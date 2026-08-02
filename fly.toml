@@ -1,0 +1,41 @@
+# Deploy configuration for Fly.io. This file is an example of how to host the
+# generic Docker image. The app itself knows nothing about Fly.
+#
+# One-time setup:
+#   fly launch --no-deploy   (or: fly apps create texttile)
+#   fly volumes create data --size 3
+#   fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret)
+# Deploy:
+#   fly deploy
+
+app = "texttile"
+primary_region = "fra"
+
+[env]
+  PHX_HOST = "demo.texttile.blog"
+  # Fly machines mount a single volume, so the database and the uploads
+  # share it in separate directories.
+  DATABASE_PATH = "/data/db/texttile.db"
+  UPLOADS_PATH = "/data/uploads"
+  # Mail: uncomment after setting the credential secret, e.g.
+  #   fly secrets set RESEND_API_KEY=... -a texttile
+  # Valid adapters: resend, postmark, brevo, smtp, ses. Unset = local preview.
+  # MAIL_ADAPTER = "resend"
+  # MAIL_FROM = "hello@demo.texttile.blog"
+
+[mounts]
+  source = "data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # SQLite lives on one volume: exactly one machine, no scaling out.
+  min_machines_running = 0
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"

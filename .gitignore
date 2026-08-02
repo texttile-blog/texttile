@@ -24,3 +24,11 @@ crash.dump
 
 # Elixir language tools
 /.elixir_ls/
+priv/uploads/
+/tmp/
+/assets/node_modules/
+*.db
+*.db-shm
+*.db-wal
+/priv/static/assets/
+.env
