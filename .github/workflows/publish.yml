@@ -23,5 +23,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/klausbreyer/texttile:latest
-            ghcr.io/klausbreyer/texttile:${{ github.sha }}
+            ghcr.io/texttile-blog/texttile:latest
+            ghcr.io/texttile-blog/texttile:${{ github.sha }}
