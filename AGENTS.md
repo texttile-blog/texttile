@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Rules for agents working in this repository. Only deviations from default behavior are listed here. Product requirements live in `idea.md`, not here.
+Rules for agents working in this repository. Only deviations from default behavior are listed here. Product requirements live in `idea.md`, not here. Framework-specific guidance (Phoenix, LiveView, Ecto, HEEx) lives in `PHOENIX.md`; read it before writing Phoenix code.
 
 ## Git and GitHub
 
