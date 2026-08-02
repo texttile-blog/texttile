@@ -12,7 +12,7 @@ app = "texttile"
 primary_region = "fra"
 
 [env]
-  PHX_HOST = "texttile.fly.dev"
+  PHX_HOST = "demo.texttile.blog"
   # Fly machines mount a single volume, so the database and the uploads
   # share it in separate directories.
   DATABASE_PATH = "/data/db/texttile.db"
