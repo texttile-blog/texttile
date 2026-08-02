@@ -10,8 +10,9 @@ defmodule Texttile.Application do
     children = [
       TexttileWeb.Telemetry,
       Texttile.Repo,
-      {Ecto.Migrator,
-       repos: Application.fetch_env!(:texttile, :ecto_repos), skip: skip_migrations?()},
+      # Migrations run once, in the container CMD (bin/migrate), before the app
+      # boots. No Ecto.Migrator child: a failing migration must fail the boot
+      # step cleanly instead of crash-looping the supervision tree.
       {DNSCluster, query: Application.get_env(:texttile, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Texttile.PubSub},
       # Start a worker by calling: Texttile.Worker.start_link(arg)
@@ -32,10 +33,5 @@ defmodule Texttile.Application do
   def config_change(changed, _new, removed) do
     TexttileWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp skip_migrations?() do
-    # By default, sqlite migrations are run when using a release
-    System.get_env("RELEASE_NAME") == nil
   end
 end

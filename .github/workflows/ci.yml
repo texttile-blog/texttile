@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+env:
+  ELIXIR_VERSION: "1.19.5"
+  OTP_VERSION: "28.5"
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,18 +18,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.19.5"
-          otp-version: "28.5"
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
       - uses: actions/cache@v4
         with:
           path: |
             deps
             _build
-          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}
-          restore-keys: mix-${{ runner.os }}-
+          key: mix-${{ runner.os }}-otp${{ env.OTP_VERSION }}-ex${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+          restore-keys: mix-${{ runner.os }}-otp${{ env.OTP_VERSION }}-ex${{ env.ELIXIR_VERSION }}-
       - run: mix deps.get
       - run: mix compile --warnings-as-errors
       - run: mix format --check-formatted
+      - run: mix assets.setup
       - run: npm --prefix assets ci
       - run: npm --prefix assets exec -- playwright install chromium --with-deps
       - run: mix test
@@ -35,3 +40,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t texttile .
+      # The image is the canonical runtime; prove it actually runs, not just builds.
+      - name: Container smoke test
+        run: |
+          docker run -d --name smoke -p 4440:4000 \
+            -e SECRET_KEY_BASE="$(openssl rand -base64 48)" \
+            -e PHX_HOST=localhost \
+            texttile
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:4440/ >/dev/null && break
+            sleep 1
+          done
+          curl -fs http://localhost:4440/ >/dev/null
+          # Migrations ran and the data layout exists on the "volume".
+          docker exec smoke sh -c 'test -f "$DATABASE_PATH" && test -d "$UPLOADS_PATH"'
+          # Root was dropped: the release (PID 1) runs as nobody.
+          docker exec smoke sh -c '[ "$(stat -c %U /proc/1)" = "nobody" ]'
+          docker logs smoke
+          docker rm -f smoke

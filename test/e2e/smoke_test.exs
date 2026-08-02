@@ -1,5 +1,6 @@
 defmodule TexttileWeb.E2E.SmokeTest do
-  use PhoenixTest.Playwright.Case, async: true
+  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
+  use PhoenixTest.Playwright.Case, async: false
 
   @moduletag :e2e
 

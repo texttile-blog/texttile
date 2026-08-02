@@ -80,7 +80,8 @@ defmodule Texttile.MixProject do
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      # Assets are built so browser e2e tests load real CSS/JS (LiveView needs app.js).
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "assets.build", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind texttile", "esbuild texttile"],
       "assets.deploy": [
