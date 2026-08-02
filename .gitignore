@@ -30,3 +30,4 @@ priv/uploads/
 *.db
 *.db-shm
 *.db-wal
+/priv/static/assets/
