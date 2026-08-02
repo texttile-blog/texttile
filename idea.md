@@ -21,7 +21,7 @@ Aufbau:
 - Tags
 - Datum / Published Status
 	- scheduled als dritter status. zukunftsdatum = geplant, mail an subscriber erst beim go-live.
-	- publish zweistufig: button öffnet sheet mit slug, datum, notify. mobil als bottom sheet.
+	- publish ist ein klick. slug, datum und die subscriber-option leben permanent in den text-settings, nicht in einem sheet. ein zukunftsdatum im feld macht aus dem klick eine planung. der button ganz rechts trägt danach den zustand: published bzw. scheduled, mit chevron-menü für unpublish, publish now und unschedule.
 - Page oder Blogeintrag (option)
 - notify subscribers on publihs
 - allow comments
@@ -29,6 +29,7 @@ Aufbau:
 - Ein Log - wer was gemacht hat. 
 
 Ediitor: 
+- markdown editor. 
 - schriftart ist die selbe des themes
 - wo Änderungen in Echtzeit an die anderen übertragen werden. inkl. der reihenfolge der bilder in den galerien! zwei cursors, wenn möglich. 
 - genauso änderungen an den optionen. tags, settings, etc. 
@@ -63,12 +64,24 @@ topbar
 
 bottom bar: mit den key shortcuts. 
 
+▎ Profil
+▎ - jeder admin hat ein eigenes profil, erreichbar über die topbar (kb-sektion im wordmark-dropdown).
+▎ - angezeigter name änderbar. wirkt sofort überall: menü, "signed in as", users-liste, log-einträge und versions-autor ab dann. leerer name fällt auf den username zurück.
+▎ - email änderbar.
+▎ - eigenes passwort direkt neu setzen (nur das eigene, fremde nur über den reset-flow).
+▎ - username ist read-only: daran hängen lock, presence und sessions.
+▎ - liste der eigenen offenen sessions ("this browser", weitere tabs).
+▎ - sign out.
+▎ - alles instant gespeichert, oben ein last saved.
+
 Frontend:
 - suche in der Textliste (titel, tags, volltext). / springt rein.
 - Passwortschutz (inkl. weiterleitung zurück wenn man auf einen artikel kam)
+- das site-passwort wird im klartext gespeichert, nicht gehasht. es ist ein geteiltes zugangswort, kein login: es steht in den benachrichtigungsmails und man gibt es weiter. gilt für den ganzen blog, nicht pro artikel. der artikel-schalter sagt nur, ob dieser text hinter dem site-passwort liegt.
 - Alle Pages kommen automatisch ins menü, sortiert nach VÖ-Datum. 
 - Radikal auf Platz optimiert. Vor allem mobile. Kein schnick schnack. 
 - die gallery ist im frontend auch quadratische tiles mit lightbox oder Für die Galerie entweder stile wie bei V01 oder dass alles wirklich teils sind wie in einer iPhone Galerie bei der Saturn-Nachteile. Man darf dabei auch nicht vergessen, das macht man mit dem Beitragsbild, dass das auch in verschiedenen Formaten funktioniert. Hier kann ich mir solches wie in der Galerie ganz gut vorstellen, dass es einfach eine maximale Höhe hat, damit man es trotzdem gut lesen kann.
+- top menu: Home (wenn separate seite) - ansonsten Blog  und dann die ganzen anderen pages. 
 
 
 Settings
@@ -78,7 +91,10 @@ Settings
 - Settings: welche page die startseite sein soll. oder ob eine liste von letzten artikeln. 
 - Settings: Title + Tagline. 
 - Settings: Sprache einstellen. 
-- Settings: Passwörter der admins ändern. von jedem. es gibt kein berechtigungssystem, das feiner einschränkt. das ist für gleichbestimmte. 
+- utzer-verwaltung, bewusst simpel: alle sind admins, gleichberechtigt, kein rollensystem.
+- eue nutzer anlegen mit username + email. die person setzt ihr passwort beim ersten login selbst (gleicher flow wie beim ersten admin aus der config).
+- passwort zurücksetzen: schickt der person eine mail mit link, darüber setzt sie selbst ein neues. niemand tippt fremde passwörter.
+- nutzer löschen. geht nur, solange mindestens ein admin übrig bleibt.
 - Settings: Bild-Größen umrechnen. es gibt ein setting für max längere kante. das wird geschaut beim ausgeben. und wenn es noch kein cached gibt, dann wird sie on the fly erstellt. und davor andere größen gelöscht, damit wir keine alten zu lange cachen. 
 - Settings: email-bestätigung vor kommentaren an/aus. unbestätigte kommentare sind markiert bis link geklickt.
 - Settings: logo + favicon hochladen. default ist das texttile logo. für beides.

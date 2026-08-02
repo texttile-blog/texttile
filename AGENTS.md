@@ -2,6 +2,12 @@
 
 Rules for agents working in this repository. Only deviations from default behavior are listed here. Product requirements live in `idea.md`, not here. Framework-specific guidance (Phoenix, LiveView, Ecto, HEEx) lives in `PHOENIX.md`; read it before writing Phoenix code.
 
+## Product notes
+
+- `idea.md` and `idea/` are read-only mirrors of the user's vault, written by `make idea`. Never edit them; the next sync discards the change. Requirements are changed in the vault by the user.
+- `idea.md` is the main note. A `[[name]]` link in it points to `idea/name.md`. Read the linked note before you build the feature it covers.
+- Run `make idea` before starting a feature, so you work from the current requirements.
+
 ## Git and GitHub
 
 - Branch names, commit messages, and PR titles/descriptions are always written in English.

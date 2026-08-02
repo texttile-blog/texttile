@@ -9,7 +9,7 @@ Follow these steps in order. Do not skip the review at the end.
 
 ## 1. Scope
 
-Restate the feature in one or two sentences and list the acceptance criteria you derive from `idea.md` and the user's request. If the scope is genuinely ambiguous, ask before writing code.
+Run `make idea` first to pull the current product notes from the vault. Then restate the feature in one or two sentences and list the acceptance criteria you derive from `idea.md`, its linked notes in `idea/`, and the user's request. If the scope is genuinely ambiguous, ask before writing code.
 
 ## 2. Worktree and branch
 
