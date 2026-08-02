@@ -27,6 +27,8 @@ if config_env() == :prod do
 
   config :texttile, :uploads_path, Texttile.Config.uploads_path()
 
+  config :texttile, Texttile.Mailer, Texttile.Config.mailer_config()
+
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
   # want to use a different value for prod and you most likely don't want

@@ -54,3 +54,8 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+# Mail: the adapter is chosen at runtime via MAIL_ADAPTER (see runtime.exs).
+# Without it, mails land in the local preview mailbox (/dev/mailbox).
+config :texttile, Texttile.Mailer, adapter: Swoosh.Adapters.Local
+config :swoosh, :api_client, Swoosh.ApiClient.Req

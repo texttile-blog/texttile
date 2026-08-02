@@ -64,6 +64,9 @@ defmodule Texttile.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
+      {:swoosh, "~> 1.27"},
+      {:req, "~> 0.7"},
+      {:gen_smtp, "~> 1.3"},
       {:phoenix_test, "~> 0.11.1", only: :test, runtime: false},
       {:phoenix_test_playwright, "~> 0.15.0", only: :test, runtime: false}
     ]
