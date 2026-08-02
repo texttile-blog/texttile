@@ -31,3 +31,4 @@ priv/uploads/
 *.db-shm
 *.db-wal
 /priv/static/assets/
+.env

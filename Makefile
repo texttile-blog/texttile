@@ -57,9 +57,11 @@ db-pull:
 	fly ssh sftp get /data/db/snapshot.db $(DB_LOCAL) -a texttile
 	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
 
+# Optional: a git-ignored .env (see .env.example) is loaded into the server,
+# e.g. to test a real mail adapter locally. Dev needs no env vars by default.
 start:
 	@$(MAKE) kill-port-4000
 	@$(MAKE) prepare
 	mix ecto.migrate
 	open http://localhost:4000
-	mix phx.server
+	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; mix phx.server
