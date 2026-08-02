@@ -59,3 +59,4 @@ import_config "#{config_env()}.exs"
 # Without it, mails land in the local preview mailbox (/dev/mailbox).
 config :texttile, Texttile.Mailer, adapter: Swoosh.Adapters.Local
 config :swoosh, :api_client, Swoosh.ApiClient.Req
+config :texttile, :mail_from, "texttile@localhost"

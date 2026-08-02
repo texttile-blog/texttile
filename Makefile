@@ -14,6 +14,8 @@ DB_LOCAL := tmp/texttile-demo.db
 prepare:
 	mix deps.get
 	mix assets.setup
+	npm --prefix assets install
+	npm --prefix assets exec -- playwright install chromium
 	mix compile
 
 test: prepare

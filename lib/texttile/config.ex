@@ -57,6 +57,14 @@ defmodule Texttile.Config do
     end
   end
 
+  @doc """
+  Sender address for outgoing mail. MAIL_FROM wins; the fallback derives
+  from the public hostname.
+  """
+  def mail_from(env \\ System.get_env()) do
+    env["MAIL_FROM"] || "texttile@#{env["PHX_HOST"] || "localhost"}"
+  end
+
   defp fetch!(env, name) do
     env[name] ||
       raise "environment variable #{name} is not set."

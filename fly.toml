@@ -21,6 +21,7 @@ primary_region = "fra"
   #   fly secrets set RESEND_API_KEY=... -a texttile
   # Valid adapters: resend, postmark, brevo, smtp, ses. Unset = local preview.
   # MAIL_ADAPTER = "resend"
+  # MAIL_FROM = "hello@demo.texttile.blog"
 
 [mounts]
   source = "data"

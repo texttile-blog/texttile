@@ -1,18 +1,67 @@
-# Texttile
+# texttile
 
-To start your Phoenix server:
+A minimal blog CMS with multiplayer editing. Phoenix, LiveView, and SQLite in
+one Docker image. One volume holds all state. No external services are
+required.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+Status: early development. Do not use it for a real site yet.
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+## Configuration
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+Texttile reads its configuration from environment variables at start.
 
-## Learn more
+| Variable          | Required in prod | Default                     | Purpose                                           |
+| ----------------- | ---------------- | --------------------------- | ------------------------------------------------- |
+| `DATABASE_PATH`   | yes              | `/data/texttile.db` (image) | SQLite database file                              |
+| `UPLOADS_PATH`    | yes              | `/data/uploads` (image)     | directory for uploaded files                      |
+| `SECRET_KEY_BASE` | yes              | none                        | signs cookies; generate with `mix phx.gen.secret` |
+| `PHX_HOST`        | yes              | `example.com`               | public hostname                                   |
+| `PORT`            | no               | `4000`                      | HTTP port                                         |
+| `MAIL_ADAPTER`    | no               | local preview mailbox       | `resend`, `postmark`, `brevo`, `smtp`, or `ses`   |
+| `MAIL_FROM`       | no               | `texttile@PHX_HOST`         | sender address for outgoing mail                  |
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+Each mail adapter loads exactly the credentials it needs:
+
+| `MAIL_ADAPTER` | Variables                                                                          |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `resend`       | `RESEND_API_KEY`                                                                   |
+| `postmark`     | `POSTMARK_API_KEY`                                                                 |
+| `brevo`        | `BREVO_API_KEY`                                                                    |
+| `smtp`         | `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_PORT` (default 587, STARTTLS) |
+| `ses`          | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`                         |
+
+A missing variable stops the app at boot with a message that names it. Without
+`MAIL_ADAPTER`, mail goes to a preview mailbox (`/dev/mailbox`, dev only).
+
+## Run with Docker
+
+```sh
+docker run -d --name texttile \
+  -p 4000:4000 \
+  -v texttile-data:/data \
+  -e SECRET_KEY_BASE="$(openssl rand -base64 48)" \
+  -e PHX_HOST=blog.example.com \
+  ghcr.io/texttile-blog/texttile:latest
+```
+
+The container prepares the data directories, runs migrations, drops root, and
+starts the server. All state lives in `/data`. An update is: pull the new
+image, start the container again.
+
+## Deploy on Fly.io
+
+`fly.toml` in this repo deploys from source with one volume for the database
+and the uploads. Its header documents the one-time setup (app, volume,
+secrets, certificate).
+
+## Development
+
+Requires Elixir 1.19+, Erlang/OTP 28+, and Node.js (for browser tests).
+
+```sh
+make start   # dev server on port 4000, no configuration needed
+make test    # unit tests plus end-to-end browser tests
+```
+
+Development reads no environment variables. To test a real mail adapter
+locally, copy `.env.example` to `.env`; `make start` loads it.

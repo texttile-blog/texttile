@@ -96,6 +96,21 @@ defmodule Texttile.ConfigTest do
     end
   end
 
+  describe "mail_from/1" do
+    test "an explicit MAIL_FROM wins" do
+      assert Config.mail_from(%{"MAIL_FROM" => "hello@breyer.blog"}) == "hello@breyer.blog"
+    end
+
+    test "falls back to texttile at the public host" do
+      assert Config.mail_from(%{"PHX_HOST" => "demo.texttile.blog"}) ==
+               "texttile@demo.texttile.blog"
+    end
+
+    test "falls back to localhost without a host" do
+      assert Config.mail_from(%{}) == "texttile@localhost"
+    end
+  end
+
   describe "uploads_path/1" do
     test "reads UPLOADS_PATH from the environment" do
       assert Config.uploads_path(%{"UPLOADS_PATH" => "/data/uploads"}) == "/data/uploads"

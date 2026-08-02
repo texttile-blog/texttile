@@ -13,6 +13,10 @@ Only deviations from default behavior. Requirements live in `idea.md`. Phoenix/L
 - Substantial features (new user-facing capability, more than one module, or more than a couple of commits) get their own worktree on a `feature/<slug>` branch. Small fixes: plain branch.
 - Every open PR gets a `/review-pr` pass. Findings are fixed as commits on the PR branch, not left as comments.
 
+## README
+
+- The README is the public setup documentation; the project will be open source. Any change to configuration (env vars, ports, Docker, deploy, make targets) updates the README in the same PR.
+
 ## Deploy config
 
 - `fly.toml` exists twice: here (builds from source) and in the repo `texttile-blog/deploy-demo` (usually checked out at `../deploy-demo`, deploys the published image). The only intended difference is the `[build]` section. When you change `fly.toml`, env vars, ports, volume paths, or the image name, apply the same change in deploy-demo and push it.
