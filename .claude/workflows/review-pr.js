@@ -9,6 +9,8 @@ export const meta = {
 }
 
 const pr = args && args.pr ? `PR #${args.pr}` : 'the PR belonging to the current branch'
+// Free-text context for the agents, e.g. the worktree path where the branch is checked out.
+const ctx = args && args.context ? `\n\nContext: ${args.context}` : ''
 
 const FINDINGS = {
   type: 'object',
@@ -72,7 +74,7 @@ const DIMENSIONS = [
 
 const reviews = await parallel(DIMENSIONS.map(d => () =>
   agent(
-    `Read AGENTS.md first. You are reviewing ${pr} in this repository, focused ONLY on this dimension: ${d.key}.\n\n${d.prompt}\n\nRead the full diff with \`gh pr diff\` and enough surrounding code (Read the actual files) to judge the changes in context, not just the changed lines. Report only real, actionable findings for your dimension. Do not pad the list; an empty list is a valid result.`,
+    `Read AGENTS.md first. You are reviewing ${pr} in this repository, focused ONLY on this dimension: ${d.key}.\n\n${d.prompt}\n\nRead the full diff with \`gh pr diff\` and enough surrounding code (Read the actual files) to judge the changes in context, not just the changed lines. Report only real, actionable findings for your dimension. Do not pad the list; an empty list is a valid result.${ctx}`,
     { label: `review:${d.key}`, phase: 'Review', schema: FINDINGS, model: d.model }
   )
 ))
@@ -103,7 +105,7 @@ if (unverified.length > 0) log(`capping verification at ${VERIFY_CAP}; ${unverif
 
 const verified = await parallel(toVerify.map(f => () =>
   agent(
-    `Adversarially verify this code-review finding on ${pr}. Your job is to try to REFUTE it by reading the actual code, not to agree with it.\n\nFile: ${f.file}${f.line ? ':' + f.line : ''}\nSeverity: ${f.severity}\nClaim: ${f.title}\n${f.description}\n\nRead the diff with \`gh pr diff\` and the surrounding files. Set real=true only if the problem genuinely exists as described and is worth fixing. If you are uncertain or the claim is speculative, set real=false and say why.`,
+    `Adversarially verify this code-review finding on ${pr}. Your job is to try to REFUTE it by reading the actual code, not to agree with it.\n\nFile: ${f.file}${f.line ? ':' + f.line : ''}\nSeverity: ${f.severity}\nClaim: ${f.title}\n${f.description}\n\nRead the diff with \`gh pr diff\` and the surrounding files. Set real=true only if the problem genuinely exists as described and is worth fixing. If you are uncertain or the claim is speculative, set real=false and say why.${ctx}`,
     // Verification is a focused yes/no on one claim; sonnet is enough.
     { label: `verify:${f.file}`, phase: 'Verify', schema: VERDICT, model: 'sonnet' }
   ).then(v => (v && v.real ? { ...f, verification: v.reasoning } : null))
