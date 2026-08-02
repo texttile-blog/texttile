@@ -11,6 +11,11 @@ Rules for agents working in this repository. Only deviations from default behavi
 - Every substantial new feature is developed in its own git worktree on a feature branch (`feature/<slug>`). Substantial means: it adds a user-facing capability, touches more than one module, or will take more than a couple of commits. Small fixes and chores may use a plain branch in the main checkout.
 - Do not merge PRs. Open them, review them, fix them. Merging is the user's decision.
 
+## Ports
+
+- Port 4000 belongs to the user (`make start`). Never start anything on it and never kill what runs there.
+- Agents use ports 4440-4449: the test server runs on 4440 (override with `TEST_PORT`), ad-hoc dev servers (visual QA, manual checks) run with `PORT=4441` and up.
+
 ## Test-driven development
 
 - Write the failing test first, then the implementation. No business logic without a unit test that motivated it.

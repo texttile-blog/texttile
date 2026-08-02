@@ -9,7 +9,7 @@ Tests passing is not enough. This workflow means actually using the app and look
 
 ## 1. Run the app
 
-Start the app locally (dev server with a seeded test database). Use a headless browser you can screenshot with (the project's e2e tooling, or Playwright/chrome headless as fallback).
+Start the app locally (dev server with a seeded test database) with `PORT=4441 mix phx.server`. Never use port 4000; it belongs to the user (see AGENTS.md). Use a headless browser you can screenshot with (the project's e2e tooling, or Playwright/chrome headless as fallback).
 
 ## 2. Use it like a user
 

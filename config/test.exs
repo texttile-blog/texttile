@@ -12,7 +12,7 @@ config :texttile, Texttile.Repo,
 
 # The server runs during tests so Playwright e2e tests can drive a real browser.
 config :texttile, TexttileWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4002],
+  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("TEST_PORT") || "4440")],
   secret_key_base: "8Fao2qVwktjBERHzC46IBzeQ10Ursj8/ot0xG4CIb05OT5x5KqgfzPKjmLFKFJCM",
   server: true
 
