@@ -20,6 +20,16 @@ if System.get_env("PHX_SERVER") do
   config :texttile, TexttileWeb.Endpoint, server: true
 end
 
+if config_env() == :dev do
+  # A local .env always applies in dev; real environment variables win.
+  for {key, value} <- Texttile.Config.dotenv(), System.get_env(key) == nil do
+    System.put_env(key, value)
+  end
+
+  config :texttile, Texttile.Mailer, Texttile.Config.mailer_config()
+  config :texttile, :mail_from, Texttile.Config.mail_from()
+end
+
 if config_env() == :prod do
   config :texttile, Texttile.Repo,
     database: Texttile.Config.database_path(),

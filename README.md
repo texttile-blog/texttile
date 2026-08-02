@@ -63,5 +63,6 @@ make start   # dev server on port 4000, no configuration needed
 make test    # unit tests plus end-to-end browser tests
 ```
 
-Development reads no environment variables. To test a real mail adapter
-locally, copy `.env.example` to `.env`; `make start` loads it.
+Development needs no environment variables. To test a real mail adapter
+locally, copy `.env.example` to `.env`; dev loads it on every start, and real
+environment variables win over `.env` values.

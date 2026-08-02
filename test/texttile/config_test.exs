@@ -111,6 +111,38 @@ defmodule Texttile.ConfigTest do
     end
   end
 
+  describe "parse_dotenv/1" do
+    test "parses KEY=VALUE lines" do
+      assert Config.parse_dotenv("A=1\nB=two") == %{"A" => "1", "B" => "two"}
+    end
+
+    test "ignores comments, blank lines, and lines without =" do
+      assert Config.parse_dotenv("# comment\n\nA=1\nnoise\n") == %{"A" => "1"}
+    end
+
+    test "keeps = inside values and strips optional quotes" do
+      assert Config.parse_dotenv("A=x=y\nB=\"quoted\"\nC='single'") ==
+               %{"A" => "x=y", "B" => "quoted", "C" => "single"}
+    end
+
+    test "accepts an export prefix" do
+      assert Config.parse_dotenv("export A=1") == %{"A" => "1"}
+    end
+  end
+
+  describe "dotenv/1" do
+    test "returns an empty map when the file does not exist" do
+      assert Config.dotenv("/nonexistent/.env") == %{}
+    end
+
+    @tag :tmp_dir
+    test "reads and parses an existing file", %{tmp_dir: dir} do
+      path = Path.join(dir, ".env")
+      File.write!(path, "MAIL_ADAPTER=resend\n")
+      assert Config.dotenv(path) == %{"MAIL_ADAPTER" => "resend"}
+    end
+  end
+
   describe "uploads_path/1" do
     test "reads UPLOADS_PATH from the environment" do
       assert Config.uploads_path(%{"UPLOADS_PATH" => "/data/uploads"}) == "/data/uploads"

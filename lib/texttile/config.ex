@@ -65,6 +65,43 @@ defmodule Texttile.Config do
     env["MAIL_FROM"] || "texttile@#{env["PHX_HOST"] || "localhost"}"
   end
 
+  @doc """
+  Reads a dotenv file. Returns an empty map when the file does not exist.
+
+  In dev, runtime.exs feeds these values into the environment so a local
+  `.env` always applies, no matter how the app is started.
+  """
+  def dotenv(path \\ ".env") do
+    case File.read(path) do
+      {:ok, content} -> parse_dotenv(content)
+      {:error, _} -> %{}
+    end
+  end
+
+  @doc false
+  def parse_dotenv(content) do
+    for line <- String.split(content, "\n"),
+        line = String.trim(line),
+        line != "" and not String.starts_with?(line, "#"),
+        parts = String.split(String.replace_prefix(line, "export ", ""), "=", parts: 2),
+        match?([_, _], parts),
+        into: %{} do
+      [key, value] = parts
+      {String.trim(key), value |> String.trim() |> unquote_value()}
+    end
+  end
+
+  defp unquote_value(<<q, rest::binary>> = value) when q in [?", ?'] do
+    size = byte_size(rest) - 1
+
+    case rest do
+      <<inner::binary-size(size), ^q>> -> inner
+      _ -> value
+    end
+  end
+
+  defp unquote_value(value), do: value
+
   defp fetch!(env, name) do
     env[name] ||
       raise "environment variable #{name} is not set."
