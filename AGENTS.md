@@ -31,6 +31,10 @@ Only deviations from default behavior. Requirements live in `idea.md`. Phoenix/L
 - Failing test first. Business logic gets unit tests; higher-level requirements get e2e tests through the real UI in a headless browser.
 - `test/contract/` is user-defined: never modify, weaken, or delete without an explicit user request. If one fails, fix the code; if the test seems wrong, stop and ask.
 
+## Mail
+
+- Never send mail to real personal addresses. For live delivery tests use Resend's test addresses (`delivered@resend.dev`, `bounced@resend.dev`) or the local preview mailbox. If a test ever needs a real recipient, ask the user for the address first.
+
 ## UI
 
 - A UI change is done only after `/visual-qa`: use it in a headless browser, look at the screenshots, judge desktop and mobile together.
