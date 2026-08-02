@@ -1,51 +1,32 @@
 # AGENTS.md
 
-Rules for agents working in this repository. Only deviations from default behavior are listed here. Product requirements live in `idea.md`, not here. Framework-specific guidance (Phoenix, LiveView, Ecto, HEEx) lives in `PHOENIX.md`; read it before writing Phoenix code.
+Only deviations from default behavior. Requirements live in `idea.md`. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
 
 ## Product notes
 
-- `idea.md` and `idea/` are read-only mirrors of the user's vault, written by `make idea`. Never edit them; the next sync discards the change. Requirements are changed in the vault by the user.
-- `idea.md` is the main note. A `[[name]]` link in it points to `idea/name.md`. Read the linked note before you build the feature it covers.
-- Run `make idea` before starting a feature, so you work from the current requirements.
+- `idea.md` and `idea/` are read-only mirrors of the user's vault (synced by `make idea`). Never edit them; requirements change in the vault. A `[[name]]` link resolves to `idea/name.md`; read linked notes before building what they cover.
 
 ## Git and GitHub
 
-- Branch names, commit messages, and PR titles/descriptions are always written in English.
-- Never add a co-author trailer to commits. No `Co-Authored-By`, no "Generated with Claude Code" lines, in neither commits nor PR descriptions.
-- Use the `gh` CLI for everything GitHub-related: PRs, reviews, comments, CI status.
-- Open PRs ready for review, never as drafts.
-- Every substantial new feature is developed in its own git worktree on a feature branch (`feature/<slug>`). Substantial means: it adds a user-facing capability, touches more than one module, or will take more than a couple of commits. Small fixes and chores may use a plain branch in the main checkout.
-- Do not merge PRs. Open them, review them, fix them. Merging is the user's decision.
+- Branches, commits, and PR texts in English. No co-author trailers, no "Generated with" lines.
+- No draft PRs. Never merge; merging is the user's decision.
+- Substantial features (new user-facing capability, more than one module, or more than a couple of commits) get their own worktree on a `feature/<slug>` branch. Small fixes: plain branch.
+- Every open PR gets a `/review-pr` pass. Findings are fixed as commits on the PR branch, not left as comments.
 
 ## Ports
 
-- Port 4000 belongs to the user (`make start`). Never start anything on it and never kill what runs there.
-- Agents use ports 4440-4449: the test server runs on 4440 (override with `TEST_PORT`), ad-hoc dev servers (visual QA, manual checks) run with `PORT=4441` and up.
+- 4000 belongs to the user (`make start`): never bind it, never kill what runs there.
+- Agents use 4440-4449: tests on 4440 (`TEST_PORT`), ad-hoc servers on `PORT=4441` and up.
 
-## Test-driven development
+## Tests
 
-- Write the failing test first, then the implementation. No business logic without a unit test that motivated it.
-- Higher-level requirements get end-to-end integration tests that exercise the app through the real UI (headless browser), not just the API layer.
-- There are two classes of tests:
-  - **Working tests**: written and freely adapted by the agent as the design evolves.
-  - **Contract tests** (everything under `test/contract/`): defined by the user. Never modify, weaken, or delete a contract test without an explicit user request. If a contract test fails, fix the code. If you believe the test itself is wrong, stop and ask.
+- Failing test first. Business logic gets unit tests; higher-level requirements get e2e tests through the real UI in a headless browser.
+- `test/contract/` is user-defined: never modify, weaken, or delete without an explicit user request. If one fails, fix the code; if the test seems wrong, stop and ask.
 
-## UI verification
+## UI
 
-- A UI change is not done when the tests pass. It is done after you have used the feature yourself in a headless browser, looked at screenshots, and judged the result. Run the `/visual-qa` workflow before opening a PR that touches the UI.
-- Always evaluate desktop and mobile viewports together, never desktop only.
+- A UI change is done only after `/visual-qa`: use it in a headless browser, look at the screenshots, judge desktop and mobile together.
 
-## Writing style
+## Prose
 
-- All English prose output (PR descriptions, commit bodies, docs, READMEs, error messages, release notes, UI copy) follows the `/ste-writing` skill: strict mode for procedures and error messages, STE-flavored mode for everything else. Never use em dashes.
-
-## Pull requests
-
-- Every PR gets a full review while it is open, via the `/review-pr` workflow. Findings are fixed directly with commits on the PR branch, not left as comments for someone else.
-
-## Workflows
-
-- `/feature` — build a substantial feature: worktree, TDD, visual QA, PR, review.
-- `/review-pr` — review an open PR and apply fixes directly.
-- `/visual-qa` — use the app in a headless browser, screenshot desktop and mobile, judge the layout.
-- `/ste-writing` — rewrite prose into Simplified Technical English (see Writing style).
+- English prose (PR texts, docs, error messages, UI copy) follows `/ste-writing`: strict mode for procedures and errors, flavored elsewhere. No em dashes.
