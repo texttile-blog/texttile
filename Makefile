@@ -6,7 +6,10 @@
 VAULT ?= $(HOME)/vault/texttile
 VAULT_MAIN := texttile - elixir multiplayer cms.md
 
-.PHONY: prepare test kill-port-4000 start idea
+.PHONY: prepare test kill-port-4000 start idea db-pull
+
+# Local, stable path for the remote DB snapshot. Point TablePlus at this file.
+DB_LOCAL := tmp/texttile-demo.db
 
 prepare:
 	mix deps.get
@@ -42,6 +45,15 @@ idea:
 	done
 	@echo "Synced from $(VAULT):"
 	@git status --short idea.md idea/ || true
+
+# Pull a consistent snapshot of the production SQLite DB to $(DB_LOCAL).
+# VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.
+db-pull:
+	fly ssh console -a texttile -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
+	@mkdir -p tmp
+	@rm -f $(DB_LOCAL)
+	fly ssh sftp get /data/db/snapshot.db $(DB_LOCAL) -a texttile
+	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
 
 start:
 	@$(MAKE) kill-port-4000
