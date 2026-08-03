@@ -47,3 +47,6 @@ config :texttile, :uploads_path, Path.expand("../tmp/test_uploads", __DIR__)
 # Mails are captured in-process, never sent.
 config :texttile, Texttile.Mailer, adapter: Swoosh.Adapters.Test
 config :swoosh, :api_client, false
+
+# Fast password hashing; tests never need real work factors.
+config :bcrypt_elixir, log_rounds: 4

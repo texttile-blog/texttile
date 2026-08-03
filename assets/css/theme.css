@@ -1,0 +1,60 @@
+/* ====================================================================
+   THEME · IRIS · the one theme of the desk
+   Round-13's iris. A warm sand desk: sand page, espresso ink, warm
+   hairlines. The accent is a violet, deep enough to hold AA on sand:
+   rings, links, active tabs and checkboxes are violet, solid buttons
+   are deep violet going lighter violet on hover, and the selection and
+   the focus wash carry the faintest lavender cast. julia keeps her
+   rust, far enough from the violet that the two never trade places.
+
+   Every colour, wash and radius of the app is one of these --tt-*
+   tokens; nothing else owns a colour. Tokens for screens that do not
+   exist yet return with their features.
+   ==================================================================== */
+:root {
+  color-scheme: light;
+
+  /* surfaces · paper's, untouched */
+  --tt-page:        #faf9f7;
+  --tt-paper:       #ffffff;
+  --tt-field:       #f2f0ec;
+  --tt-fieldhover:  #edeaf3;
+  --tt-bar:         rgba(255, 255, 255, .93);
+
+  /* ink · paper's · 15.4 / 9.9 / 6.7 / 4.9 against the page */
+  --tt-ink:         #23201b;
+  --tt-inksoft:     #443f37;
+  --tt-dim:         #5f584e;
+  --tt-faint:      #736d63;
+  --tt-slash:       #c2bdb6;
+
+  /* lines · paper's warm gray */
+  --tt-rule:        #dbd7d1;
+  --tt-hair:        #eceae5;
+
+  /* accent · violet: focus, links, active tab, checkboxes · 6.2 on the
+     page, 6.5 on white, 5.7 on a field */
+  --tt-accent:      #6d35de;
+  --tt-accentloud:  #6d35de;
+  --tt-accentsoft:  #b6a2e4;
+  --tt-accentwash:  #f2eff9;
+
+  /* solid controls: deep violet, lighter violet on hover */
+  --tt-solid:       #4b2a83;
+  --tt-solidhover:  #6a3fb5;
+  --tt-onsolid:    #ffffff;
+
+  /* julia · paper's rust, and nothing else */
+  --tt-julia:       #b0532e;
+  --tt-juliatint:   #fdf2ec;
+  --tt-julialine:   #f0d7c5;
+  --tt-livetint:    #f2eff9;
+  --tt-livetext:    #6d35de;
+
+  /* depth */
+  --tt-shadow:      35 30 24;
+
+  /* shape · paper's */
+  --tt-radius:      4px;
+  --tt-radius-pop:  7px;
+}

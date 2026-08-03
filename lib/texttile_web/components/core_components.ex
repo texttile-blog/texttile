@@ -63,25 +63,18 @@ defmodule TexttileWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="fixed left-4 bottom-4 z-[95] flex items-start gap-3 bg-paper px-4 py-3 text-[13px] max-w-[min(420px,calc(100vw-32px))]"
+      style="border-radius: var(--tt-radius-pop); border: 1px solid var(--tt-rule); box-shadow: 0 14px 34px rgb(var(--tt-shadow) / .2)"
       {@rest}
     >
-      <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
-      ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
-          <p>{msg}</p>
-        </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
-        </button>
+      <span :if={@kind == :error} class="dot text-julia mt-[6px]" aria-hidden="true"></span>
+      <div class="min-w-0">
+        <p :if={@title} class="font-semibold">{@title}</p>
+        <p class={[@kind == :error && "text-julia"]}>{msg}</p>
       </div>
+      <button type="button" class="note hover:text-ink cursor-pointer" aria-label={gettext("close")}>
+        ✕
+      </button>
     </div>
     """
   end
