@@ -11,6 +11,7 @@ Only deviations from default behavior. Requirements live in `idea.md`. Phoenix/L
 - Branches, commits, and PR texts in English. No co-author trailers, no "Generated with" lines.
 - No draft PRs. Never merge; merging is the user's decision.
 - Substantial features (new user-facing capability, more than one module, or more than a couple of commits) get their own worktree on a `feature/<slug>` branch. Small fixes: plain branch.
+- After `git worktree add`, switch the session into the worktree with the EnterWorktree tool (`path`), so the session's working directory (and any terminal split) is the worktree.
 - Every open PR gets a `/review-pr` pass. Findings are fixed as commits on the PR branch, not left as comments.
 
 ## README

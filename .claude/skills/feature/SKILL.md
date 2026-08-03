@@ -19,7 +19,7 @@ Create a git worktree with an English branch name:
 git worktree add ../texttile-<slug> -b feature/<slug>
 ```
 
-All work happens inside that worktree. Small fixes (per AGENTS.md) may skip the worktree, but anything invoked through this workflow counts as substantial.
+Then switch the session into it with the EnterWorktree tool: `{path: '../texttile-<slug>'}`. This moves the session's working directory into the worktree, so terminal splits open there too. All work happens inside that worktree. Small fixes (per AGENTS.md) may skip the worktree, but anything invoked through this workflow counts as substantial.
 
 ## 3. Tests first
 
