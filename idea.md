@@ -1,13 +1,22 @@
 https://claude.ai/share/b8bb1068-ca01-4a36-ba75-36ce5f171c24
 
-
-Triage:
-- finales logo mit finalem theme. 
-
 Werte
 - Datensparsam - im frontend. Für Remote Locations. Keine Unemgen an Javascript. 
 - Multiplayer editing.
 - Minimal - nur dem Zweck dienlich. Ist erst gut wenn man nichts mehr weglassen kann. 
+
+Triage:
+- finales logo mit finalem theme. 
+
+Später:
+- Themes oder einen anderen Namen geben, damit man sie später auseinanderhalten kann, falls die schon jemand anderes benutzt
+- Videos. Selbst hosten. Konvertieren. Genauso. ffmpeg im docker. -threads 1, nice -n 19 oder os. 
+-   kommentare später: delete, edit, hide
+- Statistiken
+- Live-Edits 
+- Import: Ich brauche ein sauberes Input Format. Inkl Bildern als Links die dann importiert werden und Kommentaren. Gut dokumentiert dass jede ai da einen importer schreiben kann Key Shortcuts! STarke idee. 
+- Hosting anbieten über die homepage - blogname.texttiles.blog
+
 
 Coding: 
 - Testgetrieben von Anfang an: evtl zwei Arten von Tests. Dinge die er selber schreibt und basierend auf prompts anpasst. Und welche die von mir definiert werden die nie ohne mein prompt failen dürfen. -> workflows 
@@ -41,49 +50,6 @@ Ediitor:
 - dann brauchen wir noch eine versoinierung. save erzeugt ja eine neue version.
   wo sieht man die alten versionen? (eigener tab würde ich sagen, mit diff) versionierung NUR für den haupt-text.
 
-Admins / login
-- Login mit Nutzername und Passwort
-- in der config hinterlegt man den username des ersten admins (nicht passwort)
-- beim ersten login muss jemand sein passwort vergeben
-- eigene profil kann man sein passwort und email und angezeigter name ändern. 
-
-topbar
-- wordmark dropdown ganz links. 
-	- new text 1
-	- texts 2
-	- comments 3
-	- newsletter 7
-	- stats 8
-	- settings 9
-	- view site 0
-	- here now (wer live ist, auf welchen seiten die person ist)
-	- kb (sektion mit meinem namen) -> your profile und sign out. 
-- gegebenenfalls breadcrump mit / für artikelname (wenn man bearbeitet) oder auuf stats / comments / texts ist. 
-- ganz rechts: mein eigenes profil  als chip (klaus).  in nicht-akzent farbe. wenn man draufklickt landet man auf seinem profil. 
-- links daneben: die anderen player. mit hover wird angezeigt was der player gerade macht. wenn man mehrere tabs offen hat als nutzer, werden diese alle angezeigt. z.b ist auf: texts übersicht, ist in dem text, ist in settings, etc. und man kann direkt dahin verlinkt werden
-
-bottom bar: mit den key shortcuts. 
-
-▎ Profil
-▎ - jeder admin hat ein eigenes profil, erreichbar über die topbar (kb-sektion im wordmark-dropdown).
-▎ - angezeigter name änderbar. wirkt sofort überall: menü, "signed in as", users-liste, log-einträge und versions-autor ab dann. leerer name fällt auf den username zurück.
-▎ - email änderbar.
-▎ - eigenes passwort direkt neu setzen (nur das eigene, fremde nur über den reset-flow).
-▎ - username ist read-only: daran hängen lock, presence und sessions.
-▎ - liste der eigenen offenen sessions ("this browser", weitere tabs).
-▎ - sign out.
-▎ - alles instant gespeichert, oben ein last saved.
-
-Frontend:
-- suche in der Textliste (titel, tags, volltext). / springt rein.
-- Passwortschutz (inkl. weiterleitung zurück wenn man auf einen artikel kam)
-- das site-passwort wird im klartext gespeichert, nicht gehasht. es ist ein geteiltes zugangswort, kein login: es steht in den benachrichtigungsmails und man gibt es weiter. gilt für den ganzen blog, nicht pro artikel. der artikel-schalter sagt nur, ob dieser text hinter dem site-passwort liegt.
-- Alle Pages kommen automatisch ins menü, sortiert nach VÖ-Datum. 
-- Radikal auf Platz optimiert. Vor allem mobile. Kein schnick schnack. 
-- die gallery ist im frontend auch quadratische tiles mit lightbox oder Für die Galerie entweder stile wie bei V01 oder dass alles wirklich teils sind wie in einer iPhone Galerie bei der Saturn-Nachteile. Man darf dabei auch nicht vergessen, das macht man mit dem Beitragsbild, dass das auch in verschiedenen Formaten funktioniert. Hier kann ich mir solches wie in der Galerie ganz gut vorstellen, dass es einfach eine maximale Höhe hat, damit man es trotzdem gut lesen kann.
-- top menu: Home (wenn separate seite) - ansonsten Blog  und dann die ganzen anderen pages. 
-
-
 Settings
 - Settings: Ob nutzer ihre email bestätigen müssen bevor sie ein kommentar schreiben können. 
 - theming nur über ein css theme. 
@@ -110,6 +76,63 @@ Newsletter
 - Die Möglichkeit sich selbst auf den Newsletter zu setzen im frontend. Ohne Bestätigung. 
 - In den mails mit neuen Artikeln  das Passwort rein falls es eines gibt. 
 
+
+Frontend:
+- suche in der Textliste (titel, tags, volltext). / springt rein.
+- Passwortschutz (inkl. weiterleitung zurück wenn man auf einen artikel kam)
+- das site-passwort wird im klartext gespeichert, nicht gehasht. es ist ein geteiltes zugangswort, kein login: es steht in den benachrichtigungsmails und man gibt es weiter. gilt für den ganzen blog, nicht pro artikel. der artikel-schalter sagt nur, ob dieser text hinter dem site-passwort liegt.
+- Alle Pages kommen automatisch ins menü, sortiert nach VÖ-Datum. 
+- Radikal auf Platz optimiert. Vor allem mobile. Kein schnick schnack. 
+- die gallery ist im frontend auch quadratische tiles mit lightbox oder Für die Galerie entweder stile wie bei V01 oder dass alles wirklich teils sind wie in einer iPhone Galerie bei der Saturn-Nachteile. Man darf dabei auch nicht vergessen, das macht man mit dem Beitragsbild, dass das auch in verschiedenen Formaten funktioniert. Hier kann ich mir solches wie in der Galerie ganz gut vorstellen, dass es einfach eine maximale Höhe hat, damit man es trotzdem gut lesen kann.
+- top menu: Home (wenn separate seite) - ansonsten Blog  und dann die ganzen anderen pages. 
+
+
+
+
+
+
+
+
+## done 
+
+
+Admins / login
+- Login mit Nutzername und Passwort
+- erster login ohne admin? admin nutzer erstellen mit passwort. 
+- **Zeitfenster**: Setup nur innerhalb von z.B. 30 Minuten nach dem Start möglich, danach Neustart nötig. Portainer macht das so. Kostet nichts und schließt das Fenster hart.
+- Im eigenen Profil kann man seinen login namen, Passwort und seine E-Mail und seinen angezeigten Namen ändern. 
+- login namen müssen eindeutig sein.
+
+▎ Profil
+▎ - jeder user hat ein eigenes profil, erreichbar über die topbar (kb-sektion im wordmark-dropdown).
+- login-name ändern (muss eindeutig sein)
+- bestätigungs-email, dass man sich hier registriert auf blogname hat mit nutzernamen (ohne passwort)
+▎ - angezeigter name änderbar.  leerer name fällt auf den username zurück. (kein check auf eindueitkgiet)
+▎ - email änderbar. (eindeutig sein)
+▎ - eigenes passwort direkt neu setzen  - mit bestätigung des aktuellen
+▎ - liste der eigenen offenen sessions ("this browser", weitere tabs).
+▎ - sign out.
+▎ - alles instant gespeichert, oben ein last saved.
+
+
+topbar
+- wordmark dropdown ganz links. 
+	- new text 1
+	- texts 2
+	- comments 3
+	- newsletter 7
+	- stats 8
+	- settings 9
+	- view site 0
+	- here now (wer live ist, auf welchen seiten die person ist)
+	- kb (sektion mit meinem namen) -> your profile und sign out. 
+- gegebenenfalls breadcrump mit / für artikelname (wenn man bearbeitet) oder auuf stats / comments / texts ist. 
+- ganz rechts: mein eigenes profil  als chip (klaus).  in nicht-akzent farbe. wenn man draufklickt landet man auf seinem profil. 
+- links daneben: die anderen player. mit hover wird angezeigt was der player gerade macht. wenn man mehrere tabs offen hat als nutzer, werden diese alle angezeigt. z.b ist auf: texts übersicht, ist in dem text, ist in settings, etc. und man kann direkt dahin verlinkt werden
+
+bottom bar: mit den key shortcuts. 
+
+
 Architektur
 - Admins bei der Installation abfragen und hashed speichern.
 - Bilder lokal ablegen in einem ordner, inkl. cachte varianten
@@ -123,12 +146,3 @@ Architektur
 Harte Konfiguration
 - Ordner wo die bilder liegen
 - Ordner / Datei wo sqlite liegt. 
-
-Später:
-- Themes oder einen anderen Namen geben, damit man sie später auseinanderhalten kann, falls die schon jemand anderes benutzt
-- Videos. Selbst hosten. Konvertieren. Genauso. ffmpeg im docker. -threads 1, nice -n 19 oder os. 
--   kommentare später: delete, edit, hide
-- Statistiken
-- Live-Edits 
-- Import: Ich brauche ein sauberes Input Format. Inkl Bildern als Links die dann importiert werden und Kommentaren. Gut dokumentiert dass jede ai da einen importer schreiben kann Key Shortcuts! STarke idee. 
-- Hosting anbieten über die homepage - blogname.texttiles.blog
