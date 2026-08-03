@@ -64,6 +64,24 @@ defmodule Texttile.ImagesTest do
       assert File.exists?(Path.join(Uploads.root(), new))
     end
 
+    test "dropping sizes leaves the renditions of a same-prefixed neighbour alone" do
+      rel = original("images/a.jpg", 4000, 2000)
+      neighbour = original("images/a-b.jpg", 4000, 2000)
+      {:ok, kept} = Images.rendition(neighbour, 1600)
+
+      {:ok, _} = Images.rendition(rel, 800)
+
+      assert File.exists?(Path.join(Uploads.root(), kept))
+    end
+
+    test "a corrupt file with an image extension is an error, not a crash" do
+      abs = Path.join(Uploads.root(), "images/broken.jpg")
+      File.mkdir_p!(Path.dirname(abs))
+      File.write!(abs, "this is not a jpeg")
+
+      assert {:error, _} = Images.rendition("images/broken.jpg", 1600)
+    end
+
     test "without an explicit edge the setting decides" do
       {:ok, _} = Settings.put(:image_max_edge, 1000)
       rel = original("images/c.jpg", 4000, 2000)

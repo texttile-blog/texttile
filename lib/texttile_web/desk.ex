@@ -37,13 +37,17 @@ defmodule TexttileWeb.Desk do
     socket =
       socket
       |> assign(:others, others(scope))
+      |> assign(:online_ids, online_user_ids())
       |> attach_hook(:desk_presence, :handle_info, &handle_info/2)
 
     {:cont, socket}
   end
 
   defp handle_info(%Phoenix.Socket.Broadcast{topic: @topic, event: "presence_diff"}, socket) do
-    {:halt, assign(socket, :others, others(socket.assigns.current_scope))}
+    {:halt,
+     socket
+     |> assign(:others, others(socket.assigns.current_scope))
+     |> assign(:online_ids, online_user_ids())}
   end
 
   # Somebody's displayed name changed. Every tab of that person reloads

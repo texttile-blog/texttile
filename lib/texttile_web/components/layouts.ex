@@ -34,18 +34,24 @@ defmodule TexttileWeb.Layouts do
   bundled Texttile mark. Uploaded names carry a random tag, so the
   browser cache never shows a stale icon.
   """
-  def favicon_href do
-    case Texttile.Settings.get(:favicon) do
-      nil -> ~p"/images/texttile-mark.svg"
-      stored -> "/uploads/" <> stored
-    end
-  end
+  def favicon_link(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :favicon,
+        case Texttile.Settings.get(:favicon) do
+          nil ->
+            {~p"/images/texttile-mark.svg", "image/svg+xml"}
 
-  def favicon_type do
-    case Texttile.Settings.get(:favicon) do
-      nil -> "image/svg+xml"
-      stored -> if String.ends_with?(stored, ".png"), do: "image/png", else: "image/svg+xml"
-    end
+          stored ->
+            {"/uploads/" <> stored,
+             if(String.ends_with?(stored, ".png"), do: "image/png", else: "image/svg+xml")}
+        end
+      )
+
+    ~H"""
+    <link rel="icon" href={elem(@favicon, 0)} type={elem(@favicon, 1)} />
+    """
   end
 
   @doc """

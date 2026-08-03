@@ -43,29 +43,43 @@ defmodule Texttile.Images do
     drop_other_sizes(relative, target)
 
     cond do
-      File.exists?(Uploads.absolute(target)) -> {:ok, target}
-      longer_edge(original) <= max_edge -> {:ok, relative}
-      true -> create(original, target, max_edge)
+      File.exists?(Uploads.absolute(target)) ->
+        {:ok, target}
+
+      true ->
+        case longer_edge(original) do
+          {:ok, edge} when edge <= max_edge -> {:ok, relative}
+          {:ok, _larger} -> create(original, target, max_edge)
+          {:error, reason} -> {:error, reason}
+        end
     end
   end
 
-  # cache/<original path, slashes flattened>-<edge><ext>
-  defp cached_name(relative, max_edge) do
+  # The one derivation of an image's cache identity: the original path
+  # with its slashes flattened, minus the extension. A cached rendition
+  # is <stem>-<edge><ext> below cache/.
+  defp cache_stem(relative) do
     extension = Path.extname(relative)
     flat = String.replace(relative, "/", "__")
-    prefix = binary_part(flat, 0, byte_size(flat) - byte_size(extension))
-    "#{@cache_dir}/#{prefix}-#{max_edge}#{extension}"
+    {binary_part(flat, 0, byte_size(flat) - byte_size(extension)), extension}
+  end
+
+  defp cached_name(relative, max_edge) do
+    {stem, extension} = cache_stem(relative)
+    "#{@cache_dir}/#{stem}-#{max_edge}#{extension}"
   end
 
   defp drop_other_sizes(relative, keep) do
-    extension = Path.extname(relative)
-    flat = String.replace(relative, "/", "__")
-    prefix = binary_part(flat, 0, byte_size(flat) - byte_size(extension)) <> "-"
+    {stem, extension} = cache_stem(relative)
+
+    # Only this image's sizes: <stem>-<digits><ext>, exactly. A plain
+    # prefix match would also hit "a-b.jpg" while dropping "a.jpg".
+    mine = ~r/^#{Regex.escape(stem)}-\d+#{Regex.escape(extension)}$/
 
     case File.ls(Uploads.absolute(@cache_dir)) do
       {:ok, names} ->
         for name <- names,
-            String.starts_with?(name, prefix),
+            Regex.match?(mine, name),
             "#{@cache_dir}/#{name}" != keep do
           File.rm(Uploads.absolute("#{@cache_dir}/#{name}"))
         end
@@ -78,18 +92,25 @@ defmodule Texttile.Images do
   end
 
   defp longer_edge(path) do
-    {:ok, image} = Vips.Image.new_from_file(path)
-    max(Vips.Image.width(image), Vips.Image.height(image))
+    case Vips.Image.new_from_file(path) do
+      {:ok, image} -> {:ok, max(Vips.Image.width(image), Vips.Image.height(image))}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp create(original, target, max_edge) do
     destination = Uploads.absolute(target)
     File.mkdir_p!(Path.dirname(destination))
 
-    # Written next to its place and renamed, so a reader never meets a
-    # half-made file. The name keeps its extension: vips reads the
-    # format from it.
-    partial = Path.join(Path.dirname(destination), ".tmp-" <> Path.basename(destination))
+    # Written under a name of its own and renamed, so a reader never
+    # meets a half-made file and two concurrent makers never share a
+    # temp file. The name keeps its extension: vips reads the format
+    # from it.
+    partial =
+      Path.join(
+        Path.dirname(destination),
+        ".tmp-#{System.unique_integer([:positive])}-" <> Path.basename(destination)
+      )
 
     with {:ok, thumb} <-
            Vips.Operation.thumbnail(original, max_edge,

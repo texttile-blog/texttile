@@ -51,6 +51,18 @@ defmodule TexttileWeb.LinkControllerTest do
       assert html_response(conn, 200) =~ "at least 12 characters"
     end
 
+    test "setting the password tells the open sockets of the old sessions to disconnect",
+         %{conn: conn} do
+      user = user_fixture(%{username: "julia"})
+      old_session_token = Accounts.create_session(user)
+      TexttileWeb.Endpoint.subscribe(TexttileWeb.UserAuth.user_session_topic(old_session_token))
+
+      token = mailed_link(user)
+      post(conn, ~p"/link/#{token}", %{"user" => %{"password" => "a long enough password"}})
+
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect"}
+    end
+
     test "a spent link lands on the dead-link screen", %{conn: conn} do
       user = user_fixture()
       token = mailed_link(user)
@@ -78,6 +90,18 @@ defmodule TexttileWeb.LinkControllerTest do
 
     test "an unknown address gets no mail; the answer reads the same", %{conn: conn} do
       conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "nobody@example.org"}})
+      assert html_response(conn, 200) =~ "on its way"
+      assert_no_email_sent()
+    end
+
+    test "hammering the form sends one mail per minute and keeps the pending link alive",
+         %{conn: conn} do
+      user_fixture(%{email: "kb@example.org"})
+
+      post(conn, ~p"/forgot", %{"user" => %{"email" => "kb@example.org"}})
+      assert_email_sent()
+
+      conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "kb@example.org"}})
       assert html_response(conn, 200) =~ "on its way"
       assert_no_email_sent()
     end

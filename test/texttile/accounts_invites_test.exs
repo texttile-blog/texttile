@@ -125,10 +125,32 @@ defmodule Texttile.AccountsInvitesTest do
 
     test "never you, never the last account" do
       me = user_fixture(%{username: "kb"})
-      assert {:error, :yourself} = Accounts.delete_user(me, by: me)
+      assert {:error, :last} = Accounts.delete_user(me, by: me)
 
       other = user_fixture(%{username: "julia"})
       assert {:error, :yourself} = Accounts.delete_user(other, by: other)
+    end
+
+    test "an account another admin deleted first answers :gone, not a crash" do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+      _third = user_fixture(%{username: "pat"})
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+      assert {:error, :gone} = Accounts.delete_user(other, by: me)
+    end
+  end
+
+  describe "link_recently_sent?/1" do
+    test "true just after a link went out, false for an old one" do
+      user = user_fixture()
+      refute Accounts.link_recently_sent?(user)
+
+      {:ok, _} = Accounts.send_password_link(user, site: "s", link_url: &link_url/1)
+      assert Accounts.link_recently_sent?(user)
+
+      Repo.update_all("login_links", set: [inserted_at: ~U[2020-01-01 00:00:00Z]])
+      refute Accounts.link_recently_sent?(user)
     end
   end
 

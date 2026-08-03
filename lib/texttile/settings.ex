@@ -106,7 +106,7 @@ defmodule Texttile.Settings do
   defp cast_integer(value) do
     case Integer.parse(String.trim(value)) do
       {n, ""} -> {:ok, n}
-      _ -> {:error, "must be a number"}
+      _ -> {:error, "a number"}
     end
   end
 

@@ -12,7 +12,6 @@ defmodule TexttileWeb.SettingsLive do
   alias Texttile.Markdown
   alias Texttile.Settings
   alias Texttile.Uploads
-  alias TexttileWeb.Desk
 
   @note_ms 4600
 
@@ -38,12 +37,14 @@ defmodule TexttileWeb.SettingsLive do
       |> allow_upload(:logo,
         accept: ~w(.svg .png),
         max_entries: 1,
+        max_file_size: 1_000_000,
         auto_upload: true,
         progress: &handle_upload/3
       )
       |> allow_upload(:favicon,
         accept: ~w(.svg .png),
         max_entries: 1,
+        max_file_size: 1_000_000,
         auto_upload: true,
         progress: &handle_upload/3
       )
@@ -116,28 +117,40 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   def handle_event("send_link", %{"id" => id}, socket) do
-    user = Accounts.get_user!(id)
-    {:ok, _token} = Accounts.send_password_link(user, mail_opts())
+    # nil when another admin deleted the row between render and click
+    case Accounts.get_user(id) do
+      nil ->
+        {:noreply, refresh_users(socket)}
 
-    {note, saved} =
-      if Accounts.invited?(user) do
-        {"invitation sent again to #{user.email} · still waiting for the first sign-in",
-         "Invitation sent again to #{user.email}"}
-      else
-        {"password reset sent to #{user.email}", "Password reset sent to #{user.email}"}
-      end
+      user ->
+        case Accounts.send_password_link(user, mail_opts()) do
+          {:ok, _token} ->
+            {note, saved} =
+              if Accounts.invited?(user) do
+                {"invitation sent again to #{user.email} · still waiting for the first sign-in",
+                 "Invitation sent again to #{user.email}"}
+              else
+                {"password reset sent to #{user.email}", "Password reset sent to #{user.email}"}
+              end
 
-    {:noreply,
-     socket
-     |> assign(:user_notes, Map.put(socket.assigns.user_notes, user.id, note))
-     |> mark_saved(saved)}
+            {:noreply,
+             socket
+             |> assign(:user_notes, Map.put(socket.assigns.user_notes, user.id, note))
+             |> mark_saved(saved)}
+
+          {:error, {:mail, _reason}} ->
+            {:noreply,
+             mark_saved(socket, "The mail could not be sent · check the mail configuration")}
+        end
+    end
   end
 
   def handle_event("ask_delete", %{"id" => id}, socket) do
-    user = Accounts.get_user!(id)
+    user = Accounts.get_user(id)
 
-    if delete_block(user, socket.assigns.users, socket.assigns.current_scope.user) do
-      {:noreply, socket}
+    if is_nil(user) or
+         delete_block(user, socket.assigns.users, socket.assigns.current_scope.user) do
+      {:noreply, refresh_users(socket)}
     else
       {:noreply, assign(socket, :confirm_delete, user)}
     end
@@ -148,32 +161,39 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   def handle_event("delete_user", _params, socket) do
-    user = socket.assigns.confirm_delete
-    me = socket.assigns.current_scope.user
+    # nil on a double click: the first click already closed the dialog
+    case socket.assigns.confirm_delete do
+      nil ->
+        {:noreply, socket}
 
-    # Every open session of the account is told to disconnect before
-    # its rows go, exactly like a password change does it.
-    sessions = Accounts.list_sessions(user)
+      user ->
+        me = socket.assigns.current_scope.user
 
-    case Accounts.delete_user(user, by: me) do
-      {:ok, _} ->
-        Enum.each(
-          sessions,
-          &TexttileWeb.Endpoint.broadcast(
-            TexttileWeb.UserAuth.user_session_topic(&1.token),
-            "disconnect",
-            %{}
-          )
-        )
+        # Every open session of the account is told to disconnect before
+        # its rows go, exactly like a password change does it.
+        sessions = Accounts.list_sessions(user)
 
-        {:noreply,
-         socket
-         |> assign(:confirm_delete, nil)
-         |> refresh_users()
-         |> mark_saved("The account of #{Accounts.display_name(user)} is deleted")}
+        case Accounts.delete_user(user, by: me) do
+          {:ok, _} ->
+            Enum.each(
+              sessions,
+              &TexttileWeb.Endpoint.broadcast(
+                TexttileWeb.UserAuth.user_session_topic(&1.token),
+                "disconnect",
+                %{}
+              )
+            )
 
-      {:error, _reason} ->
-        {:noreply, assign(socket, :confirm_delete, nil)}
+            {:noreply,
+             socket
+             |> assign(:confirm_delete, nil)
+             |> refresh_users()
+             |> mark_saved("The account of #{Accounts.display_name(user)} is deleted")}
+
+          {:error, _reason} ->
+            # :gone, :last or :yourself: the world moved; show it as it is
+            {:noreply, socket |> assign(:confirm_delete, nil) |> refresh_users()}
+        end
     end
   end
 
@@ -195,7 +215,17 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   def handle_info(:users_changed, socket) do
-    {:noreply, refresh_users(socket)}
+    socket = refresh_users(socket)
+
+    # An open confirm dialog for an account that no longer exists (or
+    # whose facts changed) must not act on a stale struct.
+    socket =
+      case socket.assigns.confirm_delete do
+        nil -> socket
+        user -> assign(socket, :confirm_delete, Accounts.get_user(user.id))
+      end
+
+    {:noreply, socket}
   end
 
   ## Uploads arrive through here (auto_upload progress)
@@ -251,10 +281,10 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:about_html, Markdown.to_html(settings.about_markdown))
   end
 
+  # :online_ids belongs to Desk: assigned on mount, refreshed on every
+  # presence diff, so the "here now" marks stay current on their own.
   defp refresh_users(socket) do
-    socket
-    |> assign(:users, Accounts.list_users())
-    |> assign(:online_ids, Desk.online_user_ids())
+    assign(socket, :users, Accounts.list_users())
   end
 
   defp refresh_storage(socket) do
@@ -293,19 +323,13 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:saved_note_until, if(note, do: now + @note_ms))
   end
 
-  # The one rule that stops a delete: the site would have nobody left
-  # who can sign in. The second is not a rule about power, it is a rule
-  # about locking yourself out: somebody else removes your account.
+  # The rules live in Accounts.delete_user_block/3; this screen only
+  # puts them into words.
   defp delete_block(user, users, me) do
-    cond do
-      length(users) <= 1 ->
-        "The only account left: deleting it would leave nobody who can sign in."
-
-      user.id == me.id ->
-        "This one is you: another admin removes it, not you."
-
-      true ->
-        nil
+    case Accounts.delete_user_block(user, me, length(users)) do
+      :last -> "The only account left: deleting it would leave nobody who can sign in."
+      :yourself -> "This one is you: another admin removes it, not you."
+      nil -> nil
     end
   end
 

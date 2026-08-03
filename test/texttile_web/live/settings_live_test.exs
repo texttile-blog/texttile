@@ -23,7 +23,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "Last saved"
 
       for section <- ~w(Site About Theme Comments Users Images Storage) do
-        assert html =~ ">#{section}</h2>"
+        assert has_element?(view, "h2", section)
       end
 
       assert has_element?(view, "#setting-site_title")
@@ -160,6 +160,43 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       assert html =~ "another admin removes it"
       assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
+    end
+
+    test "the lone account explains why it cannot go", %{conn: conn, user: user} do
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ "The only account left"
+      assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
+    end
+
+    test "an invited account offers the invitation again, not a reset", %{conn: conn} do
+      {:ok, invited} =
+        Accounts.create_user(%{"username" => "julia", "email" => "j@example.org"},
+          site: "s",
+          link_url: fn t -> "http://x/link/#{t}" end
+        )
+
+      {:ok, view, _} = live(conn, ~p"/settings")
+
+      html =
+        view
+        |> element("#user-#{invited.id} button", "Send the invitation again")
+        |> render_click()
+
+      assert html =~ "Invitation sent again to j@example.org"
+      assert html =~ "still waiting for the first sign-in"
+    end
+
+    test "a second click on the confirm button is a no-op, not a crash", %{conn: conn} do
+      other = user_fixture(%{username: "julia"})
+      {:ok, view, _} = live(conn, ~p"/settings")
+
+      view |> element("#user-#{other.id} button", "Delete") |> render_click()
+      view |> element("#dialog-ok") |> render_click()
+      html = render_click(view, "delete_user", %{})
+
+      refute html =~ "julia@"
+      assert Process.alive?(view.pid)
     end
   end
 

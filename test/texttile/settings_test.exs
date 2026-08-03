@@ -47,9 +47,11 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:language) == "en"
     end
 
-    test "refuses a max edge below 800 or not a number" do
+    test "refuses a max edge outside 800..10000 or not a number" do
       assert {:error, _} = Settings.put(:image_max_edge, "600")
+      assert {:error, _} = Settings.put(:image_max_edge, "10080")
       assert {:error, _} = Settings.put(:image_max_edge, "huge")
+      assert {:error, _} = Settings.put(:image_max_edge, "")
       assert Settings.get(:image_max_edge) == 2560
     end
 

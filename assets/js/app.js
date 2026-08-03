@@ -159,6 +159,7 @@ document.addEventListener("keydown", event => {
   }
   if (event.metaKey || event.ctrlKey || event.altKey) return
   if (typingIn(event.target)) return
+  if (!/^[0-9]$/.test(event.key)) return
   const row = document.querySelector(`#navMenu [data-key="${event.key}"]`)
   if (row) {
     closeMenu()
