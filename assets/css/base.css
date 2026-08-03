@@ -1,8 +1,8 @@
 /* ====================================================================
    TEXTTILE · BASE STYLESHEET
-   The font stacks, the element defaults, the keyframes, the drag
-   ghosts, the reader's serif prose, the reduced-motion switch. Ported
-   from the round-13 prototype.
+   The font stacks, the element defaults, the keyframes, the
+   reduced-motion switch. Ported from the round-13 prototype; the rules
+   for screens that do not exist yet return with their features.
 
    Colour lives in theme.css. Not a single hex value belongs in here.
    ==================================================================== */
@@ -61,10 +61,9 @@
 }
 
 /* ==================================================================
-   MOTION · the two keyframes the app uses
+   MOTION · the one keyframe the app uses
    ================================================================== */
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .26; } }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ==================================================================
    COMPONENTS · the plain-CSS half of the component layer. The atoms
@@ -76,86 +75,11 @@
 
   .link:hover { text-decoration-color: var(--tt-accent); }
 
-  /* the split button: the seam between the two halves */
-  .split.solid .div { background: var(--tt-solidline); }
-  .split.calm:hover { box-shadow: inset 0 0 0 1px var(--tt-inksoft); }
-  .split.calm .div { background: var(--tt-rule); }
-
   .num { font-variant-numeric: tabular-nums; }
-  /* the three radii of the app, as classes, for markup written by
-     JavaScript: a picture, a popover, a control */
-  .r-img { border-radius: var(--tt-radius-img); }
-  .r-pop { border-radius: var(--tt-radius-pop); }
-  .r-ctl { border-radius: var(--tt-radius); }
   b, strong { font-weight: 600; }
 
-  /* presence dots */
+    /* presence dots */
   .live { animation: pulse 2.2s ease-in-out infinite; }
-  .spin { animation: spin .9s linear infinite; }
-
-  /* Chrome paints an element with backdrop-filter above a later fixed
-     layer, so the bar's blur steps aside while an overlay is open */
-  body.has-overlay #topbar { backdrop-filter: none; -webkit-backdrop-filter: none; }
-
-  .log-row:first-child { border-top: 1px solid var(--tt-rule); }
-
-  /* the writing surface: flush, no box, a whisper of a wash that hugs
-     the text on hover and firms up on focus */
-  .ed-title:hover { background: var(--tt-wash1); border-bottom-color: var(--tt-ink); }
-  .ed-title:focus {
-    outline: none; background: var(--tt-wash2);
-    border-bottom-color: var(--tt-accent);
-  }
-  .ed-body:hover { background: var(--tt-wash1); }
-  .ed-body:focus { outline: none; background: var(--tt-wash2); }
-  .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
-  /* while another admin holds the text both fields are read-only and
-     say so by staying quiet, with a pointer that offers the takeover */
-  .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
-  .ed-title[readonly]:hover, .ed-title[readonly]:focus,
-  .ed-body[readonly]:hover, .ed-body[readonly]:focus {
-    background: var(--tt-livetint); border-bottom-color: var(--tt-liveline); box-shadow: none;
-  }
-  .ed-foot .flag { display: none; }
-  .ed-body:focus:not([readonly]) + .ed-foot .flag { display: inline-flex; }
-
-  /* tiles: the drag ghost, the slot it would fall into, another
-     admin's move, the drop zone around the whole grid */
-  .tile.lift {
-    z-index: 10; transform: scale(1.06); cursor: grabbing;
-    box-shadow: 0 10px 22px rgb(var(--tt-shadow) / .3);
-  }
-  .tile.jmove { outline: 2px solid var(--tt-julia); outline-offset: -2px; }
-  .tile.slot { outline: 2px dashed var(--tt-accentloud); outline-offset: -2px; }
-  .tile.up { cursor: default; touch-action: auto; }
-  .tile.up.failed { box-shadow: inset 0 0 0 2px var(--tt-julia); }
-  .tile-x:hover { background: rgb(var(--tt-overlay) / .9); }
-  .grid-drop { outline: 2px dashed var(--tt-accentloud); outline-offset: 5px; border-radius: var(--tt-radius); }
-
-  /* the preview-image picker */
-  .cover-opt:hover { box-shadow: 0 0 0 2px var(--tt-accentsoft); }
-  .cover-opt.on { box-shadow: 0 0 0 2px var(--tt-ink); }
-  .cover-opt.on::after {
-    content: "\2713"; position: absolute; right: 4px; bottom: 1px; color: #fff;
-    font-size: 12px; font-weight: 700; text-shadow: 0 0 4px rgba(0, 0, 0, .75);
-  }
-
-  /* the reader's markdown preview of the About text */
-  .md-preview h3 { font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600; margin: 12px 0 4px; }
-  .md-preview h3:first-child, .md-preview h4:first-child { margin-top: 0; }
-  .md-preview h4 { font-family: var(--tt-font-serif); font-size: 15px; font-weight: 600; margin: 10px 0 3px; }
-  .md-preview p { margin: 7px 0; max-width: 62ch; }
-  .md-preview ul { margin: 7px 0; }
-  .md-preview a { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
-  .md-preview code {
-    font-family: var(--tt-font-mono); font-size: 12px; background: var(--tt-field);
-    border-radius: var(--tt-radius-img); padding: 0 4px;
-  }
-
-  /* reader prose */
-  .prose { font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.72; margin-top: 26px; }
-  .prose p { margin-bottom: 19px; }
-  .prose h2 { font-family: var(--tt-font-serif); font-size: 20px; font-weight: 600; margin: 32px 0 8px; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }

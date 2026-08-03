@@ -1,0 +1,63 @@
+defmodule TexttileWeb.DeskTest do
+  # Not async: presence state is global to the node.
+  use TexttileWeb.ConnCase, async: false
+
+  import Phoenix.LiveViewTest
+  import Texttile.AccountsFixtures
+
+  describe "the Here-now block" do
+    test "shows the other admin's tabs as labelled jumps", %{conn: conn} do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+
+      other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
+      {:ok, _other_texts, _} = live(other_conn, ~p"/")
+      {:ok, _other_profile, _} = live(other_conn, ~p"/profile")
+
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/")
+
+      render_until(view, fn html -> html =~ "julia" end)
+      assert has_element?(view, "#liveBlock", "julia")
+      assert has_element?(view, ~s(#liveBlock a[href="/"]), "On the Texts overview")
+      assert has_element?(view, ~s(#liveBlock a[href="/profile"]), "In the profile")
+      refute has_element?(view, "#liveBlock", "No one else right now.")
+      refute has_element?(view, "#wmDot[hidden]")
+    end
+
+    test "a rename reaches the other admin's menu and the own other tab", %{conn: conn} do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+
+      other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
+      {:ok, other_texts, _} = live(other_conn, ~p"/")
+      {:ok, other_profile, _} = live(other_conn, ~p"/profile")
+
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/")
+      render_until(view, fn html -> html =~ "julia" end)
+
+      other_profile
+      |> form("#profile-form", %{"user" => %{"display_name" => "Julia W."}})
+      |> render_change(%{"_target" => ["user", "display_name"]})
+
+      # the other admin's menu follows...
+      render_until(view, fn html -> html =~ "Julia W." end)
+      assert has_element?(view, "#liveBlock", "Julia W.")
+      refute has_element?(view, "#liveBlock .who", "julia")
+
+      # ...and so does the renaming admin's second tab
+      render_until(other_texts, fn html -> html =~ "Julia W." end)
+      assert has_element?(other_texts, "#wmMe", "Julia W.")
+    end
+  end
+
+  # Presence diffs arrive asynchronously; render until they did.
+  defp render_until(view, fun, tries \\ 100) do
+    html = render(view)
+
+    cond do
+      fun.(html) -> :ok
+      tries == 0 -> flunk("the view never rendered the expected state:\n#{html}")
+      true -> Process.sleep(10) && render_until(view, fun, tries - 1)
+    end
+  end
+end

@@ -8,7 +8,8 @@
    rust, far enough from the violet that the two never trade places.
 
    Every colour, wash and radius of the app is one of these --tt-*
-   tokens; nothing else owns a colour.
+   tokens; nothing else owns a colour. Tokens for screens that do not
+   exist yet return with their features.
    ==================================================================== */
 :root {
   color-scheme: light;
@@ -37,35 +38,23 @@
   --tt-accentloud:  #6d35de;
   --tt-accentsoft:  #b6a2e4;
   --tt-accentwash:  #f2eff9;
-  --tt-accentline:  #dcd2f0;
 
   /* solid controls: deep violet, lighter violet on hover */
   --tt-solid:       #4b2a83;
   --tt-solidhover:  #6a3fb5;
   --tt-onsolid:    #ffffff;
-  --tt-solidline:   rgba(255, 255, 255, .32);
 
   /* julia · paper's rust, and nothing else */
   --tt-julia:       #b0532e;
   --tt-juliatint:   #fdf2ec;
   --tt-julialine:   #f0d7c5;
   --tt-livetint:    #f2eff9;
-  --tt-liveline:    #dcd2f0;
   --tt-livetext:    #6d35de;
 
-  /* depth · paper's warm shadow, with a lavender breath on the second
-     wash so a focused editor tints instead of graying */
+  /* depth */
   --tt-shadow:      35 30 24;
-  --tt-overlay:     25 23 32;
-  --tt-scrim:       rgba(24, 21, 17, .34);
-  --tt-lightbox:    rgba(24, 21, 17, .96);
-  --tt-wash1:       rgba(109, 53, 222, .028);
-  --tt-wash2:       rgba(109, 53, 222, .05);
 
   /* shape · paper's */
   --tt-radius:      4px;
   --tt-radius-pop:  7px;
-  --tt-radius-pill: 999px;
-  --tt-radius-img:  3px;
-  --tt-tabw:        2px;
 }

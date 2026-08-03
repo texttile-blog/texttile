@@ -9,6 +9,7 @@ defmodule TexttileWeb.Desk do
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1]
 
   alias Texttile.Accounts
+  alias Texttile.Accounts.Scope
   alias TexttileWeb.Presence
 
   @topic "desk"
@@ -44,6 +45,32 @@ defmodule TexttileWeb.Desk do
     {:halt, assign(socket, :others, others(socket.assigns.current_scope))}
   end
 
+  # Somebody's displayed name changed. Every tab of that person reloads
+  # its own scope and rewrites its own tracked meta; everybody else then
+  # sees the new name through the presence diffs that follow.
+  defp handle_info({:desk_renamed, user_id}, socket) do
+    scope = socket.assigns.current_scope
+
+    if scope && scope.user.id == user_id do
+      user = Accounts.get_user!(user_id)
+      scope = Scope.for_user(user, scope.session_token)
+
+      Presence.update(
+        self(),
+        @topic,
+        to_string(user_id),
+        &Map.put(&1, :name, Accounts.display_name(user))
+      )
+
+      {:halt,
+       socket
+       |> assign(:current_scope, scope)
+       |> assign(:others, others(scope))}
+    else
+      {:halt, socket}
+    end
+  end
+
   defp handle_info(_message, socket), do: {:cont, socket}
 
   @doc """
@@ -66,11 +93,11 @@ defmodule TexttileWeb.Desk do
   end
 
   @doc """
-  Renaming yourself changes what the others read, live: the tracked
-  meta of every tab of this process follows the new name.
+  Announces a changed displayed name. Every open tab of that user
+  updates its own tracked presence meta and its scope on arrival.
   """
-  def rename(scope, name) do
-    Presence.update(self(), @topic, to_string(scope.user.id), &Map.put(&1, :name, name))
+  def announce_rename(user_id) do
+    Phoenix.PubSub.broadcast(Texttile.PubSub, @topic, {:desk_renamed, user_id})
   end
 
   defp activity(:texts), do: "On the Texts overview"

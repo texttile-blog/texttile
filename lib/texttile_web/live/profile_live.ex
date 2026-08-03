@@ -16,6 +16,10 @@ defmodule TexttileWeb.ProfileLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
 
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Texttile.PubSub, Accounts.sessions_topic(scope.user.id))
+    end
+
     socket =
       socket
       |> assign(:page_title, "Your profile")
@@ -25,6 +29,11 @@ defmodule TexttileWeb.ProfileLive do
       |> mark_saved(nil)
 
     {:ok, socket}
+  end
+
+  def handle_info(:sessions_changed, socket) do
+    {:noreply,
+     assign(socket, :sessions, Accounts.list_sessions(socket.assigns.current_scope.user))}
   end
 
   def handle_event("save_profile", %{"_target" => target, "user" => params}, socket) do
@@ -41,12 +50,12 @@ defmodule TexttileWeb.ProfileLive do
     case result do
       {:ok, user} ->
         scope = Scope.for_user(user, socket.assigns.current_scope.session_token)
-        Desk.rename(scope, Accounts.display_name(user))
+        Desk.announce_rename(user.id)
 
         {:noreply,
          socket
          |> assign(:current_scope, scope)
-         |> assign_forms(user, params)
+         |> assign_forms(user)
          |> mark_saved(nil)}
 
       {:error, changeset} ->
@@ -59,15 +68,33 @@ defmodule TexttileWeb.ProfileLive do
 
     case Accounts.update_password(user, pw_params["current_password"], pw_params["password"]) do
       {:ok, user} ->
-        scope = Scope.for_user(user, socket.assigns.current_scope.session_token)
+        token = socket.assigns.current_scope.session_token
+        scope = Scope.for_user(user, token)
+
+        # a changed password ends every other session, and the browsers
+        # behind them are told to disconnect right away
+        user
+        |> Accounts.list_sessions()
+        |> Enum.reject(&(&1.token == token))
+        |> Enum.each(
+          &TexttileWeb.Endpoint.broadcast(
+            TexttileWeb.UserAuth.user_session_topic(&1.token),
+            "disconnect",
+            %{}
+          )
+        )
+
+        Accounts.delete_sessions_except(user, token)
 
         {:noreply,
          socket
          |> assign(:current_scope, scope)
+         |> assign(:sessions, Accounts.list_sessions(user))
          |> assign(:pw_form, to_form(%{}, as: :pw))
          |> assign(
            :pw_note,
-           "Your new password is set. Nothing was mailed to anyone: you changed your own."
+           "Your new password is set. Every other session is signed out; this browser stays in. " <>
+             "Nothing was mailed to anyone: you changed your own."
          )
          |> mark_saved("Password changed · just now")}
 
@@ -79,7 +106,11 @@ defmodule TexttileWeb.ProfileLive do
     end
   end
 
-  defp assign_forms(socket, user, merge \\ %{}) do
+  # The form always shows what is saved, nothing else: after a
+  # successful save it is rebuilt from the persisted user, so a value
+  # the database refused can never sit in a field looking saved, and a
+  # normalized value (kb for KB) shows as it was stored.
+  defp assign_forms(socket, user) do
     values = %{
       "display_name" => user.display_name,
       "username" => user.username,
@@ -87,10 +118,7 @@ defmodule TexttileWeb.ProfileLive do
     }
 
     socket
-    |> assign(
-      :profile_form,
-      to_form(Map.merge(values, Map.take(merge, Map.keys(values))), as: :user)
-    )
+    |> assign(:profile_form, to_form(values, as: :user))
     |> assign_new(:pw_form, fn -> to_form(%{}, as: :pw) end)
   end
 

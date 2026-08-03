@@ -88,7 +88,6 @@
   .btn.solid:hover { background-color: var(--tt-solidhover); color: var(--tt-onsolid); box-shadow: none; }
   .btn.quiet { color: var(--tt-dim); padding-left: 10px; padding-right: 10px; box-shadow: none; }
   .btn.quiet:hover { color: var(--tt-ink); background-color: var(--tt-field); box-shadow: none; }
-  .btn.sm { height: 25px; padding-left: 9px; padding-right: 9px; font-size: 12px; }
   .btn:disabled { opacity: .5; cursor: default; transform: translateY(0); }
   .btn:disabled:hover { background-color: transparent; box-shadow: inset 0 0 0 1px var(--tt-rule); }
   .link {
@@ -99,7 +98,6 @@
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -.015em; }
   .lead { color: var(--tt-dim); font-size: 13.5px; margin-top: 7px; margin-bottom: 26px; }
-  .sec-h { font-size: 13px; font-weight: 600; color: var(--tt-dim); margin-top: 32px; margin-bottom: 10px; }
   .lab { font-size: 12.5px; color: var(--tt-dim); }
   .note { font-size: 12.5px; color: var(--tt-faint); }
   .hint { font-size: 12px; color: var(--tt-faint); margin-top: 5px; }
@@ -108,7 +106,6 @@
   .drow { display: block; padding-top: 7px; padding-bottom: 7px; }
   .drow > .lab { display: block; padding-bottom: 3px; font-size: 12.5px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
-  .drow.gtop { margin-top: 14px; padding-top: 9px; }
   .drow .hint { margin-top: 4px; font-size: 11.5px; line-height: 1.45; }
 
   /* the quiet underline field: one container class instead of the
@@ -167,20 +164,4 @@
   .pop .who { display: flex; align-items: center; gap: 7px; padding: 6px 10px 3px; font-size: 12.5px; font-weight: 600; }
   .pop .row.sub { padding-left: 27px; font-size: 13px; }
   .pop .go { color: var(--tt-faint); font-size: 11.5px; }
-  .stamp {
-    font-size: 11.5px; padding: 3px 9px; background-color: var(--tt-field);
-    color: var(--tt-dim); flex: none; border-radius: var(--tt-radius-pill);
-  }
-
-  /* TOUCH · a finger needs 40px, a pointer does not. The small
-     controls keep their drawn size and grow an invisible hit box
-     around themselves, so nothing on a desktop gets heavier. */
-  @media (pointer: coarse) {
-    .btn.sm { position: relative; }
-    .btn.sm::after {
-      content: ""; position: absolute; left: 50%; top: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%; min-width: 40px; height: 40px;
-    }
-  }
 }

@@ -11,15 +11,15 @@ defmodule Texttile.AccountsTest do
 
   describe "setup_state/0" do
     test "is :open right after boot while no user exists" do
-      Boot.set_started_at(System.system_time(:millisecond))
+      Boot.set_started_at(System.monotonic_time(:millisecond))
       assert Accounts.setup_state() == :open
     end
 
     test "is :closed more than 30 minutes after boot" do
-      Boot.set_started_at(System.system_time(:millisecond) - @window_ms - 1)
+      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
       assert Accounts.setup_state() == :closed
     after
-      Boot.set_started_at(System.system_time(:millisecond))
+      Boot.set_started_at(System.monotonic_time(:millisecond))
     end
 
     test "is :done as soon as a user exists, regardless of the window" do
@@ -30,7 +30,7 @@ defmodule Texttile.AccountsTest do
 
   describe "create_first_admin/2" do
     setup do
-      Boot.set_started_at(System.system_time(:millisecond))
+      Boot.set_started_at(System.monotonic_time(:millisecond))
       :ok
     end
 
@@ -60,11 +60,11 @@ defmodule Texttile.AccountsTest do
     end
 
     test "refuses outside the setup window" do
-      Boot.set_started_at(System.system_time(:millisecond) - @window_ms - 1)
+      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
       attrs = valid_user_attributes()
       assert {:error, :closed} = Accounts.create_first_admin(attrs, site: "x")
     after
-      Boot.set_started_at(System.system_time(:millisecond))
+      Boot.set_started_at(System.monotonic_time(:millisecond))
     end
 
     test "validates username, email and password" do
@@ -139,6 +139,30 @@ defmodule Texttile.AccountsTest do
       :ok = Accounts.delete_session(t1)
       assert Accounts.get_user_by_session_token(t1) == nil
       assert Accounts.get_user_by_session_token(t2).id == user.id
+    end
+
+    test "delete_sessions_except/2 keeps only the given session" do
+      user = user_fixture()
+      keep = Accounts.create_session(user)
+      _t1 = Accounts.create_session(user)
+      _t2 = Accounts.create_session(user)
+
+      :ok = Accounts.delete_sessions_except(user, keep)
+      assert [%{token: ^keep}] = Accounts.list_sessions(user)
+    end
+
+    test "an old token no longer signs anybody in and drops out of the list" do
+      user = user_fixture()
+      token = Accounts.create_session(user)
+
+      too_old = DateTime.add(DateTime.utc_now(), -61, :day) |> DateTime.truncate(:second)
+
+      Texttile.Repo.update_all(Texttile.Accounts.Session,
+        set: [inserted_at: too_old]
+      )
+
+      assert Accounts.get_user_by_session_token(token) == nil
+      assert Accounts.list_sessions(user) == []
     end
   end
 
@@ -218,6 +242,23 @@ defmodule Texttile.AccountsTest do
       user = user_fixture()
       assert {:error, changeset} = Accounts.update_password(user, valid_password(), "short")
       assert %{password: [_]} = errors_on(changeset)
+    end
+
+    test "update_password/3 verifies against a fresh read, never a stale struct" do
+      stale = user_fixture()
+
+      assert {:ok, _} = Accounts.update_password(stale, valid_password(), "second password!")
+
+      # the first password is history: a caller holding the old struct
+      # cannot authorize with it any more
+      assert {:error, changeset} =
+               Accounts.update_password(stale, valid_password(), "third password!!")
+
+      assert %{current_password: [_]} = errors_on(changeset)
+
+      # the real current password works, stale struct or not
+      assert {:ok, _} = Accounts.update_password(stale, "second password!", "third password!!")
+      assert {:ok, _} = Accounts.authenticate_user(stale.username, "third password!!")
     end
   end
 end

@@ -9,8 +9,8 @@ defmodule TexttileWeb.SetupControllerTest do
   @window_ms 30 * 60 * 1000
 
   setup do
-    Boot.set_started_at(System.system_time(:millisecond))
-    on_exit(fn -> Boot.set_started_at(System.system_time(:millisecond)) end)
+    Boot.set_started_at(System.monotonic_time(:millisecond))
+    on_exit(fn -> Boot.set_started_at(System.monotonic_time(:millisecond)) end)
     :ok
   end
 
@@ -22,7 +22,7 @@ defmodule TexttileWeb.SetupControllerTest do
     end
 
     test "shows the closed screen outside the window", %{conn: conn} do
-      Boot.set_started_at(System.system_time(:millisecond) - @window_ms - 1)
+      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
       response = conn |> get(~p"/setup") |> html_response(200)
       assert response =~ "The setup window is closed"
       refute response =~ "setup-form"
@@ -71,7 +71,7 @@ defmodule TexttileWeb.SetupControllerTest do
     end
 
     test "refuses outside the window", %{conn: conn} do
-      Boot.set_started_at(System.system_time(:millisecond) - @window_ms - 1)
+      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
 
       response =
         conn

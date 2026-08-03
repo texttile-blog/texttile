@@ -24,13 +24,13 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     end
 
     test "the closed window asks for a restart", %{conn: conn} do
-      Boot.set_started_at(System.system_time(:millisecond) - @window_ms - 1)
+      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
 
       conn
       |> visit("/")
       |> assert_has("h2", text: "The setup window is closed")
     after
-      Boot.set_started_at(System.system_time(:millisecond))
+      Boot.set_started_at(System.monotonic_time(:millisecond))
     end
 
     test "bad input stays on the form and says why", %{conn: conn} do

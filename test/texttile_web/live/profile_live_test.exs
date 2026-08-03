@@ -68,6 +68,32 @@ defmodule TexttileWeb.ProfileLiveTest do
     assert Accounts.get_user!(user.id).username == user.username
   end
 
+  test "a later successful save never leaves a refused value looking saved", %{
+    conn: conn,
+    user: user
+  } do
+    user_fixture(%{username: "taken"})
+    {:ok, view, _html} = live(conn, ~p"/profile")
+
+    view
+    |> form("#profile-form", %{"user" => %{"username" => "taken"}})
+    |> render_change(%{"_target" => ["user", "username"]})
+
+    html =
+      view
+      |> form("#profile-form", %{"user" => %{"display_name" => "Klaus"}})
+      |> render_change(%{"_target" => ["user", "display_name"]})
+
+    # the username field shows what is actually saved again, not the
+    # refused value with its error line gone
+    refute html =~ "is already taken"
+
+    assert has_element?(
+             view,
+             ~s(#profile-form input[name="user[username]"][value="#{user.username}"])
+           )
+  end
+
   test "changes the email and refuses an invalid one", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/profile")
 
@@ -107,6 +133,24 @@ defmodule TexttileWeb.ProfileLiveTest do
 
     assert html =~ "Your new password is set"
     assert {:ok, _} = Accounts.authenticate_user(user.username, "a brand new password")
+  end
+
+  test "a changed password ends every other session", %{conn: conn, user: user} do
+    other_token = Accounts.create_session(user)
+    conn = log_in_user(conn, user)
+    {:ok, view, _html} = live(conn, ~p"/profile")
+
+    html =
+      view
+      |> form("#password-form", %{
+        "pw" => %{"current_password" => valid_password(), "password" => "a brand new password"}
+      })
+      |> render_submit()
+
+    assert html =~ "Every other session is signed out"
+    assert Accounts.get_user_by_session_token(other_token) == nil
+    assert [_only_this_browser] = Accounts.list_sessions(user)
+    assert has_element?(view, "#sessions", "the only one open")
   end
 
   test "lists the open sessions with this browser first", %{conn: conn, user: user} do
