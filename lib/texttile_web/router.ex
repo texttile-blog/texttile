@@ -13,6 +13,12 @@ defmodule TexttileWeb.Router do
     plug :fetch_current_scope_for_user
   end
 
+  # Uploaded files: the site marks now, the images of the texts later.
+  # Public on purpose; the public site shows them to readers.
+  scope "/", TexttileWeb do
+    get "/uploads/*path", UploadsController, :show
+  end
+
   ## The sign-in family
 
   scope "/", TexttileWeb do
