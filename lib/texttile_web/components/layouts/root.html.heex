@@ -9,21 +9,6 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
-    <script>
-      /* the theme, before the first paint: ?theme=... wins, then the
-         one picked last, then paper. The switcher itself lives in
-         app.js, at the foot of the wordmark menu. */
-      (() => {
-        const themes = ["paper", "iris", "elixir", "signal", "darkroom"];
-        const match = /[?&]theme=([a-z]+)/i.exec(location.search);
-        const wanted = match && match[1].toLowerCase();
-        let saved = null;
-        try { saved = localStorage.getItem("texttile-theme"); } catch (e) {}
-        const id = themes.includes(wanted) ? wanted : themes.includes(saved) ? saved : "paper";
-        document.documentElement.setAttribute("data-theme", id);
-        if (id !== saved) { try { localStorage.setItem("texttile-theme", id); } catch (e) {} }
-      })();
-    </script>
   </head>
   <body>
     {@inner_content}

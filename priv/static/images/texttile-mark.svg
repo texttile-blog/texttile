@@ -6,7 +6,7 @@
        file and a tab painted by the app look the same. The ink lightens
        in dark browser chrome so the mark never disappears. -->
   <style>
-    .ink { fill: #241a2e; }
+    .ink { fill: #23201b; }
     @media (prefers-color-scheme: dark) { .ink { fill: #e9e5dd; } }
   </style>
   <rect class="ink" x="0" y="0"    width="43" height="3.5" rx="1.75"/>
@@ -15,5 +15,5 @@
   <rect class="ink" x="0" y="22.5" width="26" height="3.5" rx="1.75"/>
   <rect class="ink" x="0"  y="30" width="13" height="13" rx="2.5"/>
   <rect class="ink" x="15" y="30" width="13" height="13" rx="2.5"/>
-  <rect x="30" y="30" width="13" height="13" rx="2.5" fill="#bda6ee"/>
+  <rect x="30" y="30" width="13" height="13" rx="2.5" fill="#b6a2e4"/>
 </svg>

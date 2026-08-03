@@ -1,10 +1,9 @@
 /* Texttile · the desk stylesheet.
 
    The design comes from the round-13 prototype: every colour, wash and
-   radius is a --tt-* token, and a theme is one file that sets all of
-   them (see themes/). base.css holds the theme-independent element
-   defaults and plain components; the atoms below size themselves with
-   the same tokens. */
+   radius is a --tt-* token, and theme.css sets all of them. base.css
+   holds the element defaults and plain components; the atoms below
+   size themselves with the same tokens. */
 
 @import "tailwindcss" source(none);
 @source "../css";
@@ -22,21 +21,17 @@
   prefix: "d-";
 }
 
-/* one file of --tt-* tokens per theme; paper doubles as the default */
-@import "./themes/paper.css";
-@import "./themes/iris.css";
-@import "./themes/elixir.css";
-@import "./themes/signal.css";
-@import "./themes/darkroom.css";
+/* the design tokens: one theme, iris */
+@import "./theme.css";
 
 /* element defaults, keyframes, plain components */
 @import "./base.css";
 
 /* ==================================================================
    TOKENS · the app owns no colour of its own. Every value arrives as
-   a --tt-* custom property from the theme files, and @theme inline
-   hands the same properties to the Tailwind utilities, so bg-paper
-   and text-julia follow the theme without a rebuild.
+   a --tt-* custom property from theme.css, and @theme inline hands
+   the same properties to the Tailwind utilities, so bg-paper and
+   text-julia exist as classes.
    ================================================================== */
 @theme inline {
   --font-sans: var(--tt-font-sans);

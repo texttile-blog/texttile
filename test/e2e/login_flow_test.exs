@@ -63,7 +63,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
   end
 
   describe "the desk" do
-    test "the wordmark menu opens with sections, presence and themes", %{conn: conn} do
+    test "the wordmark menu opens with sections and presence", %{conn: conn} do
       user_fixture(%{username: "kb"})
 
       conn
@@ -73,19 +73,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("#navMenu", text: "Here now")
       |> assert_has("#navMenu", text: "No one else right now.")
       |> assert_has("#wmMe", text: "kb")
-      |> assert_has("#themeRow", text: "Darkroom")
-    end
-
-    test "a swatch changes the theme and a reload keeps it", %{conn: conn} do
-      user_fixture(%{username: "kb"})
-
-      conn
-      |> sign_in()
-      |> click_button("#wmBtn", "Texttile")
-      |> click_button("Elixir")
-      |> assert_has("html[data-theme='elixir']")
-      |> visit("/")
-      |> assert_has("html[data-theme='elixir']")
     end
   end
 

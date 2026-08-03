@@ -41,62 +41,6 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 liveSocket.connect()
 
 /* ==================================================================
-   THE DESK THEME · one data-theme attribute on <html>, one file of
-   tokens per theme in the stylesheet. The head script in root.html.heex
-   applies the saved theme before first paint; everything below is the
-   switcher in the wordmark menu and the favicon that follows it.
-   ================================================================== */
-const TT_THEMES = ["paper", "iris", "elixir", "signal", "darkroom"]
-const TT_KEY = "texttile-theme"
-
-const ttTheme = () => document.documentElement.getAttribute("data-theme") || "paper"
-
-function ttApply(id) {
-  if (!TT_THEMES.includes(id)) id = "paper"
-  document.documentElement.setAttribute("data-theme", id)
-  try { localStorage.setItem(TT_KEY, id) } catch (_e) { /* private mode */ }
-  ttSyncSwatches()
-  setTimeout(ttIcon, 60)
-}
-
-function ttSyncSwatches() {
-  const current = ttTheme()
-  document.querySelectorAll("#themeRow [data-t]").forEach(button => {
-    button.setAttribute("aria-pressed", String(button.dataset.t === current))
-  })
-}
-
-/* the tab icon is the wordmark itself, drawn from the live tokens, so
-   it follows the theme you picked */
-function ttLight(hex) {
-  let h = hex.replace("#", "")
-  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]
-  const n = parseInt(h, 16)
-  if (isNaN(n)) return false
-  return (0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255)) > 128
-}
-
-function ttIcon() {
-  const styles = getComputedStyle(document.documentElement)
-  let ink = (styles.getPropertyValue("--tt-ink") || "#23201b").trim()
-  const page = (styles.getPropertyValue("--tt-page") || "#ffffff").trim()
-  const soft = (styles.getPropertyValue("--tt-accentsoft") || ink).trim()
-  /* the tab strip belongs to the browser, not to the desk: a light
-     theme on a dark strip draws itself in its own page color, and a
-     dark theme on a light strip does the same */
-  if (ttLight(ink) !== matchMedia("(prefers-color-scheme: dark)").matches) ink = page
-  const bar = (y, w) => `<rect x="0" y="${y}" width="${w}" height="3.5" rx="1.75" fill="${ink}"/>`
-  const sq = (x, fill) => `<rect x="${x}" y="30" width="13" height="13" rx="2.5" fill="${fill}"/>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -3 49 49">`
-    + bar(0, 43) + bar(7.5, 43) + bar(15, 43) + bar(22.5, 26)
-    + sq(0, ink) + sq(15, ink) + sq(30, soft) + `</svg>`
-  const el = document.getElementById("ttIcon")
-  if (el) el.setAttribute("href", "data:image/svg+xml," + encodeURIComponent(svg))
-}
-
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ttIcon)
-
-/* ==================================================================
    THE WORDMARK MENU · positioned fixed and placed here, so no scroll
    container, no overflow and no stacking context can ever clip it. On
    a short window it takes the taller side and scrolls inside it.
@@ -160,12 +104,6 @@ document.addEventListener("click", event => {
     return
   }
 
-  const swatch = event.target.closest("#themeRow [data-t]")
-  if (swatch) {
-    ttApply(swatch.dataset.t)
-    return
-  }
-
   const toggle = event.target.closest("[data-toggle-password]")
   if (toggle) {
     const input = document.getElementById(toggle.dataset.togglePassword)
@@ -190,14 +128,6 @@ window.addEventListener("resize", () => {
   if (menu && !menu.hidden) placeFixed(menu, wmBtn(), "left")
 })
 
-/* live navigation re-renders the bar: the swatches and the icon follow */
-window.addEventListener("phx:page-loading-stop", () => {
-  ttSyncSwatches()
-  ttIcon()
-})
-
-ttSyncSwatches()
-ttIcon()
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

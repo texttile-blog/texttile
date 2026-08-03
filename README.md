@@ -48,6 +48,18 @@ The container prepares the data directories, runs migrations, drops root, and
 starts the server. All state lives in `/data`. An update is: pull the new
 image, start the container again.
 
+## First run
+
+A fresh installation has no accounts. Open the site in a browser within 30
+minutes of the start. The setup screen asks for a username, an email address,
+and a password, and makes this account the first admin.
+
+After 30 minutes the setup screen closes. To open it again, restart the
+server. Once an account exists, the setup screen stays closed permanently.
+
+A confirmation mail goes to the address you enter. It contains the username.
+It does not contain the password.
+
 ## Deploy on Fly.io
 
 `fly.toml` in this repo deploys from source with one volume for the database

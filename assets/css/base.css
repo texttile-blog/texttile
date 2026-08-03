@@ -1,11 +1,10 @@
 /* ====================================================================
    TEXTTILE · BASE STYLESHEET
-   Everything that is true in every theme: the font stacks, the element
-   defaults, the keyframes, the drag ghosts, the reader's serif prose,
-   the reduced-motion switch. Ported from the round-13 prototype.
+   The font stacks, the element defaults, the keyframes, the drag
+   ghosts, the reader's serif prose, the reduced-motion switch. Ported
+   from the round-13 prototype.
 
-   Colour lives in the theme files (themes/paper.css and friends). Not
-   a single hex value belongs in here.
+   Colour lives in theme.css. Not a single hex value belongs in here.
    ==================================================================== */
 
 :root {
@@ -157,21 +156,6 @@
   .prose { font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.72; margin-top: 26px; }
   .prose p { margin-bottom: 19px; }
   .prose h2 { font-family: var(--tt-font-serif); font-size: 20px; font-weight: 600; margin: 32px 0 8px; }
-
-  /* the theme switcher at the foot of the wordmark menu: five small
-     labelled swatches, quiet enough to ignore */
-  .swatch {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 6px 2px 5px; border-radius: var(--tt-radius);
-    font-size: 10.5px; color: var(--tt-dim); transition: background-color .15s ease, color .15s ease;
-  }
-  .swatch:hover { background: var(--tt-field); color: var(--tt-ink); }
-  .swatch i {
-    display: block; width: 15px; height: 15px; border-radius: 50%;
-    box-shadow: inset 0 0 0 1px rgb(var(--tt-shadow) / .28);
-  }
-  .swatch[aria-pressed="true"] { color: var(--tt-ink); font-weight: 600; }
-  .swatch[aria-pressed="true"] i { box-shadow: 0 0 0 2px var(--tt-accent), inset 0 0 0 1px rgb(var(--tt-shadow) / .28); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }

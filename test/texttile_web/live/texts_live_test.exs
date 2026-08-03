@@ -25,11 +25,6 @@ defmodule TexttileWeb.TextsLiveTest do
 
     # presence: alone at the desk
     assert has_element?(view, "#liveBlock", "No one else right now.")
-
-    # the five theme swatches
-    for theme <- ~w(paper iris elixir signal darkroom) do
-      assert has_element?(view, ~s(#themeRow [data-t="#{theme}"]))
-    end
   end
 
   test "names the signed-in admin in the menu", %{conn: conn, user: user} do

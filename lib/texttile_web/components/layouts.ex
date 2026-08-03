@@ -8,14 +8,6 @@ defmodule TexttileWeb.Layouts do
 
   embed_templates "layouts/*"
 
-  @themes [
-    %{id: "paper", label: "Paper", page: "#faf9f7", accent: "#44614e"},
-    %{id: "iris", label: "Iris", page: "#faf9f7", accent: "#6d35de"},
-    %{id: "elixir", label: "Elixir", page: "#faf8fd", accent: "#7a3ff2"},
-    %{id: "signal", label: "Signal", page: "#f4f3ef", accent: "#d02700"},
-    %{id: "darkroom", label: "Darkroom", page: "#16181a", accent: "#e2a65c"}
-  ]
-
   @doc """
   The mark of the app: three full lines of text, one short one, and the
   row of tiles under it, the last of them in the accent.
@@ -79,8 +71,6 @@ defmodule TexttileWeb.Layouts do
   slot :inner_block, required: true
 
   def app(assigns) do
-    assigns = assign(assigns, :themes, @themes)
-
     ~H"""
     <header
       id="topbar"
@@ -142,26 +132,6 @@ defmodule TexttileWeb.Layouts do
           Your profile
         </.link>
         <.link href={~p"/logout"} method="delete" class="row">Sign out</.link>
-        <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
-        <%!-- the look of the desk: five themes, one row of swatches --%>
-        <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]">Theme</p>
-        <div
-          class="grid grid-cols-5 gap-[2px] px-[6px] pb-[3px]"
-          id="themeRow"
-          role="group"
-          aria-label="Theme"
-        >
-          <button
-            :for={theme <- @themes}
-            type="button"
-            class="swatch"
-            data-t={theme.id}
-            aria-pressed="false"
-            title={theme.label}
-          >
-            <i style={"background:linear-gradient(135deg, #{theme.page} 0 52%, #{theme.accent} 52%)"}></i>{theme.label}
-          </button>
-        </div>
       </nav>
 
       <%!-- the crumb is the one flexible thing in the bar, so the open

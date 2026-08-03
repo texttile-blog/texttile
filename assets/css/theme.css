@@ -1,15 +1,16 @@
 /* ====================================================================
-   THEME · IRIS
-   Paper's sibling. The sand desk is exactly the paper desk: same
-   #faf9f7 page, same espresso ink, same warm hairlines, same radii.
-   Only the pine green is gone, and in its place a violet, deepened a
-   step from elixir's so it holds AA on warm sand: rings, links, active
-   tabs and checkboxes are violet, solid buttons are deep violet going
-   lighter violet on hover, and the selection and the editor's focus
-   wash carry the faintest lavender cast. julia keeps paper's rust, far
-   enough from the violet that the two never trade places.
+   THEME · IRIS · the one theme of the desk
+   Round-13's iris. A warm sand desk: sand page, espresso ink, warm
+   hairlines. The accent is a violet, deep enough to hold AA on sand:
+   rings, links, active tabs and checkboxes are violet, solid buttons
+   are deep violet going lighter violet on hover, and the selection and
+   the focus wash carry the faintest lavender cast. julia keeps her
+   rust, far enough from the violet that the two never trade places.
+
+   Every colour, wash and radius of the app is one of these --tt-*
+   tokens; nothing else owns a colour.
    ==================================================================== */
-:root[data-theme="iris"] {
+:root {
   color-scheme: light;
 
   /* surfaces · paper's, untouched */

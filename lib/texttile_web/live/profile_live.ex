@@ -200,7 +200,6 @@ defmodule TexttileWeb.ProfileLive do
         </h2>
         <.form for={@pw_form} id="password-form" phx-submit="set_password">
           <div class="drow">
-            <span class="lab">New password</span>
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
                 <span class="flex-1 min-w-[180px] max-w-[260px]">
