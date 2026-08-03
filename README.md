@@ -60,6 +60,12 @@ server. Once an account exists, the setup screen stays closed permanently.
 A confirmation mail goes to the address you enter. It contains the username.
 It does not contain the password.
 
+Every later account is made in Settings: an admin enters a username and an
+email address, and the invitation mail carries a link where the new admin
+sets their own password. A password reset works the same way, from Settings
+or from the sign-in screen. Both depend on outgoing mail, so a real
+installation needs `MAIL_ADAPTER` set.
+
 ## Deploy on Fly.io
 
 `fly.toml` in this repo deploys from source with one volume for the database

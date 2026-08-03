@@ -55,6 +55,7 @@ defmodule TexttileWeb.Router do
       ] do
       live "/", TextsLive
       live "/profile", ProfileLive
+      live "/settings", SettingsLive
     end
   end
 

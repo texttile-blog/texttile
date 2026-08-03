@@ -147,7 +147,7 @@ defmodule TexttileWeb.ProfileLive do
           <span
             class="text-[12.5px] text-faint num whitespace-nowrap"
             id="savedProfile"
-            phx-hook=".SavedTicker"
+            phx-hook="SavedTicker"
             data-at={@saved_at}
             data-note={@saved_note}
             data-note-until={@saved_note_until}
@@ -287,29 +287,6 @@ defmodule TexttileWeb.ProfileLive do
         </p>
       </div>
     </Layouts.app>
-
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".SavedTicker">
-      export default {
-        mounted() {
-          this.timer = setInterval(() => this.paint(), 1000)
-          this.paint()
-        },
-        updated() { this.paint() },
-        destroyed() { clearInterval(this.timer) },
-        paint() {
-          const now = Date.now()
-          const note = this.el.dataset.note
-          const until = Number(this.el.dataset.noteUntil || 0)
-          if (note && now < until) { this.el.textContent = note; return }
-          const at = Number(this.el.dataset.at || now)
-          const d = new Date(at)
-          const pad = n => String(n).padStart(2, "0")
-          this.el.textContent = (now - at) / 1000 < 20
-            ? "Last saved · just now"
-            : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-        }
-      }
-    </script>
     """
   end
 

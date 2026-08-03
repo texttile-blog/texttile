@@ -30,6 +30,25 @@ defmodule TexttileWeb.Layouts do
   end
 
   @doc """
+  The favicon of every page: the uploaded one from Settings, or the
+  bundled Texttile mark. Uploaded names carry a random tag, so the
+  browser cache never shows a stale icon.
+  """
+  def favicon_href do
+    case Texttile.Settings.get(:favicon) do
+      nil -> ~p"/images/texttile-mark.svg"
+      stored -> "/uploads/" <> stored
+    end
+  end
+
+  def favicon_type do
+    case Texttile.Settings.get(:favicon) do
+      nil -> "image/svg+xml"
+      stored -> if String.ends_with?(stored, ".png"), do: "image/png", else: "image/svg+xml"
+    end
+  end
+
+  @doc """
   The column the sign-in family shares: the mark, the name, one quiet
   subtitle, then whatever the screen has to say.
   """
@@ -99,13 +118,15 @@ defmodule TexttileWeb.Layouts do
       </span>
       <nav class="pop min-w-[248px] max-w-[340px]" id="navMenu" hidden aria-label="Sections">
         <button class="row" type="button">New text <span class="k">1</span></button>
-        <.link navigate={~p"/"} class={["row", @active == "texts" && "on"]}>
+        <.link navigate={~p"/"} class={["row", @active == "texts" && "on"]} data-key="2">
           Texts <span class="k">2</span>
         </.link>
         <button class="row" type="button">Comments <span class="k">3</span></button>
         <button class="row" type="button">Newsletter <span class="k">7</span></button>
         <button class="row" type="button">Stats <span class="k">8</span></button>
-        <button class="row" type="button">Settings <span class="k">9</span></button>
+        <.link navigate={~p"/settings"} class={["row", @active == "settings" && "on"]} data-key="9">
+          Settings <span class="k">9</span>
+        </.link>
         <button class="row" type="button">View site <span class="k">0</span></button>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>

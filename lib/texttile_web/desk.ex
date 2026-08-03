@@ -16,7 +16,8 @@ defmodule TexttileWeb.Desk do
 
   @views %{
     TexttileWeb.TextsLive => :texts,
-    TexttileWeb.ProfileLive => :profile
+    TexttileWeb.ProfileLive => :profile,
+    TexttileWeb.SettingsLive => :settings
   }
 
   def on_mount(:track_presence, _params, _session, socket) do
@@ -102,7 +103,14 @@ defmodule TexttileWeb.Desk do
 
   defp activity(:texts), do: "On the Texts overview"
   defp activity(:profile), do: "In the profile"
+  defp activity(:settings), do: "In Settings"
 
   defp path(:profile), do: "/profile"
+  defp path(:settings), do: "/settings"
   defp path(_view), do: "/"
+
+  @doc "The ids of everybody with at least one open desk tab, as strings."
+  def online_user_ids do
+    @topic |> Presence.list() |> Map.keys()
+  end
 end
