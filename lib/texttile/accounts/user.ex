@@ -61,7 +61,7 @@ defmodule Texttile.Accounts.User do
       message: "only lower case letters, digits, dot, dash and underscore"
     )
     |> validate_length(:username, max: 32)
-    |> unsafe_validate_unique(:username, Texttile.Repo)
+    |> unsafe_validate_unique(:username, Texttile.Repo, message: "is already taken")
     |> unique_constraint(:username, message: "is already taken")
   end
 
@@ -73,7 +73,7 @@ defmodule Texttile.Accounts.User do
       message: "must be an email address"
     )
     |> validate_length(:email, max: 160)
-    |> unsafe_validate_unique(:email, Texttile.Repo)
+    |> unsafe_validate_unique(:email, Texttile.Repo, message: "is already in use")
     |> unique_constraint(:email, message: "is already in use")
   end
 

@@ -18,6 +18,7 @@ defmodule Texttile.Application do
       # step cleanly instead of crash-looping the supervision tree.
       {DNSCluster, query: Application.get_env(:texttile, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Texttile.PubSub},
+      TexttileWeb.Presence,
       # Start a worker by calling: Texttile.Worker.start_link(arg)
       # {Texttile.Worker, arg},
       # Start to serve requests, typically the last entry

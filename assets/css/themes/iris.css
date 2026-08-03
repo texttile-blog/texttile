@@ -1,0 +1,70 @@
+/* ====================================================================
+   THEME · IRIS
+   Paper's sibling. The sand desk is exactly the paper desk: same
+   #faf9f7 page, same espresso ink, same warm hairlines, same radii.
+   Only the pine green is gone, and in its place a violet, deepened a
+   step from elixir's so it holds AA on warm sand: rings, links, active
+   tabs and checkboxes are violet, solid buttons are deep violet going
+   lighter violet on hover, and the selection and the editor's focus
+   wash carry the faintest lavender cast. julia keeps paper's rust, far
+   enough from the violet that the two never trade places.
+   ==================================================================== */
+:root[data-theme="iris"] {
+  color-scheme: light;
+
+  /* surfaces · paper's, untouched */
+  --tt-page:        #faf9f7;
+  --tt-paper:       #ffffff;
+  --tt-field:       #f2f0ec;
+  --tt-fieldhover:  #edeaf3;
+  --tt-bar:         rgba(255, 255, 255, .93);
+
+  /* ink · paper's · 15.4 / 9.9 / 6.7 / 4.9 against the page */
+  --tt-ink:         #23201b;
+  --tt-inksoft:     #443f37;
+  --tt-dim:         #5f584e;
+  --tt-faint:      #736d63;
+  --tt-slash:       #c2bdb6;
+
+  /* lines · paper's warm gray */
+  --tt-rule:        #dbd7d1;
+  --tt-hair:        #eceae5;
+
+  /* accent · violet: focus, links, active tab, checkboxes · 6.2 on the
+     page, 6.5 on white, 5.7 on a field */
+  --tt-accent:      #6d35de;
+  --tt-accentloud:  #6d35de;
+  --tt-accentsoft:  #b6a2e4;
+  --tt-accentwash:  #f2eff9;
+  --tt-accentline:  #dcd2f0;
+
+  /* solid controls: deep violet, lighter violet on hover */
+  --tt-solid:       #4b2a83;
+  --tt-solidhover:  #6a3fb5;
+  --tt-onsolid:    #ffffff;
+  --tt-solidline:   rgba(255, 255, 255, .32);
+
+  /* julia · paper's rust, and nothing else */
+  --tt-julia:       #b0532e;
+  --tt-juliatint:   #fdf2ec;
+  --tt-julialine:   #f0d7c5;
+  --tt-livetint:    #f2eff9;
+  --tt-liveline:    #dcd2f0;
+  --tt-livetext:    #6d35de;
+
+  /* depth · paper's warm shadow, with a lavender breath on the second
+     wash so a focused editor tints instead of graying */
+  --tt-shadow:      35 30 24;
+  --tt-overlay:     25 23 32;
+  --tt-scrim:       rgba(24, 21, 17, .34);
+  --tt-lightbox:    rgba(24, 21, 17, .96);
+  --tt-wash1:       rgba(109, 53, 222, .028);
+  --tt-wash2:       rgba(109, 53, 222, .05);
+
+  /* shape · paper's */
+  --tt-radius:      4px;
+  --tt-radius-pop:  7px;
+  --tt-radius-pill: 999px;
+  --tt-radius-img:  3px;
+  --tt-tabw:        2px;
+}

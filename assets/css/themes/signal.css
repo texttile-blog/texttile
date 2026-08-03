@@ -1,0 +1,68 @@
+/* ====================================================================
+   THEME · SIGNAL
+   Cold gallery white, hard black ink, one loud vermillion and no
+   second opinion. Corners are square, hairlines are a step darker than
+   anywhere else, the active tab is underlined thickly. Where vermillion
+   has to carry text it steps down just far enough to stay legible; the
+   pure signal colour is kept for rings, underlines and washes, which
+   owe nobody any contrast. julia moves to burnt sienna: clearly darker
+   than the accent, so the two never trade places.
+   ==================================================================== */
+:root[data-theme="signal"] {
+  color-scheme: light;
+
+  /* surfaces */
+  --tt-page:        #f4f3ef;
+  --tt-paper:       #ffffff;
+  --tt-field:       #e9e7e1;
+  --tt-fieldhover:  #e1ded6;
+  --tt-bar:         rgba(255, 255, 255, .94);
+
+  /* ink · 17.5 / 11.4 / 6.9 / 4.5 against the page */
+  --tt-ink:         #0d0d0d;
+  --tt-inksoft:     #333330;
+  --tt-dim:         #55534d;
+  --tt-faint:       #726f68;
+  --tt-slash:       #a8a49b;
+
+  /* lines, one step harder than the other themes */
+  --tt-rule:        #c9c6bd;
+  --tt-hair:        #dedbd2;
+
+  /* accent · vermillion. accentloud is the undiluted signal and is
+     never used behind or as text. */
+  --tt-accent:      #d02700;
+  --tt-accentloud:  #ff3600;
+  --tt-accentsoft:  #f4714d;
+  --tt-accentwash:  #ffe9e2;
+  --tt-accentline:  #ffc2ae;
+
+  /* solid controls: vermillion with white on it, black on hover */
+  --tt-solid:       #e12e00;
+  --tt-solidhover:  #0d0d0d;
+  --tt-onsolid:    #ffffff;
+  --tt-solidline:   rgba(255, 255, 255, .42);
+
+  /* julia · burnt sienna */
+  --tt-julia:       #8a3a1a;
+  --tt-juliatint:   #f7ece5;
+  --tt-julialine:   #e0c4b2;
+  --tt-livetint:    #f7ece5;
+  --tt-liveline:    #e0c4b2;
+  --tt-livetext:    #8a3a1a;
+
+  /* depth */
+  --tt-shadow:      13 13 13;
+  --tt-overlay:     13 13 13;
+  --tt-scrim:       rgba(13, 13, 13, .38);
+  --tt-lightbox:    rgba(13, 13, 13, .97);
+  --tt-wash1:       rgba(13, 13, 13, .022);
+  --tt-wash2:       rgba(255, 54, 0, .05);
+
+  /* shape · hard edges everywhere, a heavier tab underline */
+  --tt-radius:      0px;
+  --tt-radius-pop:  0px;
+  --tt-radius-pill: 0px;
+  --tt-radius-img:  0px;
+  --tt-tabw:        3px;
+}

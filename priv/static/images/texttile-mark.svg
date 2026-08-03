@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -3 49 49" role="img" aria-label="Texttile">
+  <!-- The mark of the app, as a file: three full lines of text, one
+       short one, and the row of tiles under it, the last of them in the
+       accent. Same geometry the app draws into the tab from its live
+       tokens, three units of air included, so a tab painted from this
+       file and a tab painted by the app look the same. The ink lightens
+       in dark browser chrome so the mark never disappears. -->
+  <style>
+    .ink { fill: #241a2e; }
+    @media (prefers-color-scheme: dark) { .ink { fill: #e9e5dd; } }
+  </style>
+  <rect class="ink" x="0" y="0"    width="43" height="3.5" rx="1.75"/>
+  <rect class="ink" x="0" y="7.5"  width="43" height="3.5" rx="1.75"/>
+  <rect class="ink" x="0" y="15"   width="43" height="3.5" rx="1.75"/>
+  <rect class="ink" x="0" y="22.5" width="26" height="3.5" rx="1.75"/>
+  <rect class="ink" x="0"  y="30" width="13" height="13" rx="2.5"/>
+  <rect class="ink" x="15" y="30" width="13" height="13" rx="2.5"/>
+  <rect x="30" y="30" width="13" height="13" rx="2.5" fill="#bda6ee"/>
+</svg>

@@ -1,6 +1,8 @@
 defmodule TexttileWeb.Router do
   use TexttileWeb, :router
 
+  import TexttileWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,22 +10,40 @@ defmodule TexttileWeb.Router do
     plug :put_root_layout, html: {TexttileWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_scope_for_user
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
+  ## The sign-in family
+
+  scope "/", TexttileWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    get "/setup", SetupController, :new
+    post "/setup", SetupController, :create
+    get "/login", SessionController, :new
+    post "/login", SessionController, :create
   end
 
   scope "/", TexttileWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    delete "/logout", SessionController, :delete
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", TexttileWeb do
-  #   pipe_through :api
-  # end
+  ## The desk
+
+  scope "/", TexttileWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :desk,
+      on_mount: [
+        {TexttileWeb.UserAuth, :ensure_authenticated},
+        {TexttileWeb.Desk, :track_presence}
+      ] do
+      live "/", TextsLive
+      live "/profile", ProfileLive
+    end
+  end
 
   # Enable LiveDashboard in development
   if Application.compile_env(:texttile, :dev_routes) do

@@ -1,0 +1,179 @@
+/* ====================================================================
+   TEXTTILE · BASE STYLESHEET
+   Everything that is true in every theme: the font stacks, the element
+   defaults, the keyframes, the drag ghosts, the reader's serif prose,
+   the reduced-motion switch. Ported from the round-13 prototype.
+
+   Colour lives in the theme files (themes/paper.css and friends). Not
+   a single hex value belongs in here.
+   ==================================================================== */
+
+:root {
+  --tt-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --tt-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
+  --tt-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ==================================================================
+   ELEMENT DEFAULTS
+   ================================================================== */
+@layer base {
+  html { -webkit-text-size-adjust: 100%; height: 100%; }
+  body {
+    margin: 0; font-family: var(--tt-font-sans); font-size: 14px; line-height: 1.55;
+    color: var(--tt-ink); background: var(--tt-page); -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p, ul, figure { margin: 0; }
+  ul { padding-left: 20px; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+  svg { display: block; }
+  [hidden] { display: none !important; }
+  ::selection { background: var(--tt-accentwash); color: var(--tt-ink); }
+  ::placeholder { color: var(--tt-faint); opacity: 1; }
+  :focus-visible { outline: 2px solid var(--tt-accentloud); outline-offset: 2px; }
+
+  /* inputs: quiet fills, no bordered boxes, 16px on small screens so
+     iOS never zooms on focus */
+  input[type=text], input[type=email], input[type=password], input[type=date],
+  input[type=number], input[type=search], textarea, select {
+    width: 100%; font: inherit; font-family: var(--tt-font-sans); font-size: 16px;
+    color: var(--tt-ink); background: var(--tt-field);
+    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius); padding: 8px 10px;
+    transition: background-color .15s ease, border-color .15s ease;
+  }
+  @media (min-width: 900px) {
+    input[type=text], input[type=email], input[type=password], input[type=date],
+    input[type=number], input[type=search], textarea, select { font-size: 14px; }
+  }
+  input:hover, textarea:hover, select:hover { background: var(--tt-fieldhover); }
+  input:focus, textarea:focus, select:focus {
+    outline: none; background: var(--tt-paper);
+    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+  }
+  input:disabled { color: var(--tt-faint); }
+  textarea { line-height: 1.6; resize: vertical; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-weight: 500; font-size: 12.5px; color: var(--tt-dim); padding: 8px 12px 8px 0; border-bottom: 1px solid var(--tt-rule); }
+  td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--tt-hair); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th:last-child, td:last-child { padding-right: 0; }
+}
+
+/* ==================================================================
+   MOTION · the two keyframes the app uses
+   ================================================================== */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .26; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==================================================================
+   COMPONENTS · the plain-CSS half of the component layer. The atoms
+   that lean on the design tokens for sizing live in app.css.
+   ================================================================== */
+@layer components {
+  .sp { flex: 1; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .link:hover { text-decoration-color: var(--tt-accent); }
+
+  /* the split button: the seam between the two halves */
+  .split.solid .div { background: var(--tt-solidline); }
+  .split.calm:hover { box-shadow: inset 0 0 0 1px var(--tt-inksoft); }
+  .split.calm .div { background: var(--tt-rule); }
+
+  .num { font-variant-numeric: tabular-nums; }
+  /* the three radii of the app, as classes, for markup written by
+     JavaScript: a picture, a popover, a control */
+  .r-img { border-radius: var(--tt-radius-img); }
+  .r-pop { border-radius: var(--tt-radius-pop); }
+  .r-ctl { border-radius: var(--tt-radius); }
+  b, strong { font-weight: 600; }
+
+  /* presence dots */
+  .live { animation: pulse 2.2s ease-in-out infinite; }
+  .spin { animation: spin .9s linear infinite; }
+
+  /* Chrome paints an element with backdrop-filter above a later fixed
+     layer, so the bar's blur steps aside while an overlay is open */
+  body.has-overlay #topbar { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+  .log-row:first-child { border-top: 1px solid var(--tt-rule); }
+
+  /* the writing surface: flush, no box, a whisper of a wash that hugs
+     the text on hover and firms up on focus */
+  .ed-title:hover { background: var(--tt-wash1); border-bottom-color: var(--tt-ink); }
+  .ed-title:focus {
+    outline: none; background: var(--tt-wash2);
+    border-bottom-color: var(--tt-accent);
+  }
+  .ed-body:hover { background: var(--tt-wash1); }
+  .ed-body:focus { outline: none; background: var(--tt-wash2); }
+  .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
+  /* while another admin holds the text both fields are read-only and
+     say so by staying quiet, with a pointer that offers the takeover */
+  .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
+  .ed-title[readonly]:hover, .ed-title[readonly]:focus,
+  .ed-body[readonly]:hover, .ed-body[readonly]:focus {
+    background: var(--tt-livetint); border-bottom-color: var(--tt-liveline); box-shadow: none;
+  }
+  .ed-foot .flag { display: none; }
+  .ed-body:focus:not([readonly]) + .ed-foot .flag { display: inline-flex; }
+
+  /* tiles: the drag ghost, the slot it would fall into, another
+     admin's move, the drop zone around the whole grid */
+  .tile.lift {
+    z-index: 10; transform: scale(1.06); cursor: grabbing;
+    box-shadow: 0 10px 22px rgb(var(--tt-shadow) / .3);
+  }
+  .tile.jmove { outline: 2px solid var(--tt-julia); outline-offset: -2px; }
+  .tile.slot { outline: 2px dashed var(--tt-accentloud); outline-offset: -2px; }
+  .tile.up { cursor: default; touch-action: auto; }
+  .tile.up.failed { box-shadow: inset 0 0 0 2px var(--tt-julia); }
+  .tile-x:hover { background: rgb(var(--tt-overlay) / .9); }
+  .grid-drop { outline: 2px dashed var(--tt-accentloud); outline-offset: 5px; border-radius: var(--tt-radius); }
+
+  /* the preview-image picker */
+  .cover-opt:hover { box-shadow: 0 0 0 2px var(--tt-accentsoft); }
+  .cover-opt.on { box-shadow: 0 0 0 2px var(--tt-ink); }
+  .cover-opt.on::after {
+    content: "\2713"; position: absolute; right: 4px; bottom: 1px; color: #fff;
+    font-size: 12px; font-weight: 700; text-shadow: 0 0 4px rgba(0, 0, 0, .75);
+  }
+
+  /* the reader's markdown preview of the About text */
+  .md-preview h3 { font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600; margin: 12px 0 4px; }
+  .md-preview h3:first-child, .md-preview h4:first-child { margin-top: 0; }
+  .md-preview h4 { font-family: var(--tt-font-serif); font-size: 15px; font-weight: 600; margin: 10px 0 3px; }
+  .md-preview p { margin: 7px 0; max-width: 62ch; }
+  .md-preview ul { margin: 7px 0; }
+  .md-preview a { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .md-preview code {
+    font-family: var(--tt-font-mono); font-size: 12px; background: var(--tt-field);
+    border-radius: var(--tt-radius-img); padding: 0 4px;
+  }
+
+  /* reader prose */
+  .prose { font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.72; margin-top: 26px; }
+  .prose p { margin-bottom: 19px; }
+  .prose h2 { font-family: var(--tt-font-serif); font-size: 20px; font-weight: 600; margin: 32px 0 8px; }
+
+  /* the theme switcher at the foot of the wordmark menu: five small
+     labelled swatches, quiet enough to ignore */
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 6px 2px 5px; border-radius: var(--tt-radius);
+    font-size: 10.5px; color: var(--tt-dim); transition: background-color .15s ease, color .15s ease;
+  }
+  .swatch:hover { background: var(--tt-field); color: var(--tt-ink); }
+  .swatch i {
+    display: block; width: 15px; height: 15px; border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgb(var(--tt-shadow) / .28);
+  }
+  .swatch[aria-pressed="true"] { color: var(--tt-ink); font-weight: 600; }
+  .swatch[aria-pressed="true"] i { box-shadow: 0 0 0 2px var(--tt-accent), inset 0 0 0 1px rgb(var(--tt-shadow) / .28); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+}

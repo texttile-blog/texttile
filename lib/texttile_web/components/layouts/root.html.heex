@@ -4,27 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="Texttile" suffix=" · Phoenix Framework" phx-no-format>{assigns[:page_title]}</.live_title>
+    <.live_title default="Texttile" phx-no-format>{assigns[:page_title]}</.live_title>
+    <link rel="icon" id="ttIcon" href={~p"/images/texttile-mark.svg"} type="image/svg+xml" />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
     <script>
+      /* the theme, before the first paint: ?theme=... wins, then the
+         one picked last, then paper. The switcher itself lives in
+         app.js, at the foot of the wordmark menu. */
       (() => {
-        const setTheme = (theme) => {
-          if (theme === "system") {
-            localStorage.removeItem("phx:theme");
-            document.documentElement.removeAttribute("data-theme");
-          } else {
-            localStorage.setItem("phx:theme", theme);
-            document.documentElement.setAttribute("data-theme", theme);
-          }
-        };
-        if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
-        }
-        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
-        
-        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+        const themes = ["paper", "iris", "elixir", "signal", "darkroom"];
+        const match = /[?&]theme=([a-z]+)/i.exec(location.search);
+        const wanted = match && match[1].toLowerCase();
+        let saved = null;
+        try { saved = localStorage.getItem("texttile-theme"); } catch (e) {}
+        const id = themes.includes(wanted) ? wanted : themes.includes(saved) ? saved : "paper";
+        document.documentElement.setAttribute("data-theme", id);
+        if (id !== saved) { try { localStorage.setItem("texttile-theme", id); } catch (e) {} }
       })();
     </script>
   </head>
