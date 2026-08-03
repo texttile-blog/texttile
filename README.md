@@ -75,6 +75,10 @@ make start   # dev server on port 4000, no configuration needed
 make test    # unit tests plus end-to-end browser tests
 ```
 
+All git worktrees of the repository use one dev database: the
+`texttile_dev.db` file in the main checkout. Outside a git checkout, the
+database file stays next to the code.
+
 Development needs no environment variables. To test a real mail adapter
 locally, copy `.env.example` to `.env`; dev loads it on every start, and real
 environment variables win over `.env` values.

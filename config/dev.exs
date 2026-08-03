@@ -1,8 +1,24 @@
 import Config
 
-# Configure your database
+# All worktrees of this repository share the main checkout's dev database
+# (the plan is to share uploads the same way later). From any linked
+# worktree, `--git-common-dir` points into the main checkout's .git
+# directory. Without git (or outside a repository), the database stays in
+# this checkout.
+shared_root =
+  try do
+    {git_common_dir, 0} =
+      System.cmd("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+        stderr_to_stdout: true
+      )
+
+    git_common_dir |> String.trim() |> Path.dirname()
+  rescue
+    _ -> Path.expand("..", __DIR__)
+  end
+
 config :texttile, Texttile.Repo,
-  database: Path.expand("../texttile_dev.db", __DIR__),
+  database: Path.join(shared_root, "texttile_dev.db"),
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
