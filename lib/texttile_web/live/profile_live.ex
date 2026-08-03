@@ -87,7 +87,10 @@ defmodule TexttileWeb.ProfileLive do
     }
 
     socket
-    |> assign(:profile_form, to_form(Map.merge(values, Map.take(merge, Map.keys(values))), as: :user))
+    |> assign(
+      :profile_form,
+      to_form(Map.merge(values, Map.take(merge, Map.keys(values))), as: :user)
+    )
     |> assign_new(:pw_form, fn -> to_form(%{}, as: :pw) end)
   end
 
@@ -136,7 +139,7 @@ defmodule TexttileWeb.ProfileLive do
         </h2>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
           <div class="drow">
-            <span class="lab">Displayed name</span>
+            <label class="lab" for={@profile_form[:display_name].id}>Displayed name</label>
             <span class="val">
               <input
                 type="text"
@@ -153,7 +156,7 @@ defmodule TexttileWeb.ProfileLive do
             </span>
           </div>
           <div class="drow">
-            <span class="lab">Username</span>
+            <label class="lab" for={@profile_form[:username].id}>Username</label>
             <span class="val">
               <input
                 type="text"
@@ -174,7 +177,7 @@ defmodule TexttileWeb.ProfileLive do
             </span>
           </div>
           <div class="drow">
-            <span class="lab">Email</span>
+            <label class="lab" for={@profile_form[:email].id}>Email</label>
             <span class="val">
               <input
                 type="email"

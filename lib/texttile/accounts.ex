@@ -82,9 +82,7 @@ defmodule Texttile.Accounts do
 
   @doc "The user a session token belongs to, or nil."
   def get_user_by_session_token(token) do
-    Repo.one(
-      from s in Session, join: u in assoc(s, :user), where: s.token == ^token, select: u
-    )
+    Repo.one(from s in Session, join: u in assoc(s, :user), where: s.token == ^token, select: u)
   end
 
   @doc "All open sessions of the user, newest first."

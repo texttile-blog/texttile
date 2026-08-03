@@ -31,8 +31,7 @@ defmodule TexttileWeb.TextsLive do
           No texts yet. Writing them comes in the next step of the build.
         </p>
         <p class="hidden md:block text-[12.5px] text-faint mt-9 pt-[13px] border-t border-hair">
-          The keys, once their sections are here:
-          <b class="text-dim num">1</b>
+          The keys, once their sections are here: <b class="text-dim num">1</b>
           New text · <b class="text-dim num">2</b>
           Texts · <b class="text-dim num">3</b>
           Comments · <b class="text-dim num">7</b>

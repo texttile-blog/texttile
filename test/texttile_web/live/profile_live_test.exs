@@ -13,7 +13,12 @@ defmodule TexttileWeb.ProfileLiveTest do
 
     assert html =~ "Your profile"
     assert has_element?(view, "#crumb", "Your profile")
-    assert has_element?(view, ~s(#profile-form input[name="user[username]"][value="#{user.username}"]))
+
+    assert has_element?(
+             view,
+             ~s(#profile-form input[name="user[username]"][value="#{user.username}"])
+           )
+
     assert has_element?(view, ~s(#profile-form input[name="user[email]"][value="#{user.email}"]))
     assert has_element?(view, "#savedProfile")
   end
