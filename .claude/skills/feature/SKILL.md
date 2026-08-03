@@ -19,7 +19,7 @@ Create a git worktree with an English branch name:
 git worktree add ../texttile-<slug> -b feature/<slug>
 ```
 
-All work happens inside that worktree. Small fixes (per AGENTS.md) may skip the worktree, but anything invoked through this workflow counts as substantial.
+Then switch the session into it with the EnterWorktree tool: `{path: '../texttile-<slug>'}`. This moves the session's working directory into the worktree, so terminal splits open there too. All work happens inside that worktree. Small fixes (per AGENTS.md) may skip the worktree, but anything invoked through this workflow counts as substantial.
 
 ## 3. Tests first
 
@@ -42,4 +42,10 @@ If the feature has any UI, run the `/visual-qa` workflow on the affected screens
 
 ## 7. Review
 
-With the PR open, run the `/review-pr` workflow on it and apply all fixes directly to the branch. Then report to the user with the PR link. Do not merge.
+With the PR open, run the saved multi-agent review directly with the Workflow tool:
+
+```
+{name: 'review-pr', args: {pr: <PR number>, context: '<absolute path of the worktree>'}}
+```
+
+A feature PR always counts as substantial. Do not downgrade to an inline review and do not skip this step. Apply all confirmed findings as fix commits on the branch; treat unverified pass-through findings as leads to check yourself. Then report to the user with the PR link. Do not merge.
