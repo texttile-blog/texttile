@@ -48,7 +48,9 @@ defmodule TexttileWeb.LinkControllerTest do
 
       conn = post(conn, ~p"/link/#{token}", %{"user" => %{"password" => "short"}})
 
-      assert html_response(conn, 200) =~ "at least 12 characters"
+      html = html_response(conn, 200)
+      assert html =~ "Use at least 12 characters."
+      refute html =~ "The password use at least"
     end
 
     test "setting the password tells the open sockets of the old sessions to disconnect",

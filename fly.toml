@@ -5,6 +5,7 @@
 #   fly launch --no-deploy   (or: fly apps create texttile)
 #   fly volumes create data --size 3
 #   fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret)
+#   fly secrets set ADMIN_USERS="kb"   (who may sign in, comma separated)
 # Deploy:
 #   fly deploy
 

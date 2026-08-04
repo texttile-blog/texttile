@@ -12,9 +12,9 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
   setup do
     File.rm_rf!(Uploads.root())
 
-    # Mails from the server processes land in this test process.
-    Application.put_env(:swoosh, :shared_test_process, self())
-    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+    # The browser talks to the same node, so the configured usernames are
+    # the ones these tests set. They go back afterwards.
+    Texttile.DataCase.restore_admin_users_afterwards()
 
     %{kb: user_fixture(%{username: "kb"})}
   end
@@ -79,32 +79,36 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
   end
 
   describe "user management" do
-    test "invite, first sign-in through the mailed link, delete", %{conn: conn, kb: kb} do
-      # kb invites julia and the row says what it waits for
+    test "a configured name signs in for the first time, then deletes kb", %{
+      conn: conn,
+      kb: kb
+    } do
+      # julia stands in the configuration and has no account yet
+      configure_admins(["kb", "julia"])
+
       conn
       |> sign_in()
       |> visit("/settings")
-      |> fill_in("Username", with: "julia")
-      |> fill_in("Email", with: "julia@example.org")
-      |> click_button("Add")
-      |> assert_has("#newUserState", text: "invitation went to julia@example.org")
-      |> assert_has("#usersList", text: "waiting for the first sign-in")
+      |> assert_has("#waitingUsers", text: "julia")
 
-      # the mail carries the link; julia opens it and picks a password
-      assert_receive {:email, %Swoosh.Email{to: [{_, "julia@example.org"}]} = mail}, 2000
-      [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
-
+      # she takes the browser, types her name and chooses a password
       conn
-      |> visit(link)
-      |> assert_has("#link-who", text: "belongs to the account julia")
-      |> fill_in("New password", with: "julias own password")
-      |> click_button("Set the password and sign in")
+      |> visit("/profile")
+      |> click_link("#sign-out", "Sign out")
+      |> assert_has("p", text: "Admin sign-in")
+      |> fill_in("Username", with: "julia")
+      |> click_button("Sign in")
+      |> assert_has("h2", text: "Choose a password")
+      |> fill_in("Password", with: "julias own password")
+      |> fill_in("Repeat the password", with: "julias own password")
+      |> fill_in("Email address", with: "julia@example.org")
+      |> click_button("Create the account and sign in")
       |> assert_has("#crumb", text: "Texts")
 
       # julia is a full admin now, equal to kb. Her own row cannot go
       # (another admin removes it, not you), but she can delete kb,
       # with one confirmation in between.
-      julia = Texttile.Accounts.get_user_by_email("julia@example.org")
+      julia = Enum.find(Texttile.Accounts.list_users(), &(&1.username == "julia"))
 
       conn
       |> visit("/settings")

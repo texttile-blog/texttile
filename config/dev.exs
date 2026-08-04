@@ -17,6 +17,11 @@ shared_root =
     _ -> Path.expand("..", __DIR__)
   end
 
+# The people who may sign in. Every name here becomes an account at its
+# first sign-in, with the password it chooses there. ADMIN_USERS in .env
+# wins over this default, and in production it is the only source.
+config :texttile, :admin_users, ["admin"]
+
 config :texttile, Texttile.Repo,
   database: Path.join(shared_root, "texttile_dev.db"),
   pool_size: 5,

@@ -1,4 +1,9 @@
-defmodule Texttile.AccountsInvitesTest do
+defmodule Texttile.AccountsLinksTest do
+  @moduledoc """
+  The mailed link that sets a new password: the one way back into an
+  account whose password is gone. Nothing here invites anybody; the
+  configuration does that.
+  """
   use Texttile.DataCase, async: false
 
   import Swoosh.TestAssertions
@@ -8,63 +13,16 @@ defmodule Texttile.AccountsInvitesTest do
 
   defp link_url(token), do: "http://localhost/link/#{token}"
 
-  describe "create_user/2" do
-    test "creates an invited account without a password and mails the link" do
-      {:ok, user} =
-        Accounts.create_user(%{"username" => "Julia", "email" => "julia@example.org"},
-          site: "texttile.blog",
-          link_url: &link_url/1
-        )
-
-      assert user.username == "julia"
-      assert user.password_hash == nil
-      assert Accounts.invited?(user)
-
-      assert_email_sent(fn email ->
-        assert email.subject =~ "texttile.blog"
-        assert [{_, "julia@example.org"}] = email.to
-        assert email.text_body =~ "http://localhost/link/"
-      end)
-    end
-
-    test "refuses a taken username" do
-      user_fixture(%{username: "kb"})
-
-      assert {:error, changeset} =
-               Accounts.create_user(%{"username" => "kb", "email" => "kb2@example.org"},
-                 site: "s",
-                 link_url: &link_url/1
-               )
-
-      assert "is already taken" in errors_on(changeset).username
-    end
-
-    test "an invited account cannot sign in yet" do
-      {:ok, _} =
-        Accounts.create_user(%{"username" => "julia", "email" => "julia@example.org"},
-          site: "s",
-          link_url: &link_url/1
-        )
-
-      assert :error = Accounts.authenticate_user("julia", "anything at all")
-    end
-  end
-
   describe "password links" do
     test "the mailed token sets the password once and then is spent" do
-      {:ok, user} =
-        Accounts.create_user(%{"username" => "julia", "email" => "julia@example.org"},
-          site: "s",
-          link_url: fn token -> send(self(), {:token, token}) && link_url(token) end
-        )
+      user = user_fixture(%{username: "julia"})
+      {:ok, token} = Accounts.send_password_link(user, site: "s", link_url: &link_url/1)
 
-      assert_receive {:token, token}
       assert {:ok, verified} = Accounts.verify_login_link(token)
       assert verified.id == user.id
 
       assert {:ok, _user} = Accounts.accept_login_link(token, "a long enough password")
       assert {:ok, _} = Accounts.authenticate_user("julia", "a long enough password")
-      refute Accounts.invited?(Accounts.get_user!(user.id))
 
       # one use: the same link answers nothing afterwards
       assert :error = Accounts.verify_login_link(token)
@@ -112,35 +70,6 @@ defmodule Texttile.AccountsInvitesTest do
     end
   end
 
-  describe "delete_user/2" do
-    test "deletes another account with its sessions" do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
-      Accounts.create_session(other)
-
-      assert {:ok, _} = Accounts.delete_user(other, by: me)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
-      assert Accounts.list_sessions(other) == []
-    end
-
-    test "never you, never the last account" do
-      me = user_fixture(%{username: "kb"})
-      assert {:error, :last} = Accounts.delete_user(me, by: me)
-
-      other = user_fixture(%{username: "julia"})
-      assert {:error, :yourself} = Accounts.delete_user(other, by: other)
-    end
-
-    test "an account another admin deleted first answers :gone, not a crash" do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
-      _third = user_fixture(%{username: "pat"})
-
-      {:ok, _} = Accounts.delete_user(other, by: me)
-      assert {:error, :gone} = Accounts.delete_user(other, by: me)
-    end
-  end
-
   describe "link_recently_sent?/1" do
     test "true just after a link went out, false for an old one" do
       user = user_fixture()
@@ -154,12 +83,23 @@ defmodule Texttile.AccountsInvitesTest do
     end
   end
 
-  describe "list_users/0" do
-    test "everybody, oldest account first" do
-      kb = user_fixture(%{username: "kb"})
-      julia = user_fixture(%{username: "julia"})
+  describe "the configuration guards the link" do
+    test "no link goes to an address whose name left the list" do
+      user = user_fixture(%{username: "julia"})
+      assert Accounts.get_user_by_email(user.email).id == user.id
 
-      assert Enum.map(Accounts.list_users(), & &1.id) == [kb.id, julia.id]
+      configure_admins([])
+      assert Accounts.get_user_by_email(user.email) == nil
+    end
+
+    test "a link in flight opens nothing once the name is gone" do
+      user = user_fixture(%{username: "julia"})
+      {:ok, token} = Accounts.send_password_link(user, site: "s", link_url: &link_url/1)
+
+      configure_admins([])
+
+      assert :error = Accounts.verify_login_link(token)
+      assert :error = Accounts.accept_login_link(token, "a long enough password")
     end
   end
 end

@@ -1,6 +1,7 @@
 defmodule Texttile.Accounts.UserNotifier do
   @moduledoc """
-  Account mail. Nothing in here ever contains a password.
+  Account mail: the confirmation of a fresh account and the link that
+  sets a new password. Nothing in here ever contains a password.
   """
 
   import Swoosh.Email
@@ -21,29 +22,6 @@ defmodule Texttile.Accounts.UserNotifier do
 
     Sign in with this username and the password you chose. This mail
     does not contain the password, and no mail ever will.
-    """)
-  end
-
-  @doc """
-  Invites the owner of a fresh account: the site, the username, the
-  set-a-password link. Nobody chose a password for them; the link is
-  where they pick their own.
-  """
-  def deliver_invitation(user, url, site) do
-    deliver(user, "Your admin account on #{site}", """
-    Hello #{user.username},
-
-    You have an admin account on #{site} now. An admin there created it
-    for you.
-
-    Your username is: #{user.username}
-
-    Open this link and pick your own password:
-
-    #{url}
-
-    The link works once and for 24 hours. If it has run out, ask an
-    admin on #{site} to send the invitation again.
     """)
   end
 

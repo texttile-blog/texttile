@@ -5,83 +5,155 @@ defmodule Texttile.AccountsTest do
   import Texttile.AccountsFixtures
 
   alias Texttile.Accounts
-  alias Texttile.Boot
 
-  @window_ms 30 * 60 * 1000
-
-  describe "setup_state/0" do
-    test "is :open right after boot while no user exists" do
-      Boot.set_started_at(System.monotonic_time(:millisecond))
-      assert Accounts.setup_state() == :open
+  describe "sign_in_state/1" do
+    test "is :claimable for a configured name that has no account yet" do
+      configure_admins(["kb"])
+      assert Accounts.sign_in_state("kb") == :claimable
     end
 
-    test "is :closed more than 30 minutes after boot" do
-      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
-      assert Accounts.setup_state() == :closed
-    after
-      Boot.set_started_at(System.monotonic_time(:millisecond))
+    test "is :known once the account exists" do
+      user_fixture(%{username: "kb"})
+      assert Accounts.sign_in_state("kb") == :known
     end
 
-    test "is :done as soon as a user exists, regardless of the window" do
-      user_fixture()
-      assert Accounts.setup_state() == :done
+    test "is :unknown for a name that nobody configured" do
+      configure_admins(["kb"])
+      assert Accounts.sign_in_state("julia") == :unknown
+    end
+
+    # Taking a name out of the configuration takes the access away, even
+    # though the account is still there.
+    test "is :unknown for an account whose name left the configuration" do
+      user_fixture(%{username: "kb"})
+      configure_admins([])
+      assert Accounts.sign_in_state("kb") == :unknown
+    end
+
+    test "reads the name the way people type it" do
+      configure_admins(["kb"])
+      assert Accounts.sign_in_state(" KB ") == :claimable
+    end
+
+    test "is :unknown while no name is configured at all" do
+      configure_admins([])
+      assert Accounts.sign_in_state("kb") == :unknown
     end
   end
 
-  describe "create_first_admin/2" do
-    setup do
-      Boot.set_started_at(System.monotonic_time(:millisecond))
-      :ok
-    end
+  describe "claim_account/3" do
+    test "creates the account of a configured name and signs it in from then on" do
+      configure_admins(["kb"])
 
-    test "creates the admin and sends the confirmation mail without the password" do
-      attrs = %{username: "kb", email: "kb@example.org", password: "a long password"}
-
-      assert {:ok, user} = Accounts.create_first_admin(attrs, site: "texttile.blog")
+      attrs = %{password: "a long password", email: "kb@example.org", display_name: "KB"}
+      assert {:ok, user} = Accounts.claim_account("kb", attrs)
       assert user.username == "kb"
       assert user.email == "kb@example.org"
+      assert user.display_name == "KB"
       assert Bcrypt.verify_pass("a long password", user.password_hash)
-      refute user.password_hash =~ "a long password"
+      assert {:ok, _} = Accounts.authenticate_user("kb", "a long password")
+    end
+
+    # The address is what a password reset needs, so an account never
+    # exists without one.
+    test "refuses to create an account without an email address" do
+      configure_admins(["kb"])
+
+      assert {:error, changeset} = Accounts.claim_account("kb", %{password: "a long password"})
+      assert %{email: [_]} = errors_on(changeset)
+      assert Accounts.sign_in_state("kb") == :claimable
+    end
+
+    test "keeps email addresses unique across accounts" do
+      user = user_fixture()
+      configure_admins(["kb" | Accounts.admin_usernames()])
+
+      assert {:error, changeset} =
+               Accounts.claim_account("kb", %{password: "a long password", email: user.email})
+
+      assert %{email: ["is already in use"]} = errors_on(changeset)
+    end
+
+    test "mails a confirmation without the password when a site is given" do
+      configure_admins(["kb"])
+      attrs = %{password: "a long password", email: "kb@example.org"}
+
+      assert {:ok, _user} = Accounts.claim_account("kb", attrs, site: "texttile.blog")
 
       assert_email_sent(fn email ->
         assert email.to == [{"kb", "kb@example.org"}]
         assert email.subject =~ "texttile.blog"
-        assert email.text_body =~ "kb"
-        assert email.text_body =~ "texttile.blog"
         refute email.text_body =~ "a long password"
         true
       end)
     end
 
-    test "refuses a second admin" do
-      user_fixture()
-      attrs = valid_user_attributes()
-      assert {:error, :done} = Accounts.create_first_admin(attrs, site: "x")
+    test "the displayed name may stay empty, the username stands in" do
+      configure_admins(["kb"])
+
+      assert {:ok, user} =
+               Accounts.claim_account("kb", %{
+                 password: "a long password",
+                 email: "kb@example.org"
+               })
+
+      assert Accounts.display_name(user) == "kb"
     end
 
-    test "refuses outside the setup window" do
-      Boot.set_started_at(System.monotonic_time(:millisecond) - @window_ms - 1)
-      attrs = valid_user_attributes()
-      assert {:error, :closed} = Accounts.create_first_admin(attrs, site: "x")
-    after
-      Boot.set_started_at(System.monotonic_time(:millisecond))
+    test "refuses a name that nobody configured" do
+      configure_admins(["kb"])
+
+      assert {:error, :not_allowed} =
+               Accounts.claim_account("julia", %{
+                 password: "a long password",
+                 email: "j@example.org"
+               })
+
+      assert Accounts.sign_in_state("julia") == :unknown
     end
 
-    test "validates username, email and password" do
+    test "refuses a name that already has an account" do
+      user_fixture(%{username: "kb"})
+
+      assert {:error, :taken} =
+               Accounts.claim_account("kb", %{
+                 password: "another long password",
+                 email: "x@example.org"
+               })
+    end
+
+    test "keeps the password rules and its confirmation" do
+      configure_admins(["kb"])
+
       assert {:error, changeset} =
-               Accounts.create_first_admin(
-                 %{username: "Not Valid!", email: "not-a-mail", password: "short"},
-                 site: "x"
-               )
+               Accounts.claim_account("kb", %{
+                 password: "short",
+                 password_confirmation: "short",
+                 email: "kb@example.org"
+               })
 
-      assert %{username: [_], email: [_], password: [_]} = errors_on(changeset)
+      assert %{password: [_]} = errors_on(changeset)
+
+      assert {:error, changeset} =
+               Accounts.claim_account("kb", %{
+                 password: "a long password",
+                 password_confirmation: "a long passwort",
+                 email: "kb@example.org"
+               })
+
+      assert %{password_confirmation: [_]} = errors_on(changeset)
     end
 
-    test "normalizes username and email to lower case" do
-      attrs = %{username: "KB", email: "KB@Example.ORG", password: "a long password"}
-      assert {:ok, user} = Accounts.create_first_admin(attrs, site: "x")
+    test "normalizes the name" do
+      configure_admins(["kb"])
+
+      assert {:ok, user} =
+               Accounts.claim_account(" KB ", %{
+                 password: "a long password",
+                 email: "kb@example.org"
+               })
+
       assert user.username == "kb"
-      assert user.email == "kb@example.org"
     end
   end
 
@@ -106,6 +178,12 @@ defmodule Texttile.AccountsTest do
     test "rejects an unknown username" do
       assert :error = Accounts.authenticate_user("nobody", valid_password())
     end
+
+    test "rejects a user whose name left the configuration" do
+      user = user_fixture()
+      configure_admins([])
+      assert :error = Accounts.authenticate_user(user.username, valid_password())
+    end
   end
 
   describe "sessions" do
@@ -119,6 +197,17 @@ defmodule Texttile.AccountsTest do
       assert Accounts.get_user_by_session_token(:crypto.strong_rand_bytes(32)) == nil
     end
 
+    # The open browser of somebody who left the configuration is out on
+    # the next request, not only at the next sign-in.
+    test "get_user_by_session_token/1 drops the session of a removed name" do
+      user = user_fixture()
+      token = Accounts.create_session(user)
+      assert Accounts.get_user_by_session_token(token).id == user.id
+
+      configure_admins([])
+      assert Accounts.get_user_by_session_token(token) == nil
+    end
+
     test "list_sessions/1 lists only the user's sessions, newest first" do
       user = user_fixture()
       other = user_fixture()
@@ -129,6 +218,18 @@ defmodule Texttile.AccountsTest do
       sessions = Accounts.list_sessions(user)
       assert length(sessions) == 2
       assert Enum.map(sessions, & &1.token) == [t2, t1]
+    end
+
+    test "delete_all_sessions/1 ends every session, the current one included" do
+      user = user_fixture()
+      t1 = Accounts.create_session(user)
+      t2 = Accounts.create_session(user)
+
+      assert :ok = Accounts.delete_all_sessions(user)
+
+      assert Accounts.list_sessions(user) == []
+      assert Accounts.get_user_by_session_token(t1) == nil
+      assert Accounts.get_user_by_session_token(t2) == nil
     end
 
     test "delete_session/1 ends exactly that session" do
@@ -167,11 +268,23 @@ defmodule Texttile.AccountsTest do
   end
 
   describe "profile updates" do
-    test "update_username/2 changes the login name" do
+    test "update_username/2 changes the login name to another configured one" do
       user = user_fixture()
+      configure_admins([user.username, "newname"])
+
       assert {:ok, user} = Accounts.update_username(user, "newname")
       assert user.username == "newname"
       assert {:ok, _} = Accounts.authenticate_user("newname", valid_password())
+    end
+
+    # Renaming yourself to a name the configuration does not carry would
+    # sign you out of your own account on the next request.
+    test "update_username/2 refuses a name that is not configured" do
+      user = user_fixture()
+
+      assert {:error, changeset} = Accounts.update_username(user, "stranger")
+      assert %{username: ["is not a username this server allows"]} = errors_on(changeset)
+      assert {:ok, _} = Accounts.authenticate_user(user.username, valid_password())
     end
 
     test "update_username/2 keeps login names unique, case-insensitively" do
@@ -259,6 +372,44 @@ defmodule Texttile.AccountsTest do
       # the real current password works, stale struct or not
       assert {:ok, _} = Accounts.update_password(stale, "second password!", "third password!!")
       assert {:ok, _} = Accounts.authenticate_user(stale.username, "third password!!")
+    end
+  end
+
+  describe "delete_user/2" do
+    test "deletes another account with its sessions" do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+      Accounts.create_session(other)
+
+      assert {:ok, _} = Accounts.delete_user(other, by: me)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
+      assert Accounts.list_sessions(other) == []
+    end
+
+    test "never you, never the last account" do
+      me = user_fixture(%{username: "kb"})
+      assert {:error, :last} = Accounts.delete_user(me, by: me)
+
+      other = user_fixture(%{username: "julia"})
+      assert {:error, :yourself} = Accounts.delete_user(other, by: other)
+    end
+
+    test "an account another admin deleted first answers :gone, not a crash" do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+      _third = user_fixture(%{username: "pat"})
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+      assert {:error, :gone} = Accounts.delete_user(other, by: me)
+    end
+  end
+
+  describe "list_users/0" do
+    test "everybody, oldest account first" do
+      kb = user_fixture(%{username: "kb"})
+      julia = user_fixture(%{username: "julia"})
+
+      assert Enum.map(Accounts.list_users(), & &1.id) == [kb.id, julia.id]
     end
   end
 end

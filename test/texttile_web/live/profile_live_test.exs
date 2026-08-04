@@ -45,7 +45,8 @@ defmodule TexttileWeb.ProfileLiveTest do
     assert has_element?(view, "#wmMe", user.username)
   end
 
-  test "changes the username", %{conn: conn, user: user} do
+  test "changes the username to another configured one", %{conn: conn, user: user} do
+    configure_admins([user.username, "brandnew"])
     {:ok, view, _html} = live(conn, ~p"/profile")
 
     view
@@ -53,6 +54,18 @@ defmodule TexttileWeb.ProfileLiveTest do
     |> render_change(%{"_target" => ["user", "username"]})
 
     assert Accounts.get_user!(user.id).username == "brandnew"
+  end
+
+  test "refuses a username the server does not allow", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/profile")
+
+    html =
+      view
+      |> form("#profile-form", %{"user" => %{"username" => "stranger"}})
+      |> render_change(%{"_target" => ["user", "username"]})
+
+    assert html =~ "is not a username this server allows"
+    assert Accounts.get_user!(user.id).username == user.username
   end
 
   test "refuses a taken username and says so", %{conn: conn, user: user} do
@@ -172,5 +185,15 @@ defmodule TexttileWeb.ProfileLiveTest do
   test "offers sign out", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/profile")
     assert has_element?(view, "#sign-out", "Sign out")
+  end
+
+  test "offers sign out everywhere only while other sessions are open", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/profile")
+    refute has_element?(view, "#sign-out-all")
+
+    Accounts.create_session(user)
+    conn = log_in_user(conn, user)
+    {:ok, view, _html} = live(conn, ~p"/profile")
+    assert has_element?(view, "#sign-out-all", "Sign out everywhere")
   end
 end

@@ -11,6 +11,9 @@ defmodule Texttile.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @username_format ~r/^[a-z0-9._-]+$/
+  @username_max 32
+
   schema "users" do
     field :username, :string
     field :display_name, :string
@@ -22,23 +25,32 @@ defmodule Texttile.Accounts.User do
   end
 
   @doc """
-  A new account made by an admin: a username and an address, no
-  password. The owner sets one through the mailed link.
+  The account somebody creates at their first sign-in. The username
+  comes from the configuration, not from the form. The password, the
+  email address and the displayed name come from its owner, and this is
+  the one moment to ask: the address is what a password reset needs,
+  so an account never exists without one.
   """
-  def invite_changeset(user, attrs) do
+  def claim_changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email])
+    |> cast(attrs, [:username, :password, :email, :display_name])
     |> validate_username()
     |> validate_email()
-  end
-
-  def registration_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:username, :email, :password])
-    |> validate_username()
-    |> validate_email()
+    |> validate_length(:display_name, max: 80)
+    |> validate_confirmation(:password, message: "does not match the password")
     |> validate_password()
   end
+
+  @doc """
+  Whether a name could be a username at all. The configuration asks this
+  about every name it holds, so a typo there stays a typo instead of
+  becoming a name nobody can sign in with.
+  """
+  def valid_username?(name) when is_binary(name) do
+    String.length(name) <= @username_max and Regex.match?(@username_format, name)
+  end
+
+  def valid_username?(_name), do: false
 
   def username_changeset(user, attrs) do
     user
@@ -68,10 +80,10 @@ defmodule Texttile.Accounts.User do
     changeset
     |> update_change(:username, &normalize/1)
     |> validate_required([:username])
-    |> validate_format(:username, ~r/^[a-z0-9._-]+$/,
+    |> validate_format(:username, @username_format,
       message: "only lower case letters, digits, dot, dash and underscore"
     )
-    |> validate_length(:username, max: 32)
+    |> validate_length(:username, max: @username_max)
     |> unsafe_validate_unique(:username, Texttile.Repo, message: "is already taken")
     |> unique_constraint(:username, message: "is already taken")
   end

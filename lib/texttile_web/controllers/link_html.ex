@@ -1,6 +1,6 @@
 defmodule TexttileWeb.LinkHTML do
   @moduledoc """
-  The three faces of a mailed link: set a password, ask for a link,
+  The three faces of a mailed link: set a new password, ask for a link,
   and the screen a dead link lands on. All of them share the sign-in
   column. Ported from the round-13 prototype.
   """
@@ -8,17 +8,10 @@ defmodule TexttileWeb.LinkHTML do
 
   def show(assigns) do
     ~H"""
-    <Layouts.auth subtitle={
-      if(Texttile.Accounts.invited?(@user), do: "Your first sign-in", else: "A new password") <>
-        " · #{@conn.host}"
-    }>
+    <Layouts.auth subtitle={"A new password · #{@conn.host}"}>
       <p class="text-[13.5px] mt-[20px] leading-[1.6]" id="link-who">
         This link belongs to the account <b>{@user.username}</b>, at {@user.email}.
-        <%= if Texttile.Accounts.invited?(@user) do %>
-          Pick a password and the account is yours.
-        <% else %>
-          The old password stops working the moment you set a new one.
-        <% end %>
+        The old password stops working the moment you set a new one.
       </p>
       <.form
         :let={_f}
@@ -50,7 +43,7 @@ defmodule TexttileWeb.LinkHTML do
         </button>
       </.form>
       <p :if={@error} class="text-julia text-[13px] mt-[13px]" id="link-error">
-        The password {@error}.
+        {String.capitalize(@error)}.
       </p>
       <p class="note mt-[22px] leading-[1.6]">
         This link works one time, and for 24 hours. Nobody else sets your

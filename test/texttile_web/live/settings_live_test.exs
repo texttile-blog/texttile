@@ -2,7 +2,6 @@ defmodule TexttileWeb.SettingsLiveTest do
   use TexttileWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
-  import Swoosh.TestAssertions
   import Texttile.AccountsFixtures
 
   alias Texttile.Accounts
@@ -103,42 +102,40 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ other.email
     end
 
-    test "adding somebody creates the account and mails the invitation", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/settings")
+    test "names in the configuration without an account are waiting", %{conn: conn} do
+      configure_admins(["kb", "julia"])
+      {:ok, _view, html} = live(conn, ~p"/settings")
 
-      html =
-        view
-        |> form("#add-user-form", %{
-          "user" => %{"username" => "julia", "email" => "j@example.org"}
-        })
-        |> render_submit()
-
-      assert html =~ "invitation went to j@example.org"
-      assert html =~ "waiting for the first sign-in"
-      assert Accounts.invited?(Accounts.get_user_by_email("j@example.org"))
-      assert_email_sent(fn email -> assert email.subject =~ "admin account" end)
+      assert html =~ "Not here yet"
+      assert html =~ "julia"
+      assert html =~ "These names may sign in but have no account yet"
     end
 
-    test "a taken username stays on the form and says why", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/settings")
+    test "with every configured name in use, nobody is waiting", %{conn: conn, user: user} do
+      configure_admins([user.username])
+      {:ok, _view, html} = live(conn, ~p"/settings")
 
-      html =
-        view
-        |> form("#add-user-form", %{"user" => %{"username" => "kb", "email" => "j2@example.org"}})
-        |> render_submit()
-
-      assert html =~ "already"
+      assert html =~ "Every name in ADMIN_USERS has an account"
     end
 
-    test "the reset button mails a fresh link", %{conn: conn} do
+    # An account whose name left the configuration is still a row here,
+    # and it has to say why that person no longer gets in.
+    test "an account that left the configuration says so", %{conn: conn, user: user} do
       other = user_fixture(%{username: "julia"})
-      {:ok, view, _} = live(conn, ~p"/settings")
+      configure_admins([user.username])
 
-      html =
-        view |> element("#user-#{other.id} button", "Send a password reset") |> render_click()
+      {:ok, _view, html} = live(conn, ~p"/settings")
 
-      assert html =~ "Password reset sent to #{other.email}"
-      assert_email_sent(fn email -> assert email.subject =~ "password" end)
+      assert html =~ "not in ADMIN_USERS"
+      assert html =~ "cannot sign in"
+      assert html =~ "user-#{other.id}"
+    end
+
+    test "the screen offers no way to add somebody", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/settings")
+
+      refute html =~ "add-user-form"
+      refute has_element?(view, "#add-user-form")
     end
 
     test "deleting somebody asks first, then they are gone", %{conn: conn} do
@@ -167,36 +164,6 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       assert html =~ "The only account left"
       assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
-    end
-
-    test "an invited account offers the invitation again, not a reset", %{conn: conn} do
-      {:ok, invited} =
-        Accounts.create_user(%{"username" => "julia", "email" => "j@example.org"},
-          site: "s",
-          link_url: fn t -> "http://x/link/#{t}" end
-        )
-
-      {:ok, view, _} = live(conn, ~p"/settings")
-
-      html =
-        view
-        |> element("#user-#{invited.id} button", "Send the invitation again")
-        |> render_click()
-
-      assert html =~ "Invitation sent again to j@example.org"
-      assert html =~ "still waiting for the first sign-in"
-    end
-
-    test "a second click on the confirm button is a no-op, not a crash", %{conn: conn} do
-      other = user_fixture(%{username: "julia"})
-      {:ok, view, _} = live(conn, ~p"/settings")
-
-      view |> element("#user-#{other.id} button", "Delete") |> render_click()
-      view |> element("#dialog-ok") |> render_click()
-      html = render_click(view, "delete_user", %{})
-
-      refute html =~ "julia@"
-      assert Process.alive?(view.pid)
     end
   end
 
