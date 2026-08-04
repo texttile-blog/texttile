@@ -34,6 +34,16 @@ defmodule Texttile.Settings do
     favicon_name: {:file, nil}
   }
 
+  # The iris theme is the default the whole site wears, desk and public
+  # side alike, while no theme.css is stored. Embedded at compile time;
+  # the file in assets/ stays the single source.
+  @iris_theme_path Path.expand("../../assets/css/theme.css", __DIR__)
+  @external_resource @iris_theme_path
+  @iris_theme File.read!(@iris_theme_path)
+
+  @doc "The iris theme: what `theme_css` means while it is empty."
+  def default_theme_css, do: @iris_theme
+
   @doc "The value of one setting, typed, falling back to its default."
   def get(key) when is_map_key(@keys, key) do
     case Repo.get(Setting, to_string(key)) do

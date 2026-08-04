@@ -14,9 +14,11 @@ defmodule TexttileWeb.Router do
   end
 
   # Uploaded files: the site marks now, the images of the texts later.
-  # Public on purpose; the public site shows them to readers.
+  # Public on purpose; the public site shows them to readers. The theme
+  # stylesheet lives here too: every page wears it, signed in or not.
   scope "/", TexttileWeb do
     get "/uploads/*path", UploadsController, :show
+    get "/theme.css", ThemeController, :show
   end
 
   ## The sign-in family

@@ -225,6 +225,42 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
   end
 
+  describe "the site brand" do
+    test "the bar and the page title carry the site name", %{conn: conn} do
+      {:ok, _} = Settings.put(:site_title, "Two of us")
+
+      conn = get(conn, ~p"/settings")
+      html = html_response(conn, 200)
+
+      assert html =~ "Settings · Two of us"
+      assert html =~ ~r/<button[^>]*id="wmBtn"[^>]*>.*Two of us/s
+    end
+
+    test "an uploaded logo replaces the mark in the bar", %{conn: conn} do
+      {:ok, _} = Settings.put(:logo, "site/logo-feed.svg")
+
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ ~r/<button[^>]*id="wmBtn"[^>]*>.*<img[^>]*logo-feed\.svg/s
+    end
+  end
+
+  describe "the theme" do
+    test "the textarea starts from the iris default while nothing is stored", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ "--tt-accent"
+    end
+
+    test "a stored theme is what the textarea shows", %{conn: conn} do
+      {:ok, _} = Settings.put(:theme_css, ":root { --tt-accent: hotpink; }")
+
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ "hotpink"
+    end
+  end
+
   describe "storage" do
     test "shows both install paths and clears the image cache", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/settings")

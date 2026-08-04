@@ -127,6 +127,21 @@ defmodule Texttile.Images do
     end
   end
 
+  @doc """
+  Writes a copy of `source` at `destination` with the longer edge within
+  `max_edge`, never scaled up. For files outside the rendition cache,
+  e.g. a site mark at upload time.
+  """
+  def shrink_to(source, destination, max_edge) do
+    with {:ok, thumb} <-
+           Vips.Operation.thumbnail(source, max_edge,
+             height: max_edge,
+             size: :VIPS_SIZE_DOWN
+           ) do
+      Vips.Image.write_to_file(thumb, destination)
+    end
+  end
+
   @doc "Empties the rendition cache. Renditions regenerate on demand."
   def clear_cache do
     File.rm_rf!(Uploads.absolute(@cache_dir))

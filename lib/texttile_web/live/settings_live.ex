@@ -35,16 +35,16 @@ defmodule TexttileWeb.SettingsLive do
       |> assign(:confirm_delete, nil)
       |> assign(:add_user_form, to_form(%{}, as: :user))
       |> allow_upload(:logo,
-        accept: ~w(.svg .png),
+        accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
-        max_file_size: 1_000_000,
+        max_file_size: 10_000_000,
         auto_upload: true,
         progress: &handle_upload/3
       )
       |> allow_upload(:favicon,
-        accept: ~w(.svg .png),
+        accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
-        max_file_size: 1_000_000,
+        max_file_size: 10_000_000,
         auto_upload: true,
         progress: &handle_upload/3
       )
@@ -65,12 +65,22 @@ defmodule TexttileWeb.SettingsLive do
 
     case Settings.put(key_atom, value) do
       {:ok, value} ->
-        {:noreply,
-         socket
-         |> assign(:errors, Map.delete(socket.assigns.errors, key_atom))
-         |> refresh_settings()
-         |> refresh_storage()
-         |> mark_saved(saved_note(key_atom, value))}
+        socket =
+          socket
+          |> assign(:errors, Map.delete(socket.assigns.errors, key_atom))
+          |> refresh_settings()
+          |> refresh_storage()
+          |> mark_saved(saved_note(key_atom, value))
+
+        # A saved theme is worn at once: the browser refetches the sheet.
+        socket =
+          if key_atom == :theme_css do
+            push_event(socket, "theme_saved", %{})
+          else
+            socket
+          end
+
+        {:noreply, socket}
 
       {:error, message} ->
         {:noreply, assign(socket, :errors, Map.put(socket.assigns.errors, key_atom, message))}
@@ -269,7 +279,7 @@ defmodule TexttileWeb.SettingsLive do
           "site_description" => settings.site_description,
           "language" => settings.language,
           "about_markdown" => settings.about_markdown,
-          "theme_css" => settings.theme_css,
+          "theme_css" => shown_theme_css(settings.theme_css),
           "image_max_edge" => Integer.to_string(settings.image_max_edge)
         },
         as: :settings
@@ -280,6 +290,11 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:settings_form, form)
     |> assign(:about_html, Markdown.to_html(settings.about_markdown))
   end
+
+  # The textarea always shows the theme the site wears: the stored one,
+  # or the iris default while nothing is stored.
+  defp shown_theme_css(""), do: Settings.default_theme_css()
+  defp shown_theme_css(css), do: css
 
   # :online_ids belongs to Desk: assigned on mount, refreshed on every
   # presence diff, so the "here now" marks stay current on their own.
@@ -448,7 +463,10 @@ defmodule TexttileWeb.SettingsLive do
             <span class="note" id="name-logo">
               {@settings.logo_name || "Default: the Texttile mark"}
             </span>
-            <span class="note">Top left on the public site. SVG or PNG.</span>
+            <span class="note">
+              The bar here and the public site wear it. SVG, PNG, JPG or WebP;
+              a raster file is scaled down on arrival.
+            </span>
           </span>
           <span class="sp"></span>
           <button
@@ -489,7 +507,7 @@ defmodule TexttileWeb.SettingsLive do
             <span class="note" id="name-favicon">
               {@settings.favicon_name || "Default: the Texttile mark"}
             </span>
-            <span class="note">The browser-tab icon. Square SVG or PNG.</span>
+            <span class="note">The browser-tab icon. Square SVG, PNG, JPG or WebP.</span>
           </span>
           <span class="sp"></span>
           <button
@@ -571,21 +589,32 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>Theme</.section>
         <p class="note mb-[10px]">
-          Theming the public site is exactly one CSS file, nothing else: no
-          theme gallery, no options. Edit it here; empty means the default
-          look.
+          Theming is exactly one CSS file, and the desk and the public site
+          both wear it: no theme gallery, no options. The default is the iris
+          theme, and this is it below; edit it and this screen changes with
+          your next keystroke. Empty the field and the site is back in iris.
         </p>
-        <.form for={@settings_form} id="theme-form" phx-change="save_setting">
+        <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
           <label class="lab block mb-[6px]" for="setting-theme_css">theme.css</label>
           <textarea
             id="setting-theme_css"
             name="settings[theme_css]"
-            rows="8"
+            rows="12"
             spellcheck="false"
             class="font-mono text-[12.5px] leading-[1.65]"
             phx-debounce="300"
           >{@settings_form[:theme_css].value}</textarea>
         </.form>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
+          export default {
+            mounted() {
+              this.handleEvent("theme_saved", () => {
+                const link = document.querySelector('link[href^="/theme.css"]')
+                if (link) link.href = "/theme.css?v=" + Date.now()
+              })
+            }
+          }
+        </script>
 
         <.section>Comments</.section>
         <.form for={@settings_form} id="comments-form" phx-change="save_setting">

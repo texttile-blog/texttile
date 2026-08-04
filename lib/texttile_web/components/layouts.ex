@@ -30,6 +30,17 @@ defmodule TexttileWeb.Layouts do
   end
 
   @doc """
+  The name the site goes by, from Settings; an empty title falls back
+  to Texttile. It names the browser tab and the wordmark in the bar.
+  """
+  def site_title do
+    case String.trim(Texttile.Settings.get(:site_title)) do
+      "" -> "Texttile"
+      title -> title
+    end
+  end
+
+  @doc """
   The favicon of every page: the uploaded one from Settings, or the
   bundled Texttile mark. Uploaded names carry a random tag, so the
   browser cache never shows a stale icon.
@@ -99,6 +110,10 @@ defmodule TexttileWeb.Layouts do
   slot :inner_block, required: true
 
   def app(assigns) do
+    # The bar wears the site's own face: the uploaded logo (or the
+    # Texttile mark) and the site title from Settings.
+    assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
+
     ~H"""
     <header
       id="topbar"
@@ -114,13 +129,19 @@ defmodule TexttileWeb.Layouts do
           aria-haspopup="true"
           aria-expanded="false"
           aria-controls="navMenu"
-          aria-label="Texttile, sections menu"
+          aria-label={"#{@brand.title}, sections menu"}
         >
           <span class="relative flex-none">
-            <.mark size={21} />
+            <img
+              :if={@brand.logo}
+              src={"/uploads/#{@brand.logo}"}
+              alt=""
+              class="h-[21px] w-auto max-w-[84px] object-contain"
+            />
+            <.mark :if={!@brand.logo} size={21} />
             <span class="wmdot" id="wmDot" hidden={@others == []}></span>
           </span>
-          <span class="hidden sm:inline">Texttile</span>
+          <span class="hidden sm:inline">{@brand.title}</span>
           <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>

@@ -20,30 +20,58 @@ defmodule Texttile.Uploads do
   def absolute(relative), do: Path.join(root(), relative)
 
   @marks [:logo, :favicon]
-  @mark_extensions ~w(.svg .png)
+  @mark_extensions ~w(.svg .png .jpg .jpeg .webp)
+
+  # A mark is shown small everywhere: ~21 css px in the bar, up to 32 in
+  # a browser tab. 4x that stays sharp on any pixel density and keeps a
+  # multi-megapixel upload from riding along on every page.
+  @mark_max_edge 128
+
+  # An SVG is stored as it came, so this is its only brake.
+  @mark_max_svg_bytes 512_000
 
   @doc """
   Stores an uploaded logo or favicon and remembers it in the settings.
-  The stored name carries a random tag, so a browser never clings to a
-  stale one; the earlier file goes with the swap.
+  A raster file is scaled down to #{@mark_max_edge} px on the longer
+  edge; an SVG is stored as it came. The stored name carries a random
+  tag, so a browser never clings to a stale one; the earlier file goes
+  with the swap.
   """
   def put_site_mark(mark, source_path, original_name) when mark in @marks do
     extension = original_name |> Path.extname() |> String.downcase()
 
-    if extension in @mark_extensions do
-      tag = 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
-      relative = "site/#{mark}-#{tag}#{extension}"
-      destination = absolute(relative)
+    cond do
+      extension not in @mark_extensions ->
+        {:error, "SVG, PNG, JPG or WebP, please"}
 
-      File.mkdir_p!(Path.dirname(destination))
-      File.cp!(source_path, destination)
+      extension == ".svg" and File.stat!(source_path).size > @mark_max_svg_bytes ->
+        {:error, "An SVG mark this big would ride along on every page; 500 KB is plenty"}
 
-      remove_stored_file(mark)
-      {:ok, _} = Settings.put(mark, relative)
-      {:ok, _} = Settings.put(:"#{mark}_name", original_name)
-      {:ok, relative}
-    else
-      {:error, "SVG or PNG, please"}
+      true ->
+        tag = 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+        relative = "site/#{mark}-#{tag}#{extension}"
+        destination = absolute(relative)
+        File.mkdir_p!(Path.dirname(destination))
+
+        stored =
+          if extension == ".svg" do
+            File.cp!(source_path, destination)
+            :ok
+          else
+            Texttile.Images.shrink_to(source_path, destination, @mark_max_edge)
+          end
+
+        case stored do
+          :ok ->
+            remove_stored_file(mark)
+            {:ok, _} = Settings.put(mark, relative)
+            {:ok, _} = Settings.put(:"#{mark}_name", original_name)
+            {:ok, relative}
+
+          {:error, _reason} ->
+            File.rm(destination)
+            {:error, "The file could not be read as an image"}
+        end
     end
   end
 
