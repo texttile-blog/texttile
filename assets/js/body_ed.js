@@ -324,8 +324,24 @@ export default {
         this.pushEvent("editor_activity", {})
       }
       clearTimeout(debounce)
-      debounce = setTimeout(() => this.pushEvent("body_changed", {text}), 300)
+      debounce = setTimeout(() => { debounce = null; this.pushEvent("body_changed", {text}) }, 300)
     }
+
+    /* leaving the editor settles the debounce at once, so a click on
+       Save version can never miss the last keystrokes. CodeMirror
+       reports focus changes asynchronously, so the blur alone is not
+       enough: the Save button's mousedown flushes synchronously,
+       before the click's round trip. */
+    const flushNow = () => {
+      if (!debounce) return
+      clearTimeout(debounce)
+      debounce = null
+      this.pushEvent("body_changed", {text: this.view.state.doc.toString()})
+    }
+    this.onDocMousedown = e => {
+      if (e.target.closest("[phx-click='save_version'], [phx-click='publish']")) flushNow()
+    }
+    document.addEventListener("mousedown", this.onDocMousedown, true)
 
     /* an inline thumbnail's backdrop: same-origin upload paths and
        plain remote addresses, drawn as a CSS background */
@@ -362,6 +378,7 @@ export default {
       EditorView.updateListener.of(u => {
         if (u.docChanged && !u.transactions.some(t => t.annotation(remoteChange)))
           pushText(u.state.doc.toString())
+        if (u.focusChanged && !u.view.hasFocus) flushNow()
         if (u.docChanged || u.selectionSet) this.paintBar(activeStates(u.state))
       }),
       EditorView.domEventHandlers({
@@ -415,6 +432,7 @@ export default {
        to the server right now */
     this.handleEvent("flush_body", () => {
       clearTimeout(debounce)
+      debounce = null
       this.pushEvent("body_flushed", {text: this.view.state.doc.toString()})
     })
     this.handleEvent("set_readonly", ({readOnly: ro}) => {
@@ -617,6 +635,7 @@ export default {
 
   destroyed() {
     if (this.view) this.view.destroy()
+    if (this.onDocMousedown) document.removeEventListener("mousedown", this.onDocMousedown, true)
     if (this.onPanelClick) document.removeEventListener("click", this.onPanelClick)
     if (this.uploads) {
       for (const entry of this.uploads.values()) {
