@@ -103,12 +103,15 @@ Requires Elixir 1.19+, Erlang/OTP 28+, and Node.js (for browser tests).
 ```sh
 make start       # dev server on port 4000, no configuration needed
 make test        # unit tests plus end-to-end browser tests
+make db-pull     # pull the production snapshot next to the dev database
 make db-delete   # delete the shared development SQLite database
 ```
 
 All git worktrees of the repository share the dev state of the main
 checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
-`.env` file. Outside a git checkout, everything stays next to the code.
+`.env` file. `make db-pull` writes the production snapshot to
+`texttile-demo.db` in that same checkout root. Outside a git checkout,
+everything stays next to the code.
 Stop the development server before running `make db-delete`. The next
 `make start` recreates the database and applies all migrations.
 

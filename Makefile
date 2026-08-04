@@ -7,11 +7,12 @@ VAULT ?= $(HOME)/vault/texttile
 
 .PHONY: prepare test kill-port-4000 start idea db-delete db-pull
 
-# Local, stable path for the remote DB snapshot. Point TablePlus at this file.
-DB_LOCAL := tmp/texttile-demo.db
-
 # Development state is shared by all worktrees, see config/dev.exs.
-DB_DEV := $(shell common_dir="$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; if [ -n "$$common_dir" ]; then dirname "$$common_dir"; else pwd; fi)/texttile_dev.db
+SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; if [ -n "$$common_dir" ]; then dirname "$$common_dir"; else pwd; fi)
+DB_DEV := $(SHARED_ROOT)/texttile_dev.db
+
+# Local, stable path for the remote DB snapshot. Point TablePlus at this file.
+DB_LOCAL := $(SHARED_ROOT)/texttile-demo.db
 
 prepare:
 	mix deps.get
@@ -51,9 +52,8 @@ db-pull:
 	@echo "Waking the machine..."
 	@curl -fs -o /dev/null --max-time 30 https://texttile.fly.dev/ || true
 	fly ssh console -a texttile -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
-	@mkdir -p tmp
-	@rm -f $(DB_LOCAL)
-	fly ssh sftp get /data/db/snapshot.db $(DB_LOCAL) -a texttile
+	@rm -f -- "$(DB_LOCAL)"
+	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a texttile
 	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
 
 # Delete the shared development database. The next `make start` recreates it.
