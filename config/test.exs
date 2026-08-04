@@ -8,7 +8,11 @@ import Config
 config :texttile, Texttile.Repo,
   database: Path.expand("../texttile_test.db", __DIR__),
   pool_size: 5,
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  # How long a test waits for the write lock of the test before it. The default
+  # of 2 seconds is thin on a loaded CI machine. See
+  # `Texttile.DataCase.take_write_lock/0`.
+  busy_timeout: 5_000
 
 # The server runs during tests so Playwright e2e tests can drive a real browser.
 config :texttile, TexttileWeb.Endpoint,
