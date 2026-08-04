@@ -161,9 +161,7 @@ defmodule TexttileWeb.ProfileLive do
           applies the moment you make it.
         </p>
 
-        <h2 class="text-[15px] font-semibold text-ink tracking-[-.01em] mt-9 mb-[13px] pb-2 border-b border-rule">
-          You
-        </h2>
+        <h2 class="set-h">You</h2>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
           <div class="drow">
             <label class="lab" for={@profile_form[:display_name].id}>Displayed name</label>
@@ -222,9 +220,7 @@ defmodule TexttileWeb.ProfileLive do
           </div>
         </.form>
 
-        <h2 class="text-[15px] font-semibold text-ink tracking-[-.01em] mt-9 mb-[13px] pb-2 border-b border-rule">
-          Password
-        </h2>
+        <h2 class="set-h">Password</h2>
         <.form for={@pw_form} id="password-form" phx-submit="set_password">
           <div class="drow">
             <span class="val">
@@ -266,9 +262,7 @@ defmodule TexttileWeb.ProfileLive do
           </div>
         </.form>
 
-        <h2 class="text-[15px] font-semibold text-ink tracking-[-.01em] mt-9 mb-[13px] pb-2 border-b border-rule">
-          Your sessions
-        </h2>
+        <h2 class="set-h">Your sessions</h2>
         <div id="sessions">
           <div
             :for={session <- @sessions}
