@@ -487,6 +487,7 @@ defmodule TexttileWeb.SettingsLive do
             name="settings[about_markdown]"
             rows="9"
             spellcheck="false"
+            class="boxed"
             phx-debounce="300"
           >{@settings_form[:about_markdown].value}</textarea>
         </.form>
@@ -547,7 +548,7 @@ defmodule TexttileWeb.SettingsLive do
             name="settings[theme_css]"
             rows="12"
             spellcheck="false"
-            class="font-mono text-[12.5px] leading-[1.65]"
+            class="boxed font-mono text-[12.5px] leading-[1.65]"
             phx-debounce="300"
           >{@settings_form[:theme_css].value}</textarea>
         </.form>
@@ -748,9 +749,7 @@ defmodule TexttileWeb.SettingsLive do
 
   defp section(assigns) do
     ~H"""
-    <h2 class="text-[15px] font-semibold text-ink tracking-[-.01em] mt-9 mb-[13px] pb-2 border-b border-rule">
-      {render_slot(@inner_block)}
-    </h2>
+    <h2 class="set-h">{render_slot(@inner_block)}</h2>
     """
   end
 end
