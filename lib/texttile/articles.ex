@@ -203,9 +203,30 @@ defmodule Texttile.Articles do
     end)
   end
 
-  @doc "Deletes the text and everything that hangs on it."
+  @doc """
+  Deletes the text and everything that hangs on it, the images in the
+  body included: versions never guard an image, so the files go at
+  once - no orphan retention, no reference counting.
+  """
   def delete_article(%Article{} = article) do
+    bodies = [
+      article.body
+      | Version
+        |> where([v], v.article_id == ^article.id)
+        |> select([v], v.body)
+        |> Repo.all()
+    ]
+
     with {:ok, article} <- Repo.delete(article) do
+      bodies
+      |> Enum.flat_map(&inline_refs/1)
+      |> Enum.flat_map(fn
+        %{kind: :done, url: "/uploads/" <> relative} -> [relative]
+        _ -> []
+      end)
+      |> Enum.uniq()
+      |> Enum.each(&Texttile.Uploads.remove_body_image/1)
+
       broadcast({:article_deleted, article.id})
       {:ok, article}
     end
@@ -341,6 +362,10 @@ defmodule Texttile.Articles do
 
   ## Slugs
 
+  @doc "The name a text goes by on screen: its title, or Untitled."
+  def display_title(%{title: ""}), do: "Untitled"
+  def display_title(%{title: title}), do: title
+
   @doc "A title turned into an address: lowercase, dashes, nothing else."
   def slugify(title) do
     title
@@ -380,19 +405,40 @@ defmodule Texttile.Articles do
   `{:same | :add | :del, token}` runs in reading order. Tokens are
   words and the whitespace between them, so joining the `:same` and
   `:add` tokens gives back the new text byte for byte.
+
+  The untouched head and tail of the text are peeled off before the
+  LCS runs, so a long article with a small edit still gets a real
+  diff; only a rewrite of half a book falls back to "all new".
   """
   def diff(old_text, new_text) do
     a = tokenize(old_text)
     b = tokenize(new_text)
+
+    {head, a, b, tail} = peel(a, b)
+
     n = length(a)
     m = length(b)
 
-    if n * m > @word_diff_cap do
-      [{:add, to_string(new_text)}]
-    else
-      walk(List.to_tuple(a), List.to_tuple(b), lcs_table(a, b, m))
-    end
+    middle =
+      cond do
+        n == 0 and m == 0 -> []
+        n * m > @word_diff_cap -> Enum.map(a, &{:del, &1}) ++ Enum.map(b, &{:add, &1})
+        true -> walk(List.to_tuple(a), List.to_tuple(b), lcs_table(a, b, m))
+      end
+
+    Enum.map(head, &{:same, &1}) ++ middle ++ Enum.map(tail, &{:same, &1})
   end
+
+  # The common head and tail, token by token: {head, a_rest, b_rest, tail}.
+  defp peel(a, b) do
+    {head, a, b} = peel_head(a, b, [])
+    {a_rev, b_rev} = {Enum.reverse(a), Enum.reverse(b)}
+    {tail_rev, a_rev, b_rev} = peel_head(a_rev, b_rev, [])
+    {Enum.reverse(head), Enum.reverse(a_rev), Enum.reverse(b_rev), tail_rev}
+  end
+
+  defp peel_head([x | a], [x | b], acc), do: peel_head(a, b, [x | acc])
+  defp peel_head(a, b, acc), do: {acc, a, b}
 
   defp tokenize(text) do
     text

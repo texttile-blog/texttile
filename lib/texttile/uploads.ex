@@ -48,7 +48,7 @@ defmodule Texttile.Uploads do
         {:error, "An SVG mark this big would ride along on every page; 500 KB is plenty"}
 
       true ->
-        tag = 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+        tag = random_tag()
         relative = "site/#{mark}-#{tag}#{extension}"
         destination = absolute(relative)
         File.mkdir_p!(Path.dirname(destination))
@@ -101,7 +101,7 @@ defmodule Texttile.Uploads do
             slug -> slug
           end
 
-        tag = 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+        tag = random_tag()
         relative = "images/#{base}-#{tag}#{extension}"
         destination = absolute(relative)
         File.mkdir_p!(Path.dirname(destination))
@@ -113,6 +113,21 @@ defmodule Texttile.Uploads do
   defp readable_image?(path) do
     match?({:ok, _}, Vix.Vips.Image.new_from_file(path))
   end
+
+  # Stored names carry this, so they never collide and may be cached hard.
+  defp random_tag, do: 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+
+  @doc """
+  Removes a body image and its cached renditions. Only paths below
+  `images/` qualify; anything else is left alone.
+  """
+  def remove_body_image("images/" <> _ = relative) do
+    File.rm(absolute(relative))
+    Texttile.Images.drop_renditions(relative)
+    :ok
+  end
+
+  def remove_body_image(_other), do: :ok
 
   @doc "Back to the default mark: the file goes, the settings clear."
   def reset_site_mark(mark) when mark in @marks do

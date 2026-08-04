@@ -11,7 +11,6 @@ defmodule Texttile.Repo.Migrations.CreateArticles do
       add :type, :string, null: false, default: "post"
       add :tags, :string, null: false, default: ""
       add :allow_comments, :boolean, null: false, default: true
-      add :protected, :boolean, null: false, default: false
       add :notify_on_publish, :boolean, null: false, default: true
       add :notified_on, :date
 

@@ -55,6 +55,9 @@ defmodule TexttileWeb.Router do
     # travels here, and the answer is the address the token becomes.
     post "/desk/images", ImagesController, :create
 
+    # The editor's thumbnails: a scaled reading of an upload, cached.
+    get "/desk/renditions/:edge/*path", UploadsController, :rendition
+
     live_session :desk,
       on_mount: [
         {TexttileWeb.UserAuth, :ensure_authenticated},

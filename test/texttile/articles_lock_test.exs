@@ -143,6 +143,20 @@ defmodule Texttile.Articles.LockTest do
       assert :ok = Lock.takeover(id, 2, self())
       assert %{user_id: 2} = Lock.state(id)
     end
+
+    test "a second takeover while one is pending: the later asker wins", %{id: id} do
+      assert :ok = Lock.acquire(id, 1, self())
+
+      first = spawn_holder()
+      assert :pending = Lock.takeover(id, 2, first)
+      assert_receive {:lock_flush, ^id}
+
+      assert :pending = Lock.takeover(id, 3, self())
+      Lock.flushed(id)
+
+      assert_receive {:lock_granted, ^id}
+      assert %{user_id: 3} = Lock.state(id)
+    end
   end
 
   describe "activity" do

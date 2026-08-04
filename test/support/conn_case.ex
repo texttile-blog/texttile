@@ -33,6 +33,15 @@ defmodule TexttileWeb.ConnCase do
 
   setup tags do
     Texttile.DataCase.setup_sandbox(tags)
+
+    # Edit-lock processes outlive the SQL sandbox and article ids repeat
+    # across tests, so every test starts with no lock held anywhere.
+    Texttile.Articles.Lock.supervisor()
+    |> DynamicSupervisor.which_children()
+    |> Enum.each(fn {_, pid, _, _} ->
+      DynamicSupervisor.terminate_child(Texttile.Articles.Lock.supervisor(), pid)
+    end)
+
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 

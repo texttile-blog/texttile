@@ -17,11 +17,48 @@ defmodule TexttileWeb.UploadsController do
   }
 
   def show(conn, %{"path" => parts}) do
+    serve(conn, safe_relative(parts))
+  end
+
+  # The display sizes the desk asks for. A fixed list, so nobody can
+  # fill the disk by walking through edge values.
+  @edges ~w(320)
+
+  @doc """
+  A scaled reading of an upload: the cached rendition, made on the fly
+  when it is missing. The editor's thumbnails come from here instead of
+  dragging the full original over the wire.
+  """
+  def rendition(conn, %{"edge" => edge, "path" => parts}) when edge in @edges do
+    with relative when is_binary(relative) <- safe_relative(parts),
+         {:ok, scaled} <- Texttile.Images.rendition(relative, String.to_integer(edge)) do
+      serve(conn, scaled)
+    else
+      _ -> send_resp(conn, 404, "not found")
+    end
+  end
+
+  def rendition(conn, _params), do: send_resp(conn, 404, "not found")
+
+  # A wildcard path stays below the uploads root or answers nothing.
+  defp safe_relative(parts) do
     root = Path.expand(Uploads.root())
     path = Path.expand(Path.join([root | parts]))
+
+    if String.starts_with?(path, root <> "/") do
+      Path.relative_to(path, root)
+    else
+      nil
+    end
+  end
+
+  defp serve(conn, nil), do: send_resp(conn, 404, "not found")
+
+  defp serve(conn, relative) do
+    path = Uploads.absolute(relative)
     type = @types[path |> Path.extname() |> String.downcase()]
 
-    if (String.starts_with?(path, root <> "/") and type) && File.regular?(path) do
+    if type && File.regular?(path) do
       # The CSP keeps an uploaded SVG from running script on this
       # origin when somebody opens it directly.
       conn

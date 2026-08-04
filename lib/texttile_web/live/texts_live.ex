@@ -70,7 +70,7 @@ defmodule TexttileWeb.TextsLive do
               {label}
             </button>
           </span>
-          <form id="grid-search" class="contents" phx-change="search" onsubmit="return false">
+          <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
             <input
               type="search"
               name="q"
@@ -89,7 +89,7 @@ defmodule TexttileWeb.TextsLive do
         >
           <.link :for={article <- @articles} class="card" navigate={~p"/texts/#{article}"}>
             <span class="cimg empty">no images yet</span>
-            <span class="ct">{title_of(article)}</span>
+            <span class="ct">{Articles.display_title(article)}</span>
             <span class="cm">
               <span class={["st", article.status]}></span>{card_meta(article)}
             </span>
@@ -111,9 +111,6 @@ defmodule TexttileWeb.TextsLive do
     </Layouts.app>
     """
   end
-
-  defp title_of(%{title: ""}), do: "Untitled"
-  defp title_of(%{title: title}), do: title
 
   defp grid_count(articles, total) do
     shown = length(articles)

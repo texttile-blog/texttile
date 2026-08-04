@@ -142,6 +142,11 @@ defmodule Texttile.Images do
     end
   end
 
+  @doc "Drops every cached rendition of one original, e.g. when it goes."
+  def drop_renditions(relative) do
+    drop_other_sizes(relative, :none)
+  end
+
   @doc "Empties the rendition cache. Renditions regenerate on demand."
   def clear_cache do
     File.rm_rf!(Uploads.absolute(@cache_dir))

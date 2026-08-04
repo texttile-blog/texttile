@@ -51,7 +51,7 @@ defmodule TexttileWeb.EditorLive do
         socket
       end
 
-    {:ok, assign(socket, :page_title, title_of(article))}
+    {:ok, assign(socket, :page_title, Articles.display_title(article))}
   end
 
   # The wordmark menu and the other editor's banner read this: which
@@ -62,7 +62,7 @@ defmodule TexttileWeb.EditorLive do
     if connected?(socket) do
       TexttileWeb.Desk.update_activity(scope, %{
         text_id: article.id,
-        text_title: title_of(article),
+        text_title: Articles.display_title(article),
         writing: holds
       })
     end
@@ -70,21 +70,30 @@ defmodule TexttileWeb.EditorLive do
     socket
   end
 
-  def terminate(_reason, socket) do
+  # Release the lock only when the person deliberately leaves the
+  # editor ({:shutdown, :left} is live navigation). A transport close -
+  # a reload, a tab close, a network drop - stops the channel with
+  # {:shutdown, :closed} instead and must fall through to the lock's
+  # monitor, so the 45 s grace period can hand the lock back silently.
+  def terminate({:shutdown, :left}, socket) do
     if socket.assigns[:article], do: Lock.release(socket.assigns.article.id, self())
     :ok
   end
 
+  def terminate(_reason, _socket), do: :ok
+
   ## Events · the text
 
+  # phx-change while typing, phx-submit when Enter is pressed: both save
+  # the title. Without the submit binding, Enter would submit the form
+  # the browser's way, reload the page, and throw away everything the
+  # debounce had not sent yet.
   def handle_event("title_changed", %{"title" => title}, socket) do
-    if socket.assigns.holds_lock do
-      {:ok, article} = Articles.update_text(socket.assigns.article, %{title: title})
-      Lock.ping(article.id, self())
-      {:noreply, socket |> assign(:article, article) |> announce_activity() |> mark_saved()}
-    else
-      {:noreply, socket}
-    end
+    save_title(socket, title)
+  end
+
+  def handle_event("title_submitted", %{"title" => title}, socket) do
+    save_title(socket, title)
   end
 
   def handle_event("body_changed", %{"text" => text}, socket) do
@@ -265,7 +274,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
-      when field in ~w(type tags slug allow_comments protected notify_on_publish) do
+      when field in ~w(type tags slug allow_comments notify_on_publish) do
     %{article: article} = socket.assigns
 
     case Articles.update_settings(article, Map.take(params, [field])) do
@@ -310,7 +319,7 @@ defmodule TexttileWeb.EditorLive do
      |> assign(:state_menu, false)
      |> assign(:dialog, %{
        id: "delete",
-       title: ~s(Delete "#{title_of(article)}"?),
+       title: ~s(Delete "#{Articles.display_title(article)}"?),
        body:
          [
            "This deletes the text and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
@@ -328,7 +337,7 @@ defmodule TexttileWeb.EditorLive do
      socket
      |> put_flash(
        :info,
-       ~s("#{title_of(article)}" is deleted. Its versions and its log went with it.)
+       ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
      )
      |> push_navigate(to: ~p"/")}
   end
@@ -339,61 +348,89 @@ defmodule TexttileWeb.EditorLive do
 
   ## Events · images in the text. The files and the running requests
   ## live in the holder's browser; these events keep the Log and the
-  ## panel's progress display current.
+  ## panel's progress display current. Inserting into the body needs
+  ## the lock, so every one of these does too, and a file name is
+  ## client text: it gets a short leash before it reaches the Log.
 
-  def handle_event("images_inserted", %{"files" => names}, socket) do
-    %{article: article, current_scope: scope, holds_lock: holds} = socket.assigns
-
-    if holds do
-      Articles.push_log(
-        article,
-        scope.user,
-        case names do
-          [one] -> "put #{one} into the text"
-          many -> "put #{length(many)} images into the text"
-        end
+  def handle_event(
+        "images_inserted",
+        %{"files" => names},
+        %{assigns: %{holds_lock: true}} = socket
       )
-    end
+      when is_list(names) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    Articles.push_log(
+      article,
+      scope.user,
+      case names do
+        [one] -> "put #{clean_file(one)} into the text"
+        many -> "put #{length(many)} images into the text"
+      end
+    )
 
     {:noreply, socket}
   end
 
-  def handle_event("upload_progress", %{"file" => file, "pct" => pct}, socket) do
-    {:noreply, assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, file, pct))}
+  def handle_event("images_inserted", _params, socket), do: {:noreply, socket}
+
+  def handle_event("upload_progress", %{"file" => file, "pct" => pct}, socket)
+      when is_number(pct) do
+    {:noreply,
+     assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, clean_file(file), pct))}
   end
 
-  def handle_event("image_uploaded", %{"file" => file}, socket) do
+  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
     %{article: article, current_scope: scope} = socket.assigns
+    file = clean_file(file)
     Articles.push_log(article, scope.user, "#{file} is in the text")
     {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
   end
 
-  def handle_event("image_failed", %{"file" => file, "pct" => pct}, socket) do
+  def handle_event("image_uploaded", _params, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "image_failed",
+        %{"file" => file, "pct" => pct},
+        %{assigns: %{holds_lock: true}} = socket
+      )
+      when is_number(pct) do
     %{article: article, current_scope: scope} = socket.assigns
+    file = clean_file(file)
     Articles.push_log(article, scope.user, "#{file} failed to upload into the text")
 
     {:noreply,
      socket
      |> assign(:upload_pcts, Map.put(socket.assigns.upload_pcts, file, pct))
-     |> mark_saved("#{file} failed at #{pct}% · retry or remove it under the text")}
+     |> mark_saved("#{file} failed at #{round(pct)}% · retry or remove it under the text")}
   end
 
-  def handle_event("image_retry", %{"file" => file}, socket) do
+  def handle_event("image_failed", _params, socket), do: {:noreply, socket}
+
+  def handle_event("image_retry", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
     %{article: article, current_scope: scope} = socket.assigns
+    file = clean_file(file)
     Articles.push_log(article, scope.user, "retried the upload of #{file}")
     {:noreply, assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, file, 0))}
   end
+
+  def handle_event("image_retry", _params, socket), do: {:noreply, socket}
 
   def handle_event("image_retry_missing", %{"file" => file}, socket) do
     {:noreply,
      mark_saved(
        socket,
-       "The file for #{file} is not in this browser any more · remove the marker and paste the image again"
+       "The file for #{clean_file(file)} is not in this browser any more · remove the marker and paste the image again"
      )}
   end
 
-  def handle_event("image_removed", %{"file" => file, "how" => how}, socket) do
+  def handle_event(
+        "image_removed",
+        %{"file" => file, "how" => how},
+        %{assigns: %{holds_lock: true}} = socket
+      ) do
     %{article: article, current_scope: scope} = socket.assigns
+    file = clean_file(file)
 
     Articles.push_log(
       article,
@@ -407,10 +444,18 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
   end
 
+  def handle_event("image_removed", _params, socket), do: {:noreply, socket}
+
   defp do_publish(socket, opts) do
     %{article: article, current_scope: scope} = socket.assigns
-    {:ok, article} = Articles.publish(article, scope.user, opts)
 
+    case Articles.publish(article, scope.user, opts) do
+      {:ok, article} -> publish_done(socket, article)
+      {:error, _changeset} -> mark_saved(socket, "That address is taken by another text")
+    end
+  end
+
+  defp publish_done(socket, article) do
     note =
       if article.status == "scheduled" do
         "Scheduled for #{article.publish_date}" <>
@@ -447,6 +492,30 @@ defmodule TexttileWeb.EditorLive do
   defp minutes_in_words(seconds) when seconds < 60, do: "under a minute"
   defp minutes_in_words(seconds) when seconds < 120, do: "a minute"
   defp minutes_in_words(seconds), do: "#{div(seconds, 60)} minutes"
+
+  # a file name is client text before it reaches the Log
+  defp clean_file(file), do: file |> to_string() |> String.slice(0, 120)
+
+  defp save_title(socket, title) do
+    cond do
+      not socket.assigns.holds_lock ->
+        {:noreply, socket}
+
+      true ->
+        case Articles.update_text(socket.assigns.article, %{title: title}) do
+          {:ok, article} ->
+            Lock.ping(article.id, self())
+            {:noreply, socket |> assign(:article, article) |> announce_activity() |> mark_saved()}
+
+          {:error, _changeset} ->
+            {:noreply, mark_saved(socket, "That title is too long; 500 characters is the roof")}
+        end
+    end
+  end
+
+  # a thumbnail loads the scaled reading, never the full original
+  defp thumb_url("/uploads/" <> relative), do: "/desk/renditions/320/" <> relative
+  defp thumb_url(url), do: String.replace(url, "'", "%27")
 
   ## PubSub and lock messages
 
@@ -553,7 +622,7 @@ defmodule TexttileWeb.EditorLive do
       # flush's own snapshot means nothing extra is kept.
       displaced =
         case socket.assigns.holder do
-          %{user_id: user_id} -> Accounts.get_user!(user_id)
+          %{user_id: user_id} -> Accounts.get_user(user_id)
           _ -> nil
         end
 
@@ -598,9 +667,18 @@ defmodule TexttileWeb.EditorLive do
     {holds, holder} =
       case Lock.state(article.id) do
         :free ->
-          case Lock.acquire(article.id, socket.assigns.current_scope.user.id, self()) do
-            :ok -> {true, nil}
-            {:held, holder} -> {false, holder}
+          # A free lock goes to whoever has the text open - except to
+          # the tab that was just released for being idle: taking it
+          # straight back would undo the release, forever. That tab
+          # turns read-only and gets the lock again the moment its
+          # person actually touches the text.
+          if socket.assigns.holds_lock do
+            {false, nil}
+          else
+            case Lock.acquire(article.id, socket.assigns.current_scope.user.id, self()) do
+              :ok -> {true, nil}
+              {:held, holder} -> {false, holder}
+            end
           end
 
         %{pid: pid} = holder ->
@@ -640,7 +718,7 @@ defmodule TexttileWeb.EditorLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb={title_of(@article)}
+      crumb={Articles.display_title(@article)}
       active="texts"
       others={@others}
     >
@@ -783,7 +861,7 @@ defmodule TexttileWeb.EditorLive do
             </nav>
 
             <div :if={@tab == "text"} id="tp-text">
-              <form id="text-form" phx-change="title_changed" onsubmit="return false">
+              <form id="text-form" phx-change="title_changed" phx-submit="title_submitted">
                 <input
                   type="text"
                   class="ed-title"
@@ -1041,7 +1119,7 @@ defmodule TexttileWeb.EditorLive do
                     >
                       <span
                         class="w-9 h-9 r-img bg-field bg-center bg-cover flex-none"
-                        style={"background-image:url('#{String.replace(ref.url, "'", "%27")}')"}
+                        style={"background-image:url('#{thumb_url(ref.url)}')"}
                       >
                       </span>
                       <span class="font-semibold flex-none">{ref.file}</span>
@@ -1124,10 +1202,12 @@ defmodule TexttileWeb.EditorLive do
                 </p>
                 <div
                   :for={{version, index} <- Enum.with_index(@versions)}
-                  class="py-4 border-b border-hair"
+                  class="py-[22px] border-t-2 border-rule first:border-t-0"
                 >
                   <div class="flex items-baseline gap-3 flex-wrap">
-                    <b class="text-[13.5px] num">{stamp(version.inserted_at)}</b>
+                    <span class="font-serif text-[18px] font-semibold tracking-[-.01em] num">
+                      {stamp(version.inserted_at)}
+                    </span>
                     <span class={[
                       "text-[12.5px]",
                       if(version.user_id && version.user_id != @current_scope.user.id,
@@ -1157,14 +1237,12 @@ defmodule TexttileWeb.EditorLive do
                       The first version of the text.
                     <% end %>
                   </p>
-                  <div class="font-serif text-[15px] leading-[1.65] mt-2 whitespace-pre-wrap max-w-[62ch]">
-                    <span
-                      :for={{kind, text} <- diff_runs(@versions, index)}
-                      class={diff_class(kind)}
-                    >
-                      {text}
-                    </span>
-                  </div>
+                  <%!-- pre-wrap renders template whitespace, so the marked
+                       spans must stay glued to their text --%>
+                  <div
+                    class="font-serif text-[15px] leading-[1.65] mt-2 whitespace-pre-wrap max-w-[62ch]"
+                    phx-no-format
+                  ><span :for={{kind, text} <- diff_runs(@versions, index)} class={diff_class(kind)}>{text}</span></div>
                 </div>
               </div>
             </div>
@@ -1174,13 +1252,13 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label="Article settings"
-          class="quiet-fields lg:overflow-y-auto min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[100px] lg:pb-[110px]"
+          class="lg:overflow-y-auto min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[100px] lg:pb-[110px]"
         >
           <%!-- article settings: Status first and merged with the date,
                then everything that describes the text. Nothing folded,
                and no Publish button: that one lives in the bar. The
                tiles block returns with the gallery. --%>
-          <form id="artSettings" phx-change="settings_changed" onsubmit="return false">
+          <form id="artSettings" phx-change="settings_changed" phx-submit="settings_changed">
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">Article settings</span>
               <span class="sp"></span>
@@ -1265,7 +1343,7 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow gtop">
-              <span class="lab">Reading</span>
+              <span class="lab">Readers</span>
               <span class="val">
                 <label class="opt">
                   <input type="hidden" name="allow_comments" value="false" />
@@ -1277,42 +1355,25 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.allow_comments}
                   /> <span>Allow comments</span>
                 </label>
-                <label class="opt">
-                  <input type="hidden" name="protected" value="false" />
-                  <input
-                    type="checkbox"
-                    id="optProtected"
-                    name="protected"
-                    value="true"
-                    checked={@article.protected}
-                  />
-                  <span>
-                    Ask for the blog password first<span class="note">Readers need the site password; search engines see nothing.</span>
-                  </span>
-                </label>
-              </span>
-            </div>
-
-            <div class="drow">
-              <span class="lab">Subscribers</span>
-              <span class="val" id="notifyOpt">
-                <%= if @article.type == "page" do %>
-                  <span class="note">Pages never email anyone.</span>
-                <% else %>
-                  <label class="opt">
-                    <input type="hidden" name="notify_on_publish" value="false" />
-                    <input
-                      type="checkbox"
-                      id="optNotify"
-                      name="notify_on_publish"
-                      value="true"
-                      checked={@article.notify_on_publish}
-                    />
-                    <span>
-                      Email subscribers<span class="note">{notify_note(@article)}</span>
-                    </span>
-                  </label>
-                <% end %>
+                <span id="notifyOpt">
+                  <%= if @article.type == "page" do %>
+                    <span class="note">Pages never email anyone.</span>
+                  <% else %>
+                    <label class="opt">
+                      <input type="hidden" name="notify_on_publish" value="false" />
+                      <input
+                        type="checkbox"
+                        id="optNotify"
+                        name="notify_on_publish"
+                        value="true"
+                        checked={@article.notify_on_publish}
+                      />
+                      <span>
+                        Email subscribers<span class="note">{notify_note(@article)}</span>
+                      </span>
+                    </label>
+                  <% end %>
+                </span>
               </span>
             </div>
           </form>
@@ -1379,13 +1440,15 @@ defmodule TexttileWeb.EditorLive do
 
   ## Copy
 
-  defp title_of(%{title: ""}), do: "Untitled"
-  defp title_of(%{title: title}), do: title
-
   defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
 
+  # The account behind the lock may have been deleted while it held
+  # the text; the banner still needs a word for the person.
   defp holder_name(%{user_id: user_id}) do
-    Accounts.display_name(Accounts.get_user!(user_id))
+    case Accounts.get_user(user_id) do
+      nil -> "A deleted account"
+      user -> Accounts.display_name(user)
+    end
   end
 
   defp author_name(%{user: nil}), do: "—"
@@ -1433,6 +1496,25 @@ defmodule TexttileWeb.EditorLive do
     |> Enum.map(fn chunk ->
       {kind, _} = hd(chunk)
       {kind, chunk |> Enum.map(fn {_, text} -> text end) |> Enum.join()}
+    end)
+    |> Enum.flat_map(fn
+      {:same, text} ->
+        [{:same, text}]
+
+      {kind, text} ->
+        # a mark across a line break draws as a floating coloured bar
+        # over empty space, so a marked run breaks at its newlines and
+        # the whitespace between goes unmarked (removed whitespace
+        # vanishes; it has nowhere to stand)
+        text
+        |> String.split(~r/\n+/, include_captures: true, trim: true)
+        |> Enum.flat_map(fn segment ->
+          cond do
+            String.trim(segment) != "" -> [{kind, segment}]
+            kind == :add -> [{:same, segment}]
+            true -> []
+          end
+        end)
     end)
   end
 

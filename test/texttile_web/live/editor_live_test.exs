@@ -251,6 +251,45 @@ defmodule TexttileWeb.EditorLiveTest do
     end
   end
 
+  describe "publishing while the other admin writes" do
+    test "asks first, then publishes on confirm", %{conn: conn, user: user} do
+      article = draft(user)
+      other = Texttile.AccountsFixtures.user_fixture()
+      conn2 = Phoenix.ConnTest.build_conn() |> log_in_user(other)
+
+      # the first mount holds the lock; the second only reads along
+      {:ok, _holder_view, _} = live(conn, ~p"/texts/#{article}")
+      {:ok, reader_view, _} = live(conn2, ~p"/texts/#{article}")
+
+      reader_view |> element("#stateBtn .main", "Publish") |> render_click()
+      assert has_element?(reader_view, "#dialog", "is editing this text right now")
+      assert Articles.get_article!(article.id).status == "draft"
+
+      reader_view |> element("#dialog button", "Publish anyway") |> render_click()
+      assert Articles.get_article!(article.id).status == "published"
+    end
+  end
+
+  describe "restore without the lock" do
+    test "is refused with a note instead of restoring", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, _} = Articles.save_version(article, user)
+      {:ok, article} = Articles.update_text(article, %{body: "Newer words."})
+
+      {:ok, _holder_view, _} = live(conn, ~p"/texts/#{article}")
+
+      other = Texttile.AccountsFixtures.user_fixture()
+      conn2 = Phoenix.ConnTest.build_conn() |> log_in_user(other)
+      {:ok, reader_view, _} = live(conn2, ~p"/texts/#{article}")
+
+      reader_view |> element(".tab", "Versions") |> render_click()
+      reader_view |> element("#versionsList button", "Restore this version") |> render_click()
+
+      assert Articles.get_article!(article.id).body == "Newer words."
+      assert has_element?(reader_view, "#stateLine", "Take the text over first")
+    end
+  end
+
   describe "the soft lock" do
     defp second_session(article) do
       other = Texttile.AccountsFixtures.user_fixture()
@@ -299,6 +338,54 @@ defmodule TexttileWeb.EditorLiveTest do
       })
 
       wait_until(fn -> has_element?(second, "#inlineImgs", "pier-fresh.jpg") end)
+    end
+
+    test "a transport close keeps the lock through the grace period", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _} = live(conn, ~p"/texts/#{article}")
+      view_pid = view.pid
+
+      # a reload or a network drop stops the channel with
+      # {:shutdown, :closed}; the lock must stay held (grace), not free
+      Process.flag(:trap_exit, true)
+      ref = Process.monitor(view_pid)
+      GenServer.stop(view_pid, {:shutdown, :closed})
+      assert_receive {:DOWN, ^ref, :process, ^view_pid, _}
+
+      assert %{user_id: user_id} = Lock.state(article.id)
+      assert user_id == user.id
+    end
+
+    test "a deliberate leave releases the lock at once", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _} = live(conn, ~p"/texts/#{article}")
+      view_pid = view.pid
+
+      Process.flag(:trap_exit, true)
+      ref = Process.monitor(view_pid)
+      GenServer.stop(view_pid, {:shutdown, :left})
+      assert_receive {:DOWN, ^ref, :process, ^view_pid, _}
+
+      assert Lock.state(article.id) == :free
+    end
+
+    test "an idle release is not taken straight back by the idle tab",
+         %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _} = live(conn, ~p"/texts/#{article}")
+
+      [{lock_pid, _}] = Registry.lookup(Lock.registry(), article.id)
+      send(lock_pid, :idle_over)
+
+      # the released tab hears the announcement and must not re-acquire
+      wait_until(fn -> has_element?(view, "#edTitle[readonly]") end)
+      assert Lock.state(article.id) == :free
+
+      # clicking back into the text takes it again, without a dialog
+      view |> element("#edTitle") |> render_click()
+      refute has_element?(view, "#edTitle[readonly]")
+      assert %{user_id: user_id} = Lock.state(article.id)
+      assert user_id == user.id
     end
 
     test "the takeover moves the lock and turns the other side read-only",

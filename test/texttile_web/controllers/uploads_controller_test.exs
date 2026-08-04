@@ -33,4 +33,38 @@ defmodule TexttileWeb.UploadsControllerTest do
     conn = get(conn, "/uploads/..%2Fsecret.txt")
     assert response(conn, 404)
   end
+
+  describe "renditions" do
+    setup :register_and_log_in_user
+
+    defp store_image(relative, width, height) do
+      path = Uploads.absolute(relative)
+      File.mkdir_p!(Path.dirname(path))
+      {:ok, black} = Vix.Vips.Operation.black(width, height)
+      :ok = Vix.Vips.Image.write_to_file(black, path)
+    end
+
+    test "answers with a scaled reading of a large original", %{conn: conn} do
+      store_image("images/pier-abcd.png", 1600, 800)
+
+      conn = get(conn, "/desk/renditions/320/images/pier-abcd.png")
+      assert response(conn, 200)
+      assert response_content_type(conn, :png) =~ "image/png"
+
+      {:ok, image} =
+        Vix.Vips.Image.new_from_file(Uploads.absolute("cache/images__pier-abcd-320.png"))
+
+      assert Vix.Vips.Image.width(image) == 320
+    end
+
+    test "an edge outside the fixed list is a 404", %{conn: conn} do
+      store_image("images/pier-efgh.png", 1600, 800)
+      assert conn |> get("/desk/renditions/9999/images/pier-efgh.png") |> response(404)
+    end
+
+    test "signed out, renditions redirect to sign-in" do
+      conn = get(build_conn(), "/desk/renditions/320/images/pier-abcd.png")
+      assert redirected_to(conn) == ~p"/login"
+    end
+  end
 end

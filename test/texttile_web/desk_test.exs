@@ -51,6 +51,28 @@ defmodule TexttileWeb.DeskTest do
   end
 
   # Presence diffs arrive asynchronously; render until they did.
+  describe "an open editor in the Here-now block" do
+    test "says which text somebody writes in, as a jump to it", %{conn: conn} do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+
+      {:ok, article} = Texttile.Articles.create_draft(other)
+      {:ok, article} = Texttile.Articles.update_text(article, %{title: "Doors"})
+
+      other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
+      {:ok, _editor, _} = live(other_conn, ~p"/texts/#{article}")
+
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/")
+      render_until(view, fn html -> html =~ "Writing in" end)
+
+      assert has_element?(
+               view,
+               ~s(#liveBlock a[href="/texts/#{article.id}"]),
+               "Writing in “Doors”"
+             )
+    end
+  end
+
   defp render_until(view, fun, tries \\ 100) do
     html = render(view)
 

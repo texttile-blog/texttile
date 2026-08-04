@@ -24,7 +24,6 @@ defmodule Texttile.Articles.Article do
     field :type, :string, default: "post"
     field :tags, :string, default: ""
     field :allow_comments, :boolean, default: true
-    field :protected, :boolean, default: false
     field :notify_on_publish, :boolean, default: true
     field :notified_on, :date
 
@@ -41,7 +40,7 @@ defmodule Texttile.Articles.Article do
   @doc "The article settings; each field is atomic, last write wins."
   def settings_changeset(article, attrs) do
     article
-    |> cast(attrs, [:type, :tags, :slug, :allow_comments, :protected, :notify_on_publish])
+    |> cast(attrs, [:type, :tags, :slug, :allow_comments, :notify_on_publish])
     |> update_change(:slug, &normalize_slug/1)
     |> validate_inclusion(:type, @types)
     |> unique_constraint(:slug)

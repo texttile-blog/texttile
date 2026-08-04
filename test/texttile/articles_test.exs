@@ -33,7 +33,6 @@ defmodule Texttile.ArticlesTest do
       assert article.publish_date == nil
       assert article.allow_comments
       assert article.notify_on_publish
-      refute article.protected
     end
 
     test "writes the first log line" do
@@ -214,6 +213,16 @@ defmodule Texttile.ArticlesTest do
       assert [{:same, _}] = Articles.diff("one two", "one two") |> collapse()
     end
 
+    test "a long text with a small edit still gets a real diff" do
+      long = Enum.map_join(1..2000, " ", &"word#{&1}")
+      changed = String.replace(long, "word1000", "changed1000")
+
+      diff = Articles.diff(long, changed)
+      assert {:del, "word1000"} in diff
+      assert {:add, "changed1000"} in diff
+      assert Enum.count(diff, &(elem(&1, 0) != :same)) == 2
+    end
+
     defp collapse(diff) do
       diff
       |> Enum.chunk_by(fn {kind, _} -> kind end)
@@ -275,6 +284,29 @@ defmodule Texttile.ArticlesTest do
       assert Articles.list_articles() == []
       assert Repo.aggregate(Texttile.Articles.Version, :count) == 0
       assert Repo.aggregate(Texttile.Articles.LogEntry, :count) == 0
+    end
+
+    test "the images in the body go with the text, old versions included" do
+      alias Texttile.Uploads
+      File.rm_rf!(Uploads.root())
+
+      current = "images/door-aaaa1111.png"
+      versioned = "images/gone-bbbb2222.png"
+
+      for relative <- [current, versioned] do
+        path = Uploads.absolute(relative)
+        File.mkdir_p!(Path.dirname(path))
+        File.write!(path, "png bytes")
+      end
+
+      {article, user} = draft(%{title: "Doors", body: "![gone](/uploads/#{versioned})"})
+      {:ok, _} = Articles.save_version(article, user)
+      {:ok, article} = Articles.update_text(article, %{body: "![door](/uploads/#{current})"})
+
+      {:ok, _} = Articles.delete_article(article)
+
+      refute File.exists?(Uploads.absolute(current))
+      refute File.exists?(Uploads.absolute(versioned))
     end
   end
 end
