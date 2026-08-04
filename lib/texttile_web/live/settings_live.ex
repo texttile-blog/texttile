@@ -296,7 +296,10 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   defp user_meta(user) do
-    [user.username, user.email]
+    state =
+      unless Accounts.admin_username?(user.username), do: "not in ADMIN_USERS · cannot sign in"
+
+    [user.username, user.email, state]
     |> Enum.reject(&(&1 in [nil, ""]))
     |> Enum.join(" · ")
   end

@@ -24,10 +24,16 @@ defmodule Texttile.AccountsFixtures do
     })
   end
 
-  @doc "Creates an account and configures its username as an admin."
+  @doc """
+  Creates an account the way the app does: the name is configured, its
+  owner claims it with a password, and the address arrives afterwards
+  from the profile.
+  """
   def user_fixture(attrs \\ %{}) do
-    {:ok, user} = Accounts.insert_user(valid_user_attributes(attrs))
-    configure_admins([user.username | Accounts.admin_usernames()])
+    attrs = valid_user_attributes(attrs)
+    configure_admins([attrs.username | Accounts.admin_usernames()])
+    {:ok, user} = Accounts.claim_account(attrs.username, attrs.password)
+    {:ok, user} = Accounts.update_email(user, attrs.email)
     user
   end
 

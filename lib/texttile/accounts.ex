@@ -85,14 +85,6 @@ defmodule Texttile.Accounts do
     end
   end
 
-  @doc false
-  # Bare insert, used by fixtures. The rules live in claim_account/3.
-  def insert_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
-  end
-
   ## Sign-in
 
   @doc """

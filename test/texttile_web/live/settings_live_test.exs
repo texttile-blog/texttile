@@ -118,6 +118,19 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "Every name in ADMIN_USERS has an account"
     end
 
+    # An account whose name left the configuration is still a row here,
+    # and it has to say why that person no longer gets in.
+    test "an account that left the configuration says so", %{conn: conn, user: user} do
+      other = user_fixture(%{username: "julia"})
+      configure_admins([user.username])
+
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ "not in ADMIN_USERS"
+      assert html =~ "cannot sign in"
+      assert html =~ "user-#{other.id}"
+    end
+
     test "the screen offers no way to add somebody", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/settings")
 

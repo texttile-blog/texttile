@@ -49,14 +49,6 @@ defmodule Texttile.Accounts.User do
 
   def valid_username?(_name), do: false
 
-  def registration_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:username, :email, :password])
-    |> validate_username()
-    |> validate_email()
-    |> validate_password()
-  end
-
   def username_changeset(user, attrs) do
     user
     |> cast(attrs, [:username])
