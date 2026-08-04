@@ -4,7 +4,6 @@
 # The product notes live in the personal vault. The copies in this repo are
 # read-only mirrors, see the `idea` target.
 VAULT ?= $(HOME)/vault/texttile
-VAULT_MAIN := texttile - elixir multiplayer cms.md
 
 .PHONY: prepare test kill-port-4000 start idea db-delete db-pull
 
@@ -41,15 +40,10 @@ kill-port-4000:
 # Edit the notes in the vault, never here.
 idea:
 	@test -d "$(VAULT)" || { echo "Vault not found: $(VAULT)" >&2; exit 1; }
-	@test -f "$(VAULT)/$(VAULT_MAIN)" || { echo "Main note not found: $(VAULT)/$(VAULT_MAIN)" >&2; exit 1; }
-	@cp "$(VAULT)/$(VAULT_MAIN)" idea.md
 	@mkdir -p idea
-	@for f in "$(VAULT)"/*.md; do \
-		name="$$(basename "$$f")"; \
-		if [ "$$name" != "$(VAULT_MAIN)" ]; then cp "$$f" "idea/$$name"; fi; \
-	done
+	@rsync -a --delete --exclude '.DS_Store' --exclude '.obsidian/' "$(VAULT)/" idea/
 	@echo "Synced from $(VAULT):"
-	@git status --short idea.md idea/ || true
+	@git status --short idea/ || true
 
 # Pull a consistent snapshot of the production SQLite DB to $(DB_LOCAL).
 # VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.

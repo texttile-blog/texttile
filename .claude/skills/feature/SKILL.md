@@ -9,7 +9,7 @@ Follow these steps in order. Do not skip the review at the end.
 
 ## 1. Scope
 
-Run `make idea` first to pull the current product notes from the vault. Then restate the feature in one or two sentences and list the acceptance criteria you derive from `idea.md`, its linked notes in `idea/`, and the user's request. If the scope is genuinely ambiguous, ask before writing code.
+Run `make idea` first to pull the current product notes from the vault. Then restate the feature in one or two sentences and list the acceptance criteria you derive from `idea/texttile.md`, its linked notes in `idea/`, and the user's request. If the scope is genuinely ambiguous, ask before writing code.
 
 ## 2. Worktree and branch
 
@@ -19,7 +19,7 @@ Create a git worktree with an English branch name:
 git worktree add ../texttile-<slug> -b feature/<slug>
 ```
 
-Then switch the session into it with the EnterWorktree tool: `{path: '../texttile-<slug>'}`. This moves the session's working directory into the worktree, so terminal splits open there too. All work happens inside that worktree. Small fixes (per AGENTS.md) may skip the worktree, but anything invoked through this workflow counts as substantial.
+Then switch the session into it with the EnterWorktree tool: `{path: '../texttile-<slug>'}`. This moves the session's working directory into the worktree, so terminal splits open there too. All work happens inside that worktree. Per AGENTS.md every branch off `main` gets a worktree, so this step is never optional.
 
 ## 3. Tests first
 

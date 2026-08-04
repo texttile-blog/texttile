@@ -6,65 +6,23 @@ Werte
 - Minimal - nur dem Zweck dienlich. Ist erst gut wenn man nichts mehr weglassen kann. 
 
 Triage:
-- finales logo mit finalem theme. 
+- testen auch 30 min nach deployment
+- testen: wird mail versand?
 
 Später:
+- Mehrsprachigkeit
 - Themes oder einen anderen Namen geben, damit man sie später auseinanderhalten kann, falls die schon jemand anderes benutzt
-- Videos. Selbst hosten. Konvertieren. Genauso. ffmpeg im docker. -threads 1, nice -n 19 oder os. 
--   kommentare später: delete, edit, hide
-- Statistiken
-- Live-Edits 
 - Import: Ich brauche ein sauberes Input Format. Inkl Bildern als Links die dann importiert werden und Kommentaren. Gut dokumentiert dass jede ai da einen importer schreiben kann Key Shortcuts! STarke idee. 
-- Hosting anbieten über die homepage - blogname.texttiles.blog
+- Videos. Selbst hosten. Konvertieren. Genauso. ffmpeg im docker. -threads 1, nice -n 19 oder os. 
+- Für  kommentare später: delete, edit, hide
+- Thema: RSS Feed. (wie lösen wir das mit passwort? geht dann nich?)
+- Statistiken
+- Hosting anbieten über die homepage - blogname.texttiles.blog - die möglichkeit geben dass jeder 30 tage ausprobieren kann. kein freemium. oder freemium mit instanzen die sich runterfahren und für geld bleibt man länger online. 
 
 
 Coding: 
 - Testgetrieben von Anfang an: evtl zwei Arten von Tests. Dinge die er selber schreibt und basierend auf prompts anpasst. Und welche die von mir definiert werden die nie ohne mein prompt failen dürfen. -> workflows 
 - Workflows anschauen und verstehen. Inkl testing und Review. Claude Code is good video. Von Theo. 
-
-
-Aufbau: 
-- Titel 
-- Text (guter Markdown editor, aber mit Bilder einfügen wie in Github)
-- Tiles (Genau 1 Gallery)
-- Tags
-- Datum / Published Status
-	- scheduled als dritter status. zukunftsdatum = geplant, mail an subscriber erst beim go-live.
-	- publish ist ein klick. slug, datum und die subscriber-option leben permanent in den text-settings, nicht in einem sheet. ein zukunftsdatum im feld macht aus dem klick eine planung. der button ganz rechts trägt danach den zustand: published bzw. scheduled, mit chevron-menü für unpublish, publish now und unschedule.
-- Page oder Blogeintrag (option)
-- notify subscribers on publihs
-- allow comments
-- slug
-- Ein Log - wer was gemacht hat. 
-
-Ediitor: 
-- markdown editor. 
-- schriftart ist die selbe des themes
-- wo Änderungen in Echtzeit an die anderen übertragen werden. inkl. der reihenfolge der bilder in den galerien! zwei cursors, wenn möglich. 
-- genauso änderungen an den optionen. tags, settings, etc. 
-- Text bekommt ein _weiches Dokument-Lock_, die Galerie bleibt für beide gleichzeitig offen. Das ist keine Notlösung, sondern architektonisch ehrlich: Der konfliktreiche Teil wird serialisiert, der konfliktarme bleibt frei. Und dein Hero-Feature – zwei Leute schieben live Kacheln – bleibt voll erhalten. [[live-editing]]
-- Damit sich das trotzdem nach Multiplayer anfühlt, statt nach Warteschlange: Der Nicht-Editor sieht den Text **live mitlaufen** (read-only via PubSub, das ist trivial), sieht wer gerade schreibt, und kann mit einem Klick übernehmen. "Ich sehe dich schreiben und kann jederzeit dran" ist bei _zwei_ Leuten sozial fast so gut wie echtes Co-Editing – ihr redet ja ohnehin miteinander.
-- und wenn der nicht-editor reinklickt wird das vom anderen übernommen. vorher kommt nochmal eine confirm bestätigung, dass man jetzt den anderen rauskickt. der andere bekommt eine nachricht, dass er rausgekcikt wurde.
-- Die Upload Experience wie bei imaedge. Nur das mit dem teilweise hochladen lassen wir erst mal raus und man muss Dragon drop die Bilder bewegen können auch auf Mobil und die Reihenfolge ändert aber nicht  Den time Stamp. Aber das mit dem lokalen cachen und weitermachen auf jeden Fall und das mit dem Live Update der anderen auch auf jeden Fall
-- editor zeigt last saved (temp) - trotzdem einen save button um eine version zu speichern.
-- dann brauchen wir noch eine versoinierung. save erzeugt ja eine neue version.
-  wo sieht man die alten versionen? (eigener tab würde ich sagen, mit diff) versionierung NUR für den haupt-text.
-
-Settings
-- Settings: Ob nutzer ihre email bestätigen müssen bevor sie ein kommentar schreiben können. 
-- theming nur über ein css theme. 
-- Settings: einen about block. der auch komplett markdown rendered. 
-- Settings: welche page die startseite sein soll. oder ob eine liste von letzten artikeln. 
-- Settings: Title + Tagline. 
-- Settings: Sprache einstellen. 
-- utzer-verwaltung, bewusst simpel: alle sind admins, gleichberechtigt, kein rollensystem.
-- eue nutzer anlegen mit username + email. die person setzt ihr passwort beim ersten login selbst (gleicher flow wie beim ersten admin aus der config).
-- passwort zurücksetzen: schickt der person eine mail mit link, darüber setzt sie selbst ein neues. niemand tippt fremde passwörter.
-- nutzer löschen. geht nur, solange mindestens ein admin übrig bleibt.
-- Settings: Bild-Größen umrechnen. es gibt ein setting für max längere kante. das wird geschaut beim ausgeben. und wenn es noch kein cached gibt, dann wird sie on the fly erstellt. und davor andere größen gelöscht, damit wir keine alten zu lange cachen. 
-- Settings: email-bestätigung vor kommentaren an/aus. unbestätigte kommentare sind markiert bis link geklickt.
-- Settings: logo + favicon hochladen. default ist das texttile logo. für beides.
--   bei den settings gibts kein save. aalles wird instant gespeichert. und oben ist ein: last saved.
 
 Kommentare
 - Kommentare Schreiben - optional via email bestätigen. ansonsten 
@@ -92,8 +50,50 @@ Frontend:
 
 
 
+Aufbau: 
+- Titel 
+- Text (guter Markdown editor, aber mit Bilder einfügen wie in Github)
+- Tiles (Genau 1 Gallery)
+- Tags
+- Datum / Published Status
+	- scheduled als dritter status. zukunftsdatum = geplant, mail an subscriber erst beim go-live.
+	- publish ist ein klick. slug, datum und die subscriber-option leben permanent in den text-settings, nicht in einem sheet. ein zukunftsdatum im feld macht aus dem klick eine planung. der button ganz rechts trägt danach den zustand: published bzw. scheduled, mit chevron-menü für unpublish, publish now und unschedule.
+- Page oder Blogeintrag (option)
+- notify subscribers on publihs
+- allow comments
+- slug
+- Ein Log - wer was gemacht hat. 
+
+Ediitor: 
+- [[markdown]]
+- schriftart ist die selbe des themes
+- genauso änderungen an den optionen. tags, settings, etc. 
+- Text bekommt ein _weiches Dokument-Lock_, die Galerie bleibt für beide gleichzeitig offen. Das ist keine Notlösung, sondern architektonisch ehrlich: Der konfliktreiche Teil wird serialisiert, der konfliktarme bleibt frei. Und dein Hero-Feature – zwei Leute schieben live Kacheln – bleibt voll erhalten. [[live-editing]]
+- Damit sich das trotzdem nach Multiplayer anfühlt, statt nach Warteschlange: Der Nicht-Editor sieht den Text **live mitlaufen** (read-only via PubSub, das ist trivial), sieht wer gerade schreibt, und kann mit einem Klick übernehmen. "Ich sehe dich schreiben und kann jederzeit dran" ist bei _zwei_ Leuten sozial fast so gut wie echtes Co-Editing – ihr redet ja ohnehin miteinander.
+- und wenn der nicht-editor reinklickt wird das vom anderen übernommen. vorher kommt nochmal eine confirm bestätigung, dass man jetzt den anderen rauskickt. der andere bekommt eine nachricht, dass er rausgekcikt wurde.
+- editor zeigt last saved (temp) - trotzdem einen save button um eine version zu speichern.
+- dann brauchen wir noch eine versoinierung. save erzeugt ja eine neue version.
+  wo sieht man die alten versionen? (eigener tab würde ich sagen, mit diff) versionierung NUR für den haupt-text.
+
+
 
 ## done 
+
+Settings
+- Settings: Ob nutzer ihre email bestätigen müssen bevor sie ein kommentar schreiben können. 
+- theming nur über ein css theme. 
+- Settings: einen about block. der auch komplett markdown rendered. 
+- Settings: welche page die startseite sein soll. oder ob eine liste von letzten artikeln. 
+- Settings: Title + Tagline. 
+- Settings: Sprache einstellen. 
+- utzer-verwaltung, bewusst simpel: alle sind admins, gleichberechtigt, kein rollensystem.
+- eue nutzer anlegen mit username + email. die person setzt ihr passwort beim ersten login selbst (gleicher flow wie beim ersten admin aus der config).
+- passwort zurücksetzen: schickt der person eine mail mit link, darüber setzt sie selbst ein neues. niemand tippt fremde passwörter.
+- nutzer löschen. geht nur, solange mindestens ein admin übrig bleibt.
+- Settings: Bild-Größen umrechnen. es gibt ein setting für max längere kante. das wird geschaut beim ausgeben. und wenn es noch kein cached gibt, dann wird sie on the fly erstellt. und davor andere größen gelöscht, damit wir keine alten zu lange cachen. 
+- Settings: email-bestätigung vor kommentaren an/aus. unbestätigte kommentare sind markiert bis link geklickt.
+- Settings: logo + favicon hochladen. default ist das texttile logo. für beides.
+-   bei den settings gibts kein save. aalles wird instant gespeichert. und oben ist ein: last saved.
 
 
 Admins / login

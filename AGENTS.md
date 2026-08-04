@@ -1,16 +1,16 @@
 # AGENTS.md
 
-Only deviations from default behavior. Requirements live in `idea.md`. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
+Only deviations from default behavior. Requirements live in `idea/texttile.md`. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
 
 ## Product notes
 
-- `idea.md` and `idea/` are read-only mirrors of the user's vault (synced by `make idea`). Never edit them; requirements change in the vault. A `[[name]]` link resolves to `idea/name.md`; read linked notes before building what they cover.
+- `idea/` is a read-only mirror of the user's vault folder (synced by `make idea`, which copies the full folder). Never edit it; requirements change in the vault. The main note is `idea/texttile.md`. A `[[name]]` link resolves to `idea/name.md`; read linked notes before building what they cover.
 
 ## Git and GitHub
 
 - Branches, commits, and PR texts in English. No co-author trailers, no "Generated with" lines.
 - No draft PRs. Never merge; merging is the user's decision.
-- Substantial features (new user-facing capability, more than one module, or more than a couple of commits) get their own worktree on a `feature/<slug>` branch. Small fixes: plain branch.
+- Never work on `main`. Every new branch off `main` starts as a worktree: `git worktree add ../texttile-<slug> -b <branch> main`. Substantial features (new user-facing capability, more than one module, or more than a couple of commits) use `feature/<slug>`; small fixes use a short branch name, but still get a worktree.
 - After `git worktree add`, switch the session into the worktree with the EnterWorktree tool (`path`), so the session's working directory (and any terminal split) is the worktree.
 - Every open PR gets a `/review-pr` pass. Findings are fixed as commits on the PR branch, not left as comments.
 
