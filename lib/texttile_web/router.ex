@@ -57,6 +57,7 @@ defmodule TexttileWeb.Router do
         {TexttileWeb.Desk, :track_presence}
       ] do
       live "/", TextsLive
+      live "/texts/:id", EditorLive
       live "/profile", ProfileLive
       live "/settings", SettingsLive
     end

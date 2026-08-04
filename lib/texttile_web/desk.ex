@@ -16,6 +16,7 @@ defmodule TexttileWeb.Desk do
 
   @views %{
     TexttileWeb.TextsLive => :texts,
+    TexttileWeb.EditorLive => :editor,
     TexttileWeb.ProfileLive => :profile,
     TexttileWeb.SettingsLive => :settings
   }
@@ -39,9 +40,19 @@ defmodule TexttileWeb.Desk do
       |> assign(:others, others(scope))
       |> assign(:online_ids, online_user_ids())
       |> attach_hook(:desk_presence, :handle_info, &handle_info/2)
+      |> attach_hook(:desk_actions, :handle_event, &handle_event/3)
 
     {:cont, socket}
   end
+
+  # New text lives in the wordmark menu, so it must work from every desk
+  # view; this hook is the one handler behind all of them.
+  defp handle_event("new_text", _params, socket) do
+    {:ok, article} = Texttile.Articles.create_draft(socket.assigns.current_scope.user)
+    {:halt, Phoenix.LiveView.push_navigate(socket, to: "/texts/#{article.id}")}
+  end
+
+  defp handle_event(_event, _params, socket), do: {:cont, socket}
 
   defp handle_info(%Phoenix.Socket.Broadcast{topic: @topic, event: "presence_diff"}, socket) do
     {:halt,
@@ -106,6 +117,7 @@ defmodule TexttileWeb.Desk do
   end
 
   defp activity(:texts), do: "On the Texts overview"
+  defp activity(:editor), do: "In a text"
   defp activity(:profile), do: "In the profile"
   defp activity(:settings), do: "In Settings"
 

@@ -159,6 +159,14 @@ document.addEventListener("keydown", event => {
   }
   if (event.metaKey || event.ctrlKey || event.altKey) return
   if (typingIn(event.target)) return
+  if (event.key === "/") {
+    const search = document.querySelector("#grid-search input")
+    if (search) {
+      event.preventDefault()
+      search.focus()
+    }
+    return
+  }
   if (!/^[0-9]$/.test(event.key)) return
   const row = document.querySelector(`#navMenu [data-key="${event.key}"]`)
   if (row) {

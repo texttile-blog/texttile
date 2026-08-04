@@ -190,6 +190,39 @@
     border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
   }
 
+  /* segmented filter, e.g. the status filter over the texts grid */
+  .seg-b {
+    font-size: 12.5px; color: var(--tt-dim); padding: 5px 12px;
+    border-radius: var(--tt-radius-pill);
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .seg-b:hover { background-color: var(--tt-field); color: var(--tt-ink); }
+  .seg-b.on { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+
+  /* the grid of texts: cards without boxes, one two-line title box,
+     so every row lines up. The empty state is the same element, so a
+     text without images holds the same footprint. */
+  .card { display: block; width: 100%; text-align: left; }
+  .card .cimg {
+    display: block; width: 100%; aspect-ratio: 1 / 1;
+    background: var(--tt-field) center / cover;
+    transition: box-shadow .2s ease, transform .2s ease;
+    border-radius: var(--tt-radius-img);
+  }
+  .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
+  .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
+  .card .ct {
+    display: block; font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
+    line-height: 1.25; letter-spacing: -.01em; margin-top: 11px; overflow: hidden;
+    min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .card:hover .ct { text-decoration-line: underline; text-underline-offset: 3px; }
+  .card .cm { display: block; font-size: 12.5px; color: var(--tt-faint); margin-top: 4px; }
+  .card .cm .j { color: var(--tt-julia); font-weight: 600; }
+  .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
+  .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
+  .card .cm .st.scheduled { background: var(--tt-accentsoft); }
+
   /* presence, dots, popovers */
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex: none; background: currentColor; }
   /* the presence hint on the wordmark: one small dot in julia's
