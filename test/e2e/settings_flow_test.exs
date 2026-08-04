@@ -101,6 +101,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> assert_has("h2", text: "Choose a password")
       |> fill_in("Password", with: "julias own password")
       |> fill_in("Repeat the password", with: "julias own password")
+      |> fill_in("Email address", with: "julia@example.org")
       |> click_button("Create the account and sign in")
       |> assert_has("#crumb", text: "Texts")
 

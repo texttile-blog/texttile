@@ -1,6 +1,7 @@
 defmodule Texttile.AccountsTest do
   use Texttile.DataCase, async: false
 
+  import Swoosh.TestAssertions
   import Texttile.AccountsFixtures
 
   alias Texttile.Accounts
@@ -44,46 +45,114 @@ defmodule Texttile.AccountsTest do
     test "creates the account of a configured name and signs it in from then on" do
       configure_admins(["kb"])
 
-      assert {:ok, user} = Accounts.claim_account("kb", "a long password")
+      attrs = %{password: "a long password", email: "kb@example.org", display_name: "KB"}
+      assert {:ok, user} = Accounts.claim_account("kb", attrs)
       assert user.username == "kb"
+      assert user.email == "kb@example.org"
+      assert user.display_name == "KB"
       assert Bcrypt.verify_pass("a long password", user.password_hash)
       assert {:ok, _} = Accounts.authenticate_user("kb", "a long password")
     end
 
-    test "creates it without an email address, the profile fills that in" do
+    # The address is what a password reset needs, so an account never
+    # exists without one.
+    test "refuses to create an account without an email address" do
       configure_admins(["kb"])
-      assert {:ok, user} = Accounts.claim_account("kb", "a long password")
-      assert user.email == nil
 
-      assert {:ok, user} = Accounts.update_email(user, "kb@example.org")
-      assert user.email == "kb@example.org"
+      assert {:error, changeset} = Accounts.claim_account("kb", %{password: "a long password"})
+      assert %{email: [_]} = errors_on(changeset)
+      assert Accounts.sign_in_state("kb") == :claimable
+    end
+
+    test "keeps email addresses unique across accounts" do
+      user = user_fixture()
+      configure_admins(["kb" | Accounts.admin_usernames()])
+
+      assert {:error, changeset} =
+               Accounts.claim_account("kb", %{password: "a long password", email: user.email})
+
+      assert %{email: ["is already in use"]} = errors_on(changeset)
+    end
+
+    test "mails a confirmation without the password when a site is given" do
+      configure_admins(["kb"])
+      attrs = %{password: "a long password", email: "kb@example.org"}
+
+      assert {:ok, _user} = Accounts.claim_account("kb", attrs, site: "texttile.blog")
+
+      assert_email_sent(fn email ->
+        assert email.to == [{"kb", "kb@example.org"}]
+        assert email.subject =~ "texttile.blog"
+        refute email.text_body =~ "a long password"
+        true
+      end)
+    end
+
+    test "the displayed name may stay empty, the username stands in" do
+      configure_admins(["kb"])
+
+      assert {:ok, user} =
+               Accounts.claim_account("kb", %{
+                 password: "a long password",
+                 email: "kb@example.org"
+               })
+
+      assert Accounts.display_name(user) == "kb"
     end
 
     test "refuses a name that nobody configured" do
       configure_admins(["kb"])
-      assert {:error, :not_allowed} = Accounts.claim_account("julia", "a long password")
+
+      assert {:error, :not_allowed} =
+               Accounts.claim_account("julia", %{
+                 password: "a long password",
+                 email: "j@example.org"
+               })
+
       assert Accounts.sign_in_state("julia") == :unknown
     end
 
     test "refuses a name that already has an account" do
       user_fixture(%{username: "kb"})
-      assert {:error, :taken} = Accounts.claim_account("kb", "another long password")
+
+      assert {:error, :taken} =
+               Accounts.claim_account("kb", %{
+                 password: "another long password",
+                 email: "x@example.org"
+               })
     end
 
     test "keeps the password rules and its confirmation" do
       configure_admins(["kb"])
-      assert {:error, changeset} = Accounts.claim_account("kb", "short", "short")
+
+      assert {:error, changeset} =
+               Accounts.claim_account("kb", %{
+                 password: "short",
+                 password_confirmation: "short",
+                 email: "kb@example.org"
+               })
+
       assert %{password: [_]} = errors_on(changeset)
 
       assert {:error, changeset} =
-               Accounts.claim_account("kb", "a long password", "a long passwort")
+               Accounts.claim_account("kb", %{
+                 password: "a long password",
+                 password_confirmation: "a long passwort",
+                 email: "kb@example.org"
+               })
 
       assert %{password_confirmation: [_]} = errors_on(changeset)
     end
 
     test "normalizes the name" do
       configure_admins(["kb"])
-      assert {:ok, user} = Accounts.claim_account(" KB ", "a long password")
+
+      assert {:ok, user} =
+               Accounts.claim_account(" KB ", %{
+                 password: "a long password",
+                 email: "kb@example.org"
+               })
+
       assert user.username == "kb"
     end
   end

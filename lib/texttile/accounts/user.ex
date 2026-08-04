@@ -26,14 +26,17 @@ defmodule Texttile.Accounts.User do
 
   @doc """
   The account somebody creates at their first sign-in. The username
-  comes from the configuration, not from the form, and there is nobody
-  to ask for an email address at that moment. The profile takes it
-  later.
+  comes from the configuration, not from the form. The password, the
+  email address and the displayed name come from its owner, and this is
+  the one moment to ask: the address is what a password reset needs,
+  so an account never exists without one.
   """
   def claim_changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :password])
+    |> cast(attrs, [:username, :password, :email, :display_name])
     |> validate_username()
+    |> validate_email()
+    |> validate_length(:display_name, max: 80)
     |> validate_confirmation(:password, message: "does not match the password")
     |> validate_password()
   end

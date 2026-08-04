@@ -48,17 +48,19 @@ defmodule Texttile.Accounts do
   end
 
   @doc """
-  Creates the account of a configured name, with the password its owner
-  chose. Refuses a name that is not configured (`:not_allowed`) and a
-  name that has an account already (`:taken`).
+  Creates the account of a configured name: the password its owner
+  chose, the email address a reset will need, the displayed name.
+  Refuses a name that is not configured (`:not_allowed`) and a name
+  that has an account already (`:taken`). With a `:site` in the opts, a
+  confirmation goes to the address; it never contains the password, and
+  a mail that cannot leave does not undo the account.
   """
-  def claim_account(username, password, password_confirmation \\ nil)
-      when is_binary(username) and is_binary(password) do
-    attrs = %{
-      username: normalize(username),
-      password: password,
-      password_confirmation: password_confirmation || password
-    }
+  def claim_account(username, attrs, opts \\ [])
+      when is_binary(username) and is_map(attrs) do
+    attrs =
+      attrs
+      |> Map.new(fn {key, value} -> {to_string(key), value} end)
+      |> Map.put("username", normalize(username))
 
     # The check and the insert share one transaction, so two overlapping
     # claims of one name cannot both create an account.
@@ -80,6 +82,10 @@ defmodule Texttile.Accounts do
       end)
 
     with {:ok, user} <- result do
+      if site = Keyword.get(opts, :site) do
+        _ = UserNotifier.deliver_registration_confirmation(user, site)
+      end
+
       broadcast_users_changed()
       {:ok, user}
     end

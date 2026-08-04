@@ -80,13 +80,18 @@ defmodule TexttileWeb.SessionControllerTest do
           "user" => %{
             "username" => "kb",
             "password" => "a long password",
-            "password_confirmation" => "a long password"
+            "password_confirmation" => "a long password",
+            "email" => "kb@example.org",
+            "display_name" => "KB"
           }
         })
 
       assert redirected_to(conn) == ~p"/"
       assert get_session(conn, :user_token)
       assert Accounts.sign_in_state("kb") == :known
+
+      assert %{email: "kb@example.org", display_name: "KB"} =
+               Accounts.get_user_by_email("kb@example.org")
 
       conn = get(conn, ~p"/")
       assert html_response(conn, 200) =~ "Texts"
@@ -98,7 +103,8 @@ defmodule TexttileWeb.SessionControllerTest do
           "user" => %{
             "username" => "kb",
             "password" => "a long password",
-            "password_confirmation" => "a long passwort"
+            "password_confirmation" => "a long passwort",
+            "email" => "kb@example.org"
           }
         })
 
@@ -109,13 +115,34 @@ defmodule TexttileWeb.SessionControllerTest do
       assert Accounts.sign_in_state("kb") == :claimable
     end
 
+    test "keeps the screen and the typed address when the email is missing", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login/claim", %{
+          "user" => %{
+            "username" => "kb",
+            "password" => "a long password",
+            "password_confirmation" => "a long password",
+            "email" => "",
+            "display_name" => "KB"
+          }
+        })
+
+      response = html_response(conn, 200)
+      assert response =~ "claim-form"
+      assert response =~ "can&#39;t be blank"
+      assert response =~ ~s(value="KB")
+      refute get_session(conn, :user_token)
+      assert Accounts.sign_in_state("kb") == :claimable
+    end
+
     test "keeps the screen when the password is too short", %{conn: conn} do
       conn =
         post(conn, ~p"/login/claim", %{
           "user" => %{
             "username" => "kb",
             "password" => "short",
-            "password_confirmation" => "short"
+            "password_confirmation" => "short",
+            "email" => "kb@example.org"
           }
         })
 
@@ -130,7 +157,8 @@ defmodule TexttileWeb.SessionControllerTest do
           "user" => %{
             "username" => "julia",
             "password" => "a long password",
-            "password_confirmation" => "a long password"
+            "password_confirmation" => "a long password",
+            "email" => "j@example.org"
           }
         })
 
@@ -147,7 +175,8 @@ defmodule TexttileWeb.SessionControllerTest do
           "user" => %{
             "username" => "kb",
             "password" => "a long password",
-            "password_confirmation" => "a long password"
+            "password_confirmation" => "a long password",
+            "email" => "x@example.org"
           }
         })
 

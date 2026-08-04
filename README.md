@@ -59,9 +59,11 @@ ADMIN_USERS="kb,julia"
 ```
 
 A name on that list has no account at first. Its owner opens the site, types
-the name on the sign-in screen, and chooses a password there. That creates
-the account. From then on the name signs in with that password. Nobody is
-invited: adding the name to `ADMIN_USERS` is the invitation.
+the name on the sign-in screen, and chooses a password there, along with an
+email address and a displayed name. That creates the account, and a
+confirmation goes to the address. From then on the name signs in with that
+password. Nobody is invited: adding the name to `ADMIN_USERS` is the
+invitation.
 
 The list stays in charge. Take a name out and its access ends at once, in
 every open browser, whether or not the account is still there. Put it back
@@ -78,14 +80,15 @@ address of the account and sends a link that sets a new password. The link
 works one time, and for 24 hours. Outgoing mail has to work for this, so a
 real installation sets `MAIL_ADAPTER`.
 
-A fresh account has no email address: nobody asks for one at the first
-sign-in. Everyone adds theirs in their profile, and that address is what the
-reset needs. Without it, the way back is to delete the account in Settings;
-its owner then signs in again with the same name and a fresh password. For
-the only account of a site, delete the row in the database instead.
-
-An address is for the reset and for notifications. It is never a sign-in
+Every account has an address: the first sign-in asks for one, exactly so
+this reset always has somewhere to go. The profile changes it later. An
+address is for the reset and for notifications. It is never a sign-in
 identity, and a name that left `ADMIN_USERS` gets no link either.
+
+When the mail cannot go out, the way back is to delete the account in
+Settings; its owner then signs in again with the same name and a fresh
+password. For the only account of a site, delete the row in the database
+instead.
 
 ## Deploy on Fly.io
 

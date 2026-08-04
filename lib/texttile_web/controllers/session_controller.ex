@@ -37,11 +37,8 @@ defmodule TexttileWeb.SessionController do
   nobody configured gets the answer of a wrong password, and a name that
   somebody claimed in the meantime goes back to the form.
   """
-  def claim(conn, %{"user" => params}) do
-    %{"username" => username, "password" => password} = params
-    confirmation = Map.get(params, "password_confirmation", "")
-
-    case Accounts.claim_account(username, password, confirmation) do
+  def claim(conn, %{"user" => %{"username" => username} = params}) do
+    case Accounts.claim_account(username, params, site: TexttileWeb.Endpoint.host()) do
       {:ok, user} ->
         UserAuth.log_in_user(conn, user)
 

@@ -58,7 +58,8 @@ defmodule TexttileWeb.SessionHTML do
         registration. The people who may sign in stand in the configuration of
         this server. Each of them chooses a password at the first sign-in. Your
         username is the name you sign in with. Your email address is what a
-        password link needs, and you add it in your profile.
+        password link needs. You give it at the first sign-in and can change
+        it in your profile.
       </p>
     </Layouts.auth>
     """
@@ -112,20 +113,45 @@ defmodule TexttileWeb.SessionHTML do
           <.field_error changeset={@changeset} field={:password_confirmation} />
         </div>
         <div class="flex items-baseline gap-[10px]">
-          <span class="note">At least 12 characters. Nothing else is required.</span>
+          <span class="note">At least 12 characters.</span>
           <span class="sp"></span>
           <button class="link text-[12.5px]" type="button" data-toggle-password="claim-password">
             Show
           </button>
+        </div>
+        <div class="mt-[15px] mb-[15px]">
+          <label class="lab block mb-0" for="claim-email">Email address</label>
+          <input
+            type="email"
+            id="claim-email"
+            name="user[email]"
+            value={value(@changeset, :email)}
+            autocomplete="email"
+          />
+          <.field_error changeset={@changeset} field={:email} />
+          <p class="note mt-[6px]">Where a password reset goes. No account exists without one.</p>
+        </div>
+        <div class="mb-[7px]">
+          <label class="lab block mb-0" for="claim-display-name">Displayed name</label>
+          <input
+            type="text"
+            id="claim-display-name"
+            name="user[display_name]"
+            value={value(@changeset, :display_name)}
+            autocomplete="name"
+          />
+          <.field_error changeset={@changeset} field={:display_name} />
+          <p class="note mt-[6px]">What readers see. Empty shows your username.</p>
         </div>
         <button class="btn solid w-full h-[38px] mt-[16px]" type="submit">
           Create the account and sign in
         </button>
       </.form>
       <p class="note mt-[22px] leading-[1.6]">
-        Keep this password. No mail goes out about it, and nobody can send you
-        a new one: the account has no address until you add one in your
-        profile.
+        A confirmation mail goes to your address: which site, which username.
+        It never contains the password, and no mail ever will. If you forget
+        the password, the sign-in screen mails your address a link that sets
+        a new one.
       </p>
       <p class="note mt-[10px]">
         <.link href={~p"/login"} class="link" id="claim-back">Sign in with another name</.link>
@@ -133,6 +159,9 @@ defmodule TexttileWeb.SessionHTML do
     </Layouts.auth>
     """
   end
+
+  defp value(nil, _field), do: nil
+  defp value(changeset, field), do: Ecto.Changeset.get_field(changeset, field)
 
   attr :changeset, :any, required: true
   attr :field, :atom, required: true
