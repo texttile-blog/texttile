@@ -8,6 +8,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
   @moduletag :e2e
 
+  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
+
   setup do
     Texttile.DataCase.restore_admin_users_afterwards()
 

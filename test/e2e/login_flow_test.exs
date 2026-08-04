@@ -6,6 +6,8 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
   @moduletag :e2e
 
+  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
+
   setup do
     # The browser talks to the same node, so the configured usernames are
     # the ones this test sets. They go back after it.

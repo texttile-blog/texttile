@@ -26,9 +26,9 @@ ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
 
-# install build dependencies
+# install build dependencies; node/npm for the editor's JS packages
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential git \
+  && apt-get install -y --no-install-recommends build-essential git nodejs npm \
   && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
@@ -61,6 +61,10 @@ COPY lib lib
 # The default theme (assets/css/theme.css) is embedded at compile time,
 # so the assets have to be in place before the code compiles.
 COPY assets assets
+
+# the editor's JS packages (CodeMirror); dev tooling like Playwright
+# stays out of the image
+RUN npm --prefix assets ci --omit=dev
 
 # Compile the release
 RUN mix compile
