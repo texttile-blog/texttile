@@ -29,10 +29,7 @@ defmodule TexttileWeb.Layouts do
     """
   end
 
-  @doc """
-  The name the site goes by, from Settings; an empty title falls back
-  to Texttile. It names the browser tab and the wordmark in the bar.
-  """
+  @doc "The name the site goes by. It names the browser tab and the wordmark."
   defdelegate site_title, to: Texttile.Settings
 
   @doc """
