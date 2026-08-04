@@ -14,9 +14,11 @@ defmodule TexttileWeb.SessionControllerTest do
       assert response =~ "Admin sign-in"
     end
 
-    test "sends a fresh install to the setup screen", %{conn: conn} do
-      conn = get(conn, ~p"/login")
-      assert redirected_to(conn) == ~p"/setup"
+    test "shows the same form on a fresh install", %{conn: conn} do
+      configure_admins(["kb"])
+      response = conn |> get(~p"/login") |> html_response(200)
+      assert response =~ "login-form"
+      refute response =~ "kb"
     end
 
     test "sends a signed-in admin to the desk", %{conn: conn} do
@@ -25,7 +27,138 @@ defmodule TexttileWeb.SessionControllerTest do
     end
   end
 
-  describe "POST /login" do
+  describe "POST /login with a name that has no account yet" do
+    setup do
+      configure_admins(["kb"])
+      :ok
+    end
+
+    test "offers the password screen", %{conn: conn} do
+      conn = post(conn, ~p"/login", %{"user" => %{"username" => "kb", "password" => ""}})
+
+      response = html_response(conn, 200)
+      assert response =~ "claim-form"
+      assert response =~ "Choose a password"
+      assert response =~ "kb"
+      refute get_session(conn, :user_token)
+    end
+
+    test "offers the way back to the form for a mistyped name", %{conn: conn} do
+      conn = post(conn, ~p"/login", %{"user" => %{"username" => "kb", "password" => ""}})
+      assert html_response(conn, 200) =~ "Sign in with another name"
+    end
+
+    test "does not ask for a password nobody has yet", %{conn: conn} do
+      conn = post(conn, ~p"/login", %{"user" => %{"username" => "kb", "password" => ""}})
+      refute html_response(conn, 200) =~ "Both fields are required"
+    end
+
+    test "takes the name in any case", %{conn: conn} do
+      conn = post(conn, ~p"/login", %{"user" => %{"username" => " KB ", "password" => ""}})
+      assert html_response(conn, 200) =~ "claim-form"
+    end
+
+    test "says nothing about a name that is not configured", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login", %{"user" => %{"username" => "julia", "password" => "guess it"}})
+
+      response = html_response(conn, 200)
+      assert response =~ "do not match"
+      refute response =~ "claim-form"
+    end
+  end
+
+  describe "POST /login/claim" do
+    setup do
+      configure_admins(["kb"])
+      :ok
+    end
+
+    test "creates the account and signs in", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login/claim", %{
+          "user" => %{
+            "username" => "kb",
+            "password" => "a long password",
+            "password_confirmation" => "a long password"
+          }
+        })
+
+      assert redirected_to(conn) == ~p"/"
+      assert get_session(conn, :user_token)
+      assert Accounts.sign_in_state("kb") == :known
+
+      conn = get(conn, ~p"/")
+      assert html_response(conn, 200) =~ "Texts"
+    end
+
+    test "keeps the screen when the two passwords differ", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login/claim", %{
+          "user" => %{
+            "username" => "kb",
+            "password" => "a long password",
+            "password_confirmation" => "a long passwort"
+          }
+        })
+
+      response = html_response(conn, 200)
+      assert response =~ "claim-form"
+      assert response =~ "does not match"
+      refute get_session(conn, :user_token)
+      assert Accounts.sign_in_state("kb") == :claimable
+    end
+
+    test "keeps the screen when the password is too short", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login/claim", %{
+          "user" => %{
+            "username" => "kb",
+            "password" => "short",
+            "password_confirmation" => "short"
+          }
+        })
+
+      response = html_response(conn, 200)
+      assert response =~ "claim-form"
+      assert response =~ "at least 12 characters"
+    end
+
+    test "refuses a name that is not configured", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login/claim", %{
+          "user" => %{
+            "username" => "julia",
+            "password" => "a long password",
+            "password_confirmation" => "a long password"
+          }
+        })
+
+      assert html_response(conn, 200) =~ "do not match"
+      refute get_session(conn, :user_token)
+      assert Accounts.sign_in_state("julia") == :unknown
+    end
+
+    test "sends somebody whose name was claimed meanwhile to the sign-in form", %{conn: conn} do
+      user_fixture(%{username: "kb"})
+
+      conn =
+        post(conn, ~p"/login/claim", %{
+          "user" => %{
+            "username" => "kb",
+            "password" => "a long password",
+            "password_confirmation" => "a long password"
+          }
+        })
+
+      response = html_response(conn, 200)
+      assert response =~ "login-form"
+      assert response =~ "already exists"
+      refute get_session(conn, :user_token)
+    end
+  end
+
+  describe "POST /login with an account" do
     test "signs in with the right username and password", %{conn: conn} do
       user = user_fixture()
 
@@ -42,8 +175,11 @@ defmodule TexttileWeb.SessionControllerTest do
     end
 
     test "shows the missing-fields line when a field is empty", %{conn: conn} do
-      user_fixture()
-      conn = post(conn, ~p"/login", %{"user" => %{"username" => "kb", "password" => ""}})
+      user = user_fixture()
+
+      conn =
+        post(conn, ~p"/login", %{"user" => %{"username" => user.username, "password" => ""}})
+
       assert html_response(conn, 200) =~ "Both fields are required"
     end
 
@@ -58,6 +194,19 @@ defmodule TexttileWeb.SessionControllerTest do
       response = html_response(conn, 200)
       assert response =~ "do not match"
       assert response =~ user.username
+      refute get_session(conn, :user_token)
+    end
+
+    test "refuses an account whose name left the configuration", %{conn: conn} do
+      user = user_fixture()
+      configure_admins([])
+
+      conn =
+        post(conn, ~p"/login", %{
+          "user" => %{"username" => user.username, "password" => valid_password()}
+        })
+
+      assert html_response(conn, 200) =~ "do not match"
       refute get_session(conn, :user_token)
     end
   end

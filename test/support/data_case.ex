@@ -38,7 +38,18 @@ defmodule Texttile.DataCase do
   def setup_sandbox(tags) do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Texttile.Repo, shared: not tags[:async])
     take_write_lock()
+    restore_admin_users_afterwards()
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+  end
+
+  @doc """
+  Puts the configured admin usernames back after the test. Fixtures and
+  tests write that list, and it lives in the application environment,
+  which no sandbox rolls back.
+  """
+  def restore_admin_users_afterwards do
+    admin_users = Application.get_env(:texttile, :admin_users)
+    on_exit(fn -> Application.put_env(:texttile, :admin_users, admin_users) end)
   end
 
   @doc """

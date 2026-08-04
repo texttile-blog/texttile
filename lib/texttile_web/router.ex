@@ -26,23 +26,15 @@ defmodule TexttileWeb.Router do
   scope "/", TexttileWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    get "/setup", SetupController, :new
-    post "/setup", SetupController, :create
     get "/login", SessionController, :new
     post "/login", SessionController, :create
+    post "/login/claim", SessionController, :claim
   end
 
   scope "/", TexttileWeb do
     pipe_through :browser
 
     delete "/logout", SessionController, :delete
-
-    # The mailed set-a-password link and the screen that asks for one.
-    # Both work signed in or out: a link signs you in as its account.
-    get "/forgot", LinkController, :forgot
-    post "/forgot", LinkController, :send_link
-    get "/link/:token", LinkController, :show
-    post "/link/:token", LinkController, :create
   end
 
   ## The desk

@@ -56,19 +56,14 @@ defmodule TexttileWeb.UserAuth do
   end
 
   @doc """
-  Plug: only signed-in admins pass. Without any account the whole app
-  is the setup screen, so that is where an anonymous request lands.
+  Plug: only signed-in admins pass. Everybody else goes to the sign-in
+  screen, which is also where a configured name creates its account.
   """
   def require_authenticated_user(conn, _opts) do
-    cond do
-      conn.assigns.current_scope ->
-        conn
-
-      Accounts.setup_state() == :done ->
-        conn |> redirect(to: ~p"/login") |> halt()
-
-      true ->
-        conn |> redirect(to: ~p"/setup") |> halt()
+    if conn.assigns.current_scope do
+      conn
+    else
+      conn |> redirect(to: ~p"/login") |> halt()
     end
   end
 
@@ -91,8 +86,7 @@ defmodule TexttileWeb.UserAuth do
     if socket.assigns.current_scope do
       {:cont, socket}
     else
-      to = if Accounts.setup_state() == :done, do: ~p"/login", else: ~p"/setup"
-      {:halt, Phoenix.LiveView.redirect(socket, to: to)}
+      {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
     end
   end
 

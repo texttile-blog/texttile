@@ -7,9 +7,6 @@ defmodule Texttile.Application do
 
   @impl true
   def start(_type, _args) do
-    # The first-run setup window is measured from this moment.
-    Texttile.Boot.record_start()
-
     children = [
       TexttileWeb.Telemetry,
       Texttile.Repo,

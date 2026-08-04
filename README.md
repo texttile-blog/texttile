@@ -14,6 +14,7 @@ Texttile reads its configuration from environment variables at start.
 | ----------------- | ---------------- | --------------------------- | ------------------------------------------------- |
 | `DATABASE_PATH`   | yes              | `/data/texttile.db` (image) | SQLite database file                              |
 | `UPLOADS_PATH`    | yes              | `/data/uploads` (image)     | directory for uploaded files                      |
+| `ADMIN_USERS`     | yes              | none                        | usernames that may sign in, separated by commas   |
 | `SECRET_KEY_BASE` | yes              | none                        | signs cookies; generate with `mix phx.gen.secret` |
 | `PHX_HOST`        | yes              | `example.com`               | public hostname                                   |
 | `PORT`            | no               | `4000`                      | HTTP port                                         |
@@ -48,23 +49,37 @@ The container prepares the data directories, runs migrations, drops root, and
 starts the server. All state lives in `/data`. An update is: pull the new
 image, start the container again.
 
-## First run
+## Accounts
 
-A fresh installation has no accounts. Open the site in a browser within 30
-minutes of the start. The setup screen asks for a username, an email address,
-and a password, and makes this account the first admin.
+`ADMIN_USERS` names everybody who may sign in. It holds usernames,
+separated by commas:
 
-After 30 minutes the setup screen closes. To open it again, restart the
-server. Once an account exists, the setup screen stays closed permanently.
+```sh
+ADMIN_USERS="kb,julia"
+```
 
-A confirmation mail goes to the address you enter. It contains the username.
-It does not contain the password.
+A name on that list has no account at first. Its owner opens the site, types
+the name on the sign-in screen, and chooses a password there. That creates
+the account. From then on the name signs in with that password. There is no
+invitation and no mail: adding the name is the invitation.
 
-Every later account is made in Settings: an admin enters a username and an
-email address, and the invitation mail carries a link where the new admin
-sets their own password. A password reset works the same way, from Settings
-or from the sign-in screen. Both depend on outgoing mail, so a real
-installation needs `MAIL_ADAPTER` set.
+The list stays in charge. Take a name out and its access ends at once, in
+every open browser, whether or not the account is still there. Put it back
+and the account works again.
+
+Two consequences of this design:
+
+- The username is the only thing an outsider has to guess to reach the
+  password screen of a name that has no account yet. Pick names that are not
+  obvious, and keep `ADMIN_USERS` down to the people who need it.
+- A new account has no email address, so nothing can mail a password link. A
+  forgotten password is not recoverable by mail. Another admin deletes the
+  account in Settings, and its owner signs in again with the same name and a
+  fresh password. For the only account of a site, delete the row in the
+  database instead.
+
+Everyone adds their own email address in their profile. It is for
+notifications, never for signing in.
 
 ## Deploy on Fly.io
 
@@ -85,7 +100,8 @@ All git worktrees of the repository share the dev state of the main
 checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
 `.env` file. Outside a git checkout, everything stays next to the code.
 
-Development needs no environment variables. To test a real mail adapter
-locally, copy `.env.example` to `.env` in the main checkout; dev loads it on
-every start, from every worktree, and real environment variables win over
-`.env` values.
+In development the sign-in list holds `admin`, so the first sign-in with that
+name creates the account. `ADMIN_USERS` in `.env` replaces the list. To test
+a real mail adapter locally, copy `.env.example` to `.env` in the main
+checkout; dev loads it on every start, from every worktree, and real
+environment variables win over `.env` values.

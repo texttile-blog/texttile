@@ -31,6 +31,11 @@ if config_env() == :dev do
 
   config :texttile, Texttile.Mailer, Texttile.Config.mailer_config()
   config :texttile, :mail_from, Texttile.Config.mail_from()
+
+  # Without ADMIN_USERS the dev default from config/dev.exs stands.
+  if System.get_env("ADMIN_USERS") do
+    config :texttile, :admin_users, Texttile.Config.admin_users()
+  end
 end
 
 if config_env() == :prod do
@@ -39,6 +44,10 @@ if config_env() == :prod do
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5")
 
   config :texttile, :uploads_path, Texttile.Config.uploads_path()
+
+  # The guest list of the installation. An empty or missing ADMIN_USERS
+  # means nobody signs in, which is the safe end of the mistake.
+  config :texttile, :admin_users, Texttile.Config.admin_users()
 
   config :texttile, Texttile.Mailer, Texttile.Config.mailer_config()
   config :texttile, :mail_from, Texttile.Config.mail_from()

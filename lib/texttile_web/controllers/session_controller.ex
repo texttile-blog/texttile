@@ -5,21 +5,54 @@ defmodule TexttileWeb.SessionController do
   alias TexttileWeb.UserAuth
 
   def new(conn, _params) do
-    if Accounts.setup_state() == :done do
-      render(conn, :new, error: nil, username: "")
-    else
-      redirect(conn, to: ~p"/setup")
+    render(conn, :new, error: nil, username: "")
+  end
+
+  @doc """
+  The sign-in form. A configured name that has no account yet goes to
+  the password screen instead of the password check: nobody has a
+  password for it yet, and that screen is where its owner chooses one.
+  """
+  def create(conn, %{"user" => %{"username" => username, "password" => password}}) do
+    cond do
+      String.trim(username) == "" ->
+        render(conn, :new, error: :missing, username: username)
+
+      Accounts.sign_in_state(username) == :claimable ->
+        render(conn, :claim, username: String.trim(username), changeset: nil)
+
+      password == "" ->
+        render(conn, :new, error: :missing, username: username)
+
+      true ->
+        case Accounts.authenticate_user(username, password) do
+          {:ok, user} -> UserAuth.log_in_user(conn, user)
+          :error -> render(conn, :new, error: :bad, username: username)
+        end
     end
   end
 
-  def create(conn, %{"user" => %{"username" => username, "password" => password}}) do
-    if username == "" or password == "" do
-      render(conn, :new, error: :missing, username: username)
-    else
-      case Accounts.authenticate_user(username, password) do
-        {:ok, user} -> UserAuth.log_in_user(conn, user)
-        :error -> render(conn, :new, error: :bad, username: username)
-      end
+  @doc """
+  The password screen creates the account and signs it in. A name that
+  nobody configured gets the answer of a wrong password, and a name that
+  somebody claimed in the meantime goes back to the form.
+  """
+  def claim(conn, %{"user" => params}) do
+    %{"username" => username, "password" => password} = params
+    confirmation = Map.get(params, "password_confirmation", "")
+
+    case Accounts.claim_account(username, password, confirmation) do
+      {:ok, user} ->
+        UserAuth.log_in_user(conn, user)
+
+      {:error, :not_allowed} ->
+        render(conn, :new, error: :bad, username: username)
+
+      {:error, :taken} ->
+        render(conn, :new, error: :claimed, username: username)
+
+      {:error, changeset} ->
+        render(conn, :claim, username: String.trim(username), changeset: changeset)
     end
   end
 

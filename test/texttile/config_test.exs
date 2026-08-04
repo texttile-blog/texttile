@@ -29,6 +29,29 @@ defmodule Texttile.ConfigTest do
     end
   end
 
+  describe "admin_users/1" do
+    test "reads the usernames from ADMIN_USERS" do
+      assert Config.admin_users(%{"ADMIN_USERS" => "kb,julia"}) == ["kb", "julia"]
+    end
+
+    test "takes the names as people write them: spaces, case, a trailing comma" do
+      assert Config.admin_users(%{"ADMIN_USERS" => " KB , Julia ,"}) == ["kb", "julia"]
+    end
+
+    test "an unset or empty variable means nobody can sign in" do
+      assert Config.admin_users(%{}) == []
+      assert Config.admin_users(%{"ADMIN_USERS" => "   "}) == []
+    end
+
+    test "drops a name that no account could ever carry" do
+      assert Config.admin_users(%{"ADMIN_USERS" => "kb,not a username,julia"}) == ["kb", "julia"]
+    end
+
+    test "keeps every name once" do
+      assert Config.admin_users(%{"ADMIN_USERS" => "kb,KB,kb"}) == ["kb"]
+    end
+  end
+
   describe "mailer_config/1" do
     test "falls back to the local preview adapter when MAIL_ADAPTER is not set" do
       assert Config.mailer_config(%{}) == [adapter: Swoosh.Adapters.Local]

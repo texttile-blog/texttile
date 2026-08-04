@@ -12,6 +12,28 @@ defmodule Texttile.Config do
   def uploads_path(env \\ System.get_env()), do: fetch!(env, "UPLOADS_PATH")
 
   @doc """
+  The usernames that may have an account, from ADMIN_USERS.
+
+  This list is the whole guest list of the installation: a name on it
+  gets an account at its first sign-in, a name off it gets nowhere. The
+  variable holds the names separated by commas.
+
+      ADMIN_USERS="kb,julia"
+
+  Names arrive as people write them, so spaces and capitals are taken
+  out. A name no account could carry is dropped, because it could only
+  ever be a typo. Without the variable the list is empty, and nobody
+  signs in.
+  """
+  def admin_users(env \\ System.get_env()) do
+    (env["ADMIN_USERS"] || "")
+    |> String.split(",")
+    |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+    |> Enum.filter(&Texttile.Accounts.User.valid_username?/1)
+    |> Enum.uniq()
+  end
+
+  @doc """
   Swoosh mailer configuration, chosen by MAIL_ADAPTER.
 
   Each adapter loads exactly the credential variables it needs. Without

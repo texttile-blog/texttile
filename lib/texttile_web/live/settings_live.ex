@@ -30,10 +30,7 @@ defmodule TexttileWeb.SettingsLive do
       socket
       |> assign(:page_title, "Settings")
       |> assign(:errors, %{})
-      |> assign(:user_notes, %{})
-      |> assign(:new_user_state, nil)
       |> assign(:confirm_delete, nil)
-      |> assign(:add_user_form, to_form(%{}, as: :user))
       |> allow_upload(:logo,
         accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
@@ -103,57 +100,6 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   ## Users
-
-  def handle_event("add_user", %{"user" => params}, socket) do
-    case Accounts.create_user(params, mail_opts()) do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> refresh_users()
-         |> assign(:add_user_form, to_form(%{}, as: :user))
-         |> assign(
-           :new_user_state,
-           "#{user.username} has an account. The invitation went to #{user.email}, " <>
-             "and that person sets a password on arrival."
-         )
-         |> mark_saved("#{user.username} added · invitation sent to #{user.email}")}
-
-      {:error, changeset} ->
-        {:noreply,
-         socket
-         |> assign(:new_user_state, nil)
-         |> assign(:add_user_form, to_form(changeset, as: :user, action: :validate))}
-    end
-  end
-
-  def handle_event("send_link", %{"id" => id}, socket) do
-    # nil when another admin deleted the row between render and click
-    case Accounts.get_user(id) do
-      nil ->
-        {:noreply, refresh_users(socket)}
-
-      user ->
-        case Accounts.send_password_link(user, mail_opts()) do
-          {:ok, _token} ->
-            {note, saved} =
-              if Accounts.invited?(user) do
-                {"invitation sent again to #{user.email} · still waiting for the first sign-in",
-                 "Invitation sent again to #{user.email}"}
-              else
-                {"password reset sent to #{user.email}", "Password reset sent to #{user.email}"}
-              end
-
-            {:noreply,
-             socket
-             |> assign(:user_notes, Map.put(socket.assigns.user_notes, user.id, note))
-             |> mark_saved(saved)}
-
-          {:error, {:mail, _reason}} ->
-            {:noreply,
-             mark_saved(socket, "The mail could not be sent · check the mail configuration")}
-        end
-    end
-  end
 
   def handle_event("ask_delete", %{"id" => id}, socket) do
     user = Accounts.get_user(id)
@@ -265,10 +211,6 @@ defmodule TexttileWeb.SettingsLive do
   defp mark_label(:logo), do: "Logo"
   defp mark_label(:favicon), do: "Favicon"
 
-  defp mail_opts do
-    [site: TexttileWeb.Endpoint.host(), link_url: &url(~p"/link/#{&1}")]
-  end
-
   defp refresh_settings(socket) do
     settings = Settings.all()
 
@@ -299,7 +241,12 @@ defmodule TexttileWeb.SettingsLive do
   # :online_ids belongs to Desk: assigned on mount, refreshed on every
   # presence diff, so the "here now" marks stay current on their own.
   defp refresh_users(socket) do
-    assign(socket, :users, Accounts.list_users())
+    users = Accounts.list_users()
+    taken = MapSet.new(users, & &1.username)
+
+    socket
+    |> assign(:users, users)
+    |> assign(:waiting, Enum.reject(Accounts.admin_usernames(), &MapSet.member?(taken, &1)))
   end
 
   defp refresh_storage(socket) do
@@ -348,14 +295,10 @@ defmodule TexttileWeb.SettingsLive do
     end
   end
 
-  defp user_meta(user, user_notes) do
-    state =
-      case user_notes[user.id] do
-        nil -> if Accounts.invited?(user), do: "waiting for the first sign-in"
-        note -> note
-      end
-
-    Enum.join([user.username, user.email] ++ List.wrap(state), " · ")
+  defp user_meta(user) do
+    [user.username, user.email]
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.join(" · ")
   end
 
   defp comments_note(true) do
@@ -642,7 +585,9 @@ defmodule TexttileWeb.SettingsLive do
           equal: no roles, no permissions, no owner. The one exception keeps
           you from locking yourself out. Nobody deletes their own account, so
           another admin does that for you. There is no public registration
-          either. An account exists because an admin made it.
+          either: the ADMIN_USERS setting of this server names everybody who
+          may sign in, and each of them chooses a password at the first
+          sign-in.
         </p>
         <div id="usersList">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
@@ -659,11 +604,6 @@ defmodule TexttileWeb.SettingsLive do
                 <span class="dot live"></span>here now
               </span>
               <span class="sp"></span>
-              <button class="btn sm" phx-click="send_link" phx-value-id={user.id}>
-                {if Accounts.invited?(user),
-                  do: "Send the invitation again",
-                  else: "Send a password reset"}
-              </button>
               <button
                 class="btn sm"
                 id={"delete-user-#{user.id}"}
@@ -675,7 +615,7 @@ defmodule TexttileWeb.SettingsLive do
               </button>
             </div>
             <p class="note mt-[3px]">
-              {user_meta(user, @user_notes)}
+              {user_meta(user)}
               <span :if={delete_block(user, @users, @current_scope.user)} class="text-faint">
                 · {delete_block(user, @users, @current_scope.user)}
               </span>
@@ -683,47 +623,23 @@ defmodule TexttileWeb.SettingsLive do
           </div>
         </div>
 
-        <.form for={@add_user_form} id="add-user-form" class="drow gtop" phx-submit="add_user">
-          <span class="lab">Add somebody</span>
+        <div class="drow gtop" id="waitingUsers">
+          <span class="lab">Not here yet</span>
           <span class="val">
-            <span class="flex gap-[10px] items-end flex-wrap">
-              <span class="flex-1 min-w-[150px]">
-                <label class="block text-[12px] text-dim mb-[3px]" for="new-user-username">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="new-user-username"
-                  name="user[username]"
-                  value={@add_user_form[:username].value}
-                  autocomplete="off"
-                  spellcheck="false"
-                  autocapitalize="off"
-                />
-              </span>
-              <span class="flex-1 min-w-[190px]">
-                <label class="block text-[12px] text-dim mb-[3px]" for="new-user-email">Email</label>
-                <input
-                  type="email"
-                  id="new-user-email"
-                  name="user[email]"
-                  value={@add_user_form[:email].value}
-                  autocomplete="off"
-                />
-              </span>
-              <button class="btn" type="submit">Add</button>
-            </span>
-            <.field_errors field={@add_user_form[:username]} />
-            <.field_errors field={@add_user_form[:email]} />
+            <p :if={@waiting == []} class="note">
+              Every name in ADMIN_USERS has an account.
+            </p>
+            <p :if={@waiting != []} class="text-[13.5px]">
+              {Enum.join(@waiting, ", ")}
+            </p>
             <div class="hint">
-              Two fields and nothing else: no password field, because you never
-              choose somebody else's. The new admin gets one invitation with a
-              link and sets a password at the first sign-in, the way the first
-              account did.
+              These names may sign in but have no account yet. Whoever knows
+              such a name opens the site, types it, and chooses a password
+              there. To add or remove somebody, change ADMIN_USERS on the
+              server. A name you take out loses its access at once.
             </div>
-            <p :if={@new_user_state} class="note mt-[7px]" id="newUserState">{@new_user_state}</p>
           </span>
-        </.form>
+        </div>
         <p class="note mt-3">
           Your own displayed name, address and password are on <.link
             navigate={~p"/profile"}
@@ -807,12 +723,11 @@ defmodule TexttileWeb.SettingsLive do
           <p class="text-[13.5px] text-inksoft mt-[9px] leading-[1.55]">
             <b>{Accounts.display_name(@confirm_delete)}</b>
             can no longer sign in from the moment you confirm, and every
-            session {if Accounts.invited?(@confirm_delete),
-              do: "that was never opened is dropped with it",
-              else: "open right now ends"}. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
+            session open right now ends. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
             texts, the images, the comments and every line of every Log belong
             to the site, not to the account. <br />
-            <br /> There is no undo, but you can always invite the same person again.
+            <br /> There is no undo. While the name stands in ADMIN_USERS, its
+            owner can sign in again and choose a fresh password.
           </p>
           <div class="flex gap-2 mt-[18px]">
             <button class="btn solid" id="dialog-ok" phx-click="delete_user">
@@ -833,16 +748,6 @@ defmodule TexttileWeb.SettingsLive do
     <h2 class="text-[15px] font-semibold text-ink tracking-[-.01em] mt-9 mb-[13px] pb-2 border-b border-rule">
       {render_slot(@inner_block)}
     </h2>
-    """
-  end
-
-  attr :field, Phoenix.HTML.FormField, required: true
-
-  defp field_errors(assigns) do
-    assigns = assign(assigns, :errors, Enum.map(assigns.field.errors, &translate_error/1))
-
-    ~H"""
-    <p :for={message <- @errors} class="text-julia text-[13px] mt-[6px]">{message}</p>
     """
   end
 end
