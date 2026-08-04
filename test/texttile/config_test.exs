@@ -16,6 +16,19 @@ defmodule Texttile.ConfigTest do
     end
   end
 
+  describe "shared_root/1" do
+    test "resolves to the main checkout, the one that owns the real .git directory" do
+      # In a linked worktree .git is a file; only the main checkout has
+      # the directory. This test passes from both.
+      assert File.dir?(Path.join(Config.shared_root(), ".git"))
+    end
+
+    test "outside a git repository the directory is its own root" do
+      tmp = System.tmp_dir!()
+      assert Config.shared_root(tmp) == tmp
+    end
+  end
+
   describe "mailer_config/1" do
     test "falls back to the local preview adapter when MAIL_ADAPTER is not set" do
       assert Config.mailer_config(%{}) == [adapter: Swoosh.Adapters.Local]

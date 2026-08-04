@@ -21,8 +21,11 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :dev do
-  # A local .env always applies in dev; real environment variables win.
-  for {key, value} <- Texttile.Config.dotenv(), System.get_env(key) == nil do
+  # The .env of the main checkout applies in dev, in every worktree;
+  # real environment variables win.
+  for {key, value} <-
+        Texttile.Config.dotenv(Path.join(Texttile.Config.shared_root(), ".env")),
+      System.get_env(key) == nil do
     System.put_env(key, value)
   end
 

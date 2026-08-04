@@ -140,21 +140,20 @@ defmodule TexttileWeb.ProfileLive do
       active="profile"
       others={@others}
     >
+      <:bar>
+        <span
+          class="hidden md:inline text-[12.5px] text-faint num whitespace-nowrap"
+          id="savedProfile"
+          phx-hook="SavedTicker"
+          data-at={@saved_at}
+          data-note={@saved_note}
+          data-note-until={@saved_note_until}
+        >
+          Last saved · just now
+        </span>
+      </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <div class="flex items-baseline gap-[14px] flex-wrap">
-          <h1 class="page-h">Your profile</h1>
-          <span class="sp"></span>
-          <span
-            class="text-[12.5px] text-faint num whitespace-nowrap"
-            id="savedProfile"
-            phx-hook="SavedTicker"
-            data-at={@saved_at}
-            data-note={@saved_note}
-            data-note-until={@saved_note_until}
-          >
-            Last saved · just now
-          </span>
-        </div>
+        <h1 class="page-h">Your profile</h1>
         <p class="lead">
           You are signed in as <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
           This screen is yours alone: your name, your address, your password,

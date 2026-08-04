@@ -93,6 +93,9 @@ defmodule TexttileWeb.Layouts do
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
 
+  slot :bar,
+    doc: "the right end of the bar, like the editor's in round-13: the Last-saved line"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -175,6 +178,7 @@ defmodule TexttileWeb.Layouts do
           {@crumb}
         </span>
       </span>
+      {render_slot(@bar)}
     </header>
 
     <main>

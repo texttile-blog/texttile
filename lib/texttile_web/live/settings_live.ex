@@ -367,21 +367,20 @@ defmodule TexttileWeb.SettingsLive do
       active="settings"
       others={@others}
     >
+      <:bar>
+        <span
+          class="hidden md:inline text-[12.5px] text-faint num whitespace-nowrap"
+          id="savedSettings"
+          phx-hook="SavedTicker"
+          data-at={@saved_at}
+          data-note={@saved_note}
+          data-note-until={@saved_note_until}
+        >
+          Last saved · just now
+        </span>
+      </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <div class="flex items-baseline gap-[14px] flex-wrap">
-          <h1 class="page-h">Settings</h1>
-          <span class="sp"></span>
-          <span
-            class="text-[12.5px] text-faint num whitespace-nowrap"
-            id="savedSettings"
-            phx-hook="SavedTicker"
-            data-at={@saved_at}
-            data-note={@saved_note}
-            data-note-until={@saved_note_until}
-          >
-            Last saved · just now
-          </span>
-        </div>
+        <h1 class="page-h">Settings</h1>
         <p class="lead">
           Everything else is config at install time; this is the part that may
           change while you live with the site. Nothing here has a Save button:
