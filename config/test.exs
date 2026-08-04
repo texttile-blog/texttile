@@ -57,3 +57,6 @@ config :swoosh, :api_client, false
 
 # Fast password hashing; tests never need real work factors.
 config :bcrypt_elixir, log_rounds: 4
+
+# The go-live clock: tests call Articles.go_live_due/1 directly.
+config :texttile, :start_scheduler, false
