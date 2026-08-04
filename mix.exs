@@ -65,6 +65,8 @@ defmodule Texttile.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:swoosh, "~> 1.27"},
+      {:vix, "~> 0.35"},
+      {:mdex, "~> 0.9"},
       {:bcrypt_elixir, "~> 3.0"},
       {:req, "~> 0.7"},
       {:gen_smtp, "~> 1.3"},

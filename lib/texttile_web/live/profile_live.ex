@@ -140,21 +140,20 @@ defmodule TexttileWeb.ProfileLive do
       active="profile"
       others={@others}
     >
+      <:bar>
+        <span
+          class="hidden md:inline text-[12.5px] text-faint num whitespace-nowrap"
+          id="savedProfile"
+          phx-hook="SavedTicker"
+          data-at={@saved_at}
+          data-note={@saved_note}
+          data-note-until={@saved_note_until}
+        >
+          Last saved · just now
+        </span>
+      </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <div class="flex items-baseline gap-[14px] flex-wrap">
-          <h1 class="page-h">Your profile</h1>
-          <span class="sp"></span>
-          <span
-            class="text-[12.5px] text-faint num whitespace-nowrap"
-            id="savedProfile"
-            phx-hook=".SavedTicker"
-            data-at={@saved_at}
-            data-note={@saved_note}
-            data-note-until={@saved_note_until}
-          >
-            Last saved · just now
-          </span>
-        </div>
+        <h1 class="page-h">Your profile</h1>
         <p class="lead">
           You are signed in as <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
           This screen is yours alone: your name, your address, your password,
@@ -287,29 +286,6 @@ defmodule TexttileWeb.ProfileLive do
         </p>
       </div>
     </Layouts.app>
-
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".SavedTicker">
-      export default {
-        mounted() {
-          this.timer = setInterval(() => this.paint(), 1000)
-          this.paint()
-        },
-        updated() { this.paint() },
-        destroyed() { clearInterval(this.timer) },
-        paint() {
-          const now = Date.now()
-          const note = this.el.dataset.note
-          const until = Number(this.el.dataset.noteUntil || 0)
-          if (note && now < until) { this.el.textContent = note; return }
-          const at = Number(this.el.dataset.at || now)
-          const d = new Date(at)
-          const pad = n => String(n).padStart(2, "0")
-          this.el.textContent = (now - at) / 1000 < 20
-            ? "Last saved · just now"
-            : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-        }
-      }
-    </script>
     """
   end
 

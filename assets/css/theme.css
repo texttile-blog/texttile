@@ -53,6 +53,7 @@
 
   /* depth */
   --tt-shadow:      35 30 24;
+  --tt-scrim:       rgba(24, 21, 17, .34);
 
   /* shape · paper's */
   --tt-radius:      4px;

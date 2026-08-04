@@ -60,6 +60,12 @@ server. Once an account exists, the setup screen stays closed permanently.
 A confirmation mail goes to the address you enter. It contains the username.
 It does not contain the password.
 
+Every later account is made in Settings: an admin enters a username and an
+email address, and the invitation mail carries a link where the new admin
+sets their own password. A password reset works the same way, from Settings
+or from the sign-in screen. Both depend on outgoing mail, so a real
+installation needs `MAIL_ADAPTER` set.
+
 ## Deploy on Fly.io
 
 `fly.toml` in this repo deploys from source with one volume for the database
@@ -75,10 +81,11 @@ make start   # dev server on port 4000, no configuration needed
 make test    # unit tests plus end-to-end browser tests
 ```
 
-All git worktrees of the repository use one dev database: the
-`texttile_dev.db` file in the main checkout. Outside a git checkout, the
-database file stays next to the code.
+All git worktrees of the repository share the dev state of the main
+checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
+`.env` file. Outside a git checkout, everything stays next to the code.
 
 Development needs no environment variables. To test a real mail adapter
-locally, copy `.env.example` to `.env`; dev loads it on every start, and real
-environment variables win over `.env` values.
+locally, copy `.env.example` to `.env` in the main checkout; dev loads it on
+every start, from every worktree, and real environment variables win over
+`.env` values.

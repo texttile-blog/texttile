@@ -30,6 +30,42 @@ defmodule TexttileWeb.Layouts do
   end
 
   @doc """
+  The name the site goes by, from Settings; an empty title falls back
+  to Texttile. It names the browser tab and the wordmark in the bar.
+  """
+  def site_title do
+    case String.trim(Texttile.Settings.get(:site_title)) do
+      "" -> "Texttile"
+      title -> title
+    end
+  end
+
+  @doc """
+  The favicon of every page: the uploaded one from Settings, or the
+  bundled Texttile mark. Uploaded names carry a random tag, so the
+  browser cache never shows a stale icon.
+  """
+  def favicon_link(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :favicon,
+        case Texttile.Settings.get(:favicon) do
+          nil ->
+            {~p"/images/texttile-mark.svg", "image/svg+xml"}
+
+          stored ->
+            {"/uploads/" <> stored,
+             if(String.ends_with?(stored, ".png"), do: "image/png", else: "image/svg+xml")}
+        end
+      )
+
+    ~H"""
+    <link rel="icon" href={elem(@favicon, 0)} type={elem(@favicon, 1)} />
+    """
+  end
+
+  @doc """
   The column the sign-in family shares: the mark, the name, one quiet
   subtitle, then whatever the screen has to say.
   """
@@ -68,9 +104,16 @@ defmodule TexttileWeb.Layouts do
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
 
+  slot :bar,
+    doc: "the right end of the bar, like the editor's in round-13: the Last-saved line"
+
   slot :inner_block, required: true
 
   def app(assigns) do
+    # The bar wears the site's own face: the uploaded logo (or the
+    # Texttile mark) and the site title from Settings.
+    assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
+
     ~H"""
     <header
       id="topbar"
@@ -86,26 +129,34 @@ defmodule TexttileWeb.Layouts do
           aria-haspopup="true"
           aria-expanded="false"
           aria-controls="navMenu"
-          aria-label="Texttile, sections menu"
+          aria-label={"#{@brand.title}, sections menu"}
         >
           <span class="relative flex-none">
-            <.mark size={21} />
+            <img
+              :if={@brand.logo}
+              src={"/uploads/#{@brand.logo}"}
+              alt=""
+              class="h-[21px] w-auto max-w-[84px] object-contain"
+            />
+            <.mark :if={!@brand.logo} size={21} />
             <span class="wmdot" id="wmDot" hidden={@others == []}></span>
           </span>
-          <span class="hidden sm:inline">Texttile</span>
+          <span class="hidden sm:inline">{@brand.title}</span>
           <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
       </span>
       <nav class="pop min-w-[248px] max-w-[340px]" id="navMenu" hidden aria-label="Sections">
         <button class="row" type="button">New text <span class="k">1</span></button>
-        <.link navigate={~p"/"} class={["row", @active == "texts" && "on"]}>
+        <.link navigate={~p"/"} class={["row", @active == "texts" && "on"]} data-key="2">
           Texts <span class="k">2</span>
         </.link>
         <button class="row" type="button">Comments <span class="k">3</span></button>
         <button class="row" type="button">Newsletter <span class="k">7</span></button>
         <button class="row" type="button">Stats <span class="k">8</span></button>
-        <button class="row" type="button">Settings <span class="k">9</span></button>
+        <.link navigate={~p"/settings"} class={["row", @active == "settings" && "on"]} data-key="9">
+          Settings <span class="k">9</span>
+        </.link>
         <button class="row" type="button">View site <span class="k">0</span></button>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>
@@ -148,6 +199,7 @@ defmodule TexttileWeb.Layouts do
           {@crumb}
         </span>
       </span>
+      {render_slot(@bar)}
     </header>
 
     <main>

@@ -13,6 +13,14 @@ defmodule TexttileWeb.Router do
     plug :fetch_current_scope_for_user
   end
 
+  # Uploaded files: the site marks now, the images of the texts later.
+  # Public on purpose; the public site shows them to readers. The theme
+  # stylesheet lives here too: every page wears it, signed in or not.
+  scope "/", TexttileWeb do
+    get "/uploads/*path", UploadsController, :show
+    get "/theme.css", ThemeController, :show
+  end
+
   ## The sign-in family
 
   scope "/", TexttileWeb do
@@ -28,6 +36,13 @@ defmodule TexttileWeb.Router do
     pipe_through :browser
 
     delete "/logout", SessionController, :delete
+
+    # The mailed set-a-password link and the screen that asks for one.
+    # Both work signed in or out: a link signs you in as its account.
+    get "/forgot", LinkController, :forgot
+    post "/forgot", LinkController, :send_link
+    get "/link/:token", LinkController, :show
+    post "/link/:token", LinkController, :create
   end
 
   ## The desk
@@ -42,6 +57,7 @@ defmodule TexttileWeb.Router do
       ] do
       live "/", TextsLive
       live "/profile", ProfileLive
+      live "/settings", SettingsLive
     end
   end
 

@@ -9,7 +9,7 @@ defmodule Texttile.Accounts do
 
   import Ecto.Query
 
-  alias Texttile.Accounts.{Session, User, UserNotifier}
+  alias Texttile.Accounts.{LoginLink, Session, User, UserNotifier}
   alias Texttile.Boot
   alias Texttile.Repo
 
@@ -160,27 +160,229 @@ defmodule Texttile.Accounts do
     Phoenix.PubSub.broadcast(Texttile.PubSub, sessions_topic(user_id), :sessions_changed)
   end
 
+  ## Everybody's accounts
+
+  @doc "Every account, the oldest first. All of them are admins, all equal."
+  def list_users do
+    Repo.all(from u in User, order_by: u.id)
+  end
+
+  @doc "Subscribes the caller to `:users_changed` messages."
+  def subscribe_users do
+    Phoenix.PubSub.subscribe(Texttile.PubSub, "users")
+  end
+
+  defp broadcast_users_changed do
+    Phoenix.PubSub.broadcast(Texttile.PubSub, "users", :users_changed)
+  end
+
+  @doc "The user behind an email address (any case), or nil."
+  def get_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email |> String.trim() |> String.downcase())
+  end
+
+  @doc "True while the owner has not set a password through the mailed link."
+  def invited?(%User{password_hash: hash}), do: is_nil(hash)
+
+  @doc """
+  Creates an account the way an admin does it: a username and an email
+  address, nothing else. The invitation with the set-a-password link
+  goes out; the owner picks a password on arrival. A mail that cannot
+  leave does not undo the account: the row is there, marked waiting,
+  and any admin sends the invitation again.
+  """
+  def create_user(attrs, opts) do
+    with {:ok, user} <- %User{} |> User.invite_changeset(attrs) |> Repo.insert() do
+      _ = send_password_link(user, opts)
+      broadcast_users_changed()
+      {:ok, user}
+    end
+  end
+
+  @doc """
+  Mails the user a set-a-password link: the invitation again for an
+  account that was never opened, a reset for one in use. The fresh link
+  replaces any earlier one. `:link_url` turns the token into the URL for
+  the mail; `:site` names the site in it. When the mail cannot leave,
+  the answer says so instead of pretending.
+  """
+  def send_password_link(user, opts) do
+    site = Keyword.fetch!(opts, :site)
+    link_url = Keyword.fetch!(opts, :link_url)
+
+    {token, link} = LoginLink.build(user)
+
+    {:ok, _} =
+      Repo.transaction(fn ->
+        Repo.delete_all(from l in LoginLink, where: l.user_id == ^user.id)
+        Repo.insert!(link)
+      end)
+
+    url = link_url.(token)
+
+    delivery =
+      if invited?(user) do
+        UserNotifier.deliver_invitation(user, url, site)
+      else
+        UserNotifier.deliver_password_reset(user, url, site)
+      end
+
+    case delivery do
+      {:ok, _} -> {:ok, token}
+      {:error, reason} -> {:error, {:mail, reason}}
+    end
+  end
+
+  @doc """
+  True while a link mailed within the last minute is still the newest.
+  The public Forgot screen uses this as its brake: whatever a stranger
+  hammers into it, one mail per account per minute leaves, and the
+  pending link is not churned.
+  """
+  def link_recently_sent?(user) do
+    Repo.exists?(
+      from l in LoginLink,
+        where: l.user_id == ^user.id,
+        where: l.inserted_at > ago(1, "minute")
+    )
+  end
+
+  # A link this old opens nothing.
+  @link_validity_in_hours 24
+
+  @doc "The user a mailed link belongs to, while the link is fresh. Or :error."
+  def verify_login_link(token) when is_binary(token) do
+    hash = LoginLink.hash(token)
+
+    user =
+      Repo.one(
+        from l in LoginLink,
+          join: u in assoc(l, :user),
+          where: l.token_hash == ^hash,
+          where: l.inserted_at > ago(@link_validity_in_hours, "hour"),
+          select: u
+      )
+
+    if user, do: {:ok, user}, else: :error
+  end
+
+  @doc """
+  Sets the password behind a mailed link. The link is spent with it, and
+  every open session of the account ends: whoever holds the new password
+  signs in fresh. A refused password leaves the link usable.
+  """
+  def accept_login_link(token, password) do
+    with {:ok, user} <- verify_login_link(token) do
+      result =
+        Repo.transaction(fn ->
+          case Repo.update(User.password_changeset(user, %{password: password})) do
+            {:ok, user} ->
+              Repo.delete_all(from l in LoginLink, where: l.user_id == ^user.id)
+              Repo.delete_all(from s in Session, where: s.user_id == ^user.id)
+              user
+
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
+        end)
+
+      case result do
+        {:ok, user} ->
+          broadcast_sessions_changed(user.id)
+          broadcast_users_changed()
+          {:ok, user}
+
+        {:error, changeset} ->
+          {:error, Map.put(changeset, :action, :insert)}
+      end
+    end
+  end
+
+  @doc """
+  The one place the deletion rules live. Why this account cannot be
+  deleted right now: `:last` while it is the only one (the site would
+  have nobody left who can sign in), `:yourself` because somebody else
+  removes your account, not you. Or nil, and the delete may go ahead.
+  `total` is the current number of accounts, so a screen that already
+  holds the list does not ask the database again per row.
+  """
+  def delete_user_block(%User{} = user, %User{} = by, total) do
+    cond do
+      total <= 1 -> :last
+      user.id == by.id -> :yourself
+      true -> nil
+    end
+  end
+
+  @doc """
+  Deletes an account, with its sessions and links, under the rules of
+  `delete_user_block/3`. What the person wrote stays; it belongs to the
+  site. An account that another admin deleted first answers `:gone`
+  instead of raising.
+  """
+  def delete_user(%User{} = user, by: %User{} = by) do
+    case delete_user_block(user, by, Repo.aggregate(User, :count)) do
+      nil ->
+        result =
+          Repo.transaction(fn ->
+            case Repo.get(User, user.id) do
+              nil ->
+                Repo.rollback(:gone)
+
+              fresh ->
+                Repo.delete_all(from l in LoginLink, where: l.user_id == ^fresh.id)
+                Repo.delete_all(from s in Session, where: s.user_id == ^fresh.id)
+                Repo.delete!(fresh)
+            end
+          end)
+
+        with {:ok, deleted} <- result do
+          broadcast_sessions_changed(deleted.id)
+          broadcast_users_changed()
+          {:ok, deleted}
+        end
+
+      reason ->
+        {:error, reason}
+    end
+  end
+
   ## Profile
 
   def get_user!(id), do: Repo.get!(User, id)
+
+  @doc "The user behind an id, or nil when another admin deleted it first."
+  def get_user(id), do: Repo.get(User, id)
 
   def update_username(user, username) do
     user
     |> User.username_changeset(%{username: username})
     |> Repo.update()
+    |> tap_users_changed()
   end
 
   def update_display_name(user, display_name) do
     user
     |> User.display_name_changeset(%{display_name: display_name})
     |> Repo.update()
+    |> tap_users_changed()
   end
 
   def update_email(user, email) do
     user
     |> User.email_changeset(%{email: email})
     |> Repo.update()
+    |> tap_users_changed()
   end
+
+  # A profile edit is also a users-list edit: the Settings screen of
+  # every admin shows these fields.
+  defp tap_users_changed({:ok, _} = result) do
+    broadcast_users_changed()
+    result
+  end
+
+  defp tap_users_changed(result), do: result
 
   @doc """
   Sets a new password after checking the current one against a fresh

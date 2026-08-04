@@ -1,10 +1,10 @@
 import Config
 
-# All worktrees of this repository share the main checkout's dev database
-# (the plan is to share uploads the same way later). From any linked
-# worktree, `--git-common-dir` points into the main checkout's .git
-# directory. Without git (or outside a repository), the database stays in
-# this checkout.
+# All worktrees of this repository share the main checkout's dev state:
+# the database, the uploads folder, and the .env (see runtime.exs). From
+# any linked worktree, `--git-common-dir` points into the main checkout's
+# .git directory. Without git (or outside a repository), everything stays
+# in this checkout.
 shared_root =
   try do
     {git_common_dir, 0} =
@@ -102,5 +102,6 @@ config :phoenix_live_view,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
 
-# Uploaded files land here in development.
-config :texttile, :uploads_path, Path.expand("../priv/uploads", __DIR__)
+# Uploaded files land in the main checkout, shared by every worktree
+# like the database above.
+config :texttile, :uploads_path, Path.join(shared_root, "priv/uploads")

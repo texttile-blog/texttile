@@ -25,11 +25,35 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/texttile"
 import topbar from "../vendor/topbar"
 
+/* The Last-saved line of a screen that saves instantly: "just now"
+   while the save is fresh, the clock time after that, and a short note
+   about the last change while it is worth reading. */
+const SavedTicker = {
+  mounted() {
+    this.timer = setInterval(() => this.paint(), 1000)
+    this.paint()
+  },
+  updated() { this.paint() },
+  destroyed() { clearInterval(this.timer) },
+  paint() {
+    const now = Date.now()
+    const note = this.el.dataset.note
+    const until = Number(this.el.dataset.noteUntil || 0)
+    if (note && now < until) { this.el.textContent = note; return }
+    const at = Number(this.el.dataset.at || now)
+    const d = new Date(at)
+    const pad = n => String(n).padStart(2, "0")
+    this.el.textContent = (now - at) / 1000 < 20
+      ? "Last saved · just now"
+      : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, SavedTicker},
 })
 
 // Show progress bar on live navigation and form submits
@@ -119,8 +143,28 @@ document.addEventListener("click", event => {
   if (!event.target.closest("#navMenu")) closeMenu()
 })
 
+/* THE KEY DIGITS · a digit jumps to its section from anywhere on the
+   desk. The keys sleep while you are typing in a field, and each digit
+   only works once its section exists: a section row in the wordmark
+   menu carries its digit as data-key. */
+function typingIn(el) {
+  return el && (el.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))
+}
+
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape") closeMenu()
+  if (event.key === "Escape") {
+    closeMenu()
+    return
+  }
+  if (event.metaKey || event.ctrlKey || event.altKey) return
+  if (typingIn(event.target)) return
+  if (!/^[0-9]$/.test(event.key)) return
+  const row = document.querySelector(`#navMenu [data-key="${event.key}"]`)
+  if (row) {
+    closeMenu()
+    row.click()
+  }
 })
 
 window.addEventListener("resize", () => {

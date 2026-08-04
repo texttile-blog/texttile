@@ -58,10 +58,12 @@ COPY priv priv
 
 COPY lib lib
 
+# The default theme (assets/css/theme.css) is embedded at compile time,
+# so the assets have to be in place before the code compiles.
+COPY assets assets
+
 # Compile the release
 RUN mix compile
-
-COPY assets assets
 
 # compile assets
 RUN mix assets.deploy

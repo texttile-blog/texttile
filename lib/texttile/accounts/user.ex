@@ -21,6 +21,17 @@ defmodule Texttile.Accounts.User do
     timestamps(type: :utc_datetime)
   end
 
+  @doc """
+  A new account made by an admin: a username and an address, no
+  password. The owner sets one through the mailed link.
+  """
+  def invite_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:username, :email])
+    |> validate_username()
+    |> validate_email()
+  end
+
   def registration_changeset(user, attrs) do
     user
     |> cast(attrs, [:username, :email, :password])

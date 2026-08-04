@@ -1,0 +1,97 @@
+defmodule Texttile.UploadsTest do
+  use Texttile.DataCase, async: false
+
+  alias Texttile.Settings
+  alias Texttile.Uploads
+
+  setup do
+    File.rm_rf!(Uploads.root())
+    :ok
+  end
+
+  defp svg_file do
+    path = Path.join(System.tmp_dir!(), "mark-#{System.unique_integer([:positive])}.svg")
+    File.write!(path, "<svg xmlns='http://www.w3.org/2000/svg'/>")
+    path
+  end
+
+  defp raster_file(extension, width, height) do
+    path = Path.join(System.tmp_dir!(), "mark-#{System.unique_integer([:positive])}#{extension}")
+    {:ok, black} = Vix.Vips.Operation.black(width, height)
+    :ok = Vix.Vips.Image.write_to_file(black, path)
+    path
+  end
+
+  defp stored_size(relative) do
+    {:ok, image} = Vix.Vips.Image.new_from_file(Path.join(Uploads.root(), relative))
+    {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
+  end
+
+  describe "site marks" do
+    test "stores a logo below the uploads root and remembers it in the settings" do
+      {:ok, stored} = Uploads.put_site_mark(:logo, svg_file(), "my mark.svg")
+
+      assert stored =~ ~r"^site/logo-\w+\.svg$"
+      assert File.exists?(Path.join(Uploads.root(), stored))
+      assert Settings.get(:logo) == stored
+      assert Settings.get(:logo_name) == "my mark.svg"
+    end
+
+    test "a new upload replaces the file and the setting" do
+      {:ok, first} = Uploads.put_site_mark(:favicon, svg_file(), "one.svg")
+      {:ok, second} = Uploads.put_site_mark(:favicon, svg_file(), "two.svg")
+
+      refute File.exists?(Path.join(Uploads.root(), first))
+      assert File.exists?(Path.join(Uploads.root(), second))
+      assert Settings.get(:favicon) == second
+    end
+
+    test "reset returns to the default and removes the file" do
+      {:ok, stored} = Uploads.put_site_mark(:logo, svg_file(), "one.svg")
+      :ok = Uploads.reset_site_mark(:logo)
+
+      refute File.exists?(Path.join(Uploads.root(), stored))
+      assert Settings.get(:logo) == nil
+      assert Settings.get(:logo_name) == nil
+    end
+
+    test "a large raster logo is scaled down to the mark size; pixels stay sharp at 4x" do
+      {:ok, stored} = Uploads.put_site_mark(:logo, raster_file(".png", 1200, 600), "big.png")
+
+      assert {128, 64} = stored_size(stored)
+    end
+
+    test "a small raster mark is never scaled up" do
+      {:ok, stored} = Uploads.put_site_mark(:favicon, raster_file(".png", 40, 40), "small.png")
+
+      assert {40, 40} = stored_size(stored)
+    end
+
+    test "jpg and webp are welcome too" do
+      {:ok, jpg} = Uploads.put_site_mark(:logo, raster_file(".jpg", 300, 300), "mark.jpg")
+      assert {128, 128} = stored_size(jpg)
+
+      {:ok, webp} = Uploads.put_site_mark(:logo, raster_file(".webp", 300, 300), "mark.webp")
+      assert {128, 128} = stored_size(webp)
+    end
+
+    test "an svg is stored byte for byte, never rasterized" do
+      source = svg_file()
+      {:ok, stored} = Uploads.put_site_mark(:logo, source, "mark.svg")
+
+      assert File.read!(Path.join(Uploads.root(), stored)) == File.read!(source)
+    end
+
+    test "a broken raster file is an error, not a stored file" do
+      path = Path.join(System.tmp_dir!(), "broken-#{System.unique_integer([:positive])}.png")
+      File.write!(path, "not a png at all")
+
+      assert {:error, _} = Uploads.put_site_mark(:logo, path, "broken.png")
+      assert Settings.get(:logo) == nil
+    end
+
+    test "refuses anything but svg, png, jpg and webp" do
+      assert {:error, _} = Uploads.put_site_mark(:logo, svg_file(), "mark.pdf")
+    end
+  end
+end

@@ -66,10 +66,28 @@ defmodule Texttile.Config do
   end
 
   @doc """
+  The main checkout of the repository: every linked worktree answers
+  with the same directory, so the state that all worktrees share in dev
+  lives there (the database, the uploads, the `.env`). Outside a git
+  checkout, the directory is its own root.
+  """
+  def shared_root(cd \\ File.cwd!()) do
+    case System.cmd("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+           cd: cd,
+           stderr_to_stdout: true
+         ) do
+      {out, 0} -> out |> String.trim() |> Path.dirname()
+      _ -> cd
+    end
+  rescue
+    _ -> cd
+  end
+
+  @doc """
   Reads a dotenv file. Returns an empty map when the file does not exist.
 
-  In dev, runtime.exs feeds these values into the environment so a local
-  `.env` always applies, no matter how the app is started.
+  In dev, runtime.exs feeds these values into the environment so the
+  shared `.env` always applies, no matter how the app is started.
   """
   def dotenv(path \\ ".env") do
     case File.read(path) do
