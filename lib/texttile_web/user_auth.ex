@@ -45,6 +45,26 @@ defmodule TexttileWeb.UserAuth do
     |> redirect(to: ~p"/login")
   end
 
+  @doc """
+  Ends every session of the user, in every browser, and lands on the
+  sign-in screen. The open sockets of the other browsers are told to
+  disconnect; without that they would sit on dead tokens until a reload.
+  """
+  def log_out_everywhere(conn) do
+    if scope = conn.assigns[:current_scope] do
+      sessions = Accounts.list_sessions(scope.user)
+      :ok = Accounts.delete_all_sessions(scope.user)
+
+      Enum.each(sessions, fn session ->
+        TexttileWeb.Endpoint.broadcast(user_session_topic(session.token), "disconnect", %{})
+      end)
+    end
+
+    conn
+    |> renew_session()
+    |> redirect(to: ~p"/login")
+  end
+
   @doc "Plug: resolves the session token into `conn.assigns.current_scope`."
   def fetch_current_scope_for_user(conn, _opts) do
     with token when is_binary(token) <- get_session(conn, :user_token),

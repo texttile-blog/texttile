@@ -280,9 +280,21 @@ defmodule TexttileWeb.ProfileLive do
             <span :if={length(@sessions) == 1} class="note">the only one open</span>
           </div>
         </div>
-        <p class="note mt-3">Signing out ends this session only.</p>
-        <p class="mt-4">
+        <p class="note mt-3">
+          Sign out ends this session only.<span :if={length(@sessions) > 1}>
+            Sign out everywhere ends all of them, in every browser.</span>
+        </p>
+        <p class="mt-4 flex gap-2">
           <.link href={~p"/logout"} method="delete" class="btn" id="sign-out">Sign out</.link>
+          <.link
+            :if={length(@sessions) > 1}
+            href={~p"/logout/all"}
+            method="delete"
+            class="btn"
+            id="sign-out-all"
+          >
+            Sign out everywhere
+          </.link>
         </p>
       </div>
     </Layouts.app>

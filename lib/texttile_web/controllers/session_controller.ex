@@ -56,4 +56,8 @@ defmodule TexttileWeb.SessionController do
   def delete(conn, _params) do
     UserAuth.log_out_user(conn)
   end
+
+  def delete_all(conn, _params) do
+    UserAuth.log_out_everywhere(conn)
+  end
 end

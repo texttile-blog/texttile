@@ -186,4 +186,14 @@ defmodule TexttileWeb.ProfileLiveTest do
     {:ok, view, _html} = live(conn, ~p"/profile")
     assert has_element?(view, "#sign-out", "Sign out")
   end
+
+  test "offers sign out everywhere only while other sessions are open", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/profile")
+    refute has_element?(view, "#sign-out-all")
+
+    Accounts.create_session(user)
+    conn = log_in_user(conn, user)
+    {:ok, view, _html} = live(conn, ~p"/profile")
+    assert has_element?(view, "#sign-out-all", "Sign out everywhere")
+  end
 end

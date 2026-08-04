@@ -220,6 +220,18 @@ defmodule Texttile.AccountsTest do
       assert Enum.map(sessions, & &1.token) == [t2, t1]
     end
 
+    test "delete_all_sessions/1 ends every session, the current one included" do
+      user = user_fixture()
+      t1 = Accounts.create_session(user)
+      t2 = Accounts.create_session(user)
+
+      assert :ok = Accounts.delete_all_sessions(user)
+
+      assert Accounts.list_sessions(user) == []
+      assert Accounts.get_user_by_session_token(t1) == nil
+      assert Accounts.get_user_by_session_token(t2) == nil
+    end
+
     test "delete_session/1 ends exactly that session" do
       user = user_fixture()
       t1 = Accounts.create_session(user)

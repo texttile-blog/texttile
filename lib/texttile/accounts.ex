@@ -166,6 +166,16 @@ defmodule Texttile.Accounts do
   end
 
   @doc """
+  Ends every session of the user, the current one included. This is the
+  profile's sign-out-everywhere.
+  """
+  def delete_all_sessions(user) do
+    Repo.delete_all(from s in Session, where: s.user_id == ^user.id)
+    broadcast_sessions_changed(user.id)
+    :ok
+  end
+
+  @doc """
   Ends every session of the user except the given one. This is what a
   password change does: only the browser that changed it stays in.
   """

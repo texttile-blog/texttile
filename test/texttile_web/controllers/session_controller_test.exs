@@ -240,6 +240,28 @@ defmodule TexttileWeb.SessionControllerTest do
     end
   end
 
+  describe "DELETE /logout/all" do
+    test "ends every session, in every browser", %{conn: conn} do
+      user = user_fixture()
+      conn = log_in_user(conn, user)
+      other_token = Accounts.create_session(user)
+      TexttileWeb.Endpoint.subscribe(TexttileWeb.UserAuth.user_session_topic(other_token))
+
+      conn = delete(conn, ~p"/logout/all")
+
+      assert redirected_to(conn) == ~p"/login"
+      refute get_session(conn, :user_token)
+      assert Accounts.list_sessions(user) == []
+      # the other browser's socket is told to go, not left on a dead token
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect"}
+    end
+
+    test "works when not signed in", %{conn: conn} do
+      conn = delete(conn, ~p"/logout/all")
+      assert redirected_to(conn) == ~p"/login"
+    end
+  end
+
   describe "DELETE /logout" do
     test "ends only the current session", %{conn: conn} do
       user = user_fixture()

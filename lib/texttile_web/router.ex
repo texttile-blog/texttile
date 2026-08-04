@@ -35,6 +35,7 @@ defmodule TexttileWeb.Router do
     pipe_through :browser
 
     delete "/logout", SessionController, :delete
+    delete "/logout/all", SessionController, :delete_all
 
     # The mailed link that sets a new password, and the screen that asks
     # for one. Both work signed in or out: a link signs you in as its
