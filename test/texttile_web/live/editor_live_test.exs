@@ -252,16 +252,72 @@ defmodule TexttileWeb.EditorLiveTest do
   end
 
   describe "the soft lock" do
-    test "the second person gets the text read-only", %{conn: conn, user: user} do
+    defp second_session(article) do
+      other = Texttile.AccountsFixtures.user_fixture()
+      conn = Phoenix.ConnTest.build_conn() |> log_in_user(other)
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+      {view, other}
+    end
+
+    defp wait_until(fun, timeout \\ 3000) do
+      deadline = System.monotonic_time(:millisecond) + timeout
+
+      Stream.repeatedly(fn ->
+        if fun.() do
+          true
+        else
+          if System.monotonic_time(:millisecond) > deadline, do: raise("condition never met")
+          Process.sleep(50)
+          false
+        end
+      end)
+      |> Enum.find(& &1)
+    end
+
+    test "the second person gets the text read-only and sees who writes",
+         %{conn: conn, user: user} do
       article = draft(user)
       {:ok, _first, _} = live(conn, ~p"/texts/#{article}")
 
-      other = Texttile.AccountsFixtures.user_fixture()
-      conn2 = Phoenix.ConnTest.build_conn() |> log_in_user(other)
-      {:ok, second, _} = live(conn2, ~p"/texts/#{article}")
+      {second, _other} = second_session(article)
 
       assert has_element?(second, "#edTitle[readonly]")
       assert has_element?(second, "#jbar")
+    end
+
+    test "the reader sees the text live", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, first, _} = live(conn, ~p"/texts/#{article}")
+      {second, _other} = second_session(article)
+
+      # the body travels over PubSub; the panel under the text is a
+      # reading of the body, so the reader's panel shows the new image
+      # reference (the editor surface itself is client-side DOM the
+      # test cannot see into)
+      render_hook(first, "body_changed", %{
+        "text" => "Fresh words.\n\n![pier](/uploads/images/pier-fresh.jpg)"
+      })
+
+      wait_until(fn -> has_element?(second, "#inlineImgs", "pier-fresh.jpg") end)
+    end
+
+    test "the takeover moves the lock and turns the other side read-only",
+         %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, first, _} = live(conn, ~p"/texts/#{article}")
+      {second, _other} = second_session(article)
+
+      # the read-only side clicks into the title and confirms the dialog
+      second |> element("#edTitle") |> render_click()
+      assert has_element?(second, "#dialog", "Take the text over")
+      second |> element("#dialog button", "Take over the text") |> render_click()
+
+      # the flush answers (or its fallback fires), then the lock moves
+      wait_until(fn -> not has_element?(second, "#edTitle[readonly]") end)
+      wait_until(fn -> has_element?(first, "#edTitle[readonly]") end)
+
+      # the handover snapshot exists, so nothing of the old text is lost
+      assert Articles.versions(article) != []
     end
   end
 end

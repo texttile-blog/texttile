@@ -32,6 +32,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:holds_lock, true)
       |> assign(:holder, nil)
       |> assign(:upload_pcts, %{})
+      |> assign(:flush_pending, false)
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
 
@@ -39,15 +40,34 @@ defmodule TexttileWeb.EditorLive do
       if connected?(socket) do
         Articles.subscribe(article.id)
 
-        case Lock.acquire(article.id, user.id, self()) do
-          :ok -> assign(socket, :holds_lock, true)
-          {:held, holder} -> socket |> assign(:holds_lock, false) |> assign(:holder, holder)
-        end
+        socket =
+          case Lock.acquire(article.id, user.id, self()) do
+            :ok -> assign(socket, :holds_lock, true)
+            {:held, holder} -> socket |> assign(:holds_lock, false) |> assign(:holder, holder)
+          end
+
+        announce_activity(socket)
       else
         socket
       end
 
     {:ok, assign(socket, :page_title, title_of(article))}
+  end
+
+  # The wordmark menu and the other editor's banner read this: which
+  # text this tab is in, and whether it writes or reads along.
+  defp announce_activity(socket) do
+    %{article: article, current_scope: scope, holds_lock: holds} = socket.assigns
+
+    if connected?(socket) do
+      TexttileWeb.Desk.update_activity(scope, %{
+        text_id: article.id,
+        text_title: title_of(article),
+        writing: holds
+      })
+    end
+
+    socket
   end
 
   def terminate(_reason, socket) do
@@ -61,7 +81,7 @@ defmodule TexttileWeb.EditorLive do
     if socket.assigns.holds_lock do
       {:ok, article} = Articles.update_text(socket.assigns.article, %{title: title})
       Lock.ping(article.id, self())
-      {:noreply, socket |> assign(:article, article) |> mark_saved()}
+      {:noreply, socket |> assign(:article, article) |> announce_activity() |> mark_saved()}
     else
       {:noreply, socket}
     end
@@ -80,6 +100,20 @@ defmodule TexttileWeb.EditorLive do
   def handle_event("editor_activity", _params, socket) do
     if socket.assigns.holds_lock, do: Lock.ping(socket.assigns.article.id, self())
     {:noreply, socket}
+  end
+
+  # The client's answer to flush_body: the keystrokes that were still
+  # in its debounce when the takeover started.
+  def handle_event("body_flushed", %{"text" => text}, socket) do
+    socket =
+      if socket.assigns.holds_lock and text != socket.assigns.article.body do
+        {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
+        assign(socket, :article, article)
+      else
+        socket
+      end
+
+    {:noreply, finish_flush(socket)}
   end
 
   def handle_event("save_version", _params, socket) do
@@ -479,15 +513,27 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  # The lock asks this holder to flush before a takeover. The server
-  # state already carries every autosaved keystroke; anything younger
-  # sits in the client debounce and is small enough to let go. Snapshot
-  # what stands, then let the transfer go ahead.
+  # The lock asks this holder to flush before a takeover: first the
+  # client hands over what still sits in its debounce, then a version
+  # snapshot, only then the transfer. A client that does not answer
+  # within the fallback window is not waited for; the last autosaved
+  # state stands in.
   def handle_info({:lock_flush, id}, socket) do
-    %{article: article, current_scope: scope} = socket.assigns
-    if id == article.id, do: Articles.snapshot(article, scope.user)
-    Lock.flushed(id)
-    {:noreply, socket}
+    if id == socket.assigns.article.id do
+      Process.send_after(self(), :flush_fallback, 700)
+      {:noreply, socket |> assign(:flush_pending, true) |> push_event("flush_body", %{})}
+    else
+      Lock.flushed(id)
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(:flush_fallback, socket) do
+    if socket.assigns[:flush_pending] do
+      {:noreply, finish_flush(socket)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info({:lock_taken, id, _by_user_id}, socket) do
@@ -534,6 +580,18 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
+  # Autosave settled, snapshot written, transfer free to go ahead.
+  defp finish_flush(socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    if socket.assigns[:flush_pending] do
+      Articles.snapshot(article, scope.user)
+      Lock.flushed(article.id)
+    end
+
+    assign(socket, :flush_pending, false)
+  end
+
   defp refresh_lock(socket) do
     article = socket.assigns.article
 
@@ -553,6 +611,7 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:holds_lock, holds)
     |> assign(:holder, unless(holds, do: holder))
     |> push_event("set_readonly", %{readOnly: !holds})
+    |> announce_activity()
   end
 
   ## Saved state
@@ -679,17 +738,30 @@ defmodule TexttileWeb.EditorLive do
                  story. There is no button on it, because clicking into
                  the title or the body already asks. --%>
             <div
-              :if={!@holds_lock && @holder}
-              class="flex items-baseline gap-[9px] flex-wrap rounded-[5px] px-[13px] py-2 text-[13px] mb-5 bg-livetint text-livetext"
+              :if={
+                (!@holds_lock && @holder) || (@holds_lock && reading_along(@others, @article) != [])
+              }
+              class={[
+                "flex items-baseline gap-[9px] flex-wrap rounded-[5px] px-[13px] py-2 text-[13px] mb-5",
+                if(@holds_lock, do: "bg-accentwash text-accent", else: "bg-livetint text-livetext")
+              ]}
               id="jbar"
-              style="box-shadow: inset 0 0 0 1px var(--tt-liveline)"
+              style={"box-shadow: inset 0 0 0 1px var(--tt-#{if @holds_lock, do: "accentline", else: "liveline"})"}
             >
               <span class="flex items-center gap-[9px] flex-none">
                 <span class="dot live text-julia"></span>
-                <b class="text-julia">{holder_name(@holder)}</b>
+                <b class="text-julia">
+                  {if @holds_lock,
+                    do: Enum.join(reading_along(@others, @article), ", "),
+                    else: holder_name(@holder)}
+                </b>
               </span>
               <span class="opacity-85 flex-1 min-w-[220px]">
-                writes the text now, and you see every word arrive. Click into the title or the body to take the text over. The article settings stay open to every admin, at the same time.
+                <%= if @holds_lock do %>
+                  reads along while you write. The article settings stay open to every admin, at the same time.
+                <% else %>
+                  writes the text now, and you see every word arrive. Click into the title or the body to take the text over. The article settings stay open to every admin, at the same time.
+                <% end %>
               </span>
             </div>
 
@@ -1321,6 +1393,15 @@ defmodule TexttileWeb.EditorLive do
 
   defp log_line(%{user: nil, text: text}), do: text
   defp log_line(%{user: user, text: text}), do: "#{Accounts.display_name(user)} #{text}"
+
+  # Who else has this text open right now, by name; read from the desk
+  # presence the wordmark menu already carries.
+  defp reading_along(others, article) do
+    for person <- others,
+        Enum.any?(person.sessions, &(&1.text_id == article.id)),
+        uniq: true,
+        do: person.name
+  end
 
   defp inline_count(body) do
     refs = Articles.inline_refs(body)

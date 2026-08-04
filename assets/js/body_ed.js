@@ -411,6 +411,12 @@ export default {
     }
 
     this.handleEvent("sync_body", ({text, caret}) => this.sync(text, caret))
+    /* the takeover's flush: whatever still sits in the debounce goes
+       to the server right now */
+    this.handleEvent("flush_body", () => {
+      clearTimeout(debounce)
+      this.pushEvent("body_flushed", {text: this.view.state.doc.toString()})
+    })
     this.handleEvent("set_readonly", ({readOnly: ro}) => {
       this.view.dispatch({effects: roComp.reconfigure(roExt(ro))})
       if (ro && this.view.hasFocus) this.view.contentDOM.blur()
