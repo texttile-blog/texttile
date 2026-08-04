@@ -1,41 +1,467 @@
-/* BodyEd · the one door to the body editor. The CodeMirror view mounts
-   behind it in the next step; until then the server-rendered textarea
-   does the writing, wired to the same events:
+/* BodyEd · the body editor behind one door.
 
-   in:  sync_body {text}, set_readonly {readOnly}
-   out: body_changed {text} (debounced), editor_activity (throttled) */
+   Markdown IS the document: the editor holds a plain text buffer and
+   everything it shows is a view-only decoration. It never rewrites the
+   text - no normalizing, no reflowing, no cleanup - so the version
+   diff only ever shows real edits.
+
+   Live preview, the Obsidian way: on lines away from the cursor the
+   syntax is hidden and the result is shown; the line with the cursor,
+   and every line the selection touches, shows the raw text. That rule
+   also protects mobile IME composition, because the line being
+   composed on is always undecorated raw text.
+
+   The interface, and nothing else crosses it:
+   in:  the initial text (the server-rendered textarea), sync_body
+        {text, caret?}, set_readonly {readOnly}
+   out: body_changed {text} (debounced), editor_activity (throttled),
+        ask_takeover on a read-only pointer, files handed to onFiles */
+
+import {EditorState, EditorSelection, Compartment, Annotation} from "@codemirror/state"
+import {EditorView, keymap, placeholder, Decoration, WidgetType, ViewPlugin} from "@codemirror/view"
+import {syntaxTree, syntaxHighlighting, HighlightStyle} from "@codemirror/language"
+import {defaultKeymap, history, historyKeymap} from "@codemirror/commands"
+import {markdown, markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward} from "@codemirror/lang-markdown"
+import {tags} from "@lezer/highlight"
+
+/* character styling reads the theme tokens; order matters, because the
+   marks' faint must win over the link's accent on shared tokens */
+const mdHighlight = HighlightStyle.define([
+  {tag: tags.strong, fontWeight: "700"},
+  {tag: tags.emphasis, fontStyle: "italic"},
+  {tag: tags.strikethrough, textDecoration: "line-through"},
+  {tag: tags.heading, fontWeight: "600"},
+  {tag: tags.quote, color: "var(--tt-dim)"},
+  {tag: tags.monospace, fontFamily: "var(--tt-font-mono)", fontSize: "86%"},
+  {tag: tags.link, color: "var(--tt-accent)", textDecoration: "underline", textUnderlineOffset: "2px"},
+  {tag: tags.processingInstruction, color: "var(--tt-faint)"},
+  {tag: tags.contentSeparator, color: "var(--tt-faint)"},
+  {tag: tags.url, color: "var(--tt-faint)", textDecoration: "none"},
+])
+
+/* ---- the widgets the preview draws -------------------------------- */
+class BulletW extends WidgetType {
+  eq() { return true }
+  toDOM() { const s = document.createElement("span"); s.className = "cm-mdbullet"; s.textContent = "•"; return s }
+}
+class HRW extends WidgetType {
+  eq() { return true }
+  toDOM() { const s = document.createElement("span"); s.className = "cm-mdhr"; return s }
+}
+class CheckW extends WidgetType {
+  constructor(checked, ro) { super(); this.checked = checked; this.ro = ro }
+  eq(o) { return o.checked === this.checked && o.ro === this.ro }
+  ignoreEvent() { return true }
+  toDOM(view) {
+    const b = document.createElement("input")
+    b.type = "checkbox"
+    b.className = "cm-mdcheck"
+    b.checked = this.checked
+    b.disabled = this.ro
+    b.setAttribute("aria-label", this.checked ? "Done. Untick it." : "Open. Tick it off.")
+    b.addEventListener("mousedown", e => e.preventDefault())   /* the caret stays where it is */
+    b.addEventListener("click", e => {
+      e.preventDefault()
+      if (view.state.readOnly) return
+      const pos = view.posAtDOM(b)
+      if (!/^\[[ xX]\]$/.test(view.state.doc.sliceString(pos, pos + 3))) return
+      view.dispatch({changes: {from: pos + 1, to: pos + 2, insert: this.checked ? " " : "x"}})
+    })
+    return b
+  }
+}
+class ImgW extends WidgetType {
+  constructor(css, title) { super(); this.css = css; this.title = title }
+  eq(o) { return o.css === this.css && o.title === this.title }
+  toDOM() {
+    const s = document.createElement("span")
+    s.className = "cm-mdimg"
+    if (this.css) s.style.backgroundImage = this.css
+    s.title = this.title
+    return s
+  }
+}
+
+/* ---- the live preview --------------------------------------------- */
+const HIDE = Decoration.replace({})
+const remoteChange = Annotation.define()
+
+function buildDeco(view, resolveImage) {
+  const {state} = view
+  const doc = state.doc
+  const ro = state.readOnly
+  const deco = []
+  /* every line the selection touches shows its raw syntax; the
+     read-only view has no cursor, so it is a pure preview */
+  const active = []
+  if (!ro) for (const r of state.selection.ranges)
+    active.push([doc.lineAt(r.from).from, doc.lineAt(r.to).to])
+  const showRaw = (from, to) => active.some(a => from <= a[1] && to >= a[0])
+  const lineCls = (pos, cls) => deco.push(Decoration.line({class: cls}).range(doc.lineAt(pos).from))
+  const eachLine = (from, to, cls) => {
+    for (let i = doc.lineAt(from).number, last = doc.lineAt(to).number; i <= last; i++)
+      deco.push(Decoration.line({class: cls}).range(doc.line(i).from))
+  }
+  const hide = (from, to) => { if (to > from) deco.push(HIDE.range(from, to)) }
+
+  for (const vr of view.visibleRanges) {
+    syntaxTree(state).iterate({from: vr.from, to: vr.to, enter: n => {
+      const name = n.name
+      const h = /^ATXHeading([1-6])$/.exec(name)
+      if (h) {
+        lineCls(n.from, "cm-mdh cm-mdh" + h[1])
+        if (!showRaw(n.from, n.to)) n.node.getChildren("HeaderMark").forEach((m, i) =>
+          hide(m.from, i === 0 ? Math.min(m.to + 1, n.to) : m.to))
+        return   /* descend: a heading can hold emphasis */
+      }
+      if (name === "Emphasis" || name === "StrongEmphasis") {
+        if (!showRaw(n.from, n.to)) n.node.getChildren("EmphasisMark").forEach(m => hide(m.from, m.to))
+        return
+      }
+      if (name === "Strikethrough") {
+        if (!showRaw(n.from, n.to)) n.node.getChildren("StrikethroughMark").forEach(m => hide(m.from, m.to))
+        return
+      }
+      if (name === "InlineCode") {
+        const ms = n.node.getChildren("CodeMark")
+        if (ms.length === 2) {
+          const raw = showRaw(n.from, n.to)
+          if (!raw) ms.forEach(m => hide(m.from, m.to))
+          const a = raw ? n.from : ms[0].to, b = raw ? n.to : ms[1].from
+          if (b > a) deco.push(Decoration.mark({class: "cm-mdcodespan"}).range(a, b))
+        }
+        return false
+      }
+      if (name === "Image") {
+        if (showRaw(n.from, n.to)) return false
+        const urlN = n.node.getChild("URL")
+        const url = urlN ? doc.sliceString(urlN.from, urlN.to).trim() : ""
+        /* an empty target is an upload token: the raw text IS the
+           placeholder, so it stays raw on every line */
+        if (!url) return false
+        const ms = n.node.getChildren("LinkMark")
+        const alt = ms.length >= 2 ? doc.sliceString(ms[0].to, ms[1].from) : ""
+        const css = resolveImage ? resolveImage(url) : null
+        deco.push(Decoration.replace({widget: new ImgW(css, alt || url)}).range(n.from, n.to))
+        return false
+      }
+      if (name === "Link") {
+        /* only a link with a written target collapses; a bare
+           [reference] stays raw, brackets and all */
+        if (!n.node.getChild("URL")) return
+        const ms = n.node.getChildren("LinkMark")
+        if (!showRaw(n.from, n.to) && ms.length >= 2) {
+          hide(ms[0].from, ms[0].to)
+          hide(ms[1].from, n.to)   /* "](url)", and a title if there is one */
+        }
+        return
+      }
+      if (name === "Blockquote") { eachLine(n.from, n.to, "cm-mdquote"); return }
+      if (name === "QuoteMark") {
+        if (!showRaw(n.from, n.to)) hide(n.from, Math.min(n.to + 1, doc.lineAt(n.from).to))
+        return
+      }
+      if (name === "ListMark") {
+        const txt = doc.sliceString(n.from, n.to)
+        if (/^\d/.test(txt)) { deco.push(Decoration.mark({class: "cm-mdnum"}).range(n.from, n.to)); return }
+        const item = n.node.parent
+        if (item && item.getChild("Task")) {
+          /* the checkbox line: the bullet goes with the marker */
+          if (!showRaw(n.from, n.to)) hide(n.from, Math.min(n.to + 1, doc.lineAt(n.from).to))
+          return
+        }
+        if (!showRaw(n.from, n.to)) deco.push(Decoration.replace({widget: new BulletW()}).range(n.from, n.to))
+        return
+      }
+      if (name === "TaskMarker") {
+        const checked = /x/i.test(doc.sliceString(n.from, n.to))
+        if (checked) lineCls(n.from, "cm-mdtaskdone")
+        if (!showRaw(n.from, n.to))
+          deco.push(Decoration.replace({widget: new CheckW(checked, !!ro)})
+            .range(n.from, Math.min(n.to + 1, doc.lineAt(n.from).to)))
+        return
+      }
+      if (name === "FencedCode") {
+        eachLine(n.from, n.to, "cm-mdcodeblock")
+        lineCls(n.from, "cm-mdcbfirst")
+        lineCls(n.to, "cm-mdcblast")
+        return   /* descend: the fence marks take their faint from the highlighter */
+      }
+      if (name === "HorizontalRule") {
+        if (!showRaw(n.from, n.to)) deco.push(Decoration.replace({widget: new HRW()}).range(n.from, n.to))
+        return
+      }
+      if (name === "Table") { eachLine(n.from, n.to, "cm-mdtable"); return }
+    }})
+  }
+  return Decoration.set(deco, true)
+}
+
+/* ---- the commands the bar and the keys share ---------------------- */
+const findAbove = (state, pos, name) => {
+  for (let n = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent)
+    if (n.name === name) return n
+  return null
+}
+const inline = (marker, nodeName, markName) => view => {
+  const {state} = view
+  const r = state.selection.main
+  const n = findAbove(state, r.from, nodeName) || findAbove(state, r.to, nodeName)
+  if (n) {
+    const ms = n.getChildren(markName)
+    if (ms.length) {
+      view.dispatch({changes: ms.map(m => ({from: m.from, to: m.to}))})
+      view.focus()
+      return true
+    }
+  }
+  view.dispatch(state.changeByRange(rr => ({
+    changes: [{from: rr.from, insert: marker}, {from: rr.to, insert: marker}],
+    range: EditorSelection.range(rr.from + marker.length, rr.to + marker.length),
+  })))
+  view.focus()
+  return true
+}
+const heading = view => {
+  const {state} = view
+  const r = state.selection.main
+  const first = state.doc.lineAt(r.from)
+  const cur = /^(#{1,6})\s/.exec(first.text)
+  /* the title above the editor is the H1, so the cycle starts at ## */
+  const next = !cur ? "## " : cur[1].length === 2 ? "### " : cur[1].length === 3 ? "#### " : ""
+  const a = first.number, b = state.doc.lineAt(r.to).number
+  const changes = []
+  for (let i = a; i <= b; i++) {
+    const l = state.doc.line(i)
+    if (!l.text.trim() && a !== b) continue
+    const m = /^(#{1,6})\s/.exec(l.text)
+    changes.push({from: l.from, to: l.from + (m ? m[0].length : 0), insert: next})
+  }
+  if (changes.length) view.dispatch({changes})
+  view.focus()
+  return true
+}
+const STRIP = /^(?:>\s?|[-*+]\s\[[ xX]\]\s|[-*+]\s|\d+[.)]\s)/
+const linePrefix = (test, make) => view => {
+  const {state} = view
+  const r = state.selection.main
+  const a = state.doc.lineAt(r.from).number, b = state.doc.lineAt(r.to).number
+  const lines = []
+  for (let i = a; i <= b; i++) lines.push(state.doc.line(i))
+  const used = lines.filter(l => l.text.trim())
+  const on = used.length > 0 && used.every(l => test.test(l.text))
+  const changes = []
+  let k = 0
+  lines.forEach(l => {
+    if (!l.text.trim() && lines.length > 1) return
+    if (on) {
+      const m = test.exec(l.text)
+      if (m) changes.push({from: l.from, to: l.from + m[0].length})
+    } else {
+      /* whatever block prefix is there makes way for the new one */
+      const m = STRIP.exec(l.text)
+      changes.push({from: l.from, to: l.from + (m ? m[0].length : 0), insert: make(k++)})
+    }
+  })
+  if (changes.length) view.dispatch({changes})
+  view.focus()
+  return true
+}
+const link = view => {
+  view.dispatch(view.state.changeByRange(r => r.empty
+    ? {changes: {from: r.from, insert: "[]()"}, range: EditorSelection.cursor(r.from + 1)}
+    : {changes: [{from: r.from, insert: "["}, {from: r.to, insert: "]()"}],
+       range: EditorSelection.cursor(r.to + 3)}))
+  view.focus()
+  return true
+}
+const cmds = {
+  bold: inline("**", "StrongEmphasis", "EmphasisMark"),
+  italic: inline("*", "Emphasis", "EmphasisMark"),
+  code: inline("`", "InlineCode", "CodeMark"),
+  link,
+  heading,
+  quote: linePrefix(/^>\s?/, () => "> "),
+  bullet: linePrefix(/^[-*+]\s(?!\[[ xX]\]\s)/, () => "- "),
+  ordered: linePrefix(/^\d+[.)]\s/, i => (i + 1) + ". "),
+  task: linePrefix(/^[-*+]\s\[[ xX]\]\s/, () => "- [ ] "),
+}
+
+/* the bar's buttons light up where the caret stands */
+function activeStates(state) {
+  const r = state.selection.main
+  const s = {}
+  for (let n = syntaxTree(state).resolveInner(r.from, -1); n; n = n.parent) {
+    if (n.name === "StrongEmphasis") s.bold = true
+    else if (n.name === "Emphasis") s.italic = true
+    else if (n.name === "InlineCode") s.code = true
+    else if (n.name === "Link") s.link = true
+    else if (n.name === "Blockquote") s.quote = true
+    else if (/^ATXHeading/.test(n.name)) s.heading = true
+  }
+  const lt = state.doc.lineAt(r.from).text
+  if (/^[-*+]\s\[[ xX]\]\s/.test(lt)) s.task = true
+  else if (/^[-*+]\s/.test(lt)) s.bullet = true
+  else if (/^\d+[.)]\s/.test(lt)) s.ordered = true
+  return s
+}
+
+/* ---- the hook ----------------------------------------------------- */
 export default {
   mounted() {
-    const ta = this.el.querySelector("textarea")
-    this.ta = ta
+    const seed = this.el.querySelector("textarea")
+    const initial = seed ? seed.value : ""
+    const readOnly = this.el.dataset.readonly === "true"
+    this.el.replaceChildren()
+
     let debounce = null
     let lastPing = 0
 
-    ta.addEventListener("input", () => {
+    const pushText = text => {
       const now = Date.now()
       if (now - lastPing > 2000) {
         lastPing = now
         this.pushEvent("editor_activity", {})
       }
       clearTimeout(debounce)
-      debounce = setTimeout(() => {
-        this.pushEvent("body_changed", {text: ta.value})
-      }, 300)
-    })
+      debounce = setTimeout(() => this.pushEvent("body_changed", {text}), 300)
+    }
 
-    this.handleEvent("sync_body", ({text}) => {
-      if (ta.value !== text) ta.value = text
-    })
-    this.handleEvent("set_readonly", ({readOnly}) => {
-      ta.readOnly = readOnly
-      if (readOnly && document.activeElement === ta) ta.blur()
-    })
+    /* an inline thumbnail's backdrop: same-origin upload paths and
+       plain remote addresses, drawn as a CSS background */
+    const resolveImage = url => {
+      if (!/^(https?:|data:|blob:|\/)/.test(url)) return null
+      return `url('${url.replace(/'/g, "%27")}')`
+    }
 
-    ta.addEventListener("mousedown", event => {
-      if (ta.readOnly) {
-        event.preventDefault()
-        this.pushEvent("ask_takeover", {})
+    const livePreview = ViewPlugin.fromClass(class {
+      constructor(view) { this.deco = buildDeco(view, resolveImage) }
+      update(u) {
+        if (u.docChanged || u.selectionSet || u.viewportChanged ||
+            u.startState.readOnly !== u.state.readOnly) this.deco = buildDeco(u.view, resolveImage)
       }
+    }, {decorations: v => v.deco})
+
+    const roComp = new Compartment()
+    const roExt = ro => [EditorState.readOnly.of(ro), EditorView.editable.of(!ro)]
+    const fixed = [
+      EditorView.lineWrapping,
+      syntaxHighlighting(mdHighlight),
+      livePreview,
+      placeholder("Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."),
+      EditorView.contentAttributes.of({"aria-label": "Body, Markdown"}),
+      keymap.of([
+        {key: "Mod-b", run: cmds.bold},
+        {key: "Mod-i", run: cmds.italic},
+        {key: "Mod-k", run: cmds.link},
+        {key: "Enter", run: insertNewlineContinueMarkup},
+        {key: "Backspace", run: deleteMarkupBackward},
+        ...historyKeymap,
+        ...defaultKeymap,
+      ]),
+      EditorView.updateListener.of(u => {
+        if (u.docChanged && !u.transactions.some(t => t.annotation(remoteChange)))
+          pushText(u.state.doc.toString())
+        if (u.docChanged || u.selectionSet) this.paintBar(activeStates(u.state))
+      }),
+      EditorView.domEventHandlers({
+        paste: e => {
+          const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type))
+          if (!fs.length) return false
+          e.preventDefault()
+          this.onFiles(fs)
+          return true
+        },
+        drop: (e, v) => {
+          const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => /^image\//.test(f.type))
+          if (!fs.length) return false
+          e.preventDefault()   /* the outer dropzone sees this and stands down */
+          if (v.state.readOnly) { this.pushEvent("ask_takeover", {}); return true }
+          const pos = v.posAtCoords({x: e.clientX, y: e.clientY})
+          if (pos != null) v.dispatch({selection: {anchor: pos}})
+          v.focus()
+          this.onFiles(fs)
+          return true
+        },
+      }),
+    ]
+    const mkState = (text, ro) => EditorState.create({
+      doc: text,
+      extensions: [history(), roComp.of(roExt(ro)), markdown({base: markdownLanguage}), fixed],
     })
+    this.view = new EditorView({parent: this.el, state: mkState(initial, readOnly)})
+
+    /* the read-only body is not focusable, so the takeover ask hangs
+       on the pointer */
+    this.el.addEventListener("mousedown", () => {
+      if (this.view.state.readOnly) this.pushEvent("ask_takeover", {})
+    })
+
+    /* the formatting bar: mousedown is swallowed so the caret never
+       leaves the text, and the click runs the same command the
+       keyboard would. In the read-only state the command asks for the
+       takeover instead. */
+    const bar = document.getElementById("mdBar")
+    if (bar) {
+      bar.addEventListener("mousedown", e => { if (e.target.closest(".mdb")) e.preventDefault() })
+      bar.addEventListener("click", e => {
+        const b = e.target.closest(".mdb")
+        if (b) this.cmd(b.dataset.cmd)
+      })
+    }
+
+    this.handleEvent("sync_body", ({text, caret}) => this.sync(text, caret))
+    this.handleEvent("set_readonly", ({readOnly: ro}) => {
+      this.view.dispatch({effects: roComp.reconfigure(roExt(ro))})
+      if (ro && this.view.hasFocus) this.view.contentDOM.blur()
+    })
+  },
+
+  destroyed() {
+    if (this.view) this.view.destroy()
+  },
+
+  /* the model changed around the editor: the smallest change that gets
+     there, so everything around it, the caret included, maps through
+     instead of resetting */
+  sync(text, caretTo) {
+    const view = this.view
+    const cur = view.state.doc.toString()
+    if (cur === text) {
+      if (caretTo != null) view.dispatch({selection: {anchor: Math.min(caretTo, text.length)}})
+      return
+    }
+    let a = 0, b = cur.length, b2 = text.length
+    while (a < b && a < b2 && cur.charCodeAt(a) === text.charCodeAt(a)) a++
+    while (b > a && b2 > a && cur.charCodeAt(b - 1) === text.charCodeAt(b2 - 1)) { b--; b2-- }
+    view.dispatch({
+      changes: {from: a, to: b, insert: text.slice(a, b2)},
+      selection: caretTo != null ? {anchor: Math.min(caretTo, text.length)} : undefined,
+      annotations: remoteChange.of(true),
+    })
+  },
+
+  text() { return this.view.state.doc.toString() },
+  caret() { const r = this.view.state.selection.main; return {from: r.from, to: r.to} },
+
+  cmd(name) {
+    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
+    if (name === "image") {
+      const picker = document.getElementById("mdImgFile")
+      if (picker) picker.click()
+      return
+    }
+    const c = cmds[name]
+    if (c) c(this.view)
+  },
+
+  /* images pasted or dropped into the text; the upload flow owns this */
+  onFiles(files) {
+    if (this.uploadFiles) this.uploadFiles(files)
+  },
+
+  paintBar(states) {
+    document.querySelectorAll("#mdBar .mdb").forEach(b =>
+      b.classList.toggle("on", !!states[b.dataset.cmd]))
   },
 }

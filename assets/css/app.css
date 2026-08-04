@@ -387,3 +387,82 @@
   .pop .row.sub { padding-left: 27px; font-size: 13px; }
   .pop .go { color: var(--tt-faint); font-size: 11.5px; }
 }
+
+/* ==================================================================
+   THE CODEMIRROR BODY AND ITS FORMATTING BAR
+   These rules stay outside the layers on purpose: CodeMirror injects
+   its own unlayered defaults at runtime, and only unlayered rules
+   with the .ed-cm prefix reliably outweigh them.
+   ================================================================== */
+
+/* the bar: quiet glyphs on the page, sticky under the topbar */
+.mdbar {
+  position: sticky; top: 52px; z-index: 30;
+  display: flex; align-items: center; gap: 2px;
+  margin: 18px -6px 0; padding: 5px 6px 4px;
+  background: var(--tt-page);
+}
+@media (min-width: 1024px) { .mdbar { top: 0; } }
+.mdb {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 28px; flex: none;
+  border-radius: var(--tt-radius); color: var(--tt-dim);
+  transition: background-color .12s ease, color .12s ease;
+}
+.mdb:hover { background: var(--tt-field); color: var(--tt-ink); }
+.mdb.on { background: var(--tt-accentwash); color: var(--tt-accent); }
+.mdb svg { width: 16px; height: 16px; }
+.mdb .g { pointer-events: none; }
+.mdsep { width: 1px; height: 15px; background: var(--tt-rule); margin: 0 5px; flex: none; }
+/* while the other admin holds the text the bar stays, faded; a click
+   on any button asks for the takeover instead of formatting */
+.mdbar.is-readonly .mdb { color: var(--tt-slash); }
+.mdbar.is-readonly .mdb:hover { background: var(--tt-livetint); color: var(--tt-livetext); }
+
+/* the editor: the same flush surface the textarea was */
+.ed-cm { cursor: text; }
+.ed-cm .cm-editor { background: transparent; }
+.ed-cm .cm-editor.cm-focused { outline: none; }
+.ed-cm .cm-scroller {
+  font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+  overflow: visible;   /* the column scrolls, never the editor */
+}
+.ed-cm .cm-content { padding: 0; caret-color: var(--tt-ink); min-height: 96px; }
+.ed-cm .cm-line { padding: 0; }
+.ed-cm .cm-cursor { border-left: 1.5px solid var(--tt-ink); }
+.ed-cm .cm-placeholder { font-style: italic; color: var(--tt-faint); }
+
+/* what the live preview draws, all of it from the theme's tokens */
+.ed-cm .cm-mdh { font-weight: 600; }
+.ed-cm .cm-mdh1 { font-size: 24px; line-height: 1.35; padding-top: 8px; }
+.ed-cm .cm-mdh2 { font-size: 20px; line-height: 1.4; padding-top: 7px; }
+.ed-cm .cm-mdh3 { font-size: 17.5px; padding-top: 5px; }
+.ed-cm .cm-mdh4, .ed-cm .cm-mdh5, .ed-cm .cm-mdh6 { font-size: 15.5px; padding-top: 4px; }
+.ed-cm .cm-mdquote { border-left: 3px solid var(--tt-rule); padding-left: 13px; }
+.ed-cm .cm-mdcodespan { background: var(--tt-field); border-radius: 3px; padding: 1px 3px; }
+.ed-cm .cm-mdcodeblock {
+  font-family: var(--tt-font-mono); font-size: 13.5px; line-height: 1.6;
+  background: var(--tt-field); padding: 0 9px;
+}
+.ed-cm .cm-mdcbfirst { border-radius: var(--tt-radius) var(--tt-radius) 0 0; padding-top: 5px; }
+.ed-cm .cm-mdcblast { border-radius: 0 0 var(--tt-radius) var(--tt-radius); padding-bottom: 5px; }
+.ed-cm .cm-mdtable { font-family: var(--tt-font-mono); font-size: 13px; line-height: 1.6; }
+.ed-cm .cm-mdbullet { color: var(--tt-dim); }
+.ed-cm .cm-mdnum { color: var(--tt-dim); font-variant-numeric: tabular-nums; }
+.ed-cm .cm-mdcheck {
+  width: 15px; height: 15px; margin: 0 4px 0 0; vertical-align: -2px;
+  accent-color: var(--tt-accent); cursor: pointer;
+}
+.ed-cm .cm-mdtaskdone { color: var(--tt-faint); text-decoration: line-through; }
+.ed-cm .cm-mdtaskdone .cm-mdcheck { text-decoration: none; }
+.ed-cm .cm-mdhr {
+  display: inline-block; width: 100%; height: 3px; vertical-align: middle;
+  border-top: 2px solid var(--tt-rule);
+}
+.ed-cm .cm-mdimg {
+  display: inline-block; width: 86px; height: 60px; margin: 3px 0 1px;
+  border-radius: var(--tt-radius-img);
+  background: var(--tt-field) center / cover no-repeat;
+  box-shadow: inset 0 0 0 1px rgb(var(--tt-shadow) / .12);
+  cursor: text; vertical-align: -8px;
+}
