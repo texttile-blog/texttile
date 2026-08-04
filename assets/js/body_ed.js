@@ -415,10 +415,208 @@ export default {
       this.view.dispatch({effects: roComp.reconfigure(roExt(ro))})
       if (ro && this.view.hasFocus) this.view.contentDOM.blur()
     })
+
+    this.mountUploads()
+  },
+
+  /* ---- images into the body, the GitHub way ------------------------
+     A token holds the caret's place while the file travels; the token
+     becomes the reference on success and a failure marker on error.
+     The panel under the text is server-rendered from the body; its
+     Retry / Remove / Cancel buttons land here, because the file and
+     the running request live only in this browser. */
+  mountUploads() {
+    this.uploads = new Map()   /* name → {file, xhr} */
+    this.queue = []
+    this.running = 0
+
+    const wrap = this.el.closest("#bodyWrap")
+    const flag = document.getElementById("bodyDropFlag")
+    const carriesFiles = dt => !!dt && [...(dt.types || [])].indexOf("Files") >= 0
+    const show = on => {
+      if (wrap) wrap.classList.toggle("body-drop", on)
+      if (flag) flag.hidden = !on
+    }
+    if (wrap) {
+      ;["dragenter", "dragover"].forEach(ev => wrap.addEventListener(ev, e => {
+        if (!carriesFiles(e.dataTransfer)) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = "copy"
+        show(true)
+      }))
+      wrap.addEventListener("dragleave", e => {
+        if (!e.relatedTarget || !wrap.contains(e.relatedTarget)) show(false)
+      })
+      wrap.addEventListener("drop", e => {
+        show(false)
+        if (e.defaultPrevented) return   /* the editor already took it */
+        if (!carriesFiles(e.dataTransfer)) return
+        e.preventDefault()
+        const files = [...e.dataTransfer.files].filter(f => /^image\//.test(f.type))
+        if (!files.length) return
+        this.view.focus()
+        this.onFiles(files)
+      })
+    }
+
+    const picker = document.getElementById("mdImgFile")
+    if (picker) {
+      picker.addEventListener("change", () => {
+        const files = [...picker.files].filter(f => /^image\//.test(f.type))
+        picker.value = ""
+        if (!files.length) return
+        this.view.focus()
+        this.onFiles(files)
+      })
+    }
+
+    this.onPanelClick = e => {
+      const b = e.target.closest("[data-img-action]")
+      if (!b) return
+      const name = b.dataset.imgFile
+      const action = b.dataset.imgAction
+      if (action === "retry") this.retryUpload(name)
+      else this.removeUpload(name, action)
+    }
+    document.addEventListener("click", this.onPanelClick)
+  },
+
+  upToken(name) { return "![Uploading " + name + "…]()" },
+  failToken(name) { return "![Upload failed: " + name + "]()" },
+  doneRef(name, url) { return "![" + name.replace(/\.\w+$/, "") + "](" + url + ")" },
+
+  uploadFiles(files) {
+    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
+    const doc = this.view.state.doc.toString()
+    const used = new Set([...this.uploads.keys()])
+    for (const m of doc.matchAll(/!\[(?:Uploading (.+?)…|Upload failed: (.+?))\]\(\)/g))
+      used.add(m[1] || m[2])
+    for (const m of doc.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g))
+      used.add(m[1].trim().split("/").pop())
+
+    const names = files.map(f => {
+      let name = (f.name || "pasted-image.png").replace(/[\[\]()]/g, "")
+      if (used.has(name)) {
+        const dot = name.lastIndexOf(".")
+        const base = dot > 0 ? name.slice(0, dot) : name
+        const ext = dot > 0 ? name.slice(dot) : ""
+        let i = 2
+        while (used.has(base + "-" + i + ext)) i++
+        name = base + "-" + i + ext
+      }
+      used.add(name)
+      this.uploads.set(name, {file: f, xhr: null})
+      return name
+    })
+
+    this.insertText(names.map(n => this.upToken(n)).join("\n\n"))
+    this.pushEvent("images_inserted", {files: names})
+    names.forEach(n => this.queue.push(n))
+    this.pump()
+  },
+
+  pump() {
+    while (this.running < 2 && this.queue.length) {
+      const name = this.queue.shift()
+      if (this.uploads.has(name)) this.startUpload(name)
+    }
+  },
+
+  startUpload(name) {
+    const entry = this.uploads.get(name)
+    this.running++
+    const xhr = new XMLHttpRequest()
+    entry.xhr = xhr
+    xhr.open("POST", "/desk/images")
+    const meta = document.querySelector("meta[name='csrf-token']")
+    if (meta) xhr.setRequestHeader("x-csrf-token", meta.getAttribute("content"))
+    let pct = 0
+    xhr.upload.addEventListener("progress", e => {
+      if (!e.lengthComputable) return
+      pct = Math.round((e.loaded / e.total) * 100)
+      this.pushEvent("upload_progress", {file: name, pct})
+    })
+    const settle = () => { this.running--; this.pump() }
+    xhr.addEventListener("load", () => {
+      settle()
+      if (xhr.status === 200) {
+        const {url} = JSON.parse(xhr.responseText)
+        this.swap(this.upToken(name), this.doneRef(name, url))
+        this.uploads.delete(name)
+        this.pushEvent("image_uploaded", {file: name})
+      } else {
+        this.swap(this.upToken(name), this.failToken(name))
+        this.pushEvent("image_failed", {file: name, pct})
+      }
+    })
+    xhr.addEventListener("error", () => {
+      settle()
+      this.swap(this.upToken(name), this.failToken(name))
+      this.pushEvent("image_failed", {file: name, pct})
+    })
+    const form = new FormData()
+    form.append("file", entry.file, name)
+    xhr.send(form)
+  },
+
+  retryUpload(name) {
+    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
+    const entry = this.uploads.get(name)
+    if (!entry || !entry.file) {
+      /* the browser that held the file is gone (a reload, the other
+         side): nothing to send again */
+      this.pushEvent("image_retry_missing", {file: name})
+      return
+    }
+    this.swap(this.failToken(name), this.upToken(name))
+    this.pushEvent("image_retry", {file: name})
+    this.queue.push(name)
+    this.pump()
+  },
+
+  removeUpload(name, how) {
+    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
+    const entry = this.uploads.get(name)
+    if (entry && entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
+    this.uploads.delete(name)
+    const raw = how === "cancel" ? this.upToken(name) : this.failToken(name)
+    if (!this.swap(raw + "\n\n", "")) this.swap(raw, "")
+    this.pushEvent("image_removed", {file: name, how})
+  },
+
+  /* writing into the body without losing the caret: the token lands at
+     the caret with clean blank lines around it */
+  insertText(text) {
+    const view = this.view
+    const r = view.state.selection.main
+    const doc = view.state.doc.toString()
+    const before = doc.slice(0, r.from)
+    const after = doc.slice(r.to)
+    const lead = !before ? "" : /\n\n$/.test(before) ? "" : /\n$/.test(before) ? "\n" : "\n\n"
+    const tail = !after ? "" : /^\n\n/.test(after) ? "" : /^\n/.test(after) ? "\n" : "\n\n"
+    const ins = lead + text + tail
+    view.dispatch({
+      changes: {from: r.from, to: r.to, insert: ins},
+      selection: {anchor: r.from + ins.length},
+    })
+  },
+
+  swap(from, to) {
+    const doc = this.view.state.doc.toString()
+    const at = doc.indexOf(from)
+    if (at < 0) return false
+    this.view.dispatch({changes: {from: at, to: at + from.length, insert: to}})
+    return true
   },
 
   destroyed() {
     if (this.view) this.view.destroy()
+    if (this.onPanelClick) document.removeEventListener("click", this.onPanelClick)
+    if (this.uploads) {
+      for (const entry of this.uploads.values()) {
+        if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
+      }
+    }
   },
 
   /* the model changed around the editor: the smallest change that gets

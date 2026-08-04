@@ -353,6 +353,30 @@
   /* the second group start inside a settings block */
   .drow.gtop { margin-top: 14px; padding-top: 9px; }
 
+  /* a picture's radius, for markup written by the image panel */
+  .r-img { border-radius: var(--tt-radius-img); }
+
+  /* the thin progress bar of a running upload */
+  .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
+
+  /* the body as a drop target: a filled wash, a solid edge, and a
+     label that says where the image lands - so a file over the text
+     can never look like a file over anything else */
+  .drop-flag {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 20; pointer-events: none;
+    font-size: 12px; font-weight: 600; color: var(--tt-onsolid);
+    background: var(--tt-solid); padding: 5px 11px; white-space: nowrap;
+    border-radius: var(--tt-radius-pill);
+    box-shadow: 0 6px 18px rgb(var(--tt-shadow) / .3);
+  }
+  .body-drop {
+    background: var(--tt-accentwash); border-radius: var(--tt-radius);
+    outline: 2px solid var(--tt-accentloud); outline-offset: 4px;
+  }
+  .body-drop .ed-body { background: transparent; }
+
   /* presence, dots, popovers */
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex: none; background: currentColor; }
   /* the presence hint on the wordmark: one small dot in julia's

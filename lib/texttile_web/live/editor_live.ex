@@ -31,6 +31,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_until, 0)
       |> assign(:holds_lock, true)
       |> assign(:holder, nil)
+      |> assign(:upload_pcts, %{})
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
 
@@ -300,6 +301,76 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("cancel_dialog", _params, socket) do
     {:noreply, assign(socket, :dialog, nil)}
+  end
+
+  ## Events · images in the text. The files and the running requests
+  ## live in the holder's browser; these events keep the Log and the
+  ## panel's progress display current.
+
+  def handle_event("images_inserted", %{"files" => names}, socket) do
+    %{article: article, current_scope: scope, holds_lock: holds} = socket.assigns
+
+    if holds do
+      Articles.push_log(
+        article,
+        scope.user,
+        case names do
+          [one] -> "put #{one} into the text"
+          many -> "put #{length(many)} images into the text"
+        end
+      )
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("upload_progress", %{"file" => file, "pct" => pct}, socket) do
+    {:noreply, assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, file, pct))}
+  end
+
+  def handle_event("image_uploaded", %{"file" => file}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+    Articles.push_log(article, scope.user, "#{file} is in the text")
+    {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
+  end
+
+  def handle_event("image_failed", %{"file" => file, "pct" => pct}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+    Articles.push_log(article, scope.user, "#{file} failed to upload into the text")
+
+    {:noreply,
+     socket
+     |> assign(:upload_pcts, Map.put(socket.assigns.upload_pcts, file, pct))
+     |> mark_saved("#{file} failed at #{pct}% · retry or remove it under the text")}
+  end
+
+  def handle_event("image_retry", %{"file" => file}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+    Articles.push_log(article, scope.user, "retried the upload of #{file}")
+    {:noreply, assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, file, 0))}
+  end
+
+  def handle_event("image_retry_missing", %{"file" => file}, socket) do
+    {:noreply,
+     mark_saved(
+       socket,
+       "The file for #{file} is not in this browser any more · remove the marker and paste the image again"
+     )}
+  end
+
+  def handle_event("image_removed", %{"file" => file, "how" => how}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    Articles.push_log(
+      article,
+      scope.user,
+      if(how == "cancel",
+        do: "cancelled the upload of #{file}",
+        else: "took the marker for #{file} out of the text"
+      )
+    )
+
+    {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
   end
 
   defp do_publish(socket, opts) do
@@ -715,7 +786,9 @@ defmodule TexttileWeb.EditorLive do
                 </button>
                 <span class="mdsep" aria-hidden="true"></span>
                 <button type="button" class="mdb" data-cmd="quote" title="Quote" aria-label="Quote">
-                  <span class="g font-serif font-bold text-[17px] leading-none pt-[5px]">&rdquo;</span>
+                  <span class="g font-serif font-bold text-[17px] leading-none pt-[5px]">
+                    &rdquo;
+                  </span>
                 </button>
                 <button type="button" class="mdb" data-cmd="bullet" title="List" aria-label="List">
                   <svg
@@ -748,10 +821,24 @@ defmodule TexttileWeb.EditorLive do
                     stroke-linecap="round"
                   >
                     <path d="M7.5 4h5.5M7.5 8h5.5M7.5 12h5.5" />
-                    <text x="1.6" y="6" font-size="6.5" fill="currentColor" stroke="none" font-family="inherit">
+                    <text
+                      x="1.6"
+                      y="6"
+                      font-size="6.5"
+                      fill="currentColor"
+                      stroke="none"
+                      font-family="inherit"
+                    >
                       1
                     </text>
-                    <text x="1.6" y="14" font-size="6.5" fill="currentColor" stroke="none" font-family="inherit">
+                    <text
+                      x="1.6"
+                      y="14"
+                      font-size="6.5"
+                      fill="currentColor"
+                      stroke="none"
+                      font-family="inherit"
+                    >
                       2
                     </text>
                   </svg>
@@ -845,6 +932,96 @@ defmodule TexttileWeb.EditorLive do
                     <% end %>
                   </span>
                 </p>
+                <span class="drop-flag" id="bodyDropFlag" hidden>
+                  Put the image in the text, where the caret is
+                </span>
+              </div>
+              <input
+                type="file"
+                id="mdImgFile"
+                class="sr"
+                multiple
+                accept="image/*"
+                aria-label="Put images in the text"
+              />
+
+              <%!-- the images in the text: a reading of the body, never
+                   a list of its own. An upload that is still running
+                   holds its place with a token, and the token becomes
+                   the reference when the upload finishes. --%>
+              <div class="mt-[34px]">
+                <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
+                  <span class="text-[13px] font-semibold">
+                    Images in the text
+                    <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
+                  </span>
+                  <span class="sp"></span>
+                  <span class="note">Paste one into the text, or drop one on it.</span>
+                </div>
+                <div id="inlineImgs">
+                  <p :if={Articles.inline_refs(@article.body) == []} class="note pt-[10px]">
+                    None in this text yet. Paste an image into the text, or drop one on it.
+                  </p>
+                  <%= for ref <- Articles.inline_refs(@article.body) do %>
+                    <div
+                      :if={ref.kind == :done}
+                      class="flex items-center gap-[11px] py-[9px] border-b border-hair text-[13px]"
+                    >
+                      <span
+                        class="w-9 h-9 r-img bg-field bg-center bg-cover flex-none"
+                        style={"background-image:url('#{String.replace(ref.url, "'", "%27")}')"}
+                      >
+                      </span>
+                      <span class="font-semibold flex-none">{ref.file}</span>
+                      <span class="sp"></span>
+                      <span class="text-faint text-[12px] break-words">{ref.raw}</span>
+                    </div>
+                    <div :if={ref.kind == :failed} class="py-[9px] border-b border-hair text-[13px]">
+                      <div class="flex items-center gap-[11px] flex-wrap">
+                        <span class="w-9 h-9 r-img bg-field flex-none"></span>
+                        <span class="font-semibold flex-none text-julia">{ref.file}</span>
+                        <span class="sp"></span>
+                        <%= if @holds_lock do %>
+                          <button class="btn sm" data-img-action="retry" data-img-file={ref.file}>
+                            Retry
+                          </button>
+                          <button class="btn sm" data-img-action="remove" data-img-file={ref.file}>
+                            Remove
+                          </button>
+                        <% end %>
+                      </div>
+                      <p class="note mt-[5px] max-w-[62ch]">
+                        The upload stopped at {@upload_pcts[ref.file] || 0}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text.
+                      </p>
+                    </div>
+                    <div :if={ref.kind == :running} class="py-[9px] border-b border-hair text-[13px]">
+                      <div class="flex items-center gap-[11px] flex-wrap">
+                        <span class="w-9 h-9 r-img bg-field flex-none"></span>
+                        <span class="font-semibold flex-none">{ref.file}</span>
+                        <span class="note num">
+                          {if (@upload_pcts[ref.file] || 0) == 0,
+                            do: "queued",
+                            else: "uploading #{@upload_pcts[ref.file]}%"}
+                        </span>
+                        <span class="sp"></span>
+                        <button
+                          :if={@holds_lock}
+                          class="btn sm"
+                          data-img-action="cancel"
+                          data-img-file={ref.file}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <span class="track mt-[7px]">
+                        <i style={"width:#{@upload_pcts[ref.file] || 0}%"}></i>
+                      </span>
+                      <p class="note mt-[5px]">
+                        The text holds the place. The marker becomes the image when the upload finishes.
+                      </p>
+                    </div>
+                  <% end %>
+                </div>
               </div>
             </div>
 
@@ -1144,6 +1321,17 @@ defmodule TexttileWeb.EditorLive do
 
   defp log_line(%{user: nil, text: text}), do: text
   defp log_line(%{user: user, text: text}), do: "#{Accounts.display_name(user)} #{text}"
+
+  defp inline_count(body) do
+    refs = Articles.inline_refs(body)
+    done = Enum.count(refs, &(&1.kind == :done))
+    running = Enum.count(refs, &(&1.kind == :running))
+    failed = Enum.count(refs, &(&1.kind == :failed))
+
+    "#{done} #{if done == 1, do: "image", else: "images"}" <>
+      if(running > 0, do: " · #{running} on the way", else: "") <>
+      if(failed > 0, do: " · #{failed} failed", else: "")
+  end
 
   defp word_count(text) do
     case text |> to_string() |> String.split(~r/\s+/, trim: true) do

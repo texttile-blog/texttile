@@ -308,6 +308,37 @@ defmodule Texttile.Articles do
     entry
   end
 
+  ## Images in the text
+
+  @doc """
+  The one reading of the body that the image panel uses. A Markdown
+  image reference in the body IS the image; an upload still running
+  holds its place with a token (`![Uploading name…]()`), a failed one
+  with a marker (`![Upload failed: name]()`). Returns them in reading
+  order as `%{kind: :running | :failed | :done, file: name, raw: text}`.
+  """
+  def inline_refs(body) do
+    ~r/!\[([^\]]*)\]\(([^)]*)\)/
+    |> Regex.scan(to_string(body))
+    |> Enum.flat_map(fn [raw, alt, url] ->
+      url = String.trim(url)
+
+      cond do
+        url != "" ->
+          [%{kind: :done, file: url |> String.split("/") |> List.last(), raw: raw, url: url}]
+
+        match = Regex.run(~r/^Uploading (.+)…$/, alt) ->
+          [%{kind: :running, file: Enum.at(match, 1), raw: raw, url: nil}]
+
+        match = Regex.run(~r/^Upload failed: (.+)$/, alt) ->
+          [%{kind: :failed, file: Enum.at(match, 1), raw: raw, url: nil}]
+
+        true ->
+          []
+      end
+    end)
+  end
+
   ## Slugs
 
   @doc "A title turned into an address: lowercase, dashes, nothing else."

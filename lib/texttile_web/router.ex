@@ -51,6 +51,10 @@ defmodule TexttileWeb.Router do
   scope "/", TexttileWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    # The editor's image uploads: the body holds a token while the file
+    # travels here, and the answer is the address the token becomes.
+    post "/desk/images", ImagesController, :create
+
     live_session :desk,
       on_mount: [
         {TexttileWeb.UserAuth, :ensure_authenticated},

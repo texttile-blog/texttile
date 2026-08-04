@@ -75,6 +75,45 @@ defmodule Texttile.Uploads do
     end
   end
 
+  @body_image_extensions ~w(.png .jpg .jpeg .webp .gif)
+
+  @doc """
+  Stores an image pasted or dropped into a text's body, below `images/`.
+  The original is kept as it came; display sizes are renditions
+  (`Texttile.Images`). The stored name keeps the readable base of the
+  original plus a random tag, so names never collide and the file may
+  be cached hard.
+  """
+  def put_body_image(source_path, original_name) do
+    extension = original_name |> Path.extname() |> String.downcase()
+
+    cond do
+      extension not in @body_image_extensions ->
+        {:error, "PNG, JPG, WebP or GIF, please"}
+
+      not readable_image?(source_path) ->
+        {:error, "The file could not be read as an image"}
+
+      true ->
+        base =
+          case Texttile.Articles.slugify(Path.rootname(original_name)) do
+            "" -> "image"
+            slug -> slug
+          end
+
+        tag = 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+        relative = "images/#{base}-#{tag}#{extension}"
+        destination = absolute(relative)
+        File.mkdir_p!(Path.dirname(destination))
+        File.cp!(source_path, destination)
+        {:ok, relative}
+    end
+  end
+
+  defp readable_image?(path) do
+    match?({:ok, _}, Vix.Vips.Image.new_from_file(path))
+  end
+
   @doc "Back to the default mark: the file goes, the settings clear."
   def reset_site_mark(mark) when mark in @marks do
     remove_stored_file(mark)

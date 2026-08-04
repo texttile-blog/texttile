@@ -187,6 +187,42 @@ defmodule TexttileWeb.EditorLiveTest do
     end
   end
 
+  describe "images in the text" do
+    test "the panel reads the body: done, running and failed", %{conn: conn, user: user} do
+      body = """
+      Prose.
+
+      ![pier](/uploads/images/pier-abcd.jpg)
+
+      ![Uploading gull.jpg…]()
+
+      ![Upload failed: fog.png]()
+      """
+
+      article = draft(user, %{title: "Doors", body: body})
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      assert has_element?(view, "#inlineCount", "1 image · 1 on the way · 1 failed")
+      assert has_element?(view, "#inlineImgs", "pier-abcd.jpg")
+      assert has_element?(view, "#inlineImgs button[data-img-action=cancel]")
+      assert has_element?(view, "#inlineImgs button[data-img-action=retry]")
+    end
+
+    test "upload events reach the log and the progress display", %{conn: conn, user: user} do
+      article = draft(user, %{title: "Doors", body: "![Uploading gull.jpg…]()"})
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_hook(view, "images_inserted", %{"files" => ["gull.jpg"]})
+      render_hook(view, "upload_progress", %{"file" => "gull.jpg", "pct" => 40})
+      assert has_element?(view, "#inlineImgs", "uploading 40%")
+
+      render_hook(view, "image_uploaded", %{"file" => "gull.jpg"})
+      view |> element(".tab", "Log") |> render_click()
+      assert has_element?(view, "#logList", "gull.jpg is in the text")
+      assert has_element?(view, "#logList", "put gull.jpg into the text")
+    end
+  end
+
   describe "log" do
     test "records what happened, newest first", %{conn: conn, user: user} do
       article = draft(user)
