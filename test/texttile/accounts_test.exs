@@ -88,6 +88,19 @@ defmodule Texttile.AccountsTest do
       end)
     end
 
+    test "mails from the site title, not from the product name" do
+      configure_admins(["kb"])
+      {:ok, _} = Texttile.Settings.put(:site_title, "Breyer Blog")
+      attrs = %{password: "a long password", email: "kb@example.org"}
+
+      assert {:ok, _user} = Accounts.claim_account("kb", attrs, site: "texttile.blog")
+
+      assert_email_sent(fn email ->
+        assert {"Breyer Blog", _address} = email.from
+        true
+      end)
+    end
+
     test "the displayed name may stay empty, the username stands in" do
       configure_admins(["kb"])
 

@@ -17,6 +17,16 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:favicon) == nil
     end
 
+    test "site_title/0 falls back to Texttile while the title is blank" do
+      assert Settings.site_title() == "Texttile"
+
+      {:ok, _} = Settings.put(:site_title, "   ")
+      assert Settings.site_title() == "Texttile"
+
+      {:ok, _} = Settings.put(:site_title, "Breyer Blog")
+      assert Settings.site_title() == "Breyer Blog"
+    end
+
     test "all/0 carries every key" do
       all = Settings.all()
       assert all.site_title == "Texttile"

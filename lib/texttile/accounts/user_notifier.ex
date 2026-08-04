@@ -7,6 +7,7 @@ defmodule Texttile.Accounts.UserNotifier do
   import Swoosh.Email
 
   alias Texttile.Mailer
+  alias Texttile.Settings
 
   @doc """
   Confirms a fresh registration: which site, which username. The
@@ -45,11 +46,13 @@ defmodule Texttile.Accounts.UserNotifier do
     """)
   end
 
+  # The reader knows the site by its title, not by the product it runs
+  # on, so the title is the sender name.
   defp deliver(user, subject, body) do
     email =
       new()
       |> to({user.username, user.email})
-      |> from({"Texttile", Application.fetch_env!(:texttile, :mail_from)})
+      |> from({Settings.site_title(), Application.fetch_env!(:texttile, :mail_from)})
       |> subject(subject)
       |> text_body(body)
 

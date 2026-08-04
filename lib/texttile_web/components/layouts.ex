@@ -33,12 +33,7 @@ defmodule TexttileWeb.Layouts do
   The name the site goes by, from Settings; an empty title falls back
   to Texttile. It names the browser tab and the wordmark in the bar.
   """
-  def site_title do
-    case String.trim(Texttile.Settings.get(:site_title)) do
-      "" -> "Texttile"
-      title -> title
-    end
-  end
+  defdelegate site_title, to: Texttile.Settings
 
   @doc """
   The favicon of every page: the uploaded one from Settings, or the

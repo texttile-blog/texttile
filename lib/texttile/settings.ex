@@ -52,6 +52,17 @@ defmodule Texttile.Settings do
     end
   end
 
+  @doc """
+  The name the site goes by: its title, or Texttile while the title is
+  blank. It names the browser tab, the wordmark and the sender of mail.
+  """
+  def site_title do
+    case String.trim(get(:site_title)) do
+      "" -> default(:site_title)
+      title -> title
+    end
+  end
+
   @doc "Every setting as one map, typed."
   def all do
     stored = Map.new(Repo.all(Setting), &{&1.key, &1.value})
