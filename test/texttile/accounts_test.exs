@@ -293,4 +293,42 @@ defmodule Texttile.AccountsTest do
       assert {:ok, _} = Accounts.authenticate_user(stale.username, "third password!!")
     end
   end
+
+  describe "delete_user/2" do
+    test "deletes another account with its sessions" do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+      Accounts.create_session(other)
+
+      assert {:ok, _} = Accounts.delete_user(other, by: me)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
+      assert Accounts.list_sessions(other) == []
+    end
+
+    test "never you, never the last account" do
+      me = user_fixture(%{username: "kb"})
+      assert {:error, :last} = Accounts.delete_user(me, by: me)
+
+      other = user_fixture(%{username: "julia"})
+      assert {:error, :yourself} = Accounts.delete_user(other, by: other)
+    end
+
+    test "an account another admin deleted first answers :gone, not a crash" do
+      me = user_fixture(%{username: "kb"})
+      other = user_fixture(%{username: "julia"})
+      _third = user_fixture(%{username: "pat"})
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+      assert {:error, :gone} = Accounts.delete_user(other, by: me)
+    end
+  end
+
+  describe "list_users/0" do
+    test "everybody, oldest account first" do
+      kb = user_fixture(%{username: "kb"})
+      julia = user_fixture(%{username: "julia"})
+
+      assert Enum.map(Accounts.list_users(), & &1.id) == [kb.id, julia.id]
+    end
+  end
 end

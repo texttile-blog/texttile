@@ -15,22 +15,9 @@ defmodule Texttile.Repo.Migrations.AccountsFromTheConfiguration do
     execute "UPDATE users SET email = email_tmp"
     execute "ALTER TABLE users DROP COLUMN email_tmp"
     create unique_index(:users, [:email])
-
-    # Nobody is invited any more, so no link is mailed either.
-    drop table(:login_links)
   end
 
   def down do
-    create table(:login_links) do
-      add :token_hash, :binary, null: false
-      add :user_id, references(:users, on_delete: :delete_all), null: false
-
-      timestamps(type: :utc_datetime, updated_at: false)
-    end
-
-    create unique_index(:login_links, [:token_hash])
-    create index(:login_links, [:user_id])
-
     # Accounts without an address cannot go back into a NOT NULL column.
     # Give them one in the application before rolling back.
     drop unique_index(:users, [:email])

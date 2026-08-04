@@ -50,12 +50,15 @@ defmodule TexttileWeb.SessionHTML do
       <p :if={@error == :claimed} class="text-julia text-[13px] mt-[13px]" id="login-error">
         This account already exists. Sign in with its password.
       </p>
+      <p class="mt-[13px]">
+        <a class="link text-[13px]" href={~p"/forgot"}>Forgot your password?</a>
+      </p>
       <p class="note mt-[22px] leading-[1.6]">
         This page is for admins. Readers never see it, and there is no public
         registration. The people who may sign in stand in the configuration of
         this server. Each of them chooses a password at the first sign-in. Your
-        username is the name you sign in with. Your email address is only for
-        notifications, and you add it in your profile.
+        username is the name you sign in with. Your email address is what a
+        password link needs, and you add it in your profile.
       </p>
     </Layouts.auth>
     """

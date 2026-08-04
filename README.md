@@ -60,26 +60,32 @@ ADMIN_USERS="kb,julia"
 
 A name on that list has no account at first. Its owner opens the site, types
 the name on the sign-in screen, and chooses a password there. That creates
-the account. From then on the name signs in with that password. There is no
-invitation and no mail: adding the name is the invitation.
+the account. From then on the name signs in with that password. Nobody is
+invited: adding the name to `ADMIN_USERS` is the invitation.
 
 The list stays in charge. Take a name out and its access ends at once, in
 every open browser, whether or not the account is still there. Put it back
 and the account works again.
 
-Two consequences of this design:
+The username is the only thing an outsider has to guess to reach the
+password screen of a name that has no account yet. Pick names that are not
+obvious, and keep `ADMIN_USERS` down to the people who need it.
 
-- The username is the only thing an outsider has to guess to reach the
-  password screen of a name that has no account yet. Pick names that are not
-  obvious, and keep `ADMIN_USERS` down to the people who need it.
-- A new account has no email address, so nothing can mail a password link. A
-  forgotten password is not recoverable by mail. Another admin deletes the
-  account in Settings, and its owner signs in again with the same name and a
-  fresh password. For the only account of a site, delete the row in the
-  database instead.
+### A forgotten password
 
-Everyone adds their own email address in their profile. It is for
-notifications, never for signing in.
+The sign-in screen has a "Forgot your password?" link. It asks for the email
+address of the account and sends a link that sets a new password. The link
+works one time, and for 24 hours. Outgoing mail has to work for this, so a
+real installation sets `MAIL_ADAPTER`.
+
+A fresh account has no email address: nobody asks for one at the first
+sign-in. Everyone adds theirs in their profile, and that address is what the
+reset needs. Without it, the way back is to delete the account in Settings;
+its owner then signs in again with the same name and a fresh password. For
+the only account of a site, delete the row in the database instead.
+
+An address is for the reset and for notifications. It is never a sign-in
+identity, and a name that left `ADMIN_USERS` gets no link either.
 
 ## Deploy on Fly.io
 
@@ -92,13 +98,16 @@ secrets, certificate).
 Requires Elixir 1.19+, Erlang/OTP 28+, and Node.js (for browser tests).
 
 ```sh
-make start   # dev server on port 4000, no configuration needed
-make test    # unit tests plus end-to-end browser tests
+make start       # dev server on port 4000, no configuration needed
+make test        # unit tests plus end-to-end browser tests
+make db-delete   # delete the shared development SQLite database
 ```
 
 All git worktrees of the repository share the dev state of the main
 checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
 `.env` file. Outside a git checkout, everything stays next to the code.
+Stop the development server before running `make db-delete`. The next
+`make start` recreates the database and applies all migrations.
 
 In development the sign-in list holds `admin`, so the first sign-in with that
 name creates the account. `ADMIN_USERS` in `.env` replaces the list. To test

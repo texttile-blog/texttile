@@ -56,6 +56,51 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     end
   end
 
+  describe "a forgotten password" do
+    test "the link from the mail sets a new one and signs in", %{conn: conn} do
+      user = user_fixture(%{username: "kb"})
+
+      # Mails from the server processes land in this test process.
+      Application.put_env(:swoosh, :shared_test_process, self())
+      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+
+      conn
+      |> visit("/login")
+      |> click_link("Forgot your password?")
+      |> fill_in("Email address", with: user.email)
+      |> click_button("Send the link")
+      |> assert_has("#forgot-sent", text: "The mail is on its way")
+
+      assert_receive {:email, %Swoosh.Email{} = mail}, 2000
+      [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
+
+      conn
+      |> visit(link)
+      |> assert_has("#link-who", text: "belongs to the account kb")
+      |> fill_in("New password", with: "a brand new password")
+      |> click_button("Set the password and sign in")
+      |> assert_has("#crumb", text: "Texts")
+
+      assert {:ok, _} = Texttile.Accounts.authenticate_user("kb", "a brand new password")
+    end
+
+    test "a name the configuration dropped gets no mail", %{conn: conn} do
+      user = user_fixture(%{username: "kb"})
+      configure_admins([])
+
+      Application.put_env(:swoosh, :shared_test_process, self())
+      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+
+      conn
+      |> visit("/forgot")
+      |> fill_in("Email address", with: user.email)
+      |> click_button("Send the link")
+      |> assert_has("#forgot-sent", text: "The mail is on its way")
+
+      refute_receive {:email, _}, 500
+    end
+  end
+
   describe "sign-in" do
     test "wrong credentials leave a quiet line, right ones open the desk", %{conn: conn} do
       user_fixture(%{username: "kb"})
