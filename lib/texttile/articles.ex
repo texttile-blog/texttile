@@ -139,7 +139,9 @@ defmodule Texttile.Articles do
     was = article.status
 
     with {:ok, article} <-
-           article |> Article.state_changeset(%{status: "draft", publish_date: nil}) |> Repo.update() do
+           article
+           |> Article.state_changeset(%{status: "draft", publish_date: nil})
+           |> Repo.update() do
       push_log(
         article,
         user,

@@ -223,6 +223,136 @@
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
   .card .cm .st.scheduled { background: var(--tt-accentsoft); }
 
+  /* the split button: the primary action and the state actions in one
+     shell, one radius, one hairline between them. Solid while the text
+     is a draft, calm once the text has a state of its own. The hover
+     lives on the segment, so it is always clear which half you are on. */
+  .split {
+    display: inline-flex; align-items: center; flex: none; height: 30px;
+    border-radius: var(--tt-radius);
+    transition: box-shadow .15s ease, background-color .15s ease;
+  }
+  .split .main {
+    display: inline-flex; align-items: center; gap: 5px; height: 30px;
+    padding-left: 13px; padding-right: 13px; font-size: 13px; font-weight: 500;
+    white-space: nowrap; transition: background-color .15s ease, color .15s ease;
+    border-radius: var(--tt-radius) 0 0 var(--tt-radius);
+  }
+  .split .main.one { padding-right: 10px; border-radius: var(--tt-radius); }
+  .split .main .cv { font-size: 15px; opacity: .6; margin-left: 2px; }
+  .split .div { width: 1px; height: 15px; flex: none; }
+  .split .chev {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 30px; width: 30px; font-size: 16px;
+    transition: background-color .15s ease, color .15s ease;
+    border-radius: 0 var(--tt-radius) var(--tt-radius) 0;
+  }
+  .split .main:active, .split .chev:active { transform: translateY(1px); }
+  .split.solid { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+  .split.solid .div { background: var(--tt-solidline); }
+  /* hover lifts only the touched segment by a shade of the same hue
+     instead of jumping to another colour */
+  .split.solid .main:hover, .split.solid .chev:hover,
+  .split.solid .chev[aria-expanded="true"] { background-image: linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / .16)); }
+  .split.calm { color: var(--tt-ink); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+  .split.calm:hover { box-shadow: inset 0 0 0 1px var(--tt-inksoft); }
+  .split.calm .div { background: var(--tt-rule); }
+  .split.calm .main:hover, .split.calm .chev:hover,
+  .split.calm .main[aria-expanded="true"], .split.calm .chev[aria-expanded="true"] { background-color: var(--tt-field); }
+
+  /* the status stamp in the bar */
+  .stamp {
+    font-size: 11.5px; padding: 3px 9px; background-color: var(--tt-field);
+    color: var(--tt-dim); flex: none; border-radius: var(--tt-radius-pill);
+  }
+  .stamp.published { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+  .stamp.scheduled { background-color: transparent; color: var(--tt-dim); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+
+  /* the editor's tab row */
+  .tab {
+    padding: 9px 13px; font-size: 13.5px; color: var(--tt-dim);
+    border-bottom: var(--tt-tabw) solid transparent; margin-bottom: -1px;
+    transition: color .15s ease;
+  }
+  .tab:first-child { padding-left: 0; }
+  .tab:hover { color: var(--tt-ink); }
+  .tab.on { color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent); }
+  .tab .cnt { color: var(--tt-faint); font-weight: 400; margin-left: 5px; }
+
+  /* the Log */
+  .log-row { display: flex; gap: 14px; padding: 11px 0; font-size: 13.5px; border-bottom: 1px solid var(--tt-hair); }
+  .log-row:first-child { border-top: 1px solid var(--tt-rule); }
+  .log-row time { flex: none; width: 92px; white-space: nowrap; color: var(--tt-faint); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  @media (min-width: 768px) { .log-row time { width: 132px; } }
+  .log-row .j { color: var(--tt-julia); font-weight: 600; }
+
+  /* versions: word-level diff, in the palette we already have */
+  .dif-add { color: var(--tt-accent); border-radius: 2px; background: var(--tt-accentwash); }
+  .dif-del { color: var(--tt-julia); text-decoration-line: line-through; border-radius: 2px; background: var(--tt-juliatint); }
+
+  /* the writing surface: flush, no box, a whisper of a wash that hugs
+     the text on hover and firms up on focus. The field ends where the
+     text ends. */
+  .ed-title {
+    width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
+    font-family: var(--tt-font-serif); font-size: 25px; font-weight: 600;
+    line-height: 1.15; letter-spacing: -.02em;
+    background: transparent; border: 0; border-radius: 0;
+    padding: 6px 6px 9px;
+    border-bottom: 2px solid var(--tt-inksoft);
+    transition: border-color .15s ease, background-color .18s ease, box-shadow .15s ease;
+  }
+  @media (min-width: 768px) { .ed-title { font-size: 30px; } }
+  .ed-title:hover { background: var(--tt-wash1); border-bottom-color: var(--tt-ink); }
+  .ed-title:focus {
+    outline: none; background: var(--tt-wash2);
+    border-color: transparent; border-bottom-color: var(--tt-accent); box-shadow: none;
+  }
+  .ed-body {
+    display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
+    margin-top: 22px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+    color: var(--tt-ink); background: transparent; border: 0; border-radius: 0;
+    padding: 6px 6px 7px; resize: none; min-height: 100px;
+    field-sizing: content;
+    transition: background-color .18s ease;
+  }
+  .ed-body:hover { background: var(--tt-wash1); }
+  .ed-body:focus, .ed-cm:focus-within { outline: none; background: var(--tt-wash2); border-color: transparent; }
+  .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
+  /* while the other admin holds the text both fields are read-only and
+     say so by staying quiet, with a pointer that offers the takeover */
+  .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
+  .ed-title[readonly]:hover, .ed-title[readonly]:focus,
+  .ed-body[readonly]:hover, .ed-body[readonly]:focus {
+    background: var(--tt-livetint); border-bottom-color: var(--tt-liveline); box-shadow: none;
+  }
+  #bodyWrap.is-readonly .ed-cm,
+  #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
+  #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-livetint); }
+  .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
+  .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
+  #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag,
+  #bodyWrap:has(textarea.ed-body:focus:not([readonly])) .ed-foot .flag { display: inline-flex; }
+
+  /* the confirmation line under the bar. On a wide screen the quiet
+     text in the bar says it and this line is only for a screen reader;
+     on a phone this is the only place it is visible. It takes no room
+     while there is nothing to say. */
+  .state-live {
+    display: block; position: sticky; top: 52px; z-index: 20;
+    padding: 6px 10px; font-size: 12.5px; color: var(--tt-dim);
+    background: var(--tt-page); border-bottom: 1px solid var(--tt-hair);
+  }
+  @media (min-width: 768px) {
+    .state-live {
+      position: absolute; width: 1px; height: 1px; padding: 0; border: 0;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+  }
+
+  /* the second group start inside a settings block */
+  .drow.gtop { margin-top: 14px; padding-top: 9px; }
+
   /* presence, dots, popovers */
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex: none; background: currentColor; }
   /* the presence hint on the wordmark: one small dot in julia's

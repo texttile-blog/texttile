@@ -38,24 +38,33 @@
   --tt-accentloud:  #6d35de;
   --tt-accentsoft:  #b6a2e4;
   --tt-accentwash:  #f2eff9;
+  --tt-accentline:  #dcd2f0;
 
   /* solid controls: deep violet, lighter violet on hover */
   --tt-solid:       #4b2a83;
   --tt-solidhover:  #6a3fb5;
   --tt-onsolid:    #ffffff;
+  --tt-solidline:   rgba(255, 255, 255, .32);
 
   /* julia · paper's rust, and nothing else */
   --tt-julia:       #b0532e;
   --tt-juliatint:   #fdf2ec;
   --tt-julialine:   #f0d7c5;
   --tt-livetint:    #f2eff9;
+  --tt-liveline:    #dcd2f0;
   --tt-livetext:    #6d35de;
 
-  /* depth */
+  /* depth · with a lavender breath on the second wash so a focused
+     editor tints instead of graying */
   --tt-shadow:      35 30 24;
   --tt-scrim:       rgba(24, 21, 17, .34);
+  --tt-wash1:       rgba(109, 53, 222, .028);
+  --tt-wash2:       rgba(109, 53, 222, .05);
 
   /* shape · paper's */
   --tt-radius:      4px;
   --tt-radius-pop:  7px;
+  --tt-radius-pill: 999px;
+  --tt-radius-img:  3px;
+  --tt-tabw:        2px;
 }
