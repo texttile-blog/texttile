@@ -117,9 +117,11 @@ defmodule Texttile.Import do
   @doc """
   Reads every bundle folder below `dir` and answers the report: the
   bundles with their complaints, the zip-level warnings, and the hosts
-  the import would download from.
+  the import would download from. `progress` hears what is being
+  checked: `{:checking_url, url, index, total}` and
+  `{:retrying, url, what}`.
   """
-  def validate(dir) do
+  def validate(dir, progress \\ fn _event -> :ok end) do
     bundles =
       dir
       |> bundle_dirs()
@@ -127,7 +129,7 @@ defmodule Texttile.Import do
       |> mark_duplicate_slugs()
       |> mark_existing_slugs()
 
-    {bundles, hosts} = check_urls(bundles)
+    {bundles, hosts} = check_urls(bundles, progress)
 
     %Report{bundles: bundles, warnings: zip_warnings(dir), hosts: hosts}
   end
@@ -182,14 +184,22 @@ defmodule Texttile.Import do
   end
 
   # Every URL once, however many bundles share it.
-  defp check_urls(bundles) do
+  defp check_urls(bundles, progress) do
     urls =
       bundles
       |> Enum.flat_map(&Bundle.sources/1)
       |> Enum.filter(&Bundle.url?/1)
       |> Enum.uniq()
 
-    verdicts = Map.new(urls, fn url -> {url, head_check(url)} end)
+    total = length(urls)
+
+    verdicts =
+      urls
+      |> Enum.with_index(1)
+      |> Map.new(fn {url, index} ->
+        progress.({:checking_url, url, index, total})
+        {url, head_check(url, progress)}
+      end)
 
     bundles =
       Enum.map(bundles, fn bundle ->
@@ -209,9 +219,9 @@ defmodule Texttile.Import do
     {bundles, hosts}
   end
 
-  defp head_check(url) do
+  defp head_check(url, progress) do
     with :ok <- host_check(url) do
-      case request(method: :head, url: url) do
+      case request(method: :head, url: url, retry: noted_retry(progress, url)) do
         {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
           picture_answer(url, response)
 
@@ -224,7 +234,8 @@ defmodule Texttile.Import do
                  method: :get,
                  url: url,
                  headers: [range: "bytes=0-0"],
-                 decode_body: false
+                 decode_body: false,
+                 retry: noted_retry(progress, url)
                ) do
             {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
               picture_answer(url, response)
@@ -297,6 +308,25 @@ defmodule Texttile.Import do
   # break it. The final address belongs in the bundle.
   defp request(options) do
     Req.request(options ++ [redirect: false] ++ req_options())
+  end
+
+  # Req's own transient set, spelled out so the page can say what is
+  # happening instead of a server-log line saying it alone.
+  defp noted_retry(note, url) do
+    fn _request, answer ->
+      case answer do
+        %Req.Response{status: status} when status in [408, 429, 500, 502, 503, 504] ->
+          note.({:retrying, url, "answers #{status}"})
+          true
+
+        %Req.Response{} ->
+          false
+
+        exception when is_exception(exception) ->
+          note.({:retrying, url, "is not reachable (#{Exception.message(exception)})"})
+          true
+      end
+    end
   end
 
   defp content_type(response) do
@@ -375,7 +405,9 @@ defmodule Texttile.Import do
 
   @doc """
   Imports every bundle of the report that has no errors, one at a time.
-  `progress` hears `{:bundle, name, index, total}` before each one.
+  `progress` hears `{:bundle, name, index, total}` before each one,
+  then `{:fetching, source, index, total}` per picture and
+  `{:retrying, url, what}` when a host has to be asked again.
   Answers the summary: created, updated, skipped, and the failures.
   """
   def run(%Report{} = report, user, progress \\ fn _event -> :ok end) do
@@ -389,7 +421,7 @@ defmodule Texttile.Import do
       fn {bundle, index}, summary ->
         progress.({:bundle, bundle.name, index, total})
 
-        case import_bundle(bundle, user) do
+        case import_bundle(bundle, user, progress) do
           {:ok, :created} -> %{summary | created: summary.created + 1}
           {:ok, :updated} -> %{summary | updated: summary.updated + 1}
           {:error, message} -> %{summary | failed: summary.failed ++ [{bundle.name, message}]}
@@ -403,9 +435,9 @@ defmodule Texttile.Import do
   # whole and leaves only files to sweep, and those are swept here too.
   # The old files fall last, once the transaction holds - a rollback
   # must find them still in place.
-  defp import_bundle(bundle, user) do
+  defp import_bundle(bundle, user, progress) do
     with :ok <- refuse_locked(bundle),
-         {:ok, stored} <- store_pictures(bundle) do
+         {:ok, stored} <- store_pictures(bundle, progress) do
       try do
         {:ok, {verb, old_paths}} =
           Repo.transaction(fn -> apply_bundle(bundle, stored, user) end, timeout: :infinity)
@@ -435,11 +467,16 @@ defmodule Texttile.Import do
     end
   end
 
-  defp store_pictures(bundle) do
-    bundle
-    |> Bundle.sources()
-    |> Enum.reduce_while({:ok, %{}}, fn source, {:ok, stored} ->
-      case store_picture(bundle, source) do
+  defp store_pictures(bundle, progress) do
+    sources = Bundle.sources(bundle)
+    total = length(sources)
+
+    sources
+    |> Enum.with_index(1)
+    |> Enum.reduce_while({:ok, %{}}, fn {source, index}, {:ok, stored} ->
+      progress.({:fetching, source, index, total})
+
+      case store_picture(bundle, source, progress) do
         {:ok, picture} ->
           {:cont, {:ok, Map.put(stored, source, picture)}}
 
@@ -455,9 +492,9 @@ defmodule Texttile.Import do
   # A surprise here (a full disk, a body that will not read) fails the
   # one bundle, never the whole run: store_pictures hears {:error} and
   # rolls the bundle's files back.
-  defp store_picture(bundle, source) do
+  defp store_picture(bundle, source, progress) do
     if Bundle.url?(source) do
-      download(source)
+      download(source, progress)
     else
       with {:ok, relative} <-
              Uploads.put_body_image(Path.join(bundle.dir, source), Path.basename(source)) do
@@ -468,7 +505,7 @@ defmodule Texttile.Import do
     error -> {:error, "#{source}: #{Exception.message(error)}"}
   end
 
-  defp download(url) do
+  defp download(url, progress) do
     with :ok <- host_check(url) do
       tmp = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
       file = File.open!(tmp, [:write, :binary])
@@ -510,7 +547,8 @@ defmodule Texttile.Import do
           method: :get,
           url: url,
           into: into,
-          receive_timeout: receive_timeout()
+          receive_timeout: receive_timeout(),
+          retry: noted_retry(progress, url)
         )
 
       File.close(file)

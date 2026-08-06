@@ -61,7 +61,8 @@ defmodule Texttile.Import.Job do
       message: nil,
       done: 0,
       total: 0,
-      current: nil
+      current: nil,
+      step: nil
     }
   end
 
@@ -76,11 +77,14 @@ defmodule Texttile.Import.Job do
     dir = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)
 
+    job = self()
+    note = fn event -> GenServer.cast(job, {:note, event}) end
+
     task =
       Task.Supervisor.async_nolink(Texttile.Import.TaskSupervisor, fn ->
         result =
           with {:ok, warnings} <- Import.unpack(zip_path, dir) do
-            {:ok, Import.validate(dir), warnings}
+            {:ok, Import.validate(dir, note), warnings}
           end
 
         File.rm(zip_path)
@@ -101,9 +105,7 @@ defmodule Texttile.Import.Job do
     task =
       Task.Supervisor.async_nolink(Texttile.Import.TaskSupervisor, fn ->
         summary =
-          Import.run(report, user, fn {:bundle, name, index, total} ->
-            GenServer.cast(job, {:progress, name, index, total})
-          end)
+          Import.run(report, user, fn event -> GenServer.cast(job, {:note, event}) end)
 
         {:finished, summary}
       end)
@@ -126,10 +128,25 @@ defmodule Texttile.Import.Job do
     {:reply, :ok, announce(clean(state))}
   end
 
+  # The fine print of the work in flight, straight onto the page. A
+  # note from a task that is no longer the story (the phases moved on)
+  # is dropped.
   @impl true
-  def handle_cast({:progress, name, index, total}, state) do
-    {:noreply, announce(%{state | done: index - 1, total: total, current: name})}
+  def handle_cast({:note, {:bundle, name, index, total}}, %{phase: :running} = state) do
+    {:noreply, announce(%{state | done: index - 1, total: total, current: name, step: nil})}
   end
+
+  def handle_cast({:note, event}, %{phase: phase} = state)
+      when phase in [:validating, :running] do
+    {:noreply, announce(%{state | step: step(event)})}
+  end
+
+  def handle_cast({:note, _event}, state), do: {:noreply, state}
+
+  defp step({:checking_url, url, index, total}), do: "checking #{url} (#{index} of #{total})"
+  defp step({:fetching, source, index, total}), do: "picture #{index} of #{total}: #{source}"
+  defp step({:retrying, url, what}), do: "#{url} #{what}; trying again"
+  defp step(_event), do: nil
 
   @impl true
   def handle_info({ref, message}, %{task: %Task{ref: ref}} = state) do
@@ -139,7 +156,7 @@ defmodule Texttile.Import.Job do
       case message do
         {:validated, {:ok, report, warnings}} ->
           report = %{report | warnings: Enum.uniq(warnings ++ report.warnings)}
-          %{state | phase: :report, task: nil, report: report}
+          %{state | phase: :report, task: nil, report: report, step: nil}
 
         {:validated, {:error, reason}} ->
           %{clean(state) | phase: :failed, message: reason}

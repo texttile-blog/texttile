@@ -433,6 +433,43 @@ defmodule Texttile.ImportTest do
       assert [%{width: 8, height: 4}] = Gallery.list(article.id)
     end
 
+    test "the run narrates each picture and each retry", %{dir: dir, user: user} do
+      write_bundle(dir, "beach", "title: A\ngallery: [https://flaky.example/a.jpg]\n")
+
+      me = self()
+      progress = fn event -> send(me, {:progress, event}) end
+
+      report = Import.validate(dir, progress)
+      assert_received {:progress, {:checking_url, "https://flaky.example/a.jpg", 1, 1}}
+
+      base = Application.get_env(:texttile, :import_req_options)
+
+      Application.put_env(
+        :texttile,
+        :import_req_options,
+        base ++ [retry_delay: fn _attempt -> 1 end, retry_log_level: false]
+      )
+
+      on_exit(fn -> Application.put_env(:texttile, :import_req_options, base) end)
+
+      {:ok, attempts} = Agent.start_link(fn -> 0 end)
+
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        if conn.method == "GET" and Agent.get_and_update(attempts, &{&1, &1 + 1}) == 0 do
+          Plug.Conn.resp(conn, 502, "bad gateway")
+        else
+          respond_with_jpg(conn)
+        end
+      end)
+
+      summary = Import.run(report, user, progress)
+      assert summary.failed == []
+
+      assert_received {:progress, {:bundle, "beach", 1, 1}}
+      assert_received {:progress, {:fetching, "https://flaky.example/a.jpg", 1, 1}}
+      assert_received {:progress, {:retrying, "https://flaky.example/a.jpg", "answers 502"}}
+    end
+
     test "replacing the gallery tells the open editors once", %{dir: dir, user: user} do
       write_bundle(dir, "beach", "title: Beach days\ngallery: [a.jpg]\n", "", ["a.jpg"])
       Import.run(Import.validate(dir), user)

@@ -124,9 +124,12 @@ defmodule TexttileWeb.ImportLive do
               </p>
             </form>
           <% :validating -> %>
-            <p class="mt-6" id="import-validating">
-              Reading {@job.name} …
-            </p>
+            <div class="mt-6" id="import-validating">
+              <p>Reading {@job.name} …</p>
+              <p :if={@job.step} class="note mt-2 num break-all" id="import-step">
+                {@job.step}
+              </p>
+            </div>
           <% :failed -> %>
             <div class="mt-6" id="import-failed">
               <p class="text-julia">{@job.message}</p>
@@ -194,6 +197,9 @@ defmodule TexttileWeb.ImportLive do
                 >
                 </div>
               </div>
+              <p :if={@job.step} class="note mt-3 num break-all" id="import-step">
+                {@job.step}
+              </p>
               <p class="note mt-3">
                 The import runs on the server; this page may close.
               </p>

@@ -16,13 +16,16 @@ defmodule Texttile.Import.JobTest do
 
   defp zip_with_one_bundle! do
     source = Path.join(System.tmp_dir!(), "job-zip-#{System.unique_integer([:positive])}")
-    File.mkdir_p!(Path.join(source, "beach"))
+    File.mkdir_p!(Path.join(source, "beach/gallery"))
     File.write!(Path.join(source, "beach/index.md"), "---\ntitle: Beach days\n---\nHello.\n")
+
+    {:ok, black} = Vix.Vips.Operation.black(8, 4)
+    :ok = Vix.Vips.Image.write_to_file(black, Path.join(source, "beach/gallery/a.jpg"))
 
     zip_path = Path.join(System.tmp_dir!(), "job-#{System.unique_integer([:positive])}.zip")
 
     {:ok, _} =
-      :zip.create(String.to_charlist(zip_path), [~c"beach/index.md"],
+      :zip.create(String.to_charlist(zip_path), [~c"beach/index.md", ~c"beach/gallery/a.jpg"],
         cwd: String.to_charlist(source)
       )
 
@@ -44,6 +47,10 @@ defmodule Texttile.Import.JobTest do
 
     assert :ok = Job.start_import(job, user)
     assert_receive {:import_state, %{phase: :running}}, 2000
+
+    # the page hears what is being worked on, picture by picture
+    assert_receive {:import_state, %{phase: :running, step: "picture 1 of 1:" <> _}}, 2000
+
     assert_receive {:import_state, %{phase: :done, summary: summary}}, 5000
     assert summary.created == 1
     assert Repo.get_by(Article, slug: "beach-days")
