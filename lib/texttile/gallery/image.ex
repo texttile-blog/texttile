@@ -9,7 +9,6 @@ defmodule Texttile.Gallery.Image do
   what the admin sees and edits, no timezone mathematics anywhere.
   """
   use Ecto.Schema
-  import Ecto.Changeset
 
   schema "gallery_images" do
     belongs_to :article, Texttile.Articles.Article
@@ -17,8 +16,6 @@ defmodule Texttile.Gallery.Image do
     field :path, :string
     field :filename, :string
     field :gallery_date, :utc_datetime_usec
-    field :alt, :string, default: ""
-    field :caption, :string, default: ""
     field :width, :integer
     field :height, :integer
 
@@ -27,13 +24,5 @@ defmodule Texttile.Gallery.Image do
     field :delete_after, :utc_datetime_usec
 
     timestamps(type: :utc_datetime)
-  end
-
-  @doc "What the lightbox form may change: the words around a picture."
-  def meta_changeset(image, attrs) do
-    image
-    |> cast(attrs, [:alt, :caption])
-    |> update_change(:alt, &String.slice(&1, 0, 500))
-    |> update_change(:caption, &String.slice(&1, 0, 500))
   end
 end

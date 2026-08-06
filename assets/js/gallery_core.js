@@ -5,7 +5,6 @@
         gallery_changed), gallery_moved {id, note} when somebody else
         sorted
    out: gallery_reorder {id, ids}, gallery_set_date {id, date},
-        gallery_set_meta {id, alt, caption}, gallery_delete {id},
         gallery_undo {id}, gallery_refresh - and files as one POST per
         file to the upload url
 
@@ -17,6 +16,7 @@
    tile and reconciles whatever was skipped. */
 
 const MAX_PARALLEL = 2
+const MAX_FILE_MB = 50
 const TOUCH_DRAG_DELAY_MS = 200
 const DRAG_THRESHOLD_PX = 9
 const TAP_MS = 500
@@ -26,7 +26,6 @@ const SCROLL_STEP_PX = 14
 const NOTE_MS = 2600
 const JMOVE_MS = 2600
 const UNDO_S = 10
-const META_DEBOUNCE_MS = 500
 const SAVED_MS = 4000
 
 const FOCUSABLE = "a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex='-1'])"
@@ -165,14 +164,21 @@ class Gallery {
   addFiles(fileList) {
     const images = [...fileList].filter(f => /^image\//.test(f.type))
     for (const file of images) {
+      // an oversize file fails right here instead of after minutes of upload
+      const oversize = file.size > MAX_FILE_MB * 1024 * 1024
+
       this.records.push({
         id: "u" + ++this.uid,
         file,
         name: file.name,
         objurl: URL.createObjectURL(file),
-        status: "queued",
+        status: oversize ? "failed" : "queued",
+        error: oversize ? `bigger than the ${MAX_FILE_MB} MB roof` : null,
+        noRetry: oversize,
         pct: 0,
       })
+
+      if (oversize) this.noteTile(`${file.name} is bigger than the ${MAX_FILE_MB} MB roof.`)
     }
     if (images.length) {
       this.renderLocal()
@@ -317,8 +323,8 @@ class Gallery {
 
     const buttons =
       r.status === "failed"
-        ? `<button type="button" class="tile-x" data-act="retry">Retry</button>
-           <button type="button" class="tile-x" data-act="remove">Remove</button>`
+        ? (r.noRetry ? "" : `<button type="button" class="tile-x" data-act="retry">Retry</button>`) +
+          `<button type="button" class="tile-x" data-act="remove">Remove</button>`
         : `<button type="button" class="tile-x" data-act="cancel">Cancel</button>`
 
     return `<div class="tile up ${r.status}" data-local-id="${r.id}"
@@ -526,8 +532,6 @@ class Gallery {
       count: list.length,
       filename: t.dataset.filename,
       date: t.dataset.date,
-      alt: t.dataset.alt,
-      caption: t.dataset.caption,
       full: t.dataset.full,
       original: t.dataset.original,
     }
@@ -558,8 +562,8 @@ class Gallery {
     const root = document.createElement("dialog")
     root.id = "lbRoot"
     root.setAttribute("aria-label", "Image, full size")
-    // the dialog itself takes the focus: autofocusing the alt field
-    // would pop the keyboard over the picture on a phone
+    // the dialog itself takes the focus: autofocusing the date field
+    // would pop a picker over the picture on a phone
     root.tabIndex = -1
 
     root.innerHTML = `
@@ -584,22 +588,12 @@ class Gallery {
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
           <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
-          <div class="grid gap-3 md:grid-cols-[1fr_1fr_190px] items-end mt-2">
-            <span>
-              <label class="lab block mb-[3px]" for="lbAlt">Alt text</label>
-              <input type="text" id="lbAlt" placeholder="What the picture shows">
-            </span>
-            <span>
-              <label class="lab block mb-[3px]" for="lbCap">Caption</label>
-              <input type="text" id="lbCap" placeholder="Shown under the picture">
-            </span>
+          <div class="flex flex-wrap items-end gap-x-3 gap-y-2 mt-2">
             <span>
               <label class="lab block mb-[3px]" for="lbDate">Date</label>
               <input type="datetime-local" id="lbDate" step="60">
             </span>
-          </div>
-          <div class="flex items-center gap-3 mt-3">
-            <span class="note" id="lbSaved">Every change here saves itself.</span>
+            <span class="note pb-[6px]" id="lbSaved">The date saves itself and sorts the gallery.</span>
             <span class="sp"></span>
             <button type="button" class="btn sm" id="lbDelete">Delete image</button>
           </div>
@@ -620,23 +614,6 @@ class Gallery {
       b.addEventListener("click", () => this.nav(parseInt(b.dataset.nav, 10)))
     )
     root.querySelector("#lbDelete").addEventListener("click", () => this.deleteCurrent())
-
-    const alt = root.querySelector("#lbAlt")
-    const cap = root.querySelector("#lbCap")
-    const metaChanged = () => {
-      const id = this.lb && this.lb.id
-      if (!id) return
-      clearTimeout(this.metaTimer)
-      this.metaTimer = setTimeout(() => {
-        this.hook.pushEvent(
-          "gallery_set_meta",
-          {id, alt: alt.value, caption: cap.value},
-          reply => this.savedNote(reply.ok ? null : "That picture was deleted a moment ago")
-        )
-      }, META_DEBOUNCE_MS)
-    }
-    alt.addEventListener("input", metaChanged)
-    cap.addEventListener("input", metaChanged)
 
     const date = root.querySelector("#lbDate")
     date.addEventListener("change", () => {
@@ -682,14 +659,11 @@ class Gallery {
     orig.setAttribute("download", data.filename)
     this.root.querySelector("#lbName").textContent = data.filename
 
-    const caption = data.caption ? ` · “${data.caption}”` : ""
     this.root.querySelector("#lbMeta").textContent =
-      ` · ${data.date.slice(0, 10)} · image ${data.index + 1} of ${data.count}${caption}`
+      ` · ${data.date.slice(0, 10)} · image ${data.index + 1} of ${data.count}`
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {
-      this.root.querySelector("#lbAlt").value = data.alt
-      this.root.querySelector("#lbCap").value = data.caption
       this.root.querySelector("#lbDate").value = data.date
       lb.formFor = lb.id
     }
@@ -704,7 +678,7 @@ class Gallery {
     const state = this.root.querySelector("#lbState")
 
     img.style.backgroundImage = ""
-    img.setAttribute("aria-label", data.alt || data.filename)
+    img.setAttribute("aria-label", data.filename)
     state.hidden = false
     state.textContent = "Loading the full size…"
 
@@ -803,7 +777,7 @@ class Gallery {
     clearTimeout(this.savedTimer)
     el.textContent = problem || "Saved · just now"
     this.savedTimer = setTimeout(() => {
-      el.textContent = "Every change here saves itself."
+      el.textContent = "The date saves itself and sorts the gallery."
     }, SAVED_MS)
   }
 

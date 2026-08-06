@@ -62,6 +62,25 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       assert [%{filename: "e2e-" <> _}] = Gallery.list(article.id)
     end
+
+    test "a photo far past the old 8 MB parser default arrives", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      big = Path.join(System.tmp_dir!(), "big-#{System.unique_integer([:positive])}.jpg")
+      {:ok, noise} = Vix.Vips.Operation.gaussnoise(4000, 3000, sigma: 40.0)
+      {:ok, bands} = Vix.Vips.Operation.bandjoin([noise, noise, noise])
+      {:ok, cast} = Vix.Vips.Operation.cast(bands, :VIPS_FORMAT_UCHAR)
+      :ok = Vix.Vips.Image.write_to_file(cast, big, Q: 95)
+      assert File.stat!(big).size > 9_000_000
+
+      conn
+      |> sign_in()
+      |> visit("/texts/#{article.id}")
+      |> upload("Add images to the gallery", big)
+      |> assert_has("#tileServer [data-id]", timeout: 30_000)
+
+      assert [_] = Gallery.list(article.id)
+    end
   end
 
   describe "the lightbox" do
@@ -82,11 +101,6 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         |> assert_has("#lbCount", text: "1 / 2")
         |> press("#lbRoot", "ArrowRight")
         |> assert_has("#lbName", text: "gull.jpg")
-
-      # the words around the picture save themselves
-      conn = fill_in(conn, "Alt text", with: "A gull on a pole")
-
-      wait_until(fn -> Gallery.get!(article.id, b.id).alt == "A gull on a pole" end)
 
       # a picture added elsewhere: the count moves, the lightbox stays
       seed!(article, "fog.jpg", "2024:05:01 14:00:00")

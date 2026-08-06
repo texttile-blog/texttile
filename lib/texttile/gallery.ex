@@ -65,16 +65,55 @@ defmodule Texttile.Gallery do
   end
 
   @doc """
-  The oldest image of each given article, as `%{article_id => path}`.
-  The texts grid shows it on the card.
+  The preview image of each given article, as `%{article_id => path}`.
+  The texts grid shows it on the card; articles without one are absent.
   """
-  def cover_paths(article_ids) do
-    Image
-    |> where([i], i.article_id in ^article_ids and is_nil(i.delete_after))
-    |> order_by([i], asc: i.gallery_date, asc: i.id)
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn image, covers ->
-      Map.put_new(covers, image.article_id, image.path)
+  def previews(articles) do
+    ids = Enum.map(articles, & &1.id)
+
+    by_article =
+      Image
+      |> where([i], i.article_id in ^ids and is_nil(i.delete_after))
+      |> order_by([i], asc: i.gallery_date, asc: i.id)
+      |> Repo.all()
+      |> Enum.group_by(& &1.article_id, & &1.path)
+
+    Enum.reduce(articles, %{}, fn article, previews ->
+      case effective_preview(article, Map.get(by_article, article.id, [])) do
+        nil -> previews
+        path -> Map.put(previews, article.id, path)
+      end
+    end)
+  end
+
+  @doc """
+  The images a preview can be chosen from: the gallery in its order,
+  then the finished pictures inside the text.
+  """
+  def preview_candidates(article, gallery_paths) do
+    Enum.uniq(gallery_paths ++ inline_paths(article.body))
+  end
+
+  @doc """
+  The preview the readers see: the chosen image while it still exists,
+  otherwise the first image of the text, otherwise nil.
+  """
+  def effective_preview(article, gallery_paths) do
+    candidates = preview_candidates(article, gallery_paths)
+
+    if article.preview_path in candidates do
+      article.preview_path
+    else
+      List.first(candidates)
+    end
+  end
+
+  defp inline_paths(body) do
+    body
+    |> Texttile.Articles.inline_refs()
+    |> Enum.flat_map(fn
+      %{kind: :done, url: "/uploads/" <> relative} -> [relative]
+      _ -> []
     end)
   end
 
@@ -197,19 +236,6 @@ defmodule Texttile.Gallery do
   defp as_utc(naive) do
     date = DateTime.from_naive!(naive, "Etc/UTC")
     %{date | microsecond: {elem(date.microsecond, 0), 6}}
-  end
-
-  @doc "Saves the words of a picture: alt text and caption."
-  def set_meta(article_id, image_id, attrs, opts \\ []) do
-    case fetch(article_id, image_id) do
-      nil ->
-        {:error, :gone}
-
-      image ->
-        image = image |> Image.meta_changeset(attrs) |> Repo.update!()
-        broadcast(article_id, :meta, image.id, opts[:by])
-        {:ok, image}
-    end
   end
 
   ## Sorting

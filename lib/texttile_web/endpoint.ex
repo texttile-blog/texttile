@@ -48,8 +48,10 @@ defmodule TexttileWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
+  # Multipart carries the pictures; a phone photo is far past Plug's
+  # 8 MB default. 52 MB holds a 50 MB image plus the form around it.
   plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
+    parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 

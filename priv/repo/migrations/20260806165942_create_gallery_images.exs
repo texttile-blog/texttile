@@ -7,8 +7,6 @@ defmodule Texttile.Repo.Migrations.CreateGalleryImages do
       add :path, :string, null: false
       add :filename, :string, null: false
       add :gallery_date, :utc_datetime_usec, null: false
-      add :alt, :string, null: false, default: ""
-      add :caption, :string, null: false, default: ""
       add :width, :integer
       add :height, :integer
       add :delete_after, :utc_datetime_usec

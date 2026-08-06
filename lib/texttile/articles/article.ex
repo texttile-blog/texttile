@@ -27,6 +27,10 @@ defmodule Texttile.Articles.Article do
     field :notify_on_publish, :boolean, default: true
     field :notified_on, :date
 
+    # The chosen preview image (uploads-relative). Nil lets the first
+    # image of the text speak for it.
+    field :preview_path, :string
+
     timestamps(type: :utc_datetime)
   end
 
@@ -40,7 +44,7 @@ defmodule Texttile.Articles.Article do
   @doc "The article settings; each field is atomic, last write wins."
   def settings_changeset(article, attrs) do
     article
-    |> cast(attrs, [:type, :tags, :slug, :allow_comments, :notify_on_publish])
+    |> cast(attrs, [:type, :tags, :slug, :allow_comments, :notify_on_publish, :preview_path])
     |> update_change(:slug, &normalize_slug/1)
     |> validate_inclusion(:type, @types)
     |> unique_constraint(:slug)

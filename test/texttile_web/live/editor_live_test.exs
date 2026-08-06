@@ -295,7 +295,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert tile_order(render(view)) == [a.id, b.id]
     end
 
-    test "the lightbox form sets date, alt and caption", %{conn: conn, user: user} do
+    test "the lightbox date field resorts the gallery", %{conn: conn, user: user} do
       article = draft(user)
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
@@ -308,16 +308,6 @@ defmodule TexttileWeb.EditorLiveTest do
       })
 
       assert tile_order(render(view)) == [b.id, a.id]
-
-      render_hook(view, "gallery_set_meta", %{
-        "id" => to_string(b.id),
-        "alt" => "A pier",
-        "caption" => "Evening light"
-      })
-
-      updated = Texttile.Gallery.get!(article.id, b.id)
-      assert updated.alt == "A pier"
-      assert updated.caption == "Evening light"
     end
 
     test "delete takes the tile away at once, undo brings it back", %{conn: conn, user: user} do
@@ -350,6 +340,35 @@ defmodule TexttileWeb.EditorLiveTest do
       render_hook(reader, "gallery_reorder", %{"id" => to_string(b.id), "ids" => ids})
 
       assert Enum.map(Texttile.Gallery.list(article.id), & &1.id) == [b.id, a.id]
+    end
+
+    test "the preview picker chooses, flags the tile, and lets go again", %{
+      conn: conn,
+      user: user
+    } do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+      {:ok, other, _html} = live(conn, ~p"/texts/#{article}")
+
+      # without a choice the first image wears the flag
+      assert has_element?(view, "#tile-#{a.id} .cov")
+      refute has_element?(view, "#tile-#{b.id} .cov")
+
+      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+
+      assert Articles.get_article!(article.id).preview_path == b.path
+      assert has_element?(view, "#tile-#{b.id} .cov")
+      assert has_element?(view, "#coverRow button.on[phx-value-path='#{b.path}']")
+      assert has_element?(other, "#tile-#{b.id} .cov")
+
+      # the second click lets the first image speak again
+      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+
+      assert Articles.get_article!(article.id).preview_path == nil
+      assert has_element?(view, "#tile-#{a.id} .cov")
     end
 
     test "gallery doings land in the log", %{conn: conn, user: user} do

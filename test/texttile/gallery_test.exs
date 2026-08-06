@@ -236,19 +236,6 @@ defmodule Texttile.GalleryTest do
     end
   end
 
-  describe "set_meta/4" do
-    test "saves alt text and caption" do
-      {article, _user} = article!()
-      image = add!(article, "a.jpg")
-
-      {:ok, updated} =
-        Gallery.set_meta(article.id, image.id, %{"alt" => "A pier", "caption" => "Evening"})
-
-      assert updated.alt == "A pier"
-      assert updated.caption == "Evening"
-    end
-  end
-
   describe "delete, undo and the sweep" do
     test "a deleted image leaves the gallery at once, the file stays for the undo" do
       {article, _user} = article!()
@@ -314,16 +301,45 @@ defmodule Texttile.GalleryTest do
     end
   end
 
-  describe "cover_paths/1" do
-    test "answers the oldest image of each article" do
+  describe "previews" do
+    defp reload(article), do: Articles.get_article!(article.id)
+
+    test "without a choice the first image speaks for the text" do
       {article, _user} = article!()
       {other, _user} = article!()
       _late = add!(article, "b.jpg", taken: "2024:05:02 09:00:00")
       first = add!(article, "a.jpg", taken: "2024:05:01 09:00:00")
 
-      covers = Gallery.cover_paths([article.id, other.id])
+      assert Gallery.previews([reload(article), other]) == %{article.id => first.path}
+    end
 
-      assert covers == %{article.id => first.path}
+    test "a chosen image wins while it exists" do
+      {article, _user} = article!()
+      _first = add!(article, "a.jpg", taken: "2024:05:01 09:00:00")
+      chosen = add!(article, "b.jpg", taken: "2024:05:02 09:00:00")
+
+      {:ok, _} = Articles.update_settings(article, %{preview_path: chosen.path})
+
+      assert Gallery.previews([reload(article)]) == %{article.id => chosen.path}
+    end
+
+    test "a stale choice falls back to the first image" do
+      {article, _user} = article!()
+      first = add!(article, "a.jpg", taken: "2024:05:01 09:00:00")
+
+      {:ok, _} = Articles.update_settings(article, %{preview_path: "images/gone-00000000.jpg"})
+
+      assert Gallery.previews([reload(article)]) == %{article.id => first.path}
+    end
+
+    test "a picture inside the text can be the preview too" do
+      {article, _user} = article!()
+
+      {:ok, article} =
+        Articles.update_text(article, %{body: "![pier](/uploads/images/pier-abcd.jpg)"})
+
+      assert Gallery.preview_candidates(article, []) == ["images/pier-abcd.jpg"]
+      assert Gallery.previews([article]) == %{article.id => "images/pier-abcd.jpg"}
     end
   end
 

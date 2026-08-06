@@ -2,8 +2,8 @@ defmodule TexttileWeb.TextsLive do
   @moduledoc """
   The Texts overview: the full-page grid of cards without boxes, a
   status filter, a search over titles, tags and the texts themselves.
-  The design is the round-14 grid; a card wears the oldest gallery
-  image of its text.
+  The design is the round-14 grid; a card wears its text's preview
+  image (`Texttile.Gallery.effective_preview/2`).
   """
   use TexttileWeb, :live_view
 
@@ -27,7 +27,7 @@ defmodule TexttileWeb.TextsLive do
 
     socket
     |> assign(:articles, articles)
-    |> assign(:covers, Gallery.cover_paths(Enum.map(articles, & &1.id)))
+    |> assign(:covers, Gallery.previews(articles))
     |> assign(:total, length(Articles.list_articles()))
   end
 

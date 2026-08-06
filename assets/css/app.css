@@ -401,6 +401,27 @@
     font-variant-numeric: tabular-nums;
     background: rgb(var(--tt-overlay, 25 23 32) / .72);
   }
+  /* the "preview" flag on the chosen tile, bottom-right */
+  .tile .cov {
+    position: absolute; right: 5px; bottom: 5px;
+    font-size: 10px; color: #fff; padding: 1px 6px;
+    border-radius: var(--tt-radius-img);
+    background: rgb(var(--tt-overlay, 25 23 32) / .72);
+  }
+
+  /* the preview-image picker in the article settings */
+  .cover-opt {
+    position: relative; width: 46px; aspect-ratio: 1 / 1;
+    background: var(--tt-field) center / cover no-repeat;
+    border-radius: var(--tt-radius-img); transition: box-shadow .15s;
+  }
+  .cover-opt:hover { box-shadow: 0 0 0 2px var(--tt-accentsoft); }
+  .cover-opt.on { box-shadow: 0 0 0 2px var(--tt-ink); }
+  .cover-opt.on::after {
+    content: "\2713"; position: absolute; right: 4px; bottom: 1px; color: #fff;
+    font-size: 12px; font-weight: 700; text-shadow: 0 0 4px rgba(0, 0, 0, .75);
+  }
+
   .tile-add {
     aspect-ratio: 1 / 1; display: grid; place-items: center;
     color: var(--tt-dim); font-size: 12.5px;

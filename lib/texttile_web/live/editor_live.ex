@@ -493,20 +493,6 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  def handle_event("gallery_set_meta", %{"id" => id} = params, socket) do
-    %{article: article, current_scope: scope} = socket.assigns
-
-    with {:ok, id} <- parse_id(id),
-         {:ok, _image} <-
-           Gallery.set_meta(article.id, id, Map.take(params, ["alt", "caption"]),
-             by: scope.user.id
-           ) do
-      {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
-    else
-      _ -> {:reply, %{ok: false}, socket |> assign_gallery() |> mark_saved(gone_note())}
-    end
-  end
-
   def handle_event("gallery_delete", %{"id" => id}, socket) do
     %{article: article, current_scope: scope} = socket.assigns
 
@@ -531,6 +517,27 @@ defmodule TexttileWeb.EditorLive do
     else
       _ ->
         {:noreply, mark_saved(socket, "Too late · the picture is gone for good")}
+    end
+  end
+
+  # The preview picker in the article settings: a click chooses, a
+  # second click on the chosen one lets the first image speak again.
+  # Open to every admin, like the rest of the settings.
+  def handle_event("set_preview", %{"path" => path}, socket) do
+    %{article: article, gallery: gallery, current_scope: scope} = socket.assigns
+
+    cond do
+      path not in Gallery.preview_candidates(article, Enum.map(gallery, & &1.path)) ->
+        {:noreply, socket |> assign_gallery() |> mark_saved(gone_note())}
+
+      article.preview_path == path ->
+        {:ok, article} = Articles.update_settings(article, %{preview_path: nil})
+        {:noreply, socket |> assign(:article, article) |> mark_saved()}
+
+      true ->
+        {:ok, article} = Articles.update_settings(article, %{preview_path: path})
+        Articles.push_log(article, scope.user, "chose #{Path.basename(path)} as the preview")
+        {:noreply, socket |> assign(:article, article) |> mark_saved()}
     end
   end
 
@@ -662,6 +669,14 @@ defmodule TexttileWeb.EditorLive do
       1 -> "1 image"
       n -> "#{n} images"
     end
+  end
+
+  defp preview_candidates(%{article: article, gallery: gallery}) do
+    Gallery.preview_candidates(article, Enum.map(gallery, & &1.path))
+  end
+
+  defp effective_preview(%{article: article, gallery: gallery}) do
+    Gallery.effective_preview(article, Enum.map(gallery, & &1.path))
   end
 
   ## PubSub and lock messages
@@ -1452,8 +1467,6 @@ defmodule TexttileWeb.EditorLive do
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
                   data-date={Calendar.strftime(image.gallery_date, "%Y-%m-%dT%H:%M")}
-                  data-alt={image.alt}
-                  data-caption={image.caption}
                   data-full={"/desk/renditions/max/" <> image.path}
                   data-original={"/uploads/" <> image.path}
                   title={"#{image.filename} · #{Calendar.strftime(image.gallery_date, "%Y-%m-%d")}"}
@@ -1463,6 +1476,7 @@ defmodule TexttileWeb.EditorLive do
                   aria-label={"Image #{index}, #{image.filename}, grab to sort, tap to see it big"}
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
+                  <span :if={effective_preview(assigns) == image.path} class="cov">preview</span>
                 </div>
               </div>
               <div class="contents" id="tileLocal" phx-update="ignore"></div>
@@ -1580,6 +1594,39 @@ defmodule TexttileWeb.EditorLive do
                   />
                 </span>
                 <div class="hint" id="slugHint">{slug_hint(@article)}</div>
+              </span>
+            </div>
+
+            <div class="drow gtop">
+              <span class="lab">Preview image</span>
+              <span class="val">
+                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
+                  <%= if preview_candidates(assigns) == [] do %>
+                    <span class="note">
+                      No images yet. Once the text or the gallery has one, pick it here.
+                    </span>
+                  <% else %>
+                    <button
+                      :for={
+                        {path, index} <-
+                          preview_candidates(assigns) |> Enum.take(8) |> Enum.with_index(1)
+                      }
+                      type="button"
+                      class={["cover-opt", effective_preview(assigns) == path && "on"]}
+                      style={"background-image:url('/desk/renditions/320/#{path}')"}
+                      phx-click="set_preview"
+                      phx-value-path={path}
+                      aria-label={"Use image #{index} as the preview image"}
+                    >
+                    </button>
+                    <span :if={length(preview_candidates(assigns)) > 8} class="note">
+                      +{length(preview_candidates(assigns)) - 8} more in the gallery
+                    </span>
+                  <% end %>
+                </div>
+                <div class="hint">
+                  Used in the texts grid, on the front page and in link previews.
+                </div>
               </span>
             </div>
 
