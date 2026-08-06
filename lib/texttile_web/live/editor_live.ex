@@ -679,6 +679,12 @@ defmodule TexttileWeb.EditorLive do
     Gallery.effective_preview(article, Enum.map(gallery, & &1.path))
   end
 
+  # A candidate can come from the body, so the path is markdown text;
+  # a quote must not break out of the url('...') it lands in.
+  defp tile_bg(path) do
+    "background-image:url('/desk/renditions/320/#{String.replace(path, "'", "%27")}')"
+  end
+
   ## PubSub and lock messages
 
   def handle_info({:text_changed, %{id: id} = article}, socket) do
@@ -896,6 +902,12 @@ defmodule TexttileWeb.EditorLive do
   ## Render
 
   def render(assigns) do
+    # once per render, not once per tile: the candidates parse the body
+    assigns =
+      assigns
+      |> assign(:preview_candidates, preview_candidates(assigns))
+      |> assign(:effective_preview, effective_preview(assigns))
+
     ~H"""
     <Layouts.app
       flash={@flash}
@@ -1476,7 +1488,15 @@ defmodule TexttileWeb.EditorLive do
                   aria-label={"Image #{index}, #{image.filename}, grab to sort, tap to see it big"}
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
-                  <span :if={effective_preview(assigns) == image.path} class="cov">preview</span>
+                  <span :if={@effective_preview == image.path} class="cov">preview</span>
+                  <button
+                    type="button"
+                    class="tile-del"
+                    data-del
+                    aria-label={"Delete #{image.filename}"}
+                  >
+                    &times;
+                  </button>
                 </div>
               </div>
               <div class="contents" id="tileLocal" phx-update="ignore"></div>
@@ -1505,9 +1525,10 @@ defmodule TexttileWeb.EditorLive do
             </p>
           </div>
 
-          <%!-- article settings: Status first and merged with the date,
-               then everything that describes the text. Nothing folded,
-               and no Publish button: that one lives in the bar. --%>
+          <%!-- article settings: what the text wears first (preview,
+               address, date), then what it is, then its community.
+               No Status row - the stamp and the button in the bar
+               already say it - and no Publish button either. --%>
           <form
             id="artSettings"
             class="mt-[34px]"
@@ -1521,24 +1542,63 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow pt-0.5">
-              <span class="lab">Status</span>
+              <span class="lab">Preview image</span>
               <span class="val">
-                <div id="statusVal">
-                  <span class="text-[14.5px]">{status_line(@article)}</span>
-                  <div class="hint">{status_hint(@article)}</div>
+                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
+                  <%= if @preview_candidates == [] do %>
+                    <span class="note">
+                      No images yet. Once the text or the gallery has one, pick it here.
+                    </span>
+                  <% else %>
+                    <button
+                      :for={
+                        {path, index} <- @preview_candidates |> Enum.take(8) |> Enum.with_index(1)
+                      }
+                      type="button"
+                      class={["cover-opt", @effective_preview == path && "on"]}
+                      style={tile_bg(path)}
+                      phx-click="set_preview"
+                      phx-value-path={path}
+                      aria-label={"Use image #{index} as the preview image"}
+                    >
+                    </button>
+                    <span :if={length(@preview_candidates) > 8} class="note">
+                      +{length(@preview_candidates) - 8} more in the gallery
+                    </span>
+                  <% end %>
                 </div>
-                <div class="mt-[11px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="edDate" id="edDateLab">
-                    {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
-                  </label>
+                <div class="hint">
+                  Used in the texts grid, on the front page and in link previews.
+                </div>
+              </span>
+            </div>
+
+            <div class="drow gtop">
+              <span class="lab">Address</span>
+              <span class="val">
+                <span class="addr">
+                  <span class="pre">{TexttileWeb.Endpoint.host()}/</span>
                   <input
-                    type="date"
-                    id="edDate"
-                    name="publish_date"
-                    value={@article.publish_date}
+                    type="text"
+                    id="edSlug"
+                    name="slug"
+                    value={@article.slug}
+                    spellcheck="false"
+                    autocapitalize="off"
+                    phx-debounce="300"
                   />
-                  <div class="hint" id="edDateHint">{date_hint(@article)}</div>
-                </div>
+                </span>
+                <div class="hint" id="slugHint">{slug_hint(@article)}</div>
+              </span>
+            </div>
+
+            <div class="drow gtop">
+              <label class="lab" id="edDateLab" for="edDate">
+                {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
+              </label>
+              <span class="val">
+                <input type="date" id="edDate" name="publish_date" value={@article.publish_date} />
+                <div class="hint" id="edDateHint">{date_hint(@article)}</div>
               </span>
             </div>
 
@@ -1579,59 +1639,7 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow gtop">
-              <span class="lab">Address</span>
-              <span class="val">
-                <span class="addr">
-                  <span class="pre">{TexttileWeb.Endpoint.host()}/</span>
-                  <input
-                    type="text"
-                    id="edSlug"
-                    name="slug"
-                    value={@article.slug}
-                    spellcheck="false"
-                    autocapitalize="off"
-                    phx-debounce="300"
-                  />
-                </span>
-                <div class="hint" id="slugHint">{slug_hint(@article)}</div>
-              </span>
-            </div>
-
-            <div class="drow gtop">
-              <span class="lab">Preview image</span>
-              <span class="val">
-                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
-                  <%= if preview_candidates(assigns) == [] do %>
-                    <span class="note">
-                      No images yet. Once the text or the gallery has one, pick it here.
-                    </span>
-                  <% else %>
-                    <button
-                      :for={
-                        {path, index} <-
-                          preview_candidates(assigns) |> Enum.take(8) |> Enum.with_index(1)
-                      }
-                      type="button"
-                      class={["cover-opt", effective_preview(assigns) == path && "on"]}
-                      style={"background-image:url('/desk/renditions/320/#{path}')"}
-                      phx-click="set_preview"
-                      phx-value-path={path}
-                      aria-label={"Use image #{index} as the preview image"}
-                    >
-                    </button>
-                    <span :if={length(preview_candidates(assigns)) > 8} class="note">
-                      +{length(preview_candidates(assigns)) - 8} more in the gallery
-                    </span>
-                  <% end %>
-                </div>
-                <div class="hint">
-                  Used in the texts grid, on the front page and in link previews.
-                </div>
-              </span>
-            </div>
-
-            <div class="drow gtop">
-              <span class="lab">Readers</span>
+              <span class="lab">Community</span>
               <span class="val">
                 <label class="opt">
                   <input type="hidden" name="allow_comments" value="false" />
@@ -1811,24 +1819,6 @@ defmodule TexttileWeb.EditorLive do
   defp diff_class(:same), do: nil
 
   defp will_notify?(article), do: article.type != "page" and article.notify_on_publish
-
-  defp status_line(%{status: "draft"} = article),
-    do: "Draft · last edited #{Calendar.strftime(article.updated_at, "%Y-%m-%d")}"
-
-  defp status_line(%{status: "scheduled"} = article),
-    do:
-      "Scheduled · " <>
-        if(article.publish_date, do: "goes live #{article.publish_date}", else: "no date yet")
-
-  defp status_line(article), do: "Published #{article.publish_date}"
-
-  defp status_hint(%{status: "draft"}),
-    do: "Publish it with the button in the bar. It is a draft until then."
-
-  defp status_hint(%{status: "scheduled"}),
-    do: "Publish now or unschedule it with the button in the bar."
-
-  defp status_hint(_article), do: "Unpublish it with the button in the bar."
 
   defp date_hint(%{status: "draft"}),
     do: "Empty means whenever you publish. A future date schedules the text."

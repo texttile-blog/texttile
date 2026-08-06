@@ -382,6 +382,14 @@
   /* paper surfaces inside the dialog write in ink, not the stage's white */
   #lbRoot #lbFoot, #undoBar { color: var(--tt-ink); }
 
+  /* the undo bar stays one line on any screen: a long filename gives
+     way, Undo and the countdown never wrap */
+  #undoBar { max-width: calc(100vw - 32px); }
+  #undoBar > span:first-child {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #undoBar .link, #undoBar .num { flex: none; white-space: nowrap; }
+
   /* THE GALLERY TILES · round-14. A tile is the picture itself: no
      drag icon, no chrome. The number sits top-left on an overlay
      wash; a running upload lays its state over the whole tile. */
@@ -401,6 +409,28 @@
     font-variant-numeric: tabular-nums;
     background: rgb(var(--tt-overlay, 25 23 32) / .72);
   }
+  /* delete, on the picture itself: quiet until the tile is under the
+     pointer, always there for a finger (the imaedge tile toolbar) */
+  .tile .tile-del {
+    position: absolute; right: 5px; top: 5px; width: 22px; height: 22px;
+    display: grid; place-items: center;
+    color: #fff; font-size: 15px; line-height: 1;
+    border-radius: var(--tt-radius-img);
+    background: rgb(var(--tt-overlay, 25 23 32) / .55);
+    opacity: 0; transition: opacity .15s, background-color .15s;
+  }
+  .tile:hover .tile-del, .tile:focus-within .tile-del { opacity: 1; }
+  .tile .tile-del:hover { background: rgb(var(--tt-overlay, 25 23 32) / .9); }
+  @media (hover: none) {
+    .tile .tile-del { opacity: 1; }
+  }
+  @media (pointer: coarse) {
+    .tile .tile-del::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%); width: 40px; height: 40px;
+    }
+  }
+
   /* the "preview" flag on the chosen tile, bottom-right */
   .tile .cov {
     position: absolute; right: 5px; bottom: 5px;

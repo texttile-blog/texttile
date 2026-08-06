@@ -117,14 +117,6 @@ defmodule Texttile.Gallery do
     end)
   end
 
-  @doc "How many living images a text has."
-  def count(article_id) do
-    Repo.aggregate(
-      from(i in Image, where: i.article_id == ^article_id and is_nil(i.delete_after)),
-      :count
-    )
-  end
-
   ## Adding
 
   @doc """
@@ -136,15 +128,23 @@ defmodule Texttile.Gallery do
     with {:ok, relative} <- Uploads.put_body_image(source_path, original_name) do
       {taken, width, height} = probe(Uploads.absolute(relative))
 
+      # The file went to disk first; a failed insert (say the text was
+      # deleted this second) must not leave it orphaned there.
       image =
-        Repo.insert!(%Image{
-          article_id: article.id,
-          path: relative,
-          filename: String.slice(original_name, 0, 120),
-          gallery_date: taken || DateTime.utc_now(:microsecond),
-          width: width,
-          height: height
-        })
+        try do
+          Repo.insert!(%Image{
+            article_id: article.id,
+            path: relative,
+            filename: String.slice(original_name, 0, 120),
+            gallery_date: taken || DateTime.utc_now(:microsecond),
+            width: width,
+            height: height
+          })
+        rescue
+          error ->
+            Uploads.remove_body_image(relative)
+            reraise error, __STACKTRACE__
+        end
 
       broadcast(article.id, :added, image.id, opts[:by])
       {:ok, image}
@@ -382,7 +382,9 @@ defmodule Texttile.Gallery do
       Repo.all(from i in Image, where: not is_nil(i.delete_after) and i.delete_after <= ^now)
 
     Enum.each(due, fn image ->
-      Repo.delete(image)
+      # by id, not by struct: a row a second sweep already took must
+      # not raise as stale here
+      Repo.delete_all(from i in Image, where: i.id == ^image.id)
       Uploads.remove_body_image(image.path)
     end)
 

@@ -64,6 +64,10 @@ defmodule TexttileWeb.UploadsControllerTest do
 
       assert response(conn, 200)
       assert response_content_type(conn, :png) =~ "image/png"
+
+      # its content follows the Images setting, so never cached as immutable
+      assert [cache] = get_resp_header(conn, "cache-control")
+      refute cache =~ "immutable"
     end
 
     test "an edge outside the fixed list is a 404", %{conn: conn} do

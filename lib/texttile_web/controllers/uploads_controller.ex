@@ -26,6 +26,8 @@ defmodule TexttileWeb.UploadsController do
   # shows it.
   @edges ~w(320 max)
 
+  @immutable "public, max-age=31536000, immutable"
+
   @doc """
   A scaled reading of an upload: the cached rendition, made on the fly
   when it is missing. The editor's thumbnails come from here instead of
@@ -34,9 +36,13 @@ defmodule TexttileWeb.UploadsController do
   def rendition(conn, %{"edge" => edge, "path" => parts}) when edge in @edges do
     max_edge = if edge == "max", do: nil, else: String.to_integer(edge)
 
+    # A numbered edge of an immutably named original never changes;
+    # "max" follows the Images setting, so it may only be cached briefly.
+    cache = if edge == "max", do: "public, max-age=3600", else: @immutable
+
     with relative when is_binary(relative) <- safe_relative(parts),
          {:ok, scaled} <- Texttile.Images.rendition(relative, max_edge) do
-      serve(conn, scaled)
+      serve(conn, scaled, cache)
     else
       _ -> send_resp(conn, 404, "not found")
     end
@@ -56,9 +62,11 @@ defmodule TexttileWeb.UploadsController do
     end
   end
 
-  defp serve(conn, nil), do: send_resp(conn, 404, "not found")
+  defp serve(conn, relative, cache \\ @immutable)
 
-  defp serve(conn, relative) do
+  defp serve(conn, nil, _cache), do: send_resp(conn, 404, "not found")
+
+  defp serve(conn, relative, cache) do
     path = Uploads.absolute(relative)
     type = @types[path |> Path.extname() |> String.downcase()]
 
@@ -67,7 +75,7 @@ defmodule TexttileWeb.UploadsController do
       # origin when somebody opens it directly.
       conn
       |> put_resp_content_type(type)
-      |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
+      |> put_resp_header("cache-control", cache)
       |> put_resp_header("x-content-type-options", "nosniff")
       |> put_resp_header(
         "content-security-policy",

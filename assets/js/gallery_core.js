@@ -10,10 +10,12 @@
 
    The hook owns three things LiveView must not touch: the local
    upload tiles in #tileLocal (phx-update="ignore"), the lightbox it
-   appends to <body>, and the undo bar. While a tile is held,
-   #tileServer carries data-dragging and app.js skips its patches; the
-   drop ends with gallery_refresh, whose rev bump re-renders every
-   tile and reconciles whatever was skipped. */
+   appends to <body>, and the undo bar. While a tile is held, the hook
+   puts phx-update="ignore" on #tileServer itself - the patcher reads
+   that attribute from the live DOM, so the grid freezes under the
+   hand; the drop takes it off again and asks for gallery_refresh,
+   whose rev bump guarantees a diff that morphs the whole grid back
+   to the server's truth. */
 
 const MAX_PARALLEL = 2
 const MAX_FILE_MB = 50
@@ -66,6 +68,7 @@ class Gallery {
     this.mountDropzone()
     this.mountSort()
     this.mountLocalActions()
+    this.mountTileActions()
 
     this.onKeydown = e => this.keydown(e)
     window.addEventListener("keydown", this.onKeydown)
@@ -240,6 +243,14 @@ class Gallery {
       this.scheduleRender()
       this.pump()
     }
+    // abort fires neither load nor error; without this the slot would
+    // stay taken and the cancelled tile could never leave
+    xhr.onabort = () => {
+      this.active -= 1
+      record.xhr = null
+      this.dropRecord(record)
+      this.pump()
+    }
 
     const form = new FormData()
     form.append("file", record.file, record.name)
@@ -279,6 +290,19 @@ class Gallery {
         this.renderLocal()
         this.pump()
       }
+    })
+  }
+
+  // the delete button on a finished tile: gone at once, undo below
+  mountTileActions() {
+    this.grid.addEventListener("click", e => {
+      const del = e.target.closest("button[data-del]")
+      if (!del) return
+      e.stopPropagation()
+      const tile = del.closest("[data-id]")
+      if (!tile) return
+      this.hook.pushEvent("gallery_delete", {id: tile.dataset.id})
+      this.showUndoBar(tile.dataset.id, tile.dataset.filename)
     })
   }
 
@@ -401,7 +425,7 @@ class Gallery {
     d.held = true
     d.initialOrder = this.currentIds()
     d.tile.classList.add("lift", "slot")
-    this.server.setAttribute("data-dragging", "1")
+    this.server.setAttribute("phx-update", "ignore")
     if (navigator.vibrate) navigator.vibrate(8)
   }
 
@@ -495,17 +519,15 @@ class Gallery {
 
     if (d.held) {
       d.tile.classList.remove("lift", "slot")
-      this.server.removeAttribute("data-dragging")
-      const skipped = this.server.hasAttribute("data-skipped")
-      this.server.removeAttribute("data-skipped")
+      this.server.removeAttribute("phx-update")
 
       const ids = this.currentIds()
       if (d.moved && ids.join("\n") !== d.initialOrder.join("\n")) {
         this.hook.pushEvent("gallery_reorder", {id: d.id, ids})
       }
-      // when the drag held a patch off, ask for the full grid once:
-      // the rev bump re-renders every tile and nothing skipped is lost
-      if (skipped) this.hook.pushEvent("gallery_refresh", {})
+      // whatever the freeze held off, and whatever the hand moved
+      // without committing: one refresh morphs the grid back to truth
+      this.hook.pushEvent("gallery_refresh", {})
 
       if (!d.moved && e.type === "pointerup" && performance.now() - d.downAt < TAP_MS) {
         this.openLightbox(d.id)
@@ -668,12 +690,15 @@ class Gallery {
       lb.formFor = lb.id
     }
 
-    if (lb.paintedUrl !== data.full) this.loadImage(data)
+    // a paint from a background update must not restart a load that is
+    // already on its way: on a slow line the picture would never land
+    if (lb.paintedUrl !== data.full && lb.loadingUrl !== data.full) this.loadImage(data)
   }
 
   loadImage(data, bust) {
     const lb = this.lb
     const token = ++lb.token
+    lb.loadingUrl = data.full
     const img = this.root.querySelector("#lbImg")
     const state = this.root.querySelector("#lbState")
 
@@ -687,12 +712,14 @@ class Gallery {
     probe.onload = () => {
       // a late answer may not repaint a closed lightbox or another image
       if (!this.lb || this.lb.token !== token) return
+      this.lb.loadingUrl = null
       state.hidden = true
       img.style.backgroundImage = `url('${url}')`
       this.lb.paintedUrl = data.full
     }
     probe.onerror = () => {
       if (!this.lb || this.lb.token !== token) return
+      this.lb.loadingUrl = null
       this.lb.paintedUrl = null
       state.hidden = false
       state.innerHTML = `<span>This image could not be shown.

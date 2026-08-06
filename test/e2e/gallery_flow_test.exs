@@ -81,6 +81,47 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       assert [_] = Gallery.list(article.id)
     end
+
+    test "a file past the 50 MB roof fails on the spot, nothing travels", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      huge = Path.join(System.tmp_dir!(), "huge-#{System.unique_integer([:positive])}.jpg")
+      {:ok, file} = File.open(huge, [:write])
+      :ok = :file.pwrite(file, 51 * 1024 * 1024, <<0>>)
+      :ok = File.close(file)
+
+      conn
+      |> sign_in()
+      |> visit("/texts/#{article.id}")
+      |> upload("Add images to the gallery", huge)
+      |> assert_has("#tileLocal .tile.failed", text: "50 MB")
+      |> assert_has("#tileLocal button[data-act=remove]")
+      |> refute_has("#tileLocal button[data-act=retry]")
+
+      assert Gallery.list(article.id) == []
+    end
+  end
+
+  describe "sorting" do
+    test "a mouse drag over the tiles writes a new order", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      a = seed!(article, "a.jpg", "2024:05:01 10:00:00")
+      b = seed!(article, "b.jpg", "2024:05:01 12:00:00")
+      c = seed!(article, "c.jpg", "2024:05:01 14:00:00")
+
+      conn
+      |> sign_in()
+      |> visit("/texts/#{article.id}")
+      |> assert_has("#tileCount", text: "3 images")
+      |> drag("#tile-#{c.id}", to: "#tile-#{a.id}")
+
+      wait_until(fn ->
+        Enum.map(Gallery.list(article.id), & &1.id) == [c.id, a.id, b.id]
+      end)
+
+      # the numbers followed the drop
+      conn |> assert_has("#tile-#{c.id} .n", text: "01")
+    end
   end
 
   describe "the lightbox" do

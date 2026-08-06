@@ -261,6 +261,15 @@ defmodule Texttile.GalleryTest do
       assert ids(article) == [a.id, b.id, c.id]
     end
 
+    test "a picture already deleted answers gone to every late hand" do
+      {article, _user} = article!()
+      image = add!(article, "a.jpg")
+      {:ok, _} = Gallery.delete(article.id, image.id)
+
+      assert {:error, :gone} = Gallery.set_date(article.id, image.id, "2024-05-01T10:00")
+      assert {:error, :gone} = Gallery.delete(article.id, image.id)
+    end
+
     test "after the deadline the undo answers gone" do
       {article, _user} = article!()
       image = add!(article, "a.jpg")

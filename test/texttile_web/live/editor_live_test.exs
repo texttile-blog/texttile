@@ -251,6 +251,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
       assert has_element?(view, "#tileCount", "2 images")
       assert has_element?(view, "#tileGrid [data-id='#{a.id}']")
+      assert has_element?(view, "#tile-#{a.id} button.tile-del")
       assert tile_order(render(view)) == [a.id, b.id]
     end
 
@@ -369,6 +370,39 @@ defmodule TexttileWeb.EditorLiveTest do
 
       assert Articles.get_article!(article.id).preview_path == nil
       assert has_element?(view, "#tile-#{a.id} .cov")
+    end
+
+    test "a forged preview path changes nothing", %{conn: conn, user: user} do
+      article = draft(user)
+      _a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_click(view, "set_preview", %{"path" => "images/forged-00000000.jpg"})
+
+      assert Articles.get_article!(article.id).preview_path == nil
+    end
+
+    test "another admin's sort flashes the moved tile with their name", %{
+      conn: conn,
+      user: user
+    } do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, watcher, _html} = live(conn, ~p"/texts/#{article}")
+
+      mover_user = Texttile.AccountsFixtures.user_fixture()
+      mover_conn = log_in_user(build_conn(), mover_user)
+      {:ok, mover, _html} = live(mover_conn, ~p"/texts/#{article}")
+
+      ids = Enum.map([b.id, a.id], &to_string/1)
+      render_hook(mover, "gallery_reorder", %{"id" => to_string(b.id), "ids" => ids})
+
+      b_id = b.id
+      assert_push_event(watcher, "gallery_moved", %{id: ^b_id, note: note})
+      assert note =~ "moved b.jpg"
     end
 
     test "gallery doings land in the log", %{conn: conn, user: user} do
