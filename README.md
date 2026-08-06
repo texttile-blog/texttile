@@ -90,6 +90,16 @@ Settings; its owner then signs in again with the same name and a fresh
 password. For the only account of a site, delete the row in the database
 instead.
 
+## Import from another system
+
+Texttile imports texts from a zip archive of bundles: one folder per text,
+with Markdown, settings, and pictures. A picture can be a file in the bundle
+or a URL that the server downloads, so a migration zip stays small.
+[IMPORT.md](IMPORT.md) is the complete format contract, written so that a
+script or an AI agent can convert any export (WordPress, for example) into
+bundles. The import itself lives in Settings: upload the zip, read the
+validation report, start the import.
+
 ## Deploy on Fly.io
 
 `fly.toml` in this repo deploys from source with one volume for the database
