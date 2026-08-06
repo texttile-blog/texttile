@@ -217,6 +217,9 @@ defmodule Texttile.Articles do
         |> Repo.all()
     ]
 
+    # Read before the delete: the gallery rows go with the article row.
+    gallery_paths = Texttile.Gallery.paths(article.id)
+
     with {:ok, article} <- Repo.delete(article) do
       bodies
       |> Enum.flat_map(&inline_refs/1)
@@ -225,6 +228,7 @@ defmodule Texttile.Articles do
         _ -> []
       end)
       |> Enum.uniq()
+      |> Enum.concat(gallery_paths)
       |> Enum.each(&Texttile.Uploads.remove_body_image/1)
 
       broadcast({:article_deleted, article.id})

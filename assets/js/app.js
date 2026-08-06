@@ -25,6 +25,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/texttile"
 import topbar from "../vendor/topbar"
 import BodyEd from "./body_ed"
+import Gallery from "./gallery"
 
 /* The Last-saved line of a screen that saves instantly: "just now"
    while the save is fresh, the clock time after that, and a short note
@@ -71,7 +72,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd},
+  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd, Gallery},
 })
 
 // Show progress bar on live navigation and form submits

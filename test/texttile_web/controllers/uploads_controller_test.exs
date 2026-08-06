@@ -57,6 +57,19 @@ defmodule TexttileWeb.UploadsControllerTest do
       assert Vix.Vips.Image.width(image) == 320
     end
 
+    test "the max edge answers the reader size of the moment", %{conn: conn} do
+      store_image("images/pier-full.png", 4000, 2000)
+
+      conn = get(conn, "/desk/renditions/max/images/pier-full.png")
+
+      assert response(conn, 200)
+      assert response_content_type(conn, :png) =~ "image/png"
+
+      # its content follows the Images setting, so never cached as immutable
+      assert [cache] = get_resp_header(conn, "cache-control")
+      refute cache =~ "immutable"
+    end
+
     test "an edge outside the fixed list is a 404", %{conn: conn} do
       store_image("images/pier-efgh.png", 1600, 800)
       assert conn |> get("/desk/renditions/9999/images/pier-efgh.png") |> response(404)

@@ -2,12 +2,13 @@ defmodule TexttileWeb.TextsLive do
   @moduledoc """
   The Texts overview: the full-page grid of cards without boxes, a
   status filter, a search over titles, tags and the texts themselves.
-  The design is the round-14 grid; the thumbnails return with the
-  gallery.
+  The design is the round-14 grid; a card wears its text's preview
+  image (`Texttile.Gallery.effective_preview/2`).
   """
   use TexttileWeb, :live_view
 
   alias Texttile.Articles
+  alias Texttile.Gallery
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: Articles.subscribe_desk()
@@ -26,6 +27,7 @@ defmodule TexttileWeb.TextsLive do
 
     socket
     |> assign(:articles, articles)
+    |> assign(:covers, Gallery.previews(articles))
     |> assign(:total, length(Articles.list_articles()))
   end
 
@@ -40,6 +42,7 @@ defmodule TexttileWeb.TextsLive do
   def handle_info({:article_changed, _article}, socket), do: {:noreply, load(socket)}
   def handle_info({:article_deleted, _id}, socket), do: {:noreply, load(socket)}
   def handle_info({:text_changed, _article}, socket), do: {:noreply, load(socket)}
+  def handle_info({:gallery_changed, _id, _meta}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 
   def render(assigns) do
@@ -88,7 +91,11 @@ defmodule TexttileWeb.TextsLive do
           id="cards"
         >
           <.link :for={article <- @articles} class="card" navigate={~p"/texts/#{article}"}>
-            <span class="cimg empty">no images yet</span>
+            <%= if cover = @covers[article.id] do %>
+              <span class="cimg" style={cover_bg(cover)}></span>
+            <% else %>
+              <span class="cimg empty">no images yet</span>
+            <% end %>
             <span class="ct">{Articles.display_title(article)}</span>
             <span class="cm">
               <span class={["st", article.status]}></span>{card_meta(article)}
@@ -110,6 +117,12 @@ defmodule TexttileWeb.TextsLive do
       </div>
     </Layouts.app>
     """
+  end
+
+  # A preview can come from a body image, so the path is markdown text;
+  # a quote must not break out of the url('...') it lands in.
+  defp cover_bg(path) do
+    "background-image:url('/desk/renditions/320/#{String.replace(path, "'", "%27")}')"
   end
 
   defp grid_count(articles, total) do

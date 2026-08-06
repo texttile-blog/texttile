@@ -55,6 +55,10 @@ defmodule TexttileWeb.Router do
     # travels here, and the answer is the address the token becomes.
     post "/desk/images", ImagesController, :create
 
+    # The gallery's uploads: one file per request, the tile queue in
+    # the browser feeds them one after the other.
+    post "/desk/texts/:id/gallery", GalleryController, :create
+
     # The editor's thumbnails: a scaled reading of an upload, cached.
     get "/desk/renditions/:edge/*path", UploadsController, :rendition
 

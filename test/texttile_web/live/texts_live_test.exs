@@ -44,6 +44,21 @@ defmodule TexttileWeb.TextsLiveTest do
       assert has_element?(view, "#gridCount", "1 text")
     end
 
+    test "a card wears the oldest gallery image, live", %{conn: conn, user: user} do
+      {:ok, article} = Articles.create_draft(user)
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      assert has_element?(view, "#cards .cimg.empty")
+
+      path = Path.join(System.tmp_dir!(), "cover-#{System.unique_integer([:positive])}.jpg")
+      {:ok, black} = Vix.Vips.Operation.black(20, 10)
+      :ok = Vix.Vips.Image.write_to_file(black, path)
+      {:ok, image} = Texttile.Gallery.add_image(article, path, "cover.jpg")
+
+      refute has_element?(view, "#cards .cimg.empty")
+      assert render(view) =~ "/desk/renditions/320/#{image.path}"
+    end
+
     test "an untitled draft reads Untitled", %{conn: conn, user: user} do
       {:ok, _} = Articles.create_draft(user)
       {:ok, view, _html} = live(conn, ~p"/")

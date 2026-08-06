@@ -6,8 +6,8 @@ Werte
 - Minimal - nur dem Zweck dienlich. Ist erst gut wenn man nichts mehr weglassen kann. 
 
 Triage:
-- testen auch 30 min nach deployment
-- testen: wird mail versand?
+- tests mit 3 oder mehr nutzern.
+- alle texte überarbeiten, weniger ai slop sondern klare sprache. 
 
 Später:
 - Mehrsprachigkeit
@@ -50,6 +50,8 @@ Frontend:
 
 
 
+## done 
+
 Aufbau: 
 - Titel 
 - Text (guter Markdown editor, aber mit Bilder einfügen wie in Github)
@@ -77,7 +79,7 @@ Ediitor:
 
 
 
-## done 
+
 
 Settings
 - Settings: Ob nutzer ihre email bestätigen müssen bevor sie ein kommentar schreiben können. 

@@ -5,10 +5,11 @@ defmodule Texttile.Images do
   Images setting, and nothing is ever scaled up.
 
   A rendition is made the moment a page first needs it and then answers
-  from the cache. Every image holds one cached size at a time: asking
-  for a new size drops the old one first, so nothing stale survives.
-  The whole cache is disposable; clearing it only costs the next reader
-  a moment.
+  from the cache. An image holds a small, known set of cached sizes:
+  the desk thumbnail, the reader size of the moment, and whatever was
+  just asked for. Anything else is dropped on the next ask, so nothing
+  stale survives. The whole cache is disposable; clearing it only
+  costs the next reader a moment.
   """
 
   alias Texttile.Settings
@@ -19,6 +20,10 @@ defmodule Texttile.Images do
 
   # Formats vips scales well. Anything else (svg, gif) is answered as it is.
   @scalable ~w(.jpg .jpeg .png .webp)
+
+  # The thumbnail size the desk shows in tiles and panels. The gallery
+  # lightbox asks for the reader size instead ("max" in the route).
+  @desk_edges [320]
 
   @doc """
   The path to show for an original, at the current (or given) max edge:
@@ -40,7 +45,7 @@ defmodule Texttile.Images do
 
   defp scaled(relative, original, max_edge) do
     target = cached_name(relative, max_edge)
-    drop_other_sizes(relative, target)
+    drop_other_sizes(relative, sanctioned(relative, max_edge))
 
     cond do
       File.exists?(Uploads.absolute(target)) ->
@@ -69,8 +74,17 @@ defmodule Texttile.Images do
     "#{@cache_dir}/#{stem}-#{max_edge}#{extension}"
   end
 
+  # The sizes of one image that may stay cached side by side: the desk
+  # thumbnail, the reader size of the moment, and the one just asked for.
+  defp sanctioned(relative, requested) do
+    [requested | @desk_edges ++ [Settings.get(:image_max_edge)]]
+    |> Enum.uniq()
+    |> Enum.map(&cached_name(relative, &1))
+  end
+
   defp drop_other_sizes(relative, keep) do
     {stem, extension} = cache_stem(relative)
+    keep = List.wrap(keep)
 
     # Only this image's sizes: <stem>-<digits><ext>, exactly. A plain
     # prefix match would also hit "a-b.jpg" while dropping "a.jpg".
@@ -80,7 +94,7 @@ defmodule Texttile.Images do
       {:ok, names} ->
         for name <- names,
             Regex.match?(mine, name),
-            "#{@cache_dir}/#{name}" != keep do
+            "#{@cache_dir}/#{name}" not in keep do
           File.rm(Uploads.absolute("#{@cache_dir}/#{name}"))
         end
 

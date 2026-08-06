@@ -223,6 +223,203 @@ defmodule TexttileWeb.EditorLiveTest do
     end
   end
 
+  describe "the gallery" do
+    defp gallery_image(article, name, taken) do
+      path = Path.join(System.tmp_dir!(), "tile-#{System.unique_integer([:positive])}.jpg")
+      {:ok, black} = Vix.Vips.Operation.black(20, 10)
+
+      {:ok, with_date} =
+        Vix.Vips.Image.mutate(black, fn mut ->
+          :ok = Vix.Vips.MutableImage.set(mut, "exif-ifd2-DateTimeOriginal", :gchararray, taken)
+        end)
+
+      :ok = Vix.Vips.Image.write_to_file(with_date, path)
+      {:ok, image} = Texttile.Gallery.add_image(article, path, name)
+      image
+    end
+
+    defp tile_order(html) do
+      ~r/data-id="(\d+)"/ |> Regex.scan(html) |> Enum.map(fn [_, id] -> String.to_integer(id) end)
+    end
+
+    test "shows the tiles in gallery order, with the count", %{conn: conn, user: user} do
+      article = draft(user)
+      b = gallery_image(article, "b.jpg", "2024:05:02 09:00:00")
+      a = gallery_image(article, "a.jpg", "2024:05:01 09:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      assert has_element?(view, "#tileCount", "2 images")
+      assert has_element?(view, "#tileGrid [data-id='#{a.id}']")
+      assert has_element?(view, "#tile-#{a.id} button.tile-del")
+      assert tile_order(render(view)) == [a.id, b.id]
+    end
+
+    test "an image added elsewhere appears without a reload", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      assert has_element?(view, "#tileCount", "0 images")
+
+      image = gallery_image(article, "new.jpg", "2024:05:01 09:00:00")
+
+      assert has_element?(view, "#tileGrid [data-id='#{image.id}']")
+      assert has_element?(view, "#tileCount", "1 image")
+    end
+
+    test "a drop writes a new date and every editor sees the order", %{conn: conn, user: user} do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+      c = gallery_image(article, "c.jpg", "2024:05:01 14:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+      {:ok, other, _html} = live(conn, ~p"/texts/#{article}")
+
+      ids = Enum.map([a.id, c.id, b.id], &to_string/1)
+      render_hook(view, "gallery_reorder", %{"id" => to_string(c.id), "ids" => ids})
+
+      assert Enum.map(Texttile.Gallery.list(article.id), & &1.id) == [a.id, c.id, b.id]
+      assert tile_order(render(other)) == [a.id, c.id, b.id]
+    end
+
+    test "a stale order is refused and the truth re-rendered", %{conn: conn, user: user} do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_hook(view, "gallery_reorder", %{"id" => to_string(a.id), "ids" => [to_string(a.id)]})
+
+      assert Enum.map(Texttile.Gallery.list(article.id), & &1.id) == [a.id, b.id]
+      assert tile_order(render(view)) == [a.id, b.id]
+    end
+
+    test "the lightbox date field resorts the gallery", %{conn: conn, user: user} do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_hook(view, "gallery_set_date", %{
+        "id" => to_string(a.id),
+        "date" => "2024-05-01T13:00"
+      })
+
+      assert tile_order(render(view)) == [b.id, a.id]
+    end
+
+    test "delete takes the tile away at once, undo brings it back", %{conn: conn, user: user} do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_hook(view, "gallery_delete", %{"id" => to_string(a.id)})
+      assert tile_order(render(view)) == [b.id]
+
+      render_hook(view, "gallery_undo", %{"id" => to_string(a.id)})
+      assert tile_order(render(view)) == [a.id, b.id]
+    end
+
+    test "the gallery stays open without the lock", %{conn: conn, user: user} do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      # The first view holds the lock; the reader still sorts tiles.
+      {:ok, _writer, _html} = live(conn, ~p"/texts/#{article}")
+
+      other = Texttile.AccountsFixtures.user_fixture()
+      reader_conn = log_in_user(build_conn(), other)
+      {:ok, reader, _html} = live(reader_conn, ~p"/texts/#{article}")
+
+      ids = Enum.map([b.id, a.id], &to_string/1)
+      render_hook(reader, "gallery_reorder", %{"id" => to_string(b.id), "ids" => ids})
+
+      assert Enum.map(Texttile.Gallery.list(article.id), & &1.id) == [b.id, a.id]
+    end
+
+    test "the preview picker chooses, flags the tile, and lets go again", %{
+      conn: conn,
+      user: user
+    } do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+      {:ok, other, _html} = live(conn, ~p"/texts/#{article}")
+
+      # without a choice the first image wears the flag
+      assert has_element?(view, "#tile-#{a.id} .cov")
+      refute has_element?(view, "#tile-#{b.id} .cov")
+
+      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+
+      assert Articles.get_article!(article.id).preview_path == b.path
+      assert has_element?(view, "#tile-#{b.id} .cov")
+      assert has_element?(view, "#coverRow button.on[phx-value-path='#{b.path}']")
+      assert has_element?(other, "#tile-#{b.id} .cov")
+
+      # the second click lets the first image speak again
+      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+
+      assert Articles.get_article!(article.id).preview_path == nil
+      assert has_element?(view, "#tile-#{a.id} .cov")
+    end
+
+    test "a forged preview path changes nothing", %{conn: conn, user: user} do
+      article = draft(user)
+      _a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_click(view, "set_preview", %{"path" => "images/forged-00000000.jpg"})
+
+      assert Articles.get_article!(article.id).preview_path == nil
+    end
+
+    test "another admin's sort flashes the moved tile with their name", %{
+      conn: conn,
+      user: user
+    } do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+      b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
+
+      {:ok, watcher, _html} = live(conn, ~p"/texts/#{article}")
+
+      mover_user = Texttile.AccountsFixtures.user_fixture()
+      mover_conn = log_in_user(build_conn(), mover_user)
+      {:ok, mover, _html} = live(mover_conn, ~p"/texts/#{article}")
+
+      ids = Enum.map([b.id, a.id], &to_string/1)
+      render_hook(mover, "gallery_reorder", %{"id" => to_string(b.id), "ids" => ids})
+
+      b_id = b.id
+      assert_push_event(watcher, "gallery_moved", %{id: ^b_id, note: note})
+      assert note =~ "moved b.jpg"
+    end
+
+    test "gallery doings land in the log", %{conn: conn, user: user} do
+      article = draft(user)
+      a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
+
+      {:ok, view, _html} = live(conn, ~p"/texts/#{article}")
+
+      render_hook(view, "gallery_delete", %{"id" => to_string(a.id)})
+      render_hook(view, "gallery_undo", %{"id" => to_string(a.id)})
+
+      view |> element(".tab", "Log") |> render_click()
+      assert has_element?(view, "#logList", "took a.jpg out of the gallery")
+      assert has_element?(view, "#logList", "put a.jpg back")
+    end
+  end
+
   describe "log" do
     test "records what happened, newest first", %{conn: conn, user: user} do
       article = draft(user)
