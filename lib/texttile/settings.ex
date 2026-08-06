@@ -26,6 +26,8 @@ defmodule Texttile.Settings do
     about_markdown: {:string, ""},
     front_page: {:string, "latest"},
     theme_css: {:string, ""},
+    site_visibility: {:string, "public"},
+    site_password: {:string, ""},
     comments_require_confirmation: {:boolean, true},
     image_max_edge: {:integer, 2560},
     logo: {:file, nil},
@@ -141,6 +143,9 @@ defmodule Texttile.Settings do
 
   defp validate(:front_page, "latest"), do: :ok
   defp validate(:front_page, _), do: {:error, "unknown front page"}
+
+  defp validate(:site_visibility, value) when value in ~w(public protected), do: :ok
+  defp validate(:site_visibility, _), do: {:error, "public or protected"}
 
   defp validate(:image_max_edge, n) when n < 800, do: {:error, "at least 800 px"}
   defp validate(:image_max_edge, n) when n > 10_000, do: {:error, "at most 10000 px"}

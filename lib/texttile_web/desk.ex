@@ -16,6 +16,7 @@ defmodule TexttileWeb.Desk do
 
   @views %{
     TexttileWeb.TextsLive => :texts,
+    TexttileWeb.EditorLive => :editor,
     TexttileWeb.ProfileLive => :profile,
     TexttileWeb.SettingsLive => :settings
   }
@@ -39,9 +40,19 @@ defmodule TexttileWeb.Desk do
       |> assign(:others, others(scope))
       |> assign(:online_ids, online_user_ids())
       |> attach_hook(:desk_presence, :handle_info, &handle_info/2)
+      |> attach_hook(:desk_actions, :handle_event, &handle_event/3)
 
     {:cont, socket}
   end
+
+  # New text lives in the wordmark menu, so it must work from every desk
+  # view; this hook is the one handler behind all of them.
+  defp handle_event("new_text", _params, socket) do
+    {:ok, article} = Texttile.Articles.create_draft(socket.assigns.current_scope.user)
+    {:halt, Phoenix.LiveView.push_navigate(socket, to: "/texts/#{article.id}")}
+  end
+
+  defp handle_event(_event, _params, socket), do: {:cont, socket}
 
   defp handle_info(%Phoenix.Socket.Broadcast{topic: @topic, event: "presence_diff"}, socket) do
     {:halt,
@@ -80,7 +91,8 @@ defmodule TexttileWeb.Desk do
 
   @doc """
   Everybody at the desk except the current user: one entry per person,
-  their open tabs as sessions with a label and a jump target.
+  their open tabs as sessions with a label and a jump target. A session
+  in a text carries its `text_id`, so the editor knows who reads along.
   """
   def others(scope) do
     me = scope && to_string(scope.user.id)
@@ -91,10 +103,19 @@ defmodule TexttileWeb.Desk do
     |> Enum.map(fn {_key, %{metas: metas}} ->
       %{
         name: metas |> List.first() |> Map.get(:name),
-        sessions: Enum.map(metas, &%{label: activity(&1.view), path: path(&1.view)})
+        sessions:
+          Enum.map(metas, &%{label: activity(&1), path: path(&1), text_id: Map.get(&1, :text_id)})
       }
     end)
     |> Enum.sort_by(& &1.name)
+  end
+
+  @doc """
+  An open editor announces which text it is in and whether it writes or
+  reads along; the wordmark menu and the other editor's banner read it.
+  """
+  def update_activity(scope, extra) do
+    Presence.update(self(), @topic, to_string(scope.user.id), &Map.merge(&1, extra))
   end
 
   @doc """
@@ -105,13 +126,25 @@ defmodule TexttileWeb.Desk do
     Phoenix.PubSub.broadcast(Texttile.PubSub, @topic, {:desk_renamed, user_id})
   end
 
-  defp activity(:texts), do: "On the Texts overview"
-  defp activity(:profile), do: "In the profile"
-  defp activity(:settings), do: "In Settings"
+  defp activity(%{view: :editor} = meta) do
+    title = Map.get(meta, :text_title) || "Untitled"
+    if Map.get(meta, :writing), do: "Writing in “#{title}”", else: "In “#{title}”"
+  end
 
-  defp path(:profile), do: "/profile"
-  defp path(:settings), do: "/settings"
-  defp path(_view), do: "/"
+  defp activity(%{view: :texts}), do: "On the Texts overview"
+  defp activity(%{view: :profile}), do: "In the profile"
+  defp activity(%{view: :settings}), do: "In Settings"
+
+  defp path(%{view: :editor} = meta) do
+    case Map.get(meta, :text_id) do
+      nil -> "/"
+      id -> "/texts/#{id}"
+    end
+  end
+
+  defp path(%{view: :profile}), do: "/profile"
+  defp path(%{view: :settings}), do: "/settings"
+  defp path(_meta), do: "/"
 
   @doc "The ids of everybody with at least one open desk tab, as strings."
   def online_user_ids do

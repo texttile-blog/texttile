@@ -94,4 +94,26 @@ defmodule Texttile.UploadsTest do
       assert {:error, _} = Uploads.put_site_mark(:logo, svg_file(), "mark.pdf")
     end
   end
+
+  describe "body images" do
+    test "stores the original below images/ under a tagged, readable name" do
+      {:ok, stored} = Uploads.put_body_image(raster_file(".jpg", 300, 200), "Pier Lantern.JPG")
+
+      assert stored =~ ~r"^images/pier-lantern-\w+\.jpg$"
+      assert File.exists?(Path.join(Uploads.root(), stored))
+      assert {300, 200} = stored_size(stored)
+    end
+
+    test "refuses anything that is not an image" do
+      path = Path.join(System.tmp_dir!(), "note-#{System.unique_integer([:positive])}.txt")
+      File.write!(path, "words")
+      assert {:error, _} = Uploads.put_body_image(path, "note.txt")
+    end
+
+    test "refuses a file that only pretends to be an image" do
+      path = Path.join(System.tmp_dir!(), "fake-#{System.unique_integer([:positive])}.png")
+      File.write!(path, "not a png")
+      assert {:error, _} = Uploads.put_body_image(path, "fake.png")
+    end
+  end
 end

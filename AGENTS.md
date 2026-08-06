@@ -27,6 +27,10 @@ Only deviations from default behavior. Requirements live in `idea/texttile.md`. 
 - 4000 belongs to the user (`make start`): never bind it, never kill what runs there.
 - Agents use 4440-4449: tests on 4440 (`TEST_PORT`), ad-hoc servers on `PORT=4441` and up.
 
+## Dev data
+
+- All worktrees share the main checkout's dev database and uploads (`texttile_dev.db`, see config/dev.exs). That database holds the user's living test data. QA and scripts remove only the records they created themselves, through the app's own delete flows or by exact id or username. Never delete wholesale from the shared dev DB.
+
 ## Tests
 
 - Failing test first. Business logic gets unit tests; higher-level requirements get e2e tests through the real UI in a headless browser.

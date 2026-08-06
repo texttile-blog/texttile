@@ -9,7 +9,9 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <%!-- the stored theme, or the iris default: the whole site wears it --%>
     <link rel="stylesheet" href={~p"/theme.css"} />
-    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+    <%!-- a module script defers by itself; the editor's heavy chunk
+         loads on demand from here, so splitting needs the esm form --%>
+    <script phx-track-static type="module" src={~p"/assets/js/app.js"}>
     </script>
   </head>
   <body>

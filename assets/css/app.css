@@ -190,6 +190,193 @@
     border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
   }
 
+  /* segmented filter, e.g. the status filter over the texts grid */
+  .seg-b {
+    font-size: 12.5px; color: var(--tt-dim); padding: 5px 12px;
+    border-radius: var(--tt-radius-pill);
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .seg-b:hover { background-color: var(--tt-field); color: var(--tt-ink); }
+  .seg-b.on { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+
+  /* the grid of texts: cards without boxes, one two-line title box,
+     so every row lines up. The empty state is the same element, so a
+     text without images holds the same footprint. */
+  .card { display: block; width: 100%; text-align: left; }
+  .card .cimg {
+    display: block; width: 100%; aspect-ratio: 1 / 1;
+    background: var(--tt-field) center / cover;
+    transition: box-shadow .2s ease, transform .2s ease;
+    border-radius: var(--tt-radius-img);
+  }
+  .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
+  .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
+  .card .ct {
+    display: block; font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
+    line-height: 1.25; letter-spacing: -.01em; margin-top: 11px; overflow: hidden;
+    min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .card:hover .ct { text-decoration-line: underline; text-underline-offset: 3px; }
+  .card .cm { display: block; font-size: 12.5px; color: var(--tt-faint); margin-top: 4px; }
+  .card .cm .j { color: var(--tt-julia); font-weight: 600; }
+  .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
+  .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
+  .card .cm .st.scheduled { background: var(--tt-accentsoft); }
+
+  /* the split button: the primary action and the state actions in one
+     shell, one radius, one hairline between them. Solid while the text
+     is a draft, calm once the text has a state of its own. The hover
+     lives on the segment, so it is always clear which half you are on. */
+  .split {
+    display: inline-flex; align-items: center; flex: none; height: 30px;
+    border-radius: var(--tt-radius);
+    transition: box-shadow .15s ease, background-color .15s ease;
+  }
+  .split .main {
+    display: inline-flex; align-items: center; gap: 5px; height: 30px;
+    padding-left: 13px; padding-right: 13px; font-size: 13px; font-weight: 500;
+    white-space: nowrap; transition: background-color .15s ease, color .15s ease;
+    border-radius: var(--tt-radius) 0 0 var(--tt-radius);
+  }
+  .split .main.one { padding-right: 10px; border-radius: var(--tt-radius); }
+  .split .main .cv { font-size: 15px; opacity: .6; margin-left: 2px; }
+  .split .div { width: 1px; height: 15px; flex: none; }
+  .split .chev {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 30px; width: 30px; font-size: 16px;
+    transition: background-color .15s ease, color .15s ease;
+    border-radius: 0 var(--tt-radius) var(--tt-radius) 0;
+  }
+  .split .main:active, .split .chev:active { transform: translateY(1px); }
+  .split.solid { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+  .split.solid .div { background: var(--tt-solidline); }
+  /* hover lifts only the touched segment by a shade of the same hue
+     instead of jumping to another colour */
+  .split.solid .main:hover, .split.solid .chev:hover,
+  .split.solid .chev[aria-expanded="true"] { background-image: linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / .16)); }
+  .split.calm { color: var(--tt-ink); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+  .split.calm:hover { box-shadow: inset 0 0 0 1px var(--tt-inksoft); }
+  .split.calm .div { background: var(--tt-rule); }
+  .split.calm .main:hover, .split.calm .chev:hover,
+  .split.calm .main[aria-expanded="true"], .split.calm .chev[aria-expanded="true"] { background-color: var(--tt-field); }
+
+  /* the status stamp in the bar */
+  .stamp {
+    font-size: 11.5px; padding: 3px 9px; background-color: var(--tt-field);
+    color: var(--tt-dim); flex: none; border-radius: var(--tt-radius-pill);
+  }
+  .stamp.published { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+  .stamp.scheduled { background-color: transparent; color: var(--tt-dim); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+
+  /* the editor's tab row */
+  .tab {
+    padding: 9px 13px; font-size: 13.5px; color: var(--tt-dim);
+    border-bottom: var(--tt-tabw) solid transparent; margin-bottom: -1px;
+    transition: color .15s ease;
+  }
+  .tab:first-child { padding-left: 0; }
+  .tab:hover { color: var(--tt-ink); }
+  .tab.on { color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent); }
+  .tab .cnt { color: var(--tt-faint); font-weight: 400; margin-left: 5px; }
+
+  /* the Log */
+  .log-row { display: flex; gap: 14px; padding: 11px 0; font-size: 13.5px; border-bottom: 1px solid var(--tt-hair); }
+  .log-row:first-child { border-top: 1px solid var(--tt-rule); }
+  .log-row time { flex: none; width: 92px; white-space: nowrap; color: var(--tt-faint); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  @media (min-width: 768px) { .log-row time { width: 132px; } }
+  .log-row .j { color: var(--tt-julia); font-weight: 600; }
+
+  /* versions: word-level diff, in the palette we already have */
+  .dif-add { color: var(--tt-accent); border-radius: 2px; background: var(--tt-accentwash); }
+  .dif-del { color: var(--tt-julia); text-decoration-line: line-through; border-radius: 2px; background: var(--tt-juliatint); }
+
+  /* the writing surface: flush, no box, a whisper of a wash that hugs
+     the text on hover and firms up on focus. The field ends where the
+     text ends. */
+  .ed-title {
+    width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
+    font-family: var(--tt-font-serif); font-size: 25px; font-weight: 600;
+    line-height: 1.15; letter-spacing: -.02em;
+    background: transparent; border: 0; border-radius: 0;
+    padding: 6px 6px 9px;
+    border-bottom: 2px solid var(--tt-inksoft);
+    transition: border-color .15s ease, background-color .18s ease, box-shadow .15s ease;
+  }
+  @media (min-width: 768px) { .ed-title { font-size: 30px; } }
+  .ed-title:hover { background: var(--tt-wash1); border-bottom-color: var(--tt-ink); }
+  .ed-title:focus {
+    outline: none; background: var(--tt-wash2);
+    border-color: transparent; border-bottom-color: var(--tt-accent); box-shadow: none;
+  }
+  .ed-body {
+    display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
+    margin-top: 22px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+    color: var(--tt-ink); background: transparent; border: 0; border-radius: 0;
+    padding: 6px 6px 7px; resize: none; min-height: 100px;
+    field-sizing: content;
+    transition: background-color .18s ease;
+  }
+  .ed-body:hover { background: var(--tt-wash1); }
+  .ed-body:focus, .ed-cm:focus-within { outline: none; background: var(--tt-wash2); border-color: transparent; }
+  .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
+  /* while the other admin holds the text both fields are read-only and
+     say so by staying quiet, with a pointer that offers the takeover */
+  .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
+  .ed-title[readonly]:hover, .ed-title[readonly]:focus,
+  .ed-body[readonly]:hover, .ed-body[readonly]:focus {
+    background: var(--tt-livetint); border-bottom-color: var(--tt-liveline); box-shadow: none;
+  }
+  #bodyWrap.is-readonly .ed-cm,
+  #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
+  #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-livetint); }
+  .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
+  .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
+  #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag,
+  #bodyWrap:has(textarea.ed-body:focus:not([readonly])) .ed-foot .flag { display: inline-flex; }
+
+  /* the confirmation line under the bar. On a wide screen the quiet
+     text in the bar says it and this line is only for a screen reader;
+     on a phone this is the only place it is visible. It takes no room
+     while there is nothing to say. */
+  .state-live {
+    display: block; position: sticky; top: 52px; z-index: 20;
+    padding: 6px 10px; font-size: 12.5px; color: var(--tt-dim);
+    background: var(--tt-page); border-bottom: 1px solid var(--tt-hair);
+  }
+  @media (min-width: 768px) {
+    .state-live {
+      position: absolute; width: 1px; height: 1px; padding: 0; border: 0;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+  }
+
+  /* the second group start inside a settings block */
+  .drow.gtop { margin-top: 14px; padding-top: 9px; }
+
+  /* a picture's radius, for markup written by the image panel */
+  .r-img { border-radius: var(--tt-radius-img); }
+
+  /* the thin progress bar of a running upload */
+  .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
+
+  /* the body as a drop target: a filled wash, a solid edge, and a
+     label that says where the image lands - so a file over the text
+     can never look like a file over anything else */
+  .drop-flag {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 20; pointer-events: none;
+    font-size: 12px; font-weight: 600; color: var(--tt-onsolid);
+    background: var(--tt-solid); padding: 5px 11px; white-space: nowrap;
+    border-radius: var(--tt-radius-pill);
+    box-shadow: 0 6px 18px rgb(var(--tt-shadow) / .3);
+  }
+  .body-drop {
+    background: var(--tt-accentwash); border-radius: var(--tt-radius);
+    outline: 2px solid var(--tt-accentloud); outline-offset: 4px;
+  }
+  .body-drop .ed-body { background: transparent; }
+
   /* presence, dots, popovers */
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex: none; background: currentColor; }
   /* the presence hint on the wordmark: one small dot in julia's
@@ -223,4 +410,88 @@
   .pop .who { display: flex; align-items: center; gap: 7px; padding: 6px 10px 3px; font-size: 12.5px; font-weight: 600; }
   .pop .row.sub { padding-left: 27px; font-size: 13px; }
   .pop .go { color: var(--tt-faint); font-size: 11.5px; }
+}
+
+/* ==================================================================
+   THE CODEMIRROR BODY AND ITS FORMATTING BAR
+   These rules stay outside the layers on purpose: CodeMirror injects
+   its own unlayered defaults at runtime, and only unlayered rules
+   with the .ed-cm prefix reliably outweigh them.
+   ================================================================== */
+
+/* the bar: quiet glyphs on the page, sticky under the topbar */
+.mdbar {
+  position: sticky; top: 52px; z-index: 30;
+  display: flex; align-items: center; gap: 2px;
+  margin: 18px -6px 0; padding: 5px 6px 4px;
+  background: var(--tt-page);
+}
+@media (min-width: 1024px) { .mdbar { top: 0; } }
+.mdb {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 28px; flex: none;
+  border-radius: var(--tt-radius); color: var(--tt-dim);
+  transition: background-color .12s ease, color .12s ease;
+}
+.mdb:hover { background: var(--tt-field); color: var(--tt-ink); }
+.mdb.on { background: var(--tt-accentwash); color: var(--tt-accent); }
+.mdb svg { width: 16px; height: 16px; }
+.mdb .g { pointer-events: none; }
+.mdsep { width: 1px; height: 15px; background: var(--tt-rule); margin: 0 5px; flex: none; }
+/* while the other admin holds the text the bar stays, faded; a click
+   on any button asks for the takeover instead of formatting */
+.mdbar.is-readonly .mdb { color: var(--tt-slash); }
+.mdbar.is-readonly .mdb:hover { background: var(--tt-livetint); color: var(--tt-livetext); }
+
+/* the editor: the same flush surface the textarea was */
+.ed-cm { cursor: text; }
+.ed-cm .cm-editor { background: transparent; }
+.ed-cm .cm-editor.cm-focused { outline: none; }
+.ed-cm .cm-scroller {
+  font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+  overflow: visible;   /* the column scrolls, never the editor */
+}
+.ed-cm .cm-content { padding: 0; caret-color: var(--tt-ink); min-height: 96px; }
+.ed-cm .cm-line { padding: 0; }
+.ed-cm .cm-cursor { border-left: 1.5px solid var(--tt-ink); }
+/* out of the line's flow: a wrapping placeholder would make the empty
+   first line two rows tall, and the cursor grows to the whole line box */
+.ed-cm .cm-placeholder {
+  font-style: italic; color: var(--tt-faint);
+  position: absolute; max-width: 100%; pointer-events: none;
+}
+
+/* what the live preview draws, all of it from the theme's tokens */
+.ed-cm .cm-mdh { font-weight: 600; }
+.ed-cm .cm-mdh1 { font-size: 24px; line-height: 1.35; padding-top: 8px; }
+.ed-cm .cm-mdh2 { font-size: 20px; line-height: 1.4; padding-top: 7px; }
+.ed-cm .cm-mdh3 { font-size: 17.5px; padding-top: 5px; }
+.ed-cm .cm-mdh4, .ed-cm .cm-mdh5, .ed-cm .cm-mdh6 { font-size: 15.5px; padding-top: 4px; }
+.ed-cm .cm-mdquote { border-left: 3px solid var(--tt-rule); padding-left: 13px; }
+.ed-cm .cm-mdcodespan { background: var(--tt-field); border-radius: 3px; padding: 1px 3px; }
+.ed-cm .cm-mdcodeblock {
+  font-family: var(--tt-font-mono); font-size: 13.5px; line-height: 1.6;
+  background: var(--tt-field); padding: 0 9px;
+}
+.ed-cm .cm-mdcbfirst { border-radius: var(--tt-radius) var(--tt-radius) 0 0; padding-top: 5px; }
+.ed-cm .cm-mdcblast { border-radius: 0 0 var(--tt-radius) var(--tt-radius); padding-bottom: 5px; }
+.ed-cm .cm-mdtable { font-family: var(--tt-font-mono); font-size: 13px; line-height: 1.6; }
+.ed-cm .cm-mdbullet { color: var(--tt-dim); }
+.ed-cm .cm-mdnum { color: var(--tt-dim); font-variant-numeric: tabular-nums; }
+.ed-cm .cm-mdcheck {
+  width: 15px; height: 15px; margin: 0 4px 0 0; vertical-align: -2px;
+  accent-color: var(--tt-accent); cursor: pointer;
+}
+.ed-cm .cm-mdtaskdone { color: var(--tt-faint); text-decoration: line-through; }
+.ed-cm .cm-mdtaskdone .cm-mdcheck { text-decoration: none; }
+.ed-cm .cm-mdhr {
+  display: inline-block; width: 100%; height: 3px; vertical-align: middle;
+  border-top: 2px solid var(--tt-rule);
+}
+.ed-cm .cm-mdimg {
+  display: inline-block; width: 86px; height: 60px; margin: 3px 0 1px;
+  border-radius: var(--tt-radius-img);
+  background: var(--tt-field) center / cover no-repeat;
+  box-shadow: inset 0 0 0 1px rgb(var(--tt-shadow) / .12);
+  cursor: text; vertical-align: -8px;
 }

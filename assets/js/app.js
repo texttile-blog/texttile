@@ -24,6 +24,7 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/texttile"
 import topbar from "../vendor/topbar"
+import BodyEd from "./body_ed"
 
 /* The Last-saved line of a screen that saves instantly: "just now"
    while the save is fresh, the clock time after that, and a short note
@@ -49,11 +50,28 @@ const SavedTicker = {
   },
 }
 
+/* A popover in the bar: positioned fixed and placed next to its anchor
+   the moment it appears, so no scroll container, no overflow and no
+   backdrop-filter stacking context can ever clip it. */
+const PlacePop = {
+  mounted() {
+    this.place()
+    this.onResize = () => this.place()
+    window.addEventListener("resize", this.onResize)
+  },
+  updated() { this.place() },
+  destroyed() { window.removeEventListener("resize", this.onResize) },
+  place() {
+    const anchor = document.querySelector(this.el.dataset.anchor)
+    if (anchor) placeFixed(this.el, anchor, this.el.dataset.align || "right")
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, SavedTicker},
+  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd},
 })
 
 // Show progress bar on live navigation and form submits
@@ -159,6 +177,14 @@ document.addEventListener("keydown", event => {
   }
   if (event.metaKey || event.ctrlKey || event.altKey) return
   if (typingIn(event.target)) return
+  if (event.key === "/") {
+    const search = document.querySelector("#grid-search input")
+    if (search) {
+      event.preventDefault()
+      search.focus()
+    }
+    return
+  }
   if (!/^[0-9]$/.test(event.key)) return
   const row = document.querySelector(`#navMenu [data-key="${event.key}"]`)
   if (row) {

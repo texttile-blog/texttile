@@ -139,7 +139,9 @@ defmodule TexttileWeb.Layouts do
         </button>
       </span>
       <nav class="pop min-w-[248px] max-w-[340px]" id="navMenu" hidden aria-label="Sections">
-        <button class="row" type="button">New text <span class="k">1</span></button>
+        <button class="row" type="button" phx-click="new_text" data-key="1">
+          New text <span class="k">1</span>
+        </button>
         <.link navigate={~p"/"} class={["row", @active == "texts" && "on"]} data-key="2">
           Texts <span class="k">2</span>
         </.link>

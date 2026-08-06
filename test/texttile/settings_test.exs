@@ -34,6 +34,24 @@ defmodule Texttile.SettingsTest do
     end
   end
 
+  describe "site access" do
+    test "public by default, with an empty password" do
+      assert Settings.get(:site_visibility) == "public"
+      assert Settings.get(:site_password) == ""
+    end
+
+    test "stores the visibility and the shared password" do
+      assert {:ok, "protected"} = Settings.put(:site_visibility, "protected")
+      assert {:ok, "sesame"} = Settings.put(:site_password, "sesame")
+      assert Settings.get(:site_visibility) == "protected"
+      assert Settings.get(:site_password) == "sesame"
+    end
+
+    test "only public and protected exist" do
+      assert {:error, _} = Settings.put(:site_visibility, "secret")
+    end
+  end
+
   describe "put/2" do
     test "stores a value and reads it back typed" do
       assert {:ok, "Two of us"} = Settings.put(:site_title, "Two of us")

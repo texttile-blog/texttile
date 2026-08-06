@@ -16,11 +16,22 @@ defmodule Texttile.Application do
       {DNSCluster, query: Application.get_env(:texttile, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Texttile.PubSub},
       TexttileWeb.Presence,
-      # Start a worker by calling: Texttile.Worker.start_link(arg)
-      # {Texttile.Worker, arg},
+      # The soft document lock: one process per open article, under a
+      # registry and a supervisor of their own.
+      {Registry, keys: :unique, name: Texttile.Articles.Lock.registry()},
+      {DynamicSupervisor, strategy: :one_for_one, name: Texttile.Articles.Lock.supervisor()},
       # Start to serve requests, typically the last entry
       TexttileWeb.Endpoint
     ]
+
+    # The go-live clock stays out of tests: it would race the SQL
+    # sandbox. The tests call go_live_due/1 directly instead.
+    children =
+      if Application.get_env(:texttile, :start_scheduler, true) do
+        children ++ [Texttile.Articles.Scheduler]
+      else
+        children
+      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

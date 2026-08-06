@@ -9,6 +9,8 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
   @moduletag :e2e
 
+  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
+
   setup do
     File.rm_rf!(Uploads.root())
 

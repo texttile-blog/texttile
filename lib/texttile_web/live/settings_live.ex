@@ -18,7 +18,8 @@ defmodule TexttileWeb.SettingsLive do
   # The keys a form on this screen may write. The file-backed keys go
   # through Texttile.Uploads, never through a form.
   @editable ~w(site_title site_description language about_markdown front_page
-               theme_css comments_require_confirmation image_max_edge)
+               theme_css site_visibility site_password
+               comments_require_confirmation image_max_edge)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -273,6 +274,11 @@ defmodule TexttileWeb.SettingsLive do
 
   defp saved_note(:comments_require_confirmation, false),
     do: "Comments appear at once · no confirmation asked"
+
+  defp saved_note(:site_visibility, "protected"),
+    do: "The blog waits behind the password now"
+
+  defp saved_note(:site_visibility, "public"), do: "The blog is open to everyone"
 
   defp saved_note(_key, _value), do: nil
 
@@ -562,6 +568,59 @@ defmodule TexttileWeb.SettingsLive do
             }
           }
         </script>
+
+        <.section>Access</.section>
+        <.form for={@settings_form} id="access-form" phx-change="save_setting">
+          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+            <input
+              type="radio"
+              name="settings[site_visibility]"
+              value="public"
+              checked={@settings.site_visibility == "public"}
+              class="w-auto flex-none mt-[3px]"
+              style="accent-color:var(--tt-accent)"
+            />
+            <span>
+              <span class="text-[14.5px] font-semibold">Public</span>
+              <br />
+              <span class="text-[11.5px] text-faint">Anyone can read the blog.</span>
+            </span>
+          </label>
+          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+            <input
+              type="radio"
+              name="settings[site_visibility]"
+              value="protected"
+              checked={@settings.site_visibility == "protected"}
+              class="w-auto flex-none mt-[3px]"
+              style="accent-color:var(--tt-accent)"
+            />
+            <span>
+              <span class="text-[14.5px] font-semibold">Password-protected</span>
+              <br />
+              <span class="text-[11.5px] text-faint">
+                One password for the whole blog, not per text. Readers enter it
+                once and are remembered. Admins keep signing in the usual way.
+                Search engines see nothing.
+              </span>
+            </span>
+          </label>
+          <div :if={@settings.site_visibility == "protected"} class="py-3 max-w-[280px]" id="pwRow">
+            <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
+            <input
+              type="text"
+              id="setting-site_password"
+              name="settings[site_password]"
+              value={@settings_form[:site_password].value}
+              placeholder="Choose a password"
+              phx-debounce="300"
+            />
+            <div class="hint">
+              A shared access word, not a login: it goes into the notification
+              mails, and you pass it on. It is stored as it is written.
+            </div>
+          </div>
+        </.form>
 
         <.section>Comments</.section>
         <.form for={@settings_form} id="comments-form" phx-change="save_setting">
