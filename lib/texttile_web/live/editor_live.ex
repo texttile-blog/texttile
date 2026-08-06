@@ -1470,7 +1470,7 @@ defmodule TexttileWeb.EditorLive do
                 type="button"
                 class="tile-add"
                 id="tileAdd"
-                aria-label="Add images to the gallery"
+                aria-label="Add images"
               >
                 + Add
               </button>
