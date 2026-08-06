@@ -109,7 +109,16 @@ defmodule Texttile.Import.Bundle do
   defp missing(bundle, _key), do: bundle
 
   defp put_scalar(bundle, "title", ""), do: complain(bundle, "title is required")
-  defp put_scalar(bundle, "title", value), do: %{bundle | title: value}
+
+  # The article changeset refuses longer titles; the dry run says it
+  # first, so the run never trips over it.
+  defp put_scalar(bundle, "title", value) do
+    if String.length(value) > 500 do
+      complain(bundle, "the title is longer than 500 characters")
+    else
+      %{bundle | title: value}
+    end
+  end
 
   defp put_scalar(bundle, "date", value) do
     case Date.from_iso8601(value) do

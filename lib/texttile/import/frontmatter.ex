@@ -15,7 +15,7 @@ defmodule Texttile.Import.Frontmatter do
   being a string or a list of strings, or `{:error, message}`.
   """
   def parse(text) do
-    case String.split(to_string(text), "\n") do
+    case text |> to_string() |> String.split("\n") |> strip_cr_from_head() do
       ["---" | rest] ->
         case Enum.split_while(rest, &(String.trim_trailing(&1, "\r") != "---")) do
           {_block, []} ->
@@ -31,6 +31,11 @@ defmodule Texttile.Import.Frontmatter do
         {:error, "the file does not start with a --- line"}
     end
   end
+
+  # Every other line is trimmed where it is read; the opening fence
+  # gets the same treatment, so a CRLF file is not refused at line one.
+  defp strip_cr_from_head([first | rest]), do: [String.trim_trailing(first, "\r") | rest]
+  defp strip_cr_from_head([]), do: []
 
   # The block, line by line. `open` is the key of a block list that is
   # still collecting items, with the items gathered so far.

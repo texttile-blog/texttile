@@ -84,5 +84,11 @@ defmodule Texttile.Import.FrontmatterTest do
     test "scalar values keep inner colons without quotes" do
       assert {:ok, %{"title" => "a: b"}, _} = Frontmatter.parse(doc("title: a: b\n"))
     end
+
+    test "CRLF line endings parse like LF ones" do
+      text = "---\r\ntitle: A\r\ntags: [b]\r\n---\r\nBody\r\n"
+      assert {:ok, %{"title" => "A", "tags" => ["b"]}, body} = Frontmatter.parse(text)
+      assert body =~ "Body"
+    end
   end
 end

@@ -111,6 +111,11 @@ defmodule Texttile.Import.BundleTest do
       assert error =~ "title"
     end
 
+    test "a title beyond 500 characters, which the article would refuse", %{tmp_dir: dir} do
+      assert [error] = bundle(dir, "title: #{String.duplicate("x", 501)}\n").errors
+      assert error =~ "500"
+    end
+
     test "a list where a scalar belongs, and the other way round", %{tmp_dir: dir} do
       assert [error] = bundle(dir, "title: [a, b]\n").errors
       assert error =~ "title"
