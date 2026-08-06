@@ -20,6 +20,9 @@ defmodule Texttile.Application do
       # registry and a supervisor of their own.
       {Registry, keys: :unique, name: Texttile.Articles.Lock.registry()},
       {DynamicSupervisor, strategy: :one_for_one, name: Texttile.Articles.Lock.supervisor()},
+      # The bundle import: one job at a time, its work in watched tasks.
+      {Task.Supervisor, name: Texttile.Import.TaskSupervisor},
+      Texttile.Import.Job,
       # Start to serve requests, typically the last entry
       TexttileWeb.Endpoint
     ]

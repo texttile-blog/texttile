@@ -71,6 +71,7 @@ defmodule TexttileWeb.Router do
       live "/texts/:id", EditorLive
       live "/profile", ProfileLive
       live "/settings", SettingsLive
+      live "/settings/import", ImportLive
     end
   end
 
