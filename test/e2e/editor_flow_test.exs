@@ -107,6 +107,53 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       assert [%{status: "scheduled"}] = Articles.list_articles()
     end
+
+    test "a live text opens at its dated address through the bar", %{conn: conn} do
+      today = Date.utc_today()
+
+      conn =
+        conn
+        |> sign_in()
+        |> click_button("New text")
+        |> fill_in("Title", with: "Going live")
+        |> refute_has("#btnView")
+        |> click_button("#stateBtn .main", "Publish")
+        |> assert_has("#stamp", text: "published")
+
+      address =
+        "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
+          "#{String.pad_leading("#{today.day}", 2, "0")}/going-live"
+
+      conn
+      |> assert_has("#btnView[href='#{address}']")
+      |> visit(address)
+      |> assert_has("h1", text: "Going live")
+
+      # the bare slug is not an address of the text
+      conn |> visit("/going-live") |> assert_has("h1", text: "Nothing here")
+    end
+  end
+
+  describe "tags" do
+    test "the suggestions add a tag and take it off again", %{conn: conn} do
+      other = Articles.create_draft(user_fixture(%{username: "julia"}))
+      {:ok, other} = other
+      {:ok, _} = Articles.update_settings(other, %{tags: "sea, fog"})
+
+      conn
+      |> sign_in()
+      |> click_button("New text")
+      |> fill_in("Title", with: "Tagged by hand")
+      |> click("#tagchip-sea")
+      |> assert_has("#tagchip-sea.on")
+      |> assert_has("#edTags[value='sea']")
+      |> click("#tagchip-fog")
+      |> assert_has("#edTags[value='sea, fog']")
+      |> click("#tagchip-sea")
+      |> assert_has("#edTags[value='fog']")
+      |> refute_has("#tagchip-sea.on")
+      |> assert_has("#tagchip-sea")
+    end
   end
 
   describe "versions" do

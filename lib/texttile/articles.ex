@@ -135,11 +135,13 @@ defmodule Texttile.Articles do
   @doc """
   What stands before the slug in the address: `/` for a page,
   `/2026/08/23/` for a post. A post without a date yet borrows today,
-  which is the day it gets when somebody publishes it now.
+  which is the day it gets when somebody publishes it now. Takes a text
+  or anything else that carries a type and a date, so the import can
+  show the address a bundle will take.
   """
-  def public_prefix(%Article{type: "page"}), do: "/"
+  def public_prefix(%{type: "page"}), do: "/"
 
-  def public_prefix(%Article{publish_date: date}) do
+  def public_prefix(%{publish_date: date}) do
     date = date || Date.utc_today()
     "/#{date.year}/#{pad2(date.month)}/#{pad2(date.day)}/"
   end

@@ -83,8 +83,8 @@ defmodule TexttileWeb.ImportLive do
   # a page its slug alone. A bundle without a date lands on today, the
   # day the import runs.
   defp bundle_address(bundle) do
-    article = %Texttile.Articles.Article{type: bundle.type, publish_date: bundle.date}
-    Texttile.Articles.public_prefix(article) <> bundle.slug
+    prefix = Texttile.Articles.public_prefix(%{type: bundle.type, publish_date: bundle.date})
+    prefix <> bundle.slug
   end
 
   def render(assigns) do

@@ -283,7 +283,9 @@ defmodule TexttileWeb.EditorLive do
 
     case Articles.update_settings(article, Map.take(params, [field])) do
       {:ok, article} ->
-        {:noreply, socket |> assign(:article, article) |> known_tags() |> mark_saved()}
+        socket = assign(socket, :article, article)
+        socket = if field == "tags", do: known_tags(socket), else: socket
+        {:noreply, mark_saved(socket)}
 
       {:error, changeset} ->
         {:noreply, mark_saved(socket, slug_error(changeset))}

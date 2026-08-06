@@ -73,6 +73,25 @@ defmodule TexttileWeb.Router do
     end
   end
 
+  # The development tools. They stand before the reader routes: the
+  # dashboard has addresses of four segments, like a post, and the last
+  # reader route would swallow them.
+  if Application.compile_env(:texttile, :dev_routes) do
+    # If you want to use the LiveDashboard in production, you should put
+    # it behind authentication and allow only admins to access it.
+    # If your application does not have an admins-only section yet,
+    # you can use Plug.BasicAuth to set up some basic authentication
+    # as long as you are also using SSL (which you should anyway).
+    import Phoenix.LiveDashboard.Router
+
+    scope "/dev" do
+      pipe_through :browser
+
+      live_dashboard "/dashboard", metrics: TexttileWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
   ## The public site
 
   # The reader pages share a lean root layout without the desk bundle.
@@ -109,22 +128,5 @@ defmodule TexttileWeb.Router do
     # purpose; the named routes above win, and the reserved-slug rule
     # in Texttile.Articles keeps texts off those addresses.
     get "/:slug", SiteController, :page
-  end
-
-  # Enable LiveDashboard in development
-  if Application.compile_env(:texttile, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
-
-    scope "/dev" do
-      pipe_through :browser
-
-      live_dashboard "/dashboard", metrics: TexttileWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
   end
 end
