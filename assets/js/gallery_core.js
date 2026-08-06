@@ -490,14 +490,16 @@ class Gallery {
     if (d.held) {
       d.tile.classList.remove("lift", "slot")
       this.server.removeAttribute("data-dragging")
+      const skipped = this.server.hasAttribute("data-skipped")
+      this.server.removeAttribute("data-skipped")
 
       const ids = this.currentIds()
       if (d.moved && ids.join("\n") !== d.initialOrder.join("\n")) {
         this.hook.pushEvent("gallery_reorder", {id: d.id, ids})
       }
-      // reconcile whatever patch the drag held off (and a cancelled
-      // drag's optimistic order); the rev bump re-renders every tile
-      this.hook.pushEvent("gallery_refresh", {})
+      // when the drag held a patch off, ask for the full grid once:
+      // the rev bump re-renders every tile and nothing skipped is lost
+      if (skipped) this.hook.pushEvent("gallery_refresh", {})
 
       if (!d.moved && e.type === "pointerup" && performance.now() - d.downAt < TAP_MS) {
         this.openLightbox(d.id)
@@ -545,18 +547,19 @@ class Gallery {
     }
     this.buildLightbox()
     document.body.style.overflow = "hidden"
+    document.body.classList.add("has-overlay")
     this.paint()
     this.root.focus()
   }
 
   buildLightbox() {
-    const root = document.createElement("div")
+    // a native dialog in the top layer: no z-index and no compositing
+    // quirk (the topbar's backdrop-filter) can ever paint above it
+    const root = document.createElement("dialog")
     root.id = "lbRoot"
-    root.className = "fixed inset-0 z-[90] flex flex-col"
-    root.style.background = "var(--tt-lightbox)"
-    root.setAttribute("role", "dialog")
-    root.setAttribute("aria-modal", "true")
     root.setAttribute("aria-label", "Image, full size")
+    // the dialog itself takes the focus: autofocusing the alt field
+    // would pop the keyboard over the picture on a phone
     root.tabIndex = -1
 
     root.innerHTML = `
@@ -605,7 +608,13 @@ class Gallery {
 
     document.body.appendChild(root)
     this.root = root
+    root.showModal()
 
+    // Escape reaches the dialog as a cancel; closing stays one path
+    root.addEventListener("cancel", e => {
+      e.preventDefault()
+      this.closeLightbox()
+    })
     root.querySelector("#lbClose").addEventListener("click", () => this.closeLightbox())
     root.querySelectorAll("[data-nav]").forEach(b =>
       b.addEventListener("click", () => this.nav(parseInt(b.dataset.nav, 10)))
@@ -771,10 +780,14 @@ class Gallery {
 
   closeLightbox(silent) {
     if (this.root) {
+      const bar = document.getElementById("undoBar")
+      if (bar && this.root.contains(bar)) document.body.appendChild(bar)
+      if (this.root.open) this.root.close()
       this.root.remove()
       this.root = null
     }
     document.body.style.overflow = ""
+    document.body.classList.remove("has-overlay")
     if (this.lb && !silent) {
       const tile = this.server.querySelector(`[data-id="${this.lb.id}"]`)
       const prev = this.lb.prevFocus
@@ -847,7 +860,10 @@ class Gallery {
     bar.innerHTML = `<span><b>${esc(filename)}</b> deleted</span>
       <button type="button" class="link" id="undoBtn">Undo</button>
       <span class="note num" id="undoLeft">${UNDO_S} s</span>`
-    document.body.appendChild(bar)
+
+    // a modal dialog makes the page inert; while the lightbox is open
+    // the bar lives inside it, so Undo stays clickable
+    ;(this.root || document.body).appendChild(bar)
 
     let left = UNDO_S
     this.undoTimer = setInterval(() => {

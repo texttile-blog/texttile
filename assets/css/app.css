@@ -360,6 +360,28 @@
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
   .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
 
+  /* While a full-screen overlay is open, the topbar's backdrop-filter
+     goes: with it on, Chrome composites the bar's backdrop over the
+     overlay (the stacking bug round-14 met first). The hook toggles
+     the class with the lightbox. */
+  body.has-overlay #topbar {
+    backdrop-filter: none;
+  }
+
+  /* THE LIGHTBOX · a native dialog in the top layer. The hook builds
+     and owns it; these rules undo the dialog's UA box so it fills the
+     screen as the round-14 overlay. */
+  #lbRoot {
+    position: fixed; inset: 0;
+    width: 100vw; height: 100dvh; max-width: none; max-height: none;
+    border: 0; margin: 0; padding: 0;
+    background: var(--tt-lightbox, rgba(24, 21, 17, .96));
+    color: #fff;
+  }
+  #lbRoot[open] { display: flex; flex-direction: column; }
+  /* paper surfaces inside the dialog write in ink, not the stage's white */
+  #lbRoot #lbFoot, #undoBar { color: var(--tt-ink); }
+
   /* THE GALLERY TILES · round-14. A tile is the picture itself: no
      drag icon, no chrome. The number sits top-left on an overlay
      wash; a running upload lays its state over the whole tile. */
@@ -377,7 +399,7 @@
     font-size: 10.5px; font-weight: 600; line-height: 1.5; color: #fff;
     padding: 1px 6px; border-radius: var(--tt-radius-img);
     font-variant-numeric: tabular-nums;
-    background: rgb(var(--tt-overlay) / .72);
+    background: rgb(var(--tt-overlay, 25 23 32) / .72);
   }
   .tile-add {
     aspect-ratio: 1 / 1; display: grid; place-items: center;
@@ -412,7 +434,7 @@
     display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
     padding: 5px; color: #fff; font-size: 10px; line-height: 1.35;
     border-radius: var(--tt-radius-img);
-    background: linear-gradient(180deg, rgb(var(--tt-overlay) / .25), rgb(var(--tt-overlay) / .88));
+    background: linear-gradient(180deg, rgb(var(--tt-overlay, 25 23 32) / .25), rgb(var(--tt-overlay, 25 23 32) / .88));
   }
   .tile-ov .fn {
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;
@@ -429,9 +451,9 @@
     display: inline-flex; align-items: center; justify-content: center;
     height: 18px; padding: 0 6px; font-size: 10px; font-weight: 600; color: #fff;
     border-radius: var(--tt-radius-img);
-    background: rgb(var(--tt-overlay) / .55);
+    background: rgb(var(--tt-overlay, 25 23 32) / .55);
   }
-  .tile-x:hover { background: rgb(var(--tt-overlay) / .9); }
+  .tile-x:hover { background: rgb(var(--tt-overlay, 25 23 32) / .9); }
   .spin { animation: tt-spin .9s linear infinite; }
   @keyframes tt-spin { to { transform: rotate(360deg); } }
 

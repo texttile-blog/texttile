@@ -79,7 +79,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
     // gallery_refresh whose rev bump re-renders every tile, so
     // nothing skipped here is ever lost.
     onBeforeElUpdated(from, _to) {
-      if (from.id === "tileServer" && from.hasAttribute("data-dragging")) return false
+      if (from.id === "tileServer" && from.hasAttribute("data-dragging")) {
+        from.setAttribute("data-skipped", "1")
+        return false
+      }
       return true
     },
   },
