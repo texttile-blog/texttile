@@ -41,18 +41,36 @@ defmodule TexttileWeb.SiteGate do
       Settings.get(:site_password) == ""
   end
 
-  @doc "Marks the session: this reader entered the password."
-  def unlock(conn), do: put_session(conn, :site_unlocked, true)
+  @doc """
+  Marks the session: this reader entered the password. The session id
+  is renewed, so the mark never lands on an id somebody else planted.
+  """
+  def unlock(conn) do
+    conn
+    |> configure_session(renew: true)
+    |> put_session(:site_unlocked, true)
+  end
+
+  # What Phoenix refuses in a local redirect; anything carrying these
+  # falls back to the front page instead of raising there.
+  @unsafe_chars ["\\", "/%09", "/\t"]
 
   @doc """
-  Where the gate sends the reader afterwards: only a path on this site.
-  Anything absolute, protocol-relative or absent falls back to the
-  front page.
+  Where the gate sends the reader afterwards: only a clean path on this
+  site. Anything absolute, protocol-relative, absent or carrying an
+  unsafe character falls back to the front page.
   """
   def safe_return(to) do
     case to do
-      "/" <> _ = path -> if String.starts_with?(path, "//"), do: "/", else: path
-      _ -> "/"
+      "/" <> _ = path ->
+        if String.starts_with?(path, "//") or String.contains?(path, @unsafe_chars) do
+          "/"
+        else
+          path
+        end
+
+      _ ->
+        "/"
     end
   end
 

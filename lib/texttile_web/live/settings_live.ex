@@ -252,18 +252,22 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:pages, Texttile.Articles.list_pages())
   end
 
-  # The page the fixed-front-page radio stands for: the chosen one
-  # while it exists, otherwise the first published page.
-  defp fixed_front_page(settings, pages) do
-    chosen =
-      with "page:" <> id <- settings.front_page,
-           {id, ""} <- Integer.parse(id) do
-        Enum.find(pages, &(&1.id == id))
-      else
-        _ -> nil
-      end
+  # The stored choice, only while it still names a published page. A
+  # page that disappeared makes the site serve the list again, and the
+  # screen says the same instead of claiming another page.
+  defp resolved_front_page(settings, pages) do
+    with "page:" <> id <- settings.front_page,
+         {id, ""} <- Integer.parse(id) do
+      Enum.find(pages, &(&1.id == id))
+    else
+      _ -> nil
+    end
+  end
 
-    chosen || List.first(pages)
+  # The page the fixed-front-page radio stands for when clicked: the
+  # resolved choice, otherwise the first published page.
+  defp fixed_front_page(settings, pages) do
+    resolved_front_page(settings, pages) || List.first(pages)
   end
 
   # The textarea always shows the theme the site wears: the stored one,
@@ -307,10 +311,20 @@ defmodule TexttileWeb.SettingsLive do
   defp saved_note(:comments_require_confirmation, false),
     do: "Comments appear at once · no confirmation asked"
 
-  defp saved_note(:site_visibility, "protected"),
-    do: "The blog waits behind the password now"
+  # The gate only locks with a password in it, so the note tells the
+  # truth for both states instead of announcing a protection that is
+  # not there yet.
+  defp saved_note(:site_visibility, "protected") do
+    if Settings.get(:site_password) == "" do
+      "Protected once the blog password below is set"
+    else
+      "The blog waits behind the password now"
+    end
+  end
 
   defp saved_note(:site_visibility, "public"), do: "The blog is open to everyone"
+
+  defp saved_note(:site_password, ""), do: "Without a password nothing is protected"
 
   defp saved_note(_key, _value), do: nil
 
@@ -541,7 +555,7 @@ defmodule TexttileWeb.SettingsLive do
               type="radio"
               name="settings[front_page]"
               value="latest"
-              checked={@settings.front_page == "latest"}
+              checked={resolved_front_page(@settings, @pages) == nil}
               class="w-auto flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
             />
@@ -561,7 +575,7 @@ defmodule TexttileWeb.SettingsLive do
               type="radio"
               name="settings[front_page]"
               value={@pages != [] && "page:#{fixed_front_page(@settings, @pages).id}"}
-              checked={String.starts_with?(@settings.front_page, "page:")}
+              checked={resolved_front_page(@settings, @pages) != nil}
               disabled={@pages == []}
               class="w-auto flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
@@ -581,7 +595,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
           </label>
           <div
-            :if={@pages != [] && String.starts_with?(@settings.front_page, "page:")}
+            :if={resolved_front_page(@settings, @pages) != nil}
             class="py-3 max-w-[280px]"
             id="front-page-choice"
           >
@@ -665,7 +679,9 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <div :if={@settings.site_visibility == "protected"} class="py-3 max-w-[280px]" id="pwRow">
+          <%!-- always on screen: a public blog needs the password too,
+               for the texts that ask for it one by one --%>
+          <div class="py-3 max-w-[280px]" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
             <input
               type="text"
@@ -677,7 +693,9 @@ defmodule TexttileWeb.SettingsLive do
             />
             <div class="hint">
               A shared access word, not a login: it goes into the notification
-              mails, and you pass it on. It is stored as it is written.
+              mails, and you pass it on. It is stored as it is written. On a
+              public blog it guards the texts that ask for it in their own
+              settings; without a password nothing is protected.
             </div>
           </div>
         </.form>

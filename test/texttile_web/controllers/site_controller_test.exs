@@ -221,6 +221,19 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ ~s(id="menu-home")
       assert html =~ ~s(id="menu-texts" href="/")
     end
+
+    test "a fixed front page that disappears falls back to the list", %{conn: conn} do
+      user = Texttile.AccountsFixtures.user_fixture()
+      page = published_page(title: "Welcome", user: user)
+      published_post(title: "A post")
+      {:ok, _} = Settings.put(:front_page, "page:#{page.id}")
+
+      {:ok, _} = Texttile.Articles.unpublish(page, user)
+
+      html = conn |> get(~p"/") |> html_response(200)
+      assert html =~ "A post"
+      refute html =~ ~s(id="menu-home")
+    end
   end
 
   describe "the password gate" do
@@ -268,6 +281,19 @@ defmodule TexttileWeb.SiteControllerTest do
 
       conn = post(build_conn(), ~p"/unlock", %{"password" => "sesame", "to" => "//evil.example"})
       assert redirected_to(conn) == "/"
+
+      # a backslash path would make the redirect itself raise
+      conn = post(build_conn(), ~p"/unlock", %{"password" => "sesame", "to" => "/\\evil.example"})
+      assert redirected_to(conn) == "/"
+    end
+
+    test "an unlocked reader who lands on the gate is sent along", %{conn: conn} do
+      published_post(title: "Behind the wall", slug: "behind-the-wall")
+
+      conn = post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/"})
+
+      conn = conn |> recycle() |> get(~p"/unlock?to=%2Fbehind-the-wall")
+      assert redirected_to(conn) == "/behind-the-wall"
     end
 
     test "an admin session passes without unlocking", %{conn: conn} do

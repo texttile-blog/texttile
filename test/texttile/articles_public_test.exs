@@ -29,6 +29,28 @@ defmodule Texttile.ArticlesPublicTest do
                Enum.sort([by_title.id, by_tags.id, by_body.id])
     end
 
+    test "folds case beyond ASCII, where SQLite's lower() gives up" do
+      article = published_post(title: "Über den Bodensee")
+
+      assert Enum.map(Articles.list_published(search: "über"), & &1.id) == [article.id]
+      assert Enum.map(Articles.list_published(search: "ÜBER"), & &1.id) == [article.id]
+    end
+
+    test "a reader's % and _ are characters, not wildcards" do
+      published_post(title: "Fully done", body: "We are 100% done.")
+      published_post(title: "Elsewhere", body: "Nothing numeric.")
+
+      assert Articles.list_published(search: "_") == []
+      assert [%{title: "Fully done"}] = Articles.list_published(search: "100%")
+    end
+
+    test "every word of the term must appear somewhere" do
+      both = published_post(title: "Harbor mornings", body: "Fog over the pier.")
+      published_post(title: "Harbor evenings", body: "Clear sky.")
+
+      assert Enum.map(Articles.list_published(search: "harbor fog"), & &1.id) == [both.id]
+    end
+
     test "leaves protected texts out unless asked to include them" do
       open = published_post(title: "Open")
       hidden = published_post(title: "Hidden", protected: true)

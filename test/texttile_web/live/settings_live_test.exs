@@ -40,6 +40,43 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Settings.get(:site_title) == "Two of us"
     end
 
+    test "the blog password field is on screen for a public blog too", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
+      assert html =~ ~s(id="setting-site_password")
+    end
+
+    test "protecting the blog without a password says what is missing", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
+
+      html =
+        view
+        |> form("#access-form", %{"settings" => %{"site_visibility" => "protected"}})
+        |> render_change(%{"_target" => ["settings", "site_visibility"]})
+
+      assert html =~ "Protected once the blog password below is set"
+
+      view
+      |> form("#access-form", %{"settings" => %{"site_password" => "sesame"}})
+      |> render_change(%{"_target" => ["settings", "site_password"]})
+
+      html =
+        view
+        |> form("#access-form", %{"settings" => %{"site_visibility" => "protected"}})
+        |> render_change(%{"_target" => ["settings", "site_visibility"]})
+
+      assert html =~ "The blog waits behind the password now"
+    end
+
+    test "a front page that is no longer published shows as the list again", %{conn: conn} do
+      user = Texttile.AccountsFixtures.user_fixture()
+      page = Texttile.ArticlesFixtures.published_page(title: "Welcome", user: user)
+      {:ok, _} = Settings.put(:front_page, "page:#{page.id}")
+      {:ok, _} = Texttile.Articles.unpublish(page, user)
+
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
+      refute html =~ ~s(id="front-page-choice")
+    end
+
     test "a published page unlocks the fixed front page and saves it", %{conn: conn} do
       {:ok, view, _} = live(conn, ~p"/desk/settings")
       assert has_element?(view, "#front-page-form input[type=radio][disabled]")

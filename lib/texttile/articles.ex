@@ -89,6 +89,22 @@ defmodule Texttile.Articles do
     published_query("post", opts)
     |> order_by([a], desc: a.publish_date, desc: a.id)
     |> Repo.all()
+    |> search_filter(opts[:search] |> to_string() |> String.trim())
+  end
+
+  # The search runs in Elixir, not in SQL: SQLite's lower() and LIKE
+  # only fold ASCII, so "über" would never find "Über" there, and a
+  # reader's % or _ would act as wildcards. A published blog is small;
+  # every word of the term must appear somewhere in the text.
+  defp search_filter(articles, ""), do: articles
+
+  defp search_filter(articles, search) do
+    words = search |> String.downcase() |> String.split()
+
+    Enum.filter(articles, fn article ->
+      hay = String.downcase(article.title <> " " <> article.tags <> " " <> article.body)
+      Enum.all?(words, &String.contains?(hay, &1))
+    end)
   end
 
   @doc """
@@ -121,27 +137,10 @@ defmodule Texttile.Articles do
   end
 
   defp published_query(type, opts) do
-    search = opts[:search] |> to_string() |> String.trim()
-
     Article
     |> where([a], a.status == "published" and a.type == ^type)
     |> then(fn q ->
       if Keyword.get(opts, :include_protected, true), do: q, else: where(q, [a], not a.protected)
-    end)
-    |> then(fn q ->
-      if search == "" do
-        q
-      else
-        like = "%#{String.downcase(search)}%"
-
-        where(
-          q,
-          [a],
-          like(fragment("lower(?)", a.title), ^like) or
-            like(fragment("lower(?)", a.tags), ^like) or
-            like(fragment("lower(?)", a.body), ^like)
-        )
-      end
     end)
   end
 

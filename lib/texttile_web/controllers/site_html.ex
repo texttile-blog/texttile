@@ -107,12 +107,13 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc """
   The body of a text as HTML. Inline pictures leave the original file
-  alone and travel as the reader-size rendition instead.
+  alone and travel as a rendition sized for the reading column - 1320,
+  which is the 660px measure on a dense screen - never the full file.
   """
   def body_html(article) do
     article.body
     |> Texttile.Markdown.to_html()
-    |> String.replace(~s(src="/uploads/), ~s(src="/renditions/max/))
+    |> String.replace(~s(src="/uploads/), ~s(src="/renditions/1320/))
     |> Phoenix.HTML.raw()
   end
 
@@ -149,18 +150,22 @@ defmodule TexttileWeb.SiteHTML do
     |> String.trim()
   end
 
-  defp shorten(text, max) when byte_size(text) <= max, do: text
-
   defp shorten(text, max) do
-    cut = String.slice(text, 0, max)
+    if String.length(text) <= max do
+      text
+    else
+      # the slice ends mid-word, so the broken tail goes - unless the
+      # cut is one single word, which stays as it is
+      cut = String.slice(text, 0, max)
 
-    head =
-      case String.split(cut, " ") do
-        [_single] -> cut
-        words -> words |> Enum.drop(-1) |> Enum.join(" ")
-      end
+      head =
+        case String.split(cut, " ") do
+          [_single] -> cut
+          words -> words |> Enum.drop(-1) |> Enum.join(" ")
+        end
 
-    head <> "…"
+      head <> "…"
+    end
   end
 
   @doc "What the count beside the search says: all of it, or n of all."

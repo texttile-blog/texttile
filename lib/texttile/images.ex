@@ -21,9 +21,13 @@ defmodule Texttile.Images do
   # Formats vips scales well. Anything else (svg, gif) is answered as it is.
   @scalable ~w(.jpg .jpeg .png .webp)
 
-  # The thumbnail size the desk shows in tiles and panels. The gallery
-  # lightbox asks for the reader size instead ("max" in the route).
-  @desk_edges [320]
+  # The fixed edges the site asks for beside the reader size: 320 for
+  # the desk thumbnails, 640 for the reader's cards and gallery tiles,
+  # 1320 for the pictures inside a text (the 660px column, twice). The
+  # gallery lightbox asks for the reader size instead ("max" in the
+  # route). Every fixed edge stays sanctioned in the cache; only stale
+  # reader sizes are dropped.
+  @fixed_edges [320, 640, 1320]
 
   @doc """
   The path to show for an original, at the current (or given) max edge:
@@ -74,10 +78,11 @@ defmodule Texttile.Images do
     "#{@cache_dir}/#{stem}-#{max_edge}#{extension}"
   end
 
-  # The sizes of one image that may stay cached side by side: the desk
-  # thumbnail, the reader size of the moment, and the one just asked for.
+  # The sizes of one image that may stay cached side by side: the
+  # fixed edges, the reader size of the moment, and the one just asked
+  # for. Only a stale reader size falls out of this set.
   defp sanctioned(relative, requested) do
-    [requested | @desk_edges ++ [Settings.get(:image_max_edge)]]
+    [requested | @fixed_edges ++ [Settings.get(:image_max_edge)]]
     |> Enum.uniq()
     |> Enum.map(&cached_name(relative, &1))
   end
