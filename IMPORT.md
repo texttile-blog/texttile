@@ -175,7 +175,52 @@ with the gallery of the bundle. Pictures of the earlier import that the
 bundle no longer references are deleted. An import with the same zip twice
 gives the same site, not duplicates.
 
-## Reserved
+## Comments
 
-A `comments.yaml` file in a bundle is reserved for a later version. The
-importer ignores it today, without a warning.
+A bundle can carry the comments of its text in a `comments.yaml` file.
+The format stands now so a converter can already write it; the importer
+reads the file in a later version and ignores it today, without a
+warning. Export only the comments that belong on the site; there is no
+status field.
+
+```
+- author: Christiane
+  email: christiane@example.org
+  date: 2026-07-30 22:14
+  id: 12
+  text: |
+    Ihr Lieben, immer wieder!
+
+    Es war ein Fest mit euren Jungs.
+- author: kb
+  date: 2026-07-31 09:02
+  reply_to: 12
+  text: |
+    Danke euch!
+```
+
+Like the front matter, this is a restricted subset of YAML:
+
+- The file is a list. A comment starts with `- ` at the start of a
+  line. Its other fields follow, indented with two spaces.
+- `text: |` opens the comment text. Every following line that is
+  indented with four spaces belongs to it, with the indent removed.
+  Empty lines inside the text are kept.
+- All other values are single-line scalars, quoted or plain, with the
+  same quoting rules as the front matter.
+
+The fields:
+
+| Field      | Required | Value                                                  |
+| ---------- | -------- | ------------------------------------------------------ |
+| `author`   | yes      | The displayed name.                                    |
+| `text`     | yes      | The comment, plain text.                               |
+| `date`     | yes      | `YYYY-MM-DD HH:MM` or with seconds, local wall clock.  |
+| `email`    | no       | The address the author gave.                           |
+| `website`  | no       | The URL the author gave.                               |
+| `id`       | no       | A number, unique in the file. Only replies need it.    |
+| `reply_to` | no       | The `id` of the comment this one answers.              |
+
+There are no avatars in the format. WordPress avatars are Gravatars,
+computed from the email address; the address keeps that door open
+without storing third-party pictures.

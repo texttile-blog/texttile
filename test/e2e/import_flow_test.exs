@@ -85,7 +85,8 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     File.mkdir_p!(Path.join(source, "broken"))
     File.write!(Path.join(source, "broken/index.md"), "---\ntype: page\n---\n")
 
-    zip_path = Path.join(System.tmp_dir!(), "e2e-import-#{System.unique_integer([:positive])}.zip")
+    zip_path =
+      Path.join(System.tmp_dir!(), "e2e-import-#{System.unique_integer([:positive])}.zip")
 
     entries =
       source

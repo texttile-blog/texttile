@@ -92,9 +92,14 @@ defmodule Texttile.Import.Bundle do
       bundle,
       fn key, bundle ->
         case Map.fetch(entries, key) do
-          :error -> missing(bundle, key)
-          {:ok, value} when is_list(value) -> complain(bundle, "#{key} takes one value, not a list")
-          {:ok, value} -> put_scalar(bundle, key, value)
+          :error ->
+            missing(bundle, key)
+
+          {:ok, value} when is_list(value) ->
+            complain(bundle, "#{key} takes one value, not a list")
+
+          {:ok, value} ->
+            put_scalar(bundle, key, value)
         end
       end
     )
@@ -228,7 +233,10 @@ defmodule Texttile.Import.Bundle do
         end
 
       Path.type(source) != :relative or ".." in Path.split(source) ->
-        complain(bundle, "the source #{source} leaves the bundle folder (no .. and no absolute paths)")
+        complain(
+          bundle,
+          "the source #{source} leaves the bundle folder (no .. and no absolute paths)"
+        )
 
       not picture?(source) ->
         complain(

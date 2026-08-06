@@ -44,7 +44,8 @@ defmodule Texttile.Import do
   defp entry_names(zip_path) do
     case :zip.list_dir(String.to_charlist(zip_path)) do
       {:ok, entries} ->
-        {:ok, for({:zip_file, name, _info, _comment, _offset, _size} <- entries, do: to_string(name))}
+        {:ok,
+         for({:zip_file, name, _info, _comment, _offset, _size} <- entries, do: to_string(name))}
 
       {:error, reason} ->
         {:error, "this is not a zip archive (#{inspect(reason)})"}
@@ -261,7 +262,9 @@ defmodule Texttile.Import do
   defp download(url) do
     case Req.request([method: :get, url: url] ++ req_options()) do
       {:ok, %Req.Response{status: status, body: body} = response} when status in 200..299 ->
-        tmp = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
+        tmp =
+          Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
+
         File.write!(tmp, body)
         stored = Uploads.put_body_image(tmp, remote_name(url, response))
         File.rm(tmp)

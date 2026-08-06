@@ -152,7 +152,8 @@ defmodule Texttile.Import.Job do
 
   # The task died instead of answering. Keep the page honest about it.
   def handle_info({:DOWN, ref, :process, _pid, reason}, %{task: %Task{ref: ref}} = state) do
-    {:noreply, announce(%{clean(state) | phase: :failed, message: "the import crashed: #{inspect(reason)}"})}
+    {:noreply,
+     announce(%{clean(state) | phase: :failed, message: "the import crashed: #{inspect(reason)}"})}
   end
 
   def handle_info(_message, state), do: {:noreply, state}
