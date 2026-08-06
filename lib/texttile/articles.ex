@@ -77,6 +77,60 @@ defmodule Texttile.Articles do
     |> Repo.all()
   end
 
+  ## The public reading
+
+  @doc """
+  The published posts for the readers, newest publish date first.
+  `search:` looks through the title, the tags and the full text;
+  `include_protected: false` is the locked reader, who does not see
+  protected texts anywhere.
+  """
+  def list_published(opts \\ []) do
+    published_query("post", opts)
+    |> order_by([a], desc: a.publish_date, desc: a.id)
+    |> Repo.all()
+  end
+
+  @doc """
+  The published pages for the site menu, oldest publish date first.
+  Takes the same `include_protected:` as `list_published/1`.
+  """
+  def list_pages(opts \\ []) do
+    published_query("page", opts)
+    |> order_by([a], asc: a.publish_date, asc: a.id)
+    |> Repo.all()
+  end
+
+  @doc "The published text behind an address, post or page, or nil."
+  def get_published_by_slug(slug) when is_binary(slug) do
+    Repo.one(from a in Article, where: a.slug == ^slug and a.status == "published")
+  end
+
+  defp published_query(type, opts) do
+    search = opts[:search] |> to_string() |> String.trim()
+
+    Article
+    |> where([a], a.status == "published" and a.type == ^type)
+    |> then(fn q ->
+      if Keyword.get(opts, :include_protected, true), do: q, else: where(q, [a], not a.protected)
+    end)
+    |> then(fn q ->
+      if search == "" do
+        q
+      else
+        like = "%#{String.downcase(search)}%"
+
+        where(
+          q,
+          [a],
+          like(fragment("lower(?)", a.title), ^like) or
+            like(fragment("lower(?)", a.tags), ^like) or
+            like(fragment("lower(?)", a.body), ^like)
+        )
+      end
+    end)
+  end
+
   ## Writing
 
   @doc "A new, empty draft, and the first line of its Log."
@@ -386,12 +440,14 @@ defmodule Texttile.Articles do
         slug -> slug
       end
 
+    # The site's own addresses count as taken, like another text's slug.
     taken =
       Article
       |> where([a], like(a.slug, ^"#{base}%") and a.id != ^article.id)
       |> select([a], a.slug)
       |> Repo.all()
       |> MapSet.new()
+      |> MapSet.union(MapSet.new(Article.reserved_slugs()))
 
     if base in taken do
       Enum.find(Stream.map(2..1000, &"#{base}-#{&1}"), &(&1 not in taken))

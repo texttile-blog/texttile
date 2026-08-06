@@ -83,8 +83,17 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:image_max_edge) == 2560
     end
 
+    test "accepts the latest list and a fixed page as the front page" do
+      assert {:ok, "page:7"} = Settings.put(:front_page, "page:7")
+      assert Settings.get(:front_page) == "page:7"
+
+      assert {:ok, "latest"} = Settings.put(:front_page, "latest")
+    end
+
     test "refuses an unknown front page" do
-      assert {:error, _} = Settings.put(:front_page, "page:7")
+      assert {:error, _} = Settings.put(:front_page, "sitemap")
+      assert {:error, _} = Settings.put(:front_page, "page:")
+      assert {:error, _} = Settings.put(:front_page, "page:seven")
       assert Settings.get(:front_page) == "latest"
     end
 
