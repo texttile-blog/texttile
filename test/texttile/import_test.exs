@@ -106,6 +106,84 @@ defmodule Texttile.ImportTest do
       assert error =~ "not a picture"
     end
 
+    test "a host that refuses HEAD is asked again with a one byte GET", %{dir: dir} do
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        case {conn.method, Plug.Conn.get_req_header(conn, "range")} do
+          {"HEAD", _} ->
+            Plug.Conn.resp(conn, 405, "")
+
+          {"GET", ["bytes=0-0"]} ->
+            conn
+            |> Plug.Conn.put_resp_content_type("image/jpeg")
+            |> Plug.Conn.put_resp_header("content-range", "bytes 0-0/1234")
+            |> Plug.Conn.resp(206, "x")
+        end
+      end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [https://shy.example/a.jpg]\n")
+      assert hd(Import.validate(dir).bundles).errors == []
+    end
+
+    test "a redirecting URL is an error that names the target", %{dir: dir} do
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("location", "https://cdn.example/real.jpg")
+        |> Plug.Conn.resp(301, "")
+      end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [https://old.example/a.jpg]\n")
+
+      assert [error] = hd(Import.validate(dir).bundles).errors
+      assert error =~ "redirects to https://cdn.example/real.jpg"
+    end
+
+    test "a URL into the private network is refused before any request", %{dir: dir} do
+      Application.put_env(:texttile, :import_allow_private_hosts, false)
+      on_exit(fn -> Application.put_env(:texttile, :import_allow_private_hosts, true) end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [http://127.0.0.1/a.jpg]\n")
+
+      assert [error] = hd(Import.validate(dir).bundles).errors
+      assert error =~ "private network"
+    end
+
+    test "a picture whose declared size is beyond the cap is an error", %{dir: dir} do
+      Application.put_env(:texttile, :import_max_picture_bytes, 1000)
+      on_exit(fn -> Application.delete_env(:texttile, :import_max_picture_bytes) end)
+
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("image/jpeg")
+        |> Plug.Conn.put_resp_header("content-length", "5000")
+        |> Plug.Conn.resp(200, "")
+      end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [https://old.example/big.jpg]\n")
+
+      assert [error] = hd(Import.validate(dir).bundles).errors
+      assert error =~ "cap"
+    end
+
+    test "an empty folder in the zip is a warning", %{dir: dir} do
+      File.mkdir_p!(Path.join(dir, "hollow"))
+      write_bundle(dir, "fine", "title: Fine\n")
+
+      assert Enum.any?(Import.validate(dir).warnings, &(&1 =~ "hollow"))
+    end
+
+    test "a text open in an editor gets a warning", %{dir: dir, user: user} do
+      {:ok, article} = Articles.create_draft(user)
+      {:ok, _} = Articles.update_settings(article, %{slug: "beach-days"})
+      me = self()
+      :ok = Texttile.Articles.Lock.acquire(article.id, user.id, me)
+      on_exit(fn -> Texttile.Articles.Lock.release(article.id, me) end)
+
+      write_bundle(dir, "beach", "title: Beach days\n")
+
+      warnings = hd(Import.validate(dir).bundles).warnings
+      assert Enum.any?(warnings, &(&1 =~ "open in an editor"))
+    end
+
     test "a gallery entry that appears twice is an error", %{dir: dir} do
       write_bundle(dir, "beach", "title: A\ngallery: [a.jpg, a.jpg]\n", "", ["a.jpg"])
 
@@ -205,6 +283,7 @@ defmodule Texttile.ImportTest do
 
       report = Import.validate(dir)
       summary = Import.run(report, user)
+      assert summary.failed == []
       assert summary.updated == 1
       assert summary.created == 0
 
@@ -259,6 +338,79 @@ defmodule Texttile.ImportTest do
       assert Repo.get_by(Article, slug: "b")
     end
 
+    test "a text open in an editor is refused at run time", %{dir: dir, user: user} do
+      {:ok, article} = Articles.create_draft(user)
+      {:ok, _} = Articles.update_settings(article, %{slug: "beach-days", tags: "keep"})
+      me = self()
+      :ok = Texttile.Articles.Lock.acquire(article.id, user.id, me)
+      on_exit(fn -> Texttile.Articles.Lock.release(article.id, me) end)
+
+      write_bundle(dir, "beach", "title: Beach days\n")
+
+      summary = Import.run(Import.validate(dir), user)
+      assert [{"beach", message}] = summary.failed
+      assert message =~ "open in an editor"
+      assert Repo.get_by!(Article, slug: "beach-days").tags == "keep"
+    end
+
+    test "a failure inside the transaction leaves no half-imported text", %{user: user} do
+      # A title the dry run of an older release would have let through:
+      # the article changeset refuses it, and the rollback must too.
+      bundle = %Texttile.Import.Bundle{
+        name: "long",
+        dir: "/nowhere",
+        title: String.duplicate("x", 501),
+        slug: "long"
+      }
+
+      summary = Import.run(%Import.Report{bundles: [bundle]}, user)
+      assert [{"long", _message}] = summary.failed
+      assert Repo.aggregate(Article, :count) == 0
+    end
+
+    test "a body streaming past the cap fails its bundle", %{dir: dir, user: user} do
+      Application.put_env(:texttile, :import_max_picture_bytes, 1000)
+      on_exit(fn -> Application.delete_env(:texttile, :import_max_picture_bytes) end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [https://old.example/liar.jpg]\n")
+
+      # the HEAD stays silent about the size, the GET then streams past it
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("image/jpeg")
+        |> Plug.Conn.resp(
+          200,
+          if(conn.method == "HEAD", do: "", else: String.duplicate("z", 5000))
+        )
+      end)
+
+      report = Import.validate(dir)
+      assert Enum.all?(report.bundles, &(&1.errors == []))
+
+      summary = Import.run(report, user)
+      assert [{"beach", message}] = summary.failed
+      assert message =~ "cap"
+      assert File.ls(Path.join(Uploads.root(), "images")) in [{:error, :enoent}, {:ok, []}]
+    end
+
+    test "replacing the gallery tells the open editors once", %{dir: dir, user: user} do
+      write_bundle(dir, "beach", "title: Beach days\ngallery: [a.jpg]\n", "", ["a.jpg"])
+      Import.run(Import.validate(dir), user)
+      article = Repo.get_by!(Article, slug: "beach-days")
+
+      # the second bundle version has no gallery at all
+      write_bundle(dir, "beach", "title: Beach days\nslug: beach-days\n")
+      File.rm_rf!(Path.join(dir, "beach/a.jpg"))
+
+      Articles.subscribe(article.id)
+      summary = Import.run(Import.validate(dir), user)
+      assert summary.failed == []
+      assert summary.updated == 1
+
+      assert_receive {:gallery_changed, _id, %{action: :replaced}}
+      assert Gallery.list(article.id) == []
+    end
+
     test "a download that dies at run time leaves nothing behind", %{dir: dir, user: user} do
       write_bundle(dir, "beach", "title: A\ngallery: [https://old.example/a.jpg]\n")
       report = Import.validate(dir)
@@ -296,6 +448,31 @@ defmodule Texttile.ImportTest do
 
       assert {:error, message} = Import.unpack(zip_path, tmp_dir!())
       assert message =~ "evil.txt"
+    end
+
+    test "refuses a zip beyond the entry cap", %{dir: dir} do
+      Application.put_env(:texttile, :import_zip_limits, {2, 1_000_000})
+      on_exit(fn -> Application.delete_env(:texttile, :import_zip_limits) end)
+
+      source = tmp_dir!()
+      write_bundle(source, "a", "title: A\n")
+      write_bundle(source, "b", "title: B\n")
+      write_bundle(source, "c", "title: C\n")
+
+      assert {:error, message} = Import.unpack(build_zip(source), tmp_dir!())
+      assert message =~ "entries"
+      _ = dir
+    end
+
+    test "refuses a zip that unpacks beyond the size cap" do
+      Application.put_env(:texttile, :import_zip_limits, {100, 500})
+      on_exit(fn -> Application.delete_env(:texttile, :import_zip_limits) end)
+
+      source = tmp_dir!()
+      write_bundle(source, "a", "title: A\n", String.duplicate("padding ", 200))
+
+      assert {:error, message} = Import.unpack(build_zip(source), tmp_dir!())
+      assert message =~ "cap"
     end
 
     test "refuses what is not a zip", %{dir: dir} do

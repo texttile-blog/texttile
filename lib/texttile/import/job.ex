@@ -68,8 +68,10 @@ defmodule Texttile.Import.Job do
   @impl true
   def handle_call(:state, _from, state), do: {:reply, public(state), state}
 
+  # Refused while a dry run or an import is in flight: a second zip
+  # would pull the temp folder out from under the running task.
   def handle_call({:validate, zip_path, name}, _from, %{phase: phase} = state)
-      when phase != :running do
+      when phase not in [:validating, :running] do
     state = clean(state)
     dir = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)

@@ -31,6 +31,8 @@ export.zip
 ```
 
 Files at the zip root and empty folders are warnings. All text is UTF-8.
+The archive may hold up to 20,000 entries and up to 4 GB unpacked; a
+larger one is refused whole.
 
 ## index.md
 
@@ -83,7 +85,7 @@ this subset. Do not use other YAML features.
 
 | Key              | Required | Value                                                          |
 | ---------------- | -------- | -------------------------------------------------------------- |
-| `title`          | yes      | The title of the text.                                         |
+| `title`          | yes      | The title of the text, up to 500 characters.                   |
 | `slug`           | no       | The address of the text. Default: made from the title.         |
 | `date`           | no       | The publish date, `YYYY-MM-DD`. Default: the day of the import.|
 | `status`         | no       | `published` or `draft`. Default: `published`.                  |
@@ -100,7 +102,9 @@ Details:
   not resolve to the same slug. That is an error.
 - `status: published` with a `date` in the future schedules the text. It goes
   live on that day.
-- The import never sends notification mails, whatever the status is.
+- The import itself sends no mail, and a text imported as published
+  counts as already told about. A text the import schedules goes live
+  on its day like any scheduled text, subscriber notification included.
 - `preview`: the value must be byte-identical to one picture source of the
   bundle (a `gallery` entry or a body reference). Without `preview`, the
   first picture of the text speaks for it.
@@ -123,9 +127,14 @@ The same source string used twice, in one bundle, becomes one upload. The
 comparison is byte-identical strings, so write each URL one way.
 
 Supported picture formats: PNG, JPEG, WebP, and GIF. The dry run checks each
-URL with a HEAD request and reports dead URLs and non-picture content types.
-The report also lists every host the bundle downloads from. Check that list
-for hosts you do not expect.
+URL with a HEAD request (and a one-byte GET when the host refuses HEAD) and
+reports dead URLs and non-picture content types. The report also lists every
+host the bundle downloads from. Check that list for hosts you do not expect.
+
+Three rules keep the fetches honest. A URL must answer directly; a redirect
+is an error, so write the final address. A URL must not point at the
+server's own network; loopback and private addresses are refused. And one
+picture may hold up to 100 MB; a larger one is an error.
 
 ## The gallery
 
@@ -154,7 +163,10 @@ Errors:
 
 - `index.md` is missing, or its front matter does not parse.
 - An unknown front matter key, a wrong value, or a missing `title`.
+- A title longer than 500 characters.
 - Two bundles resolve to the same slug.
+- A URL that redirects, points at a private address, or is larger than
+  the picture cap.
 - A relative source points to a file that is not in the bundle.
 - A URL is dead, or its content is not a supported picture.
 - A gallery entry that appears twice in the list.
@@ -165,6 +177,8 @@ Warnings:
 - A file in the bundle that nothing references.
 - A file in `gallery/` that an explicit `gallery` key does not list.
 - A slug that already exists on the site. The import updates that text.
+- A text somebody has open in the editor right now. The run refuses
+  that bundle while the editor stays open; run the import again later.
 - A file at the zip root, or an empty folder.
 
 ## Importing twice

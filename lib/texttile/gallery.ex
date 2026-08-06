@@ -126,20 +126,11 @@ defmodule Texttile.Gallery do
   """
   def add_image(%Article{} = article, source_path, original_name, opts \\ []) do
     with {:ok, relative} <- Uploads.put_body_image(source_path, original_name) do
-      {taken, width, height} = probe(Uploads.absolute(relative))
-
       # The file went to disk first; a failed insert (say the text was
       # deleted this second) must not leave it orphaned there.
       image =
         try do
-          Repo.insert!(%Image{
-            article_id: article.id,
-            path: relative,
-            filename: String.slice(original_name, 0, 120),
-            gallery_date: taken || DateTime.utc_now(:microsecond),
-            width: width,
-            height: height
-          })
+          insert_stored(article, relative, original_name, nil)
         rescue
           error ->
             Uploads.remove_body_image(relative)
@@ -152,25 +143,38 @@ defmodule Texttile.Gallery do
   end
 
   @doc """
-  Puts an already stored upload into the gallery, for the importer. The
-  file is not touched again: the path is reused, the date and with it
-  the place in the order are the caller's word.
+  The importer's swap: the old rows go, the bundle's tiles come, in the
+  given order as `{relative, filename, gallery_date}`, and the open
+  editors hear one broadcast for the whole move. The files are not
+  touched: the old ones are the caller's to remove once its transaction
+  holds, the new ones are stored uploads already.
   """
-  def add_imported(%Article{} = article, relative, filename, gallery_date) do
-    {_taken, width, height} = probe(Uploads.absolute(relative))
+  def replace_imported(%Article{} = article, tiles) do
+    Repo.delete_all(from i in Image, where: i.article_id == ^article.id)
 
-    image =
-      Repo.insert!(%Image{
-        article_id: article.id,
-        path: relative,
-        filename: String.slice(filename, 0, 120),
-        gallery_date: gallery_date,
-        width: width,
-        height: height
-      })
+    images =
+      Enum.map(tiles, fn {relative, filename, gallery_date} ->
+        insert_stored(article, relative, filename, gallery_date)
+      end)
 
-    broadcast(article.id, :added, image.id, nil)
-    {:ok, image}
+    broadcast(article.id, :replaced, nil, nil)
+    images
+  end
+
+  # The one way a row enters the gallery: the stored file is probed,
+  # the row inserted. Without a date the picture speaks for itself
+  # (EXIF), and the fallback is this very moment.
+  defp insert_stored(article, relative, filename, gallery_date) do
+    {taken, width, height} = probe(Uploads.absolute(relative))
+
+    Repo.insert!(%Image{
+      article_id: article.id,
+      path: relative,
+      filename: String.slice(filename, 0, 120),
+      gallery_date: gallery_date || taken || DateTime.utc_now(:microsecond),
+      width: width,
+      height: height
+    })
   end
 
   # What the CMS wants to know about the stored file: the capture date,

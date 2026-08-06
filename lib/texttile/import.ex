@@ -3,17 +3,23 @@ defmodule Texttile.Import do
   The import of bundles, in the two steps IMPORT.md promises: `validate`
   reads every bundle and answers the dry-run report, nothing written;
   `run` turns the report's healthy bundles into texts, one after the
-  other - SQLite has one writer, and a migration has time.
+  other - SQLite has one writer, and a migration has time. Each bundle
+  lands in one transaction: a surprise mid-bundle rolls the text back
+  whole and fails that bundle alone.
 
   Remote pictures travel here, not in the zip: the dry run asks every
-  URL with a HEAD request, the run downloads the bytes. Both go through
-  `:import_req_options`, which the tests point at a stub.
+  URL (HEAD first, a one-byte GET when the host refuses HEAD), the run
+  downloads the bytes. The fetches are guarded: no private addresses,
+  no redirects, a size cap per picture, and caps on what the zip may
+  unpack to. Everything goes through `:import_req_options`, which the
+  tests point at a stub.
   """
 
-  import Ecto.Query
+  import Bitwise
 
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Lock
   alias Texttile.Gallery
   alias Texttile.Import.Bundle
   alias Texttile.Repo
@@ -21,19 +27,21 @@ defmodule Texttile.Import do
 
   defmodule Report do
     @moduledoc "What the dry run found: the bundles, judged, and the whole-zip notes."
-    defstruct dir: nil, bundles: [], warnings: [], hosts: []
+    defstruct bundles: [], warnings: [], hosts: []
   end
 
   ## Unpacking
 
   @doc """
   Unpacks the uploaded zip into `dest` and answers the zip-level
-  warnings. Entry names are checked first; an entry that would land
-  outside `dest` refuses the whole archive.
+  warnings. The entry list is judged first: a name that would land
+  outside `dest`, too many entries, or too large an unpacked size
+  refuses the whole archive.
   """
   def unpack(zip_path, dest) do
-    with {:ok, names} <- entry_names(zip_path),
-         :ok <- safe(names) do
+    with {:ok, entries} <- list_entries(zip_path),
+         :ok <- safe(entries),
+         :ok <- within_limits(entries) do
       case :zip.unzip(String.to_charlist(zip_path), cwd: String.to_charlist(dest)) do
         {:ok, _files} -> {:ok, zip_warnings(dest)}
         {:error, reason} -> {:error, "the zip did not unpack (#{inspect(reason)})"}
@@ -41,23 +49,50 @@ defmodule Texttile.Import do
     end
   end
 
-  defp entry_names(zip_path) do
+  defp list_entries(zip_path) do
     case :zip.list_dir(String.to_charlist(zip_path)) do
       {:ok, entries} ->
         {:ok,
-         for({:zip_file, name, _info, _comment, _offset, _size} <- entries, do: to_string(name))}
+         for {:zip_file, name, info, _comment, _offset, _comp_size} <- entries do
+           size = elem(info, 1)
+           {to_string(name), if(is_integer(size), do: size, else: 0)}
+         end}
 
       {:error, reason} ->
         {:error, "this is not a zip archive (#{inspect(reason)})"}
     end
   end
 
-  defp safe(names) do
-    case Enum.find(names, &(Path.type(&1) != :relative or ".." in Path.split(&1))) do
+  defp safe(entries) do
+    case Enum.find(entries, fn {name, _size} ->
+           Path.type(name) != :relative or ".." in Path.split(name)
+         end) do
       nil -> :ok
-      bad -> {:error, "the archive entry #{bad} would land outside the archive"}
+      {bad, _size} -> {:error, "the archive entry #{bad} would land outside the archive"}
     end
   end
+
+  # A zip is small; what it unpacks to need not be. These caps keep a
+  # decompression bomb from filling the volume the database lives on.
+  defp within_limits(entries) do
+    {max_entries, max_bytes} =
+      Application.get_env(:texttile, :import_zip_limits, {20_000, 4_294_967_296})
+
+    bytes = entries |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+
+    cond do
+      length(entries) > max_entries ->
+        {:error, "the zip holds #{length(entries)} entries; the cap is #{max_entries}"}
+
+      bytes > max_bytes ->
+        {:error, "the zip unpacks to #{mb(bytes)}; the cap is #{mb(max_bytes)}"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp mb(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"
 
   defp zip_warnings(dir) do
     dir
@@ -94,7 +129,7 @@ defmodule Texttile.Import do
 
     {bundles, hosts} = check_urls(bundles)
 
-    %Report{dir: dir, bundles: bundles, warnings: zip_warnings(dir), hosts: hosts}
+    %Report{bundles: bundles, warnings: zip_warnings(dir), hosts: hosts}
   end
 
   defp bundle_dirs(dir) do
@@ -126,10 +161,22 @@ defmodule Texttile.Import do
 
   defp mark_existing_slugs(bundles) do
     Enum.map(bundles, fn bundle ->
-      if bundle.slug && Repo.exists?(from a in Article, where: a.slug == ^bundle.slug) do
-        warn(bundle, "the slug #{bundle.slug} already exists; the import updates that text")
-      else
-        bundle
+      case bundle.slug && Repo.get_by(Article, slug: bundle.slug) do
+        nil ->
+          bundle
+
+        article ->
+          bundle =
+            warn(bundle, "the slug #{bundle.slug} already exists; the import updates that text")
+
+          if Lock.state(article.id) == :free do
+            bundle
+          else
+            warn(
+              bundle,
+              "the text /#{bundle.slug} is open in an editor; the run refuses it while it stays open"
+            )
+          end
       end
     end)
   end
@@ -163,22 +210,93 @@ defmodule Texttile.Import do
   end
 
   defp head_check(url) do
-    case Req.request([method: :head, url: url] ++ req_options()) do
-      {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
-        type = content_type(response)
+    with :ok <- host_check(url) do
+      case request(method: :head, url: url) do
+        {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
+          picture_answer(url, response)
 
-        if String.starts_with?(type, "image/") do
-          :ok
-        else
-          {:error, "#{url} answers with #{type}, not a picture"}
-        end
+        {:ok, %Req.Response{status: status} = response} when status in 300..399 ->
+          redirect_error(url, response)
 
-      {:ok, %Req.Response{status: status}} ->
-        {:error, "#{url} answers #{status}"}
+        # Some hosts refuse HEAD outright; a one-byte GET asks again.
+        _refused ->
+          case request(
+                 method: :get,
+                 url: url,
+                 headers: [range: "bytes=0-0"],
+                 decode_body: false
+               ) do
+            {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
+              picture_answer(url, response)
 
-      {:error, error} ->
-        {:error, "#{url} is not reachable (#{Exception.message(error)})"}
+            {:ok, %Req.Response{status: status} = response} when status in 300..399 ->
+              redirect_error(url, response)
+
+            other ->
+              req_failure(url, other)
+          end
+      end
     end
+  end
+
+  defp picture_answer(url, response) do
+    type = content_type(response)
+
+    cond do
+      not String.starts_with?(type, "image/") ->
+        {:error, "#{url} answers with #{type}, not a picture"}
+
+      declared_size(response) > max_picture_bytes() ->
+        {:error, "#{url} is larger than the #{mb(max_picture_bytes())} cap"}
+
+      true ->
+        :ok
+    end
+  end
+
+  # The size the host announces: the total of a content-range answer
+  # (the ranged GET), or the content-length (a HEAD). Absent means 0;
+  # the run's own cap still stands either way.
+  defp declared_size(response) do
+    with [range | _] <- Req.Response.get_header(response, "content-range"),
+         [_, total] <- Regex.run(~r{/(\d+)\z}, range) do
+      String.to_integer(total)
+    else
+      _ ->
+        case Req.Response.get_header(response, "content-length") do
+          [length | _] ->
+            case Integer.parse(length) do
+              {bytes, _rest} -> bytes
+              :error -> 0
+            end
+
+          [] ->
+            0
+        end
+    end
+  end
+
+  defp redirect_error(url, response) do
+    where =
+      case Req.Response.get_header(response, "location") do
+        [location | _] -> " to #{location}"
+        [] -> ""
+      end
+
+    {:error, "#{url} redirects#{where}; use the final address"}
+  end
+
+  defp req_failure(url, {:ok, %Req.Response{status: status}}),
+    do: {:error, "#{url} answers #{status}"}
+
+  defp req_failure(url, {:error, error}),
+    do: {:error, "#{url} is not reachable (#{Exception.message(error)})"}
+
+  # Redirects stay off on purpose: the host list in the report is a
+  # promise about where the import will reach, and a redirect would
+  # break it. The final address belongs in the bundle.
+  defp request(options) do
+    Req.request(options ++ [redirect: false] ++ req_options())
   end
 
   defp content_type(response) do
@@ -192,6 +310,61 @@ defmodule Texttile.Import do
 
   defp req_options do
     Application.get_env(:texttile, :import_req_options, [])
+  end
+
+  defp max_picture_bytes do
+    Application.get_env(:texttile, :import_max_picture_bytes, 104_857_600)
+  end
+
+  # The importer is the one place this server fetches foreign URLs, and
+  # bundles are machine-made from someone else's export. Loopback and
+  # the private ranges stay out of reach, so a crafted bundle cannot
+  # read the deployment's insides. Dev and the tests say yes to them.
+  defp host_check(url) do
+    if Application.get_env(:texttile, :import_allow_private_hosts, false) do
+      :ok
+    else
+      host = URI.parse(url).host |> to_string() |> String.to_charlist()
+
+      addresses =
+        Enum.flat_map([:inet, :inet6], fn family ->
+          case :inet.getaddr(host, family) do
+            {:ok, address} -> [address]
+            {:error, _} -> []
+          end
+        end)
+
+      cond do
+        addresses == [] ->
+          {:error, "#{url}: the host does not resolve"}
+
+        Enum.any?(addresses, &private_address?/1) ->
+          {:error, "#{url} points into the private network"}
+
+        true ->
+          :ok
+      end
+    end
+  end
+
+  defp private_address?({a, b, _c, _d}) do
+    a in [0, 10, 127] or
+      (a == 100 and b in 64..127) or
+      (a == 169 and b == 254) or
+      (a == 172 and b in 16..31) or
+      (a == 192 and b == 168) or
+      a >= 224
+  end
+
+  defp private_address?({0, 0, 0, 0, 0, 0xFFFF, x, y}) do
+    private_address?({div(x, 256), rem(x, 256), div(y, 256), rem(y, 256)})
+  end
+
+  defp private_address?({a, _, _, _, _, _, _, _} = address) do
+    address == {0, 0, 0, 0, 0, 0, 0, 0} or
+      address == {0, 0, 0, 0, 0, 0, 0, 1} or
+      band(a, 0xFE00) == 0xFC00 or
+      band(a, 0xFFC0) == 0xFE80
   end
 
   ## The run
@@ -221,18 +394,40 @@ defmodule Texttile.Import do
     )
   end
 
-  # The pictures go to disk first, the database after: a bundle that
-  # dies halfway leaves no half-imported text, only files to sweep,
-  # and those are swept here too.
+  # The pictures go to disk first, the database work in one
+  # transaction after: a bundle that dies halfway rolls its text back
+  # whole and leaves only files to sweep, and those are swept here too.
+  # The old files fall last, once the transaction holds - a rollback
+  # must find them still in place.
   defp import_bundle(bundle, user) do
-    with {:ok, stored} <- store_pictures(bundle) do
+    with :ok <- refuse_locked(bundle),
+         {:ok, stored} <- store_pictures(bundle) do
       try do
-        {:ok, apply_bundle(bundle, stored, user)}
+        {:ok, {verb, old_paths}} =
+          Repo.transaction(fn -> apply_bundle(bundle, stored, user) end, timeout: :infinity)
+
+        Enum.each(old_paths -- stored_paths(stored), &Uploads.remove_body_image/1)
+        {:ok, verb}
       rescue
         error ->
-          Enum.each(Map.values(stored), &Uploads.remove_body_image/1)
+          Enum.each(stored_paths(stored), &Uploads.remove_body_image/1)
           {:error, Exception.message(error)}
       end
+    end
+  end
+
+  # The document lock is soft and lives with the editors; the import
+  # honors it the same way they do. Checked before the downloads, so
+  # nothing is fetched for a bundle that will be refused. A lock taken
+  # while this very bundle runs still wins the race - the lock is a
+  # courtesy, not a fence.
+  defp refuse_locked(%Bundle{slug: slug}) do
+    article = slug && Repo.get_by(Article, slug: slug)
+
+    if article && Lock.state(article.id) != :free do
+      {:error, "the text /#{slug} is open in an editor right now; close it and import again"}
+    else
+      :ok
     end
   end
 
@@ -241,51 +436,82 @@ defmodule Texttile.Import do
     |> Bundle.sources()
     |> Enum.reduce_while({:ok, %{}}, fn source, {:ok, stored} ->
       case store_picture(bundle, source) do
-        {:ok, relative} ->
-          {:cont, {:ok, Map.put(stored, source, relative)}}
+        {:ok, picture} ->
+          {:cont, {:ok, Map.put(stored, source, picture)}}
 
         {:error, message} ->
-          Enum.each(Map.values(stored), &Uploads.remove_body_image/1)
+          Enum.each(stored_paths(stored), &Uploads.remove_body_image/1)
           {:halt, {:error, message}}
       end
     end)
   end
 
-  # A surprise here (a body that is not bytes, a full disk) fails the
+  defp stored_paths(stored), do: stored |> Map.values() |> Enum.map(& &1.path)
+
+  # A surprise here (a full disk, a body that will not read) fails the
   # one bundle, never the whole run: store_pictures hears {:error} and
   # rolls the bundle's files back.
   defp store_picture(bundle, source) do
     if Bundle.url?(source) do
       download(source)
     else
-      Uploads.put_body_image(Path.join(bundle.dir, source), Path.basename(source))
+      with {:ok, relative} <-
+             Uploads.put_body_image(Path.join(bundle.dir, source), Path.basename(source)) do
+        {:ok, %{path: relative, name: Path.basename(source)}}
+      end
     end
   rescue
     error -> {:error, "#{source}: #{Exception.message(error)}"}
   end
 
   defp download(url) do
-    # decode_body stays off: a body is bytes for the disk, whatever the
-    # content type says, and a JSON answer must not become a map here.
-    case Req.request([method: :get, url: url, decode_body: false] ++ req_options()) do
-      {:ok, %Req.Response{status: status, body: body} = response} when status in 200..299 ->
-        tmp =
-          Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
+    with :ok <- host_check(url) do
+      tmp = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
+      file = File.open!(tmp, [:write, :binary])
+      cap = max_picture_bytes()
 
-        File.write!(tmp, body)
-        stored = Uploads.put_body_image(tmp, remote_name(url, response))
-        File.rm(tmp)
+      # The body streams to disk, counted; a host that lied about its
+      # size is stopped at the cap instead of filling the memory.
+      into = fn {:data, chunk}, {request, response} ->
+        IO.binwrite(file, chunk)
+        seen = Map.get(response.private, :texttile_bytes, 0) + byte_size(chunk)
+        response = put_in(response.private[:texttile_bytes], seen)
 
-        case stored do
-          {:ok, relative} -> {:ok, relative}
-          {:error, message} -> {:error, "#{url}: #{message}"}
+        if seen > cap do
+          {:halt, {request, response}}
+        else
+          {:cont, {request, response}}
+        end
+      end
+
+      result = request(method: :get, url: url, into: into)
+      File.close(file)
+
+      stored =
+        case result do
+          {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
+            cond do
+              Map.get(response.private, :texttile_bytes, 0) > cap ->
+                {:error, "#{url} is larger than the #{mb(cap)} cap"}
+
+              true ->
+                name = remote_name(url, response)
+
+                case Uploads.put_body_image(tmp, name) do
+                  {:ok, relative} -> {:ok, %{path: relative, name: name}}
+                  {:error, message} -> {:error, "#{url}: #{message}"}
+                end
+            end
+
+          {:ok, %Req.Response{status: status} = response} when status in 300..399 ->
+            redirect_error(url, response)
+
+          other ->
+            req_failure(url, other)
         end
 
-      {:ok, %Req.Response{status: status}} ->
-        {:error, "#{url} answers #{status}"}
-
-      {:error, error} ->
-        {:error, "#{url} is not reachable (#{Exception.message(error)})"}
+      File.rm(tmp)
+      stored
     end
   end
 
@@ -313,6 +539,10 @@ defmodule Texttile.Import do
 
   ## One bundle into one text
 
+  # Runs inside the transaction; every complaint raises, and the raise
+  # rolls the whole bundle back. Answers {verb, old_paths}: the files
+  # the text owned before, for the caller to remove once the commit
+  # holds.
   defp apply_bundle(bundle, stored, user) do
     existing = Repo.get_by(Article, slug: bundle.slug)
 
@@ -323,7 +553,9 @@ defmodule Texttile.Import do
           {:created, article}
 
         article ->
-          # the state before the update stays restorable
+          # The words before the update stay restorable as a version.
+          # Its pictures follow the app's one rule for versions: they
+          # never guard a file (see Articles.delete_article).
           Articles.snapshot(article, user)
           {:updated, article}
       end
@@ -342,16 +574,14 @@ defmodule Texttile.Import do
         tags: Enum.join(bundle.tags, ", "),
         slug: bundle.slug,
         allow_comments: bundle.allow_comments,
-        preview_path: bundle.preview && stored[bundle.preview]
+        preview_path: bundle.preview && stored[bundle.preview].path
       })
 
     article = set_state(article, bundle, user)
     replace_gallery(article, bundle, stored)
 
-    Enum.each(old_paths -- Map.values(stored), &Uploads.remove_body_image/1)
-
     Articles.push_log(article, user, "imported the text from a bundle")
-    verb
+    {verb, old_paths}
   end
 
   # What the text owned before the update: its tiles and the uploads
@@ -373,7 +603,7 @@ defmodule Texttile.Import do
     Regex.replace(~r/!\[([^\]]*)\]\(([^)]*)\)/, body, fn whole, alt, url ->
       case stored[String.trim(url)] do
         nil -> whole
-        relative -> "![#{alt}](/uploads/#{relative})"
+        %{path: relative} -> "![#{alt}](/uploads/#{relative})"
       end
     end)
   end
@@ -412,8 +642,9 @@ defmodule Texttile.Import do
     mark_notified(article)
   end
 
-  # An imported text never mails the subscribers after the fact; it
-  # counts as told about on its own publish day.
+  # An already published import never mails the subscribers after the
+  # fact. A scheduled one goes live later like any scheduled text,
+  # notification included; IMPORT.md says so.
   defp mark_notified(%Article{status: "published"} = article) do
     article
     |> Article.state_changeset(%{notified_on: article.publish_date})
@@ -423,29 +654,17 @@ defmodule Texttile.Import do
   defp mark_notified(article), do: article
 
   defp replace_gallery(article, bundle, stored) do
-    Repo.delete_all(from i in Gallery.Image, where: i.article_id == ^article.id)
-
     base = DateTime.new!(article.publish_date || Date.utc_today(), ~T[12:00:00.000000], "Etc/UTC")
 
-    bundle.gallery
-    |> Enum.with_index()
-    |> Enum.each(fn {source, index} ->
-      {:ok, _image} =
-        Gallery.add_imported(
-          article,
-          stored[source],
-          tile_name(source),
-          DateTime.add(base, index, :second)
-        )
-    end)
-  end
+    tiles =
+      bundle.gallery
+      |> Enum.with_index()
+      |> Enum.map(fn {source, index} ->
+        %{path: path, name: name} = stored[source]
+        {path, name, DateTime.add(base, index, :second)}
+      end)
 
-  defp tile_name(source) do
-    if Bundle.url?(source) do
-      source |> URI.parse() |> Map.get(:path) |> to_string() |> Path.basename()
-    else
-      Path.basename(source)
-    end
+    Gallery.replace_imported(article, tiles)
   end
 
   defp complain(bundle, message), do: %{bundle | errors: bundle.errors ++ [message]}
