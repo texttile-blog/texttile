@@ -21,8 +21,10 @@ defmodule TexttileWeb.UploadsController do
   end
 
   # The display sizes the desk asks for. A fixed list, so nobody can
-  # fill the disk by walking through edge values.
-  @edges ~w(320)
+  # fill the disk by walking through edge values. "max" is the reader
+  # size of the moment (the Images setting); the gallery lightbox
+  # shows it.
+  @edges ~w(320 max)
 
   @doc """
   A scaled reading of an upload: the cached rendition, made on the fly
@@ -30,8 +32,10 @@ defmodule TexttileWeb.UploadsController do
   dragging the full original over the wire.
   """
   def rendition(conn, %{"edge" => edge, "path" => parts}) when edge in @edges do
+    max_edge = if edge == "max", do: nil, else: String.to_integer(edge)
+
     with relative when is_binary(relative) <- safe_relative(parts),
-         {:ok, scaled} <- Texttile.Images.rendition(relative, String.to_integer(edge)) do
+         {:ok, scaled} <- Texttile.Images.rendition(relative, max_edge) do
       serve(conn, scaled)
     else
       _ -> send_resp(conn, 404, "not found")

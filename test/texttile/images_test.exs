@@ -74,6 +74,18 @@ defmodule Texttile.ImagesTest do
       assert File.exists?(Path.join(Uploads.root(), kept))
     end
 
+    test "the desk thumbnail and the reader size live side by side" do
+      rel = original("images/side.jpg", 4000, 2000)
+
+      {:ok, thumb} = Images.rendition(rel, 320)
+      {:ok, full} = Images.rendition(rel)
+
+      assert File.exists?(Path.join(Uploads.root(), thumb))
+      assert File.exists?(Path.join(Uploads.root(), full))
+      assert {:ok, ^thumb} = Images.rendition(rel, 320)
+      assert {:ok, ^full} = Images.rendition(rel)
+    end
+
     test "a corrupt file with an image extension is an error, not a crash" do
       abs = Path.join(Uploads.root(), "images/broken.jpg")
       File.mkdir_p!(Path.dirname(abs))

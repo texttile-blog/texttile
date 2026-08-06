@@ -24,11 +24,12 @@ defmodule Texttile.Application do
       TexttileWeb.Endpoint
     ]
 
-    # The go-live clock stays out of tests: it would race the SQL
-    # sandbox. The tests call go_live_due/1 directly instead.
+    # The go-live clock and the gallery sweeper stay out of tests: they
+    # would race the SQL sandbox. The tests call go_live_due/1 and
+    # Gallery.sweep_due/0 directly instead.
     children =
       if Application.get_env(:texttile, :start_scheduler, true) do
-        children ++ [Texttile.Articles.Scheduler]
+        children ++ [Texttile.Articles.Scheduler, Texttile.Gallery.Sweeper]
       else
         children
       end
