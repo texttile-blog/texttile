@@ -316,6 +316,10 @@ defmodule Texttile.Import do
     Application.get_env(:texttile, :import_max_picture_bytes, 104_857_600)
   end
 
+  defp receive_timeout do
+    Application.get_env(:texttile, :import_receive_timeout, 300_000)
+  end
+
   # The importer is the one place this server fetches foreign URLs, and
   # bundles are machine-made from someone else's export. Loopback and
   # the private ranges stay out of reach, so a crafted bundle cannot
@@ -473,8 +477,23 @@ defmodule Texttile.Import do
       # The body streams to disk, counted; a host that lied about its
       # size is stopped at the cap instead of filling the memory.
       into = fn {:data, chunk}, {request, response} ->
-        IO.binwrite(file, chunk)
-        seen = Map.get(response.private, :texttile_bytes, 0) + byte_size(chunk)
+        seen = Map.get(response.private, :texttile_bytes)
+
+        # The first chunk of an attempt starts the file over: Req
+        # retries a failed request, and attempt two must not append to
+        # what attempt one left behind.
+        if seen == nil do
+          {:ok, 0} = :file.position(file, :bof)
+          :ok = :file.truncate(file)
+        end
+
+        # An error page's body (a 502 from a struggling host) is not
+        # the picture; the status judges the attempt, not the file.
+        if response.status in 200..299 do
+          IO.binwrite(file, chunk)
+        end
+
+        seen = (seen || 0) + byte_size(chunk)
         response = put_in(response.private[:texttile_bytes], seen)
 
         if seen > cap do
@@ -484,7 +503,16 @@ defmodule Texttile.Import do
         end
       end
 
-      result = request(method: :get, url: url, into: into)
+      # A big picture from slow hosting takes its time; the default
+      # fifteen seconds of idle patience are for API calls, not bodies.
+      result =
+        request(
+          method: :get,
+          url: url,
+          into: into,
+          receive_timeout: receive_timeout()
+        )
+
       File.close(file)
 
       stored =

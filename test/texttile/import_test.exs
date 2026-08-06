@@ -393,6 +393,46 @@ defmodule Texttile.ImportTest do
       assert File.ls(Path.join(Uploads.root(), "images")) in [{:error, :enoent}, {:ok, []}]
     end
 
+    test "a download that fails once and answers on the retry stays whole", %{
+      dir: dir,
+      user: user
+    } do
+      write_bundle(dir, "beach", "title: A\ngallery: [https://flaky.example/a.jpg]\n")
+      report = Import.validate(dir)
+      assert Enum.all?(report.bundles, &(&1.errors == []))
+
+      base = Application.get_env(:texttile, :import_req_options)
+
+      Application.put_env(
+        :texttile,
+        :import_req_options,
+        base ++ [retry_delay: fn _attempt -> 1 end, retry_log_level: false]
+      )
+
+      on_exit(fn -> Application.put_env(:texttile, :import_req_options, base) end)
+
+      # the first GET dies as a 502 error page, the retry has the bytes
+      {:ok, attempts} = Agent.start_link(fn -> 0 end)
+
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        if conn.method == "GET" and Agent.get_and_update(attempts, &{&1, &1 + 1}) == 0 do
+          conn
+          |> Plug.Conn.put_resp_content_type("text/html")
+          |> Plug.Conn.resp(502, "<html>bad gateway</html>")
+        else
+          respond_with_jpg(conn)
+        end
+      end)
+
+      summary = Import.run(report, user)
+      assert summary.failed == []
+
+      # the stored file is the picture, whole and alone: a corrupt
+      # concatenation would not read, let alone with these edges
+      article = Repo.get_by!(Article, slug: "a")
+      assert [%{width: 8, height: 4}] = Gallery.list(article.id)
+    end
+
     test "replacing the gallery tells the open editors once", %{dir: dir, user: user} do
       write_bundle(dir, "beach", "title: Beach days\ngallery: [a.jpg]\n", "", ["a.jpg"])
       Import.run(Import.validate(dir), user)
