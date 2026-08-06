@@ -151,6 +151,28 @@ defmodule Texttile.Gallery do
     end
   end
 
+  @doc """
+  Puts an already stored upload into the gallery, for the importer. The
+  file is not touched again: the path is reused, the date and with it
+  the place in the order are the caller's word.
+  """
+  def add_imported(%Article{} = article, relative, filename, gallery_date) do
+    {_taken, width, height} = probe(Uploads.absolute(relative))
+
+    image =
+      Repo.insert!(%Image{
+        article_id: article.id,
+        path: relative,
+        filename: String.slice(filename, 0, 120),
+        gallery_date: gallery_date,
+        width: width,
+        height: height
+      })
+
+    broadcast(article.id, :added, image.id, nil)
+    {:ok, image}
+  end
+
   # What the CMS wants to know about the stored file: the capture date,
   # and the size the viewer will see (vips renditions honour the EXIF
   # orientation, so a turned photo swaps its edges here too).

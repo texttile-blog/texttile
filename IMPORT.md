@@ -157,6 +157,7 @@ Errors:
 - Two bundles resolve to the same slug.
 - A relative source points to a file that is not in the bundle.
 - A URL is dead, or its content is not a supported picture.
+- A gallery entry that appears twice in the list.
 - A `preview` value that matches no picture source of the bundle.
 
 Warnings:

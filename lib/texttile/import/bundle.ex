@@ -165,7 +165,14 @@ defmodule Texttile.Import.Bundle do
   defp resolve_gallery(bundle, entries) do
     case Map.fetch(entries, "gallery") do
       {:ok, list} when is_list(list) ->
-        %{bundle | gallery: list}
+        list
+        |> Enum.frequencies()
+        |> Enum.filter(fn {_source, count} -> count > 1 end)
+        |> Enum.map(&elem(&1, 0))
+        |> Enum.sort()
+        |> Enum.reduce(%{bundle | gallery: list}, fn source, bundle ->
+          complain(bundle, "the gallery lists #{source} twice")
+        end)
 
       {:ok, _} ->
         bundle
