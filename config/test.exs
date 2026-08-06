@@ -34,6 +34,11 @@ config :phoenix_test,
     headless: true
   ]
 
+# The importer's HTTP requests answer from a stub instead of the net,
+# so its stub hosts must not be resolved and judged.
+config :texttile, :import_req_options, plug: {Req.Test, Texttile.ImportStub}
+config :texttile, :import_allow_private_hosts, true
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

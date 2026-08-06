@@ -110,3 +110,6 @@ config :phoenix_live_view,
 # Uploaded files land in the main checkout, shared by every worktree
 # like the database above.
 config :texttile, :uploads_path, Path.join(shared_root, "priv/uploads")
+
+# Imports in dev may point at localhost (QA against the dev server).
+config :texttile, :import_allow_private_hosts, true

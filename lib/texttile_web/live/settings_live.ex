@@ -841,6 +841,18 @@ defmodule TexttileWeb.SettingsLive do
           <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>
         </p>
+
+        <.section>Import</.section>
+        <p class="note mb-2 leading-[1.6]">
+          Texttile imports texts from a zip of bundles: Markdown, settings and
+          pictures, made from another system's export. IMPORT.md in the
+          repository is the format contract.
+        </p>
+        <p>
+          <.link navigate={~p"/settings/import"} class="btn sm" id="open-import">
+            Open the import
+          </.link>
+        </p>
       </div>
 
       <div
