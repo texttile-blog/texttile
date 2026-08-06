@@ -2,12 +2,13 @@ defmodule TexttileWeb.TextsLive do
   @moduledoc """
   The Texts overview: the full-page grid of cards without boxes, a
   status filter, a search over titles, tags and the texts themselves.
-  The design is the round-14 grid; the thumbnails return with the
-  gallery.
+  The design is the round-14 grid; a card wears the oldest gallery
+  image of its text.
   """
   use TexttileWeb, :live_view
 
   alias Texttile.Articles
+  alias Texttile.Gallery
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: Articles.subscribe_desk()
@@ -26,6 +27,7 @@ defmodule TexttileWeb.TextsLive do
 
     socket
     |> assign(:articles, articles)
+    |> assign(:covers, Gallery.cover_paths(Enum.map(articles, & &1.id)))
     |> assign(:total, length(Articles.list_articles()))
   end
 
@@ -40,6 +42,7 @@ defmodule TexttileWeb.TextsLive do
   def handle_info({:article_changed, _article}, socket), do: {:noreply, load(socket)}
   def handle_info({:article_deleted, _id}, socket), do: {:noreply, load(socket)}
   def handle_info({:text_changed, _article}, socket), do: {:noreply, load(socket)}
+  def handle_info({:gallery_changed, _id, _meta}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 
   def render(assigns) do
@@ -88,7 +91,12 @@ defmodule TexttileWeb.TextsLive do
           id="cards"
         >
           <.link :for={article <- @articles} class="card" navigate={~p"/texts/#{article}"}>
-            <span class="cimg empty">no images yet</span>
+            <%= if cover = @covers[article.id] do %>
+              <span class="cimg" style={"background-image:url('/desk/renditions/320/#{cover}')"}>
+              </span>
+            <% else %>
+              <span class="cimg empty">no images yet</span>
+            <% end %>
             <span class="ct">{Articles.display_title(article)}</span>
             <span class="cm">
               <span class={["st", article.status]}></span>{card_meta(article)}

@@ -58,6 +58,8 @@
      editor tints instead of graying */
   --tt-shadow:      35 30 24;
   --tt-scrim:       rgba(24, 21, 17, .34);
+  --tt-overlay:     25 23 32;
+  --tt-lightbox:    rgba(24, 21, 17, .96);
   --tt-wash1:       rgba(109, 53, 222, .028);
   --tt-wash2:       rgba(109, 53, 222, .05);
 

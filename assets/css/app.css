@@ -360,6 +360,95 @@
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
   .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
 
+  /* THE GALLERY TILES · round-14. A tile is the picture itself: no
+     drag icon, no chrome. The number sits top-left on an overlay
+     wash; a running upload lays its state over the whole tile. */
+  /* touch-action none is the imaedge mechanic: the hook decides
+     whether a finger sorts or scrolls, and drives the scroll itself -
+     a browser-owned vertical pan would cancel every touch drag */
+  .tile {
+    position: relative; aspect-ratio: 1 / 1;
+    background: var(--tt-field) center / cover no-repeat;
+    user-select: none; -webkit-user-select: none; cursor: grab;
+    border-radius: var(--tt-radius-img); touch-action: none;
+  }
+  .tile .n {
+    position: absolute; left: 5px; top: 5px;
+    font-size: 10.5px; font-weight: 600; line-height: 1.5; color: #fff;
+    padding: 1px 6px; border-radius: var(--tt-radius-img);
+    font-variant-numeric: tabular-nums;
+    background: rgb(var(--tt-overlay) / .72);
+  }
+  .tile-add {
+    aspect-ratio: 1 / 1; display: grid; place-items: center;
+    color: var(--tt-dim); font-size: 12.5px;
+    border-radius: var(--tt-radius-img);
+    box-shadow: inset 0 0 0 1px var(--tt-rule);
+    transition: box-shadow .15s, color .15s, background-color .15s;
+  }
+  .tile-add:hover {
+    color: var(--tt-ink); background: var(--tt-paper);
+    box-shadow: inset 0 0 0 1px var(--tt-ink);
+  }
+
+  /* while a tile travels: lifted under the hand, a dashed slot where
+     it would land, julia's outline when somebody else moved it */
+  .tile.lift {
+    z-index: 10; transform: scale(1.06); cursor: grabbing;
+    box-shadow: 0 10px 22px rgb(var(--tt-shadow) / .3);
+  }
+  .tile.jmove { outline: 2px solid var(--tt-julia); outline-offset: -2px; }
+  .tile.slot { outline: 2px dashed var(--tt-accentloud); outline-offset: -2px; }
+  .tile.up { cursor: default; touch-action: auto; }
+  .tile.up.failed { box-shadow: inset 0 0 0 2px var(--tt-julia); }
+  .grid-drop {
+    outline: 2px dashed var(--tt-accentloud); outline-offset: 5px;
+    border-radius: var(--tt-radius);
+  }
+
+  /* the upload overlay on a tile: name, state, a thin bar, actions */
+  .tile-ov {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
+    padding: 5px; color: #fff; font-size: 10px; line-height: 1.35;
+    border-radius: var(--tt-radius-img);
+    background: linear-gradient(180deg, rgb(var(--tt-overlay) / .25), rgb(var(--tt-overlay) / .88));
+  }
+  .tile-ov .fn {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;
+  }
+  .tile-ov .st {
+    display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums;
+  }
+  .tile-bar {
+    display: block; height: 3px; width: 100%; border-radius: 999px;
+    overflow: hidden; background: rgba(255, 255, 255, .3);
+  }
+  .tile-bar i { display: block; height: 100%; background: #fff; transition: width .2s linear; }
+  .tile-x {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 18px; padding: 0 6px; font-size: 10px; font-weight: 600; color: #fff;
+    border-radius: var(--tt-radius-img);
+    background: rgb(var(--tt-overlay) / .55);
+  }
+  .tile-x:hover { background: rgb(var(--tt-overlay) / .9); }
+  .spin { animation: tt-spin .9s linear infinite; }
+  @keyframes tt-spin { to { transform: rotate(360deg); } }
+
+  /* fingers get honest targets without growing the visible controls */
+  @media (pointer: coarse) {
+    .tile-x { position: relative; min-width: 40px; height: 24px; }
+    .tile-x::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%); width: 100%; height: 40px;
+    }
+    .lb-nav { position: relative; }
+    .lb-nav::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%); min-width: 48px; height: 100%;
+    }
+  }
+
   /* the body as a drop target: a filled wash, a solid edge, and a
      label that says where the image lands - so a file over the text
      can never look like a file over anything else */

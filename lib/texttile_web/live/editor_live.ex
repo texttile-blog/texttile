@@ -13,6 +13,7 @@ defmodule TexttileWeb.EditorLive do
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Lock
+  alias Texttile.Gallery
 
   ## Mount
 
@@ -35,6 +36,8 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:flush_pending, false)
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
+      |> assign(:gallery, Gallery.list(article.id))
+      |> assign(:gallery_rev, 0)
 
     socket =
       if connected?(socket) do
@@ -446,6 +449,143 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("image_removed", _params, socket), do: {:noreply, socket}
 
+  ## Events · the gallery
+  #
+  # Deliberately not guarded by the lock: the gallery is the
+  # conflict-poor half of the editor and stays open to every admin at
+  # once. Ids arrive as client strings and are parsed, never trusted.
+
+  def handle_event("gallery_reorder", %{"id" => id, "ids" => ids}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    with {:ok, id} <- parse_id(id),
+         {:ok, ids} <- parse_ids(ids),
+         {:ok, image} <- Gallery.reorder(article.id, id, ids, by: scope.user.id) do
+      Articles.push_log(article, scope.user, "moved #{image.filename} in the gallery")
+      {:noreply, socket |> assign_gallery() |> mark_saved()}
+    else
+      _ ->
+        {:noreply,
+         socket
+         |> assign_gallery()
+         |> mark_saved("The gallery changed under your hands · fresh order loaded")}
+    end
+  end
+
+  def handle_event("gallery_set_date", %{"id" => id, "date" => date}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    with {:ok, id} <- parse_id(id),
+         {:ok, image} <- Gallery.set_date(article.id, id, date, by: scope.user.id) do
+      Articles.push_log(
+        article,
+        scope.user,
+        "set the date of #{image.filename} to #{Calendar.strftime(image.gallery_date, "%Y-%m-%d %H:%M")}"
+      )
+
+      {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
+    else
+      {:error, :invalid_date} ->
+        {:reply, %{ok: false}, mark_saved(socket, "That date could not be read")}
+
+      _ ->
+        {:reply, %{ok: false}, socket |> assign_gallery() |> mark_saved(gone_note())}
+    end
+  end
+
+  def handle_event("gallery_set_meta", %{"id" => id} = params, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    with {:ok, id} <- parse_id(id),
+         {:ok, _image} <-
+           Gallery.set_meta(article.id, id, Map.take(params, ["alt", "caption"]),
+             by: scope.user.id
+           ) do
+      {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
+    else
+      _ -> {:reply, %{ok: false}, socket |> assign_gallery() |> mark_saved(gone_note())}
+    end
+  end
+
+  def handle_event("gallery_delete", %{"id" => id}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    with {:ok, id} <- parse_id(id),
+         {:ok, image} <- Gallery.delete(article.id, id, by: scope.user.id) do
+      Articles.push_log(article, scope.user, "took #{image.filename} out of the gallery")
+      {:noreply, socket |> assign_gallery() |> mark_saved()}
+    else
+      _ -> {:noreply, socket |> assign_gallery() |> mark_saved(gone_note())}
+    end
+  end
+
+  def handle_event("gallery_undo", %{"id" => id}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    with {:ok, id} <- parse_id(id),
+         {:ok, image} <- Gallery.undo(article.id, id, by: scope.user.id) do
+      Articles.push_log(article, scope.user, "put #{image.filename} back")
+
+      {:noreply,
+       socket |> assign_gallery() |> mark_saved("#{image.filename} is back in the gallery")}
+    else
+      _ ->
+        {:noreply, mark_saved(socket, "Too late · the picture is gone for good")}
+    end
+  end
+
+  # The client's ask to reconcile after a drag. While a tile was held,
+  # patches to the grid were skipped; bumping the rev changes every
+  # tile's render, so the next patch carries the whole grid and the
+  # DOM matches the server again whatever was missed.
+  def handle_event("gallery_refresh", _params, socket) do
+    {:noreply,
+     socket
+     |> assign_gallery()
+     |> assign(:gallery_rev, socket.assigns.gallery_rev + 1)}
+  end
+
+  defp parse_id(value) do
+    case Integer.parse(to_string(value)) do
+      {id, ""} -> {:ok, id}
+      _ -> {:error, :bad_id}
+    end
+  end
+
+  defp parse_ids(ids) when is_list(ids) do
+    parsed = Enum.map(ids, &parse_id/1)
+
+    if Enum.all?(parsed, &match?({:ok, _}, &1)) do
+      {:ok, Enum.map(parsed, fn {:ok, id} -> id end)}
+    else
+      {:error, :bad_id}
+    end
+  end
+
+  defp parse_ids(_ids), do: {:error, :bad_id}
+
+  defp assign_gallery(socket) do
+    assign(socket, :gallery, Gallery.list(socket.assigns.article.id))
+  end
+
+  defp gone_note, do: "That picture was deleted a moment ago"
+
+  defp moved_note(socket, meta) do
+    name =
+      case Accounts.get_user(meta.by) do
+        nil -> "Someone"
+        user -> Accounts.display_name(user)
+      end
+
+    file =
+      case Enum.find(socket.assigns.gallery, &(&1.id == meta.image_id)) do
+        nil -> "a picture"
+        image -> image.filename
+      end
+
+    "#{name} moved #{file}."
+  end
+
   defp do_publish(socket, opts) do
     %{article: article, current_scope: scope} = socket.assigns
 
@@ -517,6 +657,13 @@ defmodule TexttileWeb.EditorLive do
   defp thumb_url("/uploads/" <> relative), do: "/desk/renditions/320/" <> relative
   defp thumb_url(url), do: String.replace(url, "'", "%27")
 
+  defp tile_count(gallery) do
+    case length(gallery) do
+      1 -> "1 image"
+      n -> "#{n} images"
+    end
+  end
+
   ## PubSub and lock messages
 
   def handle_info({:text_changed, %{id: id} = article}, socket) do
@@ -555,6 +702,26 @@ defmodule TexttileWeb.EditorLive do
        |> push_navigate(to: ~p"/")}
     else
       {:noreply, socket}
+    end
+  end
+
+  # Every gallery change, own or foreign, lands here: the list is
+  # re-read once. When somebody else sorted, the moved tile gets its
+  # moment of color and the note under the grid says who.
+  def handle_info({:gallery_changed, id, meta}, socket) do
+    cond do
+      id != socket.assigns.article.id ->
+        {:noreply, socket}
+
+      meta.action == :reordered and meta.by != nil and
+          meta.by != socket.assigns.current_scope.user.id ->
+        {:noreply,
+         socket
+         |> assign_gallery()
+         |> push_event("gallery_moved", %{id: meta.image_id, note: moved_note(socket, meta)})}
+
+      true ->
+        {:noreply, assign_gallery(socket)}
     end
   end
 
@@ -1254,11 +1421,85 @@ defmodule TexttileWeb.EditorLive do
           aria-label="Article settings"
           class="lg:overflow-y-auto min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[100px] lg:pb-[110px]"
         >
+          <%!-- The tiles block: the gallery as the reader will see it.
+               Server truth renders into #tileServer; the hook owns the
+               local upload tiles (#tileLocal), the drag, the lightbox
+               and the undo bar. display:contents lets both halves
+               share one grid. --%>
+          <div
+            id="tilesBlock"
+            class="relative"
+            phx-hook="Gallery"
+            data-article-id={@article.id}
+            data-upload-url={~p"/desk/texts/#{@article.id}/gallery"}
+            data-csrf={Phoenix.Controller.get_csrf_token()}
+          >
+            <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
+              <span class="text-[13px] font-semibold">
+                Tiles <span class="note num" id="tileCount">{tile_count(@gallery)}</span>
+                <span class="note num" id="tileOnWay" phx-update="ignore"></span>
+              </span>
+              <span class="sp"></span>
+              <span class="note">The order is the gallery.</span>
+            </div>
+            <div class="grid gap-[6px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3" id="tileGrid">
+              <div class="contents" id="tileServer">
+                <div
+                  :for={{image, index} <- Enum.with_index(@gallery, 1)}
+                  class="tile"
+                  id={"tile-#{image.id}"}
+                  data-id={image.id}
+                  data-rev={@gallery_rev}
+                  data-filename={image.filename}
+                  data-date={Calendar.strftime(image.gallery_date, "%Y-%m-%dT%H:%M")}
+                  data-alt={image.alt}
+                  data-caption={image.caption}
+                  data-full={"/desk/renditions/max/" <> image.path}
+                  data-original={"/uploads/" <> image.path}
+                  title={"#{image.filename} · #{Calendar.strftime(image.gallery_date, "%Y-%m-%d")}"}
+                  style={"background-image:url('/desk/renditions/320/#{image.path}')"}
+                  role="button"
+                  tabindex="0"
+                  aria-label={"Image #{index}, #{image.filename}, grab to sort, tap to see it big"}
+                >
+                  <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
+                </div>
+              </div>
+              <div class="contents" id="tileLocal" phx-update="ignore"></div>
+              <button
+                type="button"
+                class="tile-add"
+                id="tileAdd"
+                aria-label="Add images to the gallery"
+              >
+                + Add
+              </button>
+            </div>
+            <input
+              type="file"
+              id="tileFiles"
+              class="sr"
+              multiple
+              accept="image/*"
+              aria-label="Add images to the gallery"
+            />
+            <span class="drop-flag" id="tileDropFlag" hidden>
+              Add the image to the gallery, at the end
+            </span>
+            <p class="note mt-[10px] transition-colors" id="tileNote">
+              Grab an image to sort it. Tap one to see it big.
+            </p>
+          </div>
+
           <%!-- article settings: Status first and merged with the date,
                then everything that describes the text. Nothing folded,
-               and no Publish button: that one lives in the bar. The
-               tiles block returns with the gallery. --%>
-          <form id="artSettings" phx-change="settings_changed" phx-submit="settings_changed">
+               and no Publish button: that one lives in the bar. --%>
+          <form
+            id="artSettings"
+            class="mt-[34px]"
+            phx-change="settings_changed"
+            phx-submit="settings_changed"
+          >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">Article settings</span>
               <span class="sp"></span>

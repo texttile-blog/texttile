@@ -47,6 +47,15 @@ defmodule Texttile.Gallery do
     )
   end
 
+  # Another admin may have deleted the image a heartbeat ago; every
+  # mutation answers {:error, :gone} then instead of raising.
+  defp fetch(article_id, image_id) do
+    Repo.one(
+      from i in Image,
+        where: i.article_id == ^article_id and i.id == ^image_id and is_nil(i.delete_after)
+    )
+  end
+
   @doc """
   The file paths of every image of a text, the pending deletes
   included. For the article's own deletion, which takes the files along.
@@ -154,14 +163,14 @@ defmodule Texttile.Gallery do
   read as the naive wall-clock time the whole gallery speaks.
   """
   def set_date(article_id, image_id, value, opts \\ []) do
-    with {:ok, date} <- parse_date(to_string(value)) do
-      image =
-        get!(article_id, image_id)
-        |> Ecto.Changeset.change(gallery_date: date)
-        |> Repo.update!()
-
+    with {:ok, date} <- parse_date(to_string(value)),
+         %Image{} = image <- fetch(article_id, image_id) do
+      image = image |> Ecto.Changeset.change(gallery_date: date) |> Repo.update!()
       broadcast(article_id, :date, image.id, opts[:by])
       {:ok, image}
+    else
+      nil -> {:error, :gone}
+      error -> error
     end
   end
 
@@ -192,13 +201,15 @@ defmodule Texttile.Gallery do
 
   @doc "Saves the words of a picture: alt text and caption."
   def set_meta(article_id, image_id, attrs, opts \\ []) do
-    image =
-      get!(article_id, image_id)
-      |> Image.meta_changeset(attrs)
-      |> Repo.update!()
+    case fetch(article_id, image_id) do
+      nil ->
+        {:error, :gone}
 
-    broadcast(article_id, :meta, image.id, opts[:by])
-    {:ok, image}
+      image ->
+        image = image |> Image.meta_changeset(attrs) |> Repo.update!()
+        broadcast(article_id, :meta, image.id, opts[:by])
+        {:ok, image}
+    end
   end
 
   ## Sorting
@@ -301,14 +312,16 @@ defmodule Texttile.Gallery do
   def delete(article_id, image_id, opts \\ []) do
     delete_after = DateTime.add(DateTime.utc_now(:microsecond), @undo_seconds, :second)
 
-    image =
-      get!(article_id, image_id)
-      |> Ecto.Changeset.change(delete_after: delete_after)
-      |> Repo.update!()
+    case fetch(article_id, image_id) do
+      nil ->
+        {:error, :gone}
 
-    broadcast(article_id, :deleted, image.id, opts[:by])
-    Sweeper.schedule(delete_after)
-    {:ok, image}
+      image ->
+        image = image |> Ecto.Changeset.change(delete_after: delete_after) |> Repo.update!()
+        broadcast(article_id, :deleted, image.id, opts[:by])
+        Sweeper.schedule(delete_after)
+        {:ok, image}
+    end
   end
 
   @doc "Puts a deleted image back, as long as its window is still open."

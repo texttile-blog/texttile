@@ -25,6 +25,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/texttile"
 import topbar from "../vendor/topbar"
 import BodyEd from "./body_ed"
+import Gallery from "./gallery"
 
 /* The Last-saved line of a screen that saves instantly: "just now"
    while the save is fresh, the clock time after that, and a short note
@@ -71,7 +72,17 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd},
+  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd, Gallery},
+  dom: {
+    // While a gallery tile is held, the grid belongs to the hand:
+    // patches to the server tiles wait. The drop ends with a
+    // gallery_refresh whose rev bump re-renders every tile, so
+    // nothing skipped here is ever lost.
+    onBeforeElUpdated(from, _to) {
+      if (from.id === "tileServer" && from.hasAttribute("data-dragging")) return false
+      return true
+    },
+  },
 })
 
 // Show progress bar on live navigation and form submits
