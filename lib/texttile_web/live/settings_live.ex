@@ -783,7 +783,7 @@ defmodule TexttileWeb.SettingsLive do
         </div>
         <p class="note mt-3">
           Your own displayed name, address and password are on <.link
-            navigate={~p"/desk/profile"}
+            navigate={~p"/edit/profile"}
             class="link"
           >your profile</.link>;
           nobody else's password is anywhere in this app.
@@ -849,7 +849,7 @@ defmodule TexttileWeb.SettingsLive do
           repository is the format contract.
         </p>
         <p>
-          <.link navigate={~p"/settings/import"} class="btn sm" id="open-import">
+          <.link navigate={~p"/edit/settings/import"} class="btn sm" id="open-import">
             Open the import
           </.link>
         </p>

@@ -47,9 +47,9 @@ defmodule TexttileWeb.Router do
     post "/link/:token", LinkController, :create
   end
 
-  ## The desk, under /desk: the readers own the root
+  ## The desk, under /edit: the readers own the root
 
-  scope "/desk", TexttileWeb do
+  scope "/edit", TexttileWeb do
     pipe_through [:browser, :require_authenticated_user]
 
     # The editor's image uploads: the body holds a token while the file
@@ -101,10 +101,14 @@ defmodule TexttileWeb.Router do
     get "/texts", SiteController, :texts
     get "/tags/:tag", SiteController, :tag
 
-    # The catch-all: every published text lives at its slug. Last on
+    # Every published post lives under the day it went live. Four
+    # segments, so no page and no named route can stand in the way.
+    get "/:year/:month/:day/:slug", SiteController, :article
+
+    # The catch-all: every published page lives at its slug. Last on
     # purpose; the named routes above win, and the reserved-slug rule
     # in Texttile.Articles keeps texts off those addresses.
-    get "/:slug", SiteController, :article
+    get "/:slug", SiteController, :page
   end
 
   # Enable LiveDashboard in development

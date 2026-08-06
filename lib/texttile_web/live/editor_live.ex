@@ -38,6 +38,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:log, Articles.log(article))
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
+      |> assign(:known_tags, Articles.known_tags())
 
     socket =
       if connected?(socket) do
@@ -282,7 +283,7 @@ defmodule TexttileWeb.EditorLive do
 
     case Articles.update_settings(article, Map.take(params, [field])) do
       {:ok, article} ->
-        {:noreply, socket |> assign(:article, article) |> mark_saved()}
+        {:noreply, socket |> assign(:article, article) |> known_tags() |> mark_saved()}
 
       {:error, changeset} ->
         {:noreply, mark_saved(socket, slug_error(changeset))}
@@ -290,6 +291,32 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", _params, socket), do: {:noreply, socket}
+
+  # The tag suggestions: one click adds a tag the blog already knows,
+  # one more takes it off again. The field keeps the spelling it has;
+  # only the tag being toggled comes and goes.
+  def handle_event("toggle_tag", %{"tag" => tag}, socket) do
+    %{article: article} = socket.assigns
+    tag = tag |> to_string() |> String.trim() |> String.downcase()
+
+    written =
+      article.tags
+      |> to_string()
+      |> String.split(",")
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+
+    kept = Enum.reject(written, &(String.downcase(&1) == tag))
+    tags = if kept == written, do: written ++ [tag], else: kept
+
+    case Articles.update_settings(article, %{tags: Enum.join(tags, ", ")}) do
+      {:ok, article} ->
+        {:noreply, socket |> assign(:article, article) |> known_tags() |> mark_saved()}
+
+      {:error, _changeset} ->
+        {:noreply, socket}
+    end
+  end
 
   ## Events · chrome
 
@@ -308,14 +335,17 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("ask_delete", _params, socket) do
     article = socket.assigns.article
-    address = "#{TexttileWeb.Endpoint.host()}/#{article.slug || Articles.slugify(article.title)}"
 
     live_line =
-      if article.status == "published",
-        do: [
+      if article.status == "published" do
+        address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
+
+        [
           "The text is live. From now on, a reader who follows an old link to #{address} gets a 404 page."
-        ],
-        else: []
+        ]
+      else
+        []
+      end
 
     {:noreply,
      socket
@@ -342,7 +372,7 @@ defmodule TexttileWeb.EditorLive do
        :info,
        ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
      )
-     |> push_navigate(to: ~p"/desk")}
+     |> push_navigate(to: ~p"/edit")}
   end
 
   def handle_event("cancel_dialog", _params, socket) do
@@ -720,7 +750,7 @@ defmodule TexttileWeb.EditorLive do
       {:noreply,
        socket
        |> put_flash(:info, "The text was deleted while you had it open.")
-       |> push_navigate(to: ~p"/desk")}
+       |> push_navigate(to: ~p"/edit")}
     else
       {:noreply, socket}
     end
@@ -901,6 +931,8 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:saved_until, if(note, do: now + @note_ms, else: 0))
   end
 
+  defp known_tags(socket), do: assign(socket, :known_tags, Articles.known_tags())
+
   defp reload_history(socket) do
     socket
     |> assign(:versions, Articles.versions(socket.assigns.article))
@@ -946,6 +978,19 @@ defmodule TexttileWeb.EditorLive do
         >
           Save version
         </button>
+        <%!-- the way out to the reader's side: only a live text has an
+             address, so the link comes with the text going live --%>
+        <a
+          :if={@article.status == "published"}
+          class="btn hidden sm:inline-flex"
+          id="btnView"
+          href={Articles.public_path(@article)}
+          target="_blank"
+          rel="noopener"
+          title="Opens the text on the public site in a new tab"
+        >
+          View
+        </a>
         <span
           class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
           id="stateBtn"
@@ -997,6 +1042,16 @@ defmodule TexttileWeb.EditorLive do
         phx-key="escape"
       >
         <button class="row sm:hidden" phx-click="save_version">Save version</button>
+        <a
+          :if={@article.status == "published"}
+          class="row sm:hidden"
+          id="viewRow"
+          href={Articles.public_path(@article)}
+          target="_blank"
+          rel="noopener"
+        >
+          View the text
+        </a>
         <%= if @article.status == "scheduled" do %>
           <button class="row" phx-click="publish_now">Publish now</button>
           <button class="row" phx-click="unpublish">Unschedule</button>
@@ -1466,7 +1521,7 @@ defmodule TexttileWeb.EditorLive do
             class="relative"
             phx-hook="Gallery"
             data-article-id={@article.id}
-            data-upload-url={~p"/desk/texts/#{@article.id}/gallery"}
+            data-upload-url={~p"/edit/texts/#{@article.id}/gallery"}
             data-csrf={Phoenix.Controller.get_csrf_token()}
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
@@ -1585,7 +1640,7 @@ defmodule TexttileWeb.EditorLive do
               <span class="lab">Address</span>
               <span class="val">
                 <span class="addr">
-                  <span class="pre">{TexttileWeb.Endpoint.host()}/</span>
+                  <span class="pre">{TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}</span>
                   <input
                     type="text"
                     id="edSlug"
@@ -1642,7 +1697,23 @@ defmodule TexttileWeb.EditorLive do
               <span class="lab">Tags</span>
               <span class="val">
                 <input type="text" id="edTags" name="tags" value={@article.tags} phx-debounce="300" />
-                <div class="hint">Comma separated; each tag becomes an archive page.</div>
+                <%!-- the tags the blog already carries: one click puts
+                     one in the field, one more takes it out again --%>
+                <div :if={@known_tags != []} class="tagpick" id="tagPick">
+                  <button
+                    :for={tag <- @known_tags}
+                    type="button"
+                    class={["tagchip", tag in Articles.tag_list(@article) && "on"]}
+                    id={"tagchip-#{Articles.slugify(tag)}"}
+                    phx-click="toggle_tag"
+                    phx-value-tag={tag}
+                  >
+                    {tag}
+                  </button>
+                </div>
+                <div class="hint">
+                  Comma separated; each tag becomes an archive page. Click a tag above to add it or take it off.
+                </div>
               </span>
             </div>
 
@@ -1859,7 +1930,7 @@ defmodule TexttileWeb.EditorLive do
   defp slug_hint(%{status: "draft"}), do: "Free to change while the text is a draft."
 
   defp slug_hint(article) do
-    "#{TexttileWeb.Endpoint.host()}/#{article.slug} is live; changing it breaks old links."
+    "#{TexttileWeb.Endpoint.host()}#{Articles.public_path(article)} is live; changing it breaks old links."
   end
 
   defp notify_note(%{status: "draft", notify_on_publish: true}),

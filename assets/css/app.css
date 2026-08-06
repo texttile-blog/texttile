@@ -144,8 +144,11 @@
   .opt .note { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.45; }
 
   /* an input with a quiet unit or prefix beside it */
-  .addr { display: flex; align-items: baseline; gap: 7px; }
-  .addr .pre { color: var(--tt-faint); font-size: 13px; flex: none; }
+  /* the dated address of a post is long: the prefix keeps one line and
+     the field moves under it when the column gets narrow */
+  .addr { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+  .addr .pre { color: var(--tt-faint); font-size: 13px; flex: none; white-space: nowrap; }
+  .addr input { flex: 1 1 140px; min-width: 0; }
 
   /* rendered markdown, e.g. the About preview */
   .md-preview { line-height: 1.6; }
@@ -212,6 +215,22 @@
   }
   .seg-b:hover { background-color: var(--tt-field); color: var(--tt-ink); }
   .seg-b.on { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+
+  /* the tags the blog already carries, under the tag field: a chip per
+     tag, the ones on this text marked */
+  .tagpick { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .tagchip {
+    font-size: 12.5px; line-height: 1; padding: 5px 9px;
+    color: var(--tt-dim, #5f584e); background-color: transparent;
+    border: 1px solid var(--tt-hair, #eceae5);
+    border-radius: var(--tt-radius-pill, 999px);
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .tagchip:hover { background-color: var(--tt-field, #f2f0ec); color: var(--tt-ink, #23201b); }
+  .tagchip.on {
+    background-color: var(--tt-solid, #4b2a83); color: var(--tt-onsolid, #ffffff);
+    border-color: var(--tt-solid, #4b2a83);
+  }
 
   /* the grid of texts: cards without boxes, one two-line title box,
      so every row lines up. The empty state is the same element, so a
@@ -673,6 +692,10 @@
   body.site .card { text-decoration: none; color: inherit; }
   body.site .card .cimg { overflow: hidden; }
   body.site .card .cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* the placeholder square: a text without a picture holds the same
+     footprint, with the mark standing quietly in the middle */
+  body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
+  body.site .card .cimg.blank svg { opacity: .26; }
   .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 3px; }
   .card-wrap .clead { font-size: 13.5px; line-height: 1.5; color: var(--tt-dim); margin-top: 6px; }
   .card-wrap .ctags { margin-top: 7px; }

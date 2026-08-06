@@ -28,7 +28,7 @@ defmodule TexttileWeb.EditorLiveTest do
   describe "the editor" do
     test "shows the text and the crumb", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, html} = live(conn, ~p"/edit/texts/#{article}")
 
       assert has_element?(view, "#crumb", "Doors")
       assert has_element?(view, "#edTitle[value='Doors']")
@@ -38,7 +38,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "autosaves the title", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view |> element("#text-form") |> render_change(%{title: "Fourteen doors"})
       assert Articles.get_article!(article.id).title == "Fourteen doors"
@@ -47,7 +47,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "autosaves the body from the editor hook", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_hook(view, "body_changed", %{"text" => "New words."})
       assert Articles.get_article!(article.id).body == "New words."
@@ -57,7 +57,7 @@ defmodule TexttileWeb.EditorLiveTest do
   describe "publish" do
     test "one click publishes a draft", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
@@ -71,7 +71,7 @@ defmodule TexttileWeb.EditorLiveTest do
     test "a future date makes the click a scheduling", %{conn: conn, user: user} do
       article = draft(user)
       future = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view
       |> element("#artSettings")
@@ -97,7 +97,7 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, article} = Articles.publish(article, user)
       assert article.status == "scheduled"
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
       view |> element("#stateBtn [aria-haspopup]") |> render_click()
       view |> element("#stateMenu button", "Publish now") |> render_click()
 
@@ -108,19 +108,36 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, article} = Articles.publish(article, user)
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
       view |> element("#stateBtn [aria-haspopup]") |> render_click()
       view |> element("#stateMenu button", "Unpublish") |> render_click()
 
       assert Articles.get_article!(article.id).status == "draft"
       assert has_element?(view, "#stateBtn .main", "Publish")
     end
+
+    test "a live text carries the link to its address in the bar", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
+
+      # a draft has no address yet, so there is nothing to open
+      refute has_element?(view, "#btnView")
+
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      article = Articles.get_article!(article.id)
+      assert has_element?(view, "#btnView")
+
+      assert view
+             |> element("#btnView")
+             |> render() =~ ~s(href="#{Articles.public_path(article)}")
+    end
   end
 
   describe "article settings" do
     test "tags and slug save on change", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view
       |> element("#artSettings")
@@ -137,7 +154,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "a page hides the tags field and never emails", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       assert has_element?(view, "#fieldTags")
       view |> element("#artSettings") |> render_change(%{_target: ["type"], type: "page"})
@@ -147,7 +164,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "the blog-password switch saves on change", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       assert has_element?(view, "#optProtected")
 
@@ -158,14 +175,53 @@ defmodule TexttileWeb.EditorLiveTest do
       assert Articles.get_article!(article.id).protected
     end
 
+    test "the tags of the blog stand under the field and add themselves",
+         %{conn: conn, user: user} do
+      other = draft(user)
+      {:ok, _} = Articles.update_settings(other, %{tags: "Sea, fog"})
+
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
+
+      assert has_element?(view, "#tagchip-sea", "sea")
+      assert has_element?(view, "#tagchip-fog", "fog")
+      refute has_element?(view, "#tagchip-sea.on")
+
+      view |> element("#tagchip-sea") |> render_click()
+
+      assert Articles.get_article!(article.id).tags == "sea"
+      assert has_element?(view, "#tagchip-sea.on")
+
+      # the same click again takes the tag off
+      view |> element("#tagchip-sea") |> render_click()
+
+      assert Articles.get_article!(article.id).tags == ""
+      refute has_element?(view, "#tagchip-sea.on")
+    end
+
+    test "a tag typed by hand joins the suggestions and keeps its spelling",
+         %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
+
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["tags"], tags: "Harbor"})
+
+      assert has_element?(view, "#tagchip-harbor.on")
+
+      view |> element("#tagchip-harbor") |> render_click()
+      assert Articles.get_article!(article.id).tags == ""
+    end
+
     test "a reserved address is refused with its own note", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       html =
         view
         |> element("#artSettings")
-        |> render_change(%{_target: ["slug"], slug: "desk"})
+        |> render_change(%{_target: ["slug"], slug: "edit"})
 
       assert html =~ "That address belongs to the site itself"
       assert Articles.get_article!(article.id).slug == nil
@@ -175,7 +231,7 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, _} = Articles.publish(article, user)
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view
       |> element("#artSettings")
@@ -188,7 +244,7 @@ defmodule TexttileWeb.EditorLiveTest do
   describe "versions" do
     test "save version, then the tab shows it with a diff", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view |> element("#btnSave") |> render_click()
       render_hook(view, "body_changed", %{"text" => "Iron ones."})
@@ -201,7 +257,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "restore puts the old text back", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view |> element("#btnSave") |> render_click()
       render_hook(view, "body_changed", %{"text" => "Iron ones."})
@@ -226,7 +282,7 @@ defmodule TexttileWeb.EditorLiveTest do
       """
 
       article = draft(user, %{title: "Doors", body: body})
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       assert has_element?(view, "#inlineCount", "1 image · 1 on the way · 1 failed")
       assert has_element?(view, "#inlineImgs", "pier-abcd.jpg")
@@ -236,7 +292,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "upload events reach the log and the progress display", %{conn: conn, user: user} do
       article = draft(user, %{title: "Doors", body: "![Uploading gull.jpg…]()"})
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_hook(view, "images_inserted", %{"files" => ["gull.jpg"]})
       render_hook(view, "upload_progress", %{"file" => "gull.jpg", "pct" => 40})
@@ -273,7 +329,7 @@ defmodule TexttileWeb.EditorLiveTest do
       b = gallery_image(article, "b.jpg", "2024:05:02 09:00:00")
       a = gallery_image(article, "a.jpg", "2024:05:01 09:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       assert has_element?(view, "#tileCount", "2 images")
       assert has_element?(view, "#tileGrid [data-id='#{a.id}']")
@@ -283,7 +339,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "an image added elsewhere appears without a reload", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       assert has_element?(view, "#tileCount", "0 images")
 
@@ -299,8 +355,8 @@ defmodule TexttileWeb.EditorLiveTest do
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
       c = gallery_image(article, "c.jpg", "2024:05:01 14:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
-      {:ok, other, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
+      {:ok, other, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       ids = Enum.map([a.id, c.id, b.id], &to_string/1)
       render_hook(view, "gallery_reorder", %{"id" => to_string(c.id), "ids" => ids})
@@ -314,7 +370,7 @@ defmodule TexttileWeb.EditorLiveTest do
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_hook(view, "gallery_reorder", %{"id" => to_string(a.id), "ids" => [to_string(a.id)]})
 
@@ -327,7 +383,7 @@ defmodule TexttileWeb.EditorLiveTest do
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_hook(view, "gallery_set_date", %{
         "id" => to_string(a.id),
@@ -342,7 +398,7 @@ defmodule TexttileWeb.EditorLiveTest do
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_hook(view, "gallery_delete", %{"id" => to_string(a.id)})
       assert tile_order(render(view)) == [b.id]
@@ -357,11 +413,11 @@ defmodule TexttileWeb.EditorLiveTest do
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
 
       # The first view holds the lock; the reader still sorts tiles.
-      {:ok, _writer, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, _writer, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       other = Texttile.AccountsFixtures.user_fixture()
       reader_conn = log_in_user(build_conn(), other)
-      {:ok, reader, _html} = live(reader_conn, ~p"/desk/texts/#{article}")
+      {:ok, reader, _html} = live(reader_conn, ~p"/edit/texts/#{article}")
 
       ids = Enum.map([b.id, a.id], &to_string/1)
       render_hook(reader, "gallery_reorder", %{"id" => to_string(b.id), "ids" => ids})
@@ -377,8 +433,8 @@ defmodule TexttileWeb.EditorLiveTest do
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
-      {:ok, other, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
+      {:ok, other, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       # without a choice the first image wears the flag
       assert has_element?(view, "#tile-#{a.id} .cov")
@@ -402,7 +458,7 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       _a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_click(view, "set_preview", %{"path" => "images/forged-00000000.jpg"})
 
@@ -417,11 +473,11 @@ defmodule TexttileWeb.EditorLiveTest do
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
       b = gallery_image(article, "b.jpg", "2024:05:01 12:00:00")
 
-      {:ok, watcher, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, watcher, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       mover_user = Texttile.AccountsFixtures.user_fixture()
       mover_conn = log_in_user(build_conn(), mover_user)
-      {:ok, mover, _html} = live(mover_conn, ~p"/desk/texts/#{article}")
+      {:ok, mover, _html} = live(mover_conn, ~p"/edit/texts/#{article}")
 
       ids = Enum.map([b.id, a.id], &to_string/1)
       render_hook(mover, "gallery_reorder", %{"id" => to_string(b.id), "ids" => ids})
@@ -435,7 +491,7 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       render_hook(view, "gallery_delete", %{"id" => to_string(a.id)})
       render_hook(view, "gallery_undo", %{"id" => to_string(a.id)})
@@ -451,7 +507,7 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, _} = Articles.publish(article, user)
 
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
       view |> element(".tab", "Log") |> render_click()
 
       assert has_element?(view, "#logList .log-row", "published the text")
@@ -462,14 +518,14 @@ defmodule TexttileWeb.EditorLiveTest do
   describe "delete" do
     test "asks first, then deletes and returns to the grid", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
 
       view |> element("#stateBtn [aria-haspopup]") |> render_click()
       view |> element("#stateMenu button", "Delete this text") |> render_click()
       assert has_element?(view, "#dialog", "Delete")
 
       view |> element("#dialog button", "Delete the text") |> render_click()
-      assert_redirect(view, "/desk")
+      assert_redirect(view, "/edit")
       assert Articles.list_articles() == []
     end
   end
@@ -481,8 +537,8 @@ defmodule TexttileWeb.EditorLiveTest do
       conn2 = Phoenix.ConnTest.build_conn() |> log_in_user(other)
 
       # the first mount holds the lock; the second only reads along
-      {:ok, _holder_view, _} = live(conn, ~p"/desk/texts/#{article}")
-      {:ok, reader_view, _} = live(conn2, ~p"/desk/texts/#{article}")
+      {:ok, _holder_view, _} = live(conn, ~p"/edit/texts/#{article}")
+      {:ok, reader_view, _} = live(conn2, ~p"/edit/texts/#{article}")
 
       reader_view |> element("#stateBtn .main", "Publish") |> render_click()
       assert has_element?(reader_view, "#dialog", "is editing this text right now")
@@ -499,11 +555,11 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, _} = Articles.save_version(article, user)
       {:ok, article} = Articles.update_text(article, %{body: "Newer words."})
 
-      {:ok, _holder_view, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, _holder_view, _} = live(conn, ~p"/edit/texts/#{article}")
 
       other = Texttile.AccountsFixtures.user_fixture()
       conn2 = Phoenix.ConnTest.build_conn() |> log_in_user(other)
-      {:ok, reader_view, _} = live(conn2, ~p"/desk/texts/#{article}")
+      {:ok, reader_view, _} = live(conn2, ~p"/edit/texts/#{article}")
 
       reader_view |> element(".tab", "Versions") |> render_click()
       reader_view |> element("#versionsList button", "Restore this version") |> render_click()
@@ -517,7 +573,7 @@ defmodule TexttileWeb.EditorLiveTest do
     defp second_session(article) do
       other = Texttile.AccountsFixtures.user_fixture()
       conn = Phoenix.ConnTest.build_conn() |> log_in_user(other)
-      {:ok, view, _html} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _html} = live(conn, ~p"/edit/texts/#{article}")
       {view, other}
     end
 
@@ -539,7 +595,7 @@ defmodule TexttileWeb.EditorLiveTest do
     test "the second person gets the text read-only and sees who writes",
          %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, _first, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, _first, _} = live(conn, ~p"/edit/texts/#{article}")
 
       {second, _other} = second_session(article)
 
@@ -549,7 +605,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "the reader sees the text live", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, first, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, first, _} = live(conn, ~p"/edit/texts/#{article}")
       {second, _other} = second_session(article)
 
       # the body travels over PubSub; the panel under the text is a
@@ -565,7 +621,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "a transport close keeps the lock through the grace period", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _} = live(conn, ~p"/edit/texts/#{article}")
       view_pid = view.pid
 
       # a reload or a network drop stops the channel with
@@ -581,7 +637,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
     test "a deliberate leave releases the lock at once", %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _} = live(conn, ~p"/edit/texts/#{article}")
       view_pid = view.pid
 
       Process.flag(:trap_exit, true)
@@ -595,7 +651,7 @@ defmodule TexttileWeb.EditorLiveTest do
     test "an idle release is not taken straight back by the idle tab",
          %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, view, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, view, _} = live(conn, ~p"/edit/texts/#{article}")
 
       [{lock_pid, _}] = Registry.lookup(Lock.registry(), article.id)
       send(lock_pid, :idle_over)
@@ -614,7 +670,7 @@ defmodule TexttileWeb.EditorLiveTest do
     test "the takeover moves the lock and turns the other side read-only",
          %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, first, _} = live(conn, ~p"/desk/texts/#{article}")
+      {:ok, first, _} = live(conn, ~p"/edit/texts/#{article}")
       {second, _other} = second_session(article)
 
       # the read-only side clicks into the title and confirms the dialog

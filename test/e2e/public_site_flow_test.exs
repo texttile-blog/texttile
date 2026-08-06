@@ -4,6 +4,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
   import Texttile.ArticlesFixtures
 
+  alias Texttile.Articles
   alias Texttile.Settings
 
   @moduletag :e2e
@@ -39,12 +40,12 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
   describe "the password gate" do
     test "asks once, remembers, and returns the reader to the text", %{conn: conn} do
-      published_post(title: "Behind the wall", slug: "behind-the-wall")
+      article = published_post(title: "Behind the wall", slug: "behind-the-wall")
       {:ok, _} = Settings.put(:site_visibility, "protected")
       {:ok, _} = Settings.put(:site_password, "sesame")
 
       conn
-      |> visit("/behind-the-wall")
+      |> visit(Articles.public_path(article))
       |> assert_has("#unlock")
       |> fill_in("Password", with: "sesame")
       |> click_button("Read on")
@@ -61,7 +62,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       {:ok, _second} = Texttile.Gallery.add_image(article, jpg_fixture(), "lagoon.jpg")
 
       conn
-      |> visit("/tiles")
+      |> visit(Articles.public_path(article))
       |> click("#tile-#{first.id}")
       |> assert_has("#lbCount", text: "1 / 2")
       |> assert_has("#lbCap", text: "pier.jpg")

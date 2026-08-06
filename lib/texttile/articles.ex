@@ -117,9 +117,66 @@ defmodule Texttile.Articles do
     |> Repo.all()
   end
 
-  @doc "The published text behind an address, post or page, or nil."
-  def get_published_by_slug(slug) when is_binary(slug) do
-    Repo.one(from a in Article, where: a.slug == ^slug and a.status == "published")
+  @doc """
+  The address a text wears on the public site. A post lives under the
+  day it went live, `/2026/08/23/harbor`; a page keeps the short
+  address, `/about-us`, because the site menu points at it. A text
+  without a slug, or a post without a date, has no address yet and
+  answers nil.
+  """
+  def public_path(%Article{slug: slug}) when slug in [nil, ""], do: nil
+  def public_path(%Article{type: "page", slug: slug} = article), do: public_prefix(article) <> slug
+
+  def public_path(%Article{slug: slug, publish_date: %Date{}} = article),
+    do: public_prefix(article) <> slug
+
+  def public_path(%Article{}), do: nil
+
+  @doc """
+  What stands before the slug in the address: `/` for a page,
+  `/2026/08/23/` for a post. A post without a date yet borrows today,
+  which is the day it gets when somebody publishes it now.
+  """
+  def public_prefix(%Article{type: "page"}), do: "/"
+
+  def public_prefix(%Article{publish_date: date}) do
+    date = date || Date.utc_today()
+    "/#{date.year}/#{pad2(date.month)}/#{pad2(date.day)}/"
+  end
+
+  defp pad2(number), do: number |> Integer.to_string() |> String.pad_leading(2, "0")
+
+  @doc "The published post at a date and a slug, or nil."
+  def get_published_post(%Date{} = date, slug) when is_binary(slug) do
+    Repo.one(
+      from a in Article,
+        where:
+          a.slug == ^slug and a.status == "published" and a.type == "post" and
+            a.publish_date == ^date
+    )
+  end
+
+  @doc "The published page behind a short address, or nil."
+  def get_published_page(slug) when is_binary(slug) do
+    Repo.one(
+      from a in Article,
+        where: a.slug == ^slug and a.status == "published" and a.type == "page"
+    )
+  end
+
+  @doc """
+  Every tag the desk already knows, the most used one first, then in
+  alphabetical order. The editor offers this list under the tag field,
+  so the same word does not come back in three spellings.
+  """
+  def known_tags do
+    Article
+    |> select([a], a.tags)
+    |> Repo.all()
+    |> Enum.flat_map(&tag_list(%{tags: &1}))
+    |> Enum.frequencies()
+    |> Enum.sort_by(fn {tag, count} -> {-count, tag} end)
+    |> Enum.map(fn {tag, _count} -> tag end)
   end
 
   @doc """

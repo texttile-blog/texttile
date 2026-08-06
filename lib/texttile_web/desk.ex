@@ -49,7 +49,7 @@ defmodule TexttileWeb.Desk do
   # view; this hook is the one handler behind all of them.
   defp handle_event("new_text", _params, socket) do
     {:ok, article} = Texttile.Articles.create_draft(socket.assigns.current_scope.user)
-    {:halt, Phoenix.LiveView.push_navigate(socket, to: "/desk/texts/#{article.id}")}
+    {:halt, Phoenix.LiveView.push_navigate(socket, to: "/edit/texts/#{article.id}")}
   end
 
   defp handle_event(_event, _params, socket), do: {:cont, socket}
@@ -137,14 +137,14 @@ defmodule TexttileWeb.Desk do
 
   defp path(%{view: :editor} = meta) do
     case Map.get(meta, :text_id) do
-      nil -> "/desk"
-      id -> "/desk/texts/#{id}"
+      nil -> "/edit"
+      id -> "/edit/texts/#{id}"
     end
   end
 
-  defp path(%{view: :profile}), do: "/desk/profile"
-  defp path(%{view: :settings}), do: "/desk/settings"
-  defp path(_meta), do: "/desk"
+  defp path(%{view: :profile}), do: "/edit/profile"
+  defp path(%{view: :settings}), do: "/edit/settings"
+  defp path(_meta), do: "/edit"
 
   @doc "The ids of everybody with at least one open desk tab, as strings."
   def online_user_ids do

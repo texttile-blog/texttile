@@ -18,7 +18,7 @@ defmodule TexttileWeb.ImagesControllerTest do
   end
 
   test "stores the image and answers with its address", %{conn: conn} do
-    conn = post(conn, ~p"/desk/images", %{"file" => png_upload("Pier Gull.png")})
+    conn = post(conn, ~p"/edit/images", %{"file" => png_upload("Pier Gull.png")})
 
     assert %{"url" => "/uploads/images/" <> stored} = json_response(conn, 200)
     assert stored =~ ~r/^pier-gull-\w+\.png$/
@@ -30,12 +30,12 @@ defmodule TexttileWeb.ImagesControllerTest do
     File.write!(path, "words")
     upload = %Plug.Upload{path: path, filename: "no.png", content_type: "image/png"}
 
-    conn = post(conn, ~p"/desk/images", %{"file" => upload})
+    conn = post(conn, ~p"/edit/images", %{"file" => upload})
     assert %{"error" => _} = json_response(conn, 422)
   end
 
   test "signed out, the endpoint answers with a redirect to sign-in" do
-    conn = post(build_conn(), ~p"/desk/images", %{})
+    conn = post(build_conn(), ~p"/edit/images", %{})
     assert redirected_to(conn) == ~p"/login"
   end
 end

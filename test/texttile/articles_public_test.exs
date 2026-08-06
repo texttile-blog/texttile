@@ -80,22 +80,72 @@ defmodule Texttile.ArticlesPublicTest do
     end
   end
 
-  describe "get_published_by_slug/1" do
-    test "finds published posts and pages by their address" do
-      post = published_post(title: "Harbor", slug: "harbor")
-      page = published_page(title: "About", slug: "about-us")
+  describe "public_path/1" do
+    test "a post lives under its publish date" do
+      post = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-08-23])
 
-      assert Articles.get_published_by_slug("harbor").id == post.id
-      assert Articles.get_published_by_slug("about-us").id == page.id
+      assert Articles.public_path(post) == "/2026/08/23/harbor"
     end
 
-    test "answers nil for drafts, scheduled texts and unknown addresses" do
+    test "the month and the day always carry two digits" do
+      post = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-01-05])
+
+      assert Articles.public_path(post) == "/2026/01/05/harbor"
+    end
+
+    test "a page keeps the short address" do
+      page = published_page(title: "About", slug: "about-us")
+
+      assert Articles.public_path(page) == "/about-us"
+    end
+
+    test "a text without an address yet answers nil" do
+      draft = draft_post(title: "Draft")
+
+      assert Articles.public_path(draft) == nil
+      assert Articles.public_path(%{draft | slug: "draft"}) == nil
+    end
+  end
+
+  describe "get_published_post/2" do
+    test "finds a published post at its date and slug" do
+      post = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-08-23])
+
+      assert Articles.get_published_post(~D[2026-08-23], "harbor").id == post.id
+    end
+
+    test "another day is another address, and no text" do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-08-23])
+
+      assert Articles.get_published_post(~D[2026-08-22], "harbor") == nil
+    end
+
+    test "answers nil for pages, drafts, scheduled texts and unknown addresses" do
+      page = published_page(title: "About", slug: "about-us", publish_date: ~D[2026-08-23])
       draft_post(title: "Draft", slug: "draft-text")
       scheduled = scheduled_post(title: "Scheduled")
 
-      assert Articles.get_published_by_slug("draft-text") == nil
-      assert Articles.get_published_by_slug(scheduled.slug) == nil
-      assert Articles.get_published_by_slug("nowhere") == nil
+      assert Articles.get_published_post(page.publish_date, "about-us") == nil
+      assert Articles.get_published_post(~D[2026-08-23], "draft-text") == nil
+      assert Articles.get_published_post(scheduled.publish_date, scheduled.slug) == nil
+      assert Articles.get_published_post(~D[2026-08-23], "nowhere") == nil
+    end
+  end
+
+  describe "get_published_page/1" do
+    test "finds a published page by its address" do
+      page = published_page(title: "About", slug: "about-us")
+
+      assert Articles.get_published_page("about-us").id == page.id
+    end
+
+    test "answers nil for posts, drafts and unknown addresses" do
+      published_post(title: "Harbor", slug: "harbor")
+      draft_post(title: "Draft", slug: "draft-page", type: "page")
+
+      assert Articles.get_published_page("harbor") == nil
+      assert Articles.get_published_page("draft-page") == nil
+      assert Articles.get_published_page("nowhere") == nil
     end
   end
 
@@ -103,7 +153,7 @@ defmodule Texttile.ArticlesPublicTest do
     test "a slug the site itself uses is refused" do
       article = draft_post(title: "Innocent")
 
-      for slug <- ~w(desk login texts tags unlock uploads renditions) do
+      for slug <- ~w(edit login texts tags unlock uploads renditions) do
         assert {:error, changeset} = Articles.update_settings(article, %{slug: slug})
         assert %{slug: [_message]} = errors_on(changeset)
       end
@@ -113,6 +163,22 @@ defmodule Texttile.ArticlesPublicTest do
       article = published_post(title: "Texts")
       assert article.slug != "texts"
       assert article.slug =~ ~r/^texts-/
+    end
+  end
+
+  describe "known_tags/0" do
+    test "answers every tag of the desk, the most used one first" do
+      published_post(title: "One", tags: "sea, fog")
+      draft_post(title: "Two", tags: "Sea, travel")
+      published_post(title: "Three", tags: "sea")
+
+      assert Articles.known_tags() == ["sea", "fog", "travel"]
+    end
+
+    test "answers an empty list while nobody has tagged anything" do
+      published_post(title: "Bare")
+
+      assert Articles.known_tags() == []
     end
   end
 

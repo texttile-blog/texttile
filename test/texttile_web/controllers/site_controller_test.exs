@@ -68,6 +68,16 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ "The second stays home."
       assert html =~ ~s(href="/tags/sea")
       assert html =~ ~s(href="/tags/fog")
+      refute html =~ "cimg blank"
+    end
+
+    test "a text without a picture keeps the square, so the grid holds", %{conn: conn} do
+      published_post(title: "Without a picture")
+
+      html = conn |> get(~p"/") |> html_response(200)
+
+      assert html =~ "cimg blank"
+      refute html =~ "/renditions/640/"
     end
 
     test "the about block sits at the foot of the front page once filled", %{conn: conn} do
@@ -98,7 +108,7 @@ defmodule TexttileWeb.SiteControllerTest do
         tags: "sea, fog"
       )
 
-      html = conn |> get(~p"/harbor-mornings") |> html_response(200)
+      html = conn |> get(~p"/2026/03/01/harbor-mornings") |> html_response(200)
 
       assert html =~ "Harbor mornings"
       assert html =~ "<strong>pier</strong>"
@@ -106,7 +116,28 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(href="/tags/sea")
     end
 
-    test "renders a published page too", %{conn: conn} do
+    test "a post has no address without its date", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      assert conn |> get(~p"/harbor") |> html_response(404)
+    end
+
+    test "another day than the publish date is a 404", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      assert conn |> get(~p"/2026/03/02/harbor") |> html_response(404)
+      assert conn |> get(~p"/2025/03/01/harbor") |> html_response(404)
+    end
+
+    test "a date the calendar does not know is a 404", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      assert conn |> get("/2026/3/1/harbor") |> html_response(404)
+      assert conn |> get("/2026/02/31/harbor") |> html_response(404)
+      assert conn |> get("/march/03/01/harbor") |> html_response(404)
+    end
+
+    test "renders a published page at its short address", %{conn: conn} do
       published_page(title: "About", slug: "about-me", body: "I write here.")
 
       html = conn |> get(~p"/about-me") |> html_response(200)
@@ -114,19 +145,28 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ "I write here."
     end
 
+    test "a page keeps its short address and wears no date", %{conn: conn} do
+      page = published_page(title: "About", slug: "about-me", publish_date: ~D[2026-03-01])
+
+      assert Texttile.Articles.public_path(page) == "/about-me"
+      assert conn |> get(~p"/2026/03/01/about-me") |> html_response(404)
+    end
+
     test "404s for drafts and unknown addresses", %{conn: conn} do
-      draft_post(title: "Draft", slug: "draft-text")
+      draft = draft_post(title: "Draft", slug: "draft-text")
 
       assert conn |> get(~p"/draft-text") |> html_response(404)
+      assert conn |> get(~p"/2026/03/01/draft-text") |> html_response(404)
       assert conn |> get(~p"/nowhere") |> html_response(404)
+      assert draft.slug == "draft-text"
     end
 
     test "shows the gallery as tiles that link the full picture, with the lightbox shell",
          %{conn: conn} do
-      article = published_post(title: "Tiles", slug: "tiles")
+      article = published_post(title: "Tiles", slug: "tiles", publish_date: ~D[2026-03-01])
       {:ok, image} = Texttile.Gallery.add_image(article, jpg_fixture(), "pier.jpg")
 
-      html = conn |> get(~p"/tiles") |> html_response(200)
+      html = conn |> get(~p"/2026/03/01/tiles") |> html_response(200)
 
       assert html =~ ~s(id="tile-#{image.id}")
       assert html =~ ~s(href="/renditions/max/#{image.path}")
@@ -135,9 +175,9 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     test "a text without pictures carries no lightbox", %{conn: conn} do
-      published_post(title: "Bare", slug: "bare")
+      published_post(title: "Bare", slug: "bare", publish_date: ~D[2026-03-01])
 
-      html = conn |> get(~p"/bare") |> html_response(200)
+      html = conn |> get(~p"/2026/03/01/bare") |> html_response(200)
       refute html =~ ~s(id="lb")
     end
   end
@@ -244,22 +284,29 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     test "a locked reader is sent to the gate and back again", %{conn: conn} do
-      published_post(title: "Behind the wall", slug: "behind-the-wall")
+      published_post(
+        title: "Behind the wall",
+        slug: "behind-the-wall",
+        publish_date: ~D[2026-03-01]
+      )
 
-      conn = get(conn, ~p"/behind-the-wall")
-      assert redirected_to(conn) == "/unlock?to=%2Fbehind-the-wall"
+      conn = get(conn, ~p"/2026/03/01/behind-the-wall")
+      assert redirected_to(conn) == "/unlock?to=%2F2026%2F03%2F01%2Fbehind-the-wall"
 
       conn = build_conn()
-      html = conn |> get(~p"/unlock?to=%2Fbehind-the-wall") |> html_response(200)
+      html = conn |> get(~p"/unlock?to=%2F2026%2F03%2F01%2Fbehind-the-wall") |> html_response(200)
       assert html =~ ~s(id="unlock")
 
       conn =
         build_conn()
-        |> post(~p"/unlock", %{"password" => "sesame", "to" => "/behind-the-wall"})
+        |> post(~p"/unlock", %{
+          "password" => "sesame",
+          "to" => "/2026/03/01/behind-the-wall"
+        })
 
-      assert redirected_to(conn) == "/behind-the-wall"
+      assert redirected_to(conn) == "/2026/03/01/behind-the-wall"
 
-      html = conn |> recycle() |> get(~p"/behind-the-wall") |> html_response(200)
+      html = conn |> recycle() |> get(~p"/2026/03/01/behind-the-wall") |> html_response(200)
       assert html =~ "Behind the wall"
     end
 
@@ -288,7 +335,7 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     test "an unlocked reader who lands on the gate is sent along", %{conn: conn} do
-      published_post(title: "Behind the wall", slug: "behind-the-wall")
+      published_page(title: "Behind the wall", slug: "behind-the-wall")
 
       conn = post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/"})
 
@@ -297,13 +344,18 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     test "an admin session passes without unlocking", %{conn: conn} do
-      published_post(title: "Behind the wall", slug: "behind-the-wall")
+      published_post(
+        title: "Behind the wall",
+        slug: "behind-the-wall",
+        publish_date: ~D[2026-03-01]
+      )
+
       user = user_fixture()
 
       html =
         conn
         |> log_in_user(user)
-        |> get(~p"/behind-the-wall")
+        |> get(~p"/2026/03/01/behind-the-wall")
         |> html_response(200)
 
       assert html =~ "Behind the wall"
@@ -326,7 +378,15 @@ defmodule TexttileWeb.SiteControllerTest do
 
     test "asks for the password on its page and hides everywhere else", %{conn: conn} do
       published_post(title: "Open text")
-      published_post(title: "Hidden text", slug: "hidden-text", protected: true, tags: "secret")
+
+      published_post(
+        title: "Hidden text",
+        slug: "hidden-text",
+        publish_date: ~D[2026-03-01],
+        protected: true,
+        tags: "secret"
+      )
+
       published_page(title: "Hidden page", protected: true)
 
       html = conn |> get(~p"/") |> html_response(200)
@@ -337,18 +397,25 @@ defmodule TexttileWeb.SiteControllerTest do
       search = conn |> get(~p"/?q=secret") |> html_response(200)
       refute search =~ "Hidden text"
 
-      conn = get(conn, ~p"/hidden-text")
-      assert redirected_to(conn) == "/unlock?to=%2Fhidden-text"
+      conn = get(conn, ~p"/2026/03/01/hidden-text")
+      assert redirected_to(conn) == "/unlock?to=%2F2026%2F03%2F01%2Fhidden-text"
     end
 
     test "after the password everything appears", %{conn: conn} do
-      published_post(title: "Hidden text", slug: "hidden-text", protected: true)
+      published_post(
+        title: "Hidden text",
+        slug: "hidden-text",
+        publish_date: ~D[2026-03-01],
+        protected: true
+      )
 
-      conn = post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/hidden-text"})
-      assert redirected_to(conn) == "/hidden-text"
+      conn =
+        post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/2026/03/01/hidden-text"})
+
+      assert redirected_to(conn) == "/2026/03/01/hidden-text"
 
       conn = recycle(conn)
-      assert conn |> get(~p"/hidden-text") |> html_response(200) =~ "Hidden text"
+      assert conn |> get(~p"/2026/03/01/hidden-text") |> html_response(200) =~ "Hidden text"
       assert conn |> get(~p"/") |> html_response(200) =~ "Hidden text"
     end
   end

@@ -49,7 +49,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       # everything is still there after a full reload
       conn
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/edit/texts/#{article.id}")
       |> assert_has("#edTitle[value='Fourteen doors']")
       |> assert_has(".ed-cm", text: "The doors")
     end
