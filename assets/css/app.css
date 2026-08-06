@@ -454,7 +454,12 @@
 .ed-cm .cm-content { padding: 0; caret-color: var(--tt-ink); min-height: 96px; }
 .ed-cm .cm-line { padding: 0; }
 .ed-cm .cm-cursor { border-left: 1.5px solid var(--tt-ink); }
-.ed-cm .cm-placeholder { font-style: italic; color: var(--tt-faint); }
+/* out of the line's flow: a wrapping placeholder would make the empty
+   first line two rows tall, and the cursor grows to the whole line box */
+.ed-cm .cm-placeholder {
+  font-style: italic; color: var(--tt-faint);
+  position: absolute; max-width: 100%; pointer-events: none;
+}
 
 /* what the live preview draws, all of it from the theme's tokens */
 .ed-cm .cm-mdh { font-weight: 600; }
