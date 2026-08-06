@@ -234,6 +234,31 @@ defmodule Texttile.ImportTest do
       assert Repo.get_by(Article, slug: "fine")
     end
 
+    test "a URL that turns into json after the dry run fails only its bundle", %{
+      dir: dir,
+      user: user
+    } do
+      write_bundle(dir, "aaa", "title: A\ngallery: [https://old.example/a.jpg]\n")
+      write_bundle(dir, "bbb", "title: B\n")
+
+      report = Import.validate(dir)
+      assert Enum.all?(report.bundles, &(&1.errors == []))
+
+      # the host now answers the GET with a body Req would decode
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, ~s({"error":"gone"}))
+      end)
+
+      summary = Import.run(report, user)
+      assert [{"aaa", message}] = summary.failed
+      assert message =~ "a.jpg"
+      assert summary.created == 1
+      refute Repo.get_by(Article, slug: "a")
+      assert Repo.get_by(Article, slug: "b")
+    end
+
     test "a download that dies at run time leaves nothing behind", %{dir: dir, user: user} do
       write_bundle(dir, "beach", "title: A\ngallery: [https://old.example/a.jpg]\n")
       report = Import.validate(dir)

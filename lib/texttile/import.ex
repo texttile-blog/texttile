@@ -251,16 +251,23 @@ defmodule Texttile.Import do
     end)
   end
 
+  # A surprise here (a body that is not bytes, a full disk) fails the
+  # one bundle, never the whole run: store_pictures hears {:error} and
+  # rolls the bundle's files back.
   defp store_picture(bundle, source) do
     if Bundle.url?(source) do
       download(source)
     else
       Uploads.put_body_image(Path.join(bundle.dir, source), Path.basename(source))
     end
+  rescue
+    error -> {:error, "#{source}: #{Exception.message(error)}"}
   end
 
   defp download(url) do
-    case Req.request([method: :get, url: url] ++ req_options()) do
+    # decode_body stays off: a body is bytes for the disk, whatever the
+    # content type says, and a JSON answer must not become a map here.
+    case Req.request([method: :get, url: url, decode_body: false] ++ req_options()) do
       {:ok, %Req.Response{status: status, body: body} = response} when status in 200..299 ->
         tmp =
           Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
