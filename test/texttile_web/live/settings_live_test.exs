@@ -16,7 +16,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
   describe "the screen" do
     test "shows every section with the saved values", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/settings")
+      {:ok, view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "Settings"
       assert html =~ "Last saved"
@@ -31,7 +31,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
   describe "instant save" do
     test "a changed title is stored the moment it changes", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/settings")
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
 
       view
       |> form("#site-form", %{"settings" => %{"site_title" => "Two of us"}})
@@ -40,8 +40,25 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Settings.get(:site_title) == "Two of us"
     end
 
+    test "a published page unlocks the fixed front page and saves it", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
+      assert has_element?(view, "#front-page-form input[type=radio][disabled]")
+
+      page = Texttile.ArticlesFixtures.published_page(title: "Welcome")
+
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
+      refute has_element?(view, "#front-page-form input[type=radio][disabled]")
+
+      view
+      |> form("#front-page-form", %{"settings" => %{"front_page" => "page:#{page.id}"}})
+      |> render_change(%{"_target" => ["settings", "front_page"]})
+
+      assert Settings.get(:front_page) == "page:#{page.id}"
+      assert has_element?(view, "#front-page-choice")
+    end
+
     test "the language select saves and an invalid max edge says no", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/settings")
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
 
       view
       |> form("#site-form", %{"settings" => %{"language" => "de"}})
@@ -59,7 +76,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
 
     test "the comments toggle rewrites its own explanation", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/settings")
+      {:ok, view, html} = live(conn, ~p"/desk/settings")
       assert html =~ "confirmation link"
 
       html =
@@ -72,7 +89,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
 
     test "the about text renders as markdown in the preview", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/settings")
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
 
       html =
         view
@@ -84,7 +101,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
 
     test "another admin's change arrives without a reload", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/settings")
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
 
       {:ok, _} = Settings.put(:site_title, "Changed elsewhere")
 
@@ -95,7 +112,7 @@ defmodule TexttileWeb.SettingsLiveTest do
   describe "users" do
     test "lists everybody with you marked", %{conn: conn} do
       other = user_fixture(%{username: "julia"})
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "julia"
       assert html =~ "you"
@@ -104,7 +121,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "names in the configuration without an account are waiting", %{conn: conn} do
       configure_admins(["kb", "julia"])
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "Not here yet"
       assert html =~ "julia"
@@ -113,7 +130,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "with every configured name in use, nobody is waiting", %{conn: conn, user: user} do
       configure_admins([user.username])
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "Every name in ADMIN_USERS has an account"
     end
@@ -124,7 +141,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       other = user_fixture(%{username: "julia"})
       configure_admins([user.username])
 
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "not in ADMIN_USERS"
       assert html =~ "cannot sign in"
@@ -132,7 +149,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
 
     test "the screen offers no way to add somebody", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/settings")
+      {:ok, view, html} = live(conn, ~p"/desk/settings")
 
       refute html =~ "add-user-form"
       refute has_element?(view, "#add-user-form")
@@ -140,7 +157,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "deleting somebody asks first, then they are gone", %{conn: conn} do
       other = user_fixture(%{username: "julia"})
-      {:ok, view, _} = live(conn, ~p"/settings")
+      {:ok, view, _} = live(conn, ~p"/desk/settings")
 
       html = view |> element("#user-#{other.id} button", "Delete") |> render_click()
       assert html =~ "Delete the account of julia?"
@@ -153,14 +170,14 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "your own row cannot be deleted", %{conn: conn, user: user} do
       _other = user_fixture(%{username: "julia"})
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "another admin removes it"
       assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
     end
 
     test "the lone account explains why it cannot go", %{conn: conn, user: user} do
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "The only account left"
       assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
@@ -169,7 +186,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
   describe "logo and favicon" do
     test "an uploaded logo lands below the uploads root and in the settings", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/settings")
+      {:ok, view, html} = live(conn, ~p"/desk/settings")
       assert html =~ "Default: the Texttile mark"
 
       view
@@ -196,7 +213,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the bar and the page title carry the site name", %{conn: conn} do
       {:ok, _} = Settings.put(:site_title, "Two of us")
 
-      conn = get(conn, ~p"/settings")
+      conn = get(conn, ~p"/desk/settings")
       html = html_response(conn, 200)
 
       assert html =~ "Settings · Two of us"
@@ -206,7 +223,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "an uploaded logo replaces the mark in the bar", %{conn: conn} do
       {:ok, _} = Settings.put(:logo, "site/logo-feed.svg")
 
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ ~r/<button[^>]*id="wmBtn"[^>]*>.*<img[^>]*logo-feed\.svg/s
     end
@@ -214,7 +231,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
   describe "the theme" do
     test "the textarea starts from the iris default while nothing is stored", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "--tt-accent"
     end
@@ -222,7 +239,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "a stored theme is what the textarea shows", %{conn: conn} do
       {:ok, _} = Settings.put(:theme_css, ":root { --tt-accent: hotpink; }")
 
-      {:ok, _view, html} = live(conn, ~p"/settings")
+      {:ok, _view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ "hotpink"
     end
@@ -230,7 +247,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
   describe "storage" do
     test "shows both install paths and clears the image cache", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/settings")
+      {:ok, view, html} = live(conn, ~p"/desk/settings")
 
       assert html =~ Uploads.root()
       assert html =~ "Clear image cache"

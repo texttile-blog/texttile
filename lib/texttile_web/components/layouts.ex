@@ -142,16 +142,20 @@ defmodule TexttileWeb.Layouts do
         <button class="row" type="button" phx-click="new_text" data-key="1">
           New text <span class="k">1</span>
         </button>
-        <.link navigate={~p"/"} class={["row", @active == "texts" && "on"]} data-key="2">
+        <.link navigate={~p"/desk"} class={["row", @active == "texts" && "on"]} data-key="2">
           Texts <span class="k">2</span>
         </.link>
         <button class="row" type="button">Comments <span class="k">3</span></button>
         <button class="row" type="button">Newsletter <span class="k">7</span></button>
         <button class="row" type="button">Stats <span class="k">8</span></button>
-        <.link navigate={~p"/settings"} class={["row", @active == "settings" && "on"]} data-key="9">
+        <.link
+          navigate={~p"/desk/settings"}
+          class={["row", @active == "settings" && "on"]}
+          data-key="9"
+        >
           Settings <span class="k">9</span>
         </.link>
-        <button class="row" type="button">View site <span class="k">0</span></button>
+        <a class="row" href={~p"/"} data-key="0">View site <span class="k">0</span></a>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>
         <div id="liveBlock">
@@ -173,7 +177,7 @@ defmodule TexttileWeb.Layouts do
         <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]" id="wmMe">
           {@current_scope && Texttile.Accounts.display_name(@current_scope.user)}
         </p>
-        <.link navigate={~p"/profile"} class={["row", @active == "profile" && "on"]}>
+        <.link navigate={~p"/desk/profile"} class={["row", @active == "profile" && "on"]}>
           Your profile
         </.link>
         <.link href={~p"/logout"} method="delete" class="row">Sign out</.link>

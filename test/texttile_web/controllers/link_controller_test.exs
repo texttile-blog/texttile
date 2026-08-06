@@ -37,7 +37,7 @@ defmodule TexttileWeb.LinkControllerTest do
       conn =
         post(conn, ~p"/link/#{token}", %{"user" => %{"password" => "a long enough password"}})
 
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/desk"
       assert get_session(conn, :user_token)
       assert {:ok, _} = Accounts.authenticate_user("julia", "a long enough password")
     end

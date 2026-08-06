@@ -1,0 +1,67 @@
+<.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
+<main>
+  <article id="text">
+    <div class="wrap narrow pt-[46px]">
+      <h1 class="f-h1">{Articles.display_title(@article)}</h1>
+      <p :if={@article.type == "post"} id="meta" class="f-note mt-3">
+        <span class="num">{format_date(@article.publish_date)}</span>
+        <span :if={Articles.tag_list(@article) != []}>·</span>
+        <span :for={tag <- Articles.tag_list(@article)}>
+          <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>
+        </span>
+      </p>
+
+      <div class="prose" id="body">{body_html(@article)}</div>
+    </div>
+
+    <%!-- the gallery: one per text, at the end of it, full width.
+         Without the script every tile is a plain link to the picture. --%>
+    <figure :if={@gallery != []} class="wrap mt-[38px]" id="gallery">
+      <div class="gal" id="gal">
+        <a
+          :for={image <- @gallery}
+          id={"tile-#{image.id}"}
+          href={"/renditions/max/#{image.path}"}
+          data-caption={image.filename}
+        >
+          <img src={"/renditions/640/#{image.path}"} alt={image.filename} loading="lazy" />
+        </a>
+      </div>
+    </figure>
+  </article>
+
+  <section
+    :if={assigns[:about_html]}
+    class="wrap narrow mt-[54px] pb-[var(--tt-sec)]"
+    id="about"
+    aria-label="About"
+  >
+    <h2 class="f-sec-h">About</h2>
+    <div class="f-body about-md mt-4">{Phoenix.HTML.raw(@about_html)}</div>
+  </section>
+</main>
+<.site_foot current_scope={@current_scope} />
+
+<%!-- the lightbox: a count, a way out, an arrow on each side, the
+     caption at the foot. public.js fills it from the tiles. --%>
+<div
+  :if={@gallery != []}
+  class="lb"
+  id="lb"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-label="Photograph, full size"
+>
+  <div class="lb-bar">
+    <span class="num" id="lbCount"></span>
+    <span class="sp"></span>
+    <button class="lb-btn" type="button" id="lbClose">Close</button>
+  </div>
+  <div class="lb-stage" id="lbStage">
+    <button class="lb-arrow" type="button" id="lbPrev" aria-label="Previous photograph">‹</button>
+    <div class="lb-img" id="lbArt"></div>
+    <button class="lb-arrow" type="button" id="lbNext" aria-label="Next photograph">›</button>
+  </div>
+  <p class="lb-cap" id="lbCap"></p>
+</div>

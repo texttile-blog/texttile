@@ -349,7 +349,7 @@ const impl = {
     const resolveImage = url => {
       if (!/^(https?:|data:|blob:|\/)/.test(url)) return null
       const scaled = url.startsWith("/uploads/")
-        ? "/desk/renditions/320/" + url.slice("/uploads/".length)
+        ? "/renditions/320/" + url.slice("/uploads/".length)
         : url
       return `url('${scaled.replace(/'/g, "%27")}')`
     }

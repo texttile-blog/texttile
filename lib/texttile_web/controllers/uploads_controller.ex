@@ -20,11 +20,12 @@ defmodule TexttileWeb.UploadsController do
     serve(conn, safe_relative(parts))
   end
 
-  # The display sizes the desk asks for. A fixed list, so nobody can
-  # fill the disk by walking through edge values. "max" is the reader
-  # size of the moment (the Images setting); the gallery lightbox
-  # shows it.
-  @edges ~w(320 max)
+  # The display sizes the site asks for. A fixed list, so nobody can
+  # fill the disk by walking through edge values: 320 for the small
+  # tiles, 640 for the reader's gallery squares, and "max" - the
+  # reader size of the moment (the Images setting) - for the
+  # lightboxes and the pictures in the text.
+  @edges ~w(320 640 max)
 
   @immutable "public, max-age=31536000, immutable"
 

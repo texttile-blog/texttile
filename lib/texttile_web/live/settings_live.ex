@@ -85,6 +85,23 @@ defmodule TexttileWeb.SettingsLive do
     end
   end
 
+  # The front-page select speaks under its own name (see the template);
+  # it writes the same setting.
+  def handle_event(
+        "save_setting",
+        %{"_target" => ["settings", "front_page_choice"]} = params,
+        socket
+      ) do
+    handle_event(
+      "save_setting",
+      %{
+        "_target" => ["settings", "front_page"],
+        "settings" => %{"front_page" => get_in(params, ["settings", "front_page_choice"])}
+      },
+      socket
+    )
+  end
+
   def handle_event("save_setting", _params, socket), do: {:noreply, socket}
 
   ## Logo and favicon
@@ -232,6 +249,21 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:settings, settings)
     |> assign(:settings_form, form)
     |> assign(:about_html, Markdown.to_html(settings.about_markdown))
+    |> assign(:pages, Texttile.Articles.list_pages())
+  end
+
+  # The page the fixed-front-page radio stands for: the chosen one
+  # while it exists, otherwise the first published page.
+  defp fixed_front_page(settings, pages) do
+    chosen =
+      with "page:" <> id <- settings.front_page,
+           {id, ""} <- Integer.parse(id) do
+        Enum.find(pages, &(&1.id == id))
+      else
+        _ -> nil
+      end
+
+    chosen || List.first(pages)
   end
 
   # The textarea always shows the theme the site wears: the stored one,
@@ -521,23 +553,51 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <label class="flex gap-[10px] items-start py-3 border-b border-hair opacity-60">
+          <label class={[
+            "flex gap-[10px] items-start py-3 border-b border-hair",
+            @pages == [] && "opacity-60"
+          ]}>
             <input
               type="radio"
               name="settings[front_page]"
-              disabled
+              value={@pages != [] && "page:#{fixed_front_page(@settings, @pages).id}"}
+              checked={String.starts_with?(@settings.front_page, "page:")}
+              disabled={@pages == []}
               class="w-auto flex-none mt-[3px]"
+              style="accent-color:var(--tt-accent)"
             />
             <span>
               <span class="text-[14.5px] font-semibold">A fixed page</span>
               <br />
               <span class="text-[11.5px] text-faint">
-                One of your pages becomes the front door; the text list moves to
-                /texts. There are no pages yet: this choice unlocks with the
-                first one you write.
+                <%= if @pages == [] do %>
+                  One of your pages becomes the front door; the text list moves to
+                  /texts. There are no pages yet: this choice unlocks with the
+                  first one you write.
+                <% else %>
+                  This page becomes the front door; the text list moves to /texts.
+                <% end %>
               </span>
             </span>
           </label>
+          <div
+            :if={@pages != [] && String.starts_with?(@settings.front_page, "page:")}
+            class="py-3 max-w-[280px]"
+            id="front-page-choice"
+          >
+            <%!-- its own name: with the radios' name, its value would
+                 shadow a click back to "Latest texts" --%>
+            <label class="lab block mb-[5px]" for="setting-front_page">The page</label>
+            <select id="setting-front_page" name="settings[front_page_choice]">
+              <option
+                :for={page <- @pages}
+                value={"page:#{page.id}"}
+                selected={@settings.front_page == "page:#{page.id}"}
+              >
+                {Texttile.Articles.display_title(page)}
+              </option>
+            </select>
+          </div>
         </.form>
 
         <.section>Theme</.section>
@@ -705,7 +765,7 @@ defmodule TexttileWeb.SettingsLive do
         </div>
         <p class="note mt-3">
           Your own displayed name, address and password are on <.link
-            navigate={~p"/profile"}
+            navigate={~p"/desk/profile"}
             class="link"
           >your profile</.link>;
           nobody else's password is anywhere in this app.

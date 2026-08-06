@@ -106,6 +106,20 @@ defmodule Texttile.Articles do
     Repo.one(from a in Article, where: a.slug == ^slug and a.status == "published")
   end
 
+  @doc """
+  The tags of a text as a clean list: split on commas, trimmed,
+  lowercased, each tag once. Every tag is an archive page.
+  """
+  def tag_list(%{tags: tags}) do
+    tags
+    |> to_string()
+    |> String.downcase()
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+  end
+
   defp published_query(type, opts) do
     search = opts[:search] |> to_string() |> String.trim()
 

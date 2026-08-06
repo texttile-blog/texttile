@@ -90,7 +90,7 @@ defmodule TexttileWeb.TextsLive do
           class="grid items-start gap-y-[22px] gap-x-3 md:gap-y-7 md:gap-x-5 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"
         >
-          <.link :for={article <- @articles} class="card" navigate={~p"/texts/#{article}"}>
+          <.link :for={article <- @articles} class="card" navigate={~p"/desk/texts/#{article}"}>
             <%= if cover = @covers[article.id] do %>
               <span class="cimg" style={cover_bg(cover)}></span>
             <% else %>
@@ -122,7 +122,7 @@ defmodule TexttileWeb.TextsLive do
   # A preview can come from a body image, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp cover_bg(path) do
-    "background-image:url('/desk/renditions/320/#{String.replace(path, "'", "%27")}')"
+    "background-image:url('/renditions/320/#{String.replace(path, "'", "%27")}')"
   end
 
   defp grid_count(articles, total) do
