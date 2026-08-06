@@ -68,6 +68,20 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* ==================================================================
+   THE FRONT TOKENS · the public site wears the desk's clothes, plus
+   the few rooms a desk has no use for. Every value is derived from
+   the theme tokens, so a stored theme.css can override any of them
+   (it loads after this sheet) and the front end follows.
+   ================================================================== */
+:root {
+  /* measure and rhythm */
+  --tt-measure: 62ch;                    /* the desk's own reading width */
+  --tt-gut:     clamp(14px, 4vw, 26px);
+  --tt-headh:   54px;                    /* the reader header of round-13 */
+  --tt-sec:     clamp(46px, 7vw, 76px);
+}
+
+/* ==================================================================
    COMPONENTS · the atoms that repeat dozens of times. Radii come from
    the theme, so one file can square every corner in the app.
    ================================================================== */
@@ -572,6 +586,188 @@
   .pop .who { display: flex; align-items: center; gap: 7px; padding: 6px 10px 3px; font-size: 12.5px; font-weight: 600; }
   .pop .row.sub { padding-left: 27px; font-size: 13px; }
   .pop .go { color: var(--tt-faint); font-size: 11.5px; }
+
+  /* ================================================================
+     THE PUBLIC SITE · ported from the marketing-round-2 example blog
+     (front.css): the reader header, the cards, the reader gallery and
+     its lightbox, the footer on the bottom edge. Rules that would
+     restyle the desk (the quiet fields, the page column) are scoped
+     to body.site; the rest carries names the desk does not use.
+     ================================================================ */
+
+  /* one column, and a footer that sits on the bottom edge of the
+     window even when the page above it is short */
+  body.site { display: flex; flex-direction: column; min-height: 100dvh; }
+  body.site > footer { margin-top: auto; }
+
+  /* the fields are .quiet-fields, worn on the body (site_root.html.heex):
+     the same underline the desk's side column writes, not a second copy */
+
+  /* the header: the reader header of round-13, with the site menu the
+     app builds out of its pages */
+  .site-head {
+    position: sticky; top: 0; z-index: 40;
+    display: flex; align-items: center; gap: 14px;
+    height: var(--tt-headh); padding: 0 var(--tt-gut);
+    background: var(--tt-bar); border-bottom: 1px solid var(--tt-rule);
+    backdrop-filter: blur(8px) saturate(1.5); -webkit-backdrop-filter: blur(8px) saturate(1.5);
+  }
+  .site-mark {
+    display: inline-flex; align-items: center; gap: 9px; flex: none;
+    font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
+    letter-spacing: -.01em; color: var(--tt-ink); text-decoration: none;
+  }
+  .site-mark svg { color: var(--tt-ink); }
+  /* the site description, as it stands in Settings: the whole
+     positioning line, and it costs no chrome */
+  .site-desc {
+    color: var(--tt-dim); font-size: 12.5px; white-space: nowrap;
+    padding-left: 14px; border-left: 1px solid var(--tt-rule);
+  }
+  .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .site-nav a {
+    font-size: 13px; color: var(--tt-dim); text-decoration: none; white-space: nowrap;
+    padding: 5px 8px; border-radius: var(--tt-radius); transition: color .15s ease, background-color .15s ease;
+  }
+  .site-nav a:hover { color: var(--tt-ink); background: var(--tt-field); }
+  .site-nav a[aria-current] { color: var(--tt-ink); font-weight: 600; }
+  @media (max-width: 900px) { .site-desc { display: none; } }
+
+  /* the foot of every page: one row, dim text, links that answer the
+     pointer instead of underlining themselves permanently */
+  .f-foot { font-size: 13px; color: var(--tt-dim); }
+  .f-foot a { color: var(--tt-dim); text-decoration: none; }
+  .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* one wrapper, two widths, both the desk's */
+  .wrap { width: 100%; max-width: 1060px; margin: 0 auto; padding: 0 var(--tt-gut); }
+  .wrap.narrow { max-width: 660px; }
+
+  /* type roles */
+  .f-h1 {
+    font-family: var(--tt-font-serif); font-weight: 600;
+    font-size: clamp(33px, 6.2vw, 47px); line-height: 1.06; letter-spacing: -.025em;
+  }
+  .f-sec-h {
+    font-family: var(--tt-font-serif); font-size: 21px; font-weight: 600;
+    line-height: 1.2; letter-spacing: -.015em; color: var(--tt-ink);
+  }
+  .f-lead { font-size: 15.5px; line-height: 1.62; color: var(--tt-dim); max-width: 48ch; }
+  .f-body { font-size: 14.5px; line-height: 1.62; max-width: var(--tt-measure); }
+  /* the quiet role sits on dim, not faint: it carries dates and the
+     notes under the forms, which have to be comfortable to read */
+  .f-note { font-size: 12.5px; line-height: 1.55; color: var(--tt-dim); }
+
+  /* the list of texts: the Texts grid of the desk, read by a reader.
+     One preview image, a title clamped to two lines, the date, a lead
+     line and the tags. Same proportions, same hover. */
+  .cards {
+    display: grid; gap: 30px 20px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    align-items: start;
+  }
+  @media (max-width: 560px) { .cards { grid-template-columns: 1fr; gap: 34px; } }
+  /* the card itself is the desk's .card (same proportions, same
+     two-line title, same hover); the reader only adds the link reset
+     and the img child inside the square, so the two grids never drift */
+  body.site .card { text-decoration: none; color: inherit; }
+  body.site .card .cimg { overflow: hidden; }
+  body.site .card .cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 3px; }
+  .card-wrap .clead { font-size: 13.5px; line-height: 1.5; color: var(--tt-dim); margin-top: 6px; }
+  .card-wrap .ctags { margin-top: 7px; }
+  .ctag {
+    display: inline-block; margin-right: 6px; font-size: 12.5px;
+    color: var(--tt-accent); text-decoration: none;
+  }
+  .ctag:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* the search over the list: the field keeps its own rule, and the
+     count stands beside it */
+  .searchrow { display: flex; align-items: baseline; gap: 16px; margin-bottom: 30px; }
+  .searchrow form { display: contents; }
+  .searchrow input { flex: 1; min-width: 0; }
+  .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+  .cnt { color: var(--tt-dim); font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 400; flex: none; }
+
+  /* the About block: the body role, with room between its paragraphs */
+  .about-md p { margin-bottom: 12px; }
+  .about-md p:last-child { margin-bottom: 0; }
+  .about-md a { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft); }
+
+  /* reader prose: serif, one narrow column's worth of comfort */
+  .prose { font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.72; margin-top: 26px; }
+  .prose p { margin-bottom: 19px; }
+  .prose h1, .prose h2, .prose h3 {
+    font-family: var(--tt-font-serif); font-weight: 600; letter-spacing: -.01em;
+    margin: 32px 0 8px;
+  }
+  .prose h1 { font-size: 22px; }
+  .prose h2 { font-size: 20px; }
+  .prose h3 { font-size: 18px; }
+  /* the preflight strips list markers; the reader wants them back */
+  .prose ul, .prose ol { margin-bottom: 19px; padding-left: 24px; }
+  .prose ul { list-style: disc; }
+  .prose ol { list-style: decimal; }
+  .prose li { margin-bottom: 5px; }
+  .prose a { color: var(--tt-accent); text-decoration-line: underline; text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft); }
+  .prose blockquote { margin: 0 0 19px; padding-left: 14px; border-left: 2px solid var(--tt-rule); color: var(--tt-dim); }
+  .prose code { font-family: var(--tt-font-mono); font-size: .88em; background: var(--tt-field); padding: 1px 4px; border-radius: 3px; }
+  .prose pre { margin-bottom: 19px; padding: 12px 14px; background: var(--tt-field); border-radius: var(--tt-radius); overflow-x: auto; }
+  .prose pre code { background: none; padding: 0; font-size: 12.5px; }
+  .prose hr { border: 0; border-top: 1px solid var(--tt-rule); margin: 26px 0; }
+  /* a picture in the text: any format, capped in height so the words
+     around it stay in reach */
+  .prose img { max-width: 100%; width: auto; height: auto; max-height: 72vh; border-radius: var(--tt-radius-img, 3px); background: var(--tt-field); }
+
+  /* the reader gallery: the tile grid, and the lightbox behind it */
+  .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  @media (min-width: 900px) { .gal { grid-template-columns: repeat(4, 1fr); } }
+  .gal a {
+    display: block; width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden;
+    border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .gal a img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gal a:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
+
+  /* the lightbox of round-13, in the shape the reader gets it: a
+     count, a way out, an arrow on each side, and the same swipe on
+     touch. The script fills it; without the script every tile is a
+     plain link to the full picture. */
+  .lb {
+    position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column;
+    background: var(--tt-lightbox, rgba(24, 21, 17, .96));
+  }
+  .lb-bar {
+    flex: none; display: flex; align-items: center; gap: 12px;
+    height: 52px; padding: 0 14px; color: rgb(255 255 255 / .8); font-size: 12.5px;
+  }
+  .lb-btn {
+    color: rgb(255 255 255 / .85); font-size: 13px; padding: 6px 12px;
+    border-radius: var(--tt-radius); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .35);
+  }
+  .lb-btn:hover { color: #fff; background: rgb(255 255 255 / .1); }
+  .lb-stage {
+    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+    gap: 4px; padding: 0 6px; touch-action: pan-y pinch-zoom;
+  }
+  .lb-arrow {
+    flex: none; color: rgb(255 255 255 / .7); font-size: 30px; line-height: 1;
+    padding: 24px 10px; text-align: center;
+  }
+  .lb-arrow:hover { color: #fff; }
+  .lb-img { flex: 1; min-width: 0; height: 100%; display: grid; place-items: center; }
+  .lb-img img {
+    width: auto; height: auto; max-width: 100%; max-height: 100%;
+    border-radius: var(--tt-radius-img, 3px);
+  }
+  .lb-cap {
+    flex: none; padding: 12px 16px 22px; text-align: center;
+    color: rgb(255 255 255 / .7); font-size: 12.5px;
+  }
+  /* while it is open the page underneath does not move */
+  html.lb-open, html.lb-open body { overflow: hidden; }
 }
 
 /* ==================================================================

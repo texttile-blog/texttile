@@ -47,7 +47,7 @@ defmodule TexttileWeb.UploadsControllerTest do
     test "answers with a scaled reading of a large original", %{conn: conn} do
       store_image("images/pier-abcd.png", 1600, 800)
 
-      conn = get(conn, "/desk/renditions/320/images/pier-abcd.png")
+      conn = get(conn, "/renditions/320/images/pier-abcd.png")
       assert response(conn, 200)
       assert response_content_type(conn, :png) =~ "image/png"
 
@@ -60,7 +60,7 @@ defmodule TexttileWeb.UploadsControllerTest do
     test "the max edge answers the reader size of the moment", %{conn: conn} do
       store_image("images/pier-full.png", 4000, 2000)
 
-      conn = get(conn, "/desk/renditions/max/images/pier-full.png")
+      conn = get(conn, "/renditions/max/images/pier-full.png")
 
       assert response(conn, 200)
       assert response_content_type(conn, :png) =~ "image/png"
@@ -72,12 +72,13 @@ defmodule TexttileWeb.UploadsControllerTest do
 
     test "an edge outside the fixed list is a 404", %{conn: conn} do
       store_image("images/pier-efgh.png", 1600, 800)
-      assert conn |> get("/desk/renditions/9999/images/pier-efgh.png") |> response(404)
+      assert conn |> get("/renditions/9999/images/pier-efgh.png") |> response(404)
     end
 
-    test "signed out, renditions redirect to sign-in" do
-      conn = get(build_conn(), "/desk/renditions/320/images/pier-abcd.png")
-      assert redirected_to(conn) == ~p"/login"
+    test "signed out, renditions answer: the public site shows them" do
+      store_image("images/pier-ijkl.png", 1600, 800)
+      conn = get(build_conn(), "/renditions/320/images/pier-ijkl.png")
+      assert response(conn, 200)
     end
   end
 end

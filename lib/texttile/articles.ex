@@ -77,6 +77,73 @@ defmodule Texttile.Articles do
     |> Repo.all()
   end
 
+  ## The public reading
+
+  @doc """
+  The published posts for the readers, newest publish date first.
+  `search:` looks through the title, the tags and the full text;
+  `include_protected: false` is the locked reader, who does not see
+  protected texts anywhere.
+  """
+  def list_published(opts \\ []) do
+    published_query("post", opts)
+    |> order_by([a], desc: a.publish_date, desc: a.id)
+    |> Repo.all()
+    |> search_filter(opts[:search] |> to_string() |> String.trim())
+  end
+
+  # The search runs in Elixir, not in SQL: SQLite's lower() and LIKE
+  # only fold ASCII, so "über" would never find "Über" there, and a
+  # reader's % or _ would act as wildcards. A published blog is small;
+  # every word of the term must appear somewhere in the text.
+  defp search_filter(articles, ""), do: articles
+
+  defp search_filter(articles, search) do
+    words = search |> String.downcase() |> String.split()
+
+    Enum.filter(articles, fn article ->
+      hay = String.downcase(article.title <> " " <> article.tags <> " " <> article.body)
+      Enum.all?(words, &String.contains?(hay, &1))
+    end)
+  end
+
+  @doc """
+  The published pages for the site menu, oldest publish date first.
+  Takes the same `include_protected:` as `list_published/1`.
+  """
+  def list_pages(opts \\ []) do
+    published_query("page", opts)
+    |> order_by([a], asc: a.publish_date, asc: a.id)
+    |> Repo.all()
+  end
+
+  @doc "The published text behind an address, post or page, or nil."
+  def get_published_by_slug(slug) when is_binary(slug) do
+    Repo.one(from a in Article, where: a.slug == ^slug and a.status == "published")
+  end
+
+  @doc """
+  The tags of a text as a clean list: split on commas, trimmed,
+  lowercased, each tag once. Every tag is an archive page.
+  """
+  def tag_list(%{tags: tags}) do
+    tags
+    |> to_string()
+    |> String.downcase()
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+  end
+
+  defp published_query(type, opts) do
+    Article
+    |> where([a], a.status == "published" and a.type == ^type)
+    |> then(fn q ->
+      if Keyword.get(opts, :include_protected, true), do: q, else: where(q, [a], not a.protected)
+    end)
+  end
+
   ## Writing
 
   @doc "A new, empty draft, and the first line of its Log."
@@ -386,12 +453,14 @@ defmodule Texttile.Articles do
         slug -> slug
       end
 
+    # The site's own addresses count as taken, like another text's slug.
     taken =
       Article
       |> where([a], like(a.slug, ^"#{base}%") and a.id != ^article.id)
       |> select([a], a.slug)
       |> Repo.all()
       |> MapSet.new()
+      |> MapSet.union(MapSet.new(Article.reserved_slugs()))
 
     if base in taken do
       Enum.find(Stream.map(2..1000, &"#{base}-#{&1}"), &(&1 not in taken))

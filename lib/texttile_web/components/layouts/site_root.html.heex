@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <.live_title default={site_title()} suffix={" · " <> site_title()} phx-no-format>{assigns[:page_title]}</.live_title>
+    <meta name="description" content={Texttile.Settings.get(:site_description)} />
+    <%!-- what a shared link shows: the title, and the text's preview image --%>
+    <meta :if={assigns[:page_title]} property="og:title" content={assigns[:page_title]} />
+    <meta :if={assigns[:og_image]} property="og:image" content={assigns[:og_image]} />
+    <.favicon_link />
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <%!-- the stored theme, or the iris default: the whole site wears it --%>
+    <link rel="stylesheet" href={~p"/theme.css"} />
+    <%!-- a few lines for the search jump and the lightbox keys; every
+         page works fully without them --%>
+    <script phx-track-static defer src={~p"/assets/js/public.js"}>
+    </script>
+  </head>
+  <body class="site quiet-fields">
+    {@inner_content}
+  </body>
+</html>

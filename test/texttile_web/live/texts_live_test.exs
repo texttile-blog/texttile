@@ -8,7 +8,7 @@ defmodule TexttileWeb.TextsLiveTest do
   setup :register_and_log_in_user
 
   test "shows the desk shell with the wordmark menu", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/")
+    {:ok, view, html} = live(conn, ~p"/desk")
 
     assert html =~ "Texts"
     assert has_element?(view, "#topbar")
@@ -30,7 +30,7 @@ defmodule TexttileWeb.TextsLiveTest do
   end
 
   test "names the signed-in admin in the menu", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/desk")
     assert has_element?(view, "#wmMe", user.username)
   end
 
@@ -39,14 +39,14 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, article} = Articles.create_draft(user)
       {:ok, _} = Articles.update_text(article, %{title: "Fourteen doors", body: "wood"})
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/desk")
       assert has_element?(view, "#cards .card", "Fourteen doors")
       assert has_element?(view, "#gridCount", "1 text")
     end
 
     test "a card wears the oldest gallery image, live", %{conn: conn, user: user} do
       {:ok, article} = Articles.create_draft(user)
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/desk")
 
       assert has_element?(view, "#cards .cimg.empty")
 
@@ -56,12 +56,12 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, image} = Texttile.Gallery.add_image(article, path, "cover.jpg")
 
       refute has_element?(view, "#cards .cimg.empty")
-      assert render(view) =~ "/desk/renditions/320/#{image.path}"
+      assert render(view) =~ "/renditions/320/#{image.path}"
     end
 
     test "an untitled draft reads Untitled", %{conn: conn, user: user} do
       {:ok, _} = Articles.create_draft(user)
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/desk")
       assert has_element?(view, "#cards .card", "Untitled")
     end
 
@@ -72,7 +72,7 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, live_article} = Articles.update_text(live_article, %{title: "Live one", body: ""})
       {:ok, _} = Articles.publish(live_article, user)
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/desk")
 
       view |> element("[data-f=published]") |> render_click()
       refute has_element?(view, "#cards .card", "Draft one")
@@ -89,7 +89,7 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, other} = Articles.create_draft(user)
       {:ok, _} = Articles.update_text(other, %{title: "Trains", body: "slow ones"})
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/desk")
       view |> element("#grid-search") |> render_change(%{q: "wooden"})
       assert has_element?(view, "#cards .card", "Doors")
       refute has_element?(view, "#cards .card", "Trains")
@@ -98,13 +98,13 @@ defmodule TexttileWeb.TextsLiveTest do
 
   describe "New text" do
     test "creates a draft and opens the editor", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/desk")
 
       view |> element("#new-text") |> render_click()
 
       assert [article] = Articles.list_articles()
       assert article.status == "draft"
-      assert_redirect(view, "/texts/#{article.id}")
+      assert_redirect(view, "/desk/texts/#{article.id}")
     end
   end
 end

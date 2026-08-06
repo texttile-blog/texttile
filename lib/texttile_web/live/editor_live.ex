@@ -277,15 +277,15 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
-      when field in ~w(type tags slug allow_comments notify_on_publish) do
+      when field in ~w(type tags slug allow_comments notify_on_publish protected) do
     %{article: article} = socket.assigns
 
     case Articles.update_settings(article, Map.take(params, [field])) do
       {:ok, article} ->
         {:noreply, socket |> assign(:article, article) |> mark_saved()}
 
-      {:error, _changeset} ->
-        {:noreply, mark_saved(socket, "That address is taken by another text")}
+      {:error, changeset} ->
+        {:noreply, mark_saved(socket, slug_error(changeset))}
     end
   end
 
@@ -342,7 +342,7 @@ defmodule TexttileWeb.EditorLive do
        :info,
        ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
      )
-     |> push_navigate(to: ~p"/")}
+     |> push_navigate(to: ~p"/desk")}
   end
 
   def handle_event("cancel_dialog", _params, socket) do
@@ -661,7 +661,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   # a thumbnail loads the scaled reading, never the full original
-  defp thumb_url("/uploads/" <> relative), do: "/desk/renditions/320/" <> relative
+  defp thumb_url("/uploads/" <> relative), do: "/renditions/320/" <> relative
   defp thumb_url(url), do: String.replace(url, "'", "%27")
 
   defp tile_count(gallery) do
@@ -682,7 +682,7 @@ defmodule TexttileWeb.EditorLive do
   # A candidate can come from the body, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp tile_bg(path) do
-    "background-image:url('/desk/renditions/320/#{String.replace(path, "'", "%27")}')"
+    "background-image:url('/renditions/320/#{String.replace(path, "'", "%27")}')"
   end
 
   ## PubSub and lock messages
@@ -720,7 +720,7 @@ defmodule TexttileWeb.EditorLive do
       {:noreply,
        socket
        |> put_flash(:info, "The text was deleted while you had it open.")
-       |> push_navigate(to: ~p"/")}
+       |> push_navigate(to: ~p"/desk")}
     else
       {:noreply, socket}
     end
@@ -878,6 +878,14 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:holder, unless(holds, do: holder))
     |> push_event("set_readonly", %{readOnly: !holds})
     |> announce_activity()
+  end
+
+  # The two ways an address can be refused, in the words of the note.
+  defp slug_error(changeset) do
+    case changeset.errors[:slug] do
+      {"is an address the site itself uses", _} -> "That address belongs to the site itself"
+      _ -> "That address is taken by another text"
+    end
   end
 
   ## Saved state
@@ -1479,10 +1487,10 @@ defmodule TexttileWeb.EditorLive do
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
                   data-date={Calendar.strftime(image.gallery_date, "%Y-%m-%dT%H:%M")}
-                  data-full={"/desk/renditions/max/" <> image.path}
+                  data-full={"/renditions/max/" <> image.path}
                   data-original={"/uploads/" <> image.path}
                   title={"#{image.filename} · #{Calendar.strftime(image.gallery_date, "%Y-%m-%d")}"}
-                  style={"background-image:url('/desk/renditions/320/#{image.path}')"}
+                  style={"background-image:url('/renditions/320/#{image.path}')"}
                   role="button"
                   tabindex="0"
                   aria-label={"Image #{index}, #{image.filename}, grab to sort, tap to see it big"}
@@ -1650,6 +1658,19 @@ defmodule TexttileWeb.EditorLive do
                     value="true"
                     checked={@article.allow_comments}
                   /> <span>Allow comments</span>
+                </label>
+                <label class="opt">
+                  <input type="hidden" name="protected" value="false" />
+                  <input
+                    type="checkbox"
+                    id="optProtected"
+                    name="protected"
+                    value="true"
+                    checked={@article.protected}
+                  />
+                  <span>
+                    Ask for the blog password first<span class="note">Readers need the site password; search engines see nothing. The password lives in Settings.</span>
+                  </span>
                 </label>
                 <span id="notifyOpt">
                   <%= if @article.type == "page" do %>

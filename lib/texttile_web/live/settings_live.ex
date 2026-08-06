@@ -85,6 +85,23 @@ defmodule TexttileWeb.SettingsLive do
     end
   end
 
+  # The front-page select speaks under its own name (see the template);
+  # it writes the same setting.
+  def handle_event(
+        "save_setting",
+        %{"_target" => ["settings", "front_page_choice"]} = params,
+        socket
+      ) do
+    handle_event(
+      "save_setting",
+      %{
+        "_target" => ["settings", "front_page"],
+        "settings" => %{"front_page" => get_in(params, ["settings", "front_page_choice"])}
+      },
+      socket
+    )
+  end
+
   def handle_event("save_setting", _params, socket), do: {:noreply, socket}
 
   ## Logo and favicon
@@ -232,6 +249,25 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:settings, settings)
     |> assign(:settings_form, form)
     |> assign(:about_html, Markdown.to_html(settings.about_markdown))
+    |> assign(:pages, Texttile.Articles.list_pages())
+  end
+
+  # The stored choice, only while it still names a published page. A
+  # page that disappeared makes the site serve the list again, and the
+  # screen says the same instead of claiming another page.
+  defp resolved_front_page(settings, pages) do
+    with "page:" <> id <- settings.front_page,
+         {id, ""} <- Integer.parse(id) do
+      Enum.find(pages, &(&1.id == id))
+    else
+      _ -> nil
+    end
+  end
+
+  # The page the fixed-front-page radio stands for when clicked: the
+  # resolved choice, otherwise the first published page.
+  defp fixed_front_page(settings, pages) do
+    resolved_front_page(settings, pages) || List.first(pages)
   end
 
   # The textarea always shows the theme the site wears: the stored one,
@@ -275,10 +311,20 @@ defmodule TexttileWeb.SettingsLive do
   defp saved_note(:comments_require_confirmation, false),
     do: "Comments appear at once · no confirmation asked"
 
-  defp saved_note(:site_visibility, "protected"),
-    do: "The blog waits behind the password now"
+  # The gate only locks with a password in it, so the note tells the
+  # truth for both states instead of announcing a protection that is
+  # not there yet.
+  defp saved_note(:site_visibility, "protected") do
+    if Settings.get(:site_password) == "" do
+      "Protected once the blog password below is set"
+    else
+      "The blog waits behind the password now"
+    end
+  end
 
   defp saved_note(:site_visibility, "public"), do: "The blog is open to everyone"
+
+  defp saved_note(:site_password, ""), do: "Without a password nothing is protected"
 
   defp saved_note(_key, _value), do: nil
 
@@ -509,7 +555,7 @@ defmodule TexttileWeb.SettingsLive do
               type="radio"
               name="settings[front_page]"
               value="latest"
-              checked={@settings.front_page == "latest"}
+              checked={resolved_front_page(@settings, @pages) == nil}
               class="w-auto flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
             />
@@ -521,23 +567,51 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <label class="flex gap-[10px] items-start py-3 border-b border-hair opacity-60">
+          <label class={[
+            "flex gap-[10px] items-start py-3 border-b border-hair",
+            @pages == [] && "opacity-60"
+          ]}>
             <input
               type="radio"
               name="settings[front_page]"
-              disabled
+              value={@pages != [] && "page:#{fixed_front_page(@settings, @pages).id}"}
+              checked={resolved_front_page(@settings, @pages) != nil}
+              disabled={@pages == []}
               class="w-auto flex-none mt-[3px]"
+              style="accent-color:var(--tt-accent)"
             />
             <span>
               <span class="text-[14.5px] font-semibold">A fixed page</span>
               <br />
               <span class="text-[11.5px] text-faint">
-                One of your pages becomes the front door; the text list moves to
-                /texts. There are no pages yet: this choice unlocks with the
-                first one you write.
+                <%= if @pages == [] do %>
+                  One of your pages becomes the front door; the text list moves to
+                  /texts. There are no pages yet: this choice unlocks with the
+                  first one you write.
+                <% else %>
+                  This page becomes the front door; the text list moves to /texts.
+                <% end %>
               </span>
             </span>
           </label>
+          <div
+            :if={resolved_front_page(@settings, @pages) != nil}
+            class="py-3 max-w-[280px]"
+            id="front-page-choice"
+          >
+            <%!-- its own name: with the radios' name, its value would
+                 shadow a click back to "Latest texts" --%>
+            <label class="lab block mb-[5px]" for="setting-front_page">The page</label>
+            <select id="setting-front_page" name="settings[front_page_choice]">
+              <option
+                :for={page <- @pages}
+                value={"page:#{page.id}"}
+                selected={@settings.front_page == "page:#{page.id}"}
+              >
+                {Texttile.Articles.display_title(page)}
+              </option>
+            </select>
+          </div>
         </.form>
 
         <.section>Theme</.section>
@@ -605,7 +679,9 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <div :if={@settings.site_visibility == "protected"} class="py-3 max-w-[280px]" id="pwRow">
+          <%!-- always on screen: a public blog needs the password too,
+               for the texts that ask for it one by one --%>
+          <div class="py-3 max-w-[280px]" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
             <input
               type="text"
@@ -617,7 +693,9 @@ defmodule TexttileWeb.SettingsLive do
             />
             <div class="hint">
               A shared access word, not a login: it goes into the notification
-              mails, and you pass it on. It is stored as it is written.
+              mails, and you pass it on. It is stored as it is written. On a
+              public blog it guards the texts that ask for it in their own
+              settings; without a password nothing is protected.
             </div>
           </div>
         </.form>
@@ -705,7 +783,7 @@ defmodule TexttileWeb.SettingsLive do
         </div>
         <p class="note mt-3">
           Your own displayed name, address and password are on <.link
-            navigate={~p"/profile"}
+            navigate={~p"/desk/profile"}
             class="link"
           >your profile</.link>;
           nobody else's password is anywhere in this app.

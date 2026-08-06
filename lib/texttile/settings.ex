@@ -141,7 +141,14 @@ defmodule Texttile.Settings do
     if value in @languages, do: :ok, else: {:error, "unknown language"}
   end
 
+  # The front page is the latest-texts list, or one fixed page as
+  # "page:<id>". A page that later disappears falls back to the list.
   defp validate(:front_page, "latest"), do: :ok
+
+  defp validate(:front_page, "page:" <> id) do
+    if id =~ ~r/\A\d+\z/, do: :ok, else: {:error, "unknown front page"}
+  end
+
   defp validate(:front_page, _), do: {:error, "unknown front page"}
 
   defp validate(:site_visibility, value) when value in ~w(public protected), do: :ok

@@ -1,0 +1,27 @@
+<.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
+<main>
+  <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
+    <h1 class="f-h1" id="title">#{@tag}</h1>
+    <p class="f-lead mt-3" id="sub">
+      {length(@articles)} {if length(@articles) == 1, do: "text has", else: "texts have"} this tag.
+    </p>
+
+    <%!-- every tag of the blog; the one being read is marked and does
+         not link, the others are the way into the next archive --%>
+    <p class="mt-7 pb-3 border-b border-rule" id="tagbar">
+      <%= for {tag, count} <- @tags do %>
+        <span :if={tag == @tag} class="ctag" style="color:var(--tt-ink);font-weight:600">
+          #{tag} <span class="cnt">{count}</span>
+        </span>
+        <a :if={tag != @tag} class="ctag" href={~p"/tags/#{tag}"}>
+          #{tag} <span class="cnt">{count}</span>
+        </a>
+      <% end %>
+    </p>
+
+    <div class="cards mt-8" id="texts">
+      <.card :for={article <- @articles} article={article} preview={@previews[article.id]} />
+    </div>
+  </div>
+</main>
+<.site_foot current_scope={@current_scope} />

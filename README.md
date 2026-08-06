@@ -49,6 +49,17 @@ The container prepares the data directories, runs migrations, drops root, and
 starts the server. All state lives in `/data`. An update is: pull the new
 image, start the container again.
 
+## Readers and admins
+
+Readers get the blog at the root: the list of published texts at `/`, each
+text at its own address, and every published page in the menu. Admins sign
+in at `/login` and work at `/desk`.
+
+The blog can sit behind one shared password (Settings > Access). It is an
+access word to hand around, not a login: it is stored in plain text and one
+entry opens the whole blog. A single text can also ask for it while the
+rest of the blog stays open (the switch is in the text's settings).
+
 ## Accounts
 
 `ADMIN_USERS` names everybody who may sign in. It holds usernames,

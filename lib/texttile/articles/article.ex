@@ -15,6 +15,13 @@ defmodule Texttile.Articles.Article do
   @statuses ~w(draft scheduled published)
   @types ~w(post page)
 
+  # The addresses the site itself answers on; no text may take them.
+  @reserved_slugs ~w(desk login logout forgot link unlock texts tags
+                     uploads renditions theme.css assets images dev)
+
+  @doc "The slugs the public site keeps for its own routes."
+  def reserved_slugs, do: @reserved_slugs
+
   schema "articles" do
     field :title, :string, default: ""
     field :body, :string, default: ""
@@ -25,6 +32,7 @@ defmodule Texttile.Articles.Article do
     field :tags, :string, default: ""
     field :allow_comments, :boolean, default: true
     field :notify_on_publish, :boolean, default: true
+    field :protected, :boolean, default: false
     field :notified_on, :date
 
     # The chosen preview image (uploads-relative). Nil lets the first
@@ -44,9 +52,18 @@ defmodule Texttile.Articles.Article do
   @doc "The article settings; each field is atomic, last write wins."
   def settings_changeset(article, attrs) do
     article
-    |> cast(attrs, [:type, :tags, :slug, :allow_comments, :notify_on_publish, :preview_path])
+    |> cast(attrs, [
+      :type,
+      :tags,
+      :slug,
+      :allow_comments,
+      :notify_on_publish,
+      :protected,
+      :preview_path
+    ])
     |> update_change(:slug, &normalize_slug/1)
     |> validate_inclusion(:type, @types)
+    |> validate_exclusion(:slug, @reserved_slugs, message: "is an address the site itself uses")
     |> unique_constraint(:slug)
   end
 

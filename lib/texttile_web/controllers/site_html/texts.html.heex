@@ -1,0 +1,43 @@
+<.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
+<main>
+  <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
+    <h1 class="f-h1">Texts</h1>
+
+    <div class="searchrow mt-7">
+      <form action={@list_path} method="get" role="search">
+        <label for="q" class="sr">Search the texts</label>
+        <input
+          type="search"
+          id="q"
+          name="q"
+          value={@q}
+          placeholder="Search titles, tags and text"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </form>
+      <a :if={@q != ""} class="btn sm" id="clear" href={@list_path}>Clear</a>
+      <span class="cnt" id="count">{count_label(length(@articles), @total)}</span>
+    </div>
+
+    <div class="cards" id="texts">
+      <.card :for={article <- @articles} article={article} preview={@previews[article.id]} />
+    </div>
+
+    <p :if={@articles == [] && @q != ""} class="f-body mt-8" id="empty">
+      Nothing matches that. <a class="link" href={@list_path}>Show all texts</a>.
+    </p>
+    <p :if={@articles == [] && @q == ""} class="f-body mt-8">Nothing here yet.</p>
+  </div>
+
+  <section
+    :if={assigns[:about_html]}
+    class="wrap narrow pb-[var(--tt-sec)]"
+    id="about"
+    aria-label="About"
+  >
+    <h2 class="f-sec-h">About</h2>
+    <div class="f-body about-md mt-4">{Phoenix.HTML.raw(@about_html)}</div>
+  </section>
+</main>
+<.site_foot current_scope={@current_scope} />
