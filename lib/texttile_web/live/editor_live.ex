@@ -38,7 +38,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:log, Articles.log(article))
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
-      |> assign(:known_tags, Articles.known_tags())
+      |> known_tags()
 
     socket =
       if connected?(socket) do
@@ -931,7 +931,16 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:saved_until, if(note, do: now + @note_ms, else: 0))
   end
 
-  defp known_tags(socket), do: assign(socket, :known_tags, Articles.known_tags())
+  # The suggestions stay where they are while the editor is open: a tag
+  # taken off the text keeps its chip, so one more click puts it back.
+  # New tags join the end of the row, and nothing under the pointer
+  # moves while somebody is clicking.
+  defp known_tags(socket) do
+    standing = socket.assigns[:known_tags] || []
+    fresh = Articles.known_tags() ++ Articles.tag_list(socket.assigns.article)
+
+    assign(socket, :known_tags, standing ++ Enum.uniq(Enum.reject(fresh, &(&1 in standing))))
+  end
 
   defp reload_history(socket) do
     socket

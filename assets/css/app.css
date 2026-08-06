@@ -130,8 +130,8 @@
      controls keep their drawn size and grow an invisible hit box
      around themselves, so nothing on a desktop gets heavier. */
   @media (pointer: coarse) {
-    .btn.sm { position: relative; }
-    .btn.sm::after {
+    .btn.sm, .tagchip { position: relative; }
+    .btn.sm::after, .tagchip::after {
       content: ""; position: absolute; left: 50%; top: 50%;
       transform: translate(-50%, -50%);
       width: 100%; min-width: 40px; height: 40px;
@@ -695,7 +695,7 @@
   /* the placeholder square: a text without a picture holds the same
      footprint, with the mark standing quietly in the middle */
   body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
-  body.site .card .cimg.blank svg { opacity: .26; }
+  body.site .card .cimg.blank svg { width: clamp(34px, 19%, 78px); height: auto; opacity: .22; }
   .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 3px; }
   .card-wrap .clead { font-size: 13.5px; line-height: 1.5; color: var(--tt-dim); margin-top: 6px; }
   .card-wrap .ctags { margin-top: 7px; }

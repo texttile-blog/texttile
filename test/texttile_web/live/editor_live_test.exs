@@ -192,11 +192,16 @@ defmodule TexttileWeb.EditorLiveTest do
       assert Articles.get_article!(article.id).tags == "sea"
       assert has_element?(view, "#tagchip-sea.on")
 
-      # the same click again takes the tag off
+      # the same click again takes the tag off, and the chip stays
+      # there, so one more click puts the tag back
       view |> element("#tagchip-sea") |> render_click()
 
       assert Articles.get_article!(article.id).tags == ""
+      assert has_element?(view, "#tagchip-sea")
       refute has_element?(view, "#tagchip-sea.on")
+
+      view |> element("#tagchip-sea") |> render_click()
+      assert Articles.get_article!(article.id).tags == "sea"
     end
 
     test "a tag typed by hand joins the suggestions and keeps its spelling",
