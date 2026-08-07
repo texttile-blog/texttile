@@ -381,8 +381,10 @@ defmodule TexttileWeb.SettingsLive do
       others={@others}
     >
       <:bar>
+        <%!-- the phone gets the stamp too, short and clipped: the
+             hook writes the sentence only where the bar has room --%>
         <span
-          class="hidden md:inline text-[12.5px] text-faint num whitespace-nowrap"
+          class="text-[12.5px] text-faint num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
           id="savedSettings"
           phx-hook="SavedTicker"
           data-at={@saved_at}

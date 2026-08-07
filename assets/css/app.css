@@ -433,14 +433,15 @@
   /* THE GALLERY TILES · round-14. A tile is the picture itself: no
      drag icon, no chrome. The number sits top-left on an overlay
      wash; a running upload lays its state over the whole tile. */
-  /* touch-action none is the imaedge mechanic: the hook decides
-     whether a finger sorts or scrolls, and drives the scroll itself -
-     a browser-owned vertical pan would cancel every touch drag */
+  /* pan-y leaves the scrolling to the browser, where it is smooth and
+     carries its momentum; the hook takes the gesture over only once a
+     press has held long enough to be a sort, and holds the pan off
+     itself from then on */
   .tile {
     position: relative; aspect-ratio: 1 / 1;
     background: var(--tt-field) center / cover no-repeat;
     user-select: none; -webkit-user-select: none; cursor: grab;
-    border-radius: var(--tt-radius-img); touch-action: none;
+    border-radius: var(--tt-radius-img); touch-action: pan-y;
   }
   .tile .n {
     position: absolute; left: 5px; top: 5px;
@@ -660,8 +661,11 @@
   @media (max-width: 900px) { .site-desc { display: none; } }
 
   /* the foot of every page: one row, dim text, links that answer the
-     pointer instead of underlining themselves permanently */
-  .f-foot { font-size: 13px; color: var(--tt-dim); }
+     pointer instead of underlining themselves permanently. On a phone
+     it keeps clear of the browser's own bar at the bottom edge, which
+     lies over the page and hides whatever ends under it. */
+  .f-foot { font-size: 13px; color: var(--tt-dim); padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+  @media (max-width: 700px) { .f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
   .f-foot a { color: var(--tt-dim); text-decoration: none; }
   .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
 

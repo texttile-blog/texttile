@@ -37,6 +37,7 @@
   /* inputs: quiet fills, no bordered boxes, 16px on small screens so
      iOS never zooms on focus */
   input[type=text], input[type=email], input[type=password], input[type=date],
+  input[type=datetime-local], input[type=time],
   input[type=number], input[type=search], textarea, select {
     width: 100%; font: inherit; font-family: var(--tt-font-sans); font-size: 16px;
     color: var(--tt-ink); background: var(--tt-field);
@@ -46,8 +47,21 @@
   }
   @media (min-width: 900px) {
     input[type=text], input[type=email], input[type=password], input[type=date],
+    input[type=datetime-local], input[type=time],
     input[type=number], input[type=search], textarea, select { font-size: 14px; }
   }
+  /* a date field is something you open, so it says so: the whole
+     field takes the pointer, and the picker sits in the ink of the
+     theme instead of the browser's own gray */
+  input[type=date], input[type=datetime-local], input[type=time] { cursor: pointer; }
+  input[type=date]::-webkit-calendar-picker-indicator,
+  input[type=datetime-local]::-webkit-calendar-picker-indicator,
+  input[type=time]::-webkit-calendar-picker-indicator {
+    cursor: pointer; opacity: .55; transition: opacity .15s ease;
+  }
+  input[type=date]:hover::-webkit-calendar-picker-indicator,
+  input[type=datetime-local]:hover::-webkit-calendar-picker-indicator,
+  input[type=time]:hover::-webkit-calendar-picker-indicator { opacity: 1; }
   input:hover, textarea:hover, select:hover { background: var(--tt-fieldhover); }
   input:focus, textarea:focus, select:focus {
     outline: none; background: var(--tt-paper);

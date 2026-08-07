@@ -45,7 +45,13 @@ const SavedTicker = {
     const at = Number(this.el.dataset.at || now)
     const d = new Date(at)
     const pad = n => String(n).padStart(2, "0")
-    this.el.textContent = (now - at) / 1000 < 20
+    const fresh = (now - at) / 1000 < 20
+    // a phone bar has room for the stamp, not for the sentence
+    if (!window.matchMedia("(min-width: 768px)").matches) {
+      this.el.textContent = fresh ? "saved" : `saved ${pad(d.getHours())}:${pad(d.getMinutes())}`
+      return
+    }
+    this.el.textContent = fresh
       ? "Last saved · just now"
       : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
   },

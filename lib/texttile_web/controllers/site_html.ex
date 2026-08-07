@@ -70,7 +70,7 @@ defmodule TexttileWeb.SiteHTML do
   def site_foot(assigns) do
     ~H"""
     <footer class="border-t border-rule">
-      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4 pb-7">
+      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
