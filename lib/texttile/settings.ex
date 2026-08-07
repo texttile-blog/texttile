@@ -120,7 +120,10 @@ defmodule Texttile.Settings do
   # percentage instead of a fraction.
   defp number(text) do
     text = String.trim(text)
-    {text, scale} = if String.ends_with?(text, "%"), do: {String.trim_trailing(text, "%"), 100}, else: {text, 1}
+
+    {text, scale} =
+      if String.ends_with?(text, "%"), do: {String.trim_trailing(text, "%"), 100}, else: {text, 1}
+
     text = if String.starts_with?(text, "."), do: "0" <> text, else: text
 
     case Float.parse(text) do

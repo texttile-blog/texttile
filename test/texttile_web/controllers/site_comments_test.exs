@@ -200,7 +200,6 @@ defmodule TexttileWeb.SiteCommentsTest do
              |> html_response(404)
     end
 
-
     test "a field that is not one line of text is read as nothing", %{conn: conn} do
       article = published_post()
 

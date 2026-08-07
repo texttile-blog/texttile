@@ -50,7 +50,6 @@ defmodule Texttile.ArticlesPublicTest do
 
       assert Enum.map(Articles.list_published(search: "harbor fog"), & &1.id) == [both.id]
     end
-
   end
 
   describe "list_pages/0" do

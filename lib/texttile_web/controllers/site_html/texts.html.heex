@@ -26,14 +26,25 @@
 
     <%!-- the pager: one step each way, and where the reader stands.
          The page size lives in Settings. --%>
-    <nav :if={@pages > 1} class="f-pager mt-10 pt-4 border-t border-rule" id="pager" aria-label="Pages">
+    <nav
+      :if={@pages > 1}
+      class="f-pager mt-10 pt-4 border-t border-rule"
+      id="pager"
+      aria-label="Pages"
+    >
       <a :if={@page > 1} class="btn sm" id="prev-page" href={@page_path.(@page - 1)} rel="prev">
         Newer texts
       </a>
       <span class="sp"></span>
       <span class="f-note num">Page {@page} of {@pages}</span>
       <span class="sp"></span>
-      <a :if={@page < @pages} class="btn sm" id="next-page" href={@page_path.(@page + 1)} rel="next">
+      <a
+        :if={@page < @pages}
+        class="btn sm"
+        id="next-page"
+        href={@page_path.(@page + 1)}
+        rel="next"
+      >
         Older texts
       </a>
     </nav>

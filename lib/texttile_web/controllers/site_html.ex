@@ -129,9 +129,9 @@ defmodule TexttileWeb.SiteHTML do
   # else around it, so the wrap is one pass over those tags.
   defp link_pictures(html) do
     Regex.replace(~r{<img([^>]*?)src="/uploads/([^"]+)"([^>]*?)/?>}, html, fn _whole,
-                                                                             before,
-                                                                             path,
-                                                                             rest ->
+                                                                              before,
+                                                                              path,
+                                                                              rest ->
       ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
         ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
         ~s(</a>)

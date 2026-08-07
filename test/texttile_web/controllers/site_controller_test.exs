@@ -347,7 +347,6 @@ defmodule TexttileWeb.SiteControllerTest do
       published_post(title: "A text", tags: "sea")
       assert conn |> get(~p"/tags/nowhere") |> html_response(404)
     end
-
   end
 
   describe "the menu" do
