@@ -639,7 +639,7 @@ defmodule TexttileWeb.EditorLive do
     assign(socket, :gallery, Gallery.list(socket.assigns.article.id))
   end
 
-  defp gone_note, do: "That picture was deleted a moment ago"
+  defp gone_note, do: "That tile was deleted a moment ago"
 
   defp moved_note(socket, meta) do
     name =
@@ -778,8 +778,8 @@ defmodule TexttileWeb.EditorLive do
 
   defp tile_count(gallery) do
     case length(gallery) do
-      1 -> "1 image"
-      n -> "#{n} images"
+      1 -> "1 tile"
+      n -> "#{n} tiles"
     end
   end
 
@@ -1493,7 +1493,7 @@ defmodule TexttileWeb.EditorLive do
                 class="sr"
                 multiple
                 accept="image/*,video/*"
-                aria-label="Put images in the text"
+                aria-label="Put pictures and videos in the text"
               />
 
               <%!-- the images in the text: a reading of the body, never
@@ -1503,7 +1503,7 @@ defmodule TexttileWeb.EditorLive do
               <div class="mt-[34px]">
                 <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
                   <span class="text-[13px] font-semibold">
-                    Images in the text
+                    Pictures and videos in the text
                     <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                   </span>
                   <span class="sp"></span>
@@ -1511,7 +1511,7 @@ defmodule TexttileWeb.EditorLive do
                 </div>
                 <div id="inlineImgs">
                   <p :if={Articles.inline_refs(@article.body) == []} class="note pt-[10px]">
-                    None in this text yet. Paste an image into the text, or drop one on it.
+                    None in this text yet. Paste a picture or a video into the text, or drop one on it.
                   </p>
                   <%= for ref <- Articles.inline_refs(@article.body) do %>
                     <% media = ref_media(@media, ref.url) %>
@@ -1727,7 +1727,7 @@ defmodule TexttileWeb.EditorLive do
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"
                   tabindex="0"
-                  aria-label={"Image #{index}, #{image.filename}, grab to sort, tap to see it big"}
+                  aria-label={"Tile #{index}, #{image.filename}, grab to sort, tap to see it big"}
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
                   <span :if={@effective_preview == image.path} class="cov">preview</span>
@@ -1750,7 +1750,7 @@ defmodule TexttileWeb.EditorLive do
                 type="button"
                 class="tile-add"
                 id="tileAdd"
-                aria-label="Add images"
+                aria-label="Add pictures and videos"
               >
                 + Add
               </button>
@@ -1761,13 +1761,13 @@ defmodule TexttileWeb.EditorLive do
               class="sr"
               multiple
               accept="image/*,video/*"
-              aria-label="Add images to the gallery"
+              aria-label="Add pictures and videos to the gallery"
             />
             <span class="drop-flag" id="tileDropFlag" hidden>
-              Add the image to the gallery, at the end
+              Add it to the gallery, at the end
             </span>
             <p class="note mt-[10px] transition-colors" id="tileNote">
-              Grab an image to sort it. Tap one to see it big.
+              Grab a tile to sort it. Tap one to see it big.
             </p>
           </div>
 
@@ -1793,7 +1793,7 @@ defmodule TexttileWeb.EditorLive do
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
                   <%= if @preview_candidates == [] do %>
                     <span class="note">
-                      No images yet. Once the text or the gallery has one, pick it here.
+                      No pictures yet. Once the text or the gallery has one, pick it here.
                     </span>
                   <% else %>
                     <button
@@ -1802,7 +1802,7 @@ defmodule TexttileWeb.EditorLive do
                       }
                       type="button"
                       class={["cover-opt", @effective_preview == path && "on"]}
-                      style={tile_bg(path)}
+                      style={tile_bg((@media[path] && @media[path].still) || path)}
                       phx-click="set_preview"
                       phx-value-path={path}
                       aria-label={"Use image #{index} as the preview image"}
@@ -2214,7 +2214,7 @@ defmodule TexttileWeb.EditorLive do
     running = Enum.count(refs, &(&1.kind == :running))
     failed = Enum.count(refs, &(&1.kind == :failed))
 
-    "#{done} #{if done == 1, do: "image", else: "images"}" <>
+    "#{done} #{if done == 1, do: "file", else: "files"}" <>
       if(running > 0, do: " · #{running} on the way", else: "") <>
       if(failed > 0, do: " · #{failed} failed", else: "")
   end

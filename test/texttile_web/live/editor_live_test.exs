@@ -336,7 +336,7 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user, %{title: "Doors", body: body})
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#inlineCount", "1 image · 1 on the way · 1 failed")
+      assert has_element?(view, "#inlineCount", "1 file · 1 on the way · 1 failed")
       assert has_element?(view, "#inlineImgs", "pier-abcd.jpg")
       assert has_element?(view, "#inlineImgs button[data-img-action=cancel]")
       assert has_element?(view, "#inlineImgs button[data-img-action=retry]")
@@ -383,7 +383,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#tileCount", "2 images")
+      assert has_element?(view, "#tileCount", "2 tiles")
       assert has_element?(view, "#tileGrid [data-id='#{a.id}']")
       assert has_element?(view, "#tile-#{a.id} button.tile-del")
       assert tile_order(render(view)) == [a.id, b.id]
@@ -393,12 +393,12 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#tileCount", "0 images")
+      assert has_element?(view, "#tileCount", "0 tiles")
 
       image = gallery_image(article, "new.jpg", "2024:05:01 09:00:00")
 
       assert has_element?(view, "#tileGrid [data-id='#{image.id}']")
-      assert has_element?(view, "#tileCount", "1 image")
+      assert has_element?(view, "#tileCount", "1 tile")
     end
 
     test "a drop writes a new date and every editor sees the order", %{conn: conn, user: user} do

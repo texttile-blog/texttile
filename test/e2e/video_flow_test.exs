@@ -78,8 +78,8 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
       conn
       |> sign_in()
       |> visit("/admin/texts/#{article.id}")
-      |> assert_has("#tileCount", text: "0 images")
-      |> upload("Add images to the gallery", video_file(640, 480))
+      |> assert_has("#tileCount", text: "0 tiles")
+      |> upload("Add pictures and videos to the gallery", video_file(640, 480))
       |> assert_has("#tileServer [data-id]", timeout: 30_000)
 
     [image] = Gallery.list(article.id)

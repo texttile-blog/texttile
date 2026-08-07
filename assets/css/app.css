@@ -1010,3 +1010,13 @@
   box-shadow: inset 0 0 0 1px rgb(var(--tt-shadow) / .12);
   cursor: text; vertical-align: -8px;
 }
+/* a video in the words has no thumbnail here; a play mark says what
+   the reference is, and the panel below says where its conversion
+   stands */
+.ed-cm .cm-mdvid { position: relative; }
+.ed-cm .cm-mdvid::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-style: solid; border-width: 7px 0 7px 12px;
+  border-color: transparent transparent transparent var(--tt-faint);
+}

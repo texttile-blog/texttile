@@ -71,16 +71,19 @@ class CheckW extends WidgetType {
   }
 }
 class ImgW extends WidgetType {
-  constructor(css, title) { super(); this.css = css; this.title = title }
-  eq(o) { return o.css === this.css && o.title === this.title }
+  constructor(css, title, video) { super(); this.css = css; this.title = title; this.video = video }
+  eq(o) { return o.css === this.css && o.title === this.title && o.video === this.video }
   toDOM() {
     const s = document.createElement("span")
-    s.className = "cm-mdimg"
+    s.className = this.video ? "cm-mdimg cm-mdvid" : "cm-mdimg"
     if (this.css) s.style.backgroundImage = this.css
     s.title = this.title
     return s
   }
 }
+
+/* the containers Texttile.Videos takes */
+export const VIDEO_FILE = /\.(mp4|mov|m4v|webm|avi|mkv)$/i
 
 /* ---- the live preview --------------------------------------------- */
 const HIDE = Decoration.replace({})
@@ -142,7 +145,7 @@ function buildDeco(view, resolveImage) {
         const ms = n.node.getChildren("LinkMark")
         const alt = ms.length >= 2 ? doc.sliceString(ms[0].to, ms[1].from) : ""
         const css = resolveImage ? resolveImage(url) : null
-        deco.push(Decoration.replace({widget: new ImgW(css, alt || url)}).range(n.from, n.to))
+        deco.push(Decoration.replace({widget: new ImgW(css, alt || url, VIDEO_FILE.test(url))}).range(n.from, n.to))
         return false
       }
       if (name === "Link") {
@@ -348,9 +351,10 @@ const impl = {
        drawn as they are */
     const resolveImage = url => {
       if (!/^(https?:|data:|blob:|\/)/.test(url)) return null
-      /* a video has no thumbnail of its own here; the panel below the
-         text says where its conversion stands */
-      if (/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(url)) return null
+      /* a video has no thumbnail of its own here; the widget wears a
+         play mark, and the panel below the text says where its
+         conversion stands */
+      if (VIDEO_FILE.test(url)) return null
       const scaled = url.startsWith("/uploads/")
         ? "/renditions/320/" + url.slice("/uploads/".length)
         : url
@@ -371,7 +375,7 @@ const impl = {
       EditorView.lineWrapping,
       syntaxHighlighting(mdHighlight),
       livePreview,
-      placeholder("Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."),
+      placeholder("Write. Markdown works: ## for a heading. Paste a picture or a video, or drop one here to put it in the text."),
       EditorView.contentAttributes.of({"aria-label": "Body, Markdown"}),
       keymap.of([
         {key: "Mod-b", run: cmds.bold},

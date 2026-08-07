@@ -120,7 +120,7 @@ class Gallery {
     this.note.textContent = text
     this.note.classList.add("text-julia", "font-semibold")
     this.noteTimer = setTimeout(() => {
-      this.note.textContent = "Grab an image to sort it. Tap one to see it big."
+      this.note.textContent = "Grab a tile to sort it. Tap one to see it big."
       this.note.classList.remove("text-julia", "font-semibold")
     }, NOTE_MS)
   }
@@ -622,7 +622,7 @@ class Gallery {
     // quirk (the topbar's backdrop-filter) can ever paint above it
     const root = document.createElement("dialog")
     root.id = "lbRoot"
-    root.setAttribute("aria-label", "Image, full size")
+    root.setAttribute("aria-label", "Full size")
     // the dialog itself takes the focus: autofocusing the date field
     // would pop a picker over the picture on a phone
     root.tabIndex = -1
@@ -631,19 +631,19 @@ class Gallery {
       <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> image</span></button>
+        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> tile</span></button>
         <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">Open original</span><span class="lb-word-s">Original</span></a>
         <button type="button" id="lbClose" class="lb-abtn" aria-label="Close">Close</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
-           data-nav="-1" aria-label="Previous image">&#8249;</button>
+           data-nav="-1" aria-label="Previous tile">&#8249;</button>
         <div class="relative flex-1 h-full min-w-0 flex items-center justify-center">
           <div id="lbImg" class="w-full h-full bg-center bg-contain bg-no-repeat" role="img" aria-label=""></div>
           <div id="lbState" class="absolute inset-0 grid place-items-center text-white/80 text-[13px] text-center px-6" hidden></div>
         </div>
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
-           data-nav="1" aria-label="Next image">&#8250;</button>
+           data-nav="1" aria-label="Next tile">&#8250;</button>
       </div>
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
@@ -718,7 +718,7 @@ class Gallery {
     this.root.querySelector("#lbName").textContent = data.filename
 
     this.root.querySelector("#lbMeta").textContent =
-      ` · ${data.date.slice(0, 10)} · image ${data.index + 1} of ${data.count}`
+      ` · ${data.date.slice(0, 10)} · ${data.index + 1} of ${data.count}`
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {

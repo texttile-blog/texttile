@@ -87,11 +87,15 @@ defmodule Texttile.Gallery do
   end
 
   @doc """
-  The images a preview can be chosen from: the gallery in its order,
-  then the finished pictures inside the text.
+  The pictures a preview can be chosen from: the gallery in its order,
+  then the finished pictures inside the text. A video counts with its
+  poster, so it joins the list once ffmpeg is through and not before -
+  a preview nobody can see is no preview.
   """
   def preview_candidates(article, gallery_paths) do
-    Enum.uniq(gallery_paths ++ inline_paths(article.body))
+    (gallery_paths ++ inline_paths(article.body))
+    |> Enum.uniq()
+    |> Enum.filter(&Texttile.Videos.still/1)
   end
 
   @doc """
@@ -138,12 +142,10 @@ defmodule Texttile.Gallery do
   a video still converting - the first candidate that has one.
   """
   def preview_still(article, gallery_paths) do
-    candidates = preview_candidates(article, gallery_paths)
-    chosen = effective_preview(article, gallery_paths)
-
-    [chosen | candidates]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.find_value(&Texttile.Videos.still/1)
+    case effective_preview(article, gallery_paths) do
+      nil -> nil
+      path -> Texttile.Videos.still(path)
+    end
   end
 
   defp inline_paths(body) do
