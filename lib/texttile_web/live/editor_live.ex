@@ -672,8 +672,7 @@ defmodule TexttileWeb.EditorLive do
             else: " · no email will go out"
           )
       else
-        "Published just now" <>
-          if(will_notify?(article), do: "", else: ", quietly · no email sent")
+        "Published just now" <> published_mail_note(socket.assigns.article, article)
       end
 
     socket
@@ -681,6 +680,26 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:state_menu, false)
     |> reload_history()
     |> mark_saved(note)
+  end
+
+  # What the publish click owes the writer: whether the email left. The
+  # stamp appearing on the text is the send; a text that carried one
+  # already went out at an earlier go-live and stays quiet.
+  defp published_mail_note(before, article) do
+    cond do
+      not will_notify?(article) ->
+        ", quietly · no email sent"
+
+      is_nil(before.notified_on) and not is_nil(article.notified_on) ->
+        case Texttile.Newsletter.confirmed_count() do
+          0 -> " · nobody is on the newsletter list, so no email went out"
+          1 -> " · the email is on its way to 1 subscriber"
+          n -> " · the email is on its way to #{n} subscribers"
+        end
+
+      true ->
+        " · the subscribers already got this email"
+    end
   end
 
   # What the takeover dialog owes the person asking: not a generic "are
@@ -2196,6 +2215,12 @@ defmodule TexttileWeb.EditorLive do
     "#{TexttileWeb.Endpoint.host()}#{Articles.public_path(article)} is live; changing it breaks old links."
   end
 
+  # The stamp outranks the status: a text that carried its email out
+  # once never sends it again, whatever state it stands in now.
+  defp notify_note(%{notified_on: %Date{} = day}),
+    do:
+      "The subscriber email for this text went out on #{day}. It goes out once; publishing again does not send it again."
+
   defp notify_note(%{status: "draft", notify_on_publish: true}),
     do:
       "Confirmed subscribers get one plain email with the title and the first paragraph when this goes live. Uncheck to publish silently."
@@ -2212,5 +2237,5 @@ defmodule TexttileWeb.EditorLive do
     do: "No email will go out on #{article.publish_date}. Check it and it goes out at go-live."
 
   defp notify_note(_article),
-    do: "No email went out for this text; sending one arrives with the newsletter."
+    do: "No email went out for this text. The email goes out only at the moment a text goes live."
 end
