@@ -96,3 +96,16 @@ addEventListener("keydown", (e) => {
   });
   stage.addEventListener("pointercancel", () => { sx = null; });
 })();
+
+// Browsers without field-sizing grow the comment box by hand.
+(function () {
+  if (CSS.supports("field-sizing", "content")) return;
+  const ta = document.querySelector("#comment-form textarea");
+  if (!ta) return;
+  const grow = () => {
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  };
+  ta.addEventListener("input", grow);
+  grow();
+})();

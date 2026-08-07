@@ -107,6 +107,11 @@ defmodule Texttile.Articles do
     end)
   end
 
+  @doc "One published text by id, post or page alike, or nil."
+  def get_published(id) do
+    Repo.get_by(Article, id: id, status: "published")
+  end
+
   @doc """
   The published pages for the site menu, oldest publish date first.
   Takes the same `include_protected:` as `list_published/1`.

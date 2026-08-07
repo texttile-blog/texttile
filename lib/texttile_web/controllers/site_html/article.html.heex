@@ -28,6 +28,104 @@
         </a>
       </div>
     </figure>
+
+    <%!-- the comments: what the rule shows to everybody, the reader's
+         own waiting ones on top, and the form. No JavaScript in it;
+         posting is a plain form round trip. --%>
+    <section :if={@comments} class="wrap narrow mt-[54px]" id="comments" aria-label="Comments">
+      <h2 class="f-sec-h mb-4">{comment_heading(@comment_count)}</h2>
+      <div :if={@comments != []} class="mt-[6px]">
+        <%= for {kind, comment} <- @comments do %>
+          <div
+            :if={kind == :shown}
+            class="py-[14px] border-b border-hair"
+            id={"comment-#{comment.id}"}
+          >
+            <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
+              {comment.name}
+              <span class="font-normal text-dim text-[12.5px]">
+                {comment_when(comment.inserted_at)}
+              </span>
+            </div>
+            <p class="mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]">
+              {comment.body}
+            </p>
+          </div>
+          <div
+            :if={kind == :own}
+            class="py-[14px] border-b border-hair opacity-70"
+            id={"comment-#{comment.id}"}
+          >
+            <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
+              {comment.name} <span class="wait">waiting for your confirmation</span>
+            </div>
+            <p class="mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]">
+              {comment.body}
+            </p>
+            <p class="f-note mt-[6px]">
+              Only you see this. Follow the link in the mail and everybody sees it.
+            </p>
+          </div>
+        <% end %>
+      </div>
+      <p :if={@comments == []} class="f-note">Nobody has said anything yet.</p>
+
+      <h2 class="f-sec-h mt-10 mb-4">Post a comment</h2>
+      <form id="comment-form" action={~p"/comments/#{@article.id}"} method="post">
+        <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+        <input type="hidden" name="t" value={@comment_token} />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-7 gap-y-4 mb-5">
+          <input
+            type="text"
+            name="name"
+            value={@comment_values["name"]}
+            placeholder="Name"
+            aria-label="Name"
+            maxlength="120"
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            value={@comment_values["email"]}
+            placeholder="Email, never published"
+            aria-label="Email"
+            required
+          />
+        </div>
+        <input
+          type="text"
+          name="website"
+          id="hp"
+          class="sr"
+          tabindex="-1"
+          aria-hidden="true"
+          autocomplete="off"
+        />
+        <textarea
+          name="body"
+          rows="2"
+          placeholder="Say something"
+          aria-label="Comment"
+          maxlength="4000"
+          required
+        >{@comment_values["body"]}</textarea>
+        <p class="f-note mt-4">{@comment_rule}</p>
+        <p
+          :if={@comment_error}
+          class="f-note mt-2"
+          id="comment-error"
+          style="color:var(--tt-julia)"
+        >
+          A comment needs a name, an email address and some words. Check the form and send it
+          again.
+        </p>
+        <p class="mt-[10px] btn-row">
+          <button class="btn solid">Post comment</button>
+          <span :if={@comment_note} class="f-note" id="comment-note">{@comment_note}</span>
+        </p>
+      </form>
+    </section>
   </article>
 
   <section

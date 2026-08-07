@@ -172,6 +172,25 @@ defmodule TexttileWeb.SiteHTML do
     end
   end
 
+  @doc "The heading of the comments block: the count while there is one."
+  def comment_heading(0), do: "Comments"
+  def comment_heading(1), do: "1 comment"
+  def comment_heading(n), do: "#{n} comments"
+
+  @doc """
+  The day a comment arrived, the way the example blog writes it: bare
+  within the year, with the year once it is another one.
+  """
+  def comment_when(%DateTime{} = at) do
+    date = DateTime.to_date(at)
+
+    if date.year == Date.utc_today().year do
+      "#{date.day} #{Calendar.strftime(date, "%B")}"
+    else
+      format_date(date)
+    end
+  end
+
   @doc "What the count beside the search says: all of it, or n of all."
   def count_label(shown, total) do
     if shown == total do
