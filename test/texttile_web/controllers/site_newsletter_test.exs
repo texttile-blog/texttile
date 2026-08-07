@@ -39,13 +39,15 @@ defmodule TexttileWeb.SiteNewsletterTest do
     |> post(~p"/newsletter", Map.delete(params, "ip"))
   end
 
-  describe "the footer form" do
-    test "stands on every reader page", %{conn: conn} do
-      article = published_post()
+  describe "the Subscribe section" do
+    test "is the last section of every reader page", %{conn: conn} do
+      article = published_post(tags: "harbour")
 
-      for path <- ["/", Texttile.Articles.public_path(article)] do
+      for path <- ["/", Texttile.Articles.public_path(article), "/tags/harbour"] do
         html = conn |> get(path) |> html_response(200)
+        assert html =~ ~s(id="subscribe")
         assert html =~ ~s(id="newsletter-form")
+        assert html =~ "One email when a new text goes out"
       end
     end
   end
@@ -94,15 +96,19 @@ defmodule TexttileWeb.SiteNewsletterTest do
       assert Newsletter.list() == []
     end
 
-    test "the fourth request in a minute from one caller is dropped", %{conn: conn} do
+    test "the fourth request in a minute from one caller is dropped", %{conn: _conn} do
       ip = fresh_ip()
 
-      for n <- 1..4 do
-        build_conn() |> send_join(%{"ip" => ip, "email" => "reader#{n}@example.org"})
-      end
+      answers =
+        for n <- 1..4 do
+          build_conn() |> send_join(%{"ip" => ip, "email" => "reader#{n}@example.org"})
+        end
 
       assert length(Newsletter.list()) == 3
-      assert conn.state == :unset
+
+      # the dropped one is told the same thing as the three that got
+      # through, so a caller learns nothing about the limit
+      assert List.last(answers) |> html_response(200) =~ "Now check your mail."
     end
   end
 

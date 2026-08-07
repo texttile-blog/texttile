@@ -25,10 +25,11 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     Application.put_env(:swoosh, :shared_test_process, self())
     on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
 
-    # The reader subscribes through the footer and confirms by mail.
+    # The reader subscribes in the Subscribe section and confirms by mail.
     conn
     |> visit("/")
-    |> fill_in("New texts by mail", with: "christel@example.org")
+    |> assert_has("#subscribe", text: "One email when a new text goes out")
+    |> fill_in("Email for new texts", with: "christel@example.org")
     |> click_button("Subscribe")
     |> assert_has("main", text: "Now check your mail.")
 
