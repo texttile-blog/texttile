@@ -32,8 +32,9 @@ config :texttile, Texttile.Repo,
 # first, then Wi-Fi, then the loopback. It goes into the links that the
 # server writes, so a phone or a second machine in the same network can
 # follow them. `bin/dev-host` finds it, `make start` opens it. DEV_HOST
-# overrides the search, for a test that wants the links to read the way
-# they read anywhere else.
+# replaces it everywhere at once: the script answers it, this reads it
+# even where the script cannot run, and `make start` opens what the
+# links say.
 dev_host =
   System.get_env("DEV_HOST") ||
     try do

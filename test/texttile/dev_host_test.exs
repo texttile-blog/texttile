@@ -7,12 +7,16 @@ defmodule Texttile.DevHostTest do
 
   @script Path.expand("../../bin/dev-host", __DIR__)
 
-  defp dev_host(interfaces) do
+  defp dev_host(interfaces, env \\ []) do
     {output, status} =
-      System.cmd(@script, [], env: [{"TEXTTILE_DEV_INTERFACES", interfaces}])
+      System.cmd(@script, [], env: [{"TEXTTILE_DEV_INTERFACES", interfaces} | env])
 
     assert status == 0
     String.trim(output)
+  end
+
+  test "DEV_HOST answers instead of the search" do
+    assert dev_host("wired 192.168.1.20", [{"DEV_HOST", "localhost"}]) == "localhost"
   end
 
   test "the wired address wins over Wi-Fi" do
