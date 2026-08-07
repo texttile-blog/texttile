@@ -28,6 +28,24 @@ config :texttile, Texttile.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
 
+# The address that the development server hands out: the cable network
+# first, then Wi-Fi, then the loopback. It goes into the links that the
+# server writes, so a phone or a second machine in the same network can
+# follow them. `bin/dev-host` finds it, `make start` opens it.
+dev_host =
+  try do
+    {address, 0} = System.cmd(Path.expand("../bin/dev-host", __DIR__), [])
+
+    case String.trim(address) do
+      "" -> "127.0.0.1"
+      address -> address
+    end
+  rescue
+    _ -> "127.0.0.1"
+  end
+
+dev_port = String.to_integer(System.get_env("PORT") || "4000")
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -35,10 +53,11 @@ config :texttile, Texttile.Repo,
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
 config :texttile, TexttileWeb.Endpoint,
-  # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
+  # Every interface, so the network reaches the server at dev_host and this
+  # machine keeps http://localhost:4000.
   # 4000 is the user's port (make start); agents pass PORT=4441+ (see AGENTS.md).
-  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
+  http: [ip: {0, 0, 0, 0}, port: dev_port],
+  url: [host: dev_host, port: dev_port],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
