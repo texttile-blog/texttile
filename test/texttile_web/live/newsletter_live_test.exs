@@ -78,6 +78,16 @@ defmodule TexttileWeb.NewsletterLiveTest do
     assert Newsletter.list() == []
   end
 
+  test "a protected blog says the mails carry its access word", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/newsletter")
+    refute has_element?(view, "#newsletterRule", "access word")
+
+    {:ok, _} = Texttile.Settings.put(:site_visibility, "protected")
+    {:ok, _} = Texttile.Settings.put(:site_password, "sesame")
+
+    assert has_element?(view, "#newsletterRule", "carries it")
+  end
+
   test "a reader joining shows up without a reload", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/newsletter")
 

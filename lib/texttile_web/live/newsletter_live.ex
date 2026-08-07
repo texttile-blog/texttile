@@ -11,10 +11,12 @@ defmodule TexttileWeb.NewsletterLive do
 
   alias Texttile.Newsletter
   alias Texttile.Newsletter.Subscriber
+  alias Texttile.Settings
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Newsletter.subscribe()
+      Settings.subscribe()
     end
 
     {:ok,
@@ -30,6 +32,10 @@ defmodule TexttileWeb.NewsletterLive do
     socket
     |> assign(:subscribers, subscribers)
     |> assign(:confirmed, Enum.count(subscribers, &Subscriber.confirmed?/1))
+    |> assign(
+      :protected?,
+      Settings.get(:site_visibility) == "protected" and Settings.get(:site_password) != ""
+    )
   end
 
   def handle_event("add", %{"email" => email}, socket) do
@@ -50,6 +56,12 @@ defmodule TexttileWeb.NewsletterLive do
   end
 
   def handle_info({:newsletter_changed}, socket), do: {:noreply, load(socket)}
+
+  def handle_info({:setting_changed, key, _value}, socket)
+      when key in [:site_visibility, :site_password] do
+    {:noreply, load(socket)}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
 
   def render(assigns) do
@@ -117,6 +129,10 @@ defmodule TexttileWeb.NewsletterLive do
           first; until then it gets no text. An address you add here is
           confirmed at once: you vouch for it. When a text goes live with
           Email subscribers checked, it goes to every confirmed address.
+          <span :if={@protected?}>
+            This blog asks for its access word, and every one of those mails
+            carries it, so this list is who can read the blog.
+          </span>
         </p>
       </div>
     </Layouts.app>

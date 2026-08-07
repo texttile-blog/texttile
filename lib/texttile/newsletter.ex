@@ -265,7 +265,9 @@ defmodule Texttile.Newsletter do
 
   # A refused mail is the one thing this feature cannot repair by
   # itself: the text is stamped, so nothing sends it again. The least
-  # it owes the person running the site is a line in the log.
+  # it owes the person running the site is a line in the log. The
+  # subscriber stands there as a number: a log travels further than a
+  # database, and a reader's address has no business in it.
   defp deliver_one(subscriber, article, site, password) do
     case Notifier.deliver_new_text(subscriber, article, site, password) do
       {:ok, _email} ->
@@ -274,7 +276,7 @@ defmodule Texttile.Newsletter do
       other ->
         Logger.error(
           "newsletter: #{Articles.display_title(article)} did not reach " <>
-            "#{subscriber.email}: #{inspect(other)}"
+            "subscriber #{subscriber.id}: #{inspect(other)}"
         )
     end
   end
