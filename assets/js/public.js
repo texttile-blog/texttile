@@ -22,24 +22,32 @@ addEventListener("keydown", (e) => {
 
 // The lightbox: a count, a way out, an arrow on each side, the arrow
 // keys, and a 48px swipe. It wraps around in both directions.
+//
+// Every picture of the page is a link to the original file, so a
+// crawler finds the file as it came. The click is taken here instead,
+// and the lightbox shows the scaled version from data-full. The
+// pictures inside the text come first, the gallery tiles after them,
+// in the order the reader meets them.
 (function () {
-  const gal = document.getElementById("gal");
   const lb = document.getElementById("lb");
-  if (!gal || !lb) return;
+  if (!lb) return;
 
-  const tiles = [...gal.querySelectorAll("a")];
+  const tiles = [...document.querySelectorAll("#body a.bodypic, #gal a")];
+  if (!tiles.length) return;
   let at = -1;
 
   function show(i) {
     at = (i + tiles.length) % tiles.length;
     const tile = tiles[at];
+    const inner = tile.querySelector("img");
+    const caption = tile.dataset.caption || (inner && inner.alt) || "";
     const img = document.createElement("img");
-    img.src = tile.href;
-    img.alt = tile.dataset.caption || "";
+    img.src = tile.dataset.full || tile.href;
+    img.alt = caption;
     const art = document.getElementById("lbArt");
     art.replaceChildren(img);
     document.getElementById("lbCount").textContent = at + 1 + " / " + tiles.length;
-    document.getElementById("lbCap").textContent = tile.dataset.caption || "";
+    document.getElementById("lbCap").textContent = caption;
   }
 
   function open(i) {
@@ -59,8 +67,12 @@ addEventListener("keydown", (e) => {
     if (at >= 0) tiles[at].focus();
   }
 
+  // A plain click opens the lightbox; a click with a modifier (or the
+  // middle button) stays the link it looks like and fetches the
+  // original in its own tab.
   tiles.forEach((tile, i) =>
     tile.addEventListener("click", (e) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
       open(i);
     })

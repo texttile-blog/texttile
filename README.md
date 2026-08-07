@@ -63,10 +63,14 @@ text at its own address, and every published page in the menu. A post lives
 under the day it went live, `/2026/08/23/harbor-mornings`; a page lives at
 its slug alone, `/about-us`. Admins sign in at `/login` and work at `/admin`.
 
+The list shows ten texts a page and then a pager. Change the number in
+Settings > Front page. Under a text stand the way to the text before it and
+the one after it, and the About block from Settings > About.
+
 The blog can sit behind one shared password (Settings > Access). It is an
-access word to hand around, not a login: it is stored in plain text and one
-entry opens the whole blog. A single text can also ask for it while the
-rest of the blog stays open (the switch is in the text's settings).
+access word to hand around, not a login: it is stored in plain text, one
+entry opens the whole blog, and it guards the blog or nothing. No text has a
+switch of its own.
 
 ## Comments
 

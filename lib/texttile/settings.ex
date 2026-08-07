@@ -29,6 +29,7 @@ defmodule Texttile.Settings do
     site_visibility: {:string, "public"},
     site_password: {:string, ""},
     comments_require_confirmation: {:boolean, true},
+    posts_per_page: {:integer, 10},
     image_max_edge: {:integer, 2560},
     logo: {:file, nil},
     logo_name: {:file, nil},
@@ -153,6 +154,9 @@ defmodule Texttile.Settings do
 
   defp validate(:site_visibility, value) when value in ~w(public protected), do: :ok
   defp validate(:site_visibility, _), do: {:error, "public or protected"}
+
+  defp validate(:posts_per_page, n) when n < 1, do: {:error, "at least 1 text"}
+  defp validate(:posts_per_page, n) when n > 200, do: {:error, "at most 200 texts"}
 
   defp validate(:image_max_edge, n) when n < 800, do: {:error, "at least 800 px"}
   defp validate(:image_max_edge, n) when n > 10_000, do: {:error, "at most 10000 px"}

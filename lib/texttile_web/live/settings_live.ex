@@ -612,6 +612,25 @@ defmodule TexttileWeb.SettingsLive do
               </option>
             </select>
           </div>
+          <div class="drow gtop">
+            <label class="lab" for="setting-posts_per_page">Texts a page</label>
+            <span class="val">
+              <input
+                type="number"
+                id="setting-posts_per_page"
+                name="settings[posts_per_page]"
+                value={@settings_form[:posts_per_page].value}
+                min="1"
+                max="200"
+                class="max-w-[110px]"
+                phx-debounce="300"
+              />
+              <div class="hint">
+                How many texts the blog list shows before the pager. Between 1
+                and 200; the default is 10.
+              </div>
+            </span>
+          </div>
         </.form>
 
         <.section>Theme</.section>

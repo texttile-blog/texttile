@@ -120,6 +120,42 @@ defmodule Texttile.Articles do
   end
 
   @doc """
+  The two posts a reader walks to from this one: `{older, newer}`, each
+  nil at the end of the row. A page is not in the row and answers
+  `{nil, nil}`; the list runs by publish date, with the id breaking a
+  tie between two texts of the same day.
+  """
+  def neighbours(%Article{type: "post", status: "published"} = article) do
+    {neighbour(article, :older), neighbour(article, :newer)}
+  end
+
+  def neighbours(%Article{}), do: {nil, nil}
+
+  defp neighbour(article, :older) do
+    published_query("post")
+    |> where(
+      [a],
+      a.publish_date < ^article.publish_date or
+        (a.publish_date == ^article.publish_date and a.id < ^article.id)
+    )
+    |> order_by([a], desc: a.publish_date, desc: a.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp neighbour(article, :newer) do
+    published_query("post")
+    |> where(
+      [a],
+      a.publish_date > ^article.publish_date or
+        (a.publish_date == ^article.publish_date and a.id > ^article.id)
+    )
+    |> order_by([a], asc: a.publish_date, asc: a.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
   The address a text wears on the public site. A post lives under the
   day it went live, `/2026/08/23/harbor`; a page keeps the short
   address, `/about-us`, because the site menu points at it. A text
