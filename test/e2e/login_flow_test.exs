@@ -144,6 +144,9 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       conn
       |> sign_in()
       |> click_button("#wmBtn", "Texttile")
+      # the menu opens in the browser: wait for it, or the next click
+      # races the script on a slow machine
+      |> assert_has("#navMenu", text: "Your profile")
       |> click_link("Your profile")
       |> assert_has("#crumb", text: "Your profile")
       |> assert_has("#sessions", text: "This browser")
