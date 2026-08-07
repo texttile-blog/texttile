@@ -64,17 +64,59 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
-  @doc "The foot of every page: the site name, and the door to the desk."
+  @doc """
+  The foot of every page: the way onto the newsletter, the site name,
+  and the door to the desk. The form carries the same invisible spam
+  filters as the comment form - a stamp of the moment it was drawn,
+  and a honeypot no person ever sees.
+  """
   attr :current_scope, :any, default: nil
 
   def site_foot(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :newsletter_token,
+        Phoenix.Token.sign(TexttileWeb.Endpoint, "newsletter form", System.system_time(:second))
+      )
+
     ~H"""
     <footer class="border-t border-rule">
-      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
-        <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
-        <span class="sp"></span>
-        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
-        <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
+      <div class="wrap pt-4">
+        <form
+          id="newsletter-form"
+          action={~p"/newsletter"}
+          method="post"
+          class="f-foot flex flex-wrap items-center gap-x-3 gap-y-2"
+        >
+          <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+          <input type="hidden" name="t" value={@newsletter_token} />
+          <input
+            type="text"
+            name="website"
+            id="nl-hp"
+            class="sr"
+            tabindex="-1"
+            aria-hidden="true"
+            autocomplete="off"
+          />
+          <label for="nl-email" class="text-ink">New texts by mail</label>
+          <input
+            type="email"
+            id="nl-email"
+            name="email"
+            placeholder="Your email, never shared"
+            required
+            class="flex-1 min-w-[190px] max-w-[290px] h-[30px] text-[13px]"
+          />
+          <button class="btn h-[30px]">Subscribe</button>
+        </form>
+        <div class="f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-3">
+          <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
+          <span class="sp"></span>
+          <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
+          <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
+        </div>
       </div>
     </footer>
     """
@@ -153,49 +195,8 @@ defmodule TexttileWeb.SiteHTML do
     "#{date.day} #{Calendar.strftime(date, "%B %Y")}"
   end
 
-  @doc """
-  The lead line of a card: the first real paragraph of the text, the
-  markdown stripped, cut at a word before 160 characters.
-  """
-  def lead(article) do
-    article.body
-    |> to_string()
-    |> String.split(~r/\n{2,}/)
-    |> Enum.map(&String.trim/1)
-    |> Enum.find("", fn block ->
-      block != "" and not String.starts_with?(block, "#") and
-        not Regex.match?(~r/\A!\[[^\]]*\]\([^)]*\)\z/, block)
-    end)
-    |> strip_markdown()
-    |> shorten(160)
-  end
-
-  defp strip_markdown(text) do
-    text
-    |> String.replace(~r/!\[[^\]]*\]\([^)]*\)/, "")
-    |> String.replace(~r/\[([^\]]*)\]\([^)]*\)/, "\\1")
-    |> String.replace(~r/[*_`>]/, "")
-    |> String.replace(~r/\s+/, " ")
-    |> String.trim()
-  end
-
-  defp shorten(text, max) do
-    if String.length(text) <= max do
-      text
-    else
-      # the slice ends mid-word, so the broken tail goes - unless the
-      # cut is one single word, which stays as it is
-      cut = String.slice(text, 0, max)
-
-      head =
-        case String.split(cut, " ") do
-          [_single] -> cut
-          words -> words |> Enum.drop(-1) |> Enum.join(" ")
-        end
-
-      head <> "…"
-    end
-  end
+  @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
+  defdelegate lead(article), to: Articles
 
   @doc "The heading of the comments block: the count while there is one."
   def comment_heading(0), do: "Comments"

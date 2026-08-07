@@ -10,13 +10,25 @@ defmodule TexttileWeb.SiteController do
   alias Texttile.Articles
   alias Texttile.Articles.Article
   alias Texttile.Comments
-  alias Texttile.Comments.RateLimiter
+  alias Texttile.Newsletter
+  alias Texttile.RateLimiter
   alias Texttile.Gallery
   alias Texttile.Settings
   alias TexttileWeb.SiteGate
 
+  # confirm_subscriber is here for its 404 branch only; the newsletter
+  # pages themselves are chrome-less like the gate.
   plug :load_chrome
-       when action in [:front, :texts, :tag, :article, :page, :post_comment, :confirm_comment]
+       when action in [
+              :front,
+              :texts,
+              :tag,
+              :article,
+              :page,
+              :post_comment,
+              :confirm_comment,
+              :confirm_subscriber
+            ]
 
   @doc "The front door: the latest texts, or the one fixed page."
   def front(conn, params) do
@@ -239,6 +251,93 @@ defmodule TexttileWeb.SiteController do
   defp comments_anchor(article), do: Articles.public_path(article) <> "#comments"
 
   defp own_comment_ids(conn), do: get_session(conn, :own_comments) || []
+
+  ## Newsletter
+
+  @doc """
+  A reader asks for the newsletter through the footer form. The same
+  invisible filters as on the comment form answer first, and a dropped
+  request is told that it worked - the sender learns nothing. What
+  every path lands on is a plain page, not the page the form stood on:
+  the form stands everywhere, and the answer matters more than the
+  place.
+  """
+  def join_newsletter(conn, params) do
+    email = text_value(params["email"])
+
+    cond do
+      newsletter_spam?(params) ->
+        newsletter_page(conn, :sent, email)
+
+      not Newsletter.Subscriber.address?(Newsletter.Subscriber.normalize(email)) ->
+        # The words travel back into the form. The stamp travels with
+        # them, so the corrected address is not a script to the trap.
+        newsletter_page(conn, :retry, email, t: to_string(params["t"]))
+
+      # The limit is spent on storable requests only.
+      not RateLimiter.allow?(client_ip(conn)) ->
+        newsletter_page(conn, :sent, email)
+
+      true ->
+        {:ok, _} = Newsletter.join(email, confirm_url: &url(~p"/newsletter/confirm/#{&1}"))
+        newsletter_page(conn, :sent, email)
+    end
+  end
+
+  @doc "The mailed link: the address is on the list from here on."
+  def confirm_subscriber(conn, %{"token" => token}) do
+    case Newsletter.confirm(token) do
+      {:ok, subscriber} -> newsletter_page(conn, :confirmed, subscriber.email)
+      :error -> not_found(conn)
+    end
+  end
+
+  @doc """
+  The way off the list, as a question: one page, one button. A mail
+  scanner that opens every link must not take anybody off the list, so
+  the leaving itself is the POST below. A spent link answers the same
+  as the button: to the person leaving, both mean off the list.
+  """
+  def unsubscribe(conn, %{"token" => token}) do
+    case Newsletter.by_token(token) do
+      nil -> newsletter_page(conn, :left, nil)
+      subscriber -> newsletter_page(conn, :leave, subscriber.email, token: token)
+    end
+  end
+
+  @doc "The button was pressed: the address goes off the list."
+  def do_unsubscribe(conn, %{"token" => token}) do
+    :ok = Newsletter.unsubscribe(token)
+    newsletter_page(conn, :left, nil)
+  end
+
+  defp newsletter_page(conn, state, email, extra \\ []) do
+    conn
+    |> assign(:page_title, "Newsletter")
+    |> render(:newsletter,
+      state: state,
+      email: email,
+      t: Keyword.get(extra, :t),
+      token: Keyword.get(extra, :token)
+    )
+  end
+
+  # The same two invisible filters as on the comment form; the stamp
+  # carries no article, only the moment the footer was drawn.
+  defp newsletter_spam?(params) do
+    text_value(params["website"]) != "" or not newsletter_timing?(params["t"])
+  end
+
+  defp newsletter_timing?(token) do
+    min_age = Application.get_env(:texttile, :comment_min_age, 3)
+
+    case Phoenix.Token.verify(TexttileWeb.Endpoint, "newsletter form", text_value(token),
+           max_age: 7 * 86_400
+         ) do
+      {:ok, signed_at} -> System.system_time(:second) - signed_at >= min_age
+      _ -> false
+    end
+  end
 
   ## The gate
 

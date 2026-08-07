@@ -68,6 +68,7 @@ defmodule TexttileWeb.Router do
       live "/", TextsLive
       live "/texts/:id", EditorLive
       live "/comments", CommentsLive
+      live "/newsletter", NewsletterLive
       live "/profile", ProfileLive
       live "/settings", SettingsLive
       live "/settings/import", ImportLive
@@ -116,6 +117,13 @@ defmodule TexttileWeb.Router do
     # The mailed confirmation link stays outside too: the reader's
     # comment must not dead-end on a browser that lost the password.
     get "/comments/confirm/:token", SiteController, :confirm_comment
+
+    # The newsletter's mailed links, outside for the same reason. The
+    # way off the list is a page with one button: a mail scanner that
+    # opens every link must not take anybody off the list.
+    get "/newsletter/confirm/:token", SiteController, :confirm_subscriber
+    get "/newsletter/unsubscribe/:token", SiteController, :unsubscribe
+    post "/newsletter/unsubscribe/:token", SiteController, :do_unsubscribe
   end
 
   scope "/", TexttileWeb do
@@ -127,6 +135,10 @@ defmodule TexttileWeb.Router do
 
     # A reader sends a comment. Behind the gate like the text it is on.
     post "/comments/:article_id", SiteController, :post_comment
+
+    # A reader asks for the newsletter. Behind the gate like the
+    # footer form the request comes from.
+    post "/newsletter", SiteController, :join_newsletter
 
     # Every published post lives under the day it went live. Four
     # segments, so no page and no named route can stand in the way.
