@@ -679,8 +679,6 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <%!-- always on screen: a public blog needs the password too,
-               for the texts that ask for it one by one --%>
           <div class="py-3 max-w-[280px]" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
             <input
@@ -693,9 +691,8 @@ defmodule TexttileWeb.SettingsLive do
             />
             <div class="hint">
               A shared access word, not a login: it goes into the notification
-              mails, and you pass it on. It is stored as it is written. On a
-              public blog it guards the texts that ask for it in their own
-              settings; without a password nothing is protected.
+              mails, and you pass it on. It is stored as it is written. It is
+              the password of the whole blog; without one nothing is protected.
             </div>
           </div>
         </.form>

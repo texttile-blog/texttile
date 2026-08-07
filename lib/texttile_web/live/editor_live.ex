@@ -294,7 +294,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
-      when field in ~w(type tags slug allow_comments notify_on_publish protected) do
+      when field in ~w(type tags slug allow_comments notify_on_publish) do
     %{article: article} = socket.assigns
 
     case Articles.update_settings(article, Map.take(params, [field])) do
@@ -1823,19 +1823,6 @@ defmodule TexttileWeb.EditorLive do
                     value="true"
                     checked={@article.allow_comments}
                   /> <span>Allow comments</span>
-                </label>
-                <label class="opt">
-                  <input type="hidden" name="protected" value="false" />
-                  <input
-                    type="checkbox"
-                    id="optProtected"
-                    name="protected"
-                    value="true"
-                    checked={@article.protected}
-                  />
-                  <span>
-                    Ask for the blog password first<span class="note">Readers need the site password; search engines see nothing. The password lives in Settings.</span>
-                  </span>
                 </label>
                 <span id="notifyOpt">
                   <%= if @article.type == "page" do %>

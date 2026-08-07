@@ -51,18 +51,9 @@ defmodule Texttile.ArticlesPublicTest do
       assert Enum.map(Articles.list_published(search: "harbor fog"), & &1.id) == [both.id]
     end
 
-    test "leaves protected texts out unless asked to include them" do
-      open = published_post(title: "Open")
-      hidden = published_post(title: "Hidden", protected: true)
-
-      assert Enum.map(Articles.list_published(include_protected: false), & &1.id) == [open.id]
-
-      ids = Articles.list_published(include_protected: true) |> Enum.map(& &1.id) |> Enum.sort()
-      assert ids == Enum.sort([open.id, hidden.id])
-    end
   end
 
-  describe "list_pages/1" do
+  describe "list_pages/0" do
     test "answers published pages, oldest publish date first" do
       late = published_page(title: "Imprint", publish_date: ~D[2026-04-01])
       early = published_page(title: "About", publish_date: ~D[2026-01-01])
@@ -70,13 +61,6 @@ defmodule Texttile.ArticlesPublicTest do
       published_post(title: "A post")
 
       assert Enum.map(Articles.list_pages(), & &1.id) == [early.id, late.id]
-    end
-
-    test "leaves protected pages out when asked" do
-      open = published_page(title: "Open page")
-      published_page(title: "Hidden page", protected: true)
-
-      assert Enum.map(Articles.list_pages(include_protected: false), & &1.id) == [open.id]
     end
   end
 
@@ -186,16 +170,6 @@ defmodule Texttile.ArticlesPublicTest do
     test "splits, trims, lowercases and deduplicates" do
       assert Articles.tag_list(%{tags: "Sea, fog , sea,,  "}) == ["sea", "fog"]
       assert Articles.tag_list(%{tags: ""}) == []
-    end
-  end
-
-  describe "the protected switch" do
-    test "update_settings flips it" do
-      article = draft_post(title: "Secret")
-      refute article.protected
-
-      assert {:ok, article} = Articles.update_settings(article, %{protected: true})
-      assert article.protected
     end
   end
 end

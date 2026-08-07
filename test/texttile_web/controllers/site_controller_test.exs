@@ -204,16 +204,6 @@ defmodule TexttileWeb.SiteControllerTest do
       assert conn |> get(~p"/tags/nowhere") |> html_response(404)
     end
 
-    test "protected texts stay out of the archives for locked readers", %{conn: conn} do
-      {:ok, _} = Settings.put(:site_password, "sesame")
-      published_post(title: "Open", tags: "sea")
-      published_post(title: "Hidden", tags: "sea", protected: true)
-
-      html = conn |> get(~p"/tags/sea") |> html_response(200)
-      assert html =~ "Open"
-      refute html =~ "Hidden"
-      assert html =~ "1 text has this tag."
-    end
   end
 
   describe "the menu" do
@@ -367,56 +357,6 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/") |> html_response(200)
       assert html =~ "Open after all"
-    end
-  end
-
-  describe "a protected text on a public site" do
-    setup do
-      {:ok, _} = Settings.put(:site_password, "sesame")
-      :ok
-    end
-
-    test "asks for the password on its page and hides everywhere else", %{conn: conn} do
-      published_post(title: "Open text")
-
-      published_post(
-        title: "Hidden text",
-        slug: "hidden-text",
-        publish_date: ~D[2026-03-01],
-        protected: true,
-        tags: "secret"
-      )
-
-      published_page(title: "Hidden page", protected: true)
-
-      html = conn |> get(~p"/") |> html_response(200)
-      assert html =~ "Open text"
-      refute html =~ "Hidden text"
-      refute html =~ "Hidden page"
-
-      search = conn |> get(~p"/?q=secret") |> html_response(200)
-      refute search =~ "Hidden text"
-
-      conn = get(conn, ~p"/2026/03/01/hidden-text")
-      assert redirected_to(conn) == "/unlock?to=%2F2026%2F03%2F01%2Fhidden-text"
-    end
-
-    test "after the password everything appears", %{conn: conn} do
-      published_post(
-        title: "Hidden text",
-        slug: "hidden-text",
-        publish_date: ~D[2026-03-01],
-        protected: true
-      )
-
-      conn =
-        post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/2026/03/01/hidden-text"})
-
-      assert redirected_to(conn) == "/2026/03/01/hidden-text"
-
-      conn = recycle(conn)
-      assert conn |> get(~p"/2026/03/01/hidden-text") |> html_response(200) =~ "Hidden text"
-      assert conn |> get(~p"/") |> html_response(200) =~ "Hidden text"
     end
   end
 

@@ -41,7 +41,7 @@ defmodule TexttileWeb.SiteController do
   def article(conn, %{"year" => year, "month" => month, "day" => day, "slug" => slug}) do
     with {:ok, date} <- Date.from_iso8601("#{year}-#{month}-#{day}"),
          article when not is_nil(article) <- Articles.get_published_post(date, slug) do
-      show(conn, article)
+      render_text(conn, article)
     else
       _ -> not_found(conn)
     end
@@ -51,15 +51,7 @@ defmodule TexttileWeb.SiteController do
   def page(conn, %{"slug" => slug}) do
     case Articles.get_published_page(slug) do
       nil -> not_found(conn)
-      article -> show(conn, article)
-    end
-  end
-
-  defp show(conn, article) do
-    if article.protected and not conn.assigns.site_unlocked do
-      redirect(conn, to: ~p"/unlock?to=#{conn.request_path}")
-    else
-      render_text(conn, article)
+      article -> render_text(conn, article)
     end
   end
 
@@ -69,7 +61,7 @@ defmodule TexttileWeb.SiteController do
   """
   def tag(conn, %{"tag" => raw}) do
     tag = raw |> String.downcase() |> String.trim()
-    posts = Articles.list_published(include_protected: conn.assigns.site_unlocked)
+    posts = Articles.list_published()
     articles = Enum.filter(posts, &(tag in Articles.tag_list(&1)))
 
     if articles == [] do
@@ -110,10 +102,7 @@ defmodule TexttileWeb.SiteController do
     article = fetch_commentable(id)
 
     cond do
-      # A locked reader learns nothing here, not even that the text
-      # exists: a redirect to the gate would carry its address, and a
-      # protected text stands in no list a locked reader can read.
-      is_nil(article) or (article.protected and not conn.assigns.site_unlocked) ->
+      is_nil(article) ->
         not_found(conn)
 
       spam?(article, params) ->
@@ -284,18 +273,9 @@ defmodule TexttileWeb.SiteController do
   ## The shared chrome and the two page shapes
 
   # What the header needs on every reader page: the menu pages and the
-  # fixed front page. The locked reader's menu holds no protected page.
-  # The confirmation link stands outside the gate plug, so the answer
-  # it would have written is asked for here when it is missing.
+  # fixed front page.
   defp load_chrome(conn, _opts) do
-    conn =
-      if Map.has_key?(conn.assigns, :site_unlocked) do
-        conn
-      else
-        assign(conn, :site_unlocked, SiteGate.unlocked?(conn))
-      end
-
-    pages = Articles.list_pages(include_protected: conn.assigns.site_unlocked)
+    pages = Articles.list_pages()
 
     home_page =
       with "page:" <> id <- Settings.get(:front_page),
@@ -312,15 +292,14 @@ defmodule TexttileWeb.SiteController do
 
   defp render_list(conn, params) do
     q = params |> Map.get("q", "") |> String.trim()
-    unlocked = conn.assigns.site_unlocked
 
-    articles = Articles.list_published(search: q, include_protected: unlocked)
+    articles = Articles.list_published(search: q)
 
     total =
       if q == "" do
         length(articles)
       else
-        length(Articles.list_published(include_protected: unlocked))
+        length(Articles.list_published())
       end
 
     conn

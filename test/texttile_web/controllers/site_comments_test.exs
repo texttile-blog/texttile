@@ -200,28 +200,6 @@ defmodule TexttileWeb.SiteCommentsTest do
              |> html_response(404)
     end
 
-    test "a protected text answers a locked reader with nothing at all", %{conn: conn} do
-      {:ok, _} = Settings.put(:site_password, "sesame")
-      article = published_post(protected: true, title: "The private one")
-
-      conn = send_comment(conn, article)
-
-      # not even its address: a 302 to the gate would carry the path,
-      # and a locked reader meets the text in no list either
-      assert html_response(conn, 404)
-      refute conn.resp_body =~ "the-private-one"
-      assert Comments.for_article(article.id) == []
-    end
-
-    test "an unlocked reader may comment on a protected text", %{conn: conn} do
-      {:ok, _} = Settings.put(:site_password, "sesame")
-      article = published_post(protected: true)
-
-      conn = conn |> init_test_session(site_unlocked: true) |> send_comment(article)
-
-      assert redirected_to(conn) == Articles.public_path(article) <> "#comments"
-      assert [_] = Comments.for_article(article.id)
-    end
 
     test "a field that is not one line of text is read as nothing", %{conn: conn} do
       article = published_post()

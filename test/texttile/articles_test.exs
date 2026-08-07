@@ -247,6 +247,27 @@ defmodule Texttile.ArticlesTest do
       assert [%{title: "Doors of Vilnius"}] = Articles.list_articles(search: "travel")
       assert [%{title: "Slow trains"}] = Articles.list_articles(search: "TRAINS")
     end
+
+    test "the grid stands by date, newest first" do
+      {old, user} = draft(%{title: "Old"})
+      {:ok, _} = Articles.publish(old, user, today: ~D[2019-04-05])
+
+      {recent, user} = draft(%{title: "Recent"})
+      {:ok, _} = Articles.publish(recent, user, today: ~D[2024-11-12])
+
+      {middle, user} = draft(%{title: "Middle"})
+      {:ok, _} = Articles.publish(middle, user, today: ~D[2021-08-01])
+
+      assert Enum.map(Articles.list_articles(), & &1.title) == ["Recent", "Middle", "Old"]
+    end
+
+    test "a draft has no date yet and stands on top" do
+      {published, user} = draft(%{title: "Live"})
+      {:ok, _} = Articles.publish(published, user, today: @today)
+      {_open, _} = draft(%{title: "Still writing"})
+
+      assert ["Still writing" | _] = Enum.map(Articles.list_articles(), & &1.title)
+    end
   end
 
   describe "inline_refs/1" do

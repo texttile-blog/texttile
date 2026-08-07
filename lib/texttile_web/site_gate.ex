@@ -4,15 +4,14 @@ defmodule TexttileWeb.SiteGate do
 
   The password is a shared access word, one for the whole blog, stored
   in plain text (it goes into notification mails and gets passed
-  around). This plug answers one question per request - may this reader
-  see protected texts? - into `conn.assigns.site_unlocked`, and when the
-  whole blog is protected it walks a locked reader to the gate at
-  `/unlock`, with the way back in `?to=`.
+  around). It guards the blog or nothing: no text carries a switch of
+  its own. This plug answers one question per request - may this reader
+  in? - into `conn.assigns.site_unlocked`, and while the blog is
+  protected it walks a locked reader to the gate at `/unlock`, with the
+  way back in `?to=`.
 
   Unlocked is: a signed-in admin, a reader who entered the password this
-  session, or a blank stored password (nothing to ask for). The
-  per-text switch is judged where the text is served, with this same
-  assign.
+  session, or a blank stored password (nothing to ask for).
   """
 
   use TexttileWeb, :verified_routes
@@ -34,7 +33,7 @@ defmodule TexttileWeb.SiteGate do
     end
   end
 
-  @doc "May this reader see protected texts?"
+  @doc "May this reader read the blog?"
   def unlocked?(conn) do
     conn.assigns[:current_scope] != nil or
       get_session(conn, :site_unlocked) == true or
