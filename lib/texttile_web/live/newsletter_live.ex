@@ -143,7 +143,4 @@ defmodule TexttileWeb.NewsletterLive do
     date = DateTime.to_date(subscriber.inserted_at)
     "#{date.day} #{Calendar.strftime(date, "%B %Y")}"
   end
-
-  defp plural(1, one, _many), do: one
-  defp plural(_n, _one, many), do: many
 end

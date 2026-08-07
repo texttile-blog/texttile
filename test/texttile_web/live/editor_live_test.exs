@@ -116,6 +116,66 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#stateBtn .main", "Publish")
     end
 
+    test "the publish note counts the subscribers the email went to", %{conn: conn, user: user} do
+      {:ok, _} = Texttile.Newsletter.add("one@example.org")
+
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      assert has_element?(view, "#state[data-note*='on its way to 1 subscriber']")
+
+      {:ok, _} = Texttile.Newsletter.add("two@example.org")
+
+      other = draft(user, %{title: "Windows", body: "Open ones."})
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{other}")
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      assert has_element?(view, "#state[data-note*='on its way to 2 subscribers']")
+    end
+
+    test "with nobody on the list the note says so", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      assert has_element?(view, "#state[data-note*='nobody is on the newsletter list']")
+    end
+
+    test "an unchecked text publishes quietly, and says that", %{conn: conn, user: user} do
+      {:ok, _} = Texttile.Newsletter.add("one@example.org")
+
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["notify_on_publish"], notify_on_publish: "false"})
+
+      refute Articles.get_article!(article.id).notify_on_publish
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      assert has_element?(view, "#state[data-note*='no email sent']")
+      assert is_nil(Articles.get_article!(article.id).notified_on)
+    end
+
+    test "a text that already mailed says so, on the button and in the settings",
+         %{conn: conn, user: user} do
+      {:ok, _} = Texttile.Newsletter.add("one@example.org")
+
+      article = draft(user)
+      {:ok, article} = Articles.publish(article, user)
+      {:ok, article} = Articles.unpublish(article, user)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      # the stamp outranks the draft status in the settings note
+      assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
+
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+      assert has_element?(view, "#state[data-note*='already got this email']")
+    end
+
     test "a live text carries the link to its address in the bar", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
