@@ -126,6 +126,7 @@ defmodule Texttile.Import do
       dir
       |> bundle_dirs()
       |> Enum.map(&Bundle.read/1)
+      |> oldest_first()
       |> mark_duplicate_slugs()
       |> mark_existing_slugs()
 
@@ -140,6 +141,18 @@ defmodule Texttile.Import do
     |> Enum.sort()
     |> Enum.map(&Path.join(dir, &1))
     |> Enum.filter(fn path -> File.dir?(path) and File.ls!(path) != [] end)
+  end
+
+  # The order of the report is the order of the run: oldest text first,
+  # the way an archive was written. A bundle without a date has nothing
+  # to sort by and goes last, under its folder name.
+  defp oldest_first(bundles) do
+    Enum.sort_by(bundles, fn bundle ->
+      case bundle.date do
+        %Date{} = date -> {0, Date.to_erl(date), bundle.name}
+        _ -> {1, {0, 0, 0}, bundle.name}
+      end
+    end)
   end
 
   defp mark_duplicate_slugs(bundles) do
@@ -505,9 +518,27 @@ defmodule Texttile.Import do
     error -> {:error, "#{source}: #{Exception.message(error)}"}
   end
 
+  @doc """
+  Makes `path` usable as a fresh file: whatever stands there goes
+  first. The zip extraction folders and the picture downloads share the
+  system temp directory, and the name counter starts over with every
+  boot, so a folder an earlier run left behind can carry the very name
+  the next download draws.
+  """
+  def tmp_path(path) do
+    File.rm_rf(path)
+    path
+  end
+
   defp download(url, progress) do
     with :ok <- host_check(url) do
-      tmp = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
+      # a prefix of its own, so a download and an extraction folder
+      # never draw from the same pool of names
+      tmp =
+        tmp_path(
+          Path.join(System.tmp_dir!(), "texttile-fetch-#{System.unique_integer([:positive])}")
+        )
+
       file = File.open!(tmp, [:write, :binary])
       cap = max_picture_bytes()
 
