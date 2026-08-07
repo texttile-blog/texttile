@@ -435,16 +435,26 @@ class Gallery {
   // and does it smoothly. Once a press becomes a sort, the pan has to
   // stop: it has not started yet (the finger stood still through the
   // whole delay), and a refused touchmove keeps it from starting.
+  //
+  // A hold that outlived its drag would leave the page unscrollable, so
+  // the last touch of any hand releases it as well - pointerup is the
+  // rule, this is the floor under it.
   holdPan() {
     if (this.panHold) return
     this.panHold = e => e.preventDefault()
+    this.panEnd = () => this.releasePan()
     document.addEventListener("touchmove", this.panHold, {passive: false})
+    document.addEventListener("touchend", this.panEnd)
+    document.addEventListener("touchcancel", this.panEnd)
   }
 
   releasePan() {
     if (!this.panHold) return
     document.removeEventListener("touchmove", this.panHold, {passive: false})
+    document.removeEventListener("touchend", this.panEnd)
+    document.removeEventListener("touchcancel", this.panEnd)
     this.panHold = null
+    this.panEnd = null
   }
 
   pointerMove(e) {

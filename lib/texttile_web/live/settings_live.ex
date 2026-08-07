@@ -18,7 +18,7 @@ defmodule TexttileWeb.SettingsLive do
   # The keys a form on this screen may write. The file-backed keys go
   # through Texttile.Uploads, never through a form.
   @editable ~w(site_title site_description language about_markdown front_page
-               theme_css site_visibility site_password
+               posts_per_page theme_css site_visibility site_password
                comments_require_confirmation image_max_edge)
 
   def mount(_params, _session, socket) do
@@ -631,6 +631,9 @@ defmodule TexttileWeb.SettingsLive do
                 How many texts the blog list shows before the pager. Between 1
                 and 200; the default is 10.
               </div>
+              <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
+                The value must be {@errors[:posts_per_page]}.
+              </p>
             </span>
           </div>
         </.form>

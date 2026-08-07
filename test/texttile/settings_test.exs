@@ -52,6 +52,20 @@ defmodule Texttile.SettingsTest do
     end
   end
 
+  describe "posts_per_page" do
+    test "ten by default, and only a number a list can use" do
+      assert Settings.get(:posts_per_page) == 10
+
+      assert {:ok, 25} = Settings.put(:posts_per_page, "25")
+      assert Settings.get(:posts_per_page) == 25
+
+      assert {:error, _} = Settings.put(:posts_per_page, "0")
+      assert {:error, _} = Settings.put(:posts_per_page, "201")
+      assert {:error, _} = Settings.put(:posts_per_page, "ten")
+      assert Settings.get(:posts_per_page) == 25
+    end
+  end
+
   describe "theme_color/0" do
     test "answers the bar of the iris theme, laid over the page" do
       # --tt-bar is rgba(255, 255, 255, .93) over the #faf9f7 page

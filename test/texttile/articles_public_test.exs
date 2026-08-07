@@ -63,6 +63,42 @@ defmodule Texttile.ArticlesPublicTest do
     end
   end
 
+  describe "neighbours/1" do
+    test "answers the older and the newer post, nil at each end" do
+      old = published_post(title: "Old", publish_date: ~D[2026-01-05])
+      middle = published_post(title: "Middle", publish_date: ~D[2026-02-05])
+      new = published_post(title: "New", publish_date: ~D[2026-03-05])
+
+      assert {nil, %{id: middle_id}} = Articles.neighbours(old)
+      assert middle_id == middle.id
+
+      assert {%{id: older}, %{id: newer}} = Articles.neighbours(middle)
+      assert older == old.id
+      assert newer == new.id
+
+      assert {%{id: middle_again}, nil} = Articles.neighbours(new)
+      assert middle_again == middle.id
+    end
+
+    test "two texts of one day are told apart, and drafts stay out of the row" do
+      first = published_post(title: "Morning", publish_date: ~D[2026-02-05])
+      second = published_post(title: "Evening", publish_date: ~D[2026-02-05])
+      draft_post(title: "Not yet")
+
+      assert {nil, %{id: next}} = Articles.neighbours(first)
+      assert next == second.id
+      assert {%{id: previous}, nil} = Articles.neighbours(second)
+      assert previous == first.id
+    end
+
+    test "a page stands on its own" do
+      published_post(title: "A post", publish_date: ~D[2026-01-01])
+      page = published_page(title: "About", publish_date: ~D[2026-02-01])
+
+      assert Articles.neighbours(page) == {nil, nil}
+    end
+  end
+
   describe "public_path/1" do
     test "a post lives under its publish date" do
       post = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-08-23])

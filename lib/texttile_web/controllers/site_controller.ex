@@ -301,7 +301,7 @@ defmodule TexttileWeb.SiteController do
 
     per_page = Settings.get(:posts_per_page)
     pages = max(div(length(found) - 1, per_page) + 1, 1)
-    page = found |> length() |> page_number(params["page"], per_page)
+    page = page_number(params["page"], pages)
     articles = Enum.slice(found, (page - 1) * per_page, per_page)
     list_path = if conn.assigns.home_page, do: ~p"/texts", else: ~p"/"
 
@@ -322,11 +322,9 @@ defmodule TexttileWeb.SiteController do
 
   # A page number outside the row is no error: a bookmark from a
   # shorter blog, or a ?page= somebody typed, lands on the last page.
-  defp page_number(found, raw, per_page) do
-    last = max(div(found - 1, per_page) + 1, 1)
-
+  defp page_number(raw, pages) do
     case Integer.parse(to_string(raw)) do
-      {n, ""} when n > 0 -> min(n, last)
+      {n, ""} when n > 0 -> min(n, pages)
       _ -> 1
     end
   end

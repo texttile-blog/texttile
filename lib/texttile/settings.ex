@@ -62,19 +62,24 @@ defmodule Texttile.Settings do
   design, so it is laid over the page colour first. A theme that
   answers neither token falls back to the iris page.
   """
+  # Every page render asks for this, so the two patterns are compiled
+  # once instead of per call.
+  @page_token ~r/--tt-page\s*:\s*([^;}]+)/
+  @bar_token ~r/--tt-bar\s*:\s*([^;}]+)/
+
   def theme_color do
     css = theme_css()
-    page = color(css, "--tt-page") || {250, 249, 247, 1.0}
+    page = color(css, @page_token) || {250, 249, 247, 1.0}
 
     css
-    |> color("--tt-bar")
+    |> color(@bar_token)
     |> Kernel.||(page)
     |> over(page)
   end
 
   # The last declaration wins, the way the browser reads it.
   defp color(css, token) do
-    ~r/#{Regex.escape(token)}\s*:\s*([^;}]+)/
+    token
     |> Regex.scan(css)
     |> List.last()
     |> case do
