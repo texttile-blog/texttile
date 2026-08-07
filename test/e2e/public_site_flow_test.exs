@@ -130,8 +130,6 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     """
 
     test "keeps space under the last line", %{conn: conn} do
-      published_post(title: "Harbor mornings")
-
       conn
       |> visit("/")
       |> assert_has("#foot-signin")
