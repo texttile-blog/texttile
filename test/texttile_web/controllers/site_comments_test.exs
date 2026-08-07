@@ -154,7 +154,7 @@ defmodule TexttileWeb.SiteCommentsTest do
     test "a stamp from another text is dropped", %{conn: conn} do
       article = published_post()
       other = published_post()
-      conn = send_comment(conn, article, %{"t" => form_token(other)})
+      send_comment(conn, article, %{"t" => form_token(other)})
 
       assert Comments.for_article(article.id) == []
     end

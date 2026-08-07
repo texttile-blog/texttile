@@ -61,6 +61,18 @@ access word to hand around, not a login: it is stored in plain text and one
 entry opens the whole blog. A single text can also ask for it while the
 rest of the blog stays open (the switch is in the text's settings).
 
+## Comments
+
+Readers can comment under every text that allows it (the switch is in the
+text's settings). There is no approval queue: by default a comment waits
+only for its reader's own email confirmation, once per address, and appears
+the moment the reader follows the mailed link. Turn the confirmation off in
+Settings > Comments and every comment appears at once. Admins see all
+comments at `/admin/comments` and can delete.
+
+Spam protection is built in and always on: a honeypot field, a time trap,
+and a rate limit per caller. No captcha, no Google, no third parties.
+
 ## Accounts
 
 `ADMIN_USERS` names everybody who may sign in. It holds usernames,
