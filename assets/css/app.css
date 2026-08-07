@@ -223,6 +223,21 @@
   .seg-b:hover { background-color: var(--tt-field); color: var(--tt-ink); }
   .seg-b.on { background-color: var(--tt-solid); color: var(--tt-onsolid); }
 
+  /* what the tag field offers while you type. It hangs on the body and
+     is placed by the hook, so no scroll container can cut it off. */
+  .tagmenu {
+    position: fixed; z-index: 70; margin: 0; padding: 4px; list-style: none;
+    max-height: 240px; overflow-y: auto;
+    background: var(--tt-paper); border: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius-pop); box-shadow: 0 14px 34px rgb(var(--tt-shadow) / .2);
+  }
+  .tagmenu li {
+    padding: 5px 9px; font-size: 13.5px; color: var(--tt-ink); cursor: pointer;
+    border-radius: var(--tt-radius);
+  }
+  .tagmenu li:hover { background: var(--tt-field); }
+  .tagmenu li.on { background: var(--tt-accentwash); color: var(--tt-accent); }
+
   /* the tags the blog already carries, under the tag field: a chip per
      tag, the ones on this text marked */
   .tagpick { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
