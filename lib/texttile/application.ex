@@ -23,9 +23,9 @@ defmodule Texttile.Application do
       # The bundle import: one job at a time, its work in watched tasks.
       {Task.Supervisor, name: Texttile.Import.TaskSupervisor},
       Texttile.Import.Job,
-      # The invisible spam filter of the comment form: a few comments
+      # The invisible spam filter of the public forms: a few knocks
       # per caller per minute.
-      Texttile.Comments.RateLimiter,
+      Texttile.RateLimiter,
       # Start to serve requests, typically the last entry
       TexttileWeb.Endpoint
     ]

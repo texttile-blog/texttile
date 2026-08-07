@@ -14,7 +14,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
   # Every test in the run knocks from the same address, so the browser
   # must not meet a limit another test spent.
   setup do
-    Texttile.Comments.RateLimiter.reset()
+    Texttile.RateLimiter.reset()
     :ok
   end
 

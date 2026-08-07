@@ -21,11 +21,11 @@ defmodule TexttileWeb.SiteCommentsTest do
   # address decides, and every test would share one bucket.
   setup do
     Application.put_env(:texttile, :client_ip_header, "x-forwarded-for")
-    Texttile.Comments.RateLimiter.reset()
+    Texttile.RateLimiter.reset()
 
     on_exit(fn ->
       Application.delete_env(:texttile, :client_ip_header)
-      Texttile.Comments.RateLimiter.reset()
+      Texttile.RateLimiter.reset()
     end)
 
     :ok
