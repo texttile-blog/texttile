@@ -38,6 +38,10 @@ config :phoenix_test,
 # trap stands down. The tests about the trap set the age themselves.
 config :texttile, :comment_min_age, 0
 
+# The subscriber mails go to a test mailbox that no provider counts, so
+# they leave without the pause that paces a real send.
+config :texttile, :newsletter_pace_ms, 0
+
 # The importer's HTTP requests answer from a stub instead of the net,
 # so its stub hosts must not be resolved and judged.
 config :texttile, :import_req_options, plug: {Req.Test, Texttile.ImportStub}

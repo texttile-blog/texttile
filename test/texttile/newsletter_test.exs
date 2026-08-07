@@ -202,6 +202,20 @@ defmodule Texttile.NewsletterTest do
       refute_receive {:email, _}, 200
     end
 
+    test "a second go-live that read the text before the stamp mails nobody" do
+      article = published_post()
+      assert_receive {:email, _}, 1000
+      assert_receive {:email, _}, 1000
+
+      # the other desk, or the go-live clock, holding the text as it
+      # stood before the stamp landed
+      stale = %{Articles.get_article!(article.id) | notified_on: nil}
+      answered = Newsletter.notify_published(stale)
+
+      refute_receive {:email, _}, 200
+      assert answered.notified_on == Date.utc_today()
+    end
+
     test "a page goes live silently" do
       published_page()
       refute_receive {:email, _}, 200

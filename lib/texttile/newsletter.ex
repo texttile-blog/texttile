@@ -13,6 +13,9 @@ defmodule Texttile.Newsletter do
 
   import Ecto.Query
 
+  require Logger
+
+  alias Texttile.Articles
   alias Texttile.Articles.Article
   alias Texttile.Newsletter.Notifier
   alias Texttile.Newsletter.Subscriber
@@ -63,17 +66,21 @@ defmodule Texttile.Newsletter do
   """
   def add(email) do
     with {:ok, subscriber} <- ensure(email) do
-      subscriber =
-        if Subscriber.confirmed?(subscriber) do
-          subscriber
-        else
-          subscriber
-          |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
-          |> Repo.update!()
-        end
-
+      subscriber = confirm_now(subscriber)
       broadcast()
       {:ok, subscriber}
+    end
+  end
+
+  # The one place an address becomes a confirmed one, whichever way it
+  # got there: the desk vouches for it, or its owner followed the link.
+  defp confirm_now(%Subscriber{} = subscriber) do
+    if Subscriber.confirmed?(subscriber) do
+      subscriber
+    else
+      subscriber
+      |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
+      |> Repo.update!()
     end
   end
 
@@ -127,15 +134,7 @@ defmodule Texttile.Newsletter do
         :error
 
       %Subscriber{} = subscriber ->
-        subscriber =
-          if Subscriber.confirmed?(subscriber) do
-            subscriber
-          else
-            subscriber
-            |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
-            |> Repo.update!()
-          end
-
+        subscriber = confirm_now(subscriber)
         broadcast()
         {:ok, subscriber}
     end
@@ -207,37 +206,80 @@ defmodule Texttile.Newsletter do
   nobody else; they call only on the move to published, never on a
   date edit of a live text.
 
-  The text is stamped `notified_on` first, in the caller's process, so
-  a second go-live can never mail again; the mails themselves leave in
-  a watched task, because a publish click must not wait for another
-  server. Pages, unchecked texts and already-stamped texts pass
-  through untouched. Answers the text as it now stands.
+  The stamp is the lock. `notified_on` goes from empty to today in one
+  statement, and only the caller whose statement wrote the row sends:
+  the go-live clock and a publish click in the same second cannot both
+  mail the list. The mails themselves leave in a watched task, because
+  a publish click must not wait for another server. Pages, unchecked
+  texts and already-stamped texts pass through untouched. Answers the
+  text as it now stands.
   """
   def notify_published(
         %Article{status: "published", type: "post", notify_on_publish: true, notified_on: nil} =
           article
       ) do
-    subscribers = confirmed()
+    today = Date.utc_today()
 
-    {:ok, article} =
-      article
-      |> Article.state_changeset(%{notified_on: Date.utc_today()})
-      |> Repo.update()
+    claimed =
+      from(a in Article, where: a.id == ^article.id and is_nil(a.notified_on))
+      |> Repo.update_all(set: [notified_on: today])
 
-    unless subscribers == [] do
-      site = Settings.site_title()
-      password = access_word()
+    case claimed do
+      {1, _} ->
+        article = %{article | notified_on: today}
+        send_new_text(article)
+        article
 
-      {:ok, _pid} =
-        Task.Supervisor.start_child(Texttile.Newsletter.TaskSupervisor, fn ->
-          Enum.each(subscribers, &Notifier.deliver_new_text(&1, article, site, password))
-        end)
+      {0, _} ->
+        # somebody else went live with this text a moment ago and is
+        # mailing it right now
+        Repo.get(Article, article.id) || article
     end
-
-    article
   end
 
   def notify_published(%Article{} = article), do: article
+
+  defp send_new_text(article) do
+    case confirmed() do
+      [] ->
+        :ok
+
+      subscribers ->
+        site = Settings.site_title()
+        password = access_word()
+
+        {:ok, _pid} =
+          Task.Supervisor.start_child(Texttile.Newsletter.TaskSupervisor, fn ->
+            Enum.each(subscribers, fn subscriber ->
+              deliver_one(subscriber, article, site, password)
+              # One pause after each address. Every mail provider counts
+              # requests per second, and a list of 200 sent as fast as
+              # the loop runs comes back as refusals for most of them.
+              Process.sleep(pace_ms())
+            end)
+          end)
+
+        :ok
+    end
+  end
+
+  # A refused mail is the one thing this feature cannot repair by
+  # itself: the text is stamped, so nothing sends it again. The least
+  # it owes the person running the site is a line in the log.
+  defp deliver_one(subscriber, article, site, password) do
+    case Notifier.deliver_new_text(subscriber, article, site, password) do
+      {:ok, _email} ->
+        :ok
+
+      other ->
+        Logger.error(
+          "newsletter: #{Articles.display_title(article)} did not reach " <>
+            "#{subscriber.email}: #{inspect(other)}"
+        )
+    end
+  end
+
+  defp pace_ms, do: Application.get_env(:texttile, :newsletter_pace_ms, 600)
 
   # The shared access word, while the blog asks for one. It goes into
   # the mail as plain text; that is what it is for (see
