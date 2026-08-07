@@ -21,6 +21,53 @@ defmodule TexttileWeb.UploadsControllerTest do
     assert cache =~ "max-age"
   end
 
+  describe "a video file" do
+    setup do
+      path = Uploads.absolute("videos/clip-abcd.web.mp4")
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, "0123456789")
+      :ok
+    end
+
+    test "comes with its type and says that it takes range requests", %{conn: conn} do
+      conn = get(conn, ~p"/uploads/videos/clip-abcd.web.mp4")
+
+      assert response(conn, 200) == "0123456789"
+      assert get_resp_header(conn, "content-type") == ["video/mp4; charset=utf-8"]
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+    end
+
+    test "answers a seek with the piece that was asked for", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("range", "bytes=2-5")
+        |> get(~p"/uploads/videos/clip-abcd.web.mp4")
+
+      assert response(conn, 206) == "2345"
+      assert get_resp_header(conn, "content-range") == ["bytes 2-5/10"]
+    end
+
+    test "an open range runs to the end of the file", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("range", "bytes=7-")
+        |> get(~p"/uploads/videos/clip-abcd.web.mp4")
+
+      assert response(conn, 206) == "789"
+      assert get_resp_header(conn, "content-range") == ["bytes 7-9/10"]
+    end
+
+    test "a range behind the end is refused", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("range", "bytes=20-30")
+        |> get(~p"/uploads/videos/clip-abcd.web.mp4")
+
+      assert response(conn, 416)
+      assert get_resp_header(conn, "content-range") == ["bytes */10"]
+    end
+  end
+
   test "a missing file is a plain 404", %{conn: conn} do
     assert conn |> get(~p"/uploads/site/never-was.png") |> response(404)
   end

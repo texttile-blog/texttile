@@ -455,11 +455,11 @@ defmodule Texttile.Import do
         {:ok, {verb, old_paths}} =
           Repo.transaction(fn -> apply_bundle(bundle, stored, user) end, timeout: :infinity)
 
-        Enum.each(old_paths -- stored_paths(stored), &Uploads.remove_body_image/1)
+        Enum.each(old_paths -- stored_paths(stored), &Uploads.remove_upload/1)
         {:ok, verb}
       rescue
         error ->
-          Enum.each(stored_paths(stored), &Uploads.remove_body_image/1)
+          Enum.each(stored_paths(stored), &Uploads.remove_upload/1)
           {:error, Exception.message(error)}
       end
     end
@@ -494,7 +494,7 @@ defmodule Texttile.Import do
           {:cont, {:ok, Map.put(stored, source, picture)}}
 
         {:error, message} ->
-          Enum.each(stored_paths(stored), &Uploads.remove_body_image/1)
+          Enum.each(stored_paths(stored), &Uploads.remove_upload/1)
           {:halt, {:error, message}}
       end
     end)

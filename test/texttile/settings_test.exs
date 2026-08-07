@@ -13,6 +13,7 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:theme_css) == ""
       assert Settings.get(:comments_require_confirmation) == true
       assert Settings.get(:image_max_edge) == 2560
+      assert Settings.get(:video_max_edge) == 1280
       assert Settings.get(:logo) == nil
       assert Settings.get(:favicon) == nil
     end

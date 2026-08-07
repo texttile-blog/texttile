@@ -44,7 +44,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
   end
 
   defp seed!(article, name, taken) do
-    {:ok, image} = Gallery.add_image(article, jpg!(taken), name)
+    {:ok, image} = Gallery.add_file(article, jpg!(taken), name)
     image
   end
 

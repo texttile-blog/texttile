@@ -402,7 +402,7 @@ defmodule Texttile.Articles do
       end)
       |> Enum.uniq()
       |> Enum.concat(gallery_paths)
-      |> Enum.each(&Texttile.Uploads.remove_body_image/1)
+      |> Enum.each(&Texttile.Uploads.remove_upload/1)
 
       broadcast({:article_deleted, article.id})
       {:ok, article}

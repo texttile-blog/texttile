@@ -6,6 +6,8 @@ defmodule Texttile.Uploads do
 
       site/    the logo and the favicon
       images/  the originals of every picture (comes with the editor)
+      videos/  the originals of every video, and what ffmpeg made of
+               them (see Texttile.Videos)
       cache/   renditions, disposable (see Texttile.Images)
   """
 
@@ -110,6 +112,33 @@ defmodule Texttile.Uploads do
     end
   end
 
+  @doc """
+  Stores an uploaded video below `videos/`. The file is kept exactly
+  as it came; what a page plays is derived from it later
+  (`Texttile.Videos`). Nothing is read here: a video is only opened
+  once, by ffmpeg, and a file that turns out to hold no video fails
+  there with a reason the editor shows.
+  """
+  def put_body_video(source_path, original_name) do
+    extension = original_name |> Path.extname() |> String.downcase()
+
+    if extension in Texttile.Videos.extensions() do
+      base =
+        case Texttile.Articles.slugify(Path.rootname(original_name)) do
+          "" -> "video"
+          slug -> slug
+        end
+
+      relative = "videos/#{base}-#{random_tag()}#{extension}"
+      destination = absolute(relative)
+      File.mkdir_p!(Path.dirname(destination))
+      File.cp!(source_path, destination)
+      {:ok, relative}
+    else
+      {:error, "MP4, MOV, M4V, WebM, AVI or MKV, please"}
+    end
+  end
+
   defp readable_image?(path) do
     match?({:ok, _}, Vix.Vips.Image.new_from_file(path))
   end
@@ -118,16 +147,24 @@ defmodule Texttile.Uploads do
   defp random_tag, do: 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
 
   @doc """
-  Removes a body image and its cached renditions. Only paths below
-  `images/` qualify; anything else is left alone.
+  Removes an uploaded file and everything derived from it: the cached
+  renditions of a picture, the converted file and the poster of a
+  video. Only paths below `images/` and `videos/` qualify; anything
+  else is left alone.
   """
-  def remove_body_image("images/" <> _ = relative) do
+  def remove_upload("images/" <> _ = relative) do
     File.rm(absolute(relative))
     Texttile.Images.drop_renditions(relative)
     :ok
   end
 
-  def remove_body_image(_other), do: :ok
+  def remove_upload("videos/" <> _ = relative) do
+    Texttile.Videos.forget(relative)
+    File.rm(absolute(relative))
+    :ok
+  end
+
+  def remove_upload(_other), do: :ok
 
   @doc "Back to the default mark: the file goes, the settings clear."
   def reset_site_mark(mark) when mark in @marks do

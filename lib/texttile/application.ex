@@ -26,6 +26,8 @@ defmodule Texttile.Application do
       # The subscriber mails leave here, so a publish click never waits
       # for another server.
       {Task.Supervisor, name: Texttile.Newsletter.TaskSupervisor},
+      # ffmpeg runs under this one, one conversion at a time.
+      {Task.Supervisor, name: Texttile.Videos.TaskSupervisor},
       # The invisible spam filter of the public forms: a few knocks
       # per caller per minute.
       Texttile.RateLimiter,
@@ -39,6 +41,16 @@ defmodule Texttile.Application do
     children =
       if Application.get_env(:texttile, :start_scheduler, true) do
         children ++ [Texttile.Articles.Scheduler, Texttile.Gallery.Sweeper]
+      else
+        children
+      end
+
+    # The video queue stays out of tests for the same reason. A test
+    # that wants a conversion converts by hand, or starts a queue of
+    # its own under its own sandbox owner.
+    children =
+      if Application.get_env(:texttile, :start_video_queue, true) do
+        children ++ [Texttile.Videos.Queue]
       else
         children
       end

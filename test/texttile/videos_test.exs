@@ -1,0 +1,188 @@
+defmodule Texttile.VideosTest do
+  use Texttile.DataCase, async: false
+
+  import Texttile.VideoFixtures
+
+  alias Texttile.Settings
+  alias Texttile.Uploads
+  alias Texttile.Videos
+
+  setup do
+    File.rm_rf!(Uploads.root())
+    :ok
+  end
+
+  defp stored(path) do
+    {:ok, relative} = Uploads.put_body_video(path, Path.basename(path))
+    relative
+  end
+
+  defp size(relative) do
+    {out, 0} =
+      System.cmd("ffprobe", [
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=width,height",
+        "-of",
+        "csv=p=0",
+        Uploads.absolute(relative)
+      ])
+
+    out |> String.trim() |> String.split(",") |> Enum.map(&String.to_integer/1)
+  end
+
+  describe "what counts as a video" do
+    test "the containers a camera and a phone write" do
+      assert Videos.video?("holiday.mp4")
+      assert Videos.video?("holiday.MOV")
+      assert Videos.video?("holiday.webm")
+      assert Videos.video?("holiday.mkv")
+      refute Videos.video?("holiday.jpg")
+      refute Videos.video?("holiday")
+    end
+  end
+
+  describe "the ffmpeg command" do
+    test "runs on one thread and at the lowest priority" do
+      {command, args} = Videos.encode_command("in.mov", "out.mp4", 1280)
+
+      assert Path.basename(command) in ~w(nice ionice)
+      assert "19" in args
+      assert Enum.find_index(args, &(&1 == "-threads")) |> then(&Enum.at(args, &1 + 1)) == "1"
+      assert "libx264" in args
+      assert "aac" in args
+      assert "+faststart" in args
+    end
+
+    test "caps the longer edge and never scales up" do
+      {_command, args} = Videos.encode_command("in.mov", "out.mp4", 1280)
+      filter = Enum.at(args, Enum.find_index(args, &(&1 == "-vf")) + 1)
+
+      assert filter =~ "min(1280,iw)"
+      assert filter =~ "force_original_aspect_ratio=decrease"
+      assert filter =~ "force_divisible_by=2"
+    end
+  end
+
+  describe "converting" do
+    test "makes one mp4 and a poster from the stored original" do
+      relative = stored(video_file(640, 480))
+
+      assert {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      assert video.state == "done"
+      assert video.mp4_path =~ ~r"^videos/.*\.web\.mp4$"
+      assert video.poster_path =~ ~r"^videos/.*\.poster\.jpg$"
+      assert File.exists?(Uploads.absolute(video.mp4_path))
+      assert File.exists?(Uploads.absolute(video.poster_path))
+      assert video.width == 640
+      assert video.height == 480
+      assert video.duration_ms in 900..1100
+    end
+
+    test "the original stays as it came" do
+      original = video_file(640, 480)
+      relative = stored(original)
+      before = File.stat!(Uploads.absolute(relative))
+
+      {:ok, _video} = Videos.convert(Videos.ensure(relative))
+
+      assert File.stat!(Uploads.absolute(relative)).size == before.size
+    end
+
+    test "the longer edge stays within the setting" do
+      {:ok, _} = Settings.put(:video_max_edge, 480)
+      relative = stored(video_file(960, 720))
+
+      {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      assert [480, _height] = size(video.mp4_path)
+      assert video.width == 480
+    end
+
+    test "a standing video is capped on its height" do
+      {:ok, _} = Settings.put(:video_max_edge, 480)
+      relative = stored(video_file(720, 960))
+
+      {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      assert video.height == 480
+      assert video.width < 480
+    end
+
+    test "a small video is never scaled up" do
+      {:ok, _} = Settings.put(:video_max_edge, 1280)
+      relative = stored(video_file(320, 240))
+
+      {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      assert {video.width, video.height} == {320, 240}
+    end
+
+    test "a file ffmpeg cannot read fails with a reason" do
+      relative = stored(broken_video_file())
+
+      assert {:error, video} = Videos.convert(Videos.ensure(relative))
+
+      assert video.state == "failed"
+      assert video.error != nil
+      assert Videos.playback(relative) == nil
+    end
+
+    test "a half written conversion leaves nothing behind" do
+      relative = stored(broken_video_file())
+
+      {:error, _video} = Videos.convert(Videos.ensure(relative))
+
+      leftovers =
+        Uploads.absolute("videos") |> File.ls!() |> Enum.filter(&String.starts_with?(&1, "."))
+
+      assert leftovers == []
+    end
+  end
+
+  describe "what a page can show" do
+    test "nothing while the conversion is still waiting" do
+      relative = stored(video_file(320, 240))
+      Videos.ensure(relative)
+
+      assert Videos.state(relative) == :queued
+      assert Videos.playback(relative) == nil
+      assert Videos.poster(relative) == nil
+    end
+
+    test "the mp4, the poster and the size once it is done" do
+      relative = stored(video_file(320, 240))
+      {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      assert Videos.state(relative) == :done
+      assert Videos.poster(relative) == video.poster_path
+
+      assert %{mp4: mp4, poster: poster, width: 320, height: 240} = Videos.playback(relative)
+      assert mp4 == video.mp4_path
+      assert poster == video.poster_path
+    end
+
+    test "nothing at all for a file nobody uploaded" do
+      assert Videos.state("videos/never-there.mp4") == :none
+      assert Videos.playback("videos/never-there.mp4") == nil
+    end
+  end
+
+  describe "removing" do
+    test "takes the derived files and the row with it" do
+      relative = stored(video_file(320, 240))
+      {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      :ok = Uploads.remove_upload(relative)
+
+      refute File.exists?(Uploads.absolute(relative))
+      refute File.exists?(Uploads.absolute(video.mp4_path))
+      refute File.exists?(Uploads.absolute(video.poster_path))
+      assert Videos.state(relative) == :none
+    end
+  end
+end

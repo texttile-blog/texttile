@@ -58,8 +58,8 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
   describe "the gallery" do
     test "a tile opens the lightbox, the arrows walk, Escape closes", %{conn: conn} do
       article = published_post(title: "Tiles", slug: "tiles", body: "Pictures below.")
-      {:ok, first} = Texttile.Gallery.add_image(article, jpg_fixture(), "pier.jpg")
-      {:ok, _second} = Texttile.Gallery.add_image(article, jpg_fixture(), "lagoon.jpg")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+      {:ok, _second} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
 
       conn
       |> visit(Articles.public_path(article))

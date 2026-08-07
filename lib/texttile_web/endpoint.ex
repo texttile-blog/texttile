@@ -48,12 +48,37 @@ defmodule TexttileWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  # Multipart carries the pictures; a phone photo is far past Plug's
-  # 8 MB default. 52 MB holds a 50 MB image plus the form around it.
-  plug Plug.Parsers,
-    parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
-    pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
+  # Multipart carries the pictures and the videos; both are far past
+  # Plug's 8 MB default. Two roofs, because they guard different
+  # things: 52 MB everywhere, which holds a 50 MB photograph and the
+  # form around it, and 520 MB on the two upload addresses of the desk,
+  # which hold a 500 MB video (MAX_VIDEO_MB in gallery_core.js). A
+  # public form never gets the big roof. Plug streams an upload to
+  # disk, so a big one costs the volume, not the memory.
+  @picture_roof Plug.Parsers.init(
+                  parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
+                  pass: ["*/*"],
+                  json_decoder: Phoenix.json_library()
+                )
+
+  @video_roof Plug.Parsers.init(
+                parsers: [:urlencoded, {:multipart, length: 520_000_000}, :json],
+                pass: ["*/*"],
+                json_decoder: Phoenix.json_library()
+              )
+
+  plug :parse_body
+
+  defp parse_body(conn, _opts) do
+    Plug.Parsers.call(
+      conn,
+      if(upload_address?(conn.path_info), do: @video_roof, else: @picture_roof)
+    )
+  end
+
+  defp upload_address?(["admin", "images"]), do: true
+  defp upload_address?(["admin", "texts", _id, "gallery"]), do: true
+  defp upload_address?(_path), do: false
 
   plug Plug.MethodOverride
   plug Plug.Head

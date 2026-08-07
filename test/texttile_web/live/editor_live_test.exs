@@ -368,7 +368,7 @@ defmodule TexttileWeb.EditorLiveTest do
         end)
 
       :ok = Vix.Vips.Image.write_to_file(with_date, path)
-      {:ok, image} = Texttile.Gallery.add_image(article, path, name)
+      {:ok, image} = Texttile.Gallery.add_file(article, path, name)
       image
     end
 

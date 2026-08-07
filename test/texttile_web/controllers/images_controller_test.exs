@@ -25,6 +25,21 @@ defmodule TexttileWeb.ImagesControllerTest do
     assert File.exists?(Uploads.absolute("images/" <> stored))
   end
 
+  test "stores a video and puts it in line for the conversion", %{conn: conn} do
+    upload = %Plug.Upload{
+      path: Texttile.VideoFixtures.video_file(320, 240),
+      filename: "Harbour Morning.mov",
+      content_type: "video/quicktime"
+    }
+
+    conn = post(conn, ~p"/admin/images", %{"file" => upload})
+
+    assert %{"url" => "/uploads/videos/" <> stored} = json_response(conn, 200)
+    assert stored =~ ~r/^harbour-morning-\w+\.mov$/
+    assert File.exists?(Uploads.absolute("videos/" <> stored))
+    assert Texttile.Videos.state("videos/" <> stored) == :queued
+  end
+
   test "a file that is no image is refused", %{conn: conn} do
     path = Path.join(System.tmp_dir!(), "no-#{System.unique_integer([:positive])}.png")
     File.write!(path, "words")

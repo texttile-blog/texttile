@@ -27,6 +27,23 @@ defmodule TexttileWeb.GalleryControllerTest do
     assert [%{id: ^id, filename: "Pier.jpg"}] = Gallery.list(article.id)
   end
 
+  test "puts a video into the gallery and in line for the conversion", %{
+    conn: conn,
+    article: article
+  } do
+    upload = %Plug.Upload{
+      path: Texttile.VideoFixtures.video_file(320, 240),
+      filename: "Harbour.mov",
+      content_type: "video/quicktime"
+    }
+
+    conn = post(conn, ~p"/admin/texts/#{article.id}/gallery", %{"file" => upload})
+
+    assert %{"id" => id} = json_response(conn, 200)
+    assert [%{id: ^id, path: path}] = Gallery.list(article.id)
+    assert Texttile.Videos.state(path) == :queued
+  end
+
   test "a file that is no image is refused", %{conn: conn, article: article} do
     path = Path.join(System.tmp_dir!(), "no-#{System.unique_integer([:positive])}.jpg")
     File.write!(path, "words")
