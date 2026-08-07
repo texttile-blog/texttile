@@ -279,6 +279,7 @@ defmodule Texttile.Articles do
     day = if opts[:force], do: today, else: article.publish_date || today
     future? = Date.compare(day, today) == :gt
     status = if future?, do: "scheduled", else: "published"
+    went_live? = status == "published" and article.status != "published"
 
     attrs = %{status: status, publish_date: day, slug: article.slug || free_slug(article)}
 
@@ -290,6 +291,8 @@ defmodule Texttile.Articles do
         user,
         if(future?, do: "scheduled the text for #{day}", else: "published the text")
       )
+
+      article = if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
 
       broadcast({:article_changed, article})
       {:ok, article}
@@ -338,10 +341,18 @@ defmodule Texttile.Articles do
       true ->
         status = if Date.compare(date, today) == :gt, do: "scheduled", else: "published"
 
+        # A scheduled text whose date is dragged to today goes live this
+        # moment - that is a go-live like any other. A date edit on an
+        # already-live text is not.
+        went_live? = status == "published" and article.status == "scheduled"
+
         with {:ok, article} <-
                article
                |> Article.state_changeset(%{publish_date: date, status: status})
                |> Repo.update() do
+          article =
+            if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
+
           broadcast({:article_changed, article})
           {:ok, article}
         end
@@ -349,9 +360,8 @@ defmodule Texttile.Articles do
   end
 
   @doc """
-  Scheduled texts whose day has come go live. Returns the texts that
-  went live, for the caller to act on (the subscriber email, once the
-  newsletter exists, goes out here and only here).
+  Scheduled texts whose day has come go live, and the subscriber email
+  goes out for each of them. Returns the texts that went live.
   """
   def go_live_due(today \\ Date.utc_today()) do
     Article
@@ -360,6 +370,7 @@ defmodule Texttile.Articles do
     |> Enum.map(fn article ->
       {:ok, article} = article |> Article.state_changeset(%{status: "published"}) |> Repo.update()
       push_log(article, nil, "the text went live as scheduled")
+      article = Texttile.Newsletter.notify_published(article)
       broadcast({:article_changed, article})
       article
     end)
@@ -531,6 +542,51 @@ defmodule Texttile.Articles do
   @doc "The name a text goes by on screen: its title, or Untitled."
   def display_title(%{title: ""}), do: "Untitled"
   def display_title(%{title: title}), do: title
+
+  @doc """
+  The lead line of a text: the first real paragraph, the markdown
+  stripped, cut at a word before 160 characters. The cards of the
+  public list carry it, and so does the subscriber mail.
+  """
+  def lead(article) do
+    article.body
+    |> to_string()
+    |> String.split(~r/\n{2,}/)
+    |> Enum.map(&String.trim/1)
+    |> Enum.find("", fn block ->
+      block != "" and not String.starts_with?(block, "#") and
+        not Regex.match?(~r/\A!\[[^\]]*\]\([^)]*\)\z/, block)
+    end)
+    |> strip_markdown()
+    |> shorten(160)
+  end
+
+  defp strip_markdown(text) do
+    text
+    |> String.replace(~r/!\[[^\]]*\]\([^)]*\)/, "")
+    |> String.replace(~r/\[([^\]]*)\]\([^)]*\)/, "\\1")
+    |> String.replace(~r/[*_`>]/, "")
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  defp shorten(text, max) do
+    if String.length(text) <= max do
+      text
+    else
+      # the slice ends mid-word, so the broken tail goes - unless the
+      # cut is one single word, which stays as it is
+      cut = String.slice(text, 0, max)
+
+      head =
+        case String.split(cut, " ") do
+          [_single] -> cut
+          words -> words |> Enum.drop(-1) |> Enum.join(" ")
+        end
+
+      head <> "…"
+    end
+  end
 
   @doc "A title turned into an address: lowercase, dashes, nothing else."
   def slugify(title) do

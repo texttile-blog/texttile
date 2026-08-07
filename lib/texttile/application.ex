@@ -23,6 +23,9 @@ defmodule Texttile.Application do
       # The bundle import: one job at a time, its work in watched tasks.
       {Task.Supervisor, name: Texttile.Import.TaskSupervisor},
       Texttile.Import.Job,
+      # The subscriber mails leave here, so a publish click never waits
+      # for another server.
+      {Task.Supervisor, name: Texttile.Newsletter.TaskSupervisor},
       # The invisible spam filter of the public forms: a few knocks
       # per caller per minute.
       Texttile.RateLimiter,
