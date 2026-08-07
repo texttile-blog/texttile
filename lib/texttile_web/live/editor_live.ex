@@ -1651,7 +1651,9 @@ defmodule TexttileWeb.EditorLive do
               <span class="lab">Address</span>
               <span class="val">
                 <span class="addr">
-                  <span class="pre">{TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}</span>
+                  <span class="pre">
+                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}
+                  </span>
                   <input
                     type="text"
                     id="edSlug"

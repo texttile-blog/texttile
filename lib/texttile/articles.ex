@@ -125,7 +125,9 @@ defmodule Texttile.Articles do
   answers nil.
   """
   def public_path(%Article{slug: slug}) when slug in [nil, ""], do: nil
-  def public_path(%Article{type: "page", slug: slug} = article), do: public_prefix(article) <> slug
+
+  def public_path(%Article{type: "page", slug: slug} = article),
+    do: public_prefix(article) <> slug
 
   def public_path(%Article{slug: slug, publish_date: %Date{}} = article),
     do: public_prefix(article) <> slug
