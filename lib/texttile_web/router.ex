@@ -47,9 +47,9 @@ defmodule TexttileWeb.Router do
     post "/link/:token", LinkController, :create
   end
 
-  ## The desk, under /edit: the readers own the root
+  ## The desk, under /admin: the readers own the root
 
-  scope "/edit", TexttileWeb do
+  scope "/admin", TexttileWeb do
     pipe_through [:browser, :require_authenticated_user]
 
     # The editor's image uploads: the body holds a token while the file

@@ -90,7 +90,7 @@ defmodule TexttileWeb.TextsLive do
           class="grid items-start gap-y-[22px] gap-x-3 md:gap-y-7 md:gap-x-5 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"
         >
-          <.link :for={article <- @articles} class="card" navigate={~p"/edit/texts/#{article}"}>
+          <.link :for={article <- @articles} class="card" navigate={~p"/admin/texts/#{article}"}>
             <%= if cover = @covers[article.id] do %>
               <span class="cimg" style={cover_bg(cover)}></span>
             <% else %>

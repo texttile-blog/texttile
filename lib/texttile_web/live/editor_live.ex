@@ -374,7 +374,7 @@ defmodule TexttileWeb.EditorLive do
        :info,
        ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
      )
-     |> push_navigate(to: ~p"/edit")}
+     |> push_navigate(to: ~p"/admin")}
   end
 
   def handle_event("cancel_dialog", _params, socket) do
@@ -752,7 +752,7 @@ defmodule TexttileWeb.EditorLive do
       {:noreply,
        socket
        |> put_flash(:info, "The text was deleted while you had it open.")
-       |> push_navigate(to: ~p"/edit")}
+       |> push_navigate(to: ~p"/admin")}
     else
       {:noreply, socket}
     end
@@ -1532,7 +1532,7 @@ defmodule TexttileWeb.EditorLive do
             class="relative"
             phx-hook="Gallery"
             data-article-id={@article.id}
-            data-upload-url={~p"/edit/texts/#{@article.id}/gallery"}
+            data-upload-url={~p"/admin/texts/#{@article.id}/gallery"}
             data-csrf={Phoenix.Controller.get_csrf_token()}
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">

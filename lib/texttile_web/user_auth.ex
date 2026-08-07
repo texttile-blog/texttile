@@ -24,7 +24,7 @@ defmodule TexttileWeb.UserAuth do
     conn
     |> renew_session()
     |> put_token_in_session(token)
-    |> redirect(to: ~p"/edit")
+    |> redirect(to: ~p"/admin")
   end
 
   @doc """
@@ -90,7 +90,7 @@ defmodule TexttileWeb.UserAuth do
   @doc "Plug: the sign-in family is pointless for somebody signed in."
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns.current_scope do
-      conn |> redirect(to: ~p"/edit") |> halt()
+      conn |> redirect(to: ~p"/admin") |> halt()
     else
       conn
     end

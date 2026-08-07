@@ -21,7 +21,7 @@ defmodule TexttileWeb.GalleryControllerTest do
   end
 
   test "puts the picture into the text's gallery", %{conn: conn, article: article} do
-    conn = post(conn, ~p"/edit/texts/#{article.id}/gallery", %{"file" => jpg_upload("Pier.jpg")})
+    conn = post(conn, ~p"/admin/texts/#{article.id}/gallery", %{"file" => jpg_upload("Pier.jpg")})
 
     assert %{"id" => id} = json_response(conn, 200)
     assert [%{id: ^id, filename: "Pier.jpg"}] = Gallery.list(article.id)
@@ -32,25 +32,25 @@ defmodule TexttileWeb.GalleryControllerTest do
     File.write!(path, "words")
     upload = %Plug.Upload{path: path, filename: "no.jpg", content_type: "image/jpeg"}
 
-    conn = post(conn, ~p"/edit/texts/#{article.id}/gallery", %{"file" => upload})
+    conn = post(conn, ~p"/admin/texts/#{article.id}/gallery", %{"file" => upload})
 
     assert %{"error" => _} = json_response(conn, 422)
     assert Gallery.list(article.id) == []
   end
 
   test "no file is a plain 400", %{conn: conn, article: article} do
-    conn = post(conn, ~p"/edit/texts/#{article.id}/gallery", %{})
+    conn = post(conn, ~p"/admin/texts/#{article.id}/gallery", %{})
     assert json_response(conn, 400)
   end
 
   test "an unknown text is a 404", %{conn: conn} do
     assert_error_sent 404, fn ->
-      post(conn, ~p"/edit/texts/999999/gallery", %{"file" => jpg_upload("a.jpg")})
+      post(conn, ~p"/admin/texts/999999/gallery", %{"file" => jpg_upload("a.jpg")})
     end
   end
 
   test "signed out, the endpoint answers with a redirect to sign-in", %{article: article} do
-    conn = post(build_conn(), ~p"/edit/texts/#{article.id}/gallery", %{})
+    conn = post(build_conn(), ~p"/admin/texts/#{article.id}/gallery", %{})
     assert redirected_to(conn) == ~p"/login"
   end
 end

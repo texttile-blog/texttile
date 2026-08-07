@@ -54,7 +54,7 @@ image, start the container again.
 Readers get the blog at the root: the list of published texts at `/`, each
 text at its own address, and every published page in the menu. A post lives
 under the day it went live, `/2026/08/23/harbor-mornings`; a page lives at
-its slug alone, `/about-us`. Admins sign in at `/login` and work at `/edit`.
+its slug alone, `/about-us`. Admins sign in at `/login` and work at `/admin`.
 
 The blog can sit behind one shared password (Settings > Access). It is an
 access word to hand around, not a login: it is stored in plain text and one

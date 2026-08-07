@@ -11,15 +11,15 @@ defmodule TexttileWeb.DeskTest do
       other = user_fixture(%{username: "julia"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
-      {:ok, _other_texts, _} = live(other_conn, ~p"/edit")
-      {:ok, _other_profile, _} = live(other_conn, ~p"/edit/profile")
+      {:ok, _other_texts, _} = live(other_conn, ~p"/admin")
+      {:ok, _other_profile, _} = live(other_conn, ~p"/admin/profile")
 
-      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/edit")
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin")
 
       render_until(view, fn html -> html =~ "julia" end)
       assert has_element?(view, "#liveBlock", "julia")
-      assert has_element?(view, ~s(#liveBlock a[href="/edit"]), "On the Texts overview")
-      assert has_element?(view, ~s(#liveBlock a[href="/edit/profile"]), "In the profile")
+      assert has_element?(view, ~s(#liveBlock a[href="/admin"]), "On the Texts overview")
+      assert has_element?(view, ~s(#liveBlock a[href="/admin/profile"]), "In the profile")
       refute has_element?(view, "#liveBlock", "No one else right now.")
       refute has_element?(view, "#wmDot[hidden]")
     end
@@ -29,10 +29,10 @@ defmodule TexttileWeb.DeskTest do
       other = user_fixture(%{username: "julia"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
-      {:ok, other_texts, _} = live(other_conn, ~p"/edit")
-      {:ok, other_profile, _} = live(other_conn, ~p"/edit/profile")
+      {:ok, other_texts, _} = live(other_conn, ~p"/admin")
+      {:ok, other_profile, _} = live(other_conn, ~p"/admin/profile")
 
-      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/edit")
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin")
       render_until(view, fn html -> html =~ "julia" end)
 
       other_profile
@@ -60,14 +60,14 @@ defmodule TexttileWeb.DeskTest do
       {:ok, article} = Texttile.Articles.update_text(article, %{title: "Doors"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
-      {:ok, _editor, _} = live(other_conn, ~p"/edit/texts/#{article}")
+      {:ok, _editor, _} = live(other_conn, ~p"/admin/texts/#{article}")
 
-      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/edit")
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin")
       render_until(view, fn html -> html =~ "Writing in" end)
 
       assert has_element?(
                view,
-               ~s(#liveBlock a[href="/edit/texts/#{article.id}"]),
+               ~s(#liveBlock a[href="/admin/texts/#{article.id}"]),
                "Writing in “Doors”"
              )
     end

@@ -37,7 +37,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
       # the value survives a full reload
       conn
-      |> visit("/edit/settings")
+      |> visit("/admin/settings")
       |> assert_has("#setting-site_title[value='Two of us']")
     end
 
@@ -53,7 +53,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
     test "the comments toggle rewrites its explanation", %{conn: conn} do
       conn
       |> sign_in()
-      |> visit("/edit/settings")
+      |> visit("/admin/settings")
       |> assert_has("#setCmtNote", text: "one confirmation link per address")
       |> uncheck("Readers confirm their email", exact: false)
       |> assert_has("#setCmtNote", text: "nobody confirms anything")
@@ -71,7 +71,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/edit/settings")
+      |> visit("/admin/settings")
       |> assert_has("#name-logo", text: "Default: the Texttile mark")
       |> upload("#logo-form input[type=file]", "Upload", path, exact: false)
       |> assert_has("#name-logo", text: "e2e-logo.svg")
@@ -90,12 +90,12 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/edit/settings")
+      |> visit("/admin/settings")
       |> assert_has("#waitingUsers", text: "julia")
 
       # she takes the browser, types her name and chooses a password
       conn
-      |> visit("/edit/profile")
+      |> visit("/admin/profile")
       |> click_link("#sign-out", "Sign out")
       |> assert_has("p", text: "Admin sign-in")
       |> fill_in("Username", with: "julia")
@@ -113,7 +113,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       julia = Enum.find(Texttile.Accounts.list_users(), &(&1.username == "julia"))
 
       conn
-      |> visit("/edit/settings")
+      |> visit("/admin/settings")
       |> assert_has("#user-#{julia.id}", text: "you")
       |> assert_has("#delete-user-#{julia.id}[disabled]")
       |> click_button("#delete-user-#{kb.id}", "Delete")
