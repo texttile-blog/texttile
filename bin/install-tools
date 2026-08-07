@@ -1,0 +1,52 @@
+#!/bin/sh
+# Install the command line tools that the app runs: ffmpeg and ffprobe,
+# which convert an uploaded video into the file a browser plays. Erlang,
+# Elixir and Node stay yours to install; `make prepare` gets the rest.
+#
+# The container has these tools already (see Dockerfile). This script is
+# for a development machine.
+set -u
+
+missing=""
+for tool in ffmpeg ffprobe; do
+	command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+done
+
+if [ -z "$missing" ]; then
+	printf 'All tools are here: ffmpeg, ffprobe (%s)\n' "$(ffmpeg -version | head -n 1)"
+	exit 0
+fi
+
+printf 'Missing:%s\n' "$missing"
+
+if command -v brew >/dev/null 2>&1; then
+	set -x
+	brew install ffmpeg
+elif command -v apt-get >/dev/null 2>&1; then
+	set -x
+	sudo apt-get update
+	sudo apt-get install -y --no-install-recommends ffmpeg
+elif command -v dnf >/dev/null 2>&1; then
+	set -x
+	sudo dnf install -y ffmpeg
+elif command -v pacman >/dev/null 2>&1; then
+	set -x
+	sudo pacman -S --needed --noconfirm ffmpeg
+else
+	cat >&2 <<-'MESSAGE'
+		No package manager found that this script knows (brew, apt-get, dnf,
+		pacman). Install ffmpeg by hand and run `make tools` again. ffprobe
+		comes with ffmpeg in every distribution.
+	MESSAGE
+	exit 1
+fi
+
+set +x
+for tool in ffmpeg ffprobe; do
+	if ! command -v "$tool" >/dev/null 2>&1; then
+		printf '%s is still missing after the install.\n' "$tool" >&2
+		exit 1
+	fi
+done
+
+printf 'Done: %s\n' "$(ffmpeg -version | head -n 1)"

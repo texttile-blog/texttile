@@ -5,7 +5,7 @@
 # read-only mirrors, see the `idea` target.
 VAULT ?= $(HOME)/vault/texttile
 
-.PHONY: prepare test kill-port-4000 start idea db-delete db-pull
+.PHONY: prepare tools test kill-port-4000 start idea db-delete db-pull
 
 # Development state is shared by all worktrees, see config/dev.exs.
 SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; if [ -n "$$common_dir" ]; then dirname "$$common_dir"; else pwd; fi)
@@ -13,6 +13,11 @@ DB_DEV := $(SHARED_ROOT)/texttile_dev.db
 
 # Local, stable path for the remote DB snapshot. Point TablePlus at this file.
 DB_LOCAL := $(SHARED_ROOT)/texttile-demo.db
+
+# The command line tools the app runs: ffmpeg and ffprobe for the video
+# conversion. Run this once per machine; the container has them already.
+tools:
+	@bin/install-tools
 
 prepare:
 	mix deps.get

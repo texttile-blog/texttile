@@ -72,6 +72,30 @@ access word to hand around, not a login: it is stored in plain text, one
 entry opens the whole blog, and it guards the blog or nothing. No text has a
 switch of its own.
 
+## Pictures and videos
+
+Pictures and videos go into a text the same way: paste one into the body,
+drop one on it, or add it to the text's gallery. Every original file is kept
+as it came, below `UPLOADS_PATH`, and nothing leaves the server: no external
+player, no third-party host.
+
+A picture is scaled to display sizes on demand, capped by Settings > Images
+> Max longer edge. A video is converted once, by ffmpeg, into one MP4 (H.264
+and AAC) that every browser plays, plus a poster frame. Settings > Videos >
+Max longer edge caps it, 1280 px by default; nothing is ever scaled up. A
+new value applies to what is converted after the change, because a converted
+video is never made again.
+
+The conversion is the most expensive thing this server does, so it stays out
+of everybody's way: one video at a time, ffmpeg on one thread, at the lowest
+scheduling priority, and with idle disk priority where the kernel offers it.
+While a video converts, the desk shows the state on its tile and under the
+text; the reader's page shows the video once it is ready. The upload takes
+`.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`.
+
+The container brings ffmpeg. On a development machine, `make tools` installs
+it.
+
 ## Comments
 
 Readers can comment under every text that allows it (the switch is in the
@@ -158,11 +182,19 @@ validation report, start the import.
 and the uploads. Its header documents the one-time setup (app, volume,
 secrets, certificate).
 
+Videos need room on that volume: the original and the converted file live
+side by side. Give the machine at least 512 MB of memory; ffmpeg runs on one
+thread, but it still wants some. A machine that stops mid-conversion loses
+nothing: the queue picks up every unfinished video when the app starts
+again.
+
 ## Development
 
-Requires Elixir 1.19+, Erlang/OTP 28+, and Node.js (for browser tests).
+Requires Elixir 1.19+, Erlang/OTP 28+, Node.js (for browser tests), and
+ffmpeg (for the video conversion; `make tools` installs it).
 
 ```sh
+make tools       # install the command line tools: ffmpeg and ffprobe
 make start       # dev server on port 4000, no configuration needed
 make test        # unit tests plus end-to-end browser tests
 make db-pull     # pull the production snapshot next to the dev database
