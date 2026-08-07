@@ -84,6 +84,23 @@ anything. Admins see all comments at `/admin/comments` and can delete them.
 Spam protection is built in and always on: a honeypot field, a time trap,
 and a rate limit per caller. No captcha, no Google, no third parties.
 
+## Newsletter
+
+Readers can put their address on the newsletter list through the form in
+the footer of every page. The address gets one confirmation mail and
+receives texts only after its reader follows the mailed link. Admins see
+the list at `/admin/newsletter` and can add addresses by hand; an added
+address is confirmed at once.
+
+When a post goes live with "Email subscribers" checked (the switch is in
+the text's settings), every confirmed address gets one plain email: the
+title, the first paragraph, and the address the text lives at. If the
+blog sits behind the shared password, the mail includes it. Every mail
+carries the way off the list. The email goes out once per text;
+publishing the same text again does not send it again.
+
+The subscribe form wears the same spam protection as the comment form.
+
 ## Accounts
 
 `ADMIN_USERS` names everybody who may sign in. It holds usernames,
