@@ -175,7 +175,9 @@ network first, then Wi-Fi, then `127.0.0.1`. A phone in the same network
 reaches the server at that address, and `http://localhost:4000` keeps
 working on this machine. `bin/dev-host` prints the address that gets
 chosen. Everybody in that network can open the site and the dev routes, so
-start the server on a network you trust.
+start the server on a network you trust. `DEV_HOST` replaces the address:
+`DEV_HOST=localhost make start` writes `http://localhost:4000` into the
+links that leave the server, mails included.
 
 All git worktrees of the repository share the dev state of the main
 checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the

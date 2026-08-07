@@ -186,6 +186,10 @@ defmodule Texttile.NewsletterTest do
       assert first.text_body =~ "Fog over the pier."
       assert first.text_body =~ "/newsletter/unsubscribe/"
 
+      # the same way off, where the mail program reads it
+      assert %{"List-Unsubscribe" => header} = first.headers
+      assert header =~ ~r"\A<http://[^\s>]+/newsletter/unsubscribe/[^\s>]+>\z"
+
       assert Articles.get_article!(article.id).notified_on == Date.utc_today()
     end
 

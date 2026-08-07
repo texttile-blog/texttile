@@ -50,21 +50,22 @@ defmodule Texttile.Newsletter.Notifier do
     unsubscribe_url =
       TexttileWeb.Endpoint.url() <> "/newsletter/unsubscribe/#{subscriber.token}"
 
-    deliver(
-      subscriber.email,
-      site,
-      "New on #{site}: #{title}",
-      """
-      "#{title}" is now on #{site}:
+    subscriber.email
+    |> build(site, "New on #{site}: #{title}", """
+    "#{title}" is now on #{site}:
 
-      #{url}
-      #{lead_block(article)}#{password_block(site, password)}
-      You get this mail because this address is on the #{site} list.
-      To leave the list, open this link:
+    #{url}
+    #{lead_block(article)}#{password_block(site, password)}
+    You get this mail because this address is on the #{site} list.
+    To leave the list, open this link:
 
-      #{unsubscribe_url}
-      """
-    )
+    #{unsubscribe_url}
+    """)
+    # The way off the list, once more where the mail program itself
+    # reads it: a mailbox that finds no List-Unsubscribe on mail that
+    # goes to a list files it as the kind of mail nobody asked for.
+    |> header("List-Unsubscribe", "<#{unsubscribe_url}>")
+    |> send()
   end
 
   defp lead_block(article) do
@@ -84,16 +85,21 @@ defmodule Texttile.Newsletter.Notifier do
     """
   end
 
+  defp deliver(to, site, subject, body) do
+    to |> build(site, subject, body) |> send()
+  end
+
   # The reader knows the site by its title, not by the product it runs
   # on, so the title is the sender name.
-  defp deliver(to, site, subject, body) do
-    email =
-      new()
-      |> to(to)
-      |> from({site, Application.fetch_env!(:texttile, :mail_from)})
-      |> subject(subject)
-      |> text_body(body)
+  defp build(to, site, subject, body) do
+    new()
+    |> to(to)
+    |> from({site, Application.fetch_env!(:texttile, :mail_from)})
+    |> subject(subject)
+    |> text_body(body)
+  end
 
+  defp send(email) do
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
