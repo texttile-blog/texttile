@@ -8,10 +8,16 @@ defmodule Texttile.CommentsTest do
   alias Texttile.Comments
   alias Texttile.Settings
 
-  @attrs %{"name" => "Grandma Christel", "email" => "christel@example.org", "body" => "More of the dog, please."}
+  @attrs %{
+    "name" => "Grandma Christel",
+    "email" => "christel@example.org",
+    "body" => "More of the dog, please."
+  }
 
   defp post!(article, attrs \\ @attrs) do
-    {:ok, comment} = Comments.post(article, attrs, confirm_url: &"http://test/comments/confirm/#{&1}")
+    {:ok, comment} =
+      Comments.post(article, attrs, confirm_url: &"http://test/comments/confirm/#{&1}")
+
     comment
   end
 

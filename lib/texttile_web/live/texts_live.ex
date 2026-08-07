@@ -8,10 +8,14 @@ defmodule TexttileWeb.TextsLive do
   use TexttileWeb, :live_view
 
   alias Texttile.Articles
+  alias Texttile.Comments
   alias Texttile.Gallery
 
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Articles.subscribe_desk()
+    if connected?(socket) do
+      Articles.subscribe_desk()
+      Comments.subscribe()
+    end
 
     {:ok,
      socket
@@ -28,6 +32,7 @@ defmodule TexttileWeb.TextsLive do
     socket
     |> assign(:articles, articles)
     |> assign(:covers, Gallery.previews(articles))
+    |> assign(:comment_counts, Comments.count_map())
     |> assign(:total, length(Articles.list_articles()))
   end
 
@@ -43,6 +48,8 @@ defmodule TexttileWeb.TextsLive do
   def handle_info({:article_deleted, _id}, socket), do: {:noreply, load(socket)}
   def handle_info({:text_changed, _article}, socket), do: {:noreply, load(socket)}
   def handle_info({:gallery_changed, _id, _meta}, socket), do: {:noreply, load(socket)}
+  def handle_info({:comment_posted, _comment}, socket), do: {:noreply, load(socket)}
+  def handle_info({:comment_deleted, _comment}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 
   def render(assigns) do
@@ -98,7 +105,10 @@ defmodule TexttileWeb.TextsLive do
             <% end %>
             <span class="ct">{Articles.display_title(article)}</span>
             <span class="cm">
-              <span class={["st", article.status]}></span>{card_meta(article)}
+              <span class={["st", article.status]}></span>{card_meta(
+                article,
+                @comment_counts[article.id]
+              )}
             </span>
           </.link>
         </div>
@@ -135,7 +145,7 @@ defmodule TexttileWeb.TextsLive do
     end
   end
 
-  defp card_meta(article) do
+  defp card_meta(article, comment_count) do
     bits =
       case article.status do
         "draft" ->
@@ -150,7 +160,12 @@ defmodule TexttileWeb.TextsLive do
           ]
 
         "published" ->
-          [to_string(article.publish_date)]
+          [to_string(article.publish_date)] ++
+            case comment_count do
+              nil -> []
+              1 -> ["1 comment"]
+              n -> ["#{n} comments"]
+            end
       end
 
     bits = if article.type == "page", do: ["page" | bits], else: bits
