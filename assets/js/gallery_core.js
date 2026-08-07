@@ -606,15 +606,12 @@ class Gallery {
     root.tabIndex = -1
 
     root.innerHTML = `
-      <div class="flex items-center gap-3 px-4 h-[52px] flex-none text-white/80 text-[12.5px]">
+      <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <button type="button" id="lbDelete" class="text-white/85 hover:text-white text-[13px] px-3 py-1.5 rounded"
-           style="box-shadow: inset 0 0 0 1px rgba(255,255,255,.35)">Delete image</button>
-        <a id="lbOrig" class="text-white/85 hover:text-white text-[13px] px-3 py-1.5 rounded underline underline-offset-2"
-           target="_blank" rel="noopener">Open original</a>
-        <button type="button" id="lbClose" class="text-white/85 hover:text-white text-[13px] px-3 py-1.5 rounded"
-           style="box-shadow: inset 0 0 0 1px rgba(255,255,255,.35)" aria-label="Close">Close</button>
+        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> image</span></button>
+        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">Open original</span><span class="lb-word-s">Original</span></a>
+        <button type="button" id="lbClose" class="lb-abtn" aria-label="Close">Close</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"

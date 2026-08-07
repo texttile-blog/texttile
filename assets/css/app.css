@@ -437,6 +437,30 @@
   /* paper surfaces inside the dialog write in ink, not the stage's white */
   #lbRoot #lbFoot, #undoBar { color: var(--tt-ink); }
 
+  /* the bar over the picture: the count, then the three things you can
+     do with the picture. Delete stands in julia, so the one move that
+     cannot be taken back never reads as a twin of Close. */
+  .lb-bar-a {
+    display: flex; align-items: center; gap: 8px; flex: none;
+    height: 52px; padding: 0 14px; color: rgb(255 255 255 / .8); font-size: 12.5px;
+  }
+  .lb-abtn {
+    flex: none; color: rgb(255 255 255 / .85); font-size: 13px; padding: 6px 12px;
+    border-radius: var(--tt-radius); white-space: nowrap; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / .35);
+    transition: color .15s ease, background-color .15s ease, box-shadow .15s ease;
+  }
+  .lb-abtn:hover { color: #fff; background: rgb(255 255 255 / .1); }
+  .lb-abtn.plain { box-shadow: none; text-decoration: underline; text-underline-offset: 2px; }
+  .lb-abtn.danger { color: var(--tt-julialine, #f0d7c5); box-shadow: inset 0 0 0 1px var(--tt-julia, #b0532e); }
+  .lb-abtn.danger:hover { color: #fff; background: var(--tt-julia, #b0532e); }
+  /* on a phone the bar wears the short labels */
+  .lb-word-s { display: none; }
+  @media (max-width: 560px) {
+    .lb-word { display: none; }
+    .lb-word-s { display: inline; }
+  }
+
   /* the undo bar stays one line on any screen: a long filename gives
      way, Undo and the countdown never wrap */
   #undoBar { max-width: calc(100vw - 32px); }
@@ -748,7 +772,13 @@
 
   /* the pager under the list, and the way from one text to the next
      under a text: one step each way, held apart by a spacer */
-  .f-pager { display: flex; align-items: center; gap: 12px; }
+  /* three columns, so the page number stands in the middle of the
+     column whether one step is missing or both are there */
+  .f-pager {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 12px;
+  }
+  .f-pager > :last-child { text-align: right; }
   .f-nextprev { display: flex; align-items: flex-start; gap: 20px; }
   .f-nextprev a { display: block; max-width: 46%; text-decoration: none; color: var(--tt-dim); }
   .f-nextprev a .t {
