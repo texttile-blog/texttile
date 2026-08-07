@@ -19,6 +19,9 @@
 
 const MAX_PARALLEL = 2
 const MAX_FILE_MB = 50
+/* a film off a phone weighs what a photograph never does; the roof for
+   a video stands where the parser's does (see endpoint.ex) */
+const MAX_VIDEO_MB = 500
 const TOUCH_DRAG_DELAY_MS = 200
 const DRAG_THRESHOLD_PX = 9
 const TAP_MS = 500
@@ -166,23 +169,29 @@ class Gallery {
   }
 
   addFiles(fileList) {
-    const images = [...fileList].filter(f => /^image\//.test(f.type))
+    /* pictures and videos alike; a video is converted on the server
+       after the upload, and its tile waits for the poster */
+    const images = [...fileList].filter(f => /^(image|video)\//.test(f.type))
     for (const file of images) {
       // an oversize file fails right here instead of after minutes of upload
-      const oversize = file.size > MAX_FILE_MB * 1024 * 1024
+      const roof = /^video\//.test(file.type) ? MAX_VIDEO_MB : MAX_FILE_MB
+      const oversize = file.size > roof * 1024 * 1024
 
       this.records.push({
         id: "u" + ++this.uid,
         file,
         name: file.name,
-        objurl: URL.createObjectURL(file),
+        /* only a picture can stand in for itself while it travels; a
+           video shows its name and its state until the server has a
+           poster for it */
+        objurl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null,
         status: oversize ? "failed" : "queued",
-        error: oversize ? `bigger than the ${MAX_FILE_MB} MB roof` : null,
+        error: oversize ? `bigger than the ${roof} MB roof` : null,
         noRetry: oversize,
         pct: 0,
       })
 
-      if (oversize) this.noteTile(`${file.name} is bigger than the ${MAX_FILE_MB} MB roof.`)
+      if (oversize) this.noteTile(`${file.name} is bigger than the ${roof} MB roof.`)
     }
     if (images.length) {
       this.renderLocal()
@@ -353,7 +362,8 @@ class Gallery {
         : `<button type="button" class="tile-x" data-act="cancel">Cancel</button>`
 
     return `<div class="tile up ${r.status}" data-local-id="${r.id}"
-      style="background-image:url('${r.objurl}')" aria-label="${esc(r.name)}, ${esc(r.status)}">
+      ${r.objurl ? `style="background-image:url('${r.objurl}')"` : ""}
+      aria-label="${esc(r.name)}, ${esc(r.status)}">
       <span class="tile-ov">
         <span class="fn" title="${esc(r.name)}">${esc(r.name)}</span>
         <span class="st">${st}</span>
@@ -582,13 +592,15 @@ class Gallery {
       filename: t.dataset.filename,
       date: t.dataset.date,
       full: t.dataset.full,
+      video: t.dataset.video,
       original: t.dataset.original,
     }
   }
 
   openLightbox(id) {
     const data = this.tileData(id)
-    if (!data || this.lb) return
+    // a video that ffmpeg has not finished has nothing to show yet
+    if (!data || !data.full || this.lb) return
 
     this.lb = {
       id,
@@ -716,7 +728,42 @@ class Gallery {
 
     // a paint from a background update must not restart a load that is
     // already on its way: on a slow line the picture would never land
-    if (lb.paintedUrl !== data.full && lb.loadingUrl !== data.full) this.loadImage(data)
+    if (lb.paintedUrl !== data.full && lb.loadingUrl !== data.full) {
+      if (data.video) this.loadVideo(data)
+      else this.loadImage(data)
+    }
+  }
+
+  // whatever was playing here stops before the next thing is painted
+  stopFilm(stage) {
+    const film = stage.querySelector("video")
+    if (film) film.pause()
+  }
+
+  // a film plays where the picture would be, with the poster behind it
+  // until the first frame arrives
+  loadVideo(data) {
+    const lb = this.lb
+    lb.token += 1
+    lb.loadingUrl = null
+    lb.paintedUrl = data.full
+    const img = this.root.querySelector("#lbImg")
+    const state = this.root.querySelector("#lbState")
+
+    state.hidden = true
+    img.style.backgroundImage = ""
+    this.stopFilm(img)
+
+    const film = document.createElement("video")
+    film.className = "lb-film"
+    film.controls = true
+    film.playsInline = true
+    film.preload = "metadata"
+    film.poster = data.full
+    film.src = data.video
+    film.setAttribute("aria-label", data.filename)
+    img.replaceChildren(film)
+    film.play().catch(() => {})
   }
 
   loadImage(data, bust) {
@@ -726,6 +773,8 @@ class Gallery {
     const img = this.root.querySelector("#lbImg")
     const state = this.root.querySelector("#lbState")
 
+    this.stopFilm(img)
+    img.replaceChildren()
     img.style.backgroundImage = ""
     img.setAttribute("aria-label", data.filename)
     state.hidden = false
@@ -805,6 +854,9 @@ class Gallery {
 
   closeLightbox(silent) {
     if (this.root) {
+      // a film goes quiet the moment the lightbox leaves
+      const film = this.root.querySelector("video")
+      if (film) film.pause()
       const bar = document.getElementById("undoBar")
       if (bar && this.root.contains(bar)) document.body.appendChild(bar)
       if (this.root.open) this.root.close()

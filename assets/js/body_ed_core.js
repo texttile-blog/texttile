@@ -348,6 +348,9 @@ const impl = {
        drawn as they are */
     const resolveImage = url => {
       if (!/^(https?:|data:|blob:|\/)/.test(url)) return null
+      /* a video has no thumbnail of its own here; the panel below the
+         text says where its conversion stands */
+      if (/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(url)) return null
       const scaled = url.startsWith("/uploads/")
         ? "/renditions/320/" + url.slice("/uploads/".length)
         : url
@@ -387,14 +390,14 @@ const impl = {
       }),
       EditorView.domEventHandlers({
         paste: e => {
-          const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type))
+          const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^(image|video)\//.test(f.type))
           if (!fs.length) return false
           e.preventDefault()
           this.uploadFiles(fs)
           return true
         },
         drop: (e, v) => {
-          const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => /^image\//.test(f.type))
+          const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => /^(image|video)\//.test(f.type))
           if (!fs.length) return false
           e.preventDefault()   /* the outer dropzone sees this and stands down */
           if (v.state.readOnly) { this.pushEvent("ask_takeover", {}); return true }
@@ -482,7 +485,7 @@ const impl = {
         if (e.defaultPrevented) return   /* the editor already took it */
         if (!carriesFiles(e.dataTransfer)) return
         e.preventDefault()
-        const files = [...e.dataTransfer.files].filter(f => /^image\//.test(f.type))
+        const files = [...e.dataTransfer.files].filter(f => /^(image|video)\//.test(f.type))
         if (!files.length) return
         this.view.focus()
         this.uploadFiles(files)
@@ -492,7 +495,7 @@ const impl = {
     const picker = document.getElementById("mdImgFile")
     if (picker) {
       picker.addEventListener("change", () => {
-        const files = [...picker.files].filter(f => /^image\//.test(f.type))
+        const files = [...picker.files].filter(f => /^(image|video)\//.test(f.type))
         picker.value = ""
         if (!files.length) return
         this.view.focus()

@@ -41,11 +41,26 @@ addEventListener("keydown", (e) => {
     const tile = tiles[at];
     const inner = tile.querySelector("img");
     const caption = tile.dataset.caption || (inner && inner.alt) || "";
-    const img = document.createElement("img");
-    img.src = tile.dataset.full || tile.href;
-    img.alt = caption;
     const art = document.getElementById("lbArt");
-    art.replaceChildren(img);
+
+    // a gallery tile can be a film: the poster stands behind it until
+    // the first frame arrives, and nothing is fetched before that
+    if (tile.dataset.video) {
+      const film = document.createElement("video");
+      film.controls = true;
+      film.playsInline = true;
+      film.preload = "metadata";
+      film.poster = tile.dataset.full || "";
+      film.src = tile.dataset.video;
+      film.setAttribute("aria-label", caption);
+      art.replaceChildren(film);
+      film.play().catch(() => {});
+    } else {
+      const img = document.createElement("img");
+      img.src = tile.dataset.full || tile.href;
+      img.alt = caption;
+      art.replaceChildren(img);
+    }
     document.getElementById("lbCount").textContent = at + 1 + " / " + tiles.length;
     document.getElementById("lbCap").textContent = caption;
   }
@@ -62,6 +77,10 @@ addEventListener("keydown", (e) => {
   }
 
   function close() {
+    // a film that goes on playing behind a closed lightbox would be
+    // heard and never seen
+    const film = document.querySelector("#lbArt video");
+    if (film) film.pause();
     lb.hidden = true;
     document.documentElement.classList.remove("lb-open");
     if (at >= 0) tiles[at].focus();

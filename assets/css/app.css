@@ -511,6 +511,27 @@
     }
   }
 
+  /* a film in the gallery: the play mark on the poster, and the word
+     that stands in its place while ffmpeg is still working */
+  .tile .tile-play {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; border-radius: 50%; pointer-events: none;
+    background: rgb(var(--tt-overlay, 25 23 32) / .55);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / .45);
+  }
+  .tile .tile-play::after {
+    content: ""; position: absolute; left: 53%; top: 50%;
+    transform: translate(-50%, -50%);
+    border-style: solid; border-width: 5px 0 5px 9px;
+    border-color: transparent transparent transparent #fff;
+  }
+  .tile.tile-waiting { cursor: default; }
+  .tile .tile-wait {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    padding: 6px; text-align: center; line-height: 1.35;
+    font-size: 10.5px; color: var(--tt-dim);
+  }
+
   /* the "preview" flag on the chosen tile, bottom-right */
   .tile .cov {
     position: absolute; right: 5px; bottom: 5px;
@@ -822,6 +843,14 @@
      the link carries no underline of its own. */
   .prose img { max-width: 100%; width: auto; height: auto; max-height: 72vh; border-radius: var(--tt-radius-img, 3px); background: var(--tt-field); }
   .prose a.bodypic { display: inline-block; text-decoration: none; line-height: 0; }
+  /* a video in the text: the same measure as a picture. It fetches
+     nothing but its poster until the reader presses play. */
+  .prose video.bodyvid {
+    display: block; max-width: 100%; width: auto; height: auto; max-height: 72vh;
+    margin-bottom: 19px; border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);
+  }
+  /* a video the server has not converted yet: the file itself, named */
+  .prose a.videofile { text-decoration: underline; text-underline-offset: 2px; }
 
   /* the reader gallery: the tile grid, and the lightbox behind it */
   .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -833,6 +862,24 @@
   }
   .gal a img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .gal a:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
+  /* a film in the gallery: the poster with a play mark on it */
+  .gal a { position: relative; }
+  .gal a .play {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgb(var(--tt-overlay, 25 23 32) / .55);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / .45);
+  }
+  .gal a .play::after {
+    content: ""; position: absolute; left: 52%; top: 50%;
+    transform: translate(-50%, -50%);
+    border-style: solid; border-width: 8px 0 8px 13px;
+    border-color: transparent transparent transparent #fff;
+  }
+  .lb-img video {
+    max-width: 100%; max-height: 100%; width: auto; height: auto;
+    border-radius: var(--tt-radius-img, 3px); background: #000;
+  }
 
   /* the lightbox of round-13, in the shape the reader gets it: a
      count, a way out, an arrow on each side, and the same swipe on
