@@ -59,13 +59,13 @@ defmodule Texttile.CommentsTest do
       refute_email_sent()
     end
 
-    test "an unconfirmed address gets the same link again with the next comment" do
+    test "a second comment from one address joins it, and the link stays the one" do
       article = published_post()
       first = post!(article)
       second = post!(article)
 
       assert second.address_id == first.address_id
-      assert_email_sent(text_body: ~r/#{first.address.token}/)
+      assert second.address.token == first.address.token
       assert_email_sent(text_body: ~r/#{first.address.token}/)
     end
 
@@ -112,6 +112,24 @@ defmodule Texttile.CommentsTest do
 
       assert %{name: _, email: _, body: _} = errors_on(changeset)
     end
+
+    test "a name or a comment beyond the limit is refused" do
+      article = published_post()
+
+      assert {:error, changeset} =
+               Comments.post(article, %{@attrs | "name" => String.duplicate("n", 121)},
+                 confirm_url: &to_string/1
+               )
+
+      assert %{name: _} = errors_on(changeset)
+
+      assert {:error, changeset} =
+               Comments.post(article, %{@attrs | "body" => String.duplicate("b", 4001)},
+                 confirm_url: &to_string/1
+               )
+
+      assert %{body: _} = errors_on(changeset)
+    end
   end
 
   describe "confirm/1" do
@@ -144,7 +162,40 @@ defmodule Texttile.CommentsTest do
     end
   end
 
+  describe "the confirmation mail" do
+    test "one address gets one link an hour, however many comments it writes" do
+      article = published_post()
+      first = post!(article)
+      assert_email_sent()
+
+      post!(article, %{@attrs | "body" => "Again"})
+      refute_email_sent()
+
+      # an hour later the link travels again, so a lost mail is no dead end
+      first.address
+      |> Ecto.Changeset.change(
+        confirmation_mailed_at: DateTime.add(DateTime.utc_now(:second), -3601)
+      )
+      |> Texttile.Repo.update!()
+
+      post!(article, %{@attrs | "body" => "Much later"})
+      assert_email_sent(text_body: ~r/#{first.address.token}/)
+    end
+  end
+
   describe "reading and counting" do
+    test "for_readers/1 answers oldest first and caps what one page carries" do
+      article = published_post()
+
+      for n <- 1..3 do
+        post!(article, %{@attrs | "email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+      end
+
+      assert {rows, 0} = Comments.for_readers(article.id)
+      assert Enum.map(rows, & &1.body) == ["Words 1", "Words 2", "Words 3"]
+      assert Comments.count_for(article.id) == 3
+    end
+
     test "for_article/1 answers newest first, recent/1 spans all texts" do
       a = published_post(%{title: "A"})
       b = published_post(%{title: "B"})
@@ -172,6 +223,24 @@ defmodule Texttile.CommentsTest do
       assert {:ok, _} = Comments.delete_comment(comment)
       assert Comments.for_article(article.id) == []
       assert_receive {:comment_deleted, %Comments.Comment{}}
+    end
+
+    test "a comment somebody deleted first is gone, not an error" do
+      article = published_post()
+      comment = post!(article)
+
+      assert {:ok, _} = Comments.delete_comment(comment)
+      assert {:error, :gone} = Comments.delete_comment(comment)
+      assert {:error, :gone} = Comments.delete_comment(comment.id)
+      assert Comments.get_comment(comment.id) == nil
+    end
+
+    test "deleting by id takes the comment" do
+      article = published_post()
+      comment = post!(article)
+
+      assert {:ok, _} = Comments.delete_comment(comment.id)
+      assert Comments.for_article(article.id) == []
     end
   end
 

@@ -110,30 +110,34 @@ defmodule TexttileWeb.SiteController do
     article = fetch_commentable(id)
 
     cond do
-      is_nil(article) ->
+      # A locked reader learns nothing here, not even that the text
+      # exists: a redirect to the gate would carry its address, and a
+      # protected text stands in no list a locked reader can read.
+      is_nil(article) or (article.protected and not conn.assigns.site_unlocked) ->
         not_found(conn)
-
-      article.protected and not conn.assigns.site_unlocked ->
-        redirect(conn, to: ~p"/unlock?to=#{Articles.public_path(article)}")
 
       spam?(article, params) ->
         conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
 
       true ->
-        store_comment(conn, article, Map.take(params, ["name", "email", "body"]))
+        store_comment(conn, article, params)
     end
   end
 
-  defp store_comment(conn, article, attrs) do
+  defp store_comment(conn, article, params) do
+    attrs = params |> Map.take(["name", "email", "body"]) |> Map.new(&text_field/1)
     changeset = Comments.Comment.post_changeset(%Comments.Comment{}, attrs)
 
     cond do
       not changeset.valid? ->
         # The words travel back into the form, with one line that says
-        # what is missing. No comment is stored.
+        # what is missing. No comment is stored, and the stamp of the
+        # first drawing travels with them: a fresh one would make the
+        # corrected comment look like a script to the time trap.
         conn
         |> assign(:comment_error, true)
         |> assign(:comment_values, attrs)
+        |> assign(:comment_token, to_string(params["t"]))
         |> render_text(article)
 
       # The limit is spent on storable comments only, so a reader who
@@ -185,8 +189,15 @@ defmodule TexttileWeb.SiteController do
   end
 
   defp spam?(article, params) do
-    to_string(params["website"]) != "" or not human_timing?(article, params["t"])
+    text_value(params["website"]) != "" or not human_timing?(article, params["t"])
   end
+
+  # A form field is one line of text. A caller who sends a list or a map
+  # instead (`body[]=x`) gets it read as nothing, not a 500.
+  defp text_field({key, value}), do: {key, text_value(value)}
+
+  defp text_value(value) when is_binary(value), do: value
+  defp text_value(_value), do: ""
 
   # The form carries a signed stamp of the moment it was drawn. Sent
   # back in under a few seconds means a script, not a person typing;
@@ -194,7 +205,7 @@ defmodule TexttileWeb.SiteController do
   defp human_timing?(article, token) do
     min_age = Application.get_env(:texttile, :comment_min_age, 3)
 
-    case Phoenix.Token.verify(TexttileWeb.Endpoint, "comment form", to_string(token),
+    case Phoenix.Token.verify(TexttileWeb.Endpoint, "comment form", text_value(token),
            max_age: 7 * 86_400
          ) do
       {:ok, {article_id, signed_at}} ->
@@ -205,22 +216,22 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  # The caller as the rate limiter knows it: the proxy's client header
-  # when one stands in front (Fly writes fly-client-ip, most others
-  # x-forwarded-for), the socket address when none does. Spoofing the
-  # header rotates a spammer's bucket, no more - the honeypot and the
-  # time trap stand either way, and readers behind one proxy do not
-  # share one bucket.
+  # The caller as the rate limiter knows it: the socket address, which
+  # no caller can choose. A forwarding header is read only where the
+  # deployment names one (CLIENT_IP_HEADER, see the README): behind a
+  # proxy the socket address is the proxy's, and without the header
+  # every reader would share one bucket. Anywhere else the header is
+  # just a line the caller wrote, and trusting it would hand every
+  # spammer a fresh bucket per request.
   defp client_ip(conn) do
-    List.first(get_req_header(conn, "fly-client-ip")) ||
-      forwarded_ip(conn) ||
-      conn.remote_ip |> :inet.ntoa() |> to_string()
-  end
+    header = Application.get_env(:texttile, :client_ip_header)
 
-  defp forwarded_ip(conn) do
-    case get_req_header(conn, "x-forwarded-for") do
-      [value | _] -> value |> String.split(",") |> hd() |> String.trim()
-      [] -> nil
+    with name when is_binary(name) <- header,
+         [value | _] <- get_req_header(conn, name),
+         first when first != "" <- value |> String.split(",") |> hd() |> String.trim() do
+      first
+    else
+      _ -> conn.remote_ip |> :inet.ntoa() |> to_string()
     end
   end
 
@@ -347,11 +358,10 @@ defmodule TexttileWeb.SiteController do
   defp comment_assigns(conn, %Article{allow_comments: true} = article) do
     require? = Settings.get(:comments_require_confirmation)
     own = own_comment_ids(conn)
+    {comments, earlier} = Comments.for_readers(article.id)
 
     rows =
-      article.id
-      |> Comments.for_readers()
-      |> Enum.flat_map(fn comment ->
+      Enum.flat_map(comments, fn comment ->
         cond do
           Comments.shown_to_readers?(comment, require?) -> [{:shown, comment}]
           comment.id in own -> [{:own, comment}]
@@ -361,13 +371,15 @@ defmodule TexttileWeb.SiteController do
 
     %{
       comments: rows,
-      comment_count: Enum.count(rows, &match?({:shown, _}, &1)),
+      comment_count: Enum.count(rows, &match?({:shown, _}, &1)) + earlier,
+      comment_earlier: earlier,
       comment_token:
-        Phoenix.Token.sign(
-          TexttileWeb.Endpoint,
-          "comment form",
-          {article.id, System.system_time(:second)}
-        ),
+        conn.assigns[:comment_token] ||
+          Phoenix.Token.sign(
+            TexttileWeb.Endpoint,
+            "comment form",
+            {article.id, System.system_time(:second)}
+          ),
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
       comment_rule:
         if(require?,

@@ -62,13 +62,43 @@ defmodule Texttile.Comments do
         |> Map.put(:address, address)
         |> Map.put(:article, article)
 
-      if Settings.get(:comments_require_confirmation) and not Address.confirmed?(address) do
-        Notifier.deliver_confirmation(comment, confirm_url.(address.token))
-      end
+      comment =
+        if Settings.get(:comments_require_confirmation) and not Address.confirmed?(address) do
+          Map.put(comment, :address, mail_confirmation(comment, address, confirm_url))
+        else
+          comment
+        end
 
       broadcast({:comment_posted, comment})
       {:ok, comment}
     end
+  end
+
+  # Nobody proves they own the address before the mail goes out, so the
+  # address itself carries the limit: one link an hour. Without it the
+  # form is a way to mail a stranger over and over, from the site's own
+  # sending domain. The comment stands either way; the link is the same
+  # one, and the next comment carries it again.
+  @mail_interval_seconds 3600
+
+  defp mail_confirmation(comment, address, confirm_url) do
+    now = DateTime.utc_now(:second)
+
+    if mailed_recently?(address, now) do
+      address
+    else
+      Notifier.deliver_confirmation(comment, confirm_url.(address.token))
+
+      address
+      |> Ecto.Changeset.change(confirmation_mailed_at: now)
+      |> Repo.update!()
+    end
+  end
+
+  defp mailed_recently?(%Address{confirmation_mailed_at: nil}, _now), do: false
+
+  defp mailed_recently?(%Address{confirmation_mailed_at: at}, now) do
+    DateTime.diff(now, at) < @mail_interval_seconds
   end
 
   defp open_for_comments(%Article{status: "published", allow_comments: true}), do: :ok
@@ -85,7 +115,7 @@ defmodule Texttile.Comments do
   end
 
   defp ensure_address(attrs) do
-    email = Comment.normalize_email(Map.get(attrs, "email", Map.get(attrs, :email)))
+    email = Comment.normalize_email(Map.get(attrs, "email"))
 
     Repo.insert!(Address.build(email),
       on_conflict: [set: [email: email]],
@@ -154,6 +184,14 @@ defmodule Texttile.Comments do
   @doc "One comment, with its address."
   def get_comment!(id), do: Comment |> Repo.get!(id) |> Repo.preload(:address)
 
+  @doc "One comment, with its address, or nil when it is already gone."
+  def get_comment(id) do
+    case Repo.get(Comment, id) do
+      nil -> nil
+      comment -> Repo.preload(comment, :address)
+    end
+  end
+
   @doc "Every comment of one text, newest first, addresses along."
   def for_article(article_id) do
     from(c in Comment,
@@ -164,12 +202,39 @@ defmodule Texttile.Comments do
     |> Repo.all()
   end
 
+  # How many comments one text ever puts into one reader's page. A blog
+  # never reaches it; a text under attack does, and the page stays a
+  # page instead of growing without an end.
+  @reader_limit 200
+
   @doc """
   A text's comments the way its readers meet them, oldest first, so a
-  conversation reads top to bottom.
+  conversation reads top to bottom. The newest #{@reader_limit} at most:
+  answers the rows and how many older ones stayed out.
   """
   def for_readers(article_id) do
-    article_id |> for_article() |> Enum.reverse()
+    newest =
+      from(c in Comment,
+        where: c.article_id == ^article_id,
+        order_by: [desc: c.id],
+        limit: ^@reader_limit,
+        preload: :address
+      )
+      |> Repo.all()
+
+    earlier =
+      if length(newest) < @reader_limit do
+        0
+      else
+        count_for(article_id) - length(newest)
+      end
+
+    {Enum.reverse(newest), earlier}
+  end
+
+  @doc "How many comments one text carries."
+  def count_for(article_id) do
+    Repo.aggregate(from(c in Comment, where: c.article_id == ^article_id), :count)
   end
 
   @doc "The latest comments across all texts, newest first, texts along."
@@ -210,11 +275,27 @@ defmodule Texttile.Comments do
 
   ## Deleting
 
-  @doc "Removes a comment, silently: no mail, no trace, announced on the topic."
+  @doc """
+  Removes a comment, silently: no mail, no trace, announced on the topic.
+  Takes the comment or its id. A comment another admin deleted first
+  answers `{:error, :gone}`; two desks working the same list must not
+  raise at each other.
+  """
   def delete_comment(%Comment{} = comment) do
-    with {:ok, comment} <- Repo.delete(comment) do
-      broadcast({:comment_deleted, comment})
-      {:ok, comment}
+    case Repo.delete_all(from c in Comment, where: c.id == ^comment.id) do
+      {1, _} ->
+        broadcast({:comment_deleted, comment})
+        {:ok, comment}
+
+      {0, _} ->
+        {:error, :gone}
+    end
+  end
+
+  def delete_comment(id) do
+    case get_comment(id) do
+      nil -> {:error, :gone}
+      comment -> delete_comment(comment)
     end
   end
 end

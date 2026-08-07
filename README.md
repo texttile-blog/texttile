@@ -20,6 +20,7 @@ Texttile reads its configuration from environment variables at start.
 | `PORT`            | no               | `4000`                      | HTTP port                                         |
 | `MAIL_ADAPTER`    | no               | local preview mailbox       | `resend`, `postmark`, `brevo`, `smtp`, or `ses`   |
 | `MAIL_FROM`       | no               | `texttile@PHX_HOST`         | sender address for outgoing mail                  |
+| `CLIENT_IP_HEADER`| no               | none, the socket address    | header a trusted proxy writes, e.g. `fly-client-ip` |
 
 Each mail adapter loads exactly the credentials it needs:
 
@@ -33,6 +34,12 @@ Each mail adapter loads exactly the credentials it needs:
 
 A missing variable stops the app at boot with a message that names it. Without
 `MAIL_ADAPTER`, mail goes to a preview mailbox (`/dev/mailbox`, dev only).
+
+Set `CLIENT_IP_HEADER` only when a proxy stands in front of Texttile and
+writes that header itself. The comment rate limit counts by it, so a header
+the caller may write is a header a spammer may change. Without the variable
+the rate limit counts by the address of the connection, which is right
+everywhere except behind a proxy.
 
 ## Run with Docker
 

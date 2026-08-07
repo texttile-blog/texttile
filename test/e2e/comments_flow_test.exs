@@ -11,6 +11,13 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
   setup {TexttileWeb.E2E, :close_browser_context_afterwards}
 
+  # Every test in the run knocks from the same address, so the browser
+  # must not meet a limit another test spent.
+  setup do
+    Texttile.Comments.RateLimiter.reset()
+    :ok
+  end
+
   test "a reader comments, confirms by mail, the admin reads and deletes", %{conn: conn} do
     user_fixture(%{username: "kb"})
     article = published_post(title: "Harbor mornings", body: "Fog over the pier.")

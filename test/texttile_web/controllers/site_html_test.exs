@@ -53,6 +53,22 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
   end
 
+  describe "comment_when/1 and comment_heading/1" do
+    test "a comment of this year goes without the year, an older one with it" do
+      this_year = DateTime.new!(Date.new!(Date.utc_today().year, 7, 2), ~T[10:00:00])
+      last_year = DateTime.new!(Date.new!(Date.utc_today().year - 1, 7, 2), ~T[10:00:00])
+
+      assert SiteHTML.comment_when(this_year) == "2 July"
+      assert SiteHTML.comment_when(last_year) == "2 July #{Date.utc_today().year - 1}"
+    end
+
+    test "the heading counts, and says the word while there is nothing to count" do
+      assert SiteHTML.comment_heading(0) == "Comments"
+      assert SiteHTML.comment_heading(1) == "1 comment"
+      assert SiteHTML.comment_heading(3) == "3 comments"
+    end
+  end
+
   describe "body_html/1" do
     test "inline pictures travel as the reading-column rendition" do
       html =

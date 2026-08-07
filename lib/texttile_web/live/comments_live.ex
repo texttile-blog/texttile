@@ -35,8 +35,10 @@ defmodule TexttileWeb.CommentsLive do
     |> assign(:require?, Settings.get(:comments_require_confirmation))
   end
 
+  # A comment the other desk deleted a moment ago is simply gone; the
+  # list reloads either way.
   def handle_event("delete_comment", %{"id" => id}, socket) do
-    {:ok, _} = Comments.delete_comment(Comments.get_comment!(id))
+    Comments.delete_comment(id)
     {:noreply, load(socket)}
   end
 

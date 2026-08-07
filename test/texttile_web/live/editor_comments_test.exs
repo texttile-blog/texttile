@@ -71,6 +71,28 @@ defmodule TexttileWeb.EditorCommentsTest do
     assert Comments.for_article(article.id) == []
   end
 
+  test "a comment of another text is never deleted from here", %{conn: conn} do
+    article = published_post()
+    other = published_post()
+    stranger = post!(other, %{"email" => "other@example.org"})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
+    render_click(view, "delete_comment", %{"id" => stranger.id})
+
+    assert [_] = Comments.for_article(other.id)
+  end
+
+  test "a comment the other desk deleted first is simply gone", %{conn: conn} do
+    article = published_post()
+    comment = post!(article)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
+    {:ok, _} = Comments.delete_comment(comment)
+
+    render_click(view, "delete_comment", %{"id" => comment.id})
+    refute has_element?(view, "#comment-#{comment.id}")
+  end
+
   test "a comment arriving on the open text shows up live", %{conn: conn} do
     article = published_post()
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")

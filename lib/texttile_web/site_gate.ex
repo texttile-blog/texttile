@@ -74,10 +74,15 @@ defmodule TexttileWeb.SiteGate do
     end
   end
 
-  defp way_back(conn) do
+  # Only a page a reader can open again. A POST address answers nothing
+  # on a GET, so a form that ran into the gate sends its reader to the
+  # front page instead of into a dead end.
+  defp way_back(%Plug.Conn{method: "GET"} = conn) do
     case conn.query_string do
       "" -> conn.request_path
       query -> conn.request_path <> "?" <> query
     end
   end
+
+  defp way_back(_conn), do: "/"
 end

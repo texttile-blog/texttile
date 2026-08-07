@@ -88,6 +88,23 @@ defmodule Texttile.Config do
   end
 
   @doc """
+  The header that carries the reader's address, from CLIENT_IP_HEADER,
+  lowercased. `nil` means: read the address off the socket. Set it only
+  where a proxy stands in front and writes the header itself, for
+  example `fly-client-ip` on Fly.io. A header the caller may write is a
+  header the caller may change, and the comment rate limit counts by it.
+  """
+  def client_ip_header(env \\ System.get_env()) do
+    case env["CLIENT_IP_HEADER"] do
+      nil -> nil
+      value -> value |> String.trim() |> String.downcase() |> presence()
+    end
+  end
+
+  defp presence(""), do: nil
+  defp presence(value), do: value
+
+  @doc """
   The main checkout of the repository: every linked worktree answers
   with the same directory, so the state that all worktrees share in dev
   lives there (the database, the uploads, the `.env`). Outside a git

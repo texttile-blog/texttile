@@ -343,14 +343,17 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, assign(socket, :tab, tab)}
   end
 
+  # Only the open text's own comments, and a comment that is already
+  # gone is no error: the list reloads either way.
   def handle_event("delete_comment", %{"id" => id}, socket) do
-    comment = Comments.get_comment!(id)
+    article_id = socket.assigns.article.id
 
-    if comment.article_id == socket.assigns.article.id do
-      {:ok, _} = Comments.delete_comment(comment)
+    case Comments.get_comment(id) do
+      %{article_id: ^article_id} = comment -> Comments.delete_comment(comment)
+      _ -> :ok
     end
 
-    {:noreply, assign(socket, :comments, Comments.for_article(socket.assigns.article.id))}
+    {:noreply, assign(socket, :comments, Comments.for_article(article_id))}
   end
 
   def handle_event("toggle_state_menu", _params, socket) do

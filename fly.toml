@@ -18,6 +18,9 @@ primary_region = "fra"
   # share it in separate directories.
   DATABASE_PATH = "/data/db/texttile.db"
   UPLOADS_PATH = "/data/uploads"
+  # The Fly proxy writes this header itself, so the comment rate limit
+  # can count by the reader instead of by the proxy.
+  CLIENT_IP_HEADER = "fly-client-ip"
   # Mail: uncomment after setting the credential secret, e.g.
   #   fly secrets set RESEND_API_KEY=... -a texttile
   # Valid adapters: resend, postmark, brevo, smtp, ses. Unset = local preview.

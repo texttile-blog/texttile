@@ -33,14 +33,13 @@ defmodule Texttile.Comments.Comment do
   def post_changeset(comment, attrs) do
     comment
     |> changeset(attrs)
-    |> cast(attrs, [])
     |> validate_email(attrs)
   end
 
   # The email lives on the address row, but the form validates it here,
   # so one changeset carries every error the reader can make.
   defp validate_email(changeset, attrs) do
-    email = attrs |> Map.get("email", Map.get(attrs, :email, "")) |> to_string()
+    email = attrs |> Map.get("email", "") |> to_string()
 
     cond do
       String.trim(email) == "" ->

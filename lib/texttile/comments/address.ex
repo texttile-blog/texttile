@@ -12,6 +12,7 @@ defmodule Texttile.Comments.Address do
     field :email, :string
     field :token, :string
     field :confirmed_at, :utc_datetime
+    field :confirmation_mailed_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

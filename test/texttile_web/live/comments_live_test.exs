@@ -80,6 +80,20 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert Comments.for_article(article.id) == []
   end
 
+  test "two desks deleting the same comment is no crash", %{conn: conn} do
+    article = published_post()
+    comment = post!(article)
+
+    {:ok, one, _html} = live(conn, ~p"/admin/comments")
+    {:ok, two, _html} = live(conn, ~p"/admin/comments")
+
+    one |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+    render_click(two, "delete_comment", %{"id" => comment.id})
+
+    refute has_element?(two, "#comment-#{comment.id}")
+    assert Comments.total_count() == 0
+  end
+
   test "a fresh comment arrives without a reload", %{conn: conn} do
     article = published_post()
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
