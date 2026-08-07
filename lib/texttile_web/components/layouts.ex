@@ -156,7 +156,13 @@ defmodule TexttileWeb.Layouts do
         >
           Comments <span class="k">3</span>
         </.link>
-        <button class="row" type="button">Newsletter <span class="k">7</span></button>
+        <.link
+          navigate={~p"/admin/newsletter"}
+          class={["row", @active == "newsletter" && "on"]}
+          data-key="7"
+        >
+          Newsletter <span class="k">7</span>
+        </.link>
         <button class="row" type="button">Stats <span class="k">8</span></button>
         <.link
           navigate={~p"/admin/settings"}

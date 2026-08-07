@@ -15,6 +15,13 @@ defmodule Texttile.ImportTest do
     %{user: user_fixture(), dir: tmp_dir!()}
   end
 
+  # The subscriber mails leave in a task of their own, so the test
+  # process has to be the one Swoosh delivers to.
+  defp share_mail do
+    Application.put_env(:swoosh, :shared_test_process, self())
+    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+  end
+
   defp tmp_dir! do
     dir = Path.join(System.tmp_dir!(), "import-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)
@@ -251,6 +258,42 @@ defmodule Texttile.ImportTest do
       end)
 
       assert Enum.any?(Articles.log(article), &(&1.text =~ "imported"))
+    end
+
+    test "an import tells the subscribers nothing", %{dir: dir, user: user} do
+      share_mail()
+      {:ok, _} = Texttile.Newsletter.add("reader@example.org")
+
+      future = Date.utc_today() |> Date.add(30) |> Date.to_iso8601()
+      write_bundle(dir, "beach", "title: Beach days\ndate: 2019-06-02\n")
+      write_bundle(dir, "soon", "title: Soon\ndate: #{future}\n")
+
+      Import.run(Import.validate(dir), user)
+
+      refute_receive {:email, _}, 200
+
+      # the scheduled one keeps its notification for its own day
+      soon = Repo.get_by!(Article, slug: "soon")
+      assert soon.status == "scheduled"
+      assert is_nil(soon.notified_on)
+
+      [gone_live] = Articles.go_live_due(soon.publish_date)
+      assert gone_live.id == soon.id
+      assert_receive {:email, %Swoosh.Email{subject: "New on Texttile: Soon"}}, 1000
+    end
+
+    test "a second import of a live text mails nobody either", %{dir: dir, user: user} do
+      share_mail()
+      {:ok, _} = Texttile.Newsletter.add("reader@example.org")
+
+      write_bundle(dir, "beach", "title: Beach days\ndate: 2019-06-02\n")
+      Import.run(Import.validate(dir), user)
+
+      write_bundle(dir, "beach", "title: Beach days again\nslug: beach-days\ndate: 2019-06-02\n")
+      Import.run(Import.validate(dir), user)
+
+      assert Repo.get_by!(Article, slug: "beach-days").title == "Beach days again"
+      refute_receive {:email, _}, 200
     end
 
     test "a future date schedules, a draft stays a draft", %{dir: dir, user: user} do

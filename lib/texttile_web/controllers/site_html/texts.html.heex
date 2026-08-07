@@ -62,14 +62,12 @@
 
   <%!-- the list runs the full width, so About lines up with the cards
        instead of stepping in with the reading column --%>
-  <section
-    :if={assigns[:about_html]}
-    class="wrap pb-[var(--tt-sec)]"
-    id="about"
-    aria-label="About"
-  >
+  <section :if={assigns[:about_html]} class="wrap" id="about" aria-label="About">
     <h2 class="f-sec-h">About</h2>
     <div class="f-body about-md mt-4">{Phoenix.HTML.raw(@about_html)}</div>
   </section>
+
+  <%!-- the last thing on the page: the one email this blog sends --%>
+  <.site_subscribe narrow={false} />
 </main>
 <.site_foot current_scope={@current_scope} />

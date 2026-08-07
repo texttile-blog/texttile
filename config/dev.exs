@@ -31,18 +31,22 @@ config :texttile, Texttile.Repo,
 # The address that the development server hands out: the cable network
 # first, then Wi-Fi, then the loopback. It goes into the links that the
 # server writes, so a phone or a second machine in the same network can
-# follow them. `bin/dev-host` finds it, `make start` opens it.
+# follow them. `bin/dev-host` finds it, `make start` opens it. DEV_HOST
+# replaces it everywhere at once: the script answers it, this reads it
+# even where the script cannot run, and `make start` opens what the
+# links say.
 dev_host =
-  try do
-    {address, 0} = System.cmd(Path.expand("../bin/dev-host", __DIR__), [])
+  System.get_env("DEV_HOST") ||
+    try do
+      {address, 0} = System.cmd(Path.expand("../bin/dev-host", __DIR__), [])
 
-    case String.trim(address) do
-      "" -> "127.0.0.1"
-      address -> address
+      case String.trim(address) do
+        "" -> "127.0.0.1"
+        address -> address
+      end
+    rescue
+      _ -> "127.0.0.1"
     end
-  rescue
-    _ -> "127.0.0.1"
-  end
 
 dev_port = String.to_integer(System.get_env("PORT") || "4000")
 

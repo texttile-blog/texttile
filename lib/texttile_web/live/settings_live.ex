@@ -10,6 +10,7 @@ defmodule TexttileWeb.SettingsLive do
   alias Texttile.Accounts
   alias Texttile.Images
   alias Texttile.Markdown
+  alias Texttile.Newsletter
   alias Texttile.Settings
   alias Texttile.Uploads
 
@@ -325,6 +326,18 @@ defmodule TexttileWeb.SettingsLive do
   defp saved_note(:site_visibility, "public"), do: "The blog is open to everyone"
 
   defp saved_note(:site_password, ""), do: "Without a password nothing is protected"
+
+  # A new word is often meant to shut somebody out, and the next text
+  # mails it to everybody on the list. This is the moment to say so;
+  # the list itself is one click away, under Newsletter.
+  defp saved_note(:site_password, _word) do
+    count = Newsletter.confirmed_count()
+
+    if Settings.get(:site_visibility) == "protected" and count > 0 do
+      "Saved · the next text mails the new word to " <>
+        "#{count} #{plural(count, "subscriber", "subscribers")}"
+    end
+  end
 
   defp saved_note(_key, _value), do: nil
 
@@ -714,9 +727,10 @@ defmodule TexttileWeb.SettingsLive do
               phx-debounce="300"
             />
             <div class="hint">
-              A shared access word, not a login: it goes into the notification
-              mails, and you pass it on. It is stored as it is written. It is
-              the password of the whole blog; without one nothing is protected.
+              A shared access word, not a login: it goes into every text mail,
+              so everybody on the newsletter list gets it, and you pass it on.
+              It is stored as it is written. It is the password of the whole
+              blog; without one nothing is protected.
             </div>
           </div>
         </.form>

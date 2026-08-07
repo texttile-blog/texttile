@@ -1,6 +1,6 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
-  <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
+  <div class="wrap pt-[46px]">
     <h1 class="f-h1" id="title">#{@tag}</h1>
     <p class="f-lead mt-3" id="sub">
       {length(@articles)} {if length(@articles) == 1, do: "text has", else: "texts have"} this tag.
@@ -23,5 +23,8 @@
       <.card :for={article <- @articles} article={article} preview={@previews[article.id]} />
     </div>
   </div>
+
+  <%!-- the last thing on the page: the one email this blog sends --%>
+  <.site_subscribe narrow={false} />
 </main>
 <.site_foot current_scope={@current_scope} />

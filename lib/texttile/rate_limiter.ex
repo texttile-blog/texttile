@@ -1,9 +1,11 @@
-defmodule Texttile.Comments.RateLimiter do
+defmodule Texttile.RateLimiter do
   @moduledoc """
-  The third invisible spam filter: one caller may send a few comments a
-  minute, no more. A sliding window per key in one ETS table, pruned as
-  it is read and swept once a minute - no external store, no cookie,
-  nothing kept but timestamps that expire within the minute.
+  The third invisible spam filter of the public forms: one caller may
+  knock a few times a minute, no more - comments and newsletter
+  requests out of one bucket. A sliding window per key in one ETS
+  table, pruned as it is read and swept once a minute - no external
+  store, no cookie, nothing kept but timestamps that expire within the
+  minute.
   """
 
   use GenServer
@@ -18,16 +20,16 @@ defmodule Texttile.Comments.RateLimiter do
   end
 
   @doc """
-  Whether the key (in practice: the reader's IP) may send another
-  comment now. Counting and answering is one atomic step in the server,
-  so two racing requests never share a free slot.
+  Whether the key (in practice: the reader's IP) may knock again now.
+  Counting and answering is one atomic step in the server, so two
+  racing requests never share a free slot.
   """
   def allow?(key, name \\ __MODULE__) do
     GenServer.call(name, {:allow?, key})
   end
 
   @doc """
-  Forgets every window. One test's comments must not count against the
+  Forgets every window. One test's requests must not count against the
   next one's: every caller in a test run wears the same address.
   """
   def reset(name \\ __MODULE__) do

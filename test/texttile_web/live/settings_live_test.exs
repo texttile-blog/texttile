@@ -67,6 +67,20 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "The blog waits behind the password now"
     end
 
+    test "a new password says who will get it by mail", %{conn: conn} do
+      {:ok, _} = Settings.put(:site_visibility, "protected")
+      {:ok, _} = Texttile.Newsletter.add("one@example.org")
+
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
+
+      html =
+        view
+        |> form("#access-form", %{"settings" => %{"site_password" => "another word"}})
+        |> render_change(%{"_target" => ["settings", "site_password"]})
+
+      assert html =~ "mails the new word to 1 subscriber"
+    end
+
     test "a front page that is no longer published shows as the list again", %{conn: conn} do
       user = Texttile.AccountsFixtures.user_fixture()
       page = Texttile.ArticlesFixtures.published_page(title: "Welcome", user: user)

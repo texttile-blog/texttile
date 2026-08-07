@@ -1,7 +1,7 @@
-defmodule Texttile.Comments.RateLimiterTest do
+defmodule Texttile.RateLimiterTest do
   use ExUnit.Case, async: true
 
-  alias Texttile.Comments.RateLimiter
+  alias Texttile.RateLimiter
 
   test "three comments a minute pass, the fourth waits, another caller is free" do
     name = :"rate_limiter_#{System.unique_integer([:positive])}"

@@ -726,29 +726,33 @@ defmodule Texttile.Import do
 
   defp set_state(article, %Bundle{status: "published"} = bundle, user) do
     date = bundle.date || Date.utc_today()
+
+    # The stamp goes on before the text goes live, because going live
+    # is what sends the mail: an already published import never mails
+    # the subscribers after the fact. A future date is a scheduled
+    # text and keeps no stamp; it goes live on its day like any other,
+    # notification included. IMPORT.md says so.
+    article = mark_notified(article, date)
+
     {:ok, article} = Articles.set_publish_date(article, user, date)
 
-    article =
-      if article.status == "draft" do
-        {:ok, article} = Articles.publish(article, user)
-        article
-      else
-        article
-      end
-
-    mark_notified(article)
+    if article.status == "draft" do
+      {:ok, article} = Articles.publish(article, user)
+      article
+    else
+      article
+    end
   end
 
-  # An already published import never mails the subscribers after the
-  # fact. A scheduled one goes live later like any scheduled text,
-  # notification included; IMPORT.md says so.
-  defp mark_notified(%Article{status: "published"} = article) do
-    article
-    |> Article.state_changeset(%{notified_on: article.publish_date})
-    |> Repo.update!()
+  defp mark_notified(article, date) do
+    if Date.compare(date, Date.utc_today()) == :gt do
+      article
+    else
+      article
+      |> Article.state_changeset(%{notified_on: date})
+      |> Repo.update!()
+    end
   end
-
-  defp mark_notified(article), do: article
 
   defp replace_gallery(article, bundle, stored) do
     base = DateTime.new!(article.publish_date || Date.utc_today(), ~T[12:00:00.000000], "Etc/UTC")

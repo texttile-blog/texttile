@@ -105,7 +105,4 @@ defmodule TexttileWeb.CommentsLive do
       "to confirm the email address, so readers do not see " <>
       plural(waiting, "it", "them") <> " yet."
   end
-
-  defp plural(1, one, _many), do: one
-  defp plural(_n, _one, many), do: many
 end

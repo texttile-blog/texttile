@@ -80,6 +80,67 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
+  @doc """
+  The last section of every reader page, straight from the example
+  blog: the one email this blog sends. The form wears the comment
+  form's invisible spam filters - a stamp of the moment it was drawn,
+  and a honeypot no person ever sees.
+
+  `narrow` follows the page it stands under: the reading column on a
+  text, the full width of the grid on the lists, so the heading lines
+  up with what is above it.
+  """
+  attr :narrow, :boolean, default: true
+
+  def site_subscribe(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :newsletter_token,
+        Phoenix.Token.sign(TexttileWeb.Endpoint, "newsletter form", System.system_time(:second))
+      )
+
+    ~H"""
+    <section
+      class={["wrap mt-[54px] pb-[var(--tt-sec)]", @narrow && "narrow"]}
+      id="subscribe"
+      aria-label="Subscribe"
+    >
+      <h2 class="f-sec-h">Subscribe</h2>
+      <p class="f-body mt-3">
+        One email when a new text goes out, nothing else. Unsubscribe is one
+        click, no questions.
+      </p>
+      <form
+        id="newsletter-form"
+        action={~p"/newsletter"}
+        method="post"
+        class="flex items-end gap-3 mt-5 max-w-[420px]"
+      >
+        <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+        <input type="hidden" name="t" value={@newsletter_token} />
+        <input
+          type="text"
+          name="website"
+          id="nl-hp"
+          class="sr"
+          tabindex="-1"
+          aria-hidden="true"
+          autocomplete="off"
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="you@example.org"
+          aria-label="Email for new texts"
+          required
+        />
+        <button class="btn solid flex-none">Subscribe</button>
+      </form>
+    </section>
+    """
+  end
+
   @doc "The card of the desk's Texts grid, drawn for a reader."
   attr :article, :any, required: true
   attr :preview, :any, default: nil
@@ -153,49 +214,8 @@ defmodule TexttileWeb.SiteHTML do
     "#{date.day} #{Calendar.strftime(date, "%B %Y")}"
   end
 
-  @doc """
-  The lead line of a card: the first real paragraph of the text, the
-  markdown stripped, cut at a word before 160 characters.
-  """
-  def lead(article) do
-    article.body
-    |> to_string()
-    |> String.split(~r/\n{2,}/)
-    |> Enum.map(&String.trim/1)
-    |> Enum.find("", fn block ->
-      block != "" and not String.starts_with?(block, "#") and
-        not Regex.match?(~r/\A!\[[^\]]*\]\([^)]*\)\z/, block)
-    end)
-    |> strip_markdown()
-    |> shorten(160)
-  end
-
-  defp strip_markdown(text) do
-    text
-    |> String.replace(~r/!\[[^\]]*\]\([^)]*\)/, "")
-    |> String.replace(~r/\[([^\]]*)\]\([^)]*\)/, "\\1")
-    |> String.replace(~r/[*_`>]/, "")
-    |> String.replace(~r/\s+/, " ")
-    |> String.trim()
-  end
-
-  defp shorten(text, max) do
-    if String.length(text) <= max do
-      text
-    else
-      # the slice ends mid-word, so the broken tail goes - unless the
-      # cut is one single word, which stays as it is
-      cut = String.slice(text, 0, max)
-
-      head =
-        case String.split(cut, " ") do
-          [_single] -> cut
-          words -> words |> Enum.drop(-1) |> Enum.join(" ")
-        end
-
-      head <> "…"
-    end
-  end
+  @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
+  defdelegate lead(article), to: Articles
 
   @doc "The heading of the comments block: the count while there is one."
   def comment_heading(0), do: "Comments"

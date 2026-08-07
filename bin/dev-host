@@ -6,10 +6,18 @@
 # The server itself listens on all interfaces, so http://localhost:4000
 # stays available whatever this script prints.
 #
+# DEV_HOST replaces the search, so `DEV_HOST=localhost make start` opens
+# the address it also writes into the links and the mails.
+#
 # TEXTTILE_DEV_INTERFACES replaces the interfaces of the machine. One
 # interface per line, "wired ADDRESS" or "wireless ADDRESS". The tests
 # use it; nothing else does.
 set -u
+
+if [ -n "${DEV_HOST:-}" ]; then
+	printf '%s\n' "$DEV_HOST"
+	exit 0
+fi
 
 # All addresses of one kind ("wired" or "wireless"), one per line.
 interfaces() {

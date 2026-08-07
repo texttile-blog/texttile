@@ -84,6 +84,23 @@ anything. Admins see all comments at `/admin/comments` and can delete them.
 Spam protection is built in and always on: a honeypot field, a time trap,
 and a rate limit per caller. No captcha, no Google, no third parties.
 
+## Newsletter
+
+Readers can put their address on the newsletter list through the form in
+the footer of every page. The address gets one confirmation mail and
+receives texts only after its reader follows the mailed link. Admins see
+the list at `/admin/newsletter` and can add addresses by hand; an added
+address is confirmed at once.
+
+When a post goes live with "Email subscribers" checked (the switch is in
+the text's settings), every confirmed address gets one plain email: the
+title, the first paragraph, and the address the text lives at. If the
+blog sits behind the shared password, the mail includes it. Every mail
+carries the way off the list. The email goes out once per text;
+publishing the same text again does not send it again.
+
+The subscribe form wears the same spam protection as the comment form.
+
 ## Accounts
 
 `ADMIN_USERS` names everybody who may sign in. It holds usernames,
@@ -158,7 +175,9 @@ network first, then Wi-Fi, then `127.0.0.1`. A phone in the same network
 reaches the server at that address, and `http://localhost:4000` keeps
 working on this machine. `bin/dev-host` prints the address that gets
 chosen. Everybody in that network can open the site and the dev routes, so
-start the server on a network you trust.
+start the server on a network you trust. `DEV_HOST` replaces the address:
+`DEV_HOST=localhost make start` writes `http://localhost:4000` into the
+links that leave the server, mails included.
 
 All git worktrees of the repository share the dev state of the main
 checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
