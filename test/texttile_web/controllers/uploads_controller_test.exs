@@ -57,6 +57,25 @@ defmodule TexttileWeb.UploadsControllerTest do
       assert get_resp_header(conn, "content-range") == ["bytes 7-9/10"]
     end
 
+    test "asking for the last bytes answers the tail", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("range", "bytes=-3")
+        |> get(~p"/uploads/videos/clip-abcd.web.mp4")
+
+      assert response(conn, 206) == "789"
+      assert get_resp_header(conn, "content-range") == ["bytes 7-9/10"]
+    end
+
+    test "a range nobody can read is answered whole", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("range", "bytes=abc")
+        |> get(~p"/uploads/videos/clip-abcd.web.mp4")
+
+      assert response(conn, 200) == "0123456789"
+    end
+
     test "a range behind the end is refused", %{conn: conn} do
       conn =
         conn

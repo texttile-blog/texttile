@@ -15,7 +15,6 @@ defmodule Texttile.Videos.Video do
     field :poster_path, :string
     field :width, :integer
     field :height, :integer
-    field :duration_ms, :integer
     field :state, :string, default: "queued"
     field :error, :string
 

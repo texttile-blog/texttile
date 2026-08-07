@@ -36,7 +36,9 @@ addEventListener("keydown", (e) => {
   if (!tiles.length) return;
   let at = -1;
 
-  function show(i) {
+  // `playing` is true only for the tile the reader opened: paging past
+  // a film with the arrow keys must not start it, and must not fetch it
+  function show(i, playing) {
     at = (i + tiles.length) % tiles.length;
     const tile = tiles[at];
     const inner = tile.querySelector("img");
@@ -49,12 +51,12 @@ addEventListener("keydown", (e) => {
       const film = document.createElement("video");
       film.controls = true;
       film.playsInline = true;
-      film.preload = "metadata";
+      film.preload = playing ? "metadata" : "none";
       film.poster = tile.dataset.full || "";
       film.src = tile.dataset.video;
       film.setAttribute("aria-label", caption);
       art.replaceChildren(film);
-      film.play().catch(() => {});
+      if (playing) film.play().catch(() => {});
     } else {
       const img = document.createElement("img");
       img.src = tile.dataset.full || tile.href;
@@ -66,14 +68,14 @@ addEventListener("keydown", (e) => {
   }
 
   function open(i) {
-    show(i);
+    show(i, true);
     lb.hidden = false;
     document.documentElement.classList.add("lb-open");
     document.getElementById("lbClose").focus();
   }
 
   function nav(dir) {
-    if (!lb.hidden) show(at + dir);
+    if (!lb.hidden) show(at + dir, false);
   }
 
   function close() {

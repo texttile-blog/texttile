@@ -87,29 +87,17 @@ defmodule Texttile.Uploads do
   be cached hard.
   """
   def put_body_image(source_path, original_name) do
-    extension = original_name |> Path.extname() |> String.downcase()
-
-    cond do
-      extension not in @body_image_extensions ->
-        {:error, "PNG, JPG, WebP or GIF, please"}
-
-      not readable_image?(source_path) ->
-        {:error, "The file could not be read as an image"}
-
-      true ->
-        base =
-          case Texttile.Articles.slugify(Path.rootname(original_name)) do
-            "" -> "image"
-            slug -> slug
-          end
-
-        tag = random_tag()
-        relative = "images/#{base}-#{tag}#{extension}"
-        destination = absolute(relative)
-        File.mkdir_p!(Path.dirname(destination))
-        File.cp!(source_path, destination)
-        {:ok, relative}
-    end
+    store(source_path, original_name,
+      directory: "images",
+      extensions: @body_image_extensions,
+      fallback: "image",
+      refusal: "PNG, JPG, WebP or GIF, please",
+      readable: fn path ->
+        if readable_image?(path),
+          do: :ok,
+          else: {:error, "The file could not be read as an image"}
+      end
+    )
   end
 
   @doc """
@@ -120,23 +108,40 @@ defmodule Texttile.Uploads do
   there with a reason the editor shows.
   """
   def put_body_video(source_path, original_name) do
-    extension = original_name |> Path.extname() |> String.downcase()
+    store(source_path, original_name,
+      directory: "videos",
+      extensions: Texttile.Videos.extensions(),
+      fallback: "video",
+      refusal: "MP4, MOV, M4V, WebM, AVI or MKV, please"
+    )
+  end
 
-    if extension in Texttile.Videos.extensions() do
+  # The one way a body file lands on disk: the extension decides
+  # whether it may, an optional reading says whether the file is what
+  # it claims, and the readable base of the name plus a random tag make
+  # the stored name.
+  defp store(source_path, original_name, opts) do
+    extension = original_name |> Path.extname() |> String.downcase()
+    readable = Keyword.get(opts, :readable, fn _path -> :ok end)
+
+    with :ok <- allowed(extension, opts),
+         :ok <- readable.(source_path) do
       base =
         case Texttile.Articles.slugify(Path.rootname(original_name)) do
-          "" -> "video"
+          "" -> opts[:fallback]
           slug -> slug
         end
 
-      relative = "videos/#{base}-#{random_tag()}#{extension}"
+      relative = "#{opts[:directory]}/#{base}-#{random_tag()}#{extension}"
       destination = absolute(relative)
       File.mkdir_p!(Path.dirname(destination))
       File.cp!(source_path, destination)
       {:ok, relative}
-    else
-      {:error, "MP4, MOV, M4V, WebM, AVI or MKV, please"}
     end
+  end
+
+  defp allowed(extension, opts) do
+    if extension in opts[:extensions], do: :ok, else: {:error, opts[:refusal]}
   end
 
   defp readable_image?(path) do

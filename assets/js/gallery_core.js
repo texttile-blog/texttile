@@ -580,8 +580,15 @@ class Gallery {
 
   /* ================= the lightbox ================= */
 
+  /* the tiles the lightbox can show. A video ffmpeg has not finished
+     has no picture and no film yet, so it stays out of the paging;
+     the sorting list above keeps every tile. */
+  shownTiles() {
+    return this.tiles().filter(t => t.dataset.full)
+  }
+
   tileData(id) {
-    const list = this.tiles()
+    const list = this.shownTiles()
     const index = list.findIndex(t => t.dataset.id === id)
     if (index < 0) return null
     const t = list[index]
@@ -608,6 +615,9 @@ class Gallery {
       token: 0,
       formFor: null,
       paintedUrl: null,
+      /* only the tile that was tapped starts playing by itself;
+         paging past a film must not start it */
+      opening: true,
       prevFocus: document.activeElement,
     }
     this.buildLightbox()
@@ -758,12 +768,13 @@ class Gallery {
     film.className = "lb-film"
     film.controls = true
     film.playsInline = true
-    film.preload = "metadata"
+    film.preload = lb.opening ? "metadata" : "none"
     film.poster = data.full
     film.src = data.video
     film.setAttribute("aria-label", data.filename)
     img.replaceChildren(film)
-    film.play().catch(() => {})
+    if (lb.opening) film.play().catch(() => {})
+    lb.opening = false
   }
 
   loadImage(data, bust) {
@@ -806,13 +817,14 @@ class Gallery {
   nav(direction) {
     const lb = this.lb
     if (!lb) return
-    const list = this.tiles()
+    const list = this.shownTiles()
     if (!list.length) return
     const index = list.findIndex(t => t.dataset.id === lb.id)
     const next = list[(Math.max(index, 0) + direction + list.length) % list.length]
     lb.id = next.dataset.id
     lb.formFor = null
     lb.paintedUrl = null
+    lb.opening = false
     this.paint()
   }
 
@@ -843,12 +855,13 @@ class Gallery {
       return
     }
 
-    const list = this.tiles()
+    const list = this.shownTiles()
     if (!list.length) return this.closeLightbox()
     const fallback = list[Math.min(lb.lastIndex, list.length - 1)]
     lb.id = fallback.dataset.id
     lb.formFor = null
     lb.paintedUrl = null
+    lb.opening = false
     this.paint()
   }
 

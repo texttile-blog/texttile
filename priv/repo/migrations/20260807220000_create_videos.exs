@@ -11,7 +11,6 @@ defmodule Texttile.Repo.Migrations.CreateVideos do
       add :poster_path, :string
       add :width, :integer
       add :height, :integer
-      add :duration_ms, :integer
       add :state, :string, null: false, default: "queued"
       add :error, :string
 

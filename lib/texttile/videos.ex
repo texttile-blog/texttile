@@ -27,6 +27,10 @@ defmodule Texttile.Videos do
 
   @topic "videos"
 
+  # Everything a video owns lives here: the original and what ffmpeg
+  # made of it.
+  @directory "videos"
+
   # What a camera, a phone and a screen recorder hand over.
   @extensions ~w(.mp4 .mov .m4v .webm .avi .mkv)
 
@@ -95,8 +99,7 @@ defmodule Texttile.Videos do
           mp4: video.mp4_path,
           poster: video.poster_path,
           width: video.width,
-          height: video.height,
-          duration_ms: video.duration_ms
+          height: video.height
         }
 
       _ ->
@@ -183,17 +186,38 @@ defmodule Texttile.Videos do
   the caller's (see `Texttile.Uploads.remove_upload/1`).
   """
   def forget(relative) do
-    case get(relative) do
-      nil ->
-        :ok
+    Repo.delete_all(from v in Video, where: v.path == ^relative)
+    drop_derived(relative)
+    :ok
+  end
 
-      video ->
-        for path <- [video.mp4_path, video.poster_path], is_binary(path) do
-          File.rm(Uploads.absolute(path))
-          Texttile.Images.drop_renditions(path)
+  # The derived files by their names, not by what the row remembers: a
+  # conversion that was still running when the row went writes its two
+  # files afterwards, and they are named the same either way.
+  defp drop_derived(relative) do
+    for path <- [derived(relative, ".web.mp4"), derived(relative, ".poster.jpg")] do
+      File.rm(Uploads.absolute(path))
+      Texttile.Images.drop_renditions(path)
+    end
+
+    :ok
+  end
+
+  @doc """
+  Removes the half written files of conversions that a stopped server
+  never finished. The queue sweeps on its way up, before it takes the
+  first video of the new run.
+  """
+  def sweep_partials do
+    case File.ls(Uploads.absolute(@directory)) do
+      {:ok, names} ->
+        for name <- names, String.starts_with?(name, ".tmp-") do
+          File.rm(Uploads.absolute("#{@directory}/#{name}"))
         end
 
-        Repo.delete_all(from v in Video, where: v.id == ^video.id)
+        :ok
+
+      {:error, _} ->
         :ok
     end
   end
@@ -220,14 +244,27 @@ defmodule Texttile.Videos do
 
   @doc """
   Converts one stored original into the file a page plays and the
-  poster beside it. Answers `{:ok, video}` or `{:error, video}`; the
-  row carries the reason in either case.
+  poster beside it. Answers `{:ok, video}`, `{:error, video}` with the
+  reason on the row, or `{:error, :gone}` when the video was deleted
+  while ffmpeg worked - then the files go with it and no row is
+  written.
 
   Both files are written under a name of their own and renamed, so a
   reader never meets a half made file.
   """
   def convert(%Video{} = video) do
-    video = mark(video, "running")
+    case mark(video, "running") do
+      nil ->
+        {:error, :gone}
+
+      video ->
+        result = work(video)
+        broadcast(video.path)
+        result
+    end
+  end
+
+  defp work(video) do
     original = Uploads.absolute(video.path)
     max_edge = Settings.get(:video_max_edge)
 
@@ -238,24 +275,41 @@ defmodule Texttile.Videos do
 
     File.mkdir_p!(Path.dirname(Uploads.absolute(mp4)))
 
-    result =
-      with :ok <- ensure_readable(original),
-           :ok <- run(encode_command(original, Uploads.absolute(partial_mp4), max_edge)),
-           :ok <-
-             run(poster_command(Uploads.absolute(partial_mp4), Uploads.absolute(partial_poster))),
-           {:ok, probed} <- probe(Uploads.absolute(partial_mp4)),
-           :ok <- File.rename(Uploads.absolute(partial_mp4), Uploads.absolute(mp4)),
-           :ok <- File.rename(Uploads.absolute(partial_poster), Uploads.absolute(poster)) do
-        {:ok, finish(video, mp4, poster, probed)}
-      else
-        {:error, reason} ->
-          File.rm(Uploads.absolute(partial_mp4))
-          File.rm(Uploads.absolute(partial_poster))
-          {:error, fail(video, reason)}
-      end
+    with :ok <- ensure_readable(original),
+         :ok <- run(encode_command(original, Uploads.absolute(partial_mp4), max_edge)),
+         :ok <-
+           run(poster_command(Uploads.absolute(partial_mp4), Uploads.absolute(partial_poster))),
+         {:ok, probed} <- probe(Uploads.absolute(partial_mp4)) do
+      settle(video, {mp4, partial_mp4}, {poster, partial_poster}, probed)
+    else
+      {:error, reason} ->
+        File.rm(Uploads.absolute(partial_mp4))
+        File.rm(Uploads.absolute(partial_poster))
+        {:error, fail(video, reason)}
+    end
+  end
 
-    broadcast(video.path)
-    result
+  # ffmpeg took minutes; the text may be gone by now. A conversion
+  # nobody waits for keeps its files to itself: it drops them instead
+  # of leaving two big ones on the volume with no row to name them.
+  defp settle(video, {mp4, partial_mp4}, {poster, partial_poster}, probed) do
+    if get(video.path) do
+      File.rename(Uploads.absolute(partial_mp4), Uploads.absolute(mp4))
+      File.rename(Uploads.absolute(partial_poster), Uploads.absolute(poster))
+
+      case finish(video, mp4, poster, probed) do
+        nil ->
+          drop_derived(video.path)
+          {:error, :gone}
+
+        finished ->
+          {:ok, finished}
+      end
+    else
+      File.rm(Uploads.absolute(partial_mp4))
+      File.rm(Uploads.absolute(partial_poster))
+      {:error, :gone}
+    end
   end
 
   defp ensure_readable(original) do
@@ -388,8 +442,6 @@ defmodule Texttile.Videos do
       "v:0",
       "-show_entries",
       "stream=width,height",
-      "-show_entries",
-      "format=duration",
       "-of",
       "default=noprint_wrappers=1",
       path
@@ -397,17 +449,11 @@ defmodule Texttile.Videos do
 
     case System.cmd("ffprobe", args, stderr_to_stdout: true) do
       {output, 0} ->
-        fields =
-          output
-          |> String.split("\n", trim: true)
-          |> Map.new(fn line ->
-            [key, value] = String.split(line, "=", parts: 2)
-            {key, value}
-          end)
+        fields = fields_of(output)
 
         with {:ok, width} <- integer(fields["width"]),
              {:ok, height} <- integer(fields["height"]) do
-          {:ok, %{width: width, height: height, duration_ms: milliseconds(fields["duration"])}}
+          {:ok, %{width: width, height: height}}
         else
           _ -> {:error, "the converted file has no picture"}
         end
@@ -419,21 +465,26 @@ defmodule Texttile.Videos do
     ErlangError -> {:error, "ffprobe is not installed"}
   end
 
+  # ffprobe writes key=value a line, but a warning it has to say comes
+  # in the same stream; a line that is no pair is not one of ours.
+  defp fields_of(output) do
+    output
+    |> String.split("\n", trim: true)
+    |> Enum.flat_map(fn line ->
+      case String.split(line, "=", parts: 2) do
+        [key, value] -> [{key, value}]
+        _ -> []
+      end
+    end)
+    |> Map.new()
+  end
+
   defp integer(nil), do: :error
 
   defp integer(value) do
     case Integer.parse(value) do
       {number, _rest} -> {:ok, number}
       :error -> :error
-    end
-  end
-
-  defp milliseconds(nil), do: nil
-
-  defp milliseconds(value) do
-    case Float.parse(value) do
-      {seconds, _rest} -> round(seconds * 1000)
-      :error -> nil
     end
   end
 
@@ -452,31 +503,40 @@ defmodule Texttile.Videos do
 
   ## The row's story
 
+  # By id, never by struct: the row may be gone - the text was deleted
+  # while ffmpeg worked - and a conversion writing its result must find
+  # that out, not raise on a stale struct. Answers the fresh row, or
+  # nil when there is none left to write.
+  defp write(video, changes) do
+    query = from v in Video, where: v.id == ^video.id
+    changes = Keyword.put(changes, :updated_at, DateTime.utc_now(:second))
+
+    case Repo.update_all(query, set: changes) do
+      {1, _} -> get(video.path)
+      _none -> nil
+    end
+  end
+
   defp mark(video, state) do
-    video
-    |> Ecto.Changeset.change(state: state)
-    |> Repo.update!()
-    |> tap(fn video -> broadcast(video.path) end)
+    case write(video, state: state) do
+      nil -> nil
+      video -> tap(video, fn video -> broadcast(video.path) end)
+    end
   end
 
   defp finish(video, mp4, poster, probed) do
-    video
-    |> Ecto.Changeset.change(
+    write(video,
       state: "done",
       error: nil,
       mp4_path: mp4,
       poster_path: poster,
       width: probed.width,
-      height: probed.height,
-      duration_ms: probed.duration_ms
+      height: probed.height
     )
-    |> Repo.update!()
   end
 
   defp fail(video, reason) do
-    video
-    |> Ecto.Changeset.change(state: "failed", error: to_string(reason))
-    |> Repo.update!()
+    write(video, state: "failed", error: to_string(reason)) || video
   end
 
   ## PubSub

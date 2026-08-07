@@ -7,6 +7,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
   # Not async: SQLite serializes writers, concurrent sandbox owners flake.
   use PhoenixTest.Playwright.Case, async: false
 
+  import Ecto.Query, only: [from: 2]
   import Texttile.AccountsFixtures
   import Texttile.VideoFixtures
 
@@ -40,6 +41,13 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     {:ok, article} = Articles.create_draft(user)
     {:ok, article} = Articles.update_text(article, %{title: "Harbour", body: "Water and light."})
     article
+  end
+
+  defp picture_file do
+    path = Path.join(System.tmp_dir!(), "tile-#{System.unique_integer([:positive])}.jpg")
+    {:ok, black} = Vix.Vips.Operation.black(40, 30)
+    :ok = Vix.Vips.Image.write_to_file(black, path)
+    path
   end
 
   defp sign_in(conn) do
@@ -101,6 +109,36 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     conn
     |> visit(Articles.public_path(article))
     |> assert_has("#gal a[data-video='/uploads/#{video.mp4_path}']")
+  end
+
+  test "the desk lightbox never lands on a tile that has nothing to show", %{
+    conn: conn,
+    kb: kb
+  } do
+    article = draft!(kb)
+    {:ok, _picture} = Gallery.add_file(article, picture_file(), "Pier.jpg")
+    {:ok, waiting} = Gallery.add_file(article, video_file(320, 240), "Harbour.mov")
+
+    # back to where a long conversion keeps a video: no poster, no
+    # film, and a tile with nothing to show
+    wait_until(fn -> Videos.state(waiting.path) == :done end)
+
+    Texttile.Repo.update_all(from(v in Texttile.Videos.Video, where: v.path == ^waiting.path),
+      set: [state: "queued", mp4_path: nil, poster_path: nil]
+    )
+
+    assert Videos.state(waiting.path) == :queued
+
+    conn
+    |> sign_in()
+    |> visit("/admin/texts/#{article.id}")
+    |> assert_has("#tile-#{waiting.id}.tile-waiting")
+    |> click("#tileServer [data-id]:not(.tile-waiting)")
+    |> assert_has("#lbRoot")
+    |> assert_has("#lbCount", text: "1 / 1")
+    |> press("#lbRoot", "ArrowRight")
+    |> assert_has("#lbCount", text: "1 / 1")
+    |> refute_has("#lbState", text: "could not be shown")
   end
 
   test "a video dropped into the words plays where it stands", %{conn: conn, kb: kb} do

@@ -80,7 +80,6 @@ defmodule Texttile.VideosTest do
       assert File.exists?(Uploads.absolute(video.poster_path))
       assert video.width == 640
       assert video.height == 480
-      assert video.duration_ms in 900..1100
     end
 
     test "the original stays as it came" do
@@ -169,6 +168,49 @@ defmodule Texttile.VideosTest do
     test "nothing at all for a file nobody uploaded" do
       assert Videos.state("videos/never-there.mp4") == :none
       assert Videos.playback("videos/never-there.mp4") == nil
+    end
+  end
+
+  describe "a video that goes while ffmpeg works" do
+    test "the conversion drops its files instead of orphaning them" do
+      relative = stored(video_file(320, 240))
+      video = Videos.ensure(relative)
+
+      # the text was deleted while ffmpeg ran: the row is gone before
+      # the conversion writes its result
+      Texttile.Repo.delete_all(
+        Ecto.Query.from(v in Texttile.Videos.Video, where: v.path == ^relative)
+      )
+
+      assert Videos.convert(video) == {:error, :gone}
+
+      leftovers =
+        Uploads.absolute("videos") |> File.ls!() |> Enum.reject(&(&1 == Path.basename(relative)))
+
+      assert leftovers == []
+      assert Videos.state(relative) == :none
+    end
+
+    test "removing takes the derived files even while none are recorded" do
+      relative = stored(video_file(320, 240))
+      Videos.ensure(relative)
+
+      # what a conversion writes just after the row went
+      File.write!(Uploads.absolute(String.replace(relative, ".mp4", ".web.mp4")), "film")
+
+      :ok = Uploads.remove_upload(relative)
+
+      refute File.exists?(Uploads.absolute(String.replace(relative, ".mp4", ".web.mp4")))
+    end
+
+    test "a half written file of a stopped server is swept" do
+      stored(video_file(320, 240))
+      partial = Uploads.absolute("videos/.tmp-99-something.web.mp4")
+      File.write!(partial, "half")
+
+      :ok = Videos.sweep_partials()
+
+      refute File.exists?(partial)
     end
   end
 

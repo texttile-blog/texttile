@@ -43,10 +43,13 @@ defmodule Texttile.Videos.Queue do
     {:ok, %{waiting: :queue.new(), running: nil, task: nil}, {:continue, :pick_up}}
   end
 
-  # A server that went down mid-conversion left rows behind. They come
-  # back into the line, in the order they were uploaded.
+  # A server that went down mid-conversion left rows behind, and half
+  # written files beside them. The files go, the rows come back into
+  # the line, in the order they were uploaded.
   @impl true
   def handle_continue(:pick_up, state) do
+    Videos.sweep_partials()
+
     state =
       Videos.unfinished()
       |> Enum.reduce(state, fn video, state -> enqueue(state, video.path) end)

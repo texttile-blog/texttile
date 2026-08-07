@@ -71,6 +71,26 @@ defmodule Texttile.VideosQueueTest do
     assert Videos.state(broken) == :failed
   end
 
+  test "a conversion that dies without a word marks its video and frees the line" do
+    # long enough that the death below lands while ffmpeg still runs
+    dies = stored(video_file(1280, 720, seconds: 3))
+    Videos.ensure(dies)
+    queue = start_queue()
+
+    Queue.push(queue, dies)
+    until(fn -> Queue.running(queue) == dies end)
+
+    # the work died without a word, the way an out-of-memory kill leaves
+    # it. Killing the task for real would take the test's database
+    # connection with it, so the queue hears the same message instead.
+    server = Process.whereis(queue)
+    %{task: %Task{ref: ref}} = :sys.get_state(server)
+    send(server, {:DOWN, ref, :process, self(), :killed})
+
+    until(fn -> match?(%{state: "failed", error: ":killed"}, Videos.get(dies)) end)
+    assert Queue.running(queue) == nil
+  end
+
   test "picks up what a stopped server left behind" do
     relative = stored(video_file(320, 240))
     Videos.ensure(relative)
