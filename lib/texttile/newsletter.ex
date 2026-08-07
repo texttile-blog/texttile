@@ -287,11 +287,6 @@ defmodule Texttile.Newsletter do
   # the mail as plain text; that is what it is for (see
   # TexttileWeb.SiteGate).
   defp access_word do
-    with "protected" <- Settings.get(:site_visibility),
-         word when word != "" <- Settings.get(:site_password) do
-      word
-    else
-      _ -> nil
-    end
+    if Settings.guarded?(), do: Settings.get(:site_password)
   end
 end

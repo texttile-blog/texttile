@@ -3,6 +3,7 @@ defmodule Texttile.FeedTest do
 
   import Texttile.ArticlesFixtures
 
+  alias Texttile.Articles
   alias Texttile.Feed
   alias Texttile.Settings
 
@@ -141,6 +142,17 @@ defmodule Texttile.FeedTest do
       refute xml =~ "#{@base}https://"
     end
 
+    test "leave out a text that has no address of its own" do
+      published_post(title: "Standing text", slug: "standing-text")
+      homeless = published_post(title: "Homeless text")
+      {:ok, _} = Articles.update_settings(homeless, %{"slug" => ""})
+
+      xml = Feed.rss(@base)
+
+      assert xml =~ "Standing text"
+      refute xml =~ "Homeless text"
+    end
+
     test "escape what XML cannot carry" do
       published_post(title: "Fish & <chips>", body: "Salt & pepper.")
 
@@ -148,6 +160,45 @@ defmodule Texttile.FeedTest do
 
       assert xml =~ "<title>Fish &amp; &lt;chips&gt;</title>"
       refute xml =~ "<title>Fish & <chips></title>"
+    end
+
+    test "drop the characters XML has no place for" do
+      # what a paste out of a PDF or a word processor carries along
+      published_post(
+        title: "Pasted in" <> <<11>>,
+        body: "A vertical tab" <> <<11>> <> ", a form feed" <> <<12>> <> ", and a real\ttab."
+      )
+
+      xml = Feed.rss(@base)
+
+      refute String.contains?(xml, <<11>>)
+      refute String.contains?(xml, <<12>>)
+      assert String.contains?(xml, "\t")
+      assert {_document, _rest} = :xmerl_scan.string(String.to_charlist(xml))
+    end
+
+    test "leave a protocol-relative address alone" do
+      published_post(title: "Elsewhere", body: ~s(<img src="//cdn.example/x.jpg">))
+
+      xml = Feed.rss(@base)
+
+      refute xml =~ "#{@base}//cdn.example"
+    end
+  end
+
+  describe "the whole document" do
+    test "parses, and says when it was last built" do
+      published_post(title: "Old text", publish_date: ~D[2026-01-05])
+      published_post(title: "New text", publish_date: ~D[2026-03-01])
+
+      xml = Feed.rss(@base)
+
+      assert xml =~ "<lastBuildDate>Sun, 01 Mar 2026 00:00:00 +0000</lastBuildDate>"
+      assert {_document, _rest} = :xmerl_scan.string(String.to_charlist(xml))
+    end
+
+    test "an empty blog says nothing about a last build" do
+      refute Feed.rss(@base) =~ "lastBuildDate"
     end
   end
 end

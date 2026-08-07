@@ -27,6 +27,27 @@ defmodule TexttileWeb.FeedControllerTest do
       assert response(again, 304) == ""
     end
 
+    test "answers a tag that a proxy weakened, and a reader that asks for any", %{conn: conn} do
+      published_post(title: "Harbor mornings")
+
+      [tag] = conn |> get(~p"/feed.xml") |> get_resp_header("etag")
+      weak = "W/" <> tag
+
+      for sent <- [weak, "*", ~s("something-else"), tag] do
+        answer = build_conn() |> put_req_header("if-none-match", sent) |> get(~p"/feed.xml")
+
+        expected = if sent == ~s("something-else"), do: 200, else: 304
+        assert answer.status == expected, "#{sent} answered #{answer.status}"
+      end
+    end
+
+    test "lets a reader keep the feed for a while", %{conn: conn} do
+      conn = get(conn, ~p"/feed.xml")
+
+      assert [cache] = get_resp_header(conn, "cache-control")
+      assert cache =~ "max-age="
+    end
+
     test "sends the feed again once a text has changed", %{conn: conn} do
       published_post(title: "Harbor mornings")
 

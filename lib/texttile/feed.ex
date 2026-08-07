@@ -21,14 +21,8 @@ defmodule Texttile.Feed do
   @doc "The one address of the feed."
   def path, do: "/feed.xml"
 
-  @doc """
-  Whether the blog offers a feed. It does while nothing is guarded: an
-  open blog, or a protected one with a blank password, which is what
-  the gate lets through as well.
-  """
-  def public? do
-    Settings.get(:site_visibility) != "protected" or Settings.get(:site_password) == ""
-  end
+  @doc "Whether the blog offers a feed: it does while no password guards it."
+  def public?, do: not Settings.guarded?()
 
   @doc """
   The RSS 2.0 document, every published post inside it, newest first.
@@ -38,7 +32,10 @@ defmodule Texttile.Feed do
   site, where a path that starts with a slash leads nowhere.
   """
   def rss(base) do
-    posts = Articles.list_published()
+    # A text without a slug, or a post without a day, has no address a
+    # reader could follow. The site draws it as a card without a link;
+    # the feed, which is nothing but addresses, leaves it out.
+    posts = Enum.filter(Articles.list_published(), &Articles.public_path/1)
 
     channel = """
     <?xml version="1.0" encoding="UTF-8"?>
@@ -107,12 +104,22 @@ defmodule Texttile.Feed do
     end)
   end
 
+  # Everything on its way into the document goes through here, the
+  # whole text of a post included: inside content:encoded its HTML is
+  # text like any other.
   defp escape(text) do
     text
     |> to_string()
-    |> String.replace("&", "&amp;")
-    |> String.replace("<", "&lt;")
-    |> String.replace(">", "&gt;")
-    |> String.replace("\"", "&quot;")
+    |> scrub()
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
   end
+
+  # A control character is illegal in XML, and one of them makes the
+  # whole document unreadable, not just its own text. They arrive by
+  # paste from a PDF or a word processor. Tab, newline and return are
+  # the three that XML allows and a text needs.
+  @illegal ~r/[\x00-\x08\x0B\x0C\x0E-\x1F]/
+
+  defp scrub(text), do: String.replace(text, @illegal, "")
 end

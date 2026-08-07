@@ -14,9 +14,19 @@ defmodule TexttileWeb.FeedController do
     if Feed.public?() do
       send_feed(conn, Feed.rss(TexttileWeb.Endpoint.url()))
     else
-      send_resp(conn, 404, "not found")
+      # Nobody keeps this answer: the password may go away in the next
+      # minute, and the feed is back.
+      conn
+      |> put_resp_header("cache-control", "no-store")
+      |> send_resp(404, "not found")
     end
   end
+
+  # How long a reader may keep the feed before asking again. The word
+  # is "private": only the reader that asked may keep it. A shared
+  # cache in between would go on handing out the texts after a
+  # password went up in front of the blog.
+  @keep "private, max-age=900"
 
   # A whole blog is a long answer, and a reader asks for it again and
   # again. Every answer carries a tag of what it says; a reader that
@@ -24,12 +34,12 @@ defmodule TexttileWeb.FeedController do
   # texts.
   defp send_feed(conn, body) do
     tag = etag(body)
+    conn = conn |> put_resp_header("etag", tag) |> put_resp_header("cache-control", @keep)
 
-    if tag in requested_tags(conn) do
-      conn |> put_resp_header("etag", tag) |> send_resp(304, "")
+    if known?(conn, tag) do
+      send_resp(conn, 304, "")
     else
       conn
-      |> put_resp_header("etag", tag)
       |> put_resp_content_type("application/rss+xml")
       |> send_resp(200, body)
     end
@@ -40,10 +50,16 @@ defmodule TexttileWeb.FeedController do
     ~s("#{hash}")
   end
 
-  defp requested_tags(conn) do
-    conn
-    |> get_req_header("if-none-match")
-    |> Enum.flat_map(&String.split(&1, ","))
-    |> Enum.map(&String.trim/1)
+  # What the reader already has. "*" means anything at all, and a
+  # proxy on the way may have marked the tag as weak; the comparison
+  # ignores that mark, the way HTTP asks for on this header.
+  defp known?(conn, tag) do
+    sent =
+      conn
+      |> get_req_header("if-none-match")
+      |> Enum.flat_map(&String.split(&1, ","))
+      |> Enum.map(&(&1 |> String.trim() |> String.replace_prefix("W/", "")))
+
+    "*" in sent or tag in sent
   end
 end

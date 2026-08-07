@@ -167,6 +167,17 @@ defmodule Texttile.Settings do
   end
 
   @doc """
+  Whether a password stands in front of the blog: it is protected, and
+  the word is not blank. A blank word guards nothing, whatever the
+  switch says, and everything that answers to the password - the gate,
+  the mail that carries the word, the feed that then does not exist -
+  reads the rule here.
+  """
+  def guarded? do
+    get(:site_visibility) == "protected" and get(:site_password) != ""
+  end
+
+  @doc """
   The name the site goes by: its title, or Texttile while the title is
   blank. It names the browser tab, the wordmark and the sender of mail.
   """
