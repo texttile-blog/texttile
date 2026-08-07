@@ -88,16 +88,21 @@ defmodule TexttileWeb.NewsletterLive do
           <div
             :for={subscriber <- @subscribers}
             id={"sub-#{subscriber.id}"}
-            class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-[11px] border-b border-hair"
+            class="flex items-center gap-x-3 py-[9px] border-b border-hair"
           >
-            <span class="text-[13.5px] font-semibold">{subscriber.email}</span>
-            <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
-              waits for their confirmation
+            <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
+              <span class="text-[13.5px] font-semibold truncate max-w-full">
+                {subscriber.email}
+              </span>
+              <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
+                waits for their confirmation
+              </span>
             </span>
-            <span class="flex-1"></span>
-            <span class="text-[12.5px] text-faint num">{since(subscriber)}</span>
+            <span class="hidden sm:inline text-[12.5px] text-faint num flex-none">
+              {since(subscriber)}
+            </span>
             <button
-              class="btn ghost"
+              class="btn ghost flex-none"
               type="button"
               phx-click="remove"
               phx-value-id={subscriber.id}
