@@ -67,6 +67,7 @@ defmodule TexttileWeb.Router do
       ] do
       live "/", TextsLive
       live "/texts/:id", EditorLive
+      live "/comments", CommentsLive
       live "/profile", ProfileLive
       live "/settings", SettingsLive
       live "/settings/import", ImportLive
@@ -111,6 +112,10 @@ defmodule TexttileWeb.Router do
     # The gate itself stays outside the gate.
     get "/unlock", SiteController, :unlock
     post "/unlock", SiteController, :enter_password
+
+    # The mailed confirmation link stays outside too: the reader's
+    # comment must not dead-end on a browser that lost the password.
+    get "/comments/confirm/:token", SiteController, :confirm_comment
   end
 
   scope "/", TexttileWeb do
@@ -119,6 +124,9 @@ defmodule TexttileWeb.Router do
     get "/", SiteController, :front
     get "/texts", SiteController, :texts
     get "/tags/:tag", SiteController, :tag
+
+    # A reader sends a comment. Behind the gate like the text it is on.
+    post "/comments/:article_id", SiteController, :post_comment
 
     # Every published post lives under the day it went live. Four
     # segments, so no page and no named route can stand in the way.

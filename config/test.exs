@@ -34,6 +34,10 @@ config :phoenix_test,
     headless: true
   ]
 
+# A browser test types faster than a person, so the comment form's time
+# trap stands down. The tests about the trap set the age themselves.
+config :texttile, :comment_min_age, 0
+
 # The importer's HTTP requests answer from a stub instead of the net,
 # so its stub hosts must not be resolved and judged.
 config :texttile, :import_req_options, plug: {Req.Test, Texttile.ImportStub}

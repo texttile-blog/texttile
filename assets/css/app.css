@@ -105,6 +105,13 @@
   .btn:disabled { opacity: .5; cursor: default; transform: translateY(0); }
   .btn:disabled:hover { background-color: transparent; box-shadow: inset 0 0 0 1px var(--tt-rule); }
   .btn.sm { height: 25px; padding-left: 9px; padding-right: 9px; font-size: 12px; }
+  /* the small badge on a comment whose reader has not confirmed the
+     address yet - worn on the desk and on the reader's own pending row */
+  .wait {
+    display: inline-block; font-size: 11px; font-weight: 500; color: var(--tt-dim);
+    padding: 1px 6px; border-radius: var(--tt-radius-img);
+    box-shadow: inset 0 0 0 1px var(--tt-rule);
+  }
   .link {
     color: var(--tt-accent); text-decoration-line: underline;
     text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft);
@@ -676,6 +683,13 @@
   /* the quiet role sits on dim, not faint: it carries dates and the
      notes under the forms, which have to be comfortable to read */
   .f-note { font-size: 12.5px; line-height: 1.55; color: var(--tt-dim); }
+
+  /* the comment form: a row that wraps, and a box that grows with the
+     words (public.js grows it by hand where field-sizing is missing) */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+  body.site #comment-form textarea {
+    field-sizing: content; resize: none; min-height: 2lh; line-height: 1.6;
+  }
 
   /* the list of texts: the Texts grid of the desk, read by a reader.
      One preview image, a title clamped to two lines, the date, a lead

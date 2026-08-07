@@ -1,8 +1,8 @@
 defmodule TexttileWeb.EditorLive do
   @moduledoc """
   One open text: the round-14 editor. The writing surface in the middle
-  column with the Text, Log and Versions tabs; the article settings in
-  the side column. The tiles block returns with the gallery.
+  column with the Text, Comments, Log and Versions tabs; the article
+  settings in the side column. The tiles block returns with the gallery.
 
   The title and the body belong to whoever holds the soft lock
   (`Texttile.Articles.Lock`); the article settings and the publish
@@ -10,9 +10,12 @@ defmodule TexttileWeb.EditorLive do
   """
   use TexttileWeb, :live_view
 
+  import TexttileWeb.CommentComponents
+
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Lock
+  alias Texttile.Comments
   alias Texttile.Gallery
 
   ## Mount
@@ -38,11 +41,15 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:log, Articles.log(article))
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
+      |> assign(:comments, Comments.for_article(article.id))
+      |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
       |> known_tags()
 
     socket =
       if connected?(socket) do
         Articles.subscribe(article.id)
+        Comments.subscribe()
+        Texttile.Settings.subscribe()
 
         socket =
           case Lock.acquire(article.id, user.id, self()) do
@@ -57,6 +64,15 @@ defmodule TexttileWeb.EditorLive do
 
     {:ok, assign(socket, :page_title, Articles.display_title(article))}
   end
+
+  # The Comments overview jumps straight into a text's Comments tab;
+  # the address may name any tab.
+  def handle_params(%{"tab" => tab}, _uri, socket)
+      when tab in ~w(text comments log versions) do
+    {:noreply, assign(socket, :tab, tab)}
+  end
+
+  def handle_params(_params, _uri, socket), do: {:noreply, socket}
 
   # The wordmark menu and the other editor's banner read this: which
   # text this tab is in, and whether it writes or reads along.
@@ -323,8 +339,21 @@ defmodule TexttileWeb.EditorLive do
   ## Events · chrome
 
   def handle_event("set_tab", %{"tab" => tab}, socket)
-      when tab in ~w(text log versions) do
+      when tab in ~w(text comments log versions) do
     {:noreply, assign(socket, :tab, tab)}
+  end
+
+  # Only the open text's own comments, and a comment that is already
+  # gone is no error: the list reloads either way.
+  def handle_event("delete_comment", %{"id" => id}, socket) do
+    article_id = socket.assigns.article.id
+
+    case Comments.get_comment(id) do
+      %{article_id: ^article_id} = comment -> Comments.delete_comment(comment)
+      _ -> :ok
+    end
+
+    {:noreply, assign(socket, :comments, Comments.for_article(article_id))}
   end
 
   def handle_event("toggle_state_menu", _params, socket) do
@@ -860,7 +889,33 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
+  # A comment arrived, went, or its address was confirmed. Confirming
+  # names no text, so every open editor reloads its own list on it.
+  def handle_info({:comment_posted, %{article_id: id}}, socket) do
+    {:noreply, maybe_reload_comments(socket, id)}
+  end
+
+  def handle_info({:comment_deleted, %{article_id: id}}, socket) do
+    {:noreply, maybe_reload_comments(socket, id)}
+  end
+
+  def handle_info({:comments_confirmed, _address_id}, socket) do
+    {:noreply, maybe_reload_comments(socket, socket.assigns.article.id)}
+  end
+
+  def handle_info({:setting_changed, :comments_require_confirmation, value}, socket) do
+    {:noreply, assign(socket, :cmt_require, value)}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp maybe_reload_comments(socket, article_id) do
+    if article_id == socket.assigns.article.id do
+      assign(socket, :comments, Comments.for_article(article_id))
+    else
+      socket
+    end
+  end
 
   defp taken_note(socket) do
     case Lock.state(socket.assigns.article.id) do
@@ -1116,7 +1171,14 @@ defmodule TexttileWeb.EditorLive do
               aria-label="Text sections"
             >
               <button
-                :for={{tab, label} <- [{"text", "Text"}, {"log", "Log"}, {"versions", "Versions"}]}
+                :for={
+                  {tab, label} <- [
+                    {"text", "Text"},
+                    {"comments", "Comments"},
+                    {"log", "Log"},
+                    {"versions", "Versions"}
+                  ]
+                }
                 class={["tab", @tab == tab && "on"]}
                 phx-click="set_tab"
                 phx-value-tab={tab}
@@ -1124,6 +1186,9 @@ defmodule TexttileWeb.EditorLive do
                 {label}
                 <span :if={tab == "versions" && @versions != []} class="cnt">
                   {length(@versions)}
+                </span>
+                <span :if={tab == "comments" && @comments != []} class="cnt">
+                  {length(@comments)}
                 </span>
               </button>
             </nav>
@@ -1440,6 +1505,22 @@ defmodule TexttileWeb.EditorLive do
                     </div>
                   <% end %>
                 </div>
+              </div>
+            </div>
+
+            <div :if={@tab == "comments"} id="tp-comments">
+              <p :if={@comments == []} class="note max-w-[62ch]">
+                No comments yet. {comment_rule(@cmt_require)}
+              </p>
+              <div :if={@comments != []}>
+                <.comment_item
+                  :for={comment <- @comments}
+                  comment={comment}
+                  waiting={@cmt_require && is_nil(comment.address.confirmed_at)}
+                />
+                <p class="note mt-[14px] max-w-[62ch]">
+                  {comments_foot(@comments, @cmt_require)}
+                </p>
               </div>
             </div>
 
@@ -1842,6 +1923,21 @@ defmodule TexttileWeb.EditorLive do
   ## Copy
 
   defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+
+  # The note under the comment list: who still stands outside the text,
+  # or the rule when nobody does.
+  defp comments_foot(comments, require?) do
+    case Enum.count(comments, &(require? && is_nil(&1.address.confirmed_at))) do
+      0 ->
+        comment_rule(require?)
+
+      1 ->
+        "1 comment is still out of the text: that reader has not followed the confirmation link yet."
+
+      n ->
+        "#{n} comments are still out of the text: those readers have not followed the confirmation link yet."
+    end
+  end
 
   # The account behind the lock may have been deleted while it held
   # the text; the banner still needs a word for the person.

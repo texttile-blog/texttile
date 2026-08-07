@@ -20,6 +20,7 @@ Texttile reads its configuration from environment variables at start.
 | `PORT`            | no               | `4000`                      | HTTP port                                         |
 | `MAIL_ADAPTER`    | no               | local preview mailbox       | `resend`, `postmark`, `brevo`, `smtp`, or `ses`   |
 | `MAIL_FROM`       | no               | `texttile@PHX_HOST`         | sender address for outgoing mail                  |
+| `CLIENT_IP_HEADER`| no               | none, the socket address    | header a trusted proxy writes, e.g. `fly-client-ip` |
 
 Each mail adapter loads exactly the credentials it needs:
 
@@ -33,6 +34,12 @@ Each mail adapter loads exactly the credentials it needs:
 
 A missing variable stops the app at boot with a message that names it. Without
 `MAIL_ADAPTER`, mail goes to a preview mailbox (`/dev/mailbox`, dev only).
+
+Set `CLIENT_IP_HEADER` only when a proxy stands in front of Texttile and
+writes that header itself. The comment rate limit counts by it, so a header
+the caller may write is a header a spammer may change. Without the variable
+the rate limit counts by the address of the connection, which is right
+everywhere except behind a proxy.
 
 ## Run with Docker
 
@@ -60,6 +67,18 @@ The blog can sit behind one shared password (Settings > Access). It is an
 access word to hand around, not a login: it is stored in plain text and one
 entry opens the whole blog. A single text can also ask for it while the
 rest of the blog stays open (the switch is in the text's settings).
+
+## Comments
+
+Readers can comment under every text that allows it (the switch is in the
+text's settings). There is no approval queue. By default a new address gets
+one confirmation mail. The comment appears when its reader follows the
+mailed link, and every later comment from that address appears at once.
+Turn the confirmation off in Settings > Comments and no comment waits for
+anything. Admins see all comments at `/admin/comments` and can delete them.
+
+Spam protection is built in and always on: a honeypot field, a time trap,
+and a rate limit per caller. No captcha, no Google, no third parties.
 
 ## Accounts
 

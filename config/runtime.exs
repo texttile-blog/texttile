@@ -52,6 +52,11 @@ if config_env() == :prod do
   config :texttile, Texttile.Mailer, Texttile.Config.mailer_config()
   config :texttile, :mail_from, Texttile.Config.mail_from()
 
+  # Which header carries the reader's address when a proxy stands in
+  # front. Only set this where a proxy really does, and where it writes
+  # the header itself: the comment rate limit counts by it.
+  config :texttile, :client_ip_header, Texttile.Config.client_ip_header()
+
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
   # want to use a different value for prod and you most likely don't want

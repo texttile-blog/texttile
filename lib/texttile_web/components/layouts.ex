@@ -149,7 +149,13 @@ defmodule TexttileWeb.Layouts do
         <.link navigate={~p"/admin"} class={["row", @active == "texts" && "on"]} data-key="2">
           Texts <span class="k">2</span>
         </.link>
-        <button class="row" type="button">Comments <span class="k">3</span></button>
+        <.link
+          navigate={~p"/admin/comments"}
+          class={["row", @active == "comments" && "on"]}
+          data-key="3"
+        >
+          Comments <span class="k">3</span>
+        </.link>
         <button class="row" type="button">Newsletter <span class="k">7</span></button>
         <button class="row" type="button">Stats <span class="k">8</span></button>
         <.link
