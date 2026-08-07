@@ -35,7 +35,11 @@ config :texttile, Texttile.Repo,
 dev_host =
   try do
     {address, 0} = System.cmd(Path.expand("../bin/dev-host", __DIR__), [])
-    String.trim(address)
+
+    case String.trim(address) do
+      "" -> "127.0.0.1"
+      address -> address
+    end
   rescue
     _ -> "127.0.0.1"
   end
