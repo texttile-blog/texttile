@@ -1,10 +1,6 @@
 # AGENTS.md
 
-Only deviations from default behavior. Requirements live in `idea/texttile.md`. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
-
-## Product notes
-
-- `idea/` is a read-only mirror of the user's vault folder (synced by `make idea`, which copies the full folder). Never edit it; requirements change in the vault. The main note is `idea/texttile.md`. A `[[name]]` link resolves to `idea/name.md`; read linked notes before building what they cover.
+Only deviations from default behavior. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
 
 ## Git and GitHub
 
