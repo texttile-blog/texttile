@@ -134,6 +134,45 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     end
   end
 
+  describe "the bar over the editor" do
+    # The bar blurs what runs under it, and a blur makes an element its
+    # own layer: the menu inside the bar can only rise as high as the
+    # bar itself. While the bar stood level with the formatting bar,
+    # the glyphs were painted over the open menu.
+    @stacking """
+    () => {
+      const menu = document.querySelector("#navMenu")
+      const bar = document.querySelector(".mdbar")
+      const m = menu.getBoundingClientRect(), b = bar.getBoundingClientRect()
+      const overlaps = m.right > b.left && m.left < b.right &&
+                       m.bottom > b.top && m.top < b.bottom
+      if (!overlaps) return "the two never meet"
+      const top = document.elementFromPoint(Math.min(m.right, b.right) - 6,
+                                            Math.max(m.top, b.top) + 12)
+      return menu.contains(top) ? "menu" : "covered"
+    }
+    """
+
+    test "the open menu stands over the formatting glyphs", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New text")
+      |> assert_has(".mdbar")
+      |> click("#wmBtn")
+      |> assert_has("#navMenu", text: "View site")
+      |> evaluate(@stacking, [is_function: true], &assert(&1 == "menu"))
+    end
+
+    test "the site opens beside the desk, in its own tab", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click("#wmBtn")
+      |> assert_has(~s(#navMenu a[href="/"][target="_blank"][rel="noopener"]),
+        text: "View site"
+      )
+    end
+  end
+
   describe "tags" do
     test "the suggestions add a tag and take it off again", %{conn: conn} do
       other = Articles.create_draft(user_fixture(%{username: "julia"}))

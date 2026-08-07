@@ -21,7 +21,8 @@ defmodule TexttileWeb.TextsLiveTest do
     assert has_element?(view, "#navMenu", "Newsletter")
     assert has_element?(view, "#navMenu", "Stats")
     assert has_element?(view, "#navMenu", "Settings")
-    assert has_element?(view, "#navMenu", "View site")
+    # the site opens beside the desk, not over it
+    assert has_element?(view, ~s(#navMenu a[href="/"][target="_blank"]), "View site")
     assert has_element?(view, "#navMenu a", "Your profile")
     assert has_element?(view, "#navMenu a", "Sign out")
 

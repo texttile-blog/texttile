@@ -107,9 +107,13 @@ defmodule TexttileWeb.Layouts do
     assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
+    <%!-- z-50: the blur makes the bar its own stacking layer, so the
+         popovers inside it are bound to the bar's own place in the
+         page. Below the formatting bar's 30 they would be painted
+         over; above it they hang free, as a menu should. --%>
     <header
       id="topbar"
-      class="sticky top-0 z-30 flex items-center gap-[6px] md:gap-2 h-[52px] px-[10px] md:px-4 border-b border-rule backdrop-blur-[8px] backdrop-saturate-150"
+      class="sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] px-[10px] md:px-4 border-b border-rule backdrop-blur-[8px] backdrop-saturate-150"
       style="background:var(--tt-bar)"
       role="banner"
     >
@@ -155,7 +159,11 @@ defmodule TexttileWeb.Layouts do
         >
           Settings <span class="k">9</span>
         </.link>
-        <a class="row" href={~p"/"} data-key="0">View site <span class="k">0</span></a>
+        <%!-- the site opens beside the desk: the writer keeps the text
+             they were working on --%>
+        <a class="row" href={~p"/"} target="_blank" rel="noopener" data-key="0">
+          View site <span class="k">0</span>
+        </a>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>
         <div id="liveBlock">
