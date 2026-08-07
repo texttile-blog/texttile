@@ -14,6 +14,31 @@ defmodule TexttileWeb.FeedControllerTest do
       assert response(conn, 200) =~ "Harbor mornings"
       assert response_content_type(conn, :xml) =~ "application/rss+xml"
     end
+
+    test "sends nothing a second time while nothing changed", %{conn: conn} do
+      published_post(title: "Harbor mornings")
+
+      first = get(conn, ~p"/feed.xml")
+      [tag] = get_resp_header(first, "etag")
+
+      again = build_conn() |> put_req_header("if-none-match", tag) |> get(~p"/feed.xml")
+
+      assert again.status == 304
+      assert response(again, 304) == ""
+    end
+
+    test "sends the feed again once a text has changed", %{conn: conn} do
+      published_post(title: "Harbor mornings")
+
+      first = get(conn, ~p"/feed.xml")
+      [tag] = get_resp_header(first, "etag")
+
+      published_post(title: "Desert nights")
+
+      again = build_conn() |> put_req_header("if-none-match", tag) |> get(~p"/feed.xml")
+
+      assert response(again, 200) =~ "Desert nights"
+    end
   end
 
   describe "a blog behind a password" do
