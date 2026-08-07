@@ -54,7 +54,7 @@ defmodule TexttileWeb.SiteHTML do
         <a
           :for={page <- @menu_pages}
           id={"menu-page-#{page.id}"}
-          href={"/#{page.slug}"}
+          href={Articles.public_path(page)}
           aria-current={@active == page.id && "page"}
         >
           {Articles.display_title(page)}
@@ -73,7 +73,7 @@ defmodule TexttileWeb.SiteHTML do
       <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4 pb-7">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
-        <a :if={@current_scope} id="foot-desk" href={~p"/desk"}>Desk</a>
+        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
         <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
       </div>
     </footer>
@@ -87,10 +87,14 @@ defmodule TexttileWeb.SiteHTML do
   def card(assigns) do
     ~H"""
     <div class="card-wrap">
-      <a class="card" id={"text-#{@article.id}"} href={"/#{@article.slug}"}>
-        <%!-- a text without a picture keeps its card, not an empty square --%>
+      <a class="card" id={"text-#{@article.id}"} href={Articles.public_path(@article)}>
+        <%!-- every card wears a square, so the grid keeps its rows: the
+             picture when there is one, the quiet mark when there is none --%>
         <span :if={@preview} class="cimg">
           <img src={"/renditions/640/#{@preview}"} alt="" loading="lazy" />
+        </span>
+        <span :if={!@preview} class="cimg blank" aria-hidden="true">
+          <Layouts.mark size={34} />
         </span>
         <span class="ct">{Articles.display_title(@article)}</span>
       </a>

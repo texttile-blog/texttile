@@ -54,7 +54,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/admin/texts/#{article.id}")
       |> assert_has("#tileCount", text: "0 images")
       |> upload("Add images to the gallery", jpg!("2024:05:01 12:00:00"))
       |> assert_has("#tileServer [data-id]")
@@ -75,7 +75,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/admin/texts/#{article.id}")
       |> upload("Add images to the gallery", big)
       |> assert_has("#tileServer [data-id]", timeout: 30_000)
 
@@ -92,7 +92,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/admin/texts/#{article.id}")
       |> upload("Add images to the gallery", huge)
       |> assert_has("#tileLocal .tile.failed", text: "50 MB")
       |> assert_has("#tileLocal button[data-act=remove]")
@@ -111,7 +111,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/admin/texts/#{article.id}")
       |> assert_has("#tileCount", text: "3 images")
       |> drag("#tile-#{c.id}", to: "#tile-#{a.id}")
 
@@ -134,7 +134,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn =
         conn
         |> sign_in()
-        |> visit("/desk/texts/#{article.id}")
+        |> visit("/admin/texts/#{article.id}")
         |> assert_has("#tileCount", text: "2 images")
         |> click("#tileServer [data-id='#{a.id}']")
         |> assert_has("#lbRoot")
@@ -172,7 +172,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/admin/texts/#{article.id}")
       |> click("#tileServer [data-id='#{a.id}']")
       |> assert_has("#lbRoot")
       |> click_button("Delete image")

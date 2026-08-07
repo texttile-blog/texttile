@@ -49,7 +49,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       # everything is still there after a full reload
       conn
-      |> visit("/desk/texts/#{article.id}")
+      |> visit("/admin/texts/#{article.id}")
       |> assert_has("#edTitle[value='Fourteen doors']")
       |> assert_has(".ed-cm", text: "The doors")
     end
@@ -106,6 +106,92 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> assert_has("#edDateHint", text: "The subscriber email goes out on #{future}")
 
       assert [%{status: "scheduled"}] = Articles.list_articles()
+    end
+
+    test "a live text opens at its dated address through the bar", %{conn: conn} do
+      today = Date.utc_today()
+
+      conn =
+        conn
+        |> sign_in()
+        |> click_button("New text")
+        |> fill_in("Title", with: "Going live")
+        |> refute_has("#btnView")
+        |> click_button("#stateBtn .main", "Publish")
+        |> assert_has("#stamp", text: "published")
+
+      address =
+        "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
+          "#{String.pad_leading("#{today.day}", 2, "0")}/going-live"
+
+      conn
+      |> assert_has("#btnView[href='#{address}']")
+      |> visit(address)
+      |> assert_has("h1", text: "Going live")
+
+      # the bare slug is not an address of the text
+      conn |> visit("/going-live") |> assert_has("h1", text: "Nothing here")
+    end
+  end
+
+  describe "the bar over the editor" do
+    # The bar blurs what runs under it, and a blur makes an element its
+    # own layer: the menu inside the bar can only rise as high as the
+    # bar itself. While the bar stood level with the formatting bar,
+    # the glyphs were painted over the open menu.
+    @stacking """
+    () => {
+      const menu = document.querySelector("#navMenu")
+      const bar = document.querySelector(".mdbar")
+      const m = menu.getBoundingClientRect(), b = bar.getBoundingClientRect()
+      const overlaps = m.right > b.left && m.left < b.right &&
+                       m.bottom > b.top && m.top < b.bottom
+      if (!overlaps) return "the two never meet"
+      const top = document.elementFromPoint(Math.min(m.right, b.right) - 6,
+                                            Math.max(m.top, b.top) + 12)
+      return menu.contains(top) ? "menu" : "covered"
+    }
+    """
+
+    test "the open menu stands over the formatting glyphs", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New text")
+      |> assert_has(".mdbar")
+      |> click("#wmBtn")
+      |> assert_has("#navMenu", text: "View site")
+      |> evaluate(@stacking, [is_function: true], &assert(&1 == "menu"))
+    end
+
+    test "the site opens beside the desk, in its own tab", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click("#wmBtn")
+      |> assert_has(~s(#navMenu a[href="/"][target="_blank"][rel="noopener"]),
+        text: "View site"
+      )
+    end
+  end
+
+  describe "tags" do
+    test "the suggestions add a tag and take it off again", %{conn: conn} do
+      other = Articles.create_draft(user_fixture(%{username: "julia"}))
+      {:ok, other} = other
+      {:ok, _} = Articles.update_settings(other, %{tags: "sea, fog"})
+
+      conn
+      |> sign_in()
+      |> click_button("New text")
+      |> fill_in("Title", with: "Tagged by hand")
+      |> click("#tagchip-sea")
+      |> assert_has("#tagchip-sea.on")
+      |> assert_has("#edTags[value='sea']")
+      |> click("#tagchip-fog")
+      |> assert_has("#edTags[value='sea, fog']")
+      |> click("#tagchip-sea")
+      |> assert_has("#edTags[value='fog']")
+      |> refute_has("#tagchip-sea.on")
+      |> assert_has("#tagchip-sea")
     end
   end
 

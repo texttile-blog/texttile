@@ -557,7 +557,7 @@ const impl = {
     this.running++
     const xhr = new XMLHttpRequest()
     entry.xhr = xhr
-    xhr.open("POST", "/desk/images")
+    xhr.open("POST", "/admin/images")
     const meta = document.querySelector("meta[name='csrf-token']")
     if (meta) xhr.setRequestHeader("x-csrf-token", meta.getAttribute("content"))
     let pct = 0

@@ -17,19 +17,19 @@ defmodule TexttileWeb.ImportLiveTest do
   end
 
   test "the empty page offers the upload", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/settings/import")
+    {:ok, view, html} = live(conn, ~p"/admin/settings/import")
 
     assert html =~ "Import"
     assert has_element?(view, "#import-upload")
   end
 
   test "settings links here", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/settings")
+    {:ok, view, _html} = live(conn, ~p"/admin/settings")
     assert has_element?(view, "#open-import")
   end
 
   test "a refused zip shows the failed phase, and Start over clears it", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/settings/import")
+    {:ok, view, _html} = live(conn, ~p"/admin/settings/import")
 
     path = Path.join(System.tmp_dir!(), "no-zip-#{System.unique_integer([:positive])}")
     File.write!(path, "plain text")
@@ -61,7 +61,7 @@ defmodule TexttileWeb.ImportLiveTest do
       File.rm_rf!(zip_path)
     end)
 
-    {:ok, view, _html} = live(conn, ~p"/settings/import")
+    {:ok, view, _html} = live(conn, ~p"/admin/settings/import")
 
     :ok = Job.validate(zip_path, "broken.zip")
     assert_receive {:import_state, %{phase: :report}}, 2000

@@ -47,9 +47,9 @@ defmodule TexttileWeb.Router do
     post "/link/:token", LinkController, :create
   end
 
-  ## The desk, under /desk: the readers own the root
+  ## The desk, under /admin: the readers own the root
 
-  scope "/desk", TexttileWeb do
+  scope "/admin", TexttileWeb do
     pipe_through [:browser, :require_authenticated_user]
 
     # The editor's image uploads: the body holds a token while the file
@@ -70,6 +70,25 @@ defmodule TexttileWeb.Router do
       live "/profile", ProfileLive
       live "/settings", SettingsLive
       live "/settings/import", ImportLive
+    end
+  end
+
+  # The development tools. They stand before the reader routes: the
+  # dashboard has addresses of four segments, like a post, and the last
+  # reader route would swallow them.
+  if Application.compile_env(:texttile, :dev_routes) do
+    # If you want to use the LiveDashboard in production, you should put
+    # it behind authentication and allow only admins to access it.
+    # If your application does not have an admins-only section yet,
+    # you can use Plug.BasicAuth to set up some basic authentication
+    # as long as you are also using SSL (which you should anyway).
+    import Phoenix.LiveDashboard.Router
+
+    scope "/dev" do
+      pipe_through :browser
+
+      live_dashboard "/dashboard", metrics: TexttileWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 
@@ -101,26 +120,13 @@ defmodule TexttileWeb.Router do
     get "/texts", SiteController, :texts
     get "/tags/:tag", SiteController, :tag
 
-    # The catch-all: every published text lives at its slug. Last on
+    # Every published post lives under the day it went live. Four
+    # segments, so no page and no named route can stand in the way.
+    get "/:year/:month/:day/:slug", SiteController, :article
+
+    # The catch-all: every published page lives at its slug. Last on
     # purpose; the named routes above win, and the reserved-slug rule
     # in Texttile.Articles keeps texts off those addresses.
-    get "/:slug", SiteController, :article
-  end
-
-  # Enable LiveDashboard in development
-  if Application.compile_env(:texttile, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
-
-    scope "/dev" do
-      pipe_through :browser
-
-      live_dashboard "/dashboard", metrics: TexttileWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
+    get "/:slug", SiteController, :page
   end
 end

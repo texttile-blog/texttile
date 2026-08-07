@@ -23,7 +23,7 @@ defmodule TexttileWeb.SessionControllerTest do
 
     test "sends a signed-in admin to the desk", %{conn: conn} do
       conn = conn |> log_in_user(user_fixture()) |> get(~p"/login")
-      assert redirected_to(conn) == ~p"/desk"
+      assert redirected_to(conn) == ~p"/admin"
     end
   end
 
@@ -86,14 +86,14 @@ defmodule TexttileWeb.SessionControllerTest do
           }
         })
 
-      assert redirected_to(conn) == ~p"/desk"
+      assert redirected_to(conn) == ~p"/admin"
       assert get_session(conn, :user_token)
       assert Accounts.sign_in_state("kb") == :known
 
       assert %{email: "kb@example.org", display_name: "KB"} =
                Accounts.get_user_by_email("kb@example.org")
 
-      conn = get(conn, ~p"/desk")
+      conn = get(conn, ~p"/admin")
       assert html_response(conn, 200) =~ "Texts"
     end
 
@@ -196,10 +196,10 @@ defmodule TexttileWeb.SessionControllerTest do
           "user" => %{"username" => user.username, "password" => valid_password()}
         })
 
-      assert redirected_to(conn) == ~p"/desk"
+      assert redirected_to(conn) == ~p"/admin"
       assert get_session(conn, :user_token)
 
-      conn = get(conn, ~p"/desk")
+      conn = get(conn, ~p"/admin")
       assert html_response(conn, 200) =~ "Texts"
     end
 

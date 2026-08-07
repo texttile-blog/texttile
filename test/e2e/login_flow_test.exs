@@ -20,7 +20,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       configure_admins(["kb"])
 
       conn
-      |> visit("/desk")
+      |> visit("/admin")
       |> assert_has("p", text: "Admin sign-in")
       |> fill_in("Username", with: "kb")
       |> click_button("Sign in")
@@ -111,7 +111,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       user_fixture(%{username: "kb"})
 
       conn
-      |> visit("/desk")
+      |> visit("/admin")
       |> assert_has("p", text: "Admin sign-in")
       |> fill_in("Username", with: "kb")
       |> fill_in("Password", with: "wrong password!")
@@ -144,6 +144,9 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       conn
       |> sign_in()
       |> click_button("#wmBtn", "Texttile")
+      # the menu opens in the browser: wait for it, or the next click
+      # races the script on a slow machine
+      |> assert_has("#navMenu", text: "Your profile")
       |> click_link("Your profile")
       |> assert_has("#crumb", text: "Your profile")
       |> assert_has("#sessions", text: "This browser")
@@ -159,7 +162,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/profile")
+      |> visit("/admin/profile")
       |> fill_in("Current password", with: "wrong current!")
       |> fill_in("New password", with: "a brand new password")
       |> click_button("Set")
@@ -175,7 +178,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/desk/profile")
+      |> visit("/admin/profile")
       |> click_link("#sign-out", "Sign out")
       |> assert_has("p", text: "Admin sign-in")
     end

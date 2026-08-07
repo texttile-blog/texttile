@@ -79,6 +79,14 @@ defmodule TexttileWeb.ImportLive do
   defp texts(1), do: "1 text"
   defp texts(n), do: "#{n} texts"
 
+  # The address the bundle takes on the site: a post carries its date,
+  # a page its slug alone. A bundle without a date lands on today, the
+  # day the import runs.
+  defp bundle_address(bundle) do
+    prefix = Texttile.Articles.public_prefix(%{type: bundle.type, publish_date: bundle.date})
+    prefix <> bundle.slug
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app
@@ -147,7 +155,7 @@ defmodule TexttileWeb.ImportLive do
               >
                 <div class="flex items-baseline gap-2 flex-wrap">
                   <b class="text-[14.5px]">{bundle.name}</b>
-                  <span :if={bundle.slug} class="note num">/{bundle.slug}</span>
+                  <span :if={bundle.slug} class="note num">{bundle_address(bundle)}</span>
                   <span class="sp"></span>
                   <span :if={bundle.errors == []} class="note">will import</span>
                   <span :if={bundle.errors != []} class="text-julia text-[13px]">

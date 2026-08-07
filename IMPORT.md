@@ -99,7 +99,9 @@ Details:
 
 - `slug`: lowercase letters, digits, and dashes. The importer normalizes any
   other slug the same way it normalizes titles. Two bundles in one zip must
-  not resolve to the same slug. That is an error.
+  not resolve to the same slug. That is an error. A post then lives at
+  `/2019/06/02/beach-days`, its date and its slug; a page lives at
+  `/about-us`, its slug alone.
 - `status: published` with a `date` in the future schedules the text. It goes
   live on that day.
 - The import itself sends no mail, and a text imported as published
@@ -135,6 +137,39 @@ Three rules keep the fetches honest. A URL must answer directly; a redirect
 is an error, so write the final address. A URL must not point at the
 server's own network; loopback and private addresses are refused. And one
 picture may hold up to 100 MB; a larger one is an error.
+
+## Check every URL before you write the zip
+
+An export from an old system is full of addresses that died years ago. Test
+them while you convert, not when the import runs. Request each picture URL
+one time and read the status code and the content type. Only a URL that
+answers 200 belongs in a bundle.
+
+For each URL:
+
+- **200 with a picture content type**: write the URL into the bundle.
+- **404, 403, 410, or 5xx**: the picture is gone. Do not write the URL.
+  Put a local copy in the bundle folder if you have one, or remove the
+  reference from the front matter and the body.
+- **301 or 302**: the importer refuses a redirect. Follow it yourself and
+  write the address it ends at.
+- **200 with `text/html`**: the host answers with a page, not a picture.
+  Treat it as dead.
+- **405 or 501 on HEAD**: the host refuses HEAD. Ask again with a one-byte
+  range GET.
+
+One request per URL is enough. This command prints the status, the final
+address, and the content type of one URL:
+
+```
+curl -sIL -o /dev/null -w '%{http_code} %{content_type} %{url_effective}\n' URL
+```
+
+Write a short list of every URL you dropped, and give it to the person who
+runs the import. They then know what is missing before the texts are live.
+
+A converter that skips this check hands the dry run a list of dead pictures,
+and the work starts again at the export.
 
 ## The gallery
 

@@ -9,7 +9,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   setup :register_and_log_in_user
 
   test "shows the profile with the current values", %{conn: conn, user: user} do
-    {:ok, view, html} = live(conn, ~p"/desk/profile")
+    {:ok, view, html} = live(conn, ~p"/admin/profile")
 
     assert html =~ "Your profile"
     assert has_element?(view, "#crumb", "Your profile")
@@ -24,7 +24,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   end
 
   test "changes the displayed name instantly, menu included", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     view
     |> form("#profile-form", %{"user" => %{"display_name" => "Klaus"}})
@@ -36,7 +36,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   end
 
   test "an empty displayed name falls back to the username", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     view
     |> form("#profile-form", %{"user" => %{"display_name" => ""}})
@@ -47,7 +47,7 @@ defmodule TexttileWeb.ProfileLiveTest do
 
   test "changes the username to another configured one", %{conn: conn, user: user} do
     configure_admins([user.username, "brandnew"])
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     view
     |> form("#profile-form", %{"user" => %{"username" => "brandnew"}})
@@ -57,7 +57,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   end
 
   test "refuses a username the server does not allow", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     html =
       view
@@ -70,7 +70,7 @@ defmodule TexttileWeb.ProfileLiveTest do
 
   test "refuses a taken username and says so", %{conn: conn, user: user} do
     user_fixture(%{username: "taken"})
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     html =
       view
@@ -86,7 +86,7 @@ defmodule TexttileWeb.ProfileLiveTest do
     user: user
   } do
     user_fixture(%{username: "taken"})
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     view
     |> form("#profile-form", %{"user" => %{"username" => "taken"}})
@@ -108,7 +108,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   end
 
   test "changes the email and refuses an invalid one", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     view
     |> form("#profile-form", %{"user" => %{"email" => "new@example.org"}})
@@ -125,7 +125,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   end
 
   test "sets a new password only with the current one", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     html =
       view
@@ -151,7 +151,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   test "a changed password ends every other session", %{conn: conn, user: user} do
     other_token = Accounts.create_session(user)
     conn = log_in_user(conn, user)
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     html =
       view
@@ -169,7 +169,7 @@ defmodule TexttileWeb.ProfileLiveTest do
   test "lists the open sessions with this browser first", %{conn: conn, user: user} do
     Accounts.create_session(user)
     conn = log_in_user(conn, user)
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     assert has_element?(view, "#sessions", "This browser")
     assert has_element?(view, "#sessions", "Another browser")
@@ -177,23 +177,23 @@ defmodule TexttileWeb.ProfileLiveTest do
   end
 
   test "a single session is the only one open", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
     assert has_element?(view, "#sessions", "This browser")
     assert has_element?(view, "#sessions", "the only one open")
   end
 
   test "offers sign out", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
     assert has_element?(view, "#sign-out", "Sign out")
   end
 
   test "offers sign out everywhere only while other sessions are open", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
     refute has_element?(view, "#sign-out-all")
 
     Accounts.create_session(user)
     conn = log_in_user(conn, user)
-    {:ok, view, _html} = live(conn, ~p"/desk/profile")
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
     assert has_element?(view, "#sign-out-all", "Sign out everywhere")
   end
 end
