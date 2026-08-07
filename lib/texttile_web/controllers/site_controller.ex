@@ -18,13 +18,8 @@ defmodule TexttileWeb.SiteController do
   plug :load_chrome
        when action in [:front, :texts, :tag, :article, :page, :post_comment, :confirm_comment]
 
-  @doc """
-  The front door: the latest texts, or the one fixed page. The About
-  block from Settings sits at its foot either way.
-  """
+  @doc "The front door: the latest texts, or the one fixed page."
   def front(conn, params) do
-    conn = assign(conn, :about_html, about_html())
-
     case conn.assigns.home_page do
       nil -> render_list(conn, params)
       page -> render_text(conn, page)
@@ -41,7 +36,7 @@ defmodule TexttileWeb.SiteController do
   def article(conn, %{"year" => year, "month" => month, "day" => day, "slug" => slug}) do
     with {:ok, date} <- Date.from_iso8601("#{year}-#{month}-#{day}"),
          article when not is_nil(article) <- Articles.get_published_post(date, slug) do
-      show(conn, article)
+      render_text(conn, article)
     else
       _ -> not_found(conn)
     end
@@ -51,15 +46,7 @@ defmodule TexttileWeb.SiteController do
   def page(conn, %{"slug" => slug}) do
     case Articles.get_published_page(slug) do
       nil -> not_found(conn)
-      article -> show(conn, article)
-    end
-  end
-
-  defp show(conn, article) do
-    if article.protected and not conn.assigns.site_unlocked do
-      redirect(conn, to: ~p"/unlock?to=#{conn.request_path}")
-    else
-      render_text(conn, article)
+      article -> render_text(conn, article)
     end
   end
 
@@ -69,7 +56,7 @@ defmodule TexttileWeb.SiteController do
   """
   def tag(conn, %{"tag" => raw}) do
     tag = raw |> String.downcase() |> String.trim()
-    posts = Articles.list_published(include_protected: conn.assigns.site_unlocked)
+    posts = Articles.list_published()
     articles = Enum.filter(posts, &(tag in Articles.tag_list(&1)))
 
     if articles == [] do
@@ -110,10 +97,7 @@ defmodule TexttileWeb.SiteController do
     article = fetch_commentable(id)
 
     cond do
-      # A locked reader learns nothing here, not even that the text
-      # exists: a redirect to the gate would carry its address, and a
-      # protected text stands in no list a locked reader can read.
-      is_nil(article) or (article.protected and not conn.assigns.site_unlocked) ->
+      is_nil(article) ->
         not_found(conn)
 
       spam?(article, params) ->
@@ -284,18 +268,10 @@ defmodule TexttileWeb.SiteController do
   ## The shared chrome and the two page shapes
 
   # What the header needs on every reader page: the menu pages and the
-  # fixed front page. The locked reader's menu holds no protected page.
-  # The confirmation link stands outside the gate plug, so the answer
-  # it would have written is asked for here when it is missing.
+  # fixed front page. The About block from Settings comes along; it
+  # stands at the foot of every text and of the list.
   defp load_chrome(conn, _opts) do
-    conn =
-      if Map.has_key?(conn.assigns, :site_unlocked) do
-        conn
-      else
-        assign(conn, :site_unlocked, SiteGate.unlocked?(conn))
-      end
-
-    pages = Articles.list_pages(include_protected: conn.assigns.site_unlocked)
+    pages = Articles.list_pages()
 
     home_page =
       with "page:" <> id <- Settings.get(:front_page),
@@ -308,20 +284,26 @@ defmodule TexttileWeb.SiteController do
     conn
     |> assign(:home_page, home_page)
     |> assign(:menu_pages, Enum.reject(pages, &(home_page && &1.id == home_page.id)))
+    |> assign(:about_html, about_html())
   end
 
   defp render_list(conn, params) do
     q = params |> Map.get("q", "") |> String.trim()
-    unlocked = conn.assigns.site_unlocked
 
-    articles = Articles.list_published(search: q, include_protected: unlocked)
+    found = Articles.list_published(search: q)
 
     total =
       if q == "" do
-        length(articles)
+        length(found)
       else
-        length(Articles.list_published(include_protected: unlocked))
+        length(Articles.list_published())
       end
+
+    per_page = Settings.get(:posts_per_page)
+    pages = max(div(length(found) - 1, per_page) + 1, 1)
+    page = page_number(params["page"], pages)
+    articles = Enum.slice(found, (page - 1) * per_page, per_page)
+    list_path = if conn.assigns.home_page, do: ~p"/texts", else: ~p"/"
 
     conn
     |> assign(:active, :texts)
@@ -329,9 +311,33 @@ defmodule TexttileWeb.SiteController do
       q: q,
       articles: articles,
       previews: Gallery.previews(articles),
+      found: length(found),
       total: total,
-      list_path: if(conn.assigns.home_page, do: ~p"/texts", else: ~p"/")
+      page: page,
+      pages: pages,
+      page_path: &page_path(list_path, q, &1),
+      list_path: list_path
     )
+  end
+
+  # A page number outside the row is no error: a bookmark from a
+  # shorter blog, or a ?page= somebody typed, lands on the last page.
+  defp page_number(raw, pages) do
+    case Integer.parse(to_string(raw)) do
+      {n, ""} when n > 0 -> min(n, pages)
+      _ -> 1
+    end
+  end
+
+  defp page_path(list_path, q, page) do
+    query =
+      [q: q, page: if(page == 1, do: nil, else: page)]
+      |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+
+    case query do
+      [] -> list_path
+      pairs -> list_path <> "?" <> URI.encode_query(pairs)
+    end
   end
 
   defp render_text(conn, article) do
@@ -344,12 +350,14 @@ defmodule TexttileWeb.SiteController do
         path -> TexttileWeb.Endpoint.url() <> "/renditions/max/" <> path
       end
 
+    {older, newer} = Articles.neighbours(article)
+
     conn
     |> assign(:page_title, if(home?, do: nil, else: Articles.display_title(article)))
     |> assign(:active, if(home?, do: :home, else: article.id))
     |> assign(:og_image, og_image)
     |> merge_assigns(comment_assigns(conn, article))
-    |> render(:article, article: article, gallery: gallery)
+    |> render(:article, article: article, gallery: gallery, older: older, newer: newer)
   end
 
   # What the comments block under a text needs, or `comments: nil` when

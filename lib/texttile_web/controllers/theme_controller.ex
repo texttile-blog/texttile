@@ -9,11 +9,7 @@ defmodule TexttileWeb.ThemeController do
   alias Texttile.Settings
 
   def show(conn, _params) do
-    css =
-      case Settings.get(:theme_css) do
-        "" -> Settings.default_theme_css()
-        custom -> custom
-      end
+    css = Settings.theme_css()
 
     conn
     |> put_resp_content_type("text/css")

@@ -80,8 +80,8 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ "/renditions/640/"
     end
 
-    test "the about block sits at the foot of the front page once filled", %{conn: conn} do
-      published_post(title: "A text")
+    test "the about block sits at the foot of every reader page once filled", %{conn: conn} do
+      published_post(title: "A text", slug: "a-text", publish_date: ~D[2026-03-01])
 
       html = conn |> get(~p"/") |> html_response(200)
       refute html =~ ~s(id="about")
@@ -92,9 +92,8 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(id="about")
       assert html =~ "<strong>write</strong>"
 
-      # the list behind /texts is not the front door and stays bare
-      html = conn |> get(~p"/texts") |> html_response(200)
-      refute html =~ ~s(id="about")
+      assert conn |> get(~p"/texts") |> html_response(200) =~ ~s(id="about")
+      assert conn |> get(~p"/2026/03/01/a-text") |> html_response(200) =~ ~s(id="about")
     end
   end
 
@@ -161,7 +160,7 @@ defmodule TexttileWeb.SiteControllerTest do
       assert draft.slug == "draft-text"
     end
 
-    test "shows the gallery as tiles that link the full picture, with the lightbox shell",
+    test "shows the gallery as tiles that link the original, with the lightbox shell",
          %{conn: conn} do
       article = published_post(title: "Tiles", slug: "tiles", publish_date: ~D[2026-03-01])
       {:ok, image} = Texttile.Gallery.add_image(article, jpg_fixture(), "pier.jpg")
@@ -169,8 +168,27 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/2026/03/01/tiles") |> html_response(200)
 
       assert html =~ ~s(id="tile-#{image.id}")
-      assert html =~ ~s(href="/renditions/max/#{image.path}")
+      # the crawler follows the link to the file as it came
+      assert html =~ ~s(href="/uploads/#{image.path}")
+      # the reader gets the scaled one, in the lightbox
+      assert html =~ ~s(data-full="/renditions/max/#{image.path}")
       assert html =~ "/renditions/640/#{image.path}"
+      assert html =~ ~s(id="lb")
+    end
+
+    test "a picture in the text links its original and opens in the lightbox", %{conn: conn} do
+      published_post(
+        title: "Inline",
+        slug: "inline",
+        publish_date: ~D[2026-03-01],
+        body: "Look ![pier](/uploads/images/pier.jpg) here."
+      )
+
+      html = conn |> get(~p"/2026/03/01/inline") |> html_response(200)
+
+      assert html =~ ~s(href="/uploads/images/pier.jpg")
+      assert html =~ ~s(data-full="/renditions/max/images/pier.jpg")
+      assert html =~ ~s(src="/renditions/1320/images/pier.jpg")
       assert html =~ ~s(id="lb")
     end
 
@@ -179,6 +197,132 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/2026/03/01/bare") |> html_response(200)
       refute html =~ ~s(id="lb")
+    end
+
+    test "keeps the line breaks a reader typed into a comment", %{conn: conn} do
+      article = published_post(title: "Talk", slug: "talk", publish_date: ~D[2026-03-01])
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+
+      {:ok, comment} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "Ada", "email" => "ada@example.org", "body" => "First line\nsecond line"},
+          confirm_url: &"http://localhost/comments/confirm/#{&1}"
+        )
+
+      html = conn |> get(~p"/2026/03/01/talk") |> html_response(200)
+
+      assert html =~ ~s(id="comment-#{comment.id}")
+      assert html =~ "First line\nsecond line"
+      assert html =~ "comment-body"
+    end
+
+    test "the About block from Settings stands under the text", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+      {:ok, _} = Settings.put(:about_markdown, "We are **kb** and julia.")
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+
+      assert html =~ ~s(id="about")
+      assert html =~ "<strong>kb</strong>"
+    end
+
+    test "no About text, no About block", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+      refute html =~ ~s(id="about")
+    end
+  end
+
+  describe "the way from one post to the next" do
+    setup do
+      %{
+        old: published_post(title: "The oldest", slug: "oldest", publish_date: ~D[2026-01-05]),
+        middle: published_post(title: "The middle", slug: "middle", publish_date: ~D[2026-02-05]),
+        new: published_post(title: "The newest", slug: "newest", publish_date: ~D[2026-03-05])
+      }
+    end
+
+    test "a post in the middle points both ways", %{conn: conn, old: old, new: new} do
+      html = conn |> get(~p"/2026/02/05/middle") |> html_response(200)
+
+      assert html =~ ~s(id="prev-post")
+      assert html =~ Texttile.Articles.public_path(old)
+      assert html =~ ~s(id="next-post")
+      assert html =~ Texttile.Articles.public_path(new)
+    end
+
+    test "the newest post has nothing newer, the oldest nothing older", %{conn: conn} do
+      newest = conn |> get(~p"/2026/03/05/newest") |> html_response(200)
+      assert newest =~ ~s(id="prev-post")
+      refute newest =~ ~s(id="next-post")
+
+      oldest = conn |> get(~p"/2026/01/05/oldest") |> html_response(200)
+      refute oldest =~ ~s(id="prev-post")
+      assert oldest =~ ~s(id="next-post")
+    end
+
+    test "a page stands on its own", %{conn: conn} do
+      published_page(title: "About", slug: "about-me")
+
+      html = conn |> get(~p"/about-me") |> html_response(200)
+      refute html =~ ~s(id="prev-post")
+      refute html =~ ~s(id="next-post")
+    end
+  end
+
+  describe "pagination" do
+    test "shows the page size from Settings and walks the pages", %{conn: conn} do
+      for day <- 1..7 do
+        published_post(title: "Text #{day}", publish_date: Date.new!(2026, 3, day))
+      end
+
+      {:ok, _} = Settings.put(:posts_per_page, 3)
+
+      first = conn |> get(~p"/") |> html_response(200)
+      assert first =~ "Text 7"
+      assert first =~ "Text 5"
+      refute first =~ "Text 4"
+      refute first =~ ~s(id="prev-page")
+      assert first =~ ~s(id="next-page")
+
+      second = conn |> get(~p"/?page=2") |> html_response(200)
+      assert second =~ "Text 4"
+      refute second =~ "Text 7"
+      assert second =~ ~s(id="prev-page")
+      assert second =~ ~s(id="next-page")
+
+      last = conn |> get(~p"/?page=3") |> html_response(200)
+      assert last =~ "Text 1"
+      refute last =~ ~s(id="next-page")
+    end
+
+    test "ten texts a page by default, and no pager while one page holds all", %{conn: conn} do
+      published_post(title: "The only one")
+
+      html = conn |> get(~p"/") |> html_response(200)
+      assert Settings.get(:posts_per_page) == 10
+      refute html =~ ~s(id="pager")
+    end
+
+    test "a page number nobody has answers with the last one", %{conn: conn} do
+      published_post(title: "Alone")
+
+      html = conn |> get(~p"/?page=99") |> html_response(200)
+      assert html =~ "Alone"
+    end
+
+    test "the search keeps its term across the pages", %{conn: conn} do
+      for day <- 1..4 do
+        published_post(title: "Harbor #{day}", publish_date: Date.new!(2026, 3, day))
+      end
+
+      {:ok, _} = Settings.put(:posts_per_page, 2)
+
+      html = conn |> get(~p"/?q=harbor") |> html_response(200)
+      assert html =~ "q=harbor"
+      assert html =~ ~s(id="next-page")
     end
   end
 
@@ -202,17 +346,6 @@ defmodule TexttileWeb.SiteControllerTest do
     test "a tag nobody uses is a 404", %{conn: conn} do
       published_post(title: "A text", tags: "sea")
       assert conn |> get(~p"/tags/nowhere") |> html_response(404)
-    end
-
-    test "protected texts stay out of the archives for locked readers", %{conn: conn} do
-      {:ok, _} = Settings.put(:site_password, "sesame")
-      published_post(title: "Open", tags: "sea")
-      published_post(title: "Hidden", tags: "sea", protected: true)
-
-      html = conn |> get(~p"/tags/sea") |> html_response(200)
-      assert html =~ "Open"
-      refute html =~ "Hidden"
-      assert html =~ "1 text has this tag."
     end
   end
 
@@ -367,56 +500,6 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/") |> html_response(200)
       assert html =~ "Open after all"
-    end
-  end
-
-  describe "a protected text on a public site" do
-    setup do
-      {:ok, _} = Settings.put(:site_password, "sesame")
-      :ok
-    end
-
-    test "asks for the password on its page and hides everywhere else", %{conn: conn} do
-      published_post(title: "Open text")
-
-      published_post(
-        title: "Hidden text",
-        slug: "hidden-text",
-        publish_date: ~D[2026-03-01],
-        protected: true,
-        tags: "secret"
-      )
-
-      published_page(title: "Hidden page", protected: true)
-
-      html = conn |> get(~p"/") |> html_response(200)
-      assert html =~ "Open text"
-      refute html =~ "Hidden text"
-      refute html =~ "Hidden page"
-
-      search = conn |> get(~p"/?q=secret") |> html_response(200)
-      refute search =~ "Hidden text"
-
-      conn = get(conn, ~p"/2026/03/01/hidden-text")
-      assert redirected_to(conn) == "/unlock?to=%2F2026%2F03%2F01%2Fhidden-text"
-    end
-
-    test "after the password everything appears", %{conn: conn} do
-      published_post(
-        title: "Hidden text",
-        slug: "hidden-text",
-        publish_date: ~D[2026-03-01],
-        protected: true
-      )
-
-      conn =
-        post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/2026/03/01/hidden-text"})
-
-      assert redirected_to(conn) == "/2026/03/01/hidden-text"
-
-      conn = recycle(conn)
-      assert conn |> get(~p"/2026/03/01/hidden-text") |> html_response(200) =~ "Hidden text"
-      assert conn |> get(~p"/") |> html_response(200) =~ "Hidden text"
     end
   end
 

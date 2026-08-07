@@ -294,7 +294,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
-      when field in ~w(type tags slug allow_comments notify_on_publish protected) do
+      when field in ~w(type tags slug allow_comments notify_on_publish) do
     %{article: article} = socket.assigns
 
     case Articles.update_settings(article, Map.take(params, [field])) do
@@ -1790,7 +1790,172 @@ defmodule TexttileWeb.EditorLive do
             <div :if={@article.type != "page"} class="drow" id="fieldTags">
               <span class="lab">Tags</span>
               <span class="val">
-                <input type="text" id="edTags" name="tags" value={@article.tags} phx-debounce="300" />
+                <%!-- the field completes itself out of the tags the
+                     blog already carries; the hook owns the list it
+                     drops under the field --%>
+                <input
+                  type="text"
+                  id="edTags"
+                  name="tags"
+                  value={@article.tags}
+                  phx-debounce="300"
+                  phx-hook=".TagType"
+                  data-tags={Enum.join(@known_tags, "\n")}
+                  autocomplete="off"
+                  spellcheck="false"
+                  role="combobox"
+                  aria-expanded="false"
+                  aria-autocomplete="list"
+                  aria-controls="tagMenu"
+                />
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".TagType">
+                  // The tag field completes what you are typing out of
+                  // the tags the blog already carries. The field holds a
+                  // comma-separated row, so only the word after the last
+                  // comma is completed. The menu lives on the body and is
+                  // placed by hand: the side column scrolls, and a menu
+                  // inside it would be cut off at its edge.
+                  const MAX = 8
+
+                  export default {
+                    mounted() {
+                      this.menu = document.createElement("ul")
+                      this.menu.id = "tagMenu"
+                      this.menu.className = "tagmenu"
+                      this.menu.setAttribute("role", "listbox")
+                      this.menu.hidden = true
+                      document.body.appendChild(this.menu)
+
+                      this.at = -1
+                      this.matches = []
+
+                      this.onInput = () => this.refresh()
+                      this.onKey = e => this.key(e)
+                      this.onBlur = () => setTimeout(() => this.close(), 120)
+                      this.onPlace = () => { if (!this.menu.hidden) this.place() }
+
+                      this.el.addEventListener("input", this.onInput)
+                      this.el.addEventListener("keydown", this.onKey)
+                      this.el.addEventListener("blur", this.onBlur)
+                      window.addEventListener("resize", this.onPlace)
+                      window.addEventListener("scroll", this.onPlace, true)
+
+                      // pointerdown, not click: the field blurs first
+                      this.menu.addEventListener("pointerdown", e => {
+                        const row = e.target.closest("[data-tag]")
+                        if (!row) return
+                        e.preventDefault()
+                        this.accept(row.dataset.tag)
+                      })
+                    },
+
+                    destroyed() {
+                      this.el.removeEventListener("input", this.onInput)
+                      this.el.removeEventListener("keydown", this.onKey)
+                      this.el.removeEventListener("blur", this.onBlur)
+                      window.removeEventListener("resize", this.onPlace)
+                      window.removeEventListener("scroll", this.onPlace, true)
+                      this.menu.remove()
+                    },
+
+                    known() {
+                      return (this.el.dataset.tags || "").split("\n").filter(Boolean)
+                    },
+
+                    // everything before the last comma stays as it is;
+                    // the rest is the word being written
+                    parts() {
+                      const value = this.el.value
+                      const cut = value.lastIndexOf(",")
+                      return {
+                        head: cut === -1 ? "" : value.slice(0, cut + 1),
+                        word: (cut === -1 ? value : value.slice(cut + 1)).trim(),
+                      }
+                    },
+
+                    written() {
+                      return this.el.value.split(",").map(t => t.trim().toLowerCase()).filter(Boolean)
+                    },
+
+                    refresh() {
+                      const {word} = this.parts()
+                      const term = word.toLowerCase()
+                      if (!term) return this.close()
+
+                      const taken = this.written()
+                      const hits = this.known().filter(
+                        tag => tag.includes(term) && !taken.includes(tag)
+                      )
+                      // what the word starts, before what it only touches
+                      hits.sort((a, b) => a.startsWith(term) === b.startsWith(term) ? 0 : a.startsWith(term) ? -1 : 1)
+
+                      this.matches = hits.slice(0, MAX)
+                      if (!this.matches.length) return this.close()
+
+                      this.at = 0
+                      this.paint()
+                      this.open()
+                    },
+
+                    paint() {
+                      this.menu.replaceChildren(...this.matches.map((tag, i) => {
+                        const row = document.createElement("li")
+                        row.dataset.tag = tag
+                        row.textContent = tag
+                        row.setAttribute("role", "option")
+                        row.setAttribute("aria-selected", i === this.at ? "true" : "false")
+                        if (i === this.at) row.classList.add("on")
+                        return row
+                      }))
+                    },
+
+                    place() {
+                      const r = this.el.getBoundingClientRect()
+                      this.menu.style.left = `${r.left}px`
+                      this.menu.style.width = `${r.width}px`
+                      this.menu.style.top = `${r.bottom + 4}px`
+                    },
+
+                    open() {
+                      this.menu.hidden = false
+                      this.el.setAttribute("aria-expanded", "true")
+                      this.place()
+                    },
+
+                    close() {
+                      this.menu.hidden = true
+                      this.el.setAttribute("aria-expanded", "false")
+                      this.at = -1
+                      this.matches = []
+                    },
+
+                    key(e) {
+                      if (this.menu.hidden) return
+                      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                        e.preventDefault()
+                        const step = e.key === "ArrowDown" ? 1 : -1
+                        this.at = (this.at + step + this.matches.length) % this.matches.length
+                        this.paint()
+                      } else if (e.key === "Enter" || e.key === "Tab") {
+                        if (this.at < 0) return
+                        e.preventDefault()
+                        this.accept(this.matches[this.at])
+                      } else if (e.key === "Escape") {
+                        e.preventDefault()
+                        this.close()
+                      }
+                    },
+
+                    // the completed tag, and a comma ready for the next
+                    accept(tag) {
+                      const {head} = this.parts()
+                      this.el.value = `${head ? head + " " : ""}${tag}, `
+                      this.close()
+                      this.el.focus()
+                      this.el.dispatchEvent(new Event("input", {bubbles: true}))
+                    },
+                  }
+                </script>
                 <%!-- the tags the blog already carries: one click puts
                      one in the field, one more takes it out again --%>
                 <div :if={@known_tags != []} class="tagpick" id="tagPick">
@@ -1806,7 +1971,9 @@ defmodule TexttileWeb.EditorLive do
                   </button>
                 </div>
                 <div class="hint">
-                  Comma separated; each tag becomes an archive page. Click a tag above to add it or take it off.
+                  Comma separated; each tag becomes an archive page. Start typing
+                  and the field offers the tags the blog already carries, or click
+                  one below to add it or take it off.
                 </div>
               </span>
             </div>
@@ -1823,19 +1990,6 @@ defmodule TexttileWeb.EditorLive do
                     value="true"
                     checked={@article.allow_comments}
                   /> <span>Allow comments</span>
-                </label>
-                <label class="opt">
-                  <input type="hidden" name="protected" value="false" />
-                  <input
-                    type="checkbox"
-                    id="optProtected"
-                    name="protected"
-                    value="true"
-                    checked={@article.protected}
-                  />
-                  <span>
-                    Ask for the blog password first<span class="note">Readers need the site password; search engines see nothing. The password lives in Settings.</span>
-                  </span>
                 </label>
                 <span id="notifyOpt">
                   <%= if @article.type == "page" do %>

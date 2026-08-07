@@ -70,7 +70,7 @@ defmodule TexttileWeb.SiteHTML do
   def site_foot(assigns) do
     ~H"""
     <footer class="border-t border-rule">
-      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4 pb-7">
+      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
@@ -113,12 +113,37 @@ defmodule TexttileWeb.SiteHTML do
   The body of a text as HTML. Inline pictures leave the original file
   alone and travel as a rendition sized for the reading column - 1320,
   which is the 660px measure on a dense screen - never the full file.
+
+  Each of them stands in a link to the original, so a crawler finds the
+  file as it came; the script turns that link into the lightbox, which
+  shows the reader size named in `data-full`.
   """
   def body_html(article) do
     article.body
     |> Texttile.Markdown.to_html()
-    |> String.replace(~s(src="/uploads/), ~s(src="/renditions/1320/))
+    |> link_pictures()
     |> Phoenix.HTML.raw()
+  end
+
+  # The markdown renderer writes <img src="/uploads/..."> and nothing
+  # else around it, so the wrap is one pass over those tags.
+  defp link_pictures(html) do
+    Regex.replace(~r{<img([^>]*?)src="/uploads/([^"]+)"([^>]*?)/?>}, html, fn _whole,
+                                                                              before,
+                                                                              path,
+                                                                              rest ->
+      ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
+        ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
+        ~s(</a>)
+    end)
+  end
+
+  @doc """
+  Whether a text shows a picture at all: a gallery tile, or one in the
+  words. The lightbox shell is only drawn where something can open it.
+  """
+  def pictures?(article, gallery) do
+    gallery != [] or String.contains?(to_string(article.body), "](/uploads/")
   end
 
   @doc "A date the way the example blog writes one: 2 July 2026."

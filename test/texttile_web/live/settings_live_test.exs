@@ -112,6 +112,24 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Settings.get(:image_max_edge) == 2560
     end
 
+    test "the page size saves, and a number nobody can use says no", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
+
+      view
+      |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "4"}})
+      |> render_change(%{"_target" => ["settings", "posts_per_page"]})
+
+      assert Settings.get(:posts_per_page) == 4
+
+      html =
+        view
+        |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "0"}})
+        |> render_change(%{"_target" => ["settings", "posts_per_page"]})
+
+      assert html =~ "at least 1"
+      assert Settings.get(:posts_per_page) == 4
+    end
+
     test "the comments toggle rewrites its own explanation", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
       assert html =~ "confirmation link"

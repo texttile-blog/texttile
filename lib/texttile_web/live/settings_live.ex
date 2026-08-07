@@ -18,7 +18,7 @@ defmodule TexttileWeb.SettingsLive do
   # The keys a form on this screen may write. The file-backed keys go
   # through Texttile.Uploads, never through a form.
   @editable ~w(site_title site_description language about_markdown front_page
-               theme_css site_visibility site_password
+               posts_per_page theme_css site_visibility site_password
                comments_require_confirmation image_max_edge)
 
   def mount(_params, _session, socket) do
@@ -381,8 +381,10 @@ defmodule TexttileWeb.SettingsLive do
       others={@others}
     >
       <:bar>
+        <%!-- the phone gets the stamp too, short and clipped: the
+             hook writes the sentence only where the bar has room --%>
         <span
-          class="hidden md:inline text-[12.5px] text-faint num whitespace-nowrap"
+          class="text-[12.5px] text-faint num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
           id="savedSettings"
           phx-hook="SavedTicker"
           data-at={@saved_at}
@@ -612,6 +614,28 @@ defmodule TexttileWeb.SettingsLive do
               </option>
             </select>
           </div>
+          <div class="drow gtop">
+            <label class="lab" for="setting-posts_per_page">Texts a page</label>
+            <span class="val">
+              <input
+                type="number"
+                id="setting-posts_per_page"
+                name="settings[posts_per_page]"
+                value={@settings_form[:posts_per_page].value}
+                min="1"
+                max="200"
+                class="max-w-[110px]"
+                phx-debounce="300"
+              />
+              <div class="hint">
+                How many texts the blog list shows before the pager. Between 1
+                and 200; the default is 10.
+              </div>
+              <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
+                The value must be {@errors[:posts_per_page]}.
+              </p>
+            </span>
+          </div>
         </.form>
 
         <.section>Theme</.section>
@@ -679,8 +703,6 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <%!-- always on screen: a public blog needs the password too,
-               for the texts that ask for it one by one --%>
           <div class="py-3 max-w-[280px]" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
             <input
@@ -693,9 +715,8 @@ defmodule TexttileWeb.SettingsLive do
             />
             <div class="hint">
               A shared access word, not a login: it goes into the notification
-              mails, and you pass it on. It is stored as it is written. On a
-              public blog it guards the texts that ask for it in their own
-              settings; without a password nothing is protected.
+              mails, and you pass it on. It is stored as it is written. It is
+              the password of the whole blog; without one nothing is protected.
             </div>
           </div>
         </.form>

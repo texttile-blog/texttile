@@ -61,6 +61,16 @@ defmodule TexttileWeb.TextsLive do
       active="texts"
       others={@others}
     >
+      <:bar>
+        <%!-- the door to the blog itself, at the end of the bar --%>
+        <a
+          class="text-[12.5px] text-dim hover:text-accent whitespace-nowrap flex-none"
+          id="bar-view-site"
+          href={~p"/"}
+        >
+          View site
+        </a>
+      </:bar>
       <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <div class="flex items-baseline gap-[14px] flex-wrap">
           <h1 class="page-h">Texts</h1>

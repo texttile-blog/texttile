@@ -32,7 +32,6 @@ defmodule Texttile.Articles.Article do
     field :tags, :string, default: ""
     field :allow_comments, :boolean, default: true
     field :notify_on_publish, :boolean, default: true
-    field :protected, :boolean, default: false
     field :notified_on, :date
 
     # The chosen preview image (uploads-relative). Nil lets the first
@@ -58,7 +57,6 @@ defmodule Texttile.Articles.Article do
       :slug,
       :allow_comments,
       :notify_on_publish,
-      :protected,
       :preview_path
     ])
     |> update_change(:slug, &normalize_slug/1)

@@ -89,6 +89,7 @@ class Gallery {
       if (r.objurl) URL.revokeObjectURL(r.objurl)
     })
     window.removeEventListener("keydown", this.onKeydown)
+    this.releasePan()
     this.closeLightbox(true)
     this.removeUndoBar()
   }
@@ -421,12 +422,39 @@ class Gallery {
 
   lift() {
     const d = this.drag
-    if (!d || d.held || d.mode === "scroll") return
+    if (!d || d.held) return
     d.held = true
     d.initialOrder = this.currentIds()
     d.tile.classList.add("lift", "slot")
     this.server.setAttribute("phx-update", "ignore")
     if (navigator.vibrate) navigator.vibrate(8)
+    this.holdPan()
+  }
+
+  // The tiles allow a vertical pan, so the browser scrolls them itself
+  // and does it smoothly. Once a press becomes a sort, the pan has to
+  // stop: it has not started yet (the finger stood still through the
+  // whole delay), and a refused touchmove keeps it from starting.
+  //
+  // A hold that outlived its drag would leave the page unscrollable, so
+  // the last touch of any hand releases it as well - pointerup is the
+  // rule, this is the floor under it.
+  holdPan() {
+    if (this.panHold) return
+    this.panHold = e => e.preventDefault()
+    this.panEnd = () => this.releasePan()
+    document.addEventListener("touchmove", this.panHold, {passive: false})
+    document.addEventListener("touchend", this.panEnd)
+    document.addEventListener("touchcancel", this.panEnd)
+  }
+
+  releasePan() {
+    if (!this.panHold) return
+    document.removeEventListener("touchmove", this.panHold, {passive: false})
+    document.removeEventListener("touchend", this.panEnd)
+    document.removeEventListener("touchcancel", this.panEnd)
+    this.panHold = null
+    this.panEnd = null
   }
 
   pointerMove(e) {
@@ -437,21 +465,19 @@ class Gallery {
     const dy = e.clientY - d.startY
     const distance = Math.hypot(dx, dy)
 
+    // A finger going sideways means sorting; going down the page it
+    // means reading, and that gesture belongs to the browser, which
+    // ends this one with a pointercancel.
     if (!d.held && !d.mode && distance > DRAG_THRESHOLD_PX) {
       clearTimeout(d.timer)
       if (e.pointerType === "mouse" || Math.abs(dx) >= Math.abs(dy)) {
         this.lift()
       } else {
-        // the finger wants the page; tiles have touch-action none, so
-        // the scroll is driven by hand (the imaedge mechanic)
         d.mode = "scroll"
       }
     }
 
-    if (d.mode === "scroll") {
-      this.scroller().scrollBy(0, d.lastY - e.clientY)
-      d.moved = true
-    } else if (d.held) {
+    if (d.held) {
       if (distance > DRAG_THRESHOLD_PX) d.moved = true
       this.place(e.clientX, e.clientY)
       this.autoScroll(e.clientY)
@@ -515,6 +541,7 @@ class Gallery {
     const d = this.drag
     if (!d || e.pointerId !== d.pointerId) return
     clearTimeout(d.timer)
+    this.releasePan()
     this.drag = null
 
     if (d.held) {
@@ -589,13 +616,12 @@ class Gallery {
     root.tabIndex = -1
 
     root.innerHTML = `
-      <div class="flex items-center gap-3 px-4 h-[52px] flex-none text-white/80 text-[12.5px]">
+      <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <a id="lbOrig" class="text-white/85 hover:text-white text-[13px] px-3 py-1.5 rounded underline underline-offset-2"
-           target="_blank" rel="noopener">Open original</a>
-        <button type="button" id="lbClose" class="text-white/85 hover:text-white text-[13px] px-3 py-1.5 rounded"
-           style="box-shadow: inset 0 0 0 1px rgba(255,255,255,.35)" aria-label="Close">Close</button>
+        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> image</span></button>
+        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">Open original</span><span class="lb-word-s">Original</span></a>
+        <button type="button" id="lbClose" class="lb-abtn" aria-label="Close">Close</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
@@ -611,13 +637,11 @@ class Gallery {
         <div class="max-w-[900px] mx-auto">
           <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
           <div class="flex flex-wrap items-end gap-x-3 gap-y-2 mt-2">
-            <span>
+            <span class="min-w-[220px]">
               <label class="lab block mb-[3px]" for="lbDate">Date</label>
               <input type="datetime-local" id="lbDate" step="60">
             </span>
             <span class="note pb-[6px]" id="lbSaved">The date saves itself and sorts the gallery.</span>
-            <span class="sp"></span>
-            <button type="button" class="btn sm" id="lbDelete">Delete image</button>
           </div>
         </div>
       </div>`

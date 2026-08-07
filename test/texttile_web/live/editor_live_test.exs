@@ -162,19 +162,6 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#notifyOpt", "Pages never email anyone")
     end
 
-    test "the blog-password switch saves on change", %{conn: conn, user: user} do
-      article = draft(user)
-      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
-
-      assert has_element?(view, "#optProtected")
-
-      view
-      |> element("#artSettings")
-      |> render_change(%{_target: ["protected"], protected: "true"})
-
-      assert Articles.get_article!(article.id).protected
-    end
-
     test "the tags of the blog stand under the field and add themselves",
          %{conn: conn, user: user} do
       other = draft(user)

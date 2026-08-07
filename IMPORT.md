@@ -12,6 +12,9 @@ reports errors and warnings. Nothing is created. Then the import creates or
 updates the texts. The importer downloads remote pictures itself, so a bundle
 can point to pictures that are still online. The zip then stays small.
 
+The report and the import both go by date, oldest text first. A bundle
+without a `date` comes last, under its folder name.
+
 ## The zip
 
 The root of the zip holds one folder per text. Each folder holds an

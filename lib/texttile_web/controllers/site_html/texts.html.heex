@@ -17,12 +17,42 @@
         />
       </form>
       <a :if={@q != ""} class="btn sm" id="clear" href={@list_path}>Clear</a>
-      <span class="cnt" id="count">{count_label(length(@articles), @total)}</span>
+      <span class="cnt" id="count">{count_label(@found, @total)}</span>
     </div>
 
     <div class="cards" id="texts">
       <.card :for={article <- @articles} article={article} preview={@previews[article.id]} />
     </div>
+
+    <%!-- the pager: one step each way, and where the reader stands.
+         The page size lives in Settings. --%>
+    <nav
+      :if={@pages > 1}
+      class="f-pager mt-10 pt-4 border-t border-rule"
+      id="pager"
+      aria-label="Pages"
+    >
+      <%!-- three cells, always: the step back, where the reader
+           stands, the step on. An empty cell keeps the middle one in
+           the middle at either end of the row. --%>
+      <span>
+        <a :if={@page > 1} class="btn sm" id="prev-page" href={@page_path.(@page - 1)} rel="prev">
+          Newer texts
+        </a>
+      </span>
+      <span class="f-note num">Page {@page} of {@pages}</span>
+      <span>
+        <a
+          :if={@page < @pages}
+          class="btn sm"
+          id="next-page"
+          href={@page_path.(@page + 1)}
+          rel="next"
+        >
+          Older texts
+        </a>
+      </span>
+    </nav>
 
     <p :if={@articles == [] && @q != ""} class="f-body mt-8" id="empty">
       Nothing matches that. <a class="link" href={@list_path}>Show all texts</a>.
@@ -30,9 +60,11 @@
     <p :if={@articles == [] && @q == ""} class="f-body mt-8">Nothing here yet.</p>
   </div>
 
+  <%!-- the list runs the full width, so About lines up with the cards
+       instead of stepping in with the reading column --%>
   <section
     :if={assigns[:about_html]}
-    class="wrap narrow pb-[var(--tt-sec)]"
+    class="wrap pb-[var(--tt-sec)]"
     id="about"
     aria-label="About"
   >

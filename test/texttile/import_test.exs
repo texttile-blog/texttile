@@ -502,6 +502,46 @@ defmodule Texttile.ImportTest do
       refute Repo.get_by(Article, slug: "a")
       assert File.ls(Path.join(Uploads.root(), "images")) in [{:error, :enoent}, {:ok, []}]
     end
+
+    test "runs the bundles oldest first", %{dir: dir, user: user} do
+      write_bundle(dir, "a-newest", "title: Newest\ndate: 2021-03-04\n")
+      write_bundle(dir, "b-oldest", "title: Oldest\ndate: 2018-01-02\n")
+      write_bundle(dir, "c-middle", "title: Middle\ndate: 2019-07-08\n")
+
+      report = Import.validate(dir)
+      assert Enum.map(report.bundles, & &1.name) == ["b-oldest", "c-middle", "a-newest"]
+
+      me = self()
+
+      summary =
+        Import.run(report, user, fn
+          {:bundle, name, _index, _total} -> send(me, {:bundle, name})
+          _event -> :ok
+        end)
+
+      assert summary.created == 3
+      assert_received {:bundle, first}
+      assert_received {:bundle, second}
+      assert_received {:bundle, third}
+      assert [first, second, third] == ["b-oldest", "c-middle", "a-newest"]
+    end
+  end
+
+  describe "tmp_path/1" do
+    # The zip extraction folders live in the same temp directory as the
+    # picture downloads, and the name counter starts over with every
+    # boot: a folder an earlier run left behind can carry the very name
+    # a download draws next.
+    test "clears a folder that stands on the name" do
+      path = Path.join(System.tmp_dir!(), "texttile-fetch-#{System.unique_integer([:positive])}")
+      File.mkdir_p!(Path.join(path, "left-over"))
+      on_exit(fn -> File.rm_rf(path) end)
+
+      assert Import.tmp_path(path) == path
+      assert {:ok, file} = File.open(path, [:write, :binary])
+      File.close(file)
+      assert File.regular?(path)
+    end
   end
 
   describe "unpack/2" do

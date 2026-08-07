@@ -11,7 +11,7 @@ defmodule Texttile.ArticlesFixtures do
 
   @doc """
   A published blog post. `attrs` may carry `:title`, `:body`, `:tags`,
-  `:slug`, `:type`, `:protected` and `:publish_date` (default today).
+  `:slug`, `:type` and `:publish_date` (default today).
   """
   def published_post(attrs \\ %{}) do
     attrs = Map.new(attrs)
@@ -60,7 +60,7 @@ defmodule Texttile.ArticlesFixtures do
         body: Map.get(attrs, :body, "Plain words.")
       })
 
-    settings = Map.take(attrs, [:type, :tags, :slug, :protected, :preview_path])
+    settings = Map.take(attrs, [:type, :tags, :slug, :preview_path])
 
     {:ok, article} =
       if map_size(settings) == 0 do

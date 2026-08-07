@@ -52,6 +52,56 @@ defmodule Texttile.SettingsTest do
     end
   end
 
+  describe "posts_per_page" do
+    test "ten by default, and only a number a list can use" do
+      assert Settings.get(:posts_per_page) == 10
+
+      assert {:ok, 25} = Settings.put(:posts_per_page, "25")
+      assert Settings.get(:posts_per_page) == 25
+
+      assert {:error, _} = Settings.put(:posts_per_page, "0")
+      assert {:error, _} = Settings.put(:posts_per_page, "201")
+      assert {:error, _} = Settings.put(:posts_per_page, "ten")
+      assert Settings.get(:posts_per_page) == 25
+    end
+  end
+
+  describe "theme_color/0" do
+    test "answers the bar of the iris theme, laid over the page" do
+      # --tt-bar is rgba(255, 255, 255, .93) over the #faf9f7 page
+      assert Settings.theme_color() == "#fffffe"
+    end
+
+    test "reads the bar out of a stored theme" do
+      {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #101010; --tt-bar: #204080; }")
+      assert Settings.theme_color() == "#204080"
+    end
+
+    test "lays a translucent bar over the page colour" do
+      {:ok, _} =
+        Settings.put(:theme_css, ":root { --tt-page: #000000; --tt-bar: rgba(255,255,255,.5); }")
+
+      assert Settings.theme_color() == "#808080"
+    end
+
+    test "the last declaration of a token wins, the way a browser reads it" do
+      {:ok, _} =
+        Settings.put(:theme_css, ":root { --tt-bar: #111111; }\n:root { --tt-bar: #222222; }")
+
+      assert Settings.theme_color() == "#222222"
+    end
+
+    test "a theme without the tokens falls back instead of failing" do
+      {:ok, _} = Settings.put(:theme_css, ":root { --tt-ink: #123456; }")
+      assert Settings.theme_color() =~ ~r/\A#[0-9a-f]{6}\z/
+    end
+
+    test "a bar nobody can read falls back to the page" do
+      {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #123456; --tt-bar: chartreuse; }")
+      assert Settings.theme_color() == "#123456"
+    end
+  end
+
   describe "put/2" do
     test "stores a value and reads it back typed" do
       assert {:ok, "Two of us"} = Settings.put(:site_title, "Two of us")

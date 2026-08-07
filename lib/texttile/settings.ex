@@ -29,6 +29,7 @@ defmodule Texttile.Settings do
     site_visibility: {:string, "public"},
     site_password: {:string, ""},
     comments_require_confirmation: {:boolean, true},
+    posts_per_page: {:integer, 10},
     image_max_edge: {:integer, 2560},
     logo: {:file, nil},
     logo_name: {:file, nil},
@@ -45,6 +46,117 @@ defmodule Texttile.Settings do
 
   @doc "The iris theme: what `theme_css` means while it is empty."
   def default_theme_css, do: @iris_theme
+
+  @doc "The theme the site wears right now: the stored one, or iris."
+  def theme_css do
+    case get(:theme_css) do
+      "" -> default_theme_css()
+      custom -> custom
+    end
+  end
+
+  @doc """
+  The colour a browser paints its own chrome with, for the theme-color
+  meta tag. That chrome sits against the bar at the top of the page, so
+  it takes the bar's colour, not the page's. The bar is translucent by
+  design, so it is laid over the page colour first. A theme that
+  answers neither token falls back to the iris page.
+  """
+  # Every page render asks for this, so the two patterns are compiled
+  # once instead of per call.
+  @page_token ~r/--tt-page\s*:\s*([^;}]+)/
+  @bar_token ~r/--tt-bar\s*:\s*([^;}]+)/
+
+  def theme_color do
+    css = theme_css()
+    page = color(css, @page_token) || {250, 249, 247, 1.0}
+
+    css
+    |> color(@bar_token)
+    |> Kernel.||(page)
+    |> over(page)
+  end
+
+  # The last declaration wins, the way the browser reads it.
+  defp color(css, token) do
+    token
+    |> Regex.scan(css)
+    |> List.last()
+    |> case do
+      [_whole, value] -> value |> String.trim() |> parse_color()
+      _ -> nil
+    end
+  end
+
+  defp parse_color("#" <> hex) do
+    case hex do
+      <<r::binary-1, g::binary-1, b::binary-1>> -> rgba(r <> r, g <> g, b <> b, "ff")
+      <<r::binary-2, g::binary-2, b::binary-2>> -> rgba(r, g, b, "ff")
+      <<r::binary-2, g::binary-2, b::binary-2, a::binary-2>> -> rgba(r, g, b, a)
+      _ -> nil
+    end
+  end
+
+  defp parse_color("rgb" <> rest) do
+    numbers =
+      rest
+      |> String.trim_leading("a")
+      |> String.trim()
+      |> String.trim_leading("(")
+      |> String.trim_trailing(")")
+      |> String.split([",", "/", " "], trim: true)
+      |> Enum.map(&number/1)
+
+    case numbers do
+      [r, g, b] when is_float(r) and is_float(g) and is_float(b) ->
+        {round(r), round(g), round(b), 1.0}
+
+      [r, g, b, a] when is_float(r) and is_float(g) and is_float(b) and is_float(a) ->
+        {round(r), round(g), round(b), a}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp parse_color(_other), do: nil
+
+  # CSS writes .93 where Elixir wants 0.93, and an alpha may be a
+  # percentage instead of a fraction.
+  defp number(text) do
+    text = String.trim(text)
+
+    {text, scale} =
+      if String.ends_with?(text, "%"), do: {String.trim_trailing(text, "%"), 100}, else: {text, 1}
+
+    text = if String.starts_with?(text, "."), do: "0" <> text, else: text
+
+    case Float.parse(text) do
+      {value, ""} -> value / scale
+      _ -> nil
+    end
+  end
+
+  defp rgba(r, g, b, a) do
+    with {r, ""} <- Integer.parse(r, 16),
+         {g, ""} <- Integer.parse(g, 16),
+         {b, ""} <- Integer.parse(b, 16),
+         {a, ""} <- Integer.parse(a, 16) do
+      {r, g, b, a / 255}
+    else
+      _ -> nil
+    end
+  end
+
+  defp over({r, g, b, a}, {pr, pg, pb, _}) do
+    a = a |> max(0.0) |> min(1.0)
+    mix = fn top, under -> round(top * a + under * (1 - a)) end
+
+    "#" <>
+      ([mix.(r, pr), mix.(g, pg), mix.(b, pb)]
+       |> Enum.map_join(&(&1 |> Integer.to_string(16) |> String.pad_leading(2, "0")))
+       |> String.downcase())
+  end
 
   @doc "The value of one setting, typed, falling back to its default."
   def get(key) when is_map_key(@keys, key) do
@@ -153,6 +265,9 @@ defmodule Texttile.Settings do
 
   defp validate(:site_visibility, value) when value in ~w(public protected), do: :ok
   defp validate(:site_visibility, _), do: {:error, "public or protected"}
+
+  defp validate(:posts_per_page, n) when n < 1, do: {:error, "at least 1 text"}
+  defp validate(:posts_per_page, n) when n > 200, do: {:error, "at most 200 texts"}
 
   defp validate(:image_max_edge, n) when n < 800, do: {:error, "at least 800 px"}
   defp validate(:image_max_edge, n) when n > 10_000, do: {:error, "at most 10000 px"}

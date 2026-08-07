@@ -46,9 +46,11 @@ defmodule Texttile.Articles do
   def get_article!(id), do: Repo.get!(Article, id)
 
   @doc """
-  The texts for the grid, newest work first. `filter:` narrows to one
-  status ("all" and nil mean everything), `search:` looks through the
-  title, the tags and the body, case-insensitively.
+  The texts for the grid, by date, newest first: the day a text is
+  published or goes live, and while it carries no date yet, today - a
+  draft is the newest thing on the desk until it gets one. `filter:`
+  narrows to one status ("all" and nil mean everything), `search:`
+  looks through the title, the tags and the body, case-insensitively.
   """
   def list_articles(opts \\ []) do
     filter = opts[:filter]
@@ -73,7 +75,7 @@ defmodule Texttile.Articles do
         )
       end
     end)
-    |> order_by([a], desc: a.updated_at, desc: a.id)
+    |> order_by([a], desc: fragment("coalesce(?, date('now'))", a.publish_date), desc: a.id)
     |> Repo.all()
   end
 
@@ -81,12 +83,10 @@ defmodule Texttile.Articles do
 
   @doc """
   The published posts for the readers, newest publish date first.
-  `search:` looks through the title, the tags and the full text;
-  `include_protected: false` is the locked reader, who does not see
-  protected texts anywhere.
+  `search:` looks through the title, the tags and the full text.
   """
   def list_published(opts \\ []) do
-    published_query("post", opts)
+    published_query("post")
     |> order_by([a], desc: a.publish_date, desc: a.id)
     |> Repo.all()
     |> search_filter(opts[:search] |> to_string() |> String.trim())
@@ -112,14 +112,47 @@ defmodule Texttile.Articles do
     Repo.get_by(Article, id: id, status: "published")
   end
 
-  @doc """
-  The published pages for the site menu, oldest publish date first.
-  Takes the same `include_protected:` as `list_published/1`.
-  """
-  def list_pages(opts \\ []) do
-    published_query("page", opts)
+  @doc "The published pages for the site menu, oldest publish date first."
+  def list_pages do
+    published_query("page")
     |> order_by([a], asc: a.publish_date, asc: a.id)
     |> Repo.all()
+  end
+
+  @doc """
+  The two posts a reader walks to from this one: `{older, newer}`, each
+  nil at the end of the row. A page is not in the row and answers
+  `{nil, nil}`; the list runs by publish date, with the id breaking a
+  tie between two texts of the same day.
+  """
+  def neighbours(%Article{type: "post", status: "published"} = article) do
+    {neighbour(article, :older), neighbour(article, :newer)}
+  end
+
+  def neighbours(%Article{}), do: {nil, nil}
+
+  defp neighbour(article, :older) do
+    published_query("post")
+    |> where(
+      [a],
+      a.publish_date < ^article.publish_date or
+        (a.publish_date == ^article.publish_date and a.id < ^article.id)
+    )
+    |> order_by([a], desc: a.publish_date, desc: a.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp neighbour(article, :newer) do
+    published_query("post")
+    |> where(
+      [a],
+      a.publish_date > ^article.publish_date or
+        (a.publish_date == ^article.publish_date and a.id > ^article.id)
+    )
+    |> order_by([a], asc: a.publish_date, asc: a.id)
+    |> limit(1)
+    |> Repo.one()
   end
 
   @doc """
@@ -202,12 +235,8 @@ defmodule Texttile.Articles do
     |> Enum.uniq()
   end
 
-  defp published_query(type, opts) do
-    Article
-    |> where([a], a.status == "published" and a.type == ^type)
-    |> then(fn q ->
-      if Keyword.get(opts, :include_protected, true), do: q, else: where(q, [a], not a.protected)
-    end)
+  defp published_query(type) do
+    where(Article, [a], a.status == "published" and a.type == ^type)
   end
 
   ## Writing

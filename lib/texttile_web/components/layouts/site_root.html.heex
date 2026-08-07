@@ -3,6 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <%!-- the browser's own chrome sits against the bar at the top of
+         the page, so it wears the bar's colour, not the page's --%>
+    <meta name="theme-color" content={Texttile.Settings.theme_color()} />
     <.live_title default={site_title()} suffix={" · " <> site_title()} phx-no-format>{assigns[:page_title]}</.live_title>
     <meta name="description" content={Texttile.Settings.get(:site_description)} />
     <%!-- what a shared link shows: the title, and the text's preview image --%>

@@ -50,19 +50,9 @@ defmodule Texttile.ArticlesPublicTest do
 
       assert Enum.map(Articles.list_published(search: "harbor fog"), & &1.id) == [both.id]
     end
-
-    test "leaves protected texts out unless asked to include them" do
-      open = published_post(title: "Open")
-      hidden = published_post(title: "Hidden", protected: true)
-
-      assert Enum.map(Articles.list_published(include_protected: false), & &1.id) == [open.id]
-
-      ids = Articles.list_published(include_protected: true) |> Enum.map(& &1.id) |> Enum.sort()
-      assert ids == Enum.sort([open.id, hidden.id])
-    end
   end
 
-  describe "list_pages/1" do
+  describe "list_pages/0" do
     test "answers published pages, oldest publish date first" do
       late = published_page(title: "Imprint", publish_date: ~D[2026-04-01])
       early = published_page(title: "About", publish_date: ~D[2026-01-01])
@@ -71,12 +61,41 @@ defmodule Texttile.ArticlesPublicTest do
 
       assert Enum.map(Articles.list_pages(), & &1.id) == [early.id, late.id]
     end
+  end
 
-    test "leaves protected pages out when asked" do
-      open = published_page(title: "Open page")
-      published_page(title: "Hidden page", protected: true)
+  describe "neighbours/1" do
+    test "answers the older and the newer post, nil at each end" do
+      old = published_post(title: "Old", publish_date: ~D[2026-01-05])
+      middle = published_post(title: "Middle", publish_date: ~D[2026-02-05])
+      new = published_post(title: "New", publish_date: ~D[2026-03-05])
 
-      assert Enum.map(Articles.list_pages(include_protected: false), & &1.id) == [open.id]
+      assert {nil, %{id: middle_id}} = Articles.neighbours(old)
+      assert middle_id == middle.id
+
+      assert {%{id: older}, %{id: newer}} = Articles.neighbours(middle)
+      assert older == old.id
+      assert newer == new.id
+
+      assert {%{id: middle_again}, nil} = Articles.neighbours(new)
+      assert middle_again == middle.id
+    end
+
+    test "two texts of one day are told apart, and drafts stay out of the row" do
+      first = published_post(title: "Morning", publish_date: ~D[2026-02-05])
+      second = published_post(title: "Evening", publish_date: ~D[2026-02-05])
+      draft_post(title: "Not yet")
+
+      assert {nil, %{id: next}} = Articles.neighbours(first)
+      assert next == second.id
+      assert {%{id: previous}, nil} = Articles.neighbours(second)
+      assert previous == first.id
+    end
+
+    test "a page stands on its own" do
+      published_post(title: "A post", publish_date: ~D[2026-01-01])
+      page = published_page(title: "About", publish_date: ~D[2026-02-01])
+
+      assert Articles.neighbours(page) == {nil, nil}
     end
   end
 
@@ -186,16 +205,6 @@ defmodule Texttile.ArticlesPublicTest do
     test "splits, trims, lowercases and deduplicates" do
       assert Articles.tag_list(%{tags: "Sea, fog , sea,,  "}) == ["sea", "fog"]
       assert Articles.tag_list(%{tags: ""}) == []
-    end
-  end
-
-  describe "the protected switch" do
-    test "update_settings flips it" do
-      article = draft_post(title: "Secret")
-      refute article.protected
-
-      assert {:ok, article} = Articles.update_settings(article, %{protected: true})
-      assert article.protected
     end
   end
 end
