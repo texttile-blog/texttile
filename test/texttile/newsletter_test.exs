@@ -26,6 +26,7 @@ defmodule Texttile.NewsletterTest do
 
       assert_email_sent(fn mail ->
         assert mail.to == [{"", @email}]
+        assert mail.subject == "Confirm your email on Texttile"
         assert mail.text_body =~ "http://test/newsletter/confirm/#{subscriber.token}"
       end)
     end

@@ -20,20 +20,22 @@ defmodule Texttile.Newsletter.Notifier do
   def deliver_confirmation(%Subscriber{} = subscriber, url) do
     site = Texttile.Settings.site_title()
 
+    # The subject and the shape are the comment confirmation's, word for
+    # word where they can be: this mail confirms an address, like that
+    # one, and a mailbox that reads "Get ... by mail" reads an offer.
     deliver(
       subscriber.email,
       site,
-      "Get the new texts of #{site} by mail",
+      "Confirm your email on #{site}",
       """
-      Somebody - probably you - asked for #{site}'s new texts by mail,
-      for this address.
+      This address asked for the new texts of #{site} by mail.
 
       Open this link, and you are on the list:
 
       #{url}
 
-      If you did not ask for this, ignore this mail. Without the link,
-      the address gets nothing.
+      You confirm this address once. If you did not ask for this,
+      ignore this mail. Without the link, the address gets nothing.
       """
     )
   end
