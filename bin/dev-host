@@ -1,0 +1,87 @@
+#!/bin/sh
+# Print the address that the development server hands out: the address of
+# the cable network first, then Wi-Fi, then 127.0.0.1. `make start` opens
+# it, and config/dev.exs puts it into the links that the server writes.
+#
+# The server itself listens on all interfaces, so http://localhost:4000
+# stays available whatever this script prints.
+#
+# TEXTTILE_DEV_INTERFACES replaces the interfaces of the machine. One
+# interface per line, "wired ADDRESS" or "wireless ADDRESS". The tests
+# use it; nothing else does.
+set -u
+
+# All addresses of one kind ("wired" or "wireless"), one per line.
+interfaces() {
+	kind=$1
+
+	if [ -n "${TEXTTILE_DEV_INTERFACES+set}" ]; then
+		printf '%s\n' "$TEXTTILE_DEV_INTERFACES" |
+			awk -v kind="$kind" '$1 == kind { print $2 }'
+		return
+	fi
+
+	case "$(uname -s)" in
+	Darwin) macos_interfaces "$kind" ;;
+	Linux) linux_interfaces "$kind" ;;
+	esac
+}
+
+# macOS names its hardware ports, and the name tells the kind apart.
+# `ipconfig getifaddr` prints nothing for a device that has no address.
+macos_interfaces() {
+	kind=$1
+
+	networksetup -listallhardwareports 2>/dev/null |
+		awk -v kind="$kind" '
+			/^Hardware Port: / { port = tolower(substr($0, 16)) }
+			/^Device: / {
+				wireless = (port ~ /wi-?fi|airport/)
+				wired = (!wireless && port ~ /ethernet|lan/ && port !~ /bridge/)
+				if ((kind == "wireless" && wireless) || (kind == "wired" && wired)) {
+					print substr($0, 9)
+				}
+			}
+		' |
+		while read -r device; do
+			ipconfig getifaddr "$device" 2>/dev/null || true
+		done
+}
+
+# On Linux a wireless device has a "wireless" directory. Virtual devices
+# of containers and tunnels carry addresses too, and no one can reach the
+# server through them.
+linux_interfaces() {
+	kind=$1
+
+	for path in /sys/class/net/*; do
+		device=${path##*/}
+
+		case "$device" in
+		lo | docker* | br-* | veth* | virbr* | tun* | tap* | utun* | zt*) continue ;;
+		esac
+
+		if [ -d "$path/wireless" ]; then
+			[ "$kind" = wireless ] || continue
+		else
+			[ "$kind" = wired ] || continue
+		fi
+
+		ip -4 -o addr show dev "$device" scope global 2>/dev/null |
+			awk '{ print $4 }' | cut -d/ -f1
+	done
+}
+
+for kind in wired wireless; do
+	for address in $(interfaces "$kind"); do
+		# A link-local address means the interface found no network.
+		case "$address" in
+		169.254.*) continue ;;
+		esac
+
+		printf '%s\n' "$address"
+		exit 0
+	done
+done
+
+printf '127.0.0.1\n'

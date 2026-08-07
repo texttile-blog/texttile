@@ -73,5 +73,5 @@ start:
 	@$(MAKE) kill-port-4000
 	@$(MAKE) prepare
 	mix ecto.migrate
-	open http://localhost:4000
+	@host="$$(bin/dev-host)"; echo "Server: http://$$host:4000"; open "http://$$host:4000"
 	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; mix phx.server
