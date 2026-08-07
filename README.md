@@ -64,11 +64,11 @@ rest of the blog stays open (the switch is in the text's settings).
 ## Comments
 
 Readers can comment under every text that allows it (the switch is in the
-text's settings). There is no approval queue: by default a comment waits
-only for its reader's own email confirmation, once per address, and appears
-the moment the reader follows the mailed link. Turn the confirmation off in
-Settings > Comments and every comment appears at once. Admins see all
-comments at `/admin/comments` and can delete.
+text's settings). There is no approval queue. By default a new address gets
+one confirmation mail. The comment appears when its reader follows the
+mailed link, and every later comment from that address appears at once.
+Turn the confirmation off in Settings > Comments and no comment waits for
+anything. Admins see all comments at `/admin/comments` and can delete them.
 
 Spam protection is built in and always on: a honeypot field, a time trap,
 and a rate limit per caller. No captcha, no Google, no third parties.
