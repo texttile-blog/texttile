@@ -259,7 +259,9 @@ defmodule TexttileWeb.EditorLiveTest do
       article = Articles.get_article!(article.id)
 
       assert has_element?(view, ~s(a#viewRow[target="_blank"]))
-      assert view |> element("#viewRow") |> render() =~ ~s(href="#{Articles.reader_path(article)}")
+
+      assert view |> element("#viewRow") |> render() =~
+               ~s(href="#{Articles.reader_path(article)}")
 
       # once it is live, looking at it is the primary action, so the
       # menu stops carrying a second way to the same page

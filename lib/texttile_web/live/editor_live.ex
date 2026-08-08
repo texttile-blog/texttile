@@ -1579,7 +1579,11 @@ defmodule TexttileWeb.EditorLive do
                  looked alike at a glance. Now the one that is yours
                  wears the accent the admin area uses for what is
                  yours, and leads with You. --%>
-            <div :if={@holds_lock && reading_along(@others, @article) != []} class="jbar mine" id="jbar">
+            <div
+              :if={@holds_lock && reading_along(@others, @article) != []}
+              class="jbar mine"
+              id="jbar"
+            >
               <span class="dot" aria-hidden="true"></span>
               <b>{gettext("You are writing.")}</b>
               <span class="w">
