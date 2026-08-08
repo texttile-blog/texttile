@@ -94,7 +94,16 @@ defmodule TexttileWeb.EditorVideoTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
       posters = posters_of(render(view))
-      assert posters == %{"/uploads/#{relative}" => "/renditions/320/#{video.poster_path}"}
+
+      # the thumbnail's poster, the poster the lightbox stands behind
+      # the film, and the film itself
+      assert posters == %{
+               "/uploads/#{relative}" => %{
+                 "poster" => "/renditions/320/#{video.poster_path}",
+                 "full" => "/renditions/max/#{video.poster_path}",
+                 "film" => "/uploads/#{video.mp4_path}"
+               }
+             }
     end
 
     test "a video that is not converted carries none", %{conn: conn, user: user} do
@@ -118,8 +127,13 @@ defmodule TexttileWeb.EditorVideoTest do
       # the conversion says twice where it stands, and only the second
       # word carries a poster
       url = "/uploads/#{relative}"
-      assert_push_event(view, "sync_media", %{posters: %{^url => poster}})
-      assert poster == "/renditions/320/#{video.poster_path}"
+      assert_push_event(view, "sync_media", %{posters: %{^url => film}})
+
+      assert film == %{
+               poster: "/renditions/320/#{video.poster_path}",
+               full: "/renditions/max/#{video.poster_path}",
+               film: "/uploads/#{video.mp4_path}"
+             }
     end
   end
 

@@ -65,11 +65,13 @@ defmodule TexttileWeb.SiteCommentsTest do
       assert first_at < second_at
     end
 
-    test "an empty block says so and still offers the form", %{conn: conn} do
+    test "an empty block is only the form, with nothing said about it", %{conn: conn} do
       article = published_post()
       html = conn |> get(Articles.public_path(article)) |> html_response(200)
 
-      assert html =~ "Nobody has said anything yet."
+      refute html =~ "Nobody has said anything yet."
+      # nothing to head either: the section starts at the form
+      refute html =~ ~s(id="comment-count")
       assert html =~ ~s(id="comment-form")
       assert html =~ "Post a comment"
     end
@@ -109,11 +111,14 @@ defmodule TexttileWeb.SiteCommentsTest do
       # another reader sees nothing yet
       other = build_conn() |> get(Articles.public_path(article)) |> html_response(200)
       refute other =~ "Grandma Christel"
-      assert other =~ "Nobody has said anything yet."
+      refute other =~ ~s(id="comment-count")
     end
 
     test "while confirmation is off it appears for everybody at once", %{conn: conn} do
       {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      # the mail this test refutes is the reader's confirmation link;
+      # the mail to the blog is another story, and another test
+      {:ok, _} = Settings.put(:notify_on_comment, false)
       article = published_post()
 
       conn = send_comment(conn, article)

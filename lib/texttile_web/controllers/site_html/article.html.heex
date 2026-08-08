@@ -1,14 +1,28 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
-  <article id="text">
+  <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
-      <p :if={@article.type == "post"} id="meta" class="f-note mt-3">
-        <span class="num">{format_date(@article.publish_date)}</span>
-        <span :if={Articles.tag_list(@article) != []}>·</span>
-        <span :for={tag <- Articles.tag_list(@article)}>
-          <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>
-        </span>
+      <%!-- the line under the title: the day, the tags, and for the
+           admin who is signed in the way straight into the desk. A page
+           has no date and no tags, so there the line is the way in and
+           nothing else. --%>
+      <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
+        <%= if @article.type == "post" do %>
+          <span class="num">{format_date(@article.publish_date)}</span>
+          <span :if={Articles.tag_list(@article) != []}>·</span>
+          <span :for={tag <- Articles.tag_list(@article)}>
+            <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>
+          </span>
+        <% end %>
+        <a
+          :if={@current_scope}
+          id="edit-text"
+          class="edit-link"
+          href={~p"/admin/texts/#{@article.id}"}
+        >
+          Edit
+        </a>
       </p>
 
       <div class="prose" id="body">{body_html(@article)}</div>
@@ -37,29 +51,41 @@
       </div>
     </figure>
 
-    <%!-- the way along the row of posts: older on the left, newer on
-         the right, each with the title it leads to --%>
-    <nav
-      :if={@older || @newer}
-      class="wrap narrow mt-[46px] pt-4 border-t border-rule f-nextprev"
-      aria-label="More texts"
-    >
-      <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
-        <span class="f-note">Previous text</span>
-        <span class="t">{Articles.display_title(@older)}</span>
-      </a>
-      <span class="sp"></span>
-      <a :if={@newer} id="next-post" href={Articles.public_path(@newer)} rel="next">
-        <span class="f-note">Next text</span>
-        <span class="t">{Articles.display_title(@newer)}</span>
-      </a>
-    </nav>
+    <%!-- The way along the row of posts: older on the left, newer on
+         the right, each with the title it leads to.
+
+         It is drawn as a strip, not as a section: a rule over it and a
+         rule under it, the width of the gallery instead of the width
+         of the reading column. Nothing else on the page has that left
+         edge, so the eye takes it for the end of the text and not for
+         the first block under it. It stands first because "keep
+         reading" is what most readers want next. --%>
+    <div :if={@older || @newer} class="wrap mt-[44px]">
+      <nav class="textnav" aria-label="More texts">
+        <div class="pv">
+          <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
+            <span class="lab">Previous text</span>
+            <span class="t">{Articles.display_title(@older)}</span>
+          </a>
+        </div>
+        <div class="nx">
+          <a :if={@newer} id="next-post" href={Articles.public_path(@newer)} rel="next">
+            <span class="lab">Next text</span>
+            <span class="t">{Articles.display_title(@newer)}</span>
+          </a>
+        </div>
+      </nav>
+    </div>
 
     <%!-- the comments: what the rule shows to everybody, the reader's
          own waiting ones on top, and the form. No JavaScript in it;
          posting is a plain form round trip. --%>
     <section :if={@comments} class="wrap narrow mt-[54px]" id="comments" aria-label="Comments">
-      <h2 class="f-sec-h mb-4">{comment_heading(@comment_count)}</h2>
+      <%!-- nothing said yet is nothing to head: the section starts at
+           the form, and the heading arrives with the first comment --%>
+      <h2 :if={@comments != []} id="comment-count" class="f-sec-h mb-4">
+        {comment_heading(@comment_count)}
+      </h2>
       <p :if={@comment_earlier > 0} class="f-note mb-2">
         The {@comment_earlier} earliest {if @comment_earlier == 1,
           do: "comment is",
@@ -86,9 +112,7 @@
           </p>
         </div>
       </div>
-      <p :if={@comments == []} class="f-note">Nobody has said anything yet.</p>
-
-      <h2 class="f-sec-h mt-10 mb-4">Post a comment</h2>
+      <h2 class={["f-sec-h mb-4", @comments != [] && "mt-10"]}>Post a comment</h2>
       <form id="comment-form" action={~p"/comments/#{@article.id}"} method="post">
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
@@ -146,13 +170,8 @@
     </section>
   </article>
 
-  <section :if={assigns[:about_html]} class="wrap narrow mt-[54px]" id="about" aria-label="About">
-    <h2 class="f-sec-h">About</h2>
-    <div class="f-body about-md mt-4">{Phoenix.HTML.raw(@about_html)}</div>
-  </section>
-
-  <%!-- the last thing on the page: the one email this blog sends --%>
-  <.site_subscribe />
+  <%!-- the second zone: what belongs to the blog and not to the text --%>
+  <.site_band about_html={assigns[:about_html]} />
 </main>
 <.site_foot current_scope={@current_scope} />
 

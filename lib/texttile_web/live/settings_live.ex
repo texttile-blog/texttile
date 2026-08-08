@@ -8,6 +8,7 @@ defmodule TexttileWeb.SettingsLive do
   use TexttileWeb, :live_view
 
   alias Texttile.Accounts
+  alias Texttile.Articles
   alias Texttile.Images
   alias Texttile.Markdown
   alias Texttile.Newsletter
@@ -20,12 +21,14 @@ defmodule TexttileWeb.SettingsLive do
   # through Texttile.Uploads, never through a form.
   @editable ~w(site_title site_description language about_markdown front_page
                posts_per_page theme_css site_visibility site_password
-               comments_require_confirmation image_max_edge video_max_edge)
+               comments_require_confirmation notify_on_comment
+               image_max_edge video_max_edge)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Settings.subscribe()
       Accounts.subscribe_users()
+      Articles.subscribe_desk()
     end
 
     socket =
@@ -33,6 +36,7 @@ defmodule TexttileWeb.SettingsLive do
       |> assign(:page_title, "Settings")
       |> assign(:errors, %{})
       |> assign(:confirm_delete, nil)
+      |> assign(:confirm_tag, nil)
       |> allow_upload(:logo,
         accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
@@ -49,6 +53,7 @@ defmodule TexttileWeb.SettingsLive do
       )
       |> refresh_settings()
       |> refresh_users()
+      |> refresh_tags()
       |> refresh_storage()
       |> mark_saved(nil)
 
@@ -131,8 +136,9 @@ defmodule TexttileWeb.SettingsLive do
     end
   end
 
+  # One way out of both questions this screen can ask.
   def handle_event("cancel_delete", _params, socket) do
-    {:noreply, assign(socket, :confirm_delete, nil)}
+    {:noreply, socket |> assign(:confirm_delete, nil) |> assign(:confirm_tag, nil)}
   end
 
   def handle_event("delete_user", _params, socket) do
@@ -172,6 +178,29 @@ defmodule TexttileWeb.SettingsLive do
     end
   end
 
+  ## Tags
+
+  def handle_event("ask_delete_tag", %{"tag" => tag}, socket) do
+    {:noreply, assign(socket, :confirm_tag, tag)}
+  end
+
+  def handle_event("delete_tag", _params, socket) do
+    # nil on a double click: the first click already closed the dialog
+    case socket.assigns.confirm_tag do
+      nil ->
+        {:noreply, socket}
+
+      tag ->
+        count = Articles.delete_tag(tag)
+
+        {:noreply,
+         socket
+         |> assign(:confirm_tag, nil)
+         |> refresh_tags()
+         |> mark_saved(tag_deleted_note(tag, count))}
+    end
+  end
+
   ## Storage
 
   def handle_event("clear_cache", _params, socket) do
@@ -189,6 +218,15 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply, socket |> refresh_settings() |> refresh_storage()}
   end
 
+  # A text changed or went away somewhere in the desk, so the row of
+  # tags may have changed with it. Every other message of the desk
+  # topic is about a body, a version or a log, and none of those
+  # touches a tag.
+  def handle_info({message, _what}, socket)
+      when message in [:article_changed, :article_deleted] do
+    {:noreply, refresh_tags(socket)}
+  end
+
   def handle_info(:users_changed, socket) do
     socket = refresh_users(socket)
 
@@ -202,6 +240,10 @@ defmodule TexttileWeb.SettingsLive do
 
     {:noreply, socket}
   end
+
+  # The rest of the desk topic: a body, a version, a log. This screen
+  # shows none of them.
+  def handle_info({_message, _what}, socket), do: {:noreply, socket}
 
   ## Uploads arrive through here (auto_upload progress)
 
@@ -251,7 +293,7 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:settings, settings)
     |> assign(:settings_form, form)
     |> assign(:about_html, Markdown.to_html(settings.about_markdown))
-    |> assign(:pages, Texttile.Articles.list_pages())
+    |> assign(:pages, Articles.list_pages())
   end
 
   # The stored choice, only while it still names a published page. A
@@ -288,6 +330,14 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:waiting, Enum.reject(Accounts.admin_usernames(), &MapSet.member?(taken, &1)))
   end
 
+  defp refresh_tags(socket), do: assign(socket, :tags, Articles.tag_counts())
+
+  defp tag_texts(1), do: "1 text"
+  defp tag_texts(count), do: "#{count} texts"
+
+  defp tag_deleted_note(tag, 0), do: "No text carried #{tag} any more"
+  defp tag_deleted_note(tag, count), do: "#{tag} is off #{tag_texts(count)}"
+
   defp refresh_storage(socket) do
     db_path = Texttile.Repo.config()[:database]
 
@@ -312,6 +362,11 @@ defmodule TexttileWeb.SettingsLive do
 
   defp saved_note(:comments_require_confirmation, false),
     do: "Comments appear at once · no confirmation asked"
+
+  defp saved_note(:notify_on_comment, true),
+    do: "Every new comment travels to everybody with an account here"
+
+  defp saved_note(:notify_on_comment, false), do: "No mail goes out for a comment"
 
   # The gate only locks with a password in it, so the note tells the
   # truth for both states instead of announcing a protection that is
@@ -385,6 +440,19 @@ defmodule TexttileWeb.SettingsLive do
       "timing, rate limit."
   end
 
+  defp notify_note(true) do
+    "Everybody with an account here and an address gets one mail per " <>
+      "comment: who wrote it, what it says, and the way to it. The mail " <>
+      "leaves when the comment stands under the text, so a comment that " <>
+      "still waits for its reader mails nobody. The address of the reader " <>
+      "is never in it."
+  end
+
+  defp notify_note(false) do
+    "No mail goes out for a comment. New comments stand on the Comments " <>
+      "screen and in the text they belong to."
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app
@@ -398,7 +466,7 @@ defmodule TexttileWeb.SettingsLive do
         <%!-- the phone gets the stamp too, short and clipped: the
              hook writes the sentence only where the bar has room --%>
         <span
-          class="text-[12.5px] text-faint num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
+          class="saved num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
           id="savedSettings"
           phx-hook="SavedTicker"
           data-at={@saved_at}
@@ -624,7 +692,7 @@ defmodule TexttileWeb.SettingsLive do
                 value={"page:#{page.id}"}
                 selected={@settings.front_page == "page:#{page.id}"}
               >
-                {Texttile.Articles.display_title(page)}
+                {Articles.display_title(page)}
               </option>
             </select>
           </div>
@@ -754,7 +822,53 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
+          <label class="opt">
+            <input type="hidden" name="settings[notify_on_comment]" value="false" />
+            <input
+              type="checkbox"
+              id="setting-notify_on_comment"
+              name="settings[notify_on_comment]"
+              value="true"
+              checked={@settings.notify_on_comment}
+            />
+            <span>
+              Mail me every new comment
+              <span class="note" id="setNotifyNote">
+                {notify_note(@settings.notify_on_comment)}
+              </span>
+            </span>
+          </label>
         </.form>
+
+        <.section>Tags</.section>
+        <p class="note mb-1 leading-[1.6]">
+          Every tag any text carries, and how many carry it. Deleting one
+          takes it off all of them at once and closes its archive page. The
+          texts themselves stay, and so does everything else they wear.
+        </p>
+        <div id="tagsList">
+          <p :if={@tags == []} class="note">
+            No text carries a tag yet. Tags are written beside the text, in
+            the settings of the text itself.
+          </p>
+          <div
+            :for={{tag, count} <- @tags}
+            class="py-[10px] border-b border-hair flex items-center gap-[10px] flex-wrap"
+            id={"tagrow-#{Articles.slugify(tag)}"}
+          >
+            <b class="text-[14.5px]">{tag}</b>
+            <span class="note">{tag_texts(count)}</span>
+            <span class="sp"></span>
+            <button
+              class="btn sm"
+              id={"delete-tag-#{Articles.slugify(tag)}"}
+              phx-click="ask_delete_tag"
+              phx-value-tag={tag}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
 
         <.section>Users</.section>
         <p class="note mb-1 leading-[1.6]">
@@ -925,41 +1039,33 @@ defmodule TexttileWeb.SettingsLive do
         </p>
       </div>
 
-      <div
+      <.ask
         :if={@confirm_delete}
-        id="scrim"
-        class="fixed inset-0 z-[80] grid place-items-center p-5"
-        style="background:var(--tt-scrim)"
-        phx-window-keydown="cancel_delete"
-        phx-key="escape"
+        heading={"Delete the account of #{Accounts.display_name(@confirm_delete)}?"}
+        ok="Delete the account"
+        on_ok="delete_user"
       >
-        <div
-          class="w-[min(430px,100%)] bg-paper px-[22px] pt-5 pb-[18px]"
-          style="border-radius:var(--tt-radius-pop); border:1px solid var(--tt-rule); box-shadow: 0 22px 54px rgb(var(--tt-shadow) / .26)"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="dlgH"
-        >
-          <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em]" id="dlgH">
-            Delete the account of {Accounts.display_name(@confirm_delete)}?
-          </h2>
-          <p class="text-[13.5px] text-inksoft mt-[9px] leading-[1.55]">
-            <b>{Accounts.display_name(@confirm_delete)}</b>
-            can no longer sign in from the moment you confirm, and every
-            session open right now ends. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
-            texts, the images, the comments and every line of every Log belong
-            to the site, not to the account. <br />
-            <br /> There is no undo. While the name stands in ADMIN_USERS, its
-            owner can sign in again and choose a fresh password.
-          </p>
-          <div class="flex gap-2 mt-[18px]">
-            <button class="btn solid" id="dialog-ok" phx-click="delete_user">
-              Delete the account
-            </button>
-            <button class="btn quiet" id="dialog-cancel" phx-click="cancel_delete">Cancel</button>
-          </div>
-        </div>
-      </div>
+        <b>{Accounts.display_name(@confirm_delete)}</b>
+        can no longer sign in from the moment you confirm, and every
+        session open right now ends. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
+        texts, the images, the comments and every line of every Log belong
+        to the site, not to the account. <br />
+        <br /> There is no undo. While the name stands in ADMIN_USERS, its
+        owner can sign in again and choose a fresh password.
+      </.ask>
+
+      <.ask
+        :if={@confirm_tag}
+        heading={"Delete the tag #{@confirm_tag}?"}
+        ok="Delete the tag"
+        on_ok="delete_tag"
+      >
+        <b>{@confirm_tag}</b>
+        leaves every text that carries it, and /tags/{Articles.slugify(@confirm_tag)} answers nothing from that moment. The texts stay where they are,
+        with the rest of their tags. <br />
+        <br /> There is no undo. To have the tag back, write it on a text
+        again.
+      </.ask>
     </Layouts.app>
     """
   end
@@ -969,6 +1075,45 @@ defmodule TexttileWeb.SettingsLive do
   defp section(assigns) do
     ~H"""
     <h2 class="set-h">{render_slot(@inner_block)}</h2>
+    """
+  end
+
+  # The one question this screen asks before it deletes something: a
+  # scrim, a heading, what it costs, and the two ways out. Escape and
+  # Cancel are the same way back for both of them.
+  attr :heading, :string, required: true
+  attr :ok, :string, required: true
+  attr :on_ok, :string, required: true
+  slot :inner_block, required: true
+
+  defp ask(assigns) do
+    ~H"""
+    <div
+      id="scrim"
+      class="fixed inset-0 z-[80] grid place-items-center p-5"
+      style="background:var(--tt-scrim)"
+      phx-window-keydown="cancel_delete"
+      phx-key="escape"
+    >
+      <div
+        class="w-[min(430px,100%)] bg-paper px-[22px] pt-5 pb-[18px]"
+        style="border-radius:var(--tt-radius-pop); border:1px solid var(--tt-rule); box-shadow: 0 22px 54px rgb(var(--tt-shadow) / .26)"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dlgH"
+      >
+        <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em]" id="dlgH">
+          {@heading}
+        </h2>
+        <p class="text-[13.5px] text-inksoft mt-[9px] leading-[1.55]">
+          {render_slot(@inner_block)}
+        </p>
+        <div class="flex gap-2 mt-[18px]">
+          <button class="btn solid" id="dialog-ok" phx-click={@on_ok}>{@ok}</button>
+          <button class="btn quiet" id="dialog-cancel" phx-click="cancel_delete">Cancel</button>
+        </div>
+      </div>
+    </div>
     """
   end
 end

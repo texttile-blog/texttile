@@ -233,6 +233,56 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
       refute html =~ ~s(id="about")
     end
+
+    # Everything above the band belongs to the text, everything on it
+    # belongs to the blog. About and Subscribe stand there side by
+    # side, out of the reading column and on a ground of their own.
+    test "About and Subscribe stand on the band under the text", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+      {:ok, _} = Settings.put(:about_markdown, "We are kb and julia.")
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+
+      assert html =~ ~s(id="foot-band")
+      assert html =~ ~s(id="about")
+      assert html =~ ~s(id="subscribe")
+
+      {band_at, _} = :binary.match(html, ~s(id="foot-band"))
+      {about_at, _} = :binary.match(html, ~s(id="about"))
+      {comments_at, _} = :binary.match(html, ~s(id="comments"))
+      assert comments_at < band_at
+      assert band_at < about_at
+    end
+
+    test "a reader never sees the way to the desk", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+      refute html =~ ~s(id="edit-text")
+    end
+
+    test "a signed-in admin gets an Edit link beside the date", %{conn: conn} do
+      article = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+      conn = log_in_user(conn, user_fixture())
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+
+      assert html =~ ~s(id="edit-text")
+      assert html =~ ~s(href="/admin/texts/#{article.id}")
+    end
+
+    test "the Edit link stands on a page too, which carries no date", %{conn: conn} do
+      # a text that was a post once may still carry tags; as a page it
+      # wears neither them nor a date
+      page = published_page(title: "About", slug: "about-me", tags: "sea")
+      conn = log_in_user(conn, user_fixture())
+
+      html = conn |> get(~p"/about-me") |> html_response(200)
+
+      assert html =~ ~s(id="edit-text")
+      assert html =~ ~s(href="/admin/texts/#{page.id}")
+      refute html =~ ~s(href="/tags/sea")
+    end
   end
 
   describe "the way from one post to the next" do
@@ -251,6 +301,9 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ Texttile.Articles.public_path(old)
       assert html =~ ~s(id="next-post")
       assert html =~ Texttile.Articles.public_path(new)
+      # the strip that ends a text: the width of the gallery, not of
+      # the reading column
+      assert html =~ ~s(class="textnav")
     end
 
     test "the newest post has nothing newer, the oldest nothing older", %{conn: conn} do

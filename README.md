@@ -115,6 +115,11 @@ mailed link, and every later comment from that address appears at once.
 Turn the confirmation off in Settings > Comments and no comment waits for
 anything. Admins see all comments at `/admin/comments` and can delete them.
 
+Every admin also gets the comment by mail, unless "Mail me every new
+comment" is switched off in Settings > Comments. The mail leaves when the
+comment stands under the text, so a comment that still waits for its
+reader mails nobody. The address of the reader is never in it.
+
 Spam protection is built in and always on: a honeypot field, a time trap,
 and a rate limit per caller. No captcha, no Google, no third parties.
 

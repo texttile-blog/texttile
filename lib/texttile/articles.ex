@@ -211,14 +211,56 @@ defmodule Texttile.Articles do
   alphabetical order. The editor offers this list under the tag field,
   so the same word does not come back in three spellings.
   """
-  def known_tags do
+  def known_tags, do: Enum.map(tag_counts(), fn {tag, _count} -> tag end)
+
+  @doc """
+  The same list with the number of texts on each tag. Settings shows
+  it, so whoever deletes a tag sees what it costs first.
+  """
+  def tag_counts do
     Article
     |> select([a], a.tags)
     |> Repo.all()
     |> Enum.flat_map(&tag_list(%{tags: &1}))
     |> Enum.frequencies()
     |> Enum.sort_by(fn {tag, count} -> {-count, tag} end)
-    |> Enum.map(fn {tag, _count} -> tag end)
+  end
+
+  @doc """
+  Takes a tag off every text that carries it, whatever it is spelled
+  like there, and answers how many texts changed. The archive page of
+  the tag is gone with the last text on it.
+  """
+  def delete_tag(tag) do
+    wanted = tag |> to_string() |> String.trim() |> String.downcase()
+
+    if wanted == "" do
+      0
+    else
+      # The like narrows the rows the database hands over; a text
+      # carries its whole body, and a blog of five hundred of them is
+      # no reason to read them all. The word itself is checked after
+      # that, so "sea" never takes "seawall" with it.
+      like = "%#{wanted}%"
+
+      Article
+      |> where([a], like(fragment("lower(?)", a.tags), ^like))
+      |> Repo.all()
+      |> Enum.filter(&(wanted in tag_list(&1)))
+      |> Enum.map(&drop_tag(&1, wanted))
+      |> length()
+    end
+  end
+
+  defp drop_tag(article, wanted) do
+    kept =
+      article.tags
+      |> String.split(",")
+      |> Enum.reject(&(&1 |> String.trim() |> String.downcase() == wanted))
+      |> Enum.join(",")
+
+    {:ok, article} = update_settings(article, %{tags: kept})
+    article
   end
 
   @doc """

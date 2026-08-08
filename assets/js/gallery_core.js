@@ -632,6 +632,7 @@ class Gallery {
     // quirk (the topbar's backdrop-filter) can ever paint above it
     const root = document.createElement("dialog")
     root.id = "lbRoot"
+    root.className = "lb-root"
     root.setAttribute("aria-label", "Full size")
     // the dialog itself takes the focus: autofocusing the date field
     // would pop a picker over the picture on a phone

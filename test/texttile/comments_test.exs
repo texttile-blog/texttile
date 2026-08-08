@@ -21,7 +21,27 @@ defmodule Texttile.CommentsTest do
     comment
   end
 
+  # The confirmation link travels to the reader from this process; the
+  # mail to the people who run the blog leaves a task of its own. Both
+  # land in the same test mailbox, so this picks out the second kind.
+  defp admin_mail(timeout \\ 1000) do
+    receive do
+      {:email, %Swoosh.Email{} = mail} ->
+        if mail.subject =~ "New comment", do: mail, else: admin_mail(timeout)
+    after
+      timeout -> nil
+    end
+  end
+
   describe "post/3" do
+    # Every mail asserted here is the one the reader gets. The mail to
+    # the people who run the blog has a block of its own, and it would
+    # otherwise stand in this one's mailbox.
+    setup do
+      {:ok, _} = Settings.put(:notify_on_comment, false)
+      :ok
+    end
+
     test "stores the comment on its text, waiting for the reader" do
       article = published_post()
       comment = post!(article)
@@ -163,6 +183,11 @@ defmodule Texttile.CommentsTest do
   end
 
   describe "the confirmation mail" do
+    setup do
+      {:ok, _} = Settings.put(:notify_on_comment, false)
+      :ok
+    end
+
     test "one address gets one link an hour, however many comments it writes" do
       article = published_post()
       first = post!(article)
@@ -180,6 +205,110 @@ defmodule Texttile.CommentsTest do
 
       post!(article, %{@attrs | "body" => "Much later"})
       assert_email_sent(text_body: ~r/#{first.address.token}/)
+    end
+  end
+
+  describe "the mail to the people who run the blog" do
+    setup do
+      Application.put_env(:swoosh, :shared_test_process, self())
+      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+      :ok
+    end
+
+    test "with confirmation off, the comment travels the moment it arrives" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(title: "Harbor mornings", user: kb)
+
+      post!(article)
+
+      assert mail = admin_mail()
+      assert mail.to == [{Texttile.Accounts.display_name(kb), kb.email}]
+      assert mail.subject =~ "Harbor mornings"
+      assert mail.text_body =~ "Grandma Christel"
+      assert mail.text_body =~ "More of the dog, please."
+      assert mail.text_body =~ Articles.public_path(article)
+      assert mail.text_body =~ "/admin/comments"
+      assert mail.text_body =~ "stands under the text"
+      # the address of the reader is nowhere in it
+      refute mail.text_body =~ "christel@example.org"
+    end
+
+    # Until the reader has followed the link, nobody has proved the
+    # address is theirs. Mailing the comment on before that would turn
+    # the form into a way to write to everybody who runs the blog.
+    test "a comment that still waits for its reader mails nobody" do
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      comment = post!(article)
+
+      refute admin_mail(300)
+
+      # the link is followed, and the same comment travels
+      {:ok, _article} = Comments.confirm(comment.address.token)
+
+      assert mail = admin_mail()
+      assert mail.text_body =~ "More of the dog, please."
+      assert mail.text_body =~ "stands under the text"
+    end
+
+    test "a confirmed address travels at once with every later comment" do
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      comment = post!(article)
+      {:ok, _article} = Comments.confirm(comment.address.token)
+      assert admin_mail()
+
+      post!(article, %{@attrs | "body" => "One more thing"})
+
+      assert mail = admin_mail()
+      assert mail.text_body =~ "One more thing"
+    end
+
+    # An address may hold a link from a time when the blog asked for
+    # one. Following it later must not mail words that travelled the
+    # moment they arrived.
+    test "with confirmation off, a late confirmation mails nothing twice" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      comment = post!(article)
+      assert admin_mail()
+
+      {:ok, _article} = Comments.confirm(comment.address.token)
+
+      refute admin_mail(300)
+    end
+
+    test "switched off in the settings, nothing is mailed" do
+      {:ok, _} = Settings.put(:notify_on_comment, false)
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      post!(article)
+
+      refute admin_mail(300)
+    end
+
+    test "everybody with an account gets their own mail" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      julia = Texttile.AccountsFixtures.user_fixture(%{username: "julia"})
+
+      article = published_post(user: kb)
+      post!(article)
+
+      addressed =
+        [admin_mail(), admin_mail()]
+        |> Enum.map(fn mail -> mail.to |> hd() |> elem(1) end)
+        |> Enum.sort()
+
+      assert addressed == Enum.sort([kb.email, julia.email])
+      refute admin_mail(300)
     end
   end
 

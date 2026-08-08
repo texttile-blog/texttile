@@ -330,4 +330,49 @@ defmodule Texttile.ArticlesTest do
       refute File.exists?(Uploads.absolute(versioned))
     end
   end
+
+  describe "tags" do
+    test "tag_counts/0 counts the texts on each tag, the busiest first" do
+      {one, _} = draft()
+      {two, _} = draft()
+      {:ok, _} = Articles.update_settings(one, %{tags: "sea, fog"})
+      {:ok, _} = Articles.update_settings(two, %{tags: "Sea"})
+
+      assert Articles.tag_counts() == [{"sea", 2}, {"fog", 1}]
+      assert Articles.known_tags() == ["sea", "fog"]
+    end
+
+    test "delete_tag/1 takes the tag off every text and leaves the rest" do
+      {one, _} = draft()
+      {two, _} = draft()
+      {three, _} = draft()
+      {:ok, _} = Articles.update_settings(one, %{tags: "sea, fog"})
+      {:ok, _} = Articles.update_settings(two, %{tags: "Sea"})
+      {:ok, _} = Articles.update_settings(three, %{tags: "doors"})
+
+      assert Articles.delete_tag("sea") == 2
+
+      assert Articles.get_article!(one.id).tags == "fog"
+      assert Articles.get_article!(two.id).tags == ""
+      assert Articles.get_article!(three.id).tags == "doors"
+      assert Articles.known_tags() == ["doors", "fog"]
+    end
+
+    test "delete_tag/1 leaves a tag that only holds the word inside it" do
+      {one, _} = draft()
+      {:ok, _} = Articles.update_settings(one, %{tags: "seawall, sea"})
+
+      assert Articles.delete_tag("sea") == 1
+      assert Articles.get_article!(one.id).tags == "seawall"
+    end
+
+    test "delete_tag/1 answers zero for a tag no text carries" do
+      {one, _} = draft()
+      {:ok, _} = Articles.update_settings(one, %{tags: "sea"})
+
+      assert Articles.delete_tag("harbor") == 0
+      assert Articles.delete_tag("  ") == 0
+      assert Articles.get_article!(one.id).tags == "sea"
+    end
+  end
 end

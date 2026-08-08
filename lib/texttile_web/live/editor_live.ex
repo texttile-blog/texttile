@@ -795,11 +795,23 @@ defmodule TexttileWeb.EditorLive do
   # The poster of every converted video, for the writing surface: it
   # draws the markdown references, so it is told the body's own urls.
   # A video ffmpeg has not finished is absent and stays a play mark.
+  # What the writing surface knows about the films in the words: the
+  # poster behind the thumbnail, the poster the lightbox stands behind
+  # the film, and the film itself. A conversion that is not through has
+  # no still, so it is not in here at all and the thumbnail is the play
+  # mark alone.
   defp poster_map(media) do
     media
     |> Enum.flat_map(fn {path, entry} ->
       if Videos.video?(path) and is_binary(entry.still) do
-        [{"/uploads/#{path}", "/renditions/320/#{entry.still}"}]
+        [
+          {"/uploads/#{path}",
+           %{
+             poster: "/renditions/320/#{entry.still}",
+             full: "/renditions/max/#{entry.still}",
+             film: entry.film && "/uploads/#{entry.film}"
+           }}
+        ]
       else
         []
       end
@@ -1096,15 +1108,21 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:saved_until, if(note, do: now + @note_ms, else: 0))
   end
 
-  # The suggestions stay where they are while the editor is open: a tag
-  # taken off the text keeps its chip, so one more click puts it back.
-  # New tags join the end of the row, and nothing under the pointer
-  # moves while somebody is clicking.
+  # The suggestions keep their order while the editor is open: a tag
+  # another text carries keeps its chip when this one drops it, so one
+  # more click puts it back, and new tags join the end of the row.
+  # Nothing under the pointer moves while somebody is clicking.
+  #
+  # A tag no text carries any more is off the blog, so it leaves the
+  # row with the text it stood on. Without that, a word typed by
+  # mistake would keep a chip until the editor is closed.
   defp known_tags(socket) do
     standing = socket.assigns[:known_tags] || []
-    fresh = Articles.known_tags() ++ Articles.tag_list(socket.assigns.article)
+    carried = Articles.known_tags() ++ Articles.tag_list(socket.assigns.article)
 
-    assign(socket, :known_tags, standing ++ Enum.uniq(Enum.reject(fresh, &(&1 in standing))))
+    kept = Enum.filter(standing, &(&1 in carried))
+
+    assign(socket, :known_tags, kept ++ Enum.uniq(Enum.reject(carried, &(&1 in kept))))
   end
 
   defp reload_history(socket) do
@@ -1137,7 +1155,7 @@ defmodule TexttileWeb.EditorLive do
           {@article.status}
         </span>
         <span
-          class="hidden md:inline text-[12.5px] text-faint whitespace-nowrap num"
+          class="saved hidden md:inline-block whitespace-nowrap num"
           id="state"
           phx-hook="SavedTicker"
           data-at={@saved_at}
@@ -1926,13 +1944,19 @@ defmodule TexttileWeb.EditorLive do
               <span class="val">
                 <%!-- the field completes itself out of the tags the
                      blog already carries; the hook owns the list it
-                     drops under the field --%>
+                     drops under the field.
+
+                     A half-written word is no tag, so the field waits:
+                     it hands the row over when it loses the focus, and
+                     the hook hands it over earlier the moment a comma
+                     closes a word. --%>
                 <input
                   type="text"
                   id="edTags"
                   name="tags"
                   value={@article.tags}
-                  phx-debounce="300"
+                  aria-label="Tags"
+                  phx-debounce="blur"
                   phx-hook=".TagType"
                   data-tags={Enum.join(@known_tags, "\n")}
                   autocomplete="off"
@@ -1962,8 +1986,9 @@ defmodule TexttileWeb.EditorLive do
 
                       this.at = -1
                       this.matches = []
+                      this.commas = this.count()
 
-                      this.onInput = () => this.refresh()
+                      this.onInput = () => { this.commit(); this.refresh() }
                       this.onKey = e => this.key(e)
                       this.onBlur = () => setTimeout(() => this.close(), 120)
                       this.onPlace = () => { if (!this.menu.hidden) this.place() }
@@ -1981,6 +2006,24 @@ defmodule TexttileWeb.EditorLive do
                         e.preventDefault()
                         this.accept(row.dataset.tag)
                       })
+                    },
+
+                    // the server wrote the row back: count what stands
+                    // there now, so the next comma is a new one
+                    updated() { this.commas = this.count() },
+
+                    count() { return (this.el.value.match(/,/g) || []).length },
+
+                    // A word is a tag once it is finished, and a comma
+                    // finishes it. The field itself waits for the blur,
+                    // so this is the earlier way in: one more comma,
+                    // one push of the whole row.
+                    commit() {
+                      const commas = this.count()
+                      if (commas > this.commas) {
+                        this.pushEvent("settings_changed", {_target: ["tags"], tags: this.el.value})
+                      }
+                      this.commas = commas
                     },
 
                     destroyed() {

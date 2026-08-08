@@ -41,6 +41,31 @@ defmodule Texttile.DataCase do
     restore_admin_users_afterwards()
     forget_open_editors()
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+    # Registered last, so it runs first: the mail has to be gone before
+    # the owner is.
+    on_exit(&settle_mail_tasks/0)
+  end
+
+  @doc """
+  Waits for the mail a test sent to leave the building.
+
+  A comment hands its mail to a task of its own, so the reader who
+  wrote it never waits for another server. A task still running when
+  the sandbox owner goes holds a connection nobody owns any more, and
+  the next test then meets a busy database instead of its own.
+  """
+  def settle_mail_tasks(timeout \\ 2_000) do
+    Texttile.Comments.TaskSupervisor
+    |> Task.Supervisor.children()
+    |> Enum.each(fn pid ->
+      ref = Process.monitor(pid)
+
+      receive do
+        {:DOWN, ^ref, :process, ^pid, _reason} -> :ok
+      after
+        timeout -> Process.demonitor(ref, [:flush])
+      end
+    end)
   end
 
   @doc """

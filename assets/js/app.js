@@ -27,33 +27,72 @@ import topbar from "../vendor/topbar"
 import BodyEd from "./body_ed"
 import Gallery from "./gallery"
 
-/* The Last-saved line of a screen that saves instantly: "just now"
-   while the save is fresh, the clock time after that, and a short note
-   about the last change while it is worth reading. */
+/* The Last-saved line of a screen that saves instantly.
+
+   A screen without a Save button owes the eye an answer, and a grey
+   line that quietly rewrites itself is not one. So the line is loud
+   for a moment and quiet the rest of the time: every save turns it to
+   the accent, ticks it, and says "Saved"; a few seconds later it fades
+   back to the stamp of the clock time. A note about the change (a
+   restored version, an address that is taken) stays in the loud state
+   as long as it stands, because that is a sentence to read, not a
+   stamp to glance at. */
+const FLASH_MS = 2600
+
 const SavedTicker = {
   mounted() {
+    // the line arrives with the last save already on it; only a save
+    // that happens while somebody is watching is worth a flash
+    this.at = Number(this.el.dataset.at || 0)
     this.timer = setInterval(() => this.paint(), 1000)
     this.paint()
   },
   updated() { this.paint() },
-  destroyed() { clearInterval(this.timer) },
+  destroyed() { clearInterval(this.timer); clearTimeout(this.fade) },
+
   paint() {
     const now = Date.now()
+    const at = Number(this.el.dataset.at || now)
     const note = this.el.dataset.note
     const until = Number(this.el.dataset.noteUntil || 0)
+
+    // a note is a sentence to read, so the loud state lasts as long as
+    // the sentence stands
+    if (at !== this.at) {
+      this.at = at
+      this.flash(note ? Math.max(FLASH_MS, until - now) : FLASH_MS)
+    }
+
     if (note && now < until) { this.el.textContent = note; return }
-    const at = Number(this.el.dataset.at || now)
+
     const d = new Date(at)
     const pad = n => String(n).padStart(2, "0")
     const fresh = (now - at) / 1000 < 20
+    const wide = window.matchMedia("(min-width: 768px)").matches
+
+    if (this.el.classList.contains("fresh")) { this.el.textContent = "Saved"; return }
     // a phone bar has room for the stamp, not for the sentence
-    if (!window.matchMedia("(min-width: 768px)").matches) {
+    if (!wide) {
       this.el.textContent = fresh ? "saved" : `saved ${pad(d.getHours())}:${pad(d.getMinutes())}`
       return
     }
     this.el.textContent = fresh
       ? "Last saved · just now"
       : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  },
+
+  // The class carries the whole loud state, and taking it off and
+  // putting it back on in one frame is what starts the animation over
+  // when two saves follow each other closely.
+  flash(ms) {
+    this.el.classList.remove("fresh")
+    void this.el.offsetWidth
+    this.el.classList.add("fresh")
+    clearTimeout(this.fade)
+    this.fade = setTimeout(() => {
+      this.el.classList.remove("fresh")
+      this.paint()
+    }, ms)
   },
 }
 

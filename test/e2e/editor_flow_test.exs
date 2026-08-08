@@ -193,6 +193,56 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> refute_has("#tagchip-sea.on")
       |> assert_has("#tagchip-sea")
     end
+
+    test "a half-written word is no tag until a comma or the way out",
+         %{conn: conn} do
+      session =
+        conn
+        |> sign_in()
+        |> click_button("New text")
+        |> fill_in("Title", with: "Half a tag")
+        |> type("#edTags", "har")
+
+      # "har" is three letters on the way to "harbor" and nothing else.
+      # Nothing on the page says whether the field stayed quiet, so the
+      # test waits out the pause a field of the old kind saved after,
+      # and then reads what the blog carries.
+      Process.sleep(600)
+
+      session
+      |> refute_has("#tagchip-har")
+      |> refute_has("#tagPick")
+
+      assert Enum.all?(Articles.list_articles(), &(&1.tags == ""))
+
+      # the comma ends the word, and only then is it a tag
+      session = type(session, "#edTags", "bor,")
+
+      assert_has(session, "#tagchip-harbor.on")
+
+      # what stands in the field after the comma follows on the way out
+      session = type(session, "#edTags", " pier")
+      Process.sleep(600)
+      refute_has(session, "#tagchip-pier")
+
+      session
+      |> click("#edTitle")
+      |> assert_has("#tagchip-pier.on")
+    end
+
+    test "a tag nobody else carries leaves the row when it leaves the field",
+         %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New text")
+      |> fill_in("Title", with: "Only tag")
+      |> type("#edTags", "lonely,")
+      |> assert_has("#tagchip-lonely.on")
+      |> press("#edTags", "ControlOrMeta+a")
+      |> press("#edTags", "Backspace")
+      |> click("#edTitle")
+      |> refute_has("#tagchip-lonely")
+    end
   end
 
   describe "versions" do
