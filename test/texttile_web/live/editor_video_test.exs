@@ -6,7 +6,6 @@ defmodule TexttileWeb.EditorVideoTest do
   import Texttile.VideoFixtures
 
   alias Texttile.Articles
-  alias Texttile.Articles.Lock
   alias Texttile.Gallery
   alias Texttile.Uploads
   alias Texttile.Videos
@@ -14,14 +13,8 @@ defmodule TexttileWeb.EditorVideoTest do
   setup :register_and_log_in_user
 
   setup do
+    # The locks are cleared for every test in TexttileWeb.ConnCase.
     File.rm_rf!(Uploads.root())
-
-    Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Lock.supervisor(), pid)
-    end)
-
     :ok
   end
 
