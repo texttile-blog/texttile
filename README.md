@@ -6,6 +6,20 @@ required.
 
 Status: early development. Do not use it for a real site yet.
 
+## Principles
+
+- Minimal. A part is right when nothing is left to take away.
+- Self-contained. One image, one volume, no external service, no tracker.
+  Everything a reader loads comes from this server.
+- Light in the browser. Small pages and little JavaScript, so the blog opens
+  on a slow line far from a data center.
+- Written together. Two people work on the same text at the same time, and
+  the desk shows who is where.
+- Mobile first. Reading and writing are laid out for a phone; a wide screen
+  gets the same screens with more room.
+- Everybody is an admin. No roles, no permission matrix: `ADMIN_USERS` is the
+  whole access model.
+
 ## Configuration
 
 Texttile reads its configuration from environment variables at start.

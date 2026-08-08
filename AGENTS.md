@@ -2,6 +2,19 @@
 
 Only deviations from default behavior. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
 
+## Product decisions
+
+The README states the principles. These are the rules behind them. They hold until the user changes them; do not improve on them.
+
+- Nothing external at runtime: no CDN, no third-party script, no tracker, no captcha service. Spam protection is honeypot, time trap, and rate limit, always on and without configuration.
+- Markdown is the document. A byte-identical round trip is a hard requirement: never normalize, reflow, or clean up what the user typed, because the version diff must show real edits only. No editor that serializes markdown from a document tree (ProseMirror, TipTap, Milkdown).
+- The body editor stays one isolated hook with a narrow interface (in: text, remote updates, read-only flag; out: changes, cursor, activity ping). Nothing else reads or writes its internals, so real concurrent editing stays a component swap instead of a rewrite.
+- The body text is the only thing that is locked. Tiles, tags, settings, and publish controls stay open to everybody at the same time; last write wins per field.
+- Versions hold title and body, nothing else. That keeps restore one clear promise, and it lets a removed image be deleted at once: no soft delete, no orphans.
+- Gallery order lives in `gallery_date` alone. Drag and drop and the date field write that one value; the original file and its EXIF data stay untouched.
+- A step that cannot be taken back stays separate and confirmed. A newsletter mail is never a side effect of publishing.
+- `/data` is the whole installation: database and uploads. Never copy the live database file; take a copy with `VACUUM INTO` or `.backup` (see `make db-pull`).
+
 ## Git and GitHub
 
 - Branches, commits, and PR texts in English. No co-author trailers, no "Generated with" lines.
