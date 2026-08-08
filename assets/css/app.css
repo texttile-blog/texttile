@@ -297,6 +297,19 @@
   .writer { color: inherit; text-decoration: none; }
   .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
 
+  /* The lines to hand on, in the voice of the column they stand in:
+     the reading size of a value, no ground, no border, no scrollbar.
+     It is a field only so the words can be selected and copied by hand;
+     it grows to what it holds and never scrolls. */
+  .sharelines {
+    display: block; width: 100%; resize: none; overflow: hidden;
+    field-sizing: content;
+    padding: 0; border: 0; background: transparent; box-shadow: none;
+    font-family: inherit; font-size: 13px; line-height: 1.5;
+    color: var(--tt-dim); overflow-wrap: anywhere;
+  }
+  .sharelines:focus { outline: none; box-shadow: none; background: transparent; }
+
   /* the addresses an entry has left behind, under the address field.
      A quiet list: the address in the monospace the address field uses,
      and the way to drop it at the right edge. */
@@ -465,11 +478,14 @@
      both places. */
   .out { text-decoration: none; align-items: center; gap: 5px; }
   .out .out-i { width: 12px; height: 12px; flex: none; opacity: .7; }
-  /* The Last-saved line is a pill with 9px of padding of its own, and
-     the arrow stands beside the pill, not inside it. Left alone the two
-     would sit 14px apart and read as two things; the arrow reaches back
-     into the padding so they read as one control. */
-  .out > .saved + .out-i { margin-left: -9px; }
+  /* The Last-saved line is a pill, and the arrow belongs inside it: the
+     flashed state draws a ground and a border, and an arrow beside that
+     would crowd the rounded edge. Inside, the pill wraps both and
+     nothing on the bar moves when a save lands. */
+  .out > .saved { display: inline-flex; align-items: center; gap: 5px; }
+  /* the tick brings its own space as a character, which a gap would
+     then double */
+  .out > .saved::before { content: "\2713" / ""; }
   .out:hover { color: var(--tt-accent); }
   .out:hover .out-i { opacity: 1; }
   .stamp.out.published:hover { color: var(--tt-onsolid); opacity: .85; }
@@ -1027,8 +1043,7 @@
      under it is the published design and must not be mistaken for it. */
   .notlive {
     background: var(--tt-accentwash); color: var(--tt-accent);
-    font-size: 12.5px; line-height: 1.5;
-    /* the gutter of the header it sits under, so the two line up */
+    font-size: 12.5px; line-height: 1.5; text-align: center;
     padding: 9px var(--tt-gut);
     border-bottom: 1px solid var(--tt-accentline);
   }

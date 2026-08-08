@@ -189,13 +189,13 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      # a draft with no slug has no address yet, so there is nothing to
-      # open and the stamp is a stamp
-      refute has_element?(view, "#stateLink")
-      assert has_element?(view, "span#stamp")
+      # a draft with no slug has no address of its own yet, and the door
+      # is still there: it opens the same page by id
+      assert view |> element("a#stamp") |> render() =~ ~s(href="/preview/#{article.id}")
+      assert view |> element("#stateLink") |> render() =~ ~s(href="/preview/#{article.id}")
 
-      # a slug is all it takes: the site serves an entry that is not
-      # live to whoever is signed in
+      # a slug is all it takes: from then on the door is the address the
+      # entry will wear, and the site serves it to whoever is signed in
       view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "harbour"})
       article = Articles.get_article!(article.id)
 

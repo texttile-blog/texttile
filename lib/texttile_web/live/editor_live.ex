@@ -1209,7 +1209,13 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:preview_candidates, preview_candidates(assigns))
       |> assign(:effective_preview, effective_preview(assigns))
       |> assign(:media, media(assigns))
-      |> assign(:public_url, Articles.reader_path(assigns.article))
+      # There is always a door. An entry with a slug wears its own
+      # address; one without has none yet, and until then the way in is
+      # by id. Both open the same page, and both only for an admin.
+      |> assign(
+        :public_url,
+        Articles.reader_path(assigns.article) || ~p"/preview/#{assigns.article.id}"
+      )
       |> assign(:public_title, public_title(assigns.article))
 
     ~H"""
@@ -1221,12 +1227,11 @@ defmodule TexttileWeb.EditorLive do
       others={@others}
     >
       <:bar>
-        <%!-- the way out to the reader's side. An entry wears its
-             address from the moment it has a slug, and the site serves
-             an unpublished one to whoever is signed in, so the stamp
-             and the Last-saved line are both that door. --%>
+        <%!-- the way out to the reader's side, and there is always one.
+             The site serves an entry that is not live to whoever is
+             signed in, so the stamp and the Last-saved line are both
+             that door, whatever state the entry stands in. --%>
         <a
-          :if={@public_url}
           class={["stamp out hidden sm:inline-flex", @article.status]}
           id="stamp"
           href={@public_url}
@@ -1236,11 +1241,7 @@ defmodule TexttileWeb.EditorLive do
         >
           {@article.status}<.out_icon />
         </a>
-        <span :if={!@public_url} class={["stamp hidden sm:inline", @article.status]} id="stamp">
-          {@article.status}
-        </span>
         <a
-          :if={@public_url}
           class="out hidden md:inline-flex flex-none"
           id="stateLink"
           href={@public_url}
@@ -1248,6 +1249,10 @@ defmodule TexttileWeb.EditorLive do
           rel="noopener"
           title={@public_title}
         >
+          <%!-- the arrow lives inside the pill, so the flashed state
+               wraps both and nothing moves when a save lands. The words
+               are a span of their own: the ticker rewrites them every
+               second and would carry the arrow away with them. --%>
           <span
             class="saved whitespace-nowrap num"
             id="state"
@@ -1256,9 +1261,8 @@ defmodule TexttileWeb.EditorLive do
             data-note={@saved_note}
             data-note-until={@saved_until}
           >
-            Last saved · just now
+            <span data-words>Last saved · just now</span> <.out_icon />
           </span>
-          <.out_icon />
         </a>
         <span
           :if={!@public_url}
@@ -1439,41 +1443,55 @@ defmodule TexttileWeb.EditorLive do
                   phx-click={!@holds_lock && "ask_takeover"}
                 />
               </form>
-              <.md_bar id="mdBar" readonly={!@holds_lock} note="Markdown Editor" />
-              <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
-                <div
-                  id="edBodyHost"
-                  class="ed-body ed-cm"
-                  phx-hook="BodyEd"
-                  phx-update="ignore"
-                  data-readonly={to_string(!@holds_lock)}
-                  data-posters={Jason.encode!(poster_map(@media))}
-                >
-                  <textarea
-                    class="ed-body"
-                    aria-label="Body, Markdown"
-                    spellcheck="false"
-                    placeholder="Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
-                    readonly={!@holds_lock}
-                  >{@article.body}</textarea>
+              <%!-- Tab goes from the title to the words, not through
+                   nine buttons on the way. The bar stands after the
+                   body in the document and is lifted over it by
+                   `order`, so it keeps its place on the screen and
+                   comes after the writing surface for the keyboard.
+                   Nothing is unreachable: the bar is the next stop
+                   after the body. --%>
+              <div class="flex flex-col">
+                <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
+                  <div
+                    id="edBodyHost"
+                    class="ed-body ed-cm"
+                    phx-hook="BodyEd"
+                    phx-update="ignore"
+                    data-readonly={to_string(!@holds_lock)}
+                    data-posters={Jason.encode!(poster_map(@media))}
+                  >
+                    <textarea
+                      class="ed-body"
+                      aria-label="Body, Markdown"
+                      spellcheck="false"
+                      placeholder="Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
+                      readonly={!@holds_lock}
+                    >{@article.body}</textarea>
+                  </div>
+                  <p class="ed-foot" id="edFoot">
+                    <span class="flag">
+                      <i class="inline-block w-[6px] h-[6px] rounded-full bg-accent"></i>Editing
+                    </span>
+                    <span id="edFootText">
+                      <%= if @holds_lock do %>
+                        The draft saves as you type. <b>Save version</b>
+                        takes a snapshot of the title and the body that you can go back to.
+                      <% else %>
+                        The title and the body are read-only right now. <b>Save version</b>
+                        and the Versions tab still work.
+                      <% end %>
+                    </span>
+                  </p>
+                  <span class="drop-flag" id="bodyDropFlag" hidden>
+                    Put the image in the text, where the caret is
+                  </span>
                 </div>
-                <p class="ed-foot" id="edFoot">
-                  <span class="flag">
-                    <i class="inline-block w-[6px] h-[6px] rounded-full bg-accent"></i>Editing
-                  </span>
-                  <span id="edFootText">
-                    <%= if @holds_lock do %>
-                      The draft saves as you type. <b>Save version</b>
-                      takes a snapshot of the title and the body that you can go back to.
-                    <% else %>
-                      The title and the body are read-only right now. <b>Save version</b>
-                      and the Versions tab still work.
-                    <% end %>
-                  </span>
-                </p>
-                <span class="drop-flag" id="bodyDropFlag" hidden>
-                  Put the image in the text, where the caret is
-                </span>
+                <.md_bar
+                  id="mdBar"
+                  class="order-first"
+                  readonly={!@holds_lock}
+                  note="Markdown Editor"
+                />
               </div>
               <input
                 type="file"
@@ -2219,19 +2237,26 @@ defmodule TexttileWeb.EditorLive do
       <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
         <span class="text-[13px] font-semibold">Share</span>
         <span class="sp"></span>
+        <%!-- the button says what it did; a word beside it would push
+             the button itself out of the way --%>
         <button :if={@share_text} type="button" class="link" data-copy>Copy</button>
-        <span class="note" data-copied hidden>Copied</span>
       </div>
 
-      <textarea
-        :if={@share_text}
-        id="shareLines"
-        class="font-mono text-[12.5px] leading-[1.6] resize-none mt-[10px]"
-        rows={length(String.split(@share_text, "\n"))}
-        readonly
-        spellcheck="false"
-        aria-label="The lines to pass on"
-      >{@share_text}</textarea>
+      <%!-- the lines read like every other value in this column: the
+           same size, the same ink, no box of its own and no bar down
+           its side. It grows to what it holds, so nothing scrolls. --%>
+      <div :if={@share_text} class="drow pt-0.5">
+        <span class="val">
+          <textarea
+            id="shareLines"
+            class="sharelines"
+            rows={length(String.split(@share_text, "\n"))}
+            readonly
+            spellcheck="false"
+            aria-label="The lines to pass on"
+          >{@share_text}</textarea>
+        </span>
+      </div>
 
       <%!-- Before an entry is live there are no lines to pass on, and
            then this is the one place the access word stands. --%>
@@ -2256,7 +2281,6 @@ defmodule TexttileWeb.EditorLive do
         updated() { this.wire() },
         wire() {
           const button = this.el.querySelector("[data-copy]")
-          const said = this.el.querySelector("[data-copied]")
           const field = this.el.querySelector("textarea")
           if (!button || button.dataset.wired) return
           button.dataset.wired = "1"
@@ -2269,11 +2293,10 @@ defmodule TexttileWeb.EditorLive do
               // still copies them.
               field.select()
             }
-            if (said) {
-              said.hidden = false
-              clearTimeout(this.timer)
-              this.timer = setTimeout(() => { said.hidden = true }, 2200)
-            }
+            // the button answers for itself, the way Save version does
+            button.textContent = "Copied"
+            clearTimeout(this.timer)
+            this.timer = setTimeout(() => { button.textContent = "Copy" }, 2200)
           })
         }
       }

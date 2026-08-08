@@ -116,9 +116,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         conn
         |> sign_in()
         |> click_button("New entry")
-        # a draft with no slug has no address yet, so the stamp is a
-        # stamp and nothing more
-        |> assert_has("span#stamp", text: "draft")
+        # a draft with no slug has no address of its own yet, and the
+        # door is still there: it opens the same page by id
+        |> assert_has("a#stamp[href^='/preview/']", text: "draft")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
         |> assert_has("#stamp", text: "published")

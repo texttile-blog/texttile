@@ -46,6 +46,9 @@ defmodule Texttile.Articles do
 
   def get_article!(id), do: Repo.get!(Article, id)
 
+  @doc "One entry by id whatever state it is in, or nil."
+  def get_article(id), do: Repo.get(Article, id)
+
   @doc """
   The texts for the grid, by date, newest first: the day a text is
   published or goes live, and while it carries no date yet, today - a

@@ -142,6 +142,11 @@ defmodule TexttileWeb.Router do
     get "/blog", SiteController, :blog
     get "/tags/:tag", SiteController, :tag
 
+    # An entry that has no slug yet has no address of its own, and a
+    # draft carries none until it goes live. This is the door the editor
+    # offers until there is one: the reader's page, for admins only.
+    get "/preview/:id", SiteController, :preview
+
     # A reader sends a comment. Behind the gate like the text it is on.
     post "/comments/:article_id", SiteController, :post_comment
 

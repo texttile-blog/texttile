@@ -26,6 +26,7 @@ defmodule TexttileWeb.SiteController do
               :tag,
               :article,
               :page,
+              :preview,
               :post_comment,
               :confirm_comment,
               :confirm_subscriber
@@ -82,6 +83,25 @@ defmodule TexttileWeb.SiteController do
     case visible_page(conn, slug) do
       nil -> not_found(conn)
       article -> render_text(conn, article)
+    end
+  end
+
+  @doc """
+  An entry on the reader's side while it has no address of its own.
+
+  A draft carries no slug until it goes live, so there is nothing to put
+  in an address for it. The editor still owes the writer a way to look
+  at the page, and it has to be this page and not a second design of it,
+  so the way in is by id. Admins only, like every other way to read an
+  entry that is not live.
+  """
+  def preview(conn, %{"id" => id}) do
+    with user when not is_nil(user) <- signed_in_user(conn),
+         {id, ""} <- Integer.parse(to_string(id)),
+         %Article{} = article <- Articles.get_article(id) do
+      render_text(conn, article)
+    else
+      _ -> not_found(conn)
     end
   end
 

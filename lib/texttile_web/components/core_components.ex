@@ -523,10 +523,16 @@ defmodule TexttileWeb.CoreComponents do
   attr :files, :boolean, default: true
   attr :readonly, :boolean, default: false
   attr :note, :string, default: nil
+  attr :class, :any, default: nil
 
   def md_bar(assigns) do
     ~H"""
-    <div class={["mdbar", @readonly && "is-readonly"]} id={@id} role="toolbar" aria-label="Formatting">
+    <div
+      class={["mdbar", @readonly && "is-readonly", @class]}
+      id={@id}
+      role="toolbar"
+      aria-label="Formatting"
+    >
       <button
         type="button"
         class="mdb"
