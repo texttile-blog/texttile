@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
 
   alias Texttile.Articles
   alias Texttile.Gallery
@@ -54,7 +55,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> assert_has("#tileCount", text: "0 tiles")
       |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
       |> assert_has("#tileServer [data-id]")
@@ -75,7 +76,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> upload("Add pictures and videos to the gallery", big)
       |> assert_has("#tileServer [data-id]", timeout: 30_000)
 
@@ -92,7 +93,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> upload("Add pictures and videos to the gallery", huge)
       |> assert_has("#tileLocal .tile.failed", text: "50 MB")
       |> assert_has("#tileLocal button[data-act=remove]")
@@ -111,7 +112,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> assert_has("#tileCount", text: "3 tiles")
       |> drag("#tile-#{c.id}", to: "#tile-#{a.id}")
 
@@ -134,7 +135,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn =
         conn
         |> sign_in()
-        |> visit("/admin/texts/#{article.id}")
+        |> open_editor(article.id)
         |> assert_has("#tileCount", text: "2 tiles")
         |> click("#tileServer [data-id='#{a.id}']")
         |> assert_has("#lbRoot")
@@ -172,7 +173,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> click("#tileServer [data-id='#{a.id}']")
       |> assert_has("#lbRoot")
       |> click_button("Delete tile")
@@ -201,14 +202,5 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         Process.sleep(50)
         do_wait(fun, deadline)
     end
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end

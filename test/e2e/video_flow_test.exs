@@ -9,6 +9,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
 
   import Ecto.Query, only: [from: 2]
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
   import Texttile.VideoFixtures
 
   alias Texttile.Articles
@@ -50,15 +51,6 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     path
   end
 
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
-  end
-
   defp wait_until(fun, timeout \\ 20_000) do
     deadline = System.monotonic_time(:millisecond) + timeout
     do_wait(fun, deadline)
@@ -85,7 +77,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     session =
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> assert_has("#tileCount", text: "0 tiles")
       |> upload("Add pictures and videos to the gallery", video_file(640, 480))
       |> assert_has("#tileServer [data-id]", timeout: 30_000)
@@ -131,7 +123,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
 
     conn
     |> sign_in()
-    |> visit("/admin/texts/#{article.id}")
+    |> open_editor(article.id)
     |> assert_has("#tile-#{waiting.id}.tile-waiting")
     |> click("#tileServer [data-id]:not(.tile-waiting)")
     |> assert_has("#lbRoot")
@@ -155,7 +147,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     # the writing surface draws the reference as its poster
     conn
     |> sign_in()
-    |> visit("/admin/texts/#{article.id}")
+    |> open_editor(article.id)
     |> assert_has(".cm-mdvid[style*='#{video.poster_path}']", timeout: 10_000)
 
     {:ok, article} = Articles.publish(article, kb)
@@ -185,7 +177,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     session =
       conn
       |> sign_in()
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> assert_has(".cm-mdvid[style*='#{video.poster_path}']", timeout: 10_000)
 
     # the picture opens at its reader size, and the caption is its alt

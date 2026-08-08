@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
   import Texttile.ArticlesFixtures
 
   alias Texttile.Articles
@@ -53,7 +54,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     # text's tab, Delete takes it out.
     conn
     |> sign_in()
-    |> visit("/admin/comments")
+    |> open("/admin/comments")
     |> assert_has("#commentsSub", text: "1 comment across all texts")
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
@@ -99,7 +100,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       session
       |> sign_in()
-      |> visit("/admin/comments")
+      |> open("/admin/comments")
       |> assert_has("#commentsList", text: "not confirmed yet")
       |> click_button("Release")
       |> assert_has("#commentsList", text: "let through")
@@ -111,7 +112,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     # And rewrites the words the reader sent.
     session =
       session
-      |> visit("/admin/comments")
+      |> open("/admin/comments")
       |> click_button("Edit")
       |> fill_in("The words of the comment", with: "Less of the dog, please.")
       |> click_button("Save")
@@ -124,7 +125,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     # Delete is the trash now: out of the text, kept in the admin area.
     session =
       session
-      |> visit("/admin/comments")
+      |> open("/admin/comments")
       |> click_button("Delete")
       |> click_button("Delete the comment")
       |> assert_has("#commentsTrash", text: "Less of the dog, please.")
@@ -134,7 +135,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     # And the way back puts it exactly where it stood.
     session
-    |> visit("/admin/comments")
+    |> open("/admin/comments")
     |> click_button("Restore")
     |> refute_has("#commentsTrash")
     |> assert_has("#commentsList", text: "Less of the dog, please.")
@@ -144,14 +145,5 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     assert Texttile.Comments.total_count() == 1
     assert Texttile.Comments.trashed_count() == 0
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end

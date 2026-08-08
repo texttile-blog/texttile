@@ -47,7 +47,8 @@ The README states the principles. These are the rules behind them. They hold unt
 - `test/contract/` is user-defined: never modify, weaken, or delete without an explicit user request. If one fails, fix the code; if the test seems wrong, stop and ask.
 - State that lives beside the database is not rolled back: document locks, presence, registries, the application environment, uploaded files. The article ids do roll back, so the next test writes id 1 again and inherits whatever the last test left under that id. A test that creates such state clears it, and the shared setup in `test/support/data_case.ex` clears it for everybody.
 - Green once is not green. Before a PR, run the suite the way the runner does: `mix test --max-cases 4`. It is slower and orders the tests differently, which is where a leak between two tests shows.
-- A test that fails on CI and passes locally is an ordering or timing race until proven otherwise, never "CI being flaky". Find the pair: run the suspect file straight after the file that could have contaminated it (`mix test test/e2e/<file> test/<suspect> --seed 0`). That usually turns it into a failure you can watch.
+- A test that fails on CI and passes locally is an ordering or timing race until proven otherwise, never "CI being flaky". Find the pair: run the suspect file straight after the file that could have contaminated it (`mix test test/e2e/<file> test/<suspect> --seed 0`). That usually turns it into a failure you can watch. A race that needs a slow machine shows under load: `mix test test/e2e/` while a few busy loops hold the cores.
+- A browser test never acts on a dead render. It reaches its screen through `TexttileWeb.E2E` (`sign_in/1`, `open/2`, `open_editor/2`), which waits for the page to be live, and for the gallery to say `data-ready`, before the first click. Playwright acts as soon as an element exists, and a click that lands before the script says nothing at all.
 
 ## Mail
 

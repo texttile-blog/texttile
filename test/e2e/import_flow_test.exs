@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1]
 
   alias Texttile.Articles.Article
   alias Texttile.Gallery
@@ -107,14 +108,5 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     end)
 
     zip_path
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end
