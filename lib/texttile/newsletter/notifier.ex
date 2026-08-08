@@ -10,14 +10,18 @@ defmodule Texttile.Newsletter.Notifier do
   address instead of taking a URL from a caller.
   """
 
+  use Gettext, backend: TexttileWeb.Gettext
+
   import Swoosh.Email
 
   alias Texttile.Articles
+  alias Texttile.I18n
   alias Texttile.Mailer
   alias Texttile.Newsletter.Subscriber
 
   @doc "Mails the link that puts the address on the list."
   def deliver_confirmation(%Subscriber{} = subscriber, url) do
+    I18n.put_site_locale()
     site = Texttile.Settings.site_title()
 
     # The subject and the shape are the comment confirmation's, word for
@@ -26,17 +30,21 @@ defmodule Texttile.Newsletter.Notifier do
     deliver(
       subscriber.email,
       site,
-      "Confirm your email on #{site}",
-      """
-      This address asked for the new entries of #{site} by mail.
+      gettext("Confirm your email on %{site}", site: site),
+      gettext(
+        """
+        This address asked for the new entries of %{site} by mail.
 
-      Open this link, and you are on the list:
+        Open this link, and you are on the list:
 
-      #{url}
+        %{url}
 
-      You confirm this address once. If you did not ask for this,
-      ignore this mail. Without the link, the address gets nothing.
-      """
+        You confirm this address once. If you did not ask for this,
+        ignore this mail. Without the link, the address gets nothing.
+        """,
+        site: site,
+        url: url
+      )
     )
   end
 
@@ -46,6 +54,7 @@ defmodule Texttile.Newsletter.Notifier do
   the blog asks for one.
   """
   def deliver_new_text(%Subscriber{} = subscriber, article, site, password) do
+    I18n.put_site_locale()
     title = Articles.display_title(article)
     url = TexttileWeb.Endpoint.url() <> Articles.public_path(article)
 
@@ -53,16 +62,28 @@ defmodule Texttile.Newsletter.Notifier do
       TexttileWeb.Endpoint.url() <> "/newsletter/unsubscribe/#{subscriber.token}"
 
     subscriber.email
-    |> build(site, "New on #{site}: #{title}", """
-    "#{title}" is now on #{site}:
+    |> build(
+      site,
+      gettext("New on %{site}: %{title}", site: site, title: title),
+      gettext(
+        """
+        "%{title}" is now on %{site}:
 
-    #{url}
-    #{lead_block(article)}#{password_block(site, password)}
-    You get this mail because this address is on the #{site} list.
-    To leave the list, open this link:
+        %{url}
+        %{lead}%{password}
+        You get this mail because this address is on the %{site} list.
+        To leave the list, open this link:
 
-    #{unsubscribe_url}
-    """)
+        %{unsubscribe}
+        """,
+        title: title,
+        site: site,
+        url: url,
+        lead: lead_block(article),
+        password: password_block(site, password),
+        unsubscribe: unsubscribe_url
+      )
+    )
     # The way off the list, once more where the mail program itself
     # reads it: a mailbox that finds no List-Unsubscribe on mail that
     # goes to a list files it as the kind of mail nobody asked for.
@@ -80,11 +101,15 @@ defmodule Texttile.Newsletter.Notifier do
   defp password_block(_site, nil), do: ""
 
   defp password_block(site, password) do
-    """
-
-    #{site} asks for its access word before it shows the entry.
-    The word is: #{password}
-    """
+    "\n" <>
+      gettext(
+        """
+        %{site} asks for its access word before it shows the entry.
+        The word is: %{password}
+        """,
+        site: site,
+        password: password
+      )
   end
 
   defp deliver(to, site, subject, body) do

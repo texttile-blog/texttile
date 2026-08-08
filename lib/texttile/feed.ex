@@ -48,7 +48,7 @@ defmodule Texttile.Feed do
         <title>#{escape(Settings.site_title())}</title>
         <link>#{escape(base)}/</link>
         <description>#{escape(Settings.get(:site_description))}</description>
-        <language>#{escape(Settings.get(:language))}</language>
+        <language>#{escape(Texttile.I18n.site_locale())}</language>
         <atom:link href="#{escape(base <> path())}" rel="self" type="application/rss+xml"/>
     #{build_date(posts)}\
     """

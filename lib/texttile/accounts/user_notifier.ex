@@ -2,10 +2,18 @@ defmodule Texttile.Accounts.UserNotifier do
   @moduledoc """
   Account mail: the confirmation of a fresh account and the link that
   sets a new password. Nothing in here ever contains a password.
+
+  Mail leaves in the language of the site, like every other word the
+  blog says. It is written by a process of its own, and Gettext holds
+  the locale per process, so each of these asks for the language before
+  it writes a line.
   """
+
+  use Gettext, backend: TexttileWeb.Gettext
 
   import Swoosh.Email
 
+  alias Texttile.I18n
   alias Texttile.Mailer
   alias Texttile.Settings
 
@@ -14,16 +22,27 @@ defmodule Texttile.Accounts.UserNotifier do
   password stays out on purpose.
   """
   def deliver_registration_confirmation(user, site) do
-    deliver(user, "Your admin account on #{site}", """
-    Hello #{user.username},
+    I18n.put_site_locale()
 
-    You have an admin account on #{site} now.
+    deliver(
+      user,
+      gettext("Your admin account on %{site}", site: site),
+      gettext(
+        """
+        Hello %{name},
 
-    Your username is: #{user.username}
+        You have an admin account on %{site} now.
 
-    Sign in with this username and the password you chose. This mail
-    does not contain the password, and no mail ever will.
-    """)
+        Your username is: %{username}
+
+        Sign in with this username and the password you chose. This mail
+        does not contain the password, and no mail ever will.
+        """,
+        name: user.username,
+        site: site,
+        username: user.username
+      )
+    )
   end
 
   @doc """
@@ -31,19 +50,30 @@ defmodule Texttile.Accounts.UserNotifier do
   themselves. Nobody types a password for anybody else.
   """
   def deliver_password_reset(user, url, site) do
-    deliver(user, "Set a new password on #{site}", """
-    Hello #{user.username},
+    I18n.put_site_locale()
 
-    Somebody asked for a password reset for your account on #{site}.
+    deliver(
+      user,
+      gettext("Set a new password on %{site}", site: site),
+      gettext(
+        """
+        Hello %{name},
 
-    Open this link and set a new password:
+        Somebody asked for a password reset for your account on %{site}.
 
-    #{url}
+        Open this link and set a new password:
 
-    The link works once and for 24 hours. The old password works until
-    you set the new one. If you did not ask for this, you can ignore
-    this mail.
-    """)
+        %{url}
+
+        The link works once and for 24 hours. The old password works until
+        you set the new one. If you did not ask for this, you can ignore
+        this mail.
+        """,
+        name: user.username,
+        site: site,
+        url: url
+      )
+    )
   end
 
   # The reader knows the site by its title, not by the product it runs

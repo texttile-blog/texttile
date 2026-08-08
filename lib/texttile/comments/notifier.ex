@@ -12,17 +12,21 @@ defmodule Texttile.Comments.Notifier do
   no screen of the admin area shows one either.
   """
 
+  use Gettext, backend: TexttileWeb.Gettext
+
   import Swoosh.Email
 
   require Logger
 
   alias Texttile.Accounts
   alias Texttile.Articles
+  alias Texttile.I18n
   alias Texttile.Mailer
   alias Texttile.Settings
 
   @doc "Mails the confirmation link for the comment's address."
   def deliver_confirmation(comment, url) do
+    I18n.put_site_locale()
     site = Settings.site_title()
     title = Texttile.Articles.display_title(comment.article)
 
@@ -30,20 +34,28 @@ defmodule Texttile.Comments.Notifier do
       new()
       |> to({comment.name, comment.address.email})
       |> from({site, Application.fetch_env!(:texttile, :mail_from)})
-      |> subject("Confirm your email on #{site}")
-      |> text_body("""
-      Hello #{comment.name},
+      |> subject(gettext("Confirm your email on %{site}", site: site))
+      |> text_body(
+        gettext(
+          """
+          Hello %{name},
 
-      You wrote a comment on "#{title}".
+          You wrote a comment on "%{title}".
 
-      Open this link, and your comment appears under the entry:
+          Open this link, and your comment appears under the entry:
 
-      #{url}
+          %{url}
 
-      You confirm this address once. Every comment you write after
-      that appears at once. If you did not write a comment on #{site},
-      ignore this mail.
-      """)
+          You confirm this address once. Every comment you write after
+          that appears at once. If you did not write a comment on %{site},
+          ignore this mail.
+          """,
+          name: comment.name,
+          title: title,
+          url: url,
+          site: site
+        )
+      )
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
@@ -56,13 +68,16 @@ defmodule Texttile.Comments.Notifier do
   that wrote the comment, which was there when it was written.
   """
   def deliver_to_admins(comment) do
+    I18n.put_site_locale()
     site = Settings.site_title()
     title = Articles.display_title(comment.article)
     body = admin_body(comment, site, title)
 
     Accounts.list_users()
     |> Enum.reject(&(&1.id == comment.user_id))
-    |> Enum.each(&deliver_one(&1, site, "New comment on #{title}", body))
+    |> Enum.each(
+      &deliver_one(&1, site, gettext("New comment on %{title}", title: title), body)
+    )
   end
 
   # A refused mail is nothing this can repair, and nothing the reader
@@ -86,16 +101,24 @@ defmodule Texttile.Comments.Notifier do
   defp admin_body(comment, site, title) do
     comments_url = TexttileWeb.Endpoint.url() <> "/admin/comments"
 
-    """
-    #{comment.name} wrote on "#{title}":
+    gettext(
+      """
+      %{name} wrote on "%{title}":
 
-    #{comment.body}
+      %{body}
 
-    #{where_it_stands(comment.article)}    All comments:  #{comments_url}
+      %{where}    All comments:  %{url}
 
-    #{site} sends this mail because "Mail me every new comment" stands
-    in its settings. Switch it off there to stop it.
-    """
+      %{site} sends this mail because "Mail me every new comment" stands
+      in its settings. Switch it off there to stop it.
+      """,
+      name: comment.name,
+      title: title,
+      body: comment.body,
+      where: where_it_stands(comment.article),
+      url: comments_url,
+      site: site
+    )
   end
 
   # A text that went off the site between the comment and the mail has
@@ -104,11 +127,12 @@ defmodule Texttile.Comments.Notifier do
   defp where_it_stands(article) do
     case Articles.public_path(article) do
       nil ->
-        "It is out of sight for now: the entry itself is not on the site.\n\n"
+        gettext("It is out of sight for now: the entry itself is not on the site.") <> "\n\n"
 
       path ->
-        "It stands under the entry now.\n\n" <>
-          "The text:      #{TexttileWeb.Endpoint.url()}#{path}\n"
+        gettext("It stands under the entry now.") <>
+          "\n\n" <>
+          gettext("The entry:     %{url}", url: TexttileWeb.Endpoint.url() <> path) <> "\n"
     end
   end
 end
