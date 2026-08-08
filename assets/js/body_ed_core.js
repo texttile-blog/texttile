@@ -16,7 +16,14 @@
         its videos (data-posters), sync_body {text, caret?},
         sync_media {posters}, set_readonly {readOnly}
    out: body_changed {text} (debounced), editor_activity (throttled),
-        ask_takeover on a read-only pointer, files into uploadFiles */
+        ask_takeover on a read-only pointer, files into uploadFiles
+
+   Three attributes on the host say which surface this is, and nothing
+   more than that. The About field of Settings is the same editor with
+   pictures and the soft lock taken out of it:
+     data-event    the name the change travels under (body_changed)
+     data-bar      the formatting bar this editor owns (#mdBar)
+     data-files    "false" takes pictures and videos out entirely */
 
 import {EditorState, EditorSelection, Compartment, Annotation} from "@codemirror/state"
 import {EditorView, keymap, placeholder, Decoration, WidgetType, ViewPlugin} from "@codemirror/view"
@@ -344,6 +351,10 @@ const impl = {
     const seed = this.el.querySelector("textarea")
     const initial = seed ? seed.value : ""
     const readOnly = this.el.dataset.readonly === "true"
+    /* which surface this is: see the note at the top of the file */
+    this.event = this.el.dataset.event || "body_changed"
+    this.barId = this.el.dataset.bar || "#mdBar"
+    this.files = this.el.dataset.files !== "false"
     /* the poster of every converted video of this text, by the url the
        body carries; the server keeps it fresh through sync_media */
     this.posters = JSON.parse(this.el.dataset.posters || "{}")
@@ -354,12 +365,14 @@ const impl = {
 
     const pushText = text => {
       const now = Date.now()
-      if (now - lastPing > 2000) {
+      /* the ping keeps the soft lock alive, and only an editor that
+         holds one has anything to say about it */
+      if (this.files && now - lastPing > 2000) {
         lastPing = now
         this.pushEvent("editor_activity", {})
       }
       clearTimeout(debounce)
-      debounce = setTimeout(() => { debounce = null; this.pushEvent("body_changed", {text}) }, 300)
+      debounce = setTimeout(() => { debounce = null; this.pushEvent(this.event, {text}) }, 300)
     }
 
     /* leaving the editor settles the debounce at once, so a click on
@@ -371,7 +384,7 @@ const impl = {
       if (!debounce) return
       clearTimeout(debounce)
       debounce = null
-      this.pushEvent("body_changed", {text: this.view.state.doc.toString()})
+      this.pushEvent(this.event, {text: this.view.state.doc.toString()})
     }
     this.onDocMousedown = e => {
       if (e.target.closest("[phx-click='save_version'], [phx-click='publish']")) flushNow()
@@ -470,8 +483,9 @@ const impl = {
       EditorView.lineWrapping,
       syntaxHighlighting(mdHighlight),
       livePreview,
-      placeholder("Write. Markdown works: ## for a heading. Paste a picture or a video, or drop one here to put it in the text."),
-      EditorView.contentAttributes.of({"aria-label": "Body, Markdown"}),
+      placeholder(this.el.dataset.placeholder ||
+        "Write. Markdown works: ## for a heading. Paste a picture or a video, or drop one here to put it in the text."),
+      EditorView.contentAttributes.of({"aria-label": this.el.dataset.label || "Body, Markdown"}),
       keymap.of([
         {key: "Mod-b", run: cmds.bold},
         {key: "Mod-i", run: cmds.italic},
@@ -487,8 +501,12 @@ const impl = {
         if (u.focusChanged && !u.view.hasFocus) flushNow()
         if (u.docChanged || u.selectionSet) this.paintBar(activeStates(u.state))
       }),
+      /* a surface without pictures lets the browser have the file: it
+         has nowhere to put one, and swallowing the drop would be a
+         promise it cannot keep */
       EditorView.domEventHandlers({
         paste: e => {
+          if (!this.files) return false
           const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^(image|video)\//.test(f.type))
           if (!fs.length) return false
           e.preventDefault()
@@ -496,6 +514,7 @@ const impl = {
           return true
         },
         drop: (e, v) => {
+          if (!this.files) return false
           const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => /^(image|video)\//.test(f.type))
           if (!fs.length) return false
           e.preventDefault()   /* the outer dropzone sees this and stands down */
@@ -519,14 +538,14 @@ const impl = {
        mousedown would catch the very click that opened it on its own
        scrim and close again before the hand leaves the mouse. */
     this.el.addEventListener("click", () => {
-      if (this.view.state.readOnly) this.pushEvent("ask_takeover", {})
+      if (this.files && this.view.state.readOnly) this.pushEvent("ask_takeover", {})
     })
 
     /* the formatting bar: mousedown is swallowed so the caret never
        leaves the text, and the click runs the same command the
        keyboard would. In the read-only state the command asks for the
        takeover instead. */
-    const bar = document.getElementById("mdBar")
+    const bar = document.querySelector(this.barId)
     if (bar) {
       bar.addEventListener("mousedown", e => { if (e.target.closest(".mdb")) e.preventDefault() })
       bar.addEventListener("click", e => {
@@ -554,7 +573,7 @@ const impl = {
       if (ro && this.view.hasFocus) this.view.contentDOM.blur()
     })
 
-    this.mountUploads()
+    if (this.files) this.mountUploads()
   },
 
   /* ---- images into the body, the GitHub way ------------------------
@@ -782,8 +801,12 @@ const impl = {
   },
 
   cmd(name) {
-    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
+    if (this.view.state.readOnly) {
+      if (this.files) this.pushEvent("ask_takeover", {})
+      return
+    }
     if (name === "image") {
+      if (!this.files) return
       const picker = document.getElementById("mdImgFile")
       if (picker) picker.click()
       return
@@ -793,7 +816,7 @@ const impl = {
   },
 
   paintBar(states) {
-    document.querySelectorAll("#mdBar .mdb").forEach(b =>
+    document.querySelectorAll(`${this.barId} .mdb`).forEach(b =>
       b.classList.toggle("on", !!states[b.dataset.cmd]))
   },
 }

@@ -248,6 +248,30 @@
     box-shadow: 0 1px 0 0 var(--tt-accent);
   }
 
+  /* A FIELD THAT ASKS FOR WORDS LOOKS LIKE ONE
+     The quiet underline is right for a value that is mostly read: a
+     username, an address, a number. It is wrong for a field somebody is
+     meant to type into on their first visit - the site title, the
+     description, the name others see - because an underline alone does
+     not read as an invitation. Those wear the drawn box, like the text
+     areas beside them. */
+  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  .quiet-fields .boxed-in select,
+  .quiet-fields textarea.boxed {
+    background-color: var(--tt-field);
+    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius); padding: 8px 10px;
+  }
+  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]):hover,
+  .quiet-fields .boxed-in select:hover {
+    background-color: var(--tt-fieldhover); border-bottom-color: var(--tt-rule);
+  }
+  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,
+  .quiet-fields .boxed-in select:focus {
+    background-color: var(--tt-paper); box-shadow: none;
+    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+  }
+
   /* a text area is a region, not a line. One underline under nine rows
      leaves the writing surface invisible, so among the quiet fields a
      textarea keeps the drawn box of base.css. */
@@ -484,6 +508,24 @@
   #bodyWrap.is-readonly .ed-cm,
   #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
   #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-livetint); }
+  /* THE SAME EDITOR, IN A BOX
+     Settings gives About the entry editor with the pictures taken out.
+     There the surface is one field among many, not the page, so it
+     wears the drawn box of the other text areas instead of the bleeding
+     writing surface, and reads at the size of a field. */
+  .boxed-cm {
+    width: 100%; margin: 0; min-height: 190px;
+    font-size: 15px; line-height: 1.65;
+    background: var(--tt-field);
+    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius); padding: 8px 10px;
+  }
+  .boxed-cm:hover { background: var(--tt-fieldhover); }
+  .boxed-cm:focus-within {
+    background: var(--tt-paper);
+    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+  }
+
   .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
   .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
   #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag,

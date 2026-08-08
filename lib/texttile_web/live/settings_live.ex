@@ -19,7 +19,9 @@ defmodule TexttileWeb.SettingsLive do
 
   # The keys a form on this screen may write. The file-backed keys go
   # through Texttile.Uploads, never through a form.
-  @editable ~w(site_title site_description language about_markdown front_page
+  # about_markdown is not among them: it comes from the editor hook,
+  # under its own name, and never through a form.
+  @editable ~w(site_title site_description language front_page
                posts_per_page theme_css site_visibility site_password
                comments_require_confirmation notify_on_comment
                image_max_edge video_max_edge)
@@ -110,6 +112,20 @@ defmodule TexttileWeb.SettingsLive do
 
   def handle_event("save_setting", _params, socket), do: {:noreply, socket}
 
+  # The About field is the entry editor with the pictures taken out, so
+  # its changes arrive under a name of their own instead of through a
+  # form. The field owns its own DOM (phx-update="ignore"), so nothing
+  # is written back into it and the caret stays where it was.
+  def handle_event("about_changed", %{"text" => text}, socket) do
+    {:ok, _} = Settings.put(:about_markdown, text)
+
+    {:noreply,
+     socket
+     |> assign(:settings, Settings.all())
+     |> assign(:about_html, Markdown.to_html(text))
+     |> mark_saved(nil)}
+  end
+
   ## Logo and favicon
 
   def handle_event("validate_upload", _params, socket), do: {:noreply, socket}
@@ -121,6 +137,20 @@ defmodule TexttileWeb.SettingsLive do
      socket
      |> refresh_settings()
      |> mark_saved("The #{mark} is the Texttile mark again")}
+  end
+
+  ## Theme
+
+  # Back to the iris default: the stored sheet goes, and the field shows
+  # the default again on the next render.
+  def handle_event("reset_theme", _params, socket) do
+    {:ok, _} = Settings.put(:theme_css, "")
+
+    {:noreply,
+     socket
+     |> refresh_settings()
+     |> push_event("theme_saved", %{})
+     |> mark_saved("The theme is the iris default again")}
   end
 
   ## Users
@@ -281,7 +311,6 @@ defmodule TexttileWeb.SettingsLive do
           "site_title" => settings.site_title,
           "site_description" => settings.site_description,
           "language" => settings.language,
-          "about_markdown" => settings.about_markdown,
           "theme_css" => shown_theme_css(settings.theme_css),
           "image_max_edge" => Integer.to_string(settings.image_max_edge),
           "video_max_edge" => Integer.to_string(settings.video_max_edge)
@@ -414,7 +443,7 @@ defmodule TexttileWeb.SettingsLive do
   defp delete_block(user, users, me) do
     case Accounts.delete_user_block(user, me, length(users)) do
       :last -> "The only account left: deleting it would leave nobody who can sign in."
-      :yourself -> "This one is you: another admin removes it, not you."
+      :yourself -> "This one is you"
       nil -> nil
     end
   end
@@ -432,15 +461,15 @@ defmodule TexttileWeb.SettingsLive do
     "The reader gets one confirmation link per address. The comment stays " <>
       "hidden from readers until the reader follows it, and it carries the " <>
       "mark \"not confirmed yet\" here. Turn this off and every comment " <>
-      "appears at once. Spam is filtered invisibly either way: honeypot, " <>
-      "timing, rate limit."
+      "appears at once. Spam is filtered by honeypot, timing and rate limit " <>
+      "checks either way."
   end
 
   defp comments_note(false) do
-    "Every comment appears under the text at once, and nobody confirms " <>
+    "Every comment appears under the entry at once, and nobody confirms " <>
       "anything. Turn this on and a comment waits for the reader to follow " <>
-      "a confirmation link. Spam is filtered invisibly either way: honeypot, " <>
-      "timing, rate limit."
+      "a confirmation link. Spam is filtered by honeypot, timing and rate " <>
+      "limit checks either way."
   end
 
   defp notify_note(true) do
@@ -483,13 +512,14 @@ defmodule TexttileWeb.SettingsLive do
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Settings</h1>
         <p class="lead">
-          Everything else is config at install time; this is the part that may
-          change while you live with the site. Nothing here has a Save button:
-          every change applies the moment you make it.
+          Nothing here has a Save button: every change applies the moment you
+          make it.
         </p>
 
         <.section>Site</.section>
-        <.form for={@settings_form} id="site-form" phx-change="save_setting">
+        <%!-- three fields somebody fills in on their first visit here,
+             so all three look like fields and not like values --%>
+        <.form for={@settings_form} id="site-form" class="boxed-in" phx-change="save_setting">
           <div class="drow">
             <label class="lab" for="setting-site_title">Site title</label>
             <span class="val">
@@ -550,8 +580,9 @@ defmodule TexttileWeb.SettingsLive do
               {@settings.logo_name || "Default: the Texttile mark"}
             </span>
             <span class="note">
-              The bar here and the public site wear it. SVG, PNG, JPG or WebP;
-              a raster file is scaled down on arrival.
+              The bar here and the public site use it. SVG, PNG, JPG or WebP;
+              a raster file is scaled down on arrival to {Uploads.mark_max_edge()} px
+              on the longer edge.
             </span>
           </span>
           <span class="sp"></span>
@@ -593,7 +624,11 @@ defmodule TexttileWeb.SettingsLive do
             <span class="note" id="name-favicon">
               {@settings.favicon_name || "Default: the Texttile mark"}
             </span>
-            <span class="note">The browser-tab icon. Square SVG, PNG, JPG or WebP.</span>
+            <span class="note">
+              The browser-tab icon. Square SVG, PNG, JPG or WebP; a raster file
+              is scaled down on arrival to {Uploads.mark_max_edge()} px on the
+              longer edge.
+            </span>
           </span>
           <span class="sp"></span>
           <button
@@ -618,19 +653,26 @@ defmodule TexttileWeb.SettingsLive do
         </div>
 
         <.section>About</.section>
-        <.form for={@settings_form} id="about-form" phx-change="save_setting">
-          <label class="lab block mb-[6px]" for="setting-about_markdown">
-            About this blog · Markdown
-          </label>
-          <textarea
-            id="setting-about_markdown"
-            name="settings[about_markdown]"
-            rows="9"
-            spellcheck="false"
-            class="boxed"
-            phx-debounce="300"
-          >{@settings_form[:about_markdown].value}</textarea>
-        </.form>
+        <label class="lab block mb-[6px]" for="setting-about_markdown">
+          About this blog
+        </label>
+        <%!-- the editor of an entry, with the pictures taken out: About
+             stands in the band under every page and carries words, not
+             a gallery. One hook, one behaviour, one set of keys. --%>
+        <.md_bar id="aboutBar" />
+        <div
+          id="setting-about_markdown"
+          class="ed-body ed-cm boxed-cm"
+          phx-hook="BodyEd"
+          phx-update="ignore"
+          data-event="about_changed"
+          data-bar="#aboutBar"
+          data-files="false"
+          data-label="About this blog, Markdown"
+          data-placeholder="Who writes here, and what this blog is. Markdown works: ## for a heading."
+        >
+          <textarea>{@settings.about_markdown}</textarea>
+        </div>
         <div class="lab mt-[14px]">Preview</div>
         <div class="md-preview text-[13.5px] mt-[10px] pt-3 border-t border-hair" id="aboutPreview">
           {Phoenix.HTML.raw(@about_html)}
@@ -703,9 +745,7 @@ defmodule TexttileWeb.SettingsLive do
             </select>
           </div>
           <div class="drow gtop">
-            <label class="lab" for="setting-posts_per_page">
-              Number of texts a page in blog overview
-            </label>
+            <label class="lab" for="setting-posts_per_page">Pagination</label>
             <span class="val">
               <select
                 id="setting-posts_per_page"
@@ -721,7 +761,7 @@ defmodule TexttileWeb.SettingsLive do
                 </option>
               </select>
               <div class="hint">
-                How many texts /blog shows before the pager. The default is 10.
+                How many entries /blog shows before the pager. The default is 10.
               </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
                 The value must be {@errors[:posts_per_page]}.
@@ -732,14 +772,24 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>Theme</.section>
         <p class="note mb-[10px]">
-          Theming is exactly one CSS file, and the admin area and the public
-          site both wear it: no theme gallery, no options. The default is
-          the iris theme, and this is it below; edit it and this screen
-          changes with your next keystroke. Empty the field and the site is
-          back in iris.
+          Theming is exactly one CSS file, used for the admin area and the
+          public site.
         </p>
         <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
-          <label class="lab block mb-[6px]" for="setting-theme_css">theme.css</label>
+          <span class="labrow">
+            <label class="lab" for="setting-theme_css">theme.css</label>
+            <%!-- emptying a twelve-row field by hand to get the default
+                 back is no way to ask for it --%>
+            <button
+              :if={@settings.theme_css != ""}
+              type="button"
+              class="link"
+              id="reset-theme"
+              phx-click="reset_theme"
+            >
+              Reset
+            </button>
+          </span>
           <textarea
             id="setting-theme_css"
             name="settings[theme_css]"
@@ -790,13 +840,14 @@ defmodule TexttileWeb.SettingsLive do
               <span class="text-[14.5px] font-semibold">Password-protected</span>
               <br />
               <span class="text-[11.5px] text-faint">
-                One password for the whole blog, not per text. Readers enter it
-                once and are remembered. Admins keep signing in the usual way.
-                Search engines see nothing.
+                One password for the whole blog. Readers enter it once and are
+                remembered. Search engines see nothing.
               </span>
             </span>
           </label>
-          <div class="py-3 max-w-[280px]" id="pwRow">
+          <%!-- the field is short, the sentence under it is not: the
+               hint keeps the width of the column --%>
+          <div class="py-3" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
             <input
               type="text"
@@ -805,9 +856,10 @@ defmodule TexttileWeb.SettingsLive do
               value={@settings_form[:site_password].value}
               placeholder="Choose a password"
               phx-debounce="300"
+              class="max-w-[280px]"
             />
             <div class="hint">
-              A shared access word, not a login: it goes into every text mail,
+              A shared access word, not a login: it goes into every entry mail,
               so everybody on the newsletter list gets it, and you pass it on.
               It is stored as it is written. It is the password of the whole
               blog; without one nothing is protected.
@@ -853,14 +905,14 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>Tags</.section>
         <p class="note mb-1 leading-[1.6]">
-          Every tag any text carries, and how many carry it. Deleting one
-          takes it off all of them at once and closes its archive page. The
-          texts themselves stay, and so does everything else they wear.
+          Every tag any entry carries. Deleting one takes it off all of them at
+          once and closes its archive page. The entries themselves stay, and so
+          do all the other tags.
         </p>
         <div id="tagsList">
           <p :if={@tags == []} class="note">
-            No text carries a tag yet. Tags are written beside the text, in
-            the settings of the text itself.
+            No entry carries a tag yet. Tags are written beside the entry, in
+            the settings of the entry itself.
           </p>
           <div
             :for={{tag, count} <- @tags}
@@ -883,13 +935,10 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>Users</.section>
         <p class="note mb-1 leading-[1.6]">
-          Everybody with an account here is an admin, and all admins are
-          equal: no roles, no permissions, no owner. The one exception keeps
-          you from locking yourself out. Nobody deletes their own account, so
-          another admin does that for you. There is no public registration
-          either: the ADMIN_USERS setting of this server names everybody who
-          may sign in, and each of them chooses a password at the first
-          sign-in.
+          There is no registration: the ADMIN_USERS setting of this server
+          names everybody who may sign in, and each of them chooses a password
+          at the first sign-in. Everybody with an account here is an admin, and
+          all admins are equal: no roles, no permissions.
         </p>
         <div id="usersList">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
@@ -916,9 +965,12 @@ defmodule TexttileWeb.SettingsLive do
                 Delete
               </button>
             </div>
+            <%!-- why the Delete is off, if it is. It is the one thing
+                 on the row that is not a fact about the account, so it
+                 carries the colour that means "read this". --%>
             <p class="note mt-[3px]">
               {user_meta(user)}
-              <span :if={delete_block(user, @users, @current_scope.user)} class="text-faint">
+              <span :if={delete_block(user, @users, @current_scope.user)} class="text-julia">
                 · {delete_block(user, @users, @current_scope.user)}
               </span>
             </p>
@@ -926,11 +978,10 @@ defmodule TexttileWeb.SettingsLive do
         </div>
 
         <p class="note mt-3">
-          Your own displayed name, address and password are on <.link
+          Change your own displayed name, address and password on <.link
             navigate={~p"/admin/profile"}
             class="link"
-          >your profile</.link>;
-          nobody else's password is anywhere in this app.
+          >your profile</.link>.
         </p>
 
         <.section>Images</.section>
@@ -1022,9 +1073,9 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>Import</.section>
         <p class="note mb-2 leading-[1.6]">
-          Texttile imports texts from a zip of bundles: Markdown, settings and
-          pictures, made from another system's export. IMPORT.md in the
-          repository is the format contract.
+          Texttile imports entries from a zip of bundles: Markdown, settings and
+          pictures, made from another system's export. <.import_doc />
+          in the repository is the format contract.
         </p>
         <p>
           <.link navigate={~p"/admin/settings/import"} class="btn sm" id="open-import">
