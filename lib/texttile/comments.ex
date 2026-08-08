@@ -69,9 +69,27 @@ defmodule Texttile.Comments do
           comment
         end
 
+      if shown_to_readers?(comment), do: notify_admins(comment)
       broadcast({:comment_posted, comment})
       {:ok, comment}
     end
+  end
+
+  # The people who run the blog hear about a comment the moment it
+  # stands under the text, and never before: while the reader has not
+  # followed the link, nobody has proved that the address is theirs,
+  # and the form would be a way to mail everybody here at will.
+  #
+  # The mail leaves in a task of its own, so the reader who wrote the
+  # comment waits for this server and not for another one.
+  defp notify_admins(comment) do
+    if Settings.get(:notify_on_comment) do
+      Task.Supervisor.start_child(Texttile.Comments.TaskSupervisor, fn ->
+        Notifier.deliver_to_admins(comment)
+      end)
+    end
+
+    :ok
   end
 
   # Nobody proves they own the address before the mail goes out, so the
@@ -158,9 +176,14 @@ defmodule Texttile.Comments do
 
       %Address{} = address ->
         unless Address.confirmed?(address) do
-          address
-          |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
-          |> Repo.update!()
+          address =
+            address
+            |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
+            |> Repo.update!()
+
+          # Everything this address wrote stands under its text from
+          # this moment, so this is when the blog hears about it.
+          Enum.each(waiting_of(address), &notify_admins/1)
 
           broadcast({:comments_confirmed, address.id})
         end
@@ -177,6 +200,16 @@ defmodule Texttile.Comments do
 
         {:ok, article}
     end
+  end
+
+  # Every comment of an address that has just been confirmed, with the
+  # text it stands under and the address itself, the way the mail
+  # needs them.
+  defp waiting_of(%Address{} = address) do
+    from(c in Comment, where: c.address_id == ^address.id, order_by: c.id)
+    |> Repo.all()
+    |> Repo.preload(:article)
+    |> Enum.map(&Map.put(&1, :address, address))
   end
 
   ## Reading and counting

@@ -116,6 +116,9 @@ defmodule TexttileWeb.SiteCommentsTest do
 
     test "while confirmation is off it appears for everybody at once", %{conn: conn} do
       {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      # the mail this test refutes is the reader's confirmation link;
+      # the mail to the blog is another story, and another test
+      {:ok, _} = Settings.put(:notify_on_comment, false)
       article = published_post()
 
       conn = send_comment(conn, article)

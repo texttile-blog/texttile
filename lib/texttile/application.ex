@@ -26,6 +26,9 @@ defmodule Texttile.Application do
       # The subscriber mails leave here, so a publish click never waits
       # for another server.
       {Task.Supervisor, name: Texttile.Newsletter.TaskSupervisor},
+      # And the mail about a new comment, for the same reason: the
+      # reader who wrote it waits for this server, not for another one.
+      {Task.Supervisor, name: Texttile.Comments.TaskSupervisor},
       # ffmpeg runs under this one, one conversion at a time.
       {Task.Supervisor, name: Texttile.Videos.TaskSupervisor},
       # The invisible spam filter of the public forms: a few knocks

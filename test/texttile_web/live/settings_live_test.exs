@@ -176,6 +176,19 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "Comments appear at once"
     end
 
+    test "the mail-me-every-comment switch saves and explains itself", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/admin/settings")
+      assert html =~ "Mail me every new comment"
+
+      html =
+        view
+        |> form("#comments-form", %{"settings" => %{"notify_on_comment" => "false"}})
+        |> render_change(%{"_target" => ["settings", "notify_on_comment"]})
+
+      assert Settings.get(:notify_on_comment) == false
+      assert html =~ "No mail goes out for a comment"
+    end
+
     test "the about text renders as markdown in the preview", %{conn: conn} do
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 

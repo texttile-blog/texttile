@@ -21,7 +21,8 @@ defmodule TexttileWeb.SettingsLive do
   # through Texttile.Uploads, never through a form.
   @editable ~w(site_title site_description language about_markdown front_page
                posts_per_page theme_css site_visibility site_password
-               comments_require_confirmation image_max_edge video_max_edge)
+               comments_require_confirmation notify_on_comment
+               image_max_edge video_max_edge)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -362,6 +363,11 @@ defmodule TexttileWeb.SettingsLive do
   defp saved_note(:comments_require_confirmation, false),
     do: "Comments appear at once · no confirmation asked"
 
+  defp saved_note(:notify_on_comment, true),
+    do: "Every new comment travels to everybody with an account here"
+
+  defp saved_note(:notify_on_comment, false), do: "No mail goes out for a comment"
+
   # The gate only locks with a password in it, so the note tells the
   # truth for both states instead of announcing a protection that is
   # not there yet.
@@ -432,6 +438,19 @@ defmodule TexttileWeb.SettingsLive do
       "anything. Turn this on and a comment waits for the reader to follow " <>
       "a confirmation link. Spam is filtered invisibly either way: honeypot, " <>
       "timing, rate limit."
+  end
+
+  defp notify_note(true) do
+    "Everybody with an account here and an address gets one mail per " <>
+      "comment: who wrote it, what it says, and the way to it. The mail " <>
+      "leaves when the comment stands under the text, so a comment that " <>
+      "still waits for its reader mails nobody. The address of the reader " <>
+      "is never in it."
+  end
+
+  defp notify_note(false) do
+    "No mail goes out for a comment. New comments stand on the Comments " <>
+      "screen and in the text they belong to."
   end
 
   def render(assigns) do
@@ -800,6 +819,22 @@ defmodule TexttileWeb.SettingsLive do
               Readers confirm their email before the comment appears
               <span class="note" id="setCmtNote">
                 {comments_note(@settings.comments_require_confirmation)}
+              </span>
+            </span>
+          </label>
+          <label class="opt">
+            <input type="hidden" name="settings[notify_on_comment]" value="false" />
+            <input
+              type="checkbox"
+              id="setting-notify_on_comment"
+              name="settings[notify_on_comment]"
+              value="true"
+              checked={@settings.notify_on_comment}
+            />
+            <span>
+              Mail me every new comment
+              <span class="note" id="setNotifyNote">
+                {notify_note(@settings.notify_on_comment)}
               </span>
             </span>
           </label>
