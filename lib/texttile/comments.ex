@@ -3,13 +3,21 @@ defmodule Texttile.Comments do
   The readers' comments. One rule, one wording, everywhere: while the
   `comments_require_confirmation` setting is on, a comment waits for the
   reader's own email confirmation and readers do not see it; while it is
-  off, every comment appears the moment it is sent. Nothing here is an
-  approval queue - no admin ever lets a comment through, an admin only
-  deletes.
+  off, every comment appears the moment it is sent.
 
   The reader confirms an address once. The link travels by mail, the
   address remembers it was followed, and every later comment from it
-  appears at once. Every change is announced on the comments topic.
+  appears at once.
+
+  This is still not an approval queue: nothing waits for the desk, and
+  the desk lets nothing through by default. What the desk can do is make
+  one exception, one comment at a time - `release_comment/1` puts a
+  single comment under the text while its address stays unconfirmed, so
+  the next comment from that address waits like every other. It can also
+  rewrite the words of a comment, and it deletes into a trash that keeps
+  a comment for 30 days before the row goes for good.
+
+  Every change is announced on the comments topic.
   """
 
   import Ecto.Query
@@ -146,19 +154,24 @@ defmodule Texttile.Comments do
 
   @doc """
   Whether readers see the comment: yes while the setting asks for no
-  confirmation, otherwise only once its address is confirmed. The one
-  exception - the reader who just sent it sees their own - lives where
-  the session is, in the web layer.
+  confirmation, otherwise once its address is confirmed or the desk let
+  this one comment through. The one exception - the reader who just sent
+  it sees their own - lives where the session is, in the web layer.
   """
   def shown_to_readers?(%Comment{} = comment) do
-    not Settings.get(:comments_require_confirmation) or
-      Address.confirmed?(comment.address)
+    shown_to_readers?(comment, Settings.get(:comments_require_confirmation))
   end
 
   @doc "`shown_to_readers?/1` with the setting read once for a whole list."
   def shown_to_readers?(%Comment{} = comment, require_confirmation?) do
-    not require_confirmation? or Address.confirmed?(comment.address)
+    not require_confirmation? or Address.confirmed?(comment.address) or released?(comment)
   end
+
+  @doc "Whether the desk let this one comment through on its own."
+  def released?(%Comment{released_at: released_at}), do: not is_nil(released_at)
+
+  @doc "Whether the desk changed the words after the reader sent them."
+  def edited?(%Comment{edited_at: edited_at}), do: not is_nil(edited_at)
 
   ## Confirming
 
@@ -208,9 +221,11 @@ defmodule Texttile.Comments do
 
   # Every comment of an address that has just been confirmed, with the
   # text it stands under and the address itself, the way the mail
-  # needs them.
+  # needs them. A comment the desk already released is left out: it has
+  # stood under the text since then, and it travelled then.
   defp waiting_of(%Address{} = address) do
-    from(c in Comment, where: c.address_id == ^address.id, order_by: c.id)
+    from(c in standing(), where: c.address_id == ^address.id and is_nil(c.released_at))
+    |> order_by(asc: :id)
     |> Repo.all()
     |> Repo.preload(:article)
     |> Enum.map(&Map.put(&1, :address, address))
@@ -218,12 +233,17 @@ defmodule Texttile.Comments do
 
   ## Reading and counting
 
+  # Every comment except the ones in the trash. Nothing outside the
+  # trash itself ever asks for those: to the desk and to the reader a
+  # deleted comment is gone from the moment it is deleted.
+  defp standing, do: from(c in Comment, where: is_nil(c.delete_after))
+
   @doc "One comment, with its address."
-  def get_comment!(id), do: Comment |> Repo.get!(id) |> Repo.preload(:address)
+  def get_comment!(id), do: standing() |> Repo.get!(id) |> Repo.preload(:address)
 
   @doc "One comment, with its address, or nil when it is already gone."
   def get_comment(id) do
-    case Repo.get(Comment, id) do
+    case Repo.get(standing(), id) do
       nil -> nil
       comment -> Repo.preload(comment, :address)
     end
@@ -231,7 +251,7 @@ defmodule Texttile.Comments do
 
   @doc "Every comment of one text, newest first, addresses along."
   def for_article(article_id) do
-    from(c in Comment,
+    from(c in standing(),
       where: c.article_id == ^article_id,
       order_by: [desc: c.id],
       preload: :address
@@ -251,7 +271,7 @@ defmodule Texttile.Comments do
   """
   def for_readers(article_id) do
     newest =
-      from(c in Comment,
+      from(c in standing(),
         where: c.article_id == ^article_id,
         order_by: [desc: c.id],
         limit: ^@reader_limit,
@@ -271,12 +291,12 @@ defmodule Texttile.Comments do
 
   @doc "How many comments one text carries."
   def count_for(article_id) do
-    Repo.aggregate(from(c in Comment, where: c.article_id == ^article_id), :count)
+    Repo.aggregate(from(c in standing(), where: c.article_id == ^article_id), :count)
   end
 
   @doc "The latest comments across all texts, newest first, texts along."
   def recent(limit) do
-    from(c in Comment,
+    from(c in standing(),
       order_by: [desc: c.id],
       limit: ^limit,
       preload: [:address, :article]
@@ -285,17 +305,18 @@ defmodule Texttile.Comments do
   end
 
   @doc "How many comments the site holds, waiting ones included."
-  def total_count, do: Repo.aggregate(Comment, :count)
+  def total_count, do: Repo.aggregate(standing(), :count)
 
   @doc """
   How many comments wait for their reader's confirmation - zero by
-  definition while the setting does not ask for one.
+  definition while the setting does not ask for one, and a comment the
+  desk released waits for nobody.
   """
   def waiting_count do
     if Settings.get(:comments_require_confirmation) do
-      from(c in Comment,
+      from(c in standing(),
         join: a in assoc(c, :address),
-        where: is_nil(a.confirmed_at)
+        where: is_nil(a.confirmed_at) and is_nil(c.released_at)
       )
       |> Repo.aggregate(:count)
     else
@@ -305,34 +326,143 @@ defmodule Texttile.Comments do
 
   @doc "Comment counts per text, one map, texts without comments absent."
   def count_map do
-    from(c in Comment, group_by: c.article_id, select: {c.article_id, count(c.id)})
+    from(c in standing(), group_by: c.article_id, select: {c.article_id, count(c.id)})
     |> Repo.all()
     |> Map.new()
   end
 
-  ## Deleting
+  ## What the desk does to one comment
 
   @doc """
-  Removes a comment, silently: no mail, no trace, announced on the topic.
-  Takes the comment or its id. A comment another admin deleted first
-  answers `{:error, :gone}`; two desks working the same list must not
-  raise at each other.
-  """
-  def delete_comment(%Comment{} = comment) do
-    case Repo.delete_all(from c in Comment, where: c.id == ^comment.id) do
-      {1, _} ->
-        broadcast({:comment_deleted, comment})
-        {:ok, comment}
+  Rewrites the words of one comment. Only the words: the name and the
+  address stay as the reader sent them, and the comment keeps the mark
+  that says the desk changed it. Readers get the new words at once.
 
-      {0, _} ->
+  Answers `{:error, :gone}` for a comment that is not there any more,
+  and `{:error, changeset}` for words that are empty or too long.
+  """
+  def edit_comment(id, body) do
+    case get_comment(id) do
+      nil ->
         {:error, :gone}
+
+      comment ->
+        case comment |> Comment.edit_changeset(body) |> Repo.update() do
+          {:ok, comment} ->
+            broadcast({:comment_changed, comment})
+            {:ok, comment}
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
     end
   end
 
-  def delete_comment(id) do
+  @doc """
+  Lets one comment through while its address is still unconfirmed: it
+  stands under the text from now on, and nothing else changes. The
+  address proved nothing, so the next comment from it waits again.
+
+  Nobody is mailed about it - the desk is the one doing it.
+  """
+  def release_comment(id) do
     case get_comment(id) do
-      nil -> {:error, :gone}
-      comment -> delete_comment(comment)
+      nil ->
+        {:error, :gone}
+
+      comment ->
+        comment =
+          comment
+          |> Ecto.Changeset.change(released_at: DateTime.utc_now(:second))
+          |> Repo.update!()
+
+        broadcast({:comment_changed, comment})
+        {:ok, comment}
     end
+  end
+
+  ## The trash
+
+  # How long a deleted comment can still be brought back.
+  @trash_days 30
+
+  @doc "How many days a deleted comment waits in the trash."
+  def trash_days, do: @trash_days
+
+  @doc """
+  Deletes a comment into the trash: readers stop seeing it at once and
+  it leaves every list on the desk, but the row waits #{@trash_days}
+  days for a `restore_comment/1`. Silent as before - no mail, no trace
+  for the reader - and announced on the topic. Takes the comment or its
+  id. A comment another desk deleted first answers `{:error, :gone}`;
+  two desks working the same list must not raise at each other.
+  """
+  def delete_comment(%Comment{} = comment), do: delete_comment(comment.id)
+
+  def delete_comment(id) do
+    delete_after = DateTime.add(DateTime.utc_now(:second), @trash_days, :day)
+
+    case get_comment(id) do
+      nil ->
+        {:error, :gone}
+
+      comment ->
+        comment = comment |> Ecto.Changeset.change(delete_after: delete_after) |> Repo.update!()
+        broadcast({:comment_deleted, comment})
+        {:ok, comment}
+    end
+  end
+
+  @doc """
+  Brings a comment back out of the trash, exactly as it stood: the same
+  words, the same address, and the same rule deciding who sees it. A
+  comment that is not in the trash answers `{:error, :gone}`.
+  """
+  def restore_comment(id) do
+    case Repo.one(from c in Comment, where: c.id == ^id and not is_nil(c.delete_after)) do
+      nil ->
+        {:error, :gone}
+
+      comment ->
+        comment =
+          comment
+          |> Ecto.Changeset.change(delete_after: nil)
+          |> Repo.update!()
+          |> Repo.preload([:address, :article])
+
+        broadcast({:comment_changed, comment})
+        {:ok, comment}
+    end
+  end
+
+  @doc "What waits in the trash, the one deleted last on top."
+  def trashed do
+    from(c in Comment,
+      where: not is_nil(c.delete_after),
+      order_by: [desc: c.delete_after, desc: c.id],
+      preload: [:address, :article]
+    )
+    |> Repo.all()
+  end
+
+  @doc "How many comments the trash holds."
+  def trashed_count do
+    Repo.aggregate(from(c in Comment, where: not is_nil(c.delete_after)), :count)
+  end
+
+  @doc """
+  Makes the deletions final whose #{@trash_days} days have run out, and
+  answers how many rows went. Runs on boot and on a clock of its own,
+  see `Texttile.Comments.Sweeper`.
+  """
+  def sweep_due do
+    now = DateTime.utc_now(:second)
+
+    {count, _} =
+      Repo.delete_all(
+        from c in Comment, where: not is_nil(c.delete_after) and c.delete_after <= ^now
+      )
+
+    count
   end
 end
