@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
 
   alias Texttile.Settings
   alias Texttile.Uploads
@@ -40,7 +41,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
       # the value survives a full reload
       conn
-      |> visit("/admin/settings")
+      |> open("/admin/settings")
       |> assert_has("#setting-site_title[value='Two of us']")
     end
 
@@ -56,7 +57,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
     test "the comments toggle rewrites its explanation", %{conn: conn} do
       conn
       |> sign_in()
-      |> visit("/admin/settings")
+      |> open("/admin/settings")
       |> assert_has("#setCmtNote", text: "one confirmation link per address")
       |> uncheck("Readers confirm their email", exact: false)
       |> assert_has("#setCmtNote", text: "nobody confirms anything")
@@ -74,7 +75,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/settings")
+      |> open("/admin/settings")
       |> assert_has("#name-logo", text: "Default: the Texttile mark")
       |> upload("#logo-form input[type=file]", "Upload", path, exact: false)
       |> assert_has("#name-logo", text: "e2e-logo.svg")
@@ -93,12 +94,12 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/settings")
+      |> open("/admin/settings")
       |> assert_has("#waitingUsers", text: "julia")
 
       # she takes the browser, types her name and chooses a password
       conn
-      |> visit("/admin/profile")
+      |> open("/admin/profile")
       |> click_link("#sign-out", "Sign out")
       |> assert_has("p", text: "Admin sign-in")
       |> fill_in("Username", with: "julia")
@@ -116,7 +117,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       julia = Enum.find(Texttile.Accounts.list_users(), &(&1.username == "julia"))
 
       conn
-      |> visit("/admin/settings")
+      |> open("/admin/settings")
       |> assert_has("#user-#{julia.id}", text: "you")
       |> assert_has("#delete-user-#{julia.id}[disabled]")
       |> click_button("#delete-user-#{kb.id}", "Delete")
@@ -124,14 +125,5 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> click_button("#dialog-ok", "Delete the account")
       |> refute_has("#usersList", text: kb.email)
     end
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end

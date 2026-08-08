@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
 
   alias Texttile.Newsletter
 
@@ -45,7 +46,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     # address by hand, confirmed at once.
     conn
     |> sign_in()
-    |> visit("/admin/newsletter")
+    |> open("/admin/newsletter")
     |> assert_has("#newsletterSub", text: "1 address gets the texts")
     |> assert_has("#subList", text: "christel@example.org")
     |> fill_in("Email", with: "jens@example.org")
@@ -55,7 +56,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
 
     # A publish click sends the text to both.
     conn
-    |> visit("/admin")
+    |> open("/admin")
     |> click_button("New text")
     |> fill_in("Title", with: "Harbor mornings")
     |> click_button("#stateBtn .main", "Publish")
@@ -85,14 +86,5 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     |> assert_has("main", text: "You are off the list.")
 
     assert [%{email: "jens@example.org"}] = Newsletter.list()
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end

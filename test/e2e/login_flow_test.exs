@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
 
   @moduletag :e2e
 
@@ -162,7 +163,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/profile")
+      |> open("/admin/profile")
       |> fill_in("Current password", with: "wrong current!")
       |> fill_in("New password", with: "a brand new password")
       |> click_button("Set")
@@ -178,18 +179,9 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> sign_in()
-      |> visit("/admin/profile")
+      |> open("/admin/profile")
       |> click_link("#sign-out", "Sign out")
       |> assert_has("p", text: "Admin sign-in")
     end
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end

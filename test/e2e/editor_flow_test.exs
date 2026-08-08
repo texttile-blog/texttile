@@ -3,6 +3,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
   use PhoenixTest.Playwright.Case, async: false
 
   import Texttile.AccountsFixtures
+  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
 
   alias Texttile.Articles
 
@@ -49,7 +50,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       # everything is still there after a full reload
       conn
-      |> visit("/admin/texts/#{article.id}")
+      |> open_editor(article.id)
       |> assert_has("#edTitle[value='Fourteen doors']")
       |> assert_has(".ed-cm", text: "The doors")
     end
@@ -307,14 +308,5 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         Process.sleep(50)
         do_wait(fun, deadline)
     end
-  end
-
-  defp sign_in(conn) do
-    conn
-    |> visit("/login")
-    |> fill_in("Username", with: "kb")
-    |> fill_in("Password", with: valid_password())
-    |> click_button("Sign in")
-    |> assert_has("#crumb", text: "Texts")
   end
 end
