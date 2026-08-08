@@ -35,7 +35,12 @@ defmodule TexttileWeb.LinkHTML do
         <div class="flex items-baseline gap-[10px]">
           <span class="note">{gettext("At least 12 characters. Nothing else is required.")}</span>
           <span class="sp"></span>
-          <button class="link text-[12.5px]" type="button" data-toggle-password="link-password">
+          <button
+            class="link text-[12.5px]"
+            type="button"
+            tabindex="-1"
+            data-toggle-password="link-password"
+          >
             {gettext("Show")}
           </button>
         </div>

@@ -113,7 +113,16 @@ defmodule TexttileWeb.SessionHTML do
         <div class="flex items-baseline gap-[10px]">
           <span class="note">{gettext("At least 12 characters.")}</span>
           <span class="sp"></span>
-          <button class="link text-[12.5px]" type="button" data-toggle-password="claim-password">
+          <%!-- Out of the tab run. The button stands after the second
+               field but reveals the first, so Tab reached it three
+               stops too late, and pressing it puts the focus back in
+               the field anyway. --%>
+          <button
+            class="link text-[12.5px]"
+            type="button"
+            tabindex="-1"
+            data-toggle-password="claim-password"
+          >
             {gettext("Show")}
           </button>
         </div>

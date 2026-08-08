@@ -840,14 +840,22 @@ defmodule TexttileWeb.SettingsLive do
         </script>
 
         <.section>{gettext("Access")}</.section>
+        <%!-- Two choices and the field that belongs to the second one.
+             No rules between them: they are one question, not three
+             rows of a list, and a line under the last choice cut the
+             password field away from the word it serves. The field is
+             indented to the text column of the choices instead, so it
+             reads as what "Password-protected" needs. The radios carry
+             a size of their own, so that indent is one number and not
+             a browser's idea of a radio. --%>
         <.form for={@settings_form} id="access-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
               value="public"
               checked={@settings.site_visibility == "public"}
-              class="w-auto flex-none mt-[3px]"
+              class="w-[13px] h-[13px] flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
@@ -856,13 +864,13 @@ defmodule TexttileWeb.SettingsLive do
               <span class="text-[11.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
           </label>
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
               value="protected"
               checked={@settings.site_visibility == "protected"}
-              class="w-auto flex-none mt-[3px]"
+              class="w-[13px] h-[13px] flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
@@ -877,7 +885,7 @@ defmodule TexttileWeb.SettingsLive do
           </label>
           <%!-- the field is short, the sentence under it is not: the
                hint keeps the width of the column --%>
-          <div class="py-3" id="pwRow">
+          <div class="pl-[23px] pb-3" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">
               {gettext("Blog password")}
             </label>

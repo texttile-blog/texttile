@@ -295,6 +295,67 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     end
   end
 
+  describe "the writing surface" do
+    # The glyphs format the words under them, so they belong to the
+    # words. They stood 18px under the title and 26px over the body,
+    # which read as a bar attached to the title.
+    @bar_gaps """
+    () => {
+      const bar = document.querySelector(".mdbar").getBoundingClientRect()
+      const title = document.querySelector("#edTitle").getBoundingClientRect()
+      const body = document.querySelector("#edBodyHost").getBoundingClientRect()
+      return [bar.top - title.bottom, body.top - bar.bottom]
+    }
+    """
+
+    test "the formatting bar belongs to the body, not to the title", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> assert_has(".mdbar")
+      |> evaluate(@bar_gaps, [is_function: true], fn [over, under] ->
+        assert under < over
+      end)
+    end
+
+    # The surface takes Tab as a character, so without a key that lets
+    # go the body is a room with only a mouse for a door.
+    test "Escape leaves the body", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> type(".ed-cm .cm-content", "Words.")
+      |> assert_has(".cm-editor.cm-focused")
+      |> press(".ed-cm .cm-content", "Escape")
+      |> refute_has(".cm-editor.cm-focused")
+    end
+
+    # The lines to hand on are a field of the pane, in the same clothes
+    # as every other field beside them. They were a bare paragraph.
+    @share_ground """
+    () => {
+      const one = getComputedStyle(document.querySelector("#shareLines"))
+      const other = getComputedStyle(document.querySelector("#edSlug"))
+      return [one.backgroundColor, other.backgroundColor,
+              one.fontSize, other.fontSize, one.padding, other.padding]
+    }
+    """
+
+    test "the share lines wear the clothes of the pane", %{conn: conn} do
+      article = Texttile.ArticlesFixtures.published_post(title: "Handed on")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> assert_has("#shareLines")
+      |> evaluate(@share_ground, [is_function: true], fn [bg, other_bg, fs, other_fs, p, other_p] ->
+        assert bg == other_bg
+        assert fs == other_fs
+        assert p == other_p
+      end)
+    end
+  end
+
   # The editor debounces its autosave; database asserts wait for it.
   defp wait_until(fun, timeout \\ 3000) do
     do_wait(fun, System.monotonic_time(:millisecond) + timeout)

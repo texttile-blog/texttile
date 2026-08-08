@@ -491,6 +491,11 @@ const impl = {
         {key: "Mod-b", run: cmds.bold},
         {key: "Mod-i", run: cmds.italic},
         {key: "Mod-k", run: cmds.link},
+        /* Escape is the way out of the words. The writing surface takes
+           Tab as a character, so without this the body is a room with
+           only a mouse for a door. Leaving flushes what is unsaved,
+           through the focus listener below. */
+        {key: "Escape", run: v => { v.contentDOM.blur(); return true }},
         {key: "Enter", run: insertNewlineContinueMarkup},
         {key: "Backspace", run: deleteMarkupBackward},
         ...historyKeymap,

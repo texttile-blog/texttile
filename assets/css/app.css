@@ -303,18 +303,15 @@
   .writer { color: inherit; text-decoration: none; }
   .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
 
-  /* The lines to hand on, in the voice of the column they stand in:
-     the reading size of a value, no ground, no border, no scrollbar.
-     It is a field only so the words can be selected and copied by hand;
-     it grows to what it holds and never scrolls. */
+  /* The lines to hand on: a field like every other field of the
+     column, so the block reads as part of the pane and not as a stray
+     paragraph. It only gives up the two things a field does that this
+     one must not: it never scrolls and it is not dragged bigger, it
+     grows to what it holds. */
   .sharelines {
-    display: block; width: 100%; resize: none; overflow: hidden;
-    field-sizing: content;
-    padding: 0; border: 0; background: transparent; box-shadow: none;
-    font-family: inherit; font-size: 13px; line-height: 1.5;
-    color: var(--tt-dim); overflow-wrap: anywhere;
+    display: block; resize: none; overflow: hidden;
+    field-sizing: content; overflow-wrap: anywhere;
   }
-  .sharelines:focus { outline: none; box-shadow: none; background: transparent; }
 
   /* the addresses an entry has left behind, under the address field.
      A quiet list: the address in the monospace the address field uses,
@@ -483,7 +480,11 @@
      both wear it, so the way to the reader's side reads the same in
      both places. */
   .out { text-decoration: none; align-items: center; gap: 5px; }
-  .out .out-i { width: 12px; height: 12px; flex: none; opacity: .7; }
+  /* The arrow carries its own size, wherever it stands. An SVG without
+     one grows to fill the box it lands in, and next to the IMPORT.md
+     link, which is a .link and not an .out, there was no other rule to
+     take a size from. */
+  .out-i { width: 12px; height: 12px; flex: none; vertical-align: -2px; opacity: .7; }
   /* The Last-saved line is a pill, and the arrow belongs inside it: the
      flashed state draws a ground and a border, and an arrow beside that
      would crowd the rounded edge. Inside, the pill wraps both and
@@ -495,7 +496,7 @@
   .out:hover { color: var(--tt-accent); }
   .out:hover .out-i { opacity: 1; }
   .stamp.out.published:hover { color: var(--tt-onsolid); opacity: .85; }
-  .pop .row .out-i { width: 12px; height: 12px; margin-left: 5px; opacity: .7; }
+  .pop .row .out-i { margin-left: 5px; }
 
   /* the editor's tab row */
   .tab {
@@ -550,7 +551,7 @@
   }
   .ed-body {
     display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
-    margin-top: 22px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+    margin-top: 3px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
     color: var(--tt-ink); background-color: var(--tt-field); border: 0;
     border-radius: var(--tt-radius);
     padding: 6px 6px 7px; resize: none; min-height: 100px;
@@ -1302,11 +1303,14 @@
    with the .ed-cm prefix reliably outweigh them.
    ================================================================== */
 
-/* the bar: quiet glyphs on the page, sticky under the topbar */
+/* the bar: quiet glyphs on the page, sticky under the topbar. The
+   space above it is the wide one and the space under it is nearly
+   none, so the glyphs belong to the words they format and not to the
+   title above them. `.ed-body` carries the small half. */
 .mdbar {
   position: sticky; top: 52px; z-index: 30;
   display: flex; align-items: center; gap: 2px;
-  margin: 18px -6px 0; padding: 5px 6px 4px;
+  margin: 24px -6px 0; padding: 5px 6px 4px;
   background: var(--tt-page);
 }
 @media (min-width: 1024px) { .mdbar { top: 0; } }

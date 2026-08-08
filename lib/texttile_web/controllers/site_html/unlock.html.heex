@@ -1,6 +1,10 @@
+<%!-- The card stands in the middle of the page and everything on it
+     stands in the middle of the card: the mark, the title, the one
+     line that says why, and the field. Nothing here is a form to work
+     through, so nothing needs a left edge to run down. --%>
 <main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[13vh] pb-10">
-  <div class="w-[min(374px,100%)]">
-    <div class="flex items-center gap-[11px]">
+  <div class="w-[min(374px,100%)] text-center">
+    <div class="flex items-center justify-center gap-[11px]">
       <Layouts.mark size={28} ink="var(--tt-ink)" />
       <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">
         {Texttile.Settings.site_title()}
@@ -14,6 +18,7 @@
       <input
         type="password"
         id="password"
+        class="text-center"
         name="password"
         autofocus
         autocomplete="current-password"
@@ -30,10 +35,5 @@
         {gettext("Read on")}
       </button>
     </form>
-    <p class="note mt-[18px] leading-[1.6]">
-      {gettext(
-        "One password opens the whole blog, and this browser remembers it. If you do not have it, ask the person who gave you the address."
-      )}
-    </p>
   </div>
 </main>

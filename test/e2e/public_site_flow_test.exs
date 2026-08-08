@@ -53,6 +53,45 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> visit("/")
       |> assert_has("a", text: "Behind the wall")
     end
+
+    # The card was centred on the page while everything on it ran down
+    # the left edge, so the mark, the title and the button each began
+    # somewhere else. The gate is four short things, not a form to work
+    # through, so they stand on one axis.
+    # Full-width boxes are centred whatever they hold, so the measure
+    # is what is drawn: the mark and the title from the left edge of
+    # the one to the right edge of the other, and the rendered range of
+    # each line of words.
+    @gate_axis """
+    () => {
+      const card = document.querySelector("#unlock").parentElement
+      const box = card.getBoundingClientRect()
+      const axis = box.left + box.width / 2
+      const off = r => Math.abs(r.left + r.width / 2 - axis)
+      const kids = [...card.firstElementChild.children].map(k => k.getBoundingClientRect())
+      const head = {left: kids[0].left, width: kids[kids.length - 1].right - kids[0].left}
+      const words = el => {
+        const range = document.createRange()
+        range.selectNodeContents(el)
+        return range.getBoundingClientRect()
+      }
+      return Math.max(off(head),
+                      off(words(card.querySelector("p"))),
+                      off(words(document.querySelector("#unlock button"))))
+    }
+    """
+
+    test "stands on one axis and says only what it must", %{conn: conn} do
+      published_post(title: "Behind the wall", slug: "behind-the-wall")
+      {:ok, _} = Settings.put(:site_visibility, "protected")
+      {:ok, _} = Settings.put(:site_password, "sesame")
+
+      conn
+      |> visit("/")
+      |> assert_has("#unlock")
+      |> refute_has("body", text: "One password opens the whole blog")
+      |> evaluate(@gate_axis, [is_function: true], &assert(&1 < 1.5))
+    end
   end
 
   describe "the gallery" do
