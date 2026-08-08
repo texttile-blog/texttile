@@ -8,7 +8,7 @@ SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git
 DB_DEV := $(SHARED_ROOT)/texttile_dev.db
 
 # Local, stable path for the remote DB snapshot. Point TablePlus at this file.
-DB_LOCAL := $(SHARED_ROOT)/texttile-demo.db
+DB_LOCAL := $(SHARED_ROOT)/texttile-snapshot.db
 
 # The command line tools the app runs: ffmpeg and ffprobe for the video
 # conversion. Run this once per machine; the container has them already.
@@ -38,14 +38,18 @@ kill-port-4000:
 		fi; \
 	fi
 
-# Pull a consistent snapshot of the production SQLite DB to $(DB_LOCAL).
+# Pull a consistent snapshot of a running SQLite DB to $(DB_LOCAL).
 # VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.
+# This repository deploys texttile-staging, so that is the default.
+# The demo: `make db-pull FLY_APP=texttile-demo`.
+FLY_APP ?= texttile-staging
+
 db-pull:
 	@echo "Waking the machine..."
-	@curl -fs -o /dev/null --max-time 30 https://texttile.fly.dev/ || true
-	fly ssh console -a texttile -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
+	@curl -fs -o /dev/null --max-time 30 https://$(FLY_APP).fly.dev/ || true
+	fly ssh console -a $(FLY_APP) -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
 	@rm -f -- "$(DB_LOCAL)"
-	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a texttile
+	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a $(FLY_APP)
 	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
 
 # Delete the shared development database. The next `make start` recreates it.
