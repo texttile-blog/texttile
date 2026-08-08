@@ -14,6 +14,7 @@ defmodule Texttile.Articles do
 
   alias Texttile.Articles.Article
   alias Texttile.Articles.LogEntry
+  alias Texttile.Articles.Redirect
   alias Texttile.Articles.Version
   alias Texttile.Repo
 
@@ -44,6 +45,9 @@ defmodule Texttile.Articles do
   ## Reading
 
   def get_article!(id), do: Repo.get!(Article, id)
+
+  @doc "One entry by id whatever state it is in, or nil."
+  def get_article(id), do: Repo.get(Article, id)
 
   @doc """
   The texts for the grid, by date, newest first: the day a text is
@@ -208,6 +212,188 @@ defmodule Texttile.Articles do
   end
 
   @doc """
+  The post at a date and a slug whatever state it is in, or nil.
+
+  An entry wears its address from the moment it has a slug, and an
+  admin who is signed in reads it there before anybody else can: the
+  reader's side of a draft is the reader's side, not a second design.
+  """
+  def get_post(%Date{} = date, slug) when is_binary(slug) do
+    Repo.one(
+      from a in Article, where: a.slug == ^slug and a.type == "post" and a.publish_date == ^date
+    ) || dateless_post(date, slug)
+  end
+
+  # A post with no day yet borrows today, exactly as `public_prefix/1`
+  # does, so the address the editor prints is the address that answers.
+  # Tomorrow it borrows tomorrow, and so would publishing it.
+  defp dateless_post(date, slug) do
+    if Date.compare(date, Date.utc_today()) == :eq do
+      Repo.one(
+        from a in Article,
+          where: a.slug == ^slug and a.type == "post" and is_nil(a.publish_date)
+      )
+    end
+  end
+
+  @doc """
+  The address an entry can be read at right now, live or not: its
+  public address, and while a post has no day yet, the address it
+  borrows from today. Nil until the entry has a slug, because until
+  then there is nothing to open.
+  """
+  def reader_path(%Article{slug: slug}) when slug in [nil, ""], do: nil
+
+  def reader_path(%Article{slug: slug} = article),
+    do: public_path(article) || public_prefix(article) <> slug
+
+  @doc "The page behind a short address whatever state it is in, or nil."
+  def get_page(slug) when is_binary(slug) do
+    Repo.one(from a in Article, where: a.slug == ^slug and a.type == "page")
+  end
+
+  ## The archive: one line of years, the months of the open year
+
+  @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
+
+  @doc "The short name of a month, 1 to 12."
+  def month_name(number) when number in 1..12, do: Enum.at(@months, number - 1)
+
+  @doc """
+  Whether an entry falls in a period. `nil` for the year means every
+  year, `nil` for the month means the whole year. An entry without a
+  publish date falls in no year at all: it is not in the archive until
+  it has a day.
+  """
+  def in_period?(_article, nil, _month), do: true
+  def in_period?(%{publish_date: nil}, _year, _month), do: false
+  def in_period?(%{publish_date: date}, year, nil), do: date.year == year
+
+  def in_period?(%{publish_date: date}, year, month),
+    do: date.year == year and date.month == month
+
+  @doc """
+  The archive over a list of entries: `{years, months}`.
+
+  `years` is every year the list touches, newest first, each with how
+  many entries it holds. `months` is empty until a year is open, and
+  then it holds only the months of that year that carry something: a
+  month nobody wrote in is not a choice, and a row of twelve where half
+  of them do nothing reads as a calendar.
+
+  The counts come from the list as it stands, so they follow whatever
+  the search has narrowed it to and a year that holds nothing for the
+  term goes quiet instead of lying about it.
+  """
+  def periods(articles, year) do
+    years =
+      articles
+      |> Enum.flat_map(fn
+        %{publish_date: nil} -> []
+        %{publish_date: date} -> [date.year]
+      end)
+      |> Enum.frequencies()
+      |> Enum.sort_by(fn {y, _count} -> -y end)
+
+    months =
+      if year do
+        for month <- 1..12,
+            count = Enum.count(articles, &in_period?(&1, year, month)),
+            count > 0,
+            do: {month, count}
+      else
+        []
+      end
+
+    {years, months}
+  end
+
+  @doc """
+  The year and the month a list can actually show, out of what was
+  asked for. A search can empty the year that is open; then the year
+  lets go, rather than showing a page with nothing on it.
+  """
+  def settle_period(articles, year, month) do
+    year = if year && Enum.any?(articles, &in_period?(&1, year, nil)), do: year
+    month = if year && month && Enum.any?(articles, &in_period?(&1, year, month)), do: month
+    {year, month}
+  end
+
+  ## The addresses an entry has left behind
+
+  @doc """
+  The addresses this entry used to live at, newest first. The editor
+  lists them under the address field, so whoever moved a text sees what
+  the move left standing and can take a row off again.
+  """
+  def redirects(%Article{id: id}) do
+    Redirect
+    |> where([r], r.article_id == ^id)
+    |> order_by([r], desc: r.id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Where an old address sends a reader now, or nil when it sends nobody
+  anywhere: no row, the entry left the site, or the row names the very
+  address that was asked for.
+  """
+  def redirect_target(path) when is_binary(path) do
+    with %Redirect{} = redirect <- Repo.get_by(Redirect, path: path),
+         %Article{status: "published"} = article <- Repo.get(Article, redirect.article_id),
+         target when is_binary(target) and target != path <- public_path(article) do
+      target
+    else
+      _ -> nil
+    end
+  end
+
+  def redirect_target(_path), do: nil
+
+  @doc "Takes one old address off the entry; it answers a 404 again."
+  def delete_redirect(%Article{id: id}, redirect_id) do
+    case Repo.get_by(Redirect, id: redirect_id, article_id: id) do
+      nil -> :ok
+      redirect -> with {:ok, _} <- Repo.delete(redirect), do: :ok
+    end
+  end
+
+  # A live entry that moves leaves its address behind. Only a live one:
+  # before an entry goes live nobody could reach the address, so there
+  # is no link to keep alive.
+  #
+  # The address it moves to must answer the entry itself from now on, so
+  # a row that claims it is dropped - that is what happens when somebody
+  # moves a text and moves it straight back.
+  # Nothing is written while nothing moved. Every article setting goes
+  # through here - a tag, a checkbox, a keystroke in the tag field - and
+  # a write on each of those would hold SQLite's one write lock for a
+  # change that means nothing.
+  defp remember_address(%Article{status: "published"} = before, %Article{} = now) do
+    old = public_path(before)
+    new = public_path(now)
+
+    if is_binary(old) and old != new do
+      stamp = DateTime.utc_now(:second)
+
+      Repo.insert(
+        %Redirect{article_id: now.id, path: old, inserted_at: stamp},
+        on_conflict: [set: [article_id: now.id, inserted_at: stamp]],
+        conflict_target: :path
+      )
+
+      # Two live entries can never share an address, so a row claiming
+      # the address this one just moved to belongs to an entry that
+      # vacated it. From now on the address is this entry's own again.
+      if is_binary(new), do: Repo.delete_all(from r in Redirect, where: r.path == ^new)
+    end
+
+    now
+  end
+
+  defp remember_address(_before, now), do: now
+
+  @doc """
   Every tag the admin area already knows, the most used one first, then
   in alphabetical order. The editor offers this list under the tag field,
   so the same word does not come back in three spellings.
@@ -287,7 +473,7 @@ defmodule Texttile.Articles do
   @doc "A new, empty draft, and the first line of its Log."
   def create_draft(user) do
     {:ok, article} = Repo.insert(%Article{})
-    push_log(article, user, "started the text")
+    push_log(article, user, "started the entry")
     broadcast({:article_changed, article})
     {:ok, article}
   end
@@ -305,9 +491,10 @@ defmodule Texttile.Articles do
 
   @doc "One article setting changed. Atomic, last write wins."
   def update_settings(%Article{} = article, attrs) do
-    with {:ok, article} <- article |> Article.settings_changeset(attrs) |> Repo.update() do
-      broadcast({:article_changed, article})
-      {:ok, article}
+    with {:ok, moved} <- article |> Article.settings_changeset(attrs) |> Repo.update() do
+      moved = remember_address(article, moved)
+      broadcast({:article_changed, moved})
+      {:ok, moved}
     end
   end
 
@@ -332,7 +519,7 @@ defmodule Texttile.Articles do
       push_log(
         article,
         user,
-        if(future?, do: "scheduled the text for #{day}", else: "published the text")
+        if(future?, do: "scheduled the entry for #{day}", else: "published the entry")
       )
 
       article = if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
@@ -353,7 +540,7 @@ defmodule Texttile.Articles do
       push_log(
         article,
         user,
-        if(was == "scheduled", do: "unscheduled the text", else: "unpublished the text")
+        if(was == "scheduled", do: "unscheduled the entry", else: "unpublished the entry")
       )
 
       broadcast({:article_changed, article})
@@ -389,15 +576,19 @@ defmodule Texttile.Articles do
         # already-live text is not.
         went_live? = status == "published" and article.status == "scheduled"
 
-        with {:ok, article} <-
+        with {:ok, moved} <-
                article
                |> Article.state_changeset(%{publish_date: date, status: status})
                |> Repo.update() do
-          article =
-            if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
+          # The date is part of the address of a post, so a live entry
+          # that gets another day has moved and leaves the old day
+          # standing as a redirect.
+          moved = remember_address(article, moved)
 
-          broadcast({:article_changed, article})
-          {:ok, article}
+          moved = if went_live?, do: Texttile.Newsletter.notify_published(moved), else: moved
+
+          broadcast({:article_changed, moved})
+          {:ok, moved}
         end
     end
   end
@@ -412,7 +603,7 @@ defmodule Texttile.Articles do
     |> Repo.all()
     |> Enum.map(fn article ->
       {:ok, article} = article |> Article.state_changeset(%{status: "published"}) |> Repo.update()
-      push_log(article, nil, "the text went live as scheduled")
+      push_log(article, nil, "the entry went live as scheduled")
       article = Texttile.Newsletter.notify_published(article)
       broadcast({:article_changed, article})
       article
@@ -470,7 +661,7 @@ defmodule Texttile.Articles do
   def save_version(%Article{} = article, user) do
     case snapshot(article, user) do
       {:ok, version} ->
-        push_log(article, user, "saved a version of the text")
+        push_log(article, user, "saved a version of the entry")
         broadcast({:versions_changed, article.id})
         {:ok, version}
 

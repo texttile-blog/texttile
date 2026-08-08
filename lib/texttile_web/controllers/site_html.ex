@@ -115,8 +115,8 @@ defmodule TexttileWeb.SiteHTML do
         <div id="subscribe" aria-label="Subscribe">
           <p class="f-eyebrow">Subscribe</p>
           <p>
-            One email when a new text goes out, nothing else. Unsubscribe is one
-            click, no questions.
+            You get an email when a new entry goes out, nothing else.
+            Unsubscribe is one click, no questions.
           </p>
           <form
             id="newsletter-form"
@@ -140,7 +140,7 @@ defmodule TexttileWeb.SiteHTML do
               name="email"
               class="min-w-0 flex-1"
               placeholder="you@example.org"
-              aria-label="Email for new texts"
+              aria-label="Email for new entries"
               required
             />
             <button class="btn solid flex-none">Subscribe</button>
@@ -148,6 +148,27 @@ defmodule TexttileWeb.SiteHTML do
         </div>
       </div>
     </section>
+    """
+  end
+
+  @doc """
+  One word of the archive: a year, a month, or the "all" that lets go
+  of one. The one that is open says so and stops being a link, so the
+  row never sends a reader to the page they are already on.
+  """
+  attr :label, :any, required: true
+  attr :href, :string, required: true
+  attr :on, :boolean, default: false
+  attr :count, :any, default: nil
+
+  def period(assigns) do
+    ~H"""
+    <span :if={@on} class="per on" aria-current="true">
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </span>
+    <a :if={!@on} class="per" href={@href}>
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </a>
     """
   end
 
@@ -310,7 +331,7 @@ defmodule TexttileWeb.SiteHTML do
   @doc "What the count beside the search says: all of it, or n of all."
   def count_label(shown, total) do
     if shown == total do
-      "#{total} #{if total == 1, do: "text", else: "texts"}"
+      "#{total} #{if total == 1, do: "entry", else: "entries"}"
     else
       "#{shown} of #{total}"
     end

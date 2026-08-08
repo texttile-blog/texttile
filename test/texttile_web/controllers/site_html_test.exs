@@ -39,8 +39,8 @@ defmodule TexttileWeb.SiteHTMLTest do
 
   describe "count_label/2" do
     test "speaks of all texts, or of the found part" do
-      assert SiteHTML.count_label(1, 1) == "1 text"
-      assert SiteHTML.count_label(3, 3) == "3 texts"
+      assert SiteHTML.count_label(1, 1) == "1 entry"
+      assert SiteHTML.count_label(3, 3) == "3 entries"
       assert SiteHTML.count_label(2, 5) == "2 of 5"
       assert SiteHTML.count_label(0, 5) == "0 of 5"
     end

@@ -23,6 +23,7 @@ defmodule TexttileWeb.NewsletterLive do
      socket
      |> assign(:page_title, "Newsletter")
      |> assign(:add_error, false)
+     |> assign(:confirm_remove, nil)
      |> load()}
   end
 
@@ -45,11 +46,27 @@ defmodule TexttileWeb.NewsletterLive do
     end
   end
 
+  # Taking an address off cannot be undone: nobody can put a reader
+  # back on the list on their behalf, and the reader is never told. So
+  # it asks first, like every other step of that kind here.
+  def handle_event("ask_remove", %{"id" => id}, socket) do
+    case Enum.find(socket.assigns.subscribers, &(to_string(&1.id) == to_string(id))) do
+      nil -> {:noreply, load(socket)}
+      subscriber -> {:noreply, assign(socket, :confirm_remove, subscriber)}
+    end
+  end
+
+  def handle_event("cancel_remove", _params, socket) do
+    {:noreply, assign(socket, :confirm_remove, nil)}
+  end
+
   # An address another admin removed a moment ago is simply gone; the
   # list reloads either way.
-  def handle_event("remove", %{"id" => id}, socket) do
-    Newsletter.remove(id)
-    {:noreply, load(socket)}
+  def handle_event("remove", _params, socket) do
+    # nil on a double click: the first click already closed the dialog
+    if subscriber = socket.assigns.confirm_remove, do: Newsletter.remove(subscriber.id)
+
+    {:noreply, socket |> assign(:confirm_remove, nil) |> load()}
   end
 
   def handle_info({:newsletter_changed}, socket), do: {:noreply, load(socket)}
@@ -116,7 +133,8 @@ defmodule TexttileWeb.NewsletterLive do
             <button
               class="btn ghost flex-none"
               type="button"
-              phx-click="remove"
+              id={"remove-#{subscriber.id}"}
+              phx-click="ask_remove"
               phx-value-id={subscriber.id}
             >
               Remove
@@ -124,30 +142,47 @@ defmodule TexttileWeb.NewsletterLive do
           </div>
         </div>
 
-        <p class="note mt-[22px] max-w-[62ch]" id="newsletterRule">
+        <p class="note mt-[22px]" id="newsletterRule">
           A reader who subscribes on the site confirms the address by mail
-          first; until then it gets no text. An address you add here is
-          confirmed at once: you vouch for it. When a text goes live with
-          Email subscribers checked, it goes to every confirmed address.
+          first; until then it gets no updates. An address you add here is
+          directly confirmed. When an entry goes live with Email subscribers
+          checked, it goes to every confirmed address.
           <span :if={@protected?}>
             This blog asks for its access word, and every one of those mails
             carries it, so this list is who can read the blog.
           </span>
         </p>
       </div>
+
+      <.ask
+        :if={@confirm_remove}
+        heading={"Take #{@confirm_remove.email} off the list?"}
+        ok="Remove the address"
+        on_ok="remove"
+        on_cancel="cancel_remove"
+      >
+        <p>
+          <b>{@confirm_remove.email}</b>
+          gets no mail from this blog from the moment you confirm, and the
+          reader is not told. <br />
+          <br /> There is no undo, and nobody can put the address back on
+          the list for them: a reader subscribes on the site, or you add the
+          address here again and vouch for it yourself.
+        </p>
+      </.ask>
     </Layouts.app>
     """
   end
 
-  # The lead line: how many addresses get the texts, and who still waits.
+  # The lead line: how many addresses get the entries, and who still waits.
   defp sub_line([], _confirmed) do
-    "Everybody who gets a mail when a new text goes live."
+    "Everybody who gets a mail when a new entry goes live."
   end
 
   defp sub_line(subscribers, confirmed) do
     waiting = length(subscribers) - confirmed
 
-    "#{confirmed} #{plural(confirmed, "address gets", "addresses get")} the texts by mail." <>
+    "#{confirmed} #{plural(confirmed, "email gets", "emails get")} updates." <>
       if waiting == 0 do
         ""
       else

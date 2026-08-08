@@ -5,7 +5,7 @@
 
     <div class="searchrow mt-7">
       <form action={@list_path} method="get" role="search">
-        <label for="q" class="sr">Search the texts</label>
+        <label for="q" class="sr">Search the entries</label>
         <input
           type="search"
           id="q"
@@ -16,9 +16,47 @@
           spellcheck="false"
         />
       </form>
-      <a :if={@q != ""} class="btn sm" id="clear" href={@list_path}>Clear</a>
+      <a :if={@q != "" || @year} class="btn sm" id="clear" href={@list_path}>Clear</a>
       <span class="cnt" id="count">{count_label(@found, @total)}</span>
     </div>
+
+    <%!-- the archive: one line of years, and the months of the year
+         that is open under it. Two lines, whatever the age of the blog.
+         The counts follow the search, so a year that holds nothing for
+         the term goes quiet instead of lying about it. --%>
+    <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
+      <p class="prow" id="years">
+        <.period
+          label="All years"
+          on={is_nil(@year)}
+          href={@period_path.(nil, nil)}
+          count={@across_years}
+        />
+        <.period
+          :for={{year, count} <- @years}
+          label={year}
+          on={@year == year}
+          href={@period_path.(year, nil)}
+          count={count}
+        />
+      </p>
+      <p :if={@months != []} class="prow" id="months">
+        <.period
+          label="All months"
+          on={is_nil(@month)}
+          href={@period_path.(@year, nil)}
+          count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
+        />
+        <%!-- no count under a month: twelve numbers in a row is a
+             table, not a line --%>
+        <.period
+          :for={{month, _count} <- @months}
+          label={Articles.month_name(month)}
+          on={@month == month}
+          href={@period_path.(@year, month)}
+        />
+      </p>
+    </nav>
 
     <div class="cards" id="texts">
       <.card
@@ -42,7 +80,7 @@
            the middle at either end of the row. --%>
       <span>
         <a :if={@page > 1} class="btn sm" id="prev-page" href={@page_path.(@page - 1)} rel="prev">
-          Newer texts
+          Newer
         </a>
       </span>
       <span class="f-note num">Page {@page} of {@pages}</span>
@@ -54,13 +92,13 @@
           href={@page_path.(@page + 1)}
           rel="next"
         >
-          Older texts
+          Older
         </a>
       </span>
     </nav>
 
     <p :if={@articles == [] && @q != ""} class="f-body mt-8" id="empty">
-      Nothing matches that. <a class="link" href={@list_path}>Show all texts</a>.
+      Nothing matches that. <a class="link" href={@list_path}>Show all entries</a>.
     </p>
     <p :if={@articles == [] && @q == ""} class="f-body mt-8">Nothing here yet.</p>
   </div>

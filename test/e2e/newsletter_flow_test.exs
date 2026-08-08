@@ -29,8 +29,8 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     # The reader subscribes in the Subscribe section and confirms by mail.
     conn
     |> visit("/")
-    |> assert_has("#subscribe", text: "One email when a new text goes out")
-    |> fill_in("Email for new texts", with: "christel@example.org")
+    |> assert_has("#subscribe", text: "You get an email when a new entry goes out")
+    |> fill_in("Email for new entries", with: "christel@example.org")
     |> click_button("Subscribe")
     |> assert_has("main", text: "Now check your mail.")
 
@@ -47,21 +47,24 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     conn
     |> sign_in()
     |> open("/admin/newsletter")
-    |> assert_has("#newsletterSub", text: "1 address gets the texts")
+    |> assert_has("#newsletterSub", text: "1 email gets updates")
     |> assert_has("#subList", text: "christel@example.org")
     |> fill_in("Email", with: "jens@example.org")
     |> click_button("Add")
     |> assert_has("#subList", text: "jens@example.org")
-    |> assert_has("#newsletterSub", text: "2 addresses get the texts")
+    |> assert_has("#newsletterSub", text: "2 emails get updates")
 
     # A publish click sends the text to both.
     conn
-    |> open("/admin")
-    |> click_button("New text")
+    |> open("/admin/texts")
+    |> click_button("New entry")
     |> fill_in("Title", with: "Harbor mornings")
     |> click_button("#stateBtn .main", "Publish")
     |> assert_has("#stamp", text: "published")
-    |> assert_has("#state", text: "on its way to 2 subscribers")
+    # the click says one word; the two mails below are the proof that it
+    # went out, and the settings row keeps the story
+    |> assert_has("#state", text: "Published")
+    |> assert_has("#notifyOpt", text: "went out on")
 
     mails =
       for _ <- 1..2 do

@@ -35,7 +35,7 @@ defmodule TexttileWeb.NewsletterLiveTest do
     refute has_element?(view, "#sub-#{confirmed.id}", "waits")
     assert has_element?(view, "#sub-#{waiting.id}", "two@example.org")
     assert has_element?(view, "#sub-#{waiting.id}", "waits")
-    assert has_element?(view, "#newsletterSub", "1 address gets the texts")
+    assert has_element?(view, "#newsletterSub", "1 email gets updates")
   end
 
   test "adding an address puts it on the list confirmed, live for everybody", %{conn: conn} do
@@ -64,14 +64,45 @@ defmodule TexttileWeb.NewsletterLiveTest do
     assert Newsletter.list() == []
   end
 
-  test "remove takes the address off the list, and a double remove is no crash", %{conn: conn} do
+  test "remove asks first, then takes the address off the list", %{conn: conn} do
+    {:ok, subscriber} = Newsletter.add("one@example.org")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/newsletter")
+
+    view |> element("#remove-#{subscriber.id}") |> render_click()
+    assert has_element?(view, "#dialog", "one@example.org")
+    assert has_element?(view, "#sub-#{subscriber.id}")
+
+    view |> element("#dialog-ok") |> render_click()
+
+    refute has_element?(view, "#sub-#{subscriber.id}")
+    assert Newsletter.list() == []
+  end
+
+  test "the question can be waved off, and the address stays", %{conn: conn} do
+    {:ok, subscriber} = Newsletter.add("one@example.org")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/newsletter")
+
+    view |> element("#remove-#{subscriber.id}") |> render_click()
+    view |> element("#dialog-cancel") |> render_click()
+
+    refute has_element?(view, "#dialog")
+    assert has_element?(view, "#sub-#{subscriber.id}")
+    assert [_still_there] = Newsletter.list()
+  end
+
+  test "two admins removing the same address is no crash", %{conn: conn} do
     {:ok, subscriber} = Newsletter.add("one@example.org")
 
     {:ok, one, _html} = live(conn, ~p"/admin/newsletter")
     {:ok, two, _html} = live(conn, ~p"/admin/newsletter")
 
-    one |> element("#sub-#{subscriber.id} button", "Remove") |> render_click()
-    render_click(two, "remove", %{"id" => subscriber.id})
+    one |> element("#remove-#{subscriber.id}") |> render_click()
+    two |> element("#remove-#{subscriber.id}") |> render_click()
+
+    one |> element("#dialog-ok") |> render_click()
+    two |> element("#dialog-ok") |> render_click()
 
     refute has_element?(one, "#sub-#{subscriber.id}")
     refute has_element?(two, "#sub-#{subscriber.id}")

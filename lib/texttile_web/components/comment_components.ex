@@ -27,7 +27,7 @@ defmodule TexttileWeb.CommentComponents do
     ~H"""
     <div class="py-[14px] border-b border-hair" id={"comment-#{@comment.id}"}>
       <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
-        {@comment.name}
+        <.writer comment={@comment} />
         <span :if={@waiting} class="wait">not confirmed yet</span>
         <span class="font-normal text-faint text-[12.5px]">
           <span class="num">{Calendar.strftime(@comment.inserted_at, "%Y-%m-%d %H:%M")}</span>
@@ -98,6 +98,29 @@ defmodule TexttileWeb.CommentComponents do
   end
 
   @doc """
+  Who wrote a comment, as a way to answer them. Only the admin area
+  ever draws this, and the address goes no further than the mail
+  client it opens: readers never see it anywhere.
+
+  A comment whose address row is gone keeps its name as plain words.
+  """
+  attr :comment, :any, required: true
+
+  def writer(assigns) do
+    assigns = assign(assigns, :email, email_of(assigns.comment))
+
+    ~H"""
+    <a :if={@email} class="writer" href={"mailto:#{@email}"} title={"Write to #{@email}"}>
+      {@comment.name}
+    </a>
+    <span :if={!@email}>{@comment.name}</span>
+    """
+  end
+
+  defp email_of(%{address: %{email: email}}) when is_binary(email) and email != "", do: email
+  defp email_of(_comment), do: nil
+
+  @doc """
   One comment in the trash: what it said, where it stood, the day it
   goes for good, and the way back.
   """
@@ -107,7 +130,7 @@ defmodule TexttileWeb.CommentComponents do
     ~H"""
     <div class="py-[14px] border-b border-hair" id={"trash-#{@comment.id}"}>
       <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
-        {@comment.name}
+        <.writer comment={@comment} />
         <span class="font-normal text-faint text-[12.5px]">
           <span class="num">{Calendar.strftime(@comment.inserted_at, "%Y-%m-%d %H:%M")}</span>
           · on
@@ -136,19 +159,19 @@ defmodule TexttileWeb.CommentComponents do
   time, and can take a deleted comment back out of the trash.
   """
   def comment_rule(true = _require_confirmation?) do
-    "Readers confirm their email first. A comment stays out of the text until " <>
+    "Readers confirm their email first. A comment stays out of the entry until " <>
       "the reader follows the link in the mail. Until then only you see it, " <>
       "marked \"not confirmed yet\", and Release puts that one comment under the " <>
-      "text without waiting. Delete keeps a comment in the trash for #{Comments.trash_days()} " <>
-      "days, silently, and then it is gone. Spam is filtered invisibly: honeypot, " <>
-      "timing, rate limit. No captcha, ever."
+      "entry without waiting. Delete keeps a comment in the trash for " <>
+      "#{Comments.trash_days()} days, silently, and then it is gone. Spam is filtered " <>
+      "by honeypot, timing and rate limit checks. No captcha, ever."
   end
 
   def comment_rule(false) do
-    "A comment appears under the text the moment a reader sends it, and nobody " <>
-      "confirms anything. Delete keeps a comment in the trash for #{Comments.trash_days()} " <>
-      "days, silently, and then it is gone. Spam is filtered invisibly: honeypot, " <>
-      "timing, rate limit. No captcha, ever."
+    "A comment appears under the entry the moment a reader sends it, and nobody " <>
+      "confirms anything. Delete keeps a comment in the trash for " <>
+      "#{Comments.trash_days()} days, silently, and then it is gone. Spam is filtered " <>
+      "by honeypot, timing and rate limit checks. No captcha, ever."
   end
 
   @doc """
@@ -160,7 +183,7 @@ defmodule TexttileWeb.CommentComponents do
     %{
       title: "Delete the comment of #{comment.name}?",
       body: [
-        "It leaves the text at once, and the reader is never told.",
+        "It removes the comment from the entry at once, and the reader is not told.",
         "The trash on the Comments screen keeps it for #{Comments.trash_days()} days. " <>
           "Restore puts it back where it stood; after that it is gone for good."
       ],

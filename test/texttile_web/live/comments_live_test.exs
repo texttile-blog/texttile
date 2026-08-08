@@ -24,6 +24,19 @@ defmodule TexttileWeb.CommentsLiveTest do
     comment
   end
 
+  test "the name of a writer is the way to answer them", %{conn: conn} do
+    article = published_post(title: "Harbor mornings")
+    comment = post!(article)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/comments")
+
+    assert has_element?(
+             view,
+             ~s(#comment-#{comment.id} a[href="mailto:christel@example.org"]),
+             "Grandma Christel"
+           )
+  end
+
   test "an empty overview says every comment will show up here", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
 
@@ -46,7 +59,7 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
 
-    assert has_element?(view, "#commentsSub", "2 comments across all texts")
+    assert has_element?(view, "#commentsSub", "across all entries")
     assert has_element?(view, "#commentsSub", "1 comment waits for the reader")
   end
 
@@ -61,7 +74,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     assert has_element?(view, "#commentsList", "Words 9")
     refute has_element?(view, "#commentsList", "Words 1")
-    assert has_element?(view, "#commentsList", "and 1 more on their texts.")
+    assert has_element?(view, "#commentsList", "and 1 more on their entries.")
   end
 
   test "delete asks first, and the words stay while the question stands", %{conn: conn} do

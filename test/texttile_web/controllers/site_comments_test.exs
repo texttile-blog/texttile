@@ -122,7 +122,7 @@ defmodule TexttileWeb.SiteCommentsTest do
       article = published_post()
 
       conn = send_comment(conn, article)
-      assert Phoenix.Flash.get(conn.assigns.flash, :comment_note) =~ "under the text now"
+      assert Phoenix.Flash.get(conn.assigns.flash, :comment_note) =~ "under the entry now"
 
       other = build_conn() |> get(Articles.public_path(article)) |> html_response(200)
       assert other =~ "Grandma Christel"

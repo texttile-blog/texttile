@@ -1,5 +1,14 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
+  <%!-- An entry that is not live wears its address for the admins and
+       for nobody else. The strip says so before the first line, because
+       everything under it looks exactly like the published thing. --%>
+  <p :if={@article.status != "published"} class="notlive" id="not-live">
+    <b>{String.capitalize(@article.status)}.</b>
+    This is the entry as it was last saved. Only somebody signed in can open
+    this address; a reader gets a 404.
+    <a href={~p"/admin/texts/#{@article.id}"}>Back to the editor</a>
+  </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
@@ -61,16 +70,16 @@
          the first block under it. It stands first because "keep
          reading" is what most readers want next. --%>
     <div :if={@older || @newer} class="wrap mt-[44px]">
-      <nav class="textnav" aria-label="More texts">
+      <nav class="textnav" aria-label="More entries">
         <div class="pv">
           <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
-            <span class="lab">Previous text</span>
+            <span class="lab">Previous</span>
             <span class="t">{Articles.display_title(@older)}</span>
           </a>
         </div>
         <div class="nx">
           <a :if={@newer} id="next-post" href={Articles.public_path(@newer)} rel="next">
-            <span class="lab">Next text</span>
+            <span class="lab">Next</span>
             <span class="t">{Articles.display_title(@newer)}</span>
           </a>
         </div>
@@ -137,7 +146,7 @@
             name="email"
             id="comment-email"
             value={(@comment_author && @comment_author.email) || @comment_values["email"]}
-            placeholder="Email, never published"
+            placeholder="Email, not public"
             aria-label="Email"
             required={!@comment_author}
             disabled={!!@comment_author}

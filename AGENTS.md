@@ -15,6 +15,7 @@ The README states the principles. These are the rules behind them. They hold unt
 - A step that cannot be taken back stays separate and confirmed. A newsletter mail is never a side effect of publishing.
 - `/data` is the whole installation: database and uploads. Never copy the live database file; take a copy with `VACUUM INTO` or `.backup` (see `make db-pull`).
 - The signed-in area behind `/admin` is the admin area, in prose and in code (`TexttileWeb.Admin`). Never "the desk": that word is a leftover of a prototype variant name. "Admin" alone stays the person, so the place keeps its noun.
+- One thing a blog holds is an **entry**, in every word a person reads: the admin menu, the headings, the counts, the reader pages, the mails, and the docs. "Text" is what an entry is made of, so it stays where it means the words themselves ("the body text", "stored in plain text"). The code keeps the older noun (`/admin/texts`, `TexttileWeb.TextsLive`, `Texttile.Articles`); renaming the routes would break every bookmark for nothing.
 
 ## Git and GitHub
 

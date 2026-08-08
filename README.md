@@ -13,7 +13,7 @@ Status: early development. Do not use it for a real site yet.
   Everything a reader loads comes from this server.
 - Light in the browser. Small pages and little JavaScript, so the blog opens
   on a slow line far from a data center.
-- Written together. Two people work on the same text at the same time, and
+- Written together. Two people work on the same entry at the same time, and
   the admin area shows who is where.
 - Mobile first. Reading and writing are laid out for a phone; a wide screen
   gets the same screens with more room.
@@ -72,34 +72,47 @@ image, start the container again.
 
 ## Readers and admins
 
-Readers get the list of published texts at `/blog`, each text at its own
+Readers get the list of published entries at `/blog`, each entry at its own
 address, and every published page in the menu. A post lives under the day it
 went live, `/2026/08/23/harbor-mornings`; a page lives at its slug alone,
-`/about-us`. Admins sign in at `/login` and work at `/admin`.
+`/about-us`. Admins sign in at `/login` and work at `/admin`, which sends
+them on to the entries at `/admin/texts`.
 
 The root, `/`, is the front door. It sends the reader to `/blog`, or it
 shows the one page you picked in Settings > Front page. The list keeps
 `/blog` either way, so a bookmark of it stays good when you change your
 mind.
 
-The list shows ten texts a page and then a pager. Change the number in
-Settings > Front page. Under a text stand the way to the text before it and
-the one after it, and the About block from Settings > About.
+The list shows ten entries a page and then a pager. Change the number in
+Settings > Front page. Over the list stands the archive: one line of years,
+and the months of the open year under it, only the months that carry
+something. Both are addresses (`/blog?y=2026&m=8`), so a year or a month can
+be copied and bookmarked. Under an entry stand the way to the entry before
+it and the one after it, and the About block from Settings > About.
+
+An entry that is not live yet answers at the address it will wear, but only
+for somebody signed in; a reader gets a 404 there. So the way out of the
+editor leads into the real reader's page, drafts included.
+
+Changing the slug or the publish date of a live entry moves it, because the
+address of a post carries its date. The old address stays alive as a
+permanent redirect, and the editor lists what is standing under the address
+field, each with a Delete for the day you want it gone.
 
 The blog can sit behind one shared password (Settings > Access). It is an
 access word to hand around, not a login: it is stored in plain text, one
-entry opens the whole blog, and it guards the blog or nothing. No text has a
+word opens the whole blog, and it guards the blog or nothing. No entry has a
 switch of its own.
 
-While the blog is protected, the editor of every text shows the word under
-Share, so you never have to go and look it up. Once a text is live, the same
-block holds the lines to hand on: the title, the address, and the password
-under it. Copy puts them on the clipboard.
+While the blog is protected, the editor of every entry shows the word under
+Share, so you never have to go and look it up. Once an entry is live, the
+same block holds the lines to hand on: the title, the address, and the
+password under it. Copy puts them on the clipboard.
 
 ## Pictures and videos
 
-Pictures and videos go into a text the same way: paste one into the body,
-drop one on it, or add it to the text's gallery. Every original file is kept
+Pictures and videos go into an entry the same way: paste one into the body,
+drop one on it, or add it to the entry's gallery. Every original file is kept
 as it came, below `UPLOADS_PATH`, and nothing leaves the server: no external
 player, no third-party host.
 
@@ -114,7 +127,7 @@ The conversion is the most expensive thing this server does, so it stays out
 of everybody's way: one video at a time, ffmpeg on one thread, at the lowest
 scheduling priority, and with idle disk priority where the kernel offers it.
 While a video converts, the admin area shows the state on its tile and under
-the text; the reader's page shows the video once it is ready. The upload
+the entry; the reader's page shows the video once it is ready. The upload
 takes `.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`.
 
 The container brings ffmpeg. On a development machine, `make tools` installs
@@ -123,17 +136,17 @@ it.
 ## Feed
 
 The blog has an RSS feed at `/feed.xml`. It carries every published post,
-newest first, with the whole text. Each page points at it from its head, and
+newest first, with the whole entry. Each page points at it from its head, and
 the footer carries an RSS link.
 
 A blog behind the shared password has no feed: `/feed.xml` answers 404 and
-no page offers a link. A feed reader cannot enter a password, and the texts
+no page offers a link. A feed reader cannot enter a password, and the entries
 would travel out of the gate. Remove the password to get the feed back.
 
 ## Comments
 
-Readers can comment under every text that allows it (the switch is in the
-text's settings). There is no approval queue. By default a new address gets
+Readers can comment under every entry that allows it (the switch is in the
+entry's settings). There is no approval queue. By default a new address gets
 one confirmation mail. The comment appears when its reader follows the
 mailed link, and every later comment from that address appears at once.
 Turn the confirmation off in Settings > Comments and no comment waits for
@@ -141,7 +154,7 @@ anything.
 
 Comment while signed in and the form fills itself: the name and the address
 come from your account, the two fields take no typing, and the comment
-stands under the text at once. The sign-in already proved the address, so no
+stands under the entry at once. The sign-in already proved the address, so no
 confirmation mail goes out. The comment counts show under each card, on
 `/blog` and on `/admin`.
 
@@ -149,7 +162,7 @@ Admins see all comments at `/admin/comments` and on the Comments tab of each
 text. There they can do three things to a comment:
 
 - **Release** a comment whose reader has not confirmed the address. It puts
-  that one comment under the text. The address itself stays unconfirmed, so
+  that one comment under the entry. The address itself stays unconfirmed, so
   the next comment from it waits again.
 - **Edit** the words. The name and the address stay as the reader sent them,
   and the comment is marked "edited" in the admin area.
@@ -159,7 +172,7 @@ text. There they can do three things to a comment:
 
 Every admin also gets the comment by mail, unless "Mail me every new
 comment" is switched off in Settings > Comments. The mail leaves when the
-comment stands under the text, so a comment that still waits for its
+comment stands under the entry, so a comment that still waits for its
 reader mails nobody. The address of the reader is never in it.
 
 Spam protection is built in and always on: a honeypot field, a time trap,
@@ -169,16 +182,16 @@ and a rate limit per caller. No captcha, no Google, no third parties.
 
 Readers can put their address on the newsletter list through the form in
 the footer of every page. The address gets one confirmation mail and
-receives texts only after its reader follows the mailed link. Admins see
+receives entries only after its reader follows the mailed link. Admins see
 the list at `/admin/newsletter` and can add addresses by hand; an added
 address is confirmed at once.
 
 When a post goes live with "Email subscribers" checked (the switch is in
-the text's settings), every confirmed address gets one plain email: the
-title, the first paragraph, and the address the text lives at. If the
+the entry's settings), every confirmed address gets one plain email: the
+title, the first paragraph, and the address the entry lives at. If the
 blog sits behind the shared password, the mail includes it. Every mail
-carries the way off the list. The email goes out once per text;
-publishing the same text again does not send it again.
+carries the way off the list. The email goes out once per entry;
+publishing the same entry again does not send it again.
 
 The subscribe form wears the same spam protection as the comment form.
 
@@ -225,7 +238,7 @@ instead.
 
 ## Import from another system
 
-Texttile imports texts from a zip archive of bundles: one folder per text,
+Texttile imports entries from a zip archive of bundles: one folder per entry,
 with Markdown, settings, and pictures. A picture can be a file in the bundle
 or a URL that the server downloads, so a migration zip stays small.
 [IMPORT.md](IMPORT.md) is the complete format contract, written so that a

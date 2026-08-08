@@ -157,13 +157,14 @@ defmodule TexttileWeb.ProfileLive do
         <h1 class="page-h">Your profile</h1>
         <p class="lead">
           You are signed in as <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
-          This screen is yours alone: your name, your address, your password,
-          your open sessions. Nothing here has a Save button: every change
-          applies the moment you make it.
+          Change here your email, your password and your open sessions. Every
+          change applies the moment you make it.
         </p>
 
         <h2 class="set-h">You</h2>
-        <.form for={@profile_form} id="profile-form" phx-change="save_profile">
+        <%!-- fields to type into, so they look like fields; the same
+             treatment the Site block of Settings wears --%>
+        <.form for={@profile_form} id="profile-form" class="boxed-in" phx-change="save_profile">
           <div class="drow">
             <label class="lab" for={@profile_form[:display_name].id}>Displayed name</label>
             <span class="val">
@@ -175,9 +176,7 @@ defmodule TexttileWeb.ProfileLive do
                 phx-debounce="300"
               />
               <div class="hint">
-                What the others see, and it changes everywhere the moment you
-                type it: the Texttile menu, the log of every text from here on.
-                Empty falls back to the username.
+                What others see. Empty falls back to the username.
               </div>
             </span>
           </div>
@@ -222,7 +221,7 @@ defmodule TexttileWeb.ProfileLive do
         </.form>
 
         <h2 class="set-h">Password</h2>
-        <.form for={@pw_form} id="password-form" phx-submit="set_password">
+        <.form for={@pw_form} id="password-form" class="boxed-in" phx-submit="set_password">
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
@@ -253,10 +252,8 @@ defmodule TexttileWeb.ProfileLive do
               <.field_errors field={@pw_form[:current_password]} />
               <.field_errors field={@pw_form[:password]} />
               <div class="hint">
-                Your own, and only yours: confirm the current password once and
-                the new one takes over, at least 12 characters. This is the only
-                password field in the app, because nobody ever sets anybody
-                else's.
+                Confirm the current password once to change it. Needs to be at
+                least 12 characters.
               </div>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
             </span>

@@ -27,7 +27,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "a new text: title and body autosave, the live preview renders", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New text")
+      |> click_button("New entry")
       |> assert_has("#crumb", text: "Untitled")
       |> fill_in("Title", with: "Fourteen doors")
       |> assert_has("#crumb", text: "Fourteen doors")
@@ -59,7 +59,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("New text")
+        |> click_button("New entry")
         |> type(".ed-cm .cm-content", "strong words")
 
       # select the line, then bold it from the bar
@@ -78,7 +78,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("New text")
+        |> click_button("New entry")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
         |> assert_has("#stamp", text: "published")
@@ -99,7 +99,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       conn
       |> sign_in()
-      |> click_button("New text")
+      |> click_button("New entry")
       |> fill_in("Title", with: "Later")
       |> fill_in("Publish date", with: future)
       |> click_button("#stateBtn .main", "Publish")
@@ -109,15 +109,17 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       assert [%{status: "scheduled"}] = Articles.list_articles()
     end
 
-    test "a live text opens at its dated address through the bar", %{conn: conn} do
+    test "a live entry opens at its dated address through the bar", %{conn: conn} do
       today = Date.utc_today()
 
       conn =
         conn
         |> sign_in()
-        |> click_button("New text")
+        |> click_button("New entry")
+        # a draft with no slug has no address of its own yet, and the
+        # door is still there: it opens the same page by id
+        |> assert_has("a#stamp[href^='/preview/']", text: "draft")
         |> fill_in("Title", with: "Going live")
-        |> refute_has("#btnView")
         |> click_button("#stateBtn .main", "Publish")
         |> assert_has("#stamp", text: "published")
 
@@ -126,7 +128,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
           "#{String.pad_leading("#{today.day}", 2, "0")}/going-live"
 
       conn
-      |> assert_has("#btnView[href='#{address}']")
+      |> assert_has("a#stamp[href='#{address}']")
       |> visit(address)
       |> assert_has("h1", text: "Going live")
 
@@ -157,7 +159,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "the open menu stands over the formatting glyphs", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New text")
+      |> click_button("New entry")
       |> assert_has(".mdbar")
       |> click("#wmBtn")
       |> assert_has("#navMenu", text: "View site")
@@ -182,7 +184,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       conn
       |> sign_in()
-      |> click_button("New text")
+      |> click_button("New entry")
       |> fill_in("Title", with: "Tagged by hand")
       |> click("#tagchip-sea")
       |> assert_has("#tagchip-sea.on")
@@ -200,7 +202,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       session =
         conn
         |> sign_in()
-        |> click_button("New text")
+        |> click_button("New entry")
         |> fill_in("Title", with: "Half a tag")
         |> type("#edTags", "har")
 
@@ -235,7 +237,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
          %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New text")
+      |> click_button("New entry")
       |> fill_in("Title", with: "Only tag")
       |> type("#edTags", "lonely,")
       |> assert_has("#tagchip-lonely.on")
@@ -252,12 +254,12 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("New text")
+        |> click_button("New entry")
         |> fill_in("Title", with: "Versioned")
         |> type(".ed-cm .cm-content", "First words.")
         |> assert_has("#state", text: "Last saved · just now")
         |> click_button("Save version")
-        |> assert_has("#state", text: "Version saved")
+        |> assert_has("#btnSave", text: "Saved")
 
       conn =
         conn
@@ -284,12 +286,12 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "the Log tab tells the story of the text", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New text")
+      |> click_button("New entry")
       |> fill_in("Title", with: "Logged")
       |> click_button("#stateBtn .main", "Publish")
       |> click_button(".tab", "Log")
-      |> assert_has("#logList", text: "published the text")
-      |> assert_has("#logList", text: "started the text")
+      |> assert_has("#logList", text: "published the entry")
+      |> assert_has("#logList", text: "started the entry")
     end
   end
 

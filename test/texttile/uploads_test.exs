@@ -55,10 +55,10 @@ defmodule Texttile.UploadsTest do
       assert Settings.get(:logo_name) == nil
     end
 
-    test "a large raster logo is scaled down to the mark size; pixels stay sharp at 4x" do
+    test "a large raster logo is scaled down to the mark size; pixels stay sharp at 3x" do
       {:ok, stored} = Uploads.put_site_mark(:logo, raster_file(".png", 1200, 600), "big.png")
 
-      assert {128, 64} = stored_size(stored)
+      assert {256, 128} = stored_size(stored)
     end
 
     test "a small raster mark is never scaled up" do
@@ -69,10 +69,10 @@ defmodule Texttile.UploadsTest do
 
     test "jpg and webp are welcome too" do
       {:ok, jpg} = Uploads.put_site_mark(:logo, raster_file(".jpg", 300, 300), "mark.jpg")
-      assert {128, 128} = stored_size(jpg)
+      assert {256, 256} = stored_size(jpg)
 
       {:ok, webp} = Uploads.put_site_mark(:logo, raster_file(".webp", 300, 300), "mark.webp")
-      assert {128, 128} = stored_size(webp)
+      assert {256, 256} = stored_size(webp)
     end
 
     test "an svg is stored byte for byte, never rasterized" do

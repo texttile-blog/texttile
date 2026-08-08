@@ -148,7 +148,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the page size is a row of sizes, and picking one saves it", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "Number of texts a page in blog overview"
+      assert html =~ "Pagination"
 
       for size <- [10, 25, 50, 100, 150, 200] do
         assert has_element?(view, ~s(#setting-posts_per_page option[value="#{size}"]))
@@ -198,13 +198,13 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the about text renders as markdown in the preview", %{conn: conn} do
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 
-      html =
-        view
-        |> form("#about-form", %{"settings" => %{"about_markdown" => "# Us\n\n**bold** words"}})
-        |> render_change(%{"_target" => ["settings", "about_markdown"]})
+      # About is the entry editor with the pictures taken out, so its
+      # changes arrive from the hook and not through a form
+      html = render_hook(view, "about_changed", %{"text" => "# Us\n\n**bold** words"})
 
       assert html =~ "<h1>Us</h1>"
       assert html =~ "<strong>bold</strong>"
+      assert Settings.get(:about_markdown) == "# Us\n\n**bold** words"
     end
 
     test "another admin's change arrives without a reload", %{conn: conn} do
@@ -229,8 +229,8 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 
       assert has_element?(view, "#tagrow-sea", "sea")
-      assert has_element?(view, "#tagrow-sea", "2 texts")
-      assert has_element?(view, "#tagrow-fog", "1 text")
+      assert has_element?(view, "#tagrow-sea", "2 entries")
+      assert has_element?(view, "#tagrow-fog", "1 entry")
     end
 
     test "deleting a tag asks first, then takes it off every text",
@@ -269,7 +269,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 
-      assert has_element?(view, "#tagsList", "No text carries a tag yet")
+      assert has_element?(view, "#tagsList", "No entry carries a tag yet")
     end
   end
 
@@ -330,7 +330,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       _other = user_fixture(%{username: "julia"})
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "another admin removes it"
+      assert html =~ "This one is you"
       assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
     end
 
@@ -400,6 +400,23 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "hotpink"
+    end
+
+    test "Reset puts the iris default back", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      # nothing to reset while the site wears the default
+      refute has_element?(view, "#reset-theme")
+
+      {:ok, _} = Settings.put(:theme_css, ":root { --tt-accent: hotpink; }")
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html = view |> element("#reset-theme") |> render_click()
+
+      assert Settings.get(:theme_css) == ""
+      refute html =~ "hotpink"
+      assert html =~ "--tt-accent"
+      refute has_element?(view, "#reset-theme")
     end
   end
 

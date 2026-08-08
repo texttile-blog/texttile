@@ -216,6 +216,14 @@
   .drow > .lab { display: block; padding-bottom: 3px; font-size: 12.5px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
   .drow .hint { margin-top: 4px; font-size: 11.5px; line-height: 1.45; }
+  /* a group name with one quiet word at the right edge of its row: the
+     Reset of the publish date, the Reset of the theme */
+  .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 3px; }
+  .labrow > .lab {
+    flex: 1; min-width: 0; padding-bottom: 0;
+    font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em;
+  }
+  .labrow > .link { flex: none; font-size: 11.5px; }
 
   /* the quiet underline field: one container class instead of the
      same eight utilities on forty inputs. Used by the sign-in family
@@ -240,6 +248,33 @@
     box-shadow: 0 1px 0 0 var(--tt-accent);
   }
 
+  /* A FIELD THAT ASKS FOR WORDS LOOKS LIKE ONE
+     The quiet underline is right for a value that is mostly read: a
+     username, an address, a number. It is wrong for a field somebody is
+     meant to type into on their first visit - the site title, the
+     description, the name others see - because an underline alone does
+     not read as an invitation. Those wear the drawn box, like the text
+     areas beside them. */
+  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  .quiet-fields .boxed-in select,
+  .quiet-fields textarea.boxed {
+    background-color: var(--tt-field);
+    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius); padding: 8px 10px;
+  }
+  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]):hover,
+  .quiet-fields .boxed-in select:hover {
+    background-color: var(--tt-fieldhover); border-bottom-color: var(--tt-rule);
+  }
+  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,
+  .quiet-fields .boxed-in select:focus {
+    background-color: var(--tt-paper); box-shadow: none;
+    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+  }
+  /* a field is as wide as what it holds: a title or a description can
+     run, a choice out of three words cannot */
+  .quiet-fields .boxed-in select { max-width: 280px; }
+
   /* a text area is a region, not a line. One underline under nine rows
      leaves the writing surface invisible, so among the quiet fields a
      textarea keeps the drawn box of base.css. */
@@ -255,6 +290,38 @@
     background-color: var(--tt-paper); box-shadow: none;
     border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
   }
+
+  /* the name over a comment, in the admin area: it is the way to write
+     back, so it answers the pointer, but it carries no underline of its
+     own - the row is a name and a date, not a paragraph of links */
+  .writer { color: inherit; text-decoration: none; }
+  .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* The lines to hand on, in the voice of the column they stand in:
+     the reading size of a value, no ground, no border, no scrollbar.
+     It is a field only so the words can be selected and copied by hand;
+     it grows to what it holds and never scrolls. */
+  .sharelines {
+    display: block; width: 100%; resize: none; overflow: hidden;
+    field-sizing: content;
+    padding: 0; border: 0; background: transparent; box-shadow: none;
+    font-family: inherit; font-size: 13px; line-height: 1.5;
+    color: var(--tt-dim); overflow-wrap: anywhere;
+  }
+  .sharelines:focus { outline: none; box-shadow: none; background: transparent; }
+
+  /* the addresses an entry has left behind, under the address field.
+     A quiet list: the address in the monospace the address field uses,
+     and the way to drop it at the right edge. */
+  .oldaddr { margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--tt-hair); }
+  .oldaddr > .lab { display: block; margin-bottom: 2px; }
+  .oldaddr .row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .oldaddr .p {
+    flex: 1; min-width: 0; overflow-wrap: anywhere;
+    font-family: var(--tt-font-mono); font-size: 12px;
+    color: var(--tt-dim); text-decoration: none;
+  }
+  .oldaddr .p:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
 
   /* segmented filter, e.g. the status filter over the texts grid */
   .seg-b {
@@ -357,6 +424,46 @@
   .split.calm .main:hover, .split.calm .chev:hover,
   .split.calm .main[aria-expanded="true"], .split.calm .chev[aria-expanded="true"] { background-color: var(--tt-field); }
 
+  /* THE EDITOR'S SECOND COLUMN
+     The article settings stand still while the words scroll. One screen
+     tall under the bar, stuck there, with a scrollbar of its own that
+     is always drawn: `scroll`, not `auto`, so the column reads as a
+     column whatever the height of the window, and nothing on the page
+     moves when the settings grow past the bottom edge.
+     On a narrow window the settings simply follow the words, and this
+     whole arrangement is off. */
+  @media (min-width: 1024px) {
+    .sidecol {
+      position: sticky;
+      /* the bar is 52px and sticky, so the column starts under it */
+      top: 52px;
+      align-self: start;
+      height: calc(100dvh - 52px);
+      overflow-y: scroll;
+      overscroll-behavior: contain;
+      /* the lane is reserved whether or not anything overflows, so the
+         column never shifts sideways as the settings grow */
+      scrollbar-gutter: stable;
+    }
+    /* Drawn, always. A macOS browser hides its overlay scrollbar until
+       something moves, and a column that stands still then reads as a
+       column that ends at the bottom edge of the window. Naming the
+       parts turns the overlay bar into one that keeps its place.
+       `scrollbar-width` is deliberately not set: declaring it puts the
+       browser back on its own overlay bar and drops everything below. */
+    .sidecol::-webkit-scrollbar { width: 11px; }
+    .sidecol::-webkit-scrollbar-track { background: transparent; }
+    .sidecol::-webkit-scrollbar-thumb {
+      /* the hairline of a rule disappears against paper, and a bar
+         nobody can see is the thing this was meant to fix */
+      background-color: var(--tt-faint);
+      border: 3px solid transparent;
+      background-clip: content-box;
+      border-radius: 999px;
+    }
+    .sidecol::-webkit-scrollbar-thumb:hover { background-color: var(--tt-inksoft); }
+  }
+
   /* the status stamp in the bar */
   .stamp {
     font-size: 11.5px; padding: 3px 9px; background-color: var(--tt-field);
@@ -364,6 +471,25 @@
   }
   .stamp.published { background-color: var(--tt-solid); color: var(--tt-onsolid); }
   .stamp.scheduled { background-color: transparent; color: var(--tt-dim); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+
+  /* a link that opens a tab of its own: the arrow leaving its box, in
+     the ink of the words it follows. The stamp and the Last-saved line
+     both wear it, so the way to the reader's side reads the same in
+     both places. */
+  .out { text-decoration: none; align-items: center; gap: 5px; }
+  .out .out-i { width: 12px; height: 12px; flex: none; opacity: .7; }
+  /* The Last-saved line is a pill, and the arrow belongs inside it: the
+     flashed state draws a ground and a border, and an arrow beside that
+     would crowd the rounded edge. Inside, the pill wraps both and
+     nothing on the bar moves when a save lands. */
+  .out > .saved { display: inline-flex; align-items: center; gap: 5px; }
+  /* the tick brings its own space as a character, which a gap would
+     then double */
+  .out > .saved::before { content: "\2713" / ""; }
+  .out:hover { color: var(--tt-accent); }
+  .out:hover .out-i { opacity: 1; }
+  .stamp.out.published:hover { color: var(--tt-onsolid); opacity: .85; }
+  .pop .row .out-i { width: 12px; height: 12px; margin-left: 5px; opacity: .7; }
 
   /* the editor's tab row */
   .tab {
@@ -394,27 +520,42 @@
     width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
     font-family: var(--tt-font-serif); font-size: 25px; font-weight: 600;
     line-height: 1.15; letter-spacing: -.02em;
-    background: transparent; border: 0; border-radius: 0;
+    /* The two writing surfaces carry the ground of a field, like every
+       other input: at rest they are what you type into, and a surface
+       that only appears under the pointer asks to be found first. The
+       washes are translucent tints, so hover and focus layer over the
+       ground instead of replacing it, and the two steps read exactly as
+       they did before. */
+    background-color: var(--tt-field); border: 0;
+    border-radius: var(--tt-radius) var(--tt-radius) 0 0;
     padding: 6px 6px 9px;
     border-bottom: 2px solid var(--tt-inksoft);
     transition: border-color .15s ease, background-color .18s ease, box-shadow .15s ease;
   }
   @media (min-width: 768px) { .ed-title { font-size: 30px; } }
-  .ed-title:hover { background: var(--tt-wash1); border-bottom-color: var(--tt-ink); }
+  .ed-title:hover {
+    background-image: linear-gradient(var(--tt-wash1), var(--tt-wash1));
+    border-bottom-color: var(--tt-ink);
+  }
   .ed-title:focus {
-    outline: none; background: var(--tt-wash2);
+    outline: none;
+    background-image: linear-gradient(var(--tt-wash2), var(--tt-wash2));
     border-color: transparent; border-bottom-color: var(--tt-accent); box-shadow: none;
   }
   .ed-body {
     display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
     margin-top: 22px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
-    color: var(--tt-ink); background: transparent; border: 0; border-radius: 0;
+    color: var(--tt-ink); background-color: var(--tt-field); border: 0;
+    border-radius: var(--tt-radius);
     padding: 6px 6px 7px; resize: none; min-height: 100px;
     field-sizing: content;
     transition: background-color .18s ease;
   }
-  .ed-body:hover { background: var(--tt-wash1); }
-  .ed-body:focus, .ed-cm:focus-within { outline: none; background: var(--tt-wash2); border-color: transparent; }
+  .ed-body:hover { background-image: linear-gradient(var(--tt-wash1), var(--tt-wash1)); }
+  .ed-body:focus, .ed-cm:focus-within {
+    outline: none; border-color: transparent;
+    background-image: linear-gradient(var(--tt-wash2), var(--tt-wash2));
+  }
   .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
   /* while the other admin holds the text both fields are read-only and
      say so by staying quiet, with a pointer that offers the takeover */
@@ -426,6 +567,24 @@
   #bodyWrap.is-readonly .ed-cm,
   #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
   #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-livetint); }
+  /* THE SAME EDITOR, IN A BOX
+     Settings gives About the entry editor with the pictures taken out.
+     There the surface is one field among many, not the page, so it
+     wears the drawn box of the other text areas instead of the bleeding
+     writing surface, and reads at the size of a field. */
+  .boxed-cm {
+    width: 100%; margin: 0; min-height: 190px;
+    font-size: 15px; line-height: 1.65;
+    background: var(--tt-field);
+    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius); padding: 8px 10px;
+  }
+  .boxed-cm:hover { background: var(--tt-fieldhover); }
+  .boxed-cm:focus-within {
+    background: var(--tt-paper);
+    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+  }
+
   .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
   .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
   #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag,
@@ -830,11 +989,20 @@
     padding: 8px 10px;
     box-shadow: none;
   }
+  /* The subscribe field stands on the band, which has a ground of its
+     own. The field grey of the admin area is close enough to it to read
+     as a smudge, so this one field is white: on a coloured ground white
+     is the thing that says "type here". */
+  body.site #newsletter-form input[type=email] {
+    background-color: var(--tt-paper);
+  }
   body.site #comment-form input:not([type=hidden]):not(.sr):hover:not(:disabled),
-  body.site #comment-form textarea:hover,
-  body.site #newsletter-form input[type=email]:hover {
+  body.site #comment-form textarea:hover {
     background-color: var(--tt-fieldhover);
     border-bottom-color: var(--tt-rule);
+  }
+  body.site #newsletter-form input[type=email]:hover {
+    border-bottom-color: var(--tt-inksoft);
   }
   body.site #comment-form input:not([type=hidden]):not(.sr):focus,
   body.site #comment-form textarea:focus,
@@ -844,18 +1012,11 @@
     border-bottom-color: var(--tt-accent);
     box-shadow: none;
   }
-  /* signed in, the name and the address are facts the account carries,
-     not questions. They keep the place of the two fields so the form
-     still reads as one row, and they drop the ground of a field: no
-     fill, one hairline under them, dimmer ink. Nothing there invites a
-     click, and nothing answers one. */
+  /* Signed in, the name and the address are facts the account carries,
+     not questions. They keep the ground of a field, so the form reads as
+     one block of fields, and dimmer ink and the plain cursor are what
+     say the two take no typing. */
   body.site #comment-form input[disabled]:not([type=hidden]):not(.sr) {
-    background-color: transparent;
-    border-color: transparent;
-    border-bottom: 1px solid var(--tt-hair);
-    border-radius: 0;
-    padding-left: 0;
-    padding-right: 0;
     color: var(--tt-dim);
     cursor: default;
   }
@@ -893,6 +1054,19 @@
   }
   .ctag:hover { text-decoration: underline; text-underline-offset: 2px; }
 
+  /* the strip over an entry that is not live yet. Only an admin who is
+     signed in is ever served one, so it stands quietly on the accent
+     wash instead of shouting, and it keeps the full width: everything
+     under it is the published design and must not be mistaken for it. */
+  .notlive {
+    background: var(--tt-accentwash); color: var(--tt-accent);
+    font-size: 12.5px; line-height: 1.5; text-align: center;
+    padding: 9px var(--tt-gut);
+    border-bottom: 1px solid var(--tt-accentline);
+  }
+  .notlive b { font-weight: 600; }
+  .notlive a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
   /* the search over the list: the field keeps its own rule, and the
      count stands beside it */
   .searchrow { display: flex; align-items: baseline; gap: 16px; margin-bottom: 30px; }
@@ -900,6 +1074,22 @@
   .searchrow input { flex: 1; min-width: 0; }
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   .cnt { color: var(--tt-dim); font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 400; flex: none; }
+
+  /* the archive over a list: one line of years, and under it the months
+     of the year that is open. Words in a row, no chips and no boxes, so
+     ten years of writing stay one line and the whole control is never
+     taller than two. The months are only the ones that carry entries. */
+  .periods { margin-bottom: 30px; padding-bottom: 13px; border-bottom: 1px solid var(--tt-rule); }
+  .prow { display: flex; flex-wrap: wrap; gap: 4px 15px; }
+  .prow + .prow { margin-top: 9px; }
+  .per {
+    font-size: 13px; line-height: 1.5; color: var(--tt-dim);
+    text-decoration: none; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .per .cnt { margin-left: 4px; }
+  a.per:hover, button.per:hover { color: var(--tt-ink); }
+  .per.on { color: var(--tt-ink); font-weight: 600; }
+  .per.on .cnt { color: var(--tt-dim); font-weight: 400; }
 
   /* the pager under the list, and the way from one text to the next
      under a text: one step each way, held apart by a spacer */

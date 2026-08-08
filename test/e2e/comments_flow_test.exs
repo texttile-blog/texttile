@@ -55,7 +55,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments")
-    |> assert_has("#commentsSub", text: "1 comment across all texts")
+    |> assert_has("#commentsSub", text: "1 comment across all entries")
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")
@@ -169,7 +169,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session
     |> visit("/blog")
     |> assert_has("#texts", text: "1 comment")
-    |> open("/admin")
+    |> open("/admin/texts")
     |> assert_has("#cards", text: "1 comment")
 
     assert [comment] = Texttile.Comments.for_article(article.id)

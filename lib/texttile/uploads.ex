@@ -24,10 +24,14 @@ defmodule Texttile.Uploads do
   @marks [:logo, :favicon]
   @mark_extensions ~w(.svg .png .jpg .jpeg .webp)
 
-  # A mark is shown small everywhere: ~21 css px in the bar, up to 32 in
-  # a browser tab. 4x that stays sharp on any pixel density and keeps a
-  # multi-megapixel upload from riding along on every page.
-  @mark_max_edge 128
+  # A mark is shown small everywhere: a logo up to 84 css px wide in the
+  # bar, a favicon up to 32 in a browser tab. This covers the widest of
+  # them at three times the density, which is as far as screens go, and
+  # keeps a multi-megapixel upload from riding along on every page.
+  @mark_max_edge 256
+
+  @doc "How large a raster logo or favicon is kept, on the longer edge."
+  def mark_max_edge, do: @mark_max_edge
 
   # An SVG is stored as it came, so this is its only brake.
   @mark_max_svg_bytes 512_000

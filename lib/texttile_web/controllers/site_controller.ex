@@ -26,6 +26,7 @@ defmodule TexttileWeb.SiteController do
               :tag,
               :article,
               :page,
+              :preview,
               :post_comment,
               :confirm_comment,
               :confirm_subscriber
@@ -53,7 +54,7 @@ defmodule TexttileWeb.SiteController do
   # front door with a query on it lands on the same list it named.
   defp blog_path(params) do
     pairs =
-      for key <- ["q", "page"],
+      for key <- ["q", "y", "m", "page"],
           value = text_value(params[key]),
           value != "",
           do: {key, value}
@@ -70,7 +71,7 @@ defmodule TexttileWeb.SiteController do
   """
   def article(conn, %{"year" => year, "month" => month, "day" => day, "slug" => slug}) do
     with {:ok, date} <- Date.from_iso8601("#{year}-#{month}-#{day}"),
-         article when not is_nil(article) <- Articles.get_published_post(date, slug) do
+         article when not is_nil(article) <- visible_post(conn, date, slug) do
       render_text(conn, article)
     else
       _ -> not_found(conn)
@@ -79,10 +80,46 @@ defmodule TexttileWeb.SiteController do
 
   @doc "One published page, at its short address."
   def page(conn, %{"slug" => slug}) do
-    case Articles.get_published_page(slug) do
+    case visible_page(conn, slug) do
       nil -> not_found(conn)
       article -> render_text(conn, article)
     end
+  end
+
+  @doc """
+  An entry on the reader's side while it has no address of its own.
+
+  A draft carries no slug until it goes live, so there is nothing to put
+  in an address for it. The editor still owes the writer a way to look
+  at the page, and it has to be this page and not a second design of it,
+  so the way in is by id. Admins only, like every other way to read an
+  entry that is not live.
+  """
+  def preview(conn, %{"id" => id}) do
+    with user when not is_nil(user) <- signed_in_user(conn),
+         {id, ""} <- Integer.parse(to_string(id)),
+         %Article{} = article <- Articles.get_article(id) do
+      render_text(conn, article)
+    else
+      _ -> not_found(conn)
+    end
+  end
+
+  # An entry that is not live yet still answers at the address it will
+  # wear, but only to somebody who is signed in. That way the editor's
+  # way out leads into the real site instead of into a second design of
+  # it, and a reader who guesses the address gets the 404 they should.
+  defp visible_post(conn, date, slug) do
+    Articles.get_published_post(date, slug) ||
+      for_admin(conn, fn -> Articles.get_post(date, slug) end)
+  end
+
+  defp visible_page(conn, slug) do
+    Articles.get_published_page(slug) || for_admin(conn, fn -> Articles.get_page(slug) end)
+  end
+
+  defp for_admin(conn, fun) do
+    if signed_in_user(conn), do: fun.()
   end
 
   @doc """
@@ -204,7 +241,7 @@ defmodule TexttileWeb.SiteController do
     case Comments.confirm(token) do
       {:ok, %Article{status: "published"} = article} ->
         conn
-        |> put_flash(:comment_note, "Confirmed. Your comment is under the text now.")
+        |> put_flash(:comment_note, "Confirmed. Your comment is under the entry now.")
         |> redirect(to: comments_anchor(article))
 
       {:ok, _gone} ->
@@ -296,9 +333,9 @@ defmodule TexttileWeb.SiteController do
 
     note =
       if waiting? do
-        "Sent. Follow the link in your mail and your comment appears under the text."
+        "Sent. Follow the link in your mail and your comment appears under the entry."
       else
-        "Sent. Your comment is under the text now."
+        "Sent. Your comment is under the entry now."
       end
 
     put_flash(conn, :comment_note, note)
@@ -454,10 +491,18 @@ defmodule TexttileWeb.SiteController do
         length(Articles.list_published())
       end
 
+    # The field searches every entry of every year; the archive narrows
+    # what the field found to one year, and then to one month of it.
+    {year, month} =
+      Articles.settle_period(found, number_param(params["y"]), number_param(params["m"]))
+
+    {years, months} = Articles.periods(found, year)
+    in_period = Enum.filter(found, &Articles.in_period?(&1, year, month))
+
     per_page = Settings.get(:posts_per_page)
-    pages = max(div(length(found) - 1, per_page) + 1, 1)
+    pages = max(div(length(in_period) - 1, per_page) + 1, 1)
     page = page_number(params["page"], pages)
-    articles = Enum.slice(found, (page - 1) * per_page, per_page)
+    articles = Enum.slice(in_period, (page - 1) * per_page, per_page)
     list_path = ~p"/blog"
 
     conn
@@ -467,13 +512,29 @@ defmodule TexttileWeb.SiteController do
       articles: articles,
       previews: Gallery.previews(articles),
       comment_counts: Comments.reader_count_map(),
-      found: length(found),
+      found: length(in_period),
       total: total,
+      # what the search found across every year: the number "All years"
+      # carries, so it counts the same way the years beside it do
+      across_years: length(found),
+      year: year,
+      month: month,
+      years: years,
+      months: months,
       page: page,
       pages: pages,
-      page_path: &page_path(list_path, q, &1),
+      page_path: &list_link(list_path, q, year, month, &1),
+      period_path: &list_link(list_path, q, &1, &2, 1),
       list_path: list_path
     )
+  end
+
+  # A page number, a year or a month as the address writes them, or nil.
+  defp number_param(raw) do
+    case Integer.parse(to_string(raw)) do
+      {number, ""} when number > 0 -> number
+      _ -> nil
+    end
   end
 
   # A page number outside the row is no error: a bookmark from a
@@ -485,10 +546,18 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  defp page_path(list_path, q, page) do
+  # One address for the list in any state it can stand in, so a year, a
+  # month and a page are all things a reader can copy, bookmark or open
+  # in a tab of their own.
+  defp list_link(list_path, q, year, month, page) do
     query =
-      [q: q, page: if(page == 1, do: nil, else: page)]
-      |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+      [
+        q: q,
+        y: year,
+        m: year && month,
+        page: if(page == 1, do: nil, else: page)
+      ]
+      |> Enum.reject(fn {_key, value} -> value in [nil, "", false] end)
 
     case query do
       [] -> list_path
@@ -518,6 +587,13 @@ defmodule TexttileWeb.SiteController do
     |> assign(:og_image, og_image)
     |> merge_assigns(comment_assigns(conn, article))
     |> render(:article, article: article, gallery: gallery, older: older, newer: newer)
+  end
+
+  # An entry that is not live takes no comments: the reader who could
+  # write one cannot reach the page at all, and the form would post to
+  # an address that answers nothing.
+  defp comment_assigns(_conn, %Article{status: status}) when status != "published" do
+    %{comments: nil}
   end
 
   # What the comments block under a text needs, or `comments: nil` when
@@ -562,17 +638,17 @@ defmodule TexttileWeb.SiteController do
   # address, so there is no link to follow and nothing to confirm.
   defp comment_rule(nil, true) do
     "Your address is never published. You get one link by mail, and " <>
-      "your comment appears under the text once you follow it."
+      "your comment appears under the entry once you follow it."
   end
 
   defp comment_rule(nil, false) do
-    "Your address is never published. Your comment appears under the text at once."
+    "Your address is never published. Your comment appears under the entry at once."
   end
 
   defp comment_rule(_user, _require?) do
     "You are signed in, so your name and your address come from your " <>
       "account. Your address is never published, and your comment " <>
-      "appears under the text at once."
+      "appears under the entry at once."
   end
 
   # The account writing the comment, as the form draws it: the name and
@@ -592,11 +668,22 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
+  # Nothing here answers this address - unless an entry used to live at
+  # it. A moved entry keeps its old addresses alive, so the link
+  # somebody shared last year still arrives.
   defp not_found(conn) do
-    conn
-    |> put_status(:not_found)
-    |> assign(:page_title, "Not found")
-    |> assign(:active, nil)
-    |> render(:not_found)
+    case Articles.redirect_target(conn.request_path) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> assign(:page_title, "Not found")
+        |> assign(:active, nil)
+        |> render(:not_found)
+
+      target ->
+        conn
+        |> put_status(:moved_permanently)
+        |> redirect(to: target)
+    end
   end
 end

@@ -34,12 +34,15 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
+      |> assign(:save_label, "Save version")
+      |> assign(:save_timer, nil)
       |> assign(:holds_lock, true)
       |> assign(:holder, nil)
       |> assign(:upload_pcts, %{})
       |> assign(:flush_pending, false)
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
+      |> assign(:redirects, Articles.redirects(article))
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
       |> assign(:media_rev, 0)
@@ -159,12 +162,15 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, finish_flush(socket)}
   end
 
+  # The button answers for itself. A version is not a save of the text -
+  # the text saved itself while it was typed - so the news belongs on
+  # the control that was pressed, not on the Last-saved line beside it.
   def handle_event("save_version", _params, socket) do
     %{article: article, current_scope: scope} = socket.assigns
 
     case Articles.save_version(article, scope.user) do
-      {:ok, _version} -> {:noreply, mark_saved(socket, "Version saved · just now")}
-      :unchanged -> {:noreply, mark_saved(socket, "Nothing changed since the last version")}
+      {:ok, _version} -> {:noreply, socket |> mark_saved() |> say_on_button("Saved")}
+      :unchanged -> {:noreply, say_on_button(socket, "Nothing changed")}
     end
   end
 
@@ -173,7 +179,7 @@ defmodule TexttileWeb.EditorLive do
 
     cond do
       not socket.assigns.holds_lock ->
-        {:noreply, mark_saved(socket, "Take the text over first; restoring needs it")}
+        {:noreply, mark_saved(socket, "Take the entry over first; restoring needs it")}
 
       version = Enum.find(versions, &(to_string(&1.id) == id)) ->
         {:ok, article} = Articles.restore_version(article, version, scope.user)
@@ -207,12 +213,12 @@ defmodule TexttileWeb.EditorLive do
         {:noreply,
          assign(socket, :dialog, %{
            id: "takeover",
-           title: "Take the text over from #{name}?",
+           title: "Take the entry over from #{name}?",
            body: [
              activity_line(name, holder),
-             "A takeover stops that mid-sentence. The title and the body turn read-only on the other side, and a note says who took the text. Nothing is lost, and the text can go straight back."
+             "A takeover stops that mid-sentence. The title and the body turn read-only on the other side, and a note says who took the entry. Nothing is lost, and the entry can go straight back."
            ],
-           ok: "Take over the text",
+           ok: "Take over the entry",
            event: "confirm_takeover"
          })}
     end
@@ -245,7 +251,7 @@ defmodule TexttileWeb.EditorLive do
       {:noreply,
        assign(socket, :dialog, %{
          id: "publish-anyway",
-         title: "#{name} is editing this text right now",
+         title: "#{name} is editing this entry right now",
          body: ["Publish it anyway, as it stands this second?"],
          ok: "Publish anyway",
          event: "do_publish"
@@ -304,7 +310,12 @@ defmodule TexttileWeb.EditorLive do
           nil
       end
 
-    {:noreply, socket |> assign(:article, article) |> reload_history() |> mark_saved(note)}
+    {:noreply,
+     socket
+     |> assign(:article, article)
+     |> reload_history()
+     |> load_redirects()
+     |> mark_saved(note)}
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
@@ -315,7 +326,7 @@ defmodule TexttileWeb.EditorLive do
       {:ok, article} ->
         socket = assign(socket, :article, article)
         socket = if field == "tags", do: known_tags(socket), else: socket
-        {:noreply, mark_saved(socket)}
+        {:noreply, socket |> load_redirects() |> mark_saved()}
 
       {:error, changeset} ->
         {:noreply, mark_saved(socket, slug_error(changeset))}
@@ -323,6 +334,28 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", _params, socket), do: {:noreply, socket}
+
+  # The Reset beside the date label: the same thing as emptying the
+  # field, which a date input makes hard by hand.
+  def handle_event("clear_publish_date", _params, socket) do
+    handle_event(
+      "settings_changed",
+      %{"_target" => ["publish_date"], "publish_date" => ""},
+      socket
+    )
+  end
+
+  # One old address off the list. The entry keeps every other one; from
+  # now on that address is a 404 like any other.
+  def handle_event("delete_redirect", %{"id" => id}, socket) do
+    %{article: article} = socket.assigns
+
+    with {id, ""} <- Integer.parse(to_string(id)) do
+      :ok = Articles.delete_redirect(article, id)
+    end
+
+    {:noreply, socket |> load_redirects() |> mark_saved("That address answers nothing again")}
+  end
 
   # The tag suggestions: one click adds a tag the blog already knows,
   # one more takes it off again. The field keeps the spelling it has;
@@ -416,7 +449,7 @@ defmodule TexttileWeb.EditorLive do
         address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
 
         [
-          "The text is live. From now on, a reader who follows an old link to #{address} gets a 404 page."
+          "The entry is live. From now on, a reader who follows an old link to #{address} gets a 404 page."
         ]
       else
         []
@@ -430,9 +463,9 @@ defmodule TexttileWeb.EditorLive do
        title: ~s(Delete "#{Articles.display_title(article)}"?),
        body:
          [
-           "This deletes the text and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
+           "This deletes the entry and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
          ] ++ live_line ++ ["There is no undo."],
-       ok: "Delete the text",
+       ok: "Delete the entry",
        event: "confirm_delete"
      })}
   end
@@ -447,7 +480,7 @@ defmodule TexttileWeb.EditorLive do
        :info,
        ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
      )
-     |> push_navigate(to: ~p"/admin")}
+     |> push_navigate(to: ~p"/admin/texts")}
   end
 
   def handle_event("cancel_dialog", _params, socket) do
@@ -703,47 +736,24 @@ defmodule TexttileWeb.EditorLive do
 
     case Articles.publish(article, scope.user, opts) do
       {:ok, article} -> publish_done(socket, article)
-      {:error, _changeset} -> mark_saved(socket, "That address is taken by another text")
+      {:error, _changeset} -> mark_saved(socket, "That address is taken by another entry")
     end
   end
 
+  # One word for what happened. Whether an email left is not news of the
+  # click: the settings row beside it carries the mail's whole story, and
+  # it goes on carrying it after the note has faded.
   defp publish_done(socket, article) do
     note =
-      if article.status == "scheduled" do
-        "Scheduled for #{article.publish_date}" <>
-          if(will_notify?(article),
-            do: " · subscribers get the email then",
-            else: " · no email will go out"
-          )
-      else
-        "Published just now" <> published_mail_note(socket.assigns.article, article)
-      end
+      if article.status == "scheduled",
+        do: "Scheduled for #{article.publish_date}",
+        else: "Published"
 
     socket
     |> assign(:article, article)
     |> assign(:state_menu, false)
     |> reload_history()
     |> mark_saved(note)
-  end
-
-  # What the publish click owes the writer: whether the email left. The
-  # stamp appearing on the text is the send; a text that carried one
-  # already went out at an earlier go-live and stays quiet.
-  defp published_mail_note(before, article) do
-    cond do
-      not will_notify?(article) ->
-        ", quietly · no email sent"
-
-      is_nil(before.notified_on) and not is_nil(article.notified_on) ->
-        case Texttile.Newsletter.confirmed_count() do
-          0 -> " · nobody is on the newsletter list, so no email went out"
-          1 -> " · the email is on its way to 1 subscriber"
-          n -> " · the email is on its way to #{n} subscribers"
-        end
-
-      true ->
-        " · the subscribers already got this email"
-    end
   end
 
   # What the takeover dialog owes the person asking: not a generic "are
@@ -904,7 +914,9 @@ defmodule TexttileWeb.EditorLive do
           do: %{incoming | title: current.title, body: current.body},
           else: incoming
 
-      {:noreply, assign(socket, :article, article)}
+      # Another admin may have moved the entry, and the address it left
+      # behind belongs on this screen too.
+      {:noreply, socket |> assign(:article, article) |> load_redirects()}
     else
       {:noreply, socket}
     end
@@ -914,8 +926,8 @@ defmodule TexttileWeb.EditorLive do
     if id == socket.assigns.article.id do
       {:noreply,
        socket
-       |> put_flash(:info, "The text was deleted while you had it open.")
-       |> push_navigate(to: ~p"/admin")}
+       |> put_flash(:info, "The entry was deleted while you had it open.")
+       |> push_navigate(to: ~p"/admin/texts")}
     else
       {:noreply, socket}
     end
@@ -1010,12 +1022,12 @@ defmodule TexttileWeb.EditorLive do
         end
 
       if displaced, do: Articles.snapshot(article, displaced)
-      Articles.push_log(article, scope.user, "took over the text")
+      Articles.push_log(article, scope.user, "took over the entry")
 
       note =
         if displaced,
-          do: "You have the text · #{Accounts.display_name(displaced)} was told",
-          else: "You have the text"
+          do: "You have the entry · #{Accounts.display_name(displaced)} was told",
+          else: "You have the entry"
 
       {:noreply, socket |> refresh_lock() |> mark_saved(note)}
     else
@@ -1056,6 +1068,10 @@ defmodule TexttileWeb.EditorLive do
     # Every editor is asked, not only the ones that already know the
     # video: a reference pasted a moment ago is still on its way here.
     {:noreply, sync_posters(socket)}
+  end
+
+  def handle_info(:reset_save_label, socket) do
+    {:noreply, socket |> assign(:save_label, "Save version") |> assign(:save_timer, nil)}
   end
 
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -1127,13 +1143,25 @@ defmodule TexttileWeb.EditorLive do
   defp slug_error(changeset) do
     case changeset.errors[:slug] do
       {"is an address the site itself uses", _} -> "That address belongs to the site itself"
-      _ -> "That address is taken by another text"
+      _ -> "That address is taken by another entry"
     end
   end
 
   ## Saved state
 
   @note_ms 4600
+
+  # How long the Save version button keeps its answer before it is a
+  # button again. The same window the Last-saved line flashes for.
+  @button_ms 2600
+
+  defp say_on_button(socket, label) do
+    if timer = socket.assigns[:save_timer], do: Process.cancel_timer(timer)
+
+    socket
+    |> assign(:save_label, label)
+    |> assign(:save_timer, Process.send_after(self(), :reset_save_label, @button_ms))
+  end
 
   defp mark_saved(socket, note \\ nil) do
     now = System.system_time(:millisecond)
@@ -1167,6 +1195,10 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:log, Articles.log(socket.assigns.article))
   end
 
+  defp load_redirects(socket) do
+    assign(socket, :redirects, Articles.redirects(socket.assigns.article))
+  end
+
   ## Render
 
   def render(assigns) do
@@ -1177,6 +1209,14 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:preview_candidates, preview_candidates(assigns))
       |> assign(:effective_preview, effective_preview(assigns))
       |> assign(:media, media(assigns))
+      # There is always a door. An entry with a slug wears its own
+      # address; one without has none yet, and until then the way in is
+      # by id. Both open the same page, and both only for an admin.
+      |> assign(
+        :public_url,
+        Articles.reader_path(assigns.article) || ~p"/preview/#{assigns.article.id}"
+      )
+      |> assign(:public_title, public_title(assigns.article))
 
     ~H"""
     <Layouts.app
@@ -1187,10 +1227,45 @@ defmodule TexttileWeb.EditorLive do
       others={@others}
     >
       <:bar>
-        <span class={["stamp hidden sm:inline", @article.status]} id="stamp">
-          {@article.status}
-        </span>
+        <%!-- the way out to the reader's side, and there is always one.
+             The site serves an entry that is not live to whoever is
+             signed in, so the stamp and the Last-saved line are both
+             that door, whatever state the entry stands in. --%>
+        <a
+          class={["stamp out hidden sm:inline-flex", @article.status]}
+          id="stamp"
+          href={@public_url}
+          target="_blank"
+          rel="noopener"
+          title={@public_title}
+        >
+          {@article.status}<.out_icon />
+        </a>
+        <a
+          class="out hidden md:inline-flex flex-none"
+          id="stateLink"
+          href={@public_url}
+          target="_blank"
+          rel="noopener"
+          title={@public_title}
+        >
+          <%!-- the arrow lives inside the pill, so the flashed state
+               wraps both and nothing moves when a save lands. The words
+               are a span of their own: the ticker rewrites them every
+               second and would carry the arrow away with them. --%>
+          <span
+            class="saved whitespace-nowrap num"
+            id="state"
+            phx-hook="SavedTicker"
+            data-at={@saved_at}
+            data-note={@saved_note}
+            data-note-until={@saved_until}
+          >
+            <span data-words>Last saved · just now</span> <.out_icon />
+          </span>
+        </a>
         <span
+          :if={!@public_url}
           class="saved hidden md:inline-block whitespace-nowrap num"
           id="state"
           phx-hook="SavedTicker"
@@ -1206,21 +1281,8 @@ defmodule TexttileWeb.EditorLive do
           phx-click="save_version"
           title="Keep a version of the title and the body as they stand now"
         >
-          Save version
+          {@save_label}
         </button>
-        <%!-- the way out to the reader's side: only a live text has an
-             address, so the link comes with the text going live --%>
-        <a
-          :if={@article.status == "published"}
-          class="btn hidden sm:inline-flex"
-          id="btnView"
-          href={Articles.public_path(@article)}
-          target="_blank"
-          rel="noopener"
-          title="Opens the text on the public site in a new tab"
-        >
-          View
-        </a>
         <span
           class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
           id="stateBtn"
@@ -1273,14 +1335,14 @@ defmodule TexttileWeb.EditorLive do
       >
         <button class="row sm:hidden" phx-click="save_version">Save version</button>
         <a
-          :if={@article.status == "published"}
+          :if={@public_url}
           class="row sm:hidden"
           id="viewRow"
-          href={Articles.public_path(@article)}
+          href={@public_url}
           target="_blank"
           rel="noopener"
         >
-          View the text
+          Open the entry <.out_icon />
         </a>
         <%= if @article.status == "scheduled" do %>
           <button class="row" phx-click="publish_now">Publish now</button>
@@ -1289,15 +1351,21 @@ defmodule TexttileWeb.EditorLive do
         <%= if @article.status == "published" do %>
           <button class="row" phx-click="unpublish">Unpublish</button>
         <% end %>
-        <button class="row" phx-click="ask_delete">Delete this text</button>
+        <button class="row" phx-click="ask_delete">Delete this entry</button>
       </div>
 
       <p :if={@saved_note} class="state-live" id="stateLine" role="status" aria-live="polite">
         {@saved_note}
       </p>
 
-      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:h-[calc(100dvh-52px)]">
-        <div class="lg:overflow-y-auto min-w-0" id="textCol">
+      <%!-- Two columns, one scrollbar each and no third one. The words
+           are the page: they scroll with the browser's own bar, however
+           long the entry gets. The article settings stand still beside
+           them, one screen tall, with a bar of their own that is always
+           drawn (.sidecol), so the column never looks like it ends
+           where the window does. --%>
+      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
             <%!-- the lock banner: the only place that tells the lock
                  story. There is no button on it, because clicking into
@@ -1307,25 +1375,27 @@ defmodule TexttileWeb.EditorLive do
                 (!@holds_lock && @holder) || (@holds_lock && reading_along(@others, @article) != [])
               }
               class={[
-                "flex items-baseline gap-[9px] flex-wrap rounded-[5px] px-[13px] py-2 text-[13px] mb-5",
+                "rounded-[5px] px-[13px] py-2 text-[13px] leading-[1.55] mb-5",
                 if(@holds_lock, do: "bg-accentwash text-accent", else: "bg-livetint text-livetext")
               ]}
               id="jbar"
               style={"box-shadow: inset 0 0 0 1px var(--tt-#{if @holds_lock, do: "accentline", else: "liveline"})"}
             >
-              <span class="flex items-center gap-[9px] flex-none">
-                <span class="dot live text-julia"></span>
-                <b class="text-julia">
-                  {if @holds_lock,
-                    do: Enum.join(reading_along(@others, @article), ", "),
-                    else: holder_name(@holder)}
-                </b>
-              </span>
-              <span class="opacity-85 flex-1 min-w-[220px]">
+              <%!-- one running line, not a name column and a text
+                   column: a second line of it starts at the left edge
+                   like the first, and nothing is indented under the
+                   name --%>
+              <span class="dot live text-julia"></span>
+              <b class="text-julia">
+                {if @holds_lock,
+                  do: Enum.join(reading_along(@others, @article), ", "),
+                  else: holder_name(@holder)}
+              </b>
+              <span class="opacity-85">
                 <%= if @holds_lock do %>
                   reads along while you write. The article settings stay open to every admin, at the same time.
                 <% else %>
-                  writes the text now, and you see every word arrive. Click into the title or the body to take the text over. The article settings stay open to every admin, at the same time.
+                  writes the text now, and you see it in real time. Click into the title or the body to take the text over. The article settings can be changed by everyone independently from title or body.
                 <% end %>
               </span>
             </div>
@@ -1373,216 +1443,55 @@ defmodule TexttileWeb.EditorLive do
                   phx-click={!@holds_lock && "ask_takeover"}
                 />
               </form>
-              <%!-- the formatting bar: nine quiet buttons for the admin
-                   who does not know Markdown, and a hint for the one who
-                   does. Every button writes plain Markdown through the
-                   same commands the keyboard uses; the hook swallows the
-                   mousedown so the caret never leaves the text. --%>
-              <div
-                class={["mdbar", !@holds_lock && "is-readonly"]}
-                id="mdBar"
-                role="toolbar"
-                aria-label="Formatting"
-              >
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="heading"
-                  title="Heading. Click again for the next size."
-                  aria-label="Heading"
-                >
-                  <span class="g font-serif font-semibold text-[15px]">H</span>
-                </button>
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="bold"
-                  title="Bold (Ctrl or Cmd + B)"
-                  aria-label="Bold"
-                >
-                  <span class="g font-serif font-bold text-[14.5px]">B</span>
-                </button>
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="italic"
-                  title="Italic (Ctrl or Cmd + I)"
-                  aria-label="Italic"
-                >
-                  <span class="g font-serif italic font-semibold text-[14.5px]">I</span>
-                </button>
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="link"
-                  title="Link (Ctrl or Cmd + K)"
-                  aria-label="Link"
-                >
-                  <svg
-                    class="g"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
+              <%!-- Tab goes from the title to the words, not through
+                   nine buttons on the way. The bar stands after the
+                   body in the document and is lifted over it by
+                   `order`, so it keeps its place on the screen and
+                   comes after the writing surface for the keyboard.
+                   Nothing is unreachable: the bar is the next stop
+                   after the body. --%>
+              <div class="flex flex-col">
+                <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
+                  <div
+                    id="edBodyHost"
+                    class="ed-body ed-cm"
+                    phx-hook="BodyEd"
+                    phx-update="ignore"
+                    data-readonly={to_string(!@holds_lock)}
+                    data-posters={Jason.encode!(poster_map(@media))}
                   >
-                    <path d="M6.5 9.5 9.5 6.5" />
-                    <path d="M7.2 4.6l1.5-1.5a2.6 2.6 0 0 1 3.7 3.7l-1.5 1.5" />
-                    <path d="M8.8 11.4l-1.5 1.5a2.6 2.6 0 0 1-3.7-3.7l1.5-1.5" />
-                  </svg>
-                </button>
-                <span class="mdsep" aria-hidden="true"></span>
-                <button type="button" class="mdb" data-cmd="quote" title="Quote" aria-label="Quote">
-                  <span class="g font-serif font-bold text-[17px] leading-none pt-[5px]">
-                    &rdquo;
+                    <textarea
+                      class="ed-body"
+                      aria-label="Body, Markdown"
+                      spellcheck="false"
+                      placeholder="Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
+                      readonly={!@holds_lock}
+                    >{@article.body}</textarea>
+                  </div>
+                  <p class="ed-foot" id="edFoot">
+                    <span class="flag">
+                      <i class="inline-block w-[6px] h-[6px] rounded-full bg-accent"></i>Editing
+                    </span>
+                    <span id="edFootText">
+                      <%= if @holds_lock do %>
+                        The draft saves as you type. <b>Save version</b>
+                        takes a snapshot of the title and the body that you can go back to.
+                      <% else %>
+                        The title and the body are read-only right now. <b>Save version</b>
+                        and the Versions tab still work.
+                      <% end %>
+                    </span>
+                  </p>
+                  <span class="drop-flag" id="bodyDropFlag" hidden>
+                    Put the image in the text, where the caret is
                   </span>
-                </button>
-                <button type="button" class="mdb" data-cmd="bullet" title="List" aria-label="List">
-                  <svg
-                    class="g"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                  >
-                    <circle cx="3" cy="4" r=".4" fill="currentColor" />
-                    <circle cx="3" cy="8" r=".4" fill="currentColor" />
-                    <circle cx="3" cy="12" r=".4" fill="currentColor" />
-                    <path d="M6.5 4h6.5M6.5 8h6.5M6.5 12h6.5" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="ordered"
-                  title="Numbered list"
-                  aria-label="Numbered list"
-                >
-                  <svg
-                    class="g"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                  >
-                    <path d="M7.5 4h5.5M7.5 8h5.5M7.5 12h5.5" />
-                    <text
-                      x="1.6"
-                      y="6"
-                      font-size="6.5"
-                      fill="currentColor"
-                      stroke="none"
-                      font-family="inherit"
-                    >
-                      1
-                    </text>
-                    <text
-                      x="1.6"
-                      y="14"
-                      font-size="6.5"
-                      fill="currentColor"
-                      stroke="none"
-                      font-family="inherit"
-                    >
-                      2
-                    </text>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="task"
-                  title="Task list. Click a box in the text to tick it."
-                  aria-label="Task list"
-                >
-                  <svg
-                    class="g"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="2.2" y="2.2" width="11.6" height="11.6" rx="2.6" />
-                    <path d="M5.2 8.2l2 2 3.6-4" />
-                  </svg>
-                </button>
-                <span class="mdsep" aria-hidden="true"></span>
-                <button type="button" class="mdb" data-cmd="code" title="Code" aria-label="Code">
-                  <svg
-                    class="g"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M6 4.5 2.5 8 6 11.5" />
-                    <path d="M10 4.5 13.5 8 10 11.5" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="mdb"
-                  data-cmd="image"
-                  title="Put an image in the text, at the caret"
-                  aria-label="Image"
-                >
-                  <svg
-                    class="g"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="2.2" y="3.2" width="11.6" height="9.6" rx="1.6" />
-                    <circle cx="5.6" cy="6.4" r="1" />
-                    <path d="M2.6 11.4 6.5 8l3 2.6 1.9-1.6 2.2 2" />
-                  </svg>
-                </button>
-                <span class="sp"></span>
-                <span class="note hidden sm:inline self-center">Markdown works too.</span>
-              </div>
-              <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
-                <div
-                  id="edBodyHost"
-                  class="ed-body ed-cm"
-                  phx-hook="BodyEd"
-                  phx-update="ignore"
-                  data-readonly={to_string(!@holds_lock)}
-                  data-posters={Jason.encode!(poster_map(@media))}
-                >
-                  <textarea
-                    class="ed-body"
-                    aria-label="Body, Markdown"
-                    spellcheck="false"
-                    placeholder="Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
-                    readonly={!@holds_lock}
-                  >{@article.body}</textarea>
                 </div>
-                <p class="ed-foot" id="edFoot">
-                  <span class="flag">
-                    <i class="inline-block w-[6px] h-[6px] rounded-full bg-accent"></i>Editing
-                  </span>
-                  <span id="edFootText">
-                    <%= if @holds_lock do %>
-                      Markdown. The draft saves as you type. <b>Save version</b>
-                      keeps the title and the body as they stand, and the Versions tab shows what changed.
-                    <% else %>
-                      Markdown. The title and the body are read-only right now. <b>Save version</b>
-                      and the Versions tab still work.
-                    <% end %>
-                  </span>
-                </p>
-                <span class="drop-flag" id="bodyDropFlag" hidden>
-                  Put the image in the text, where the caret is
-                </span>
+                <.md_bar
+                  id="mdBar"
+                  class="order-first"
+                  readonly={!@holds_lock}
+                  note="Markdown Editor"
+                />
               </div>
               <input
                 type="file"
@@ -1709,7 +1618,7 @@ defmodule TexttileWeb.EditorLive do
 
             <div :if={@tab == "log"} id="tp-log">
               <p class="note mb-4">
-                Everything that happened to this text, newest first: your edits, the edits of every other admin, every handover of the text, and every version anybody saved.
+                Everything that happened to this entry, newest first: your edits, the edits of every other admin, every handover of the entry, and every version anybody saved.
               </p>
               <div id="logList">
                 <div :for={entry <- @log} class="log-row">
@@ -1723,9 +1632,8 @@ defmodule TexttileWeb.EditorLive do
 
             <div :if={@tab == "versions"} id="tp-versions">
               <p class="note mb-4">
-                A version is the main text and nothing else: the title and the body. Article settings are never versioned, because they are shared and live.
-                <b>Save version</b>
-                in the bar writes one; every version below shows what changed against the one before it, and can be put back into the editor.
+                The <b>Save version</b>
+                button in the bar saves the current version of the title and the body. Article settings are never versioned, because they are shared and live. Every version below shows what changed against the one before it, and can be restored.
               </p>
               <div id="versionsList">
                 <p :if={@versions == []} class="note">
@@ -1766,7 +1674,7 @@ defmodule TexttileWeb.EditorLive do
                         Enum.at(@versions, index + 1).inserted_at
                       )}: <span class="dif-add">added</span>, <span class="dif-del">removed</span>.
                     <% else %>
-                      The first version of the text.
+                      The first version of the entry.
                     <% end %>
                   </p>
                   <%!-- pre-wrap renders template whitespace, so the marked
@@ -1784,7 +1692,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label="Article settings"
-          class="lg:overflow-y-auto min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[100px] lg:pb-[110px]"
+          class="sidecol min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -1805,7 +1713,7 @@ defmodule TexttileWeb.EditorLive do
                 <span class="note num" id="tileOnWay" phx-update="ignore"></span>
               </span>
               <span class="sp"></span>
-              <span class="note">The order is the gallery.</span>
+              <span class="note">Grab a tile to sort it.</span>
             </div>
             <div class="grid gap-[6px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3" id="tileGrid">
               <div class="contents" id="tileServer">
@@ -1865,12 +1773,12 @@ defmodule TexttileWeb.EditorLive do
             <span class="drop-flag" id="tileDropFlag" hidden>
               Add it to the gallery, at the end
             </span>
-            <p class="note mt-[10px] transition-colors" id="tileNote">
-              Grab a tile to sort it. Tap one to see it big.
-            </p>
+            <%!-- what the grid has to say for a moment: a tile another
+                 admin moved, a file over the roof, an upload that
+                 failed. The rule stands over the grid, so this line has
+                 nothing to say the rest of the time and is not there. --%>
+            <p class="note mt-[10px] transition-colors empty:hidden" id="tileNote"></p>
           </div>
-
-          <.share_block article={@article} />
 
           <%!-- article settings: what the text wears first (preview,
                address, date), then what it is, then its community.
@@ -1894,7 +1802,7 @@ defmodule TexttileWeb.EditorLive do
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
                   <%= if @preview_candidates == [] do %>
                     <span class="note">
-                      No pictures yet. Once the text or the gallery has one, pick it here.
+                      No pictures yet. Once the entry or the gallery has one, pick it here.
                     </span>
                   <% else %>
                     <button
@@ -1915,7 +1823,7 @@ defmodule TexttileWeb.EditorLive do
                   <% end %>
                 </div>
                 <div class="hint">
-                  Used in the texts grid, on the front page and in link previews.
+                  Used in the entries grid, on the front page and in link previews.
                 </div>
               </span>
             </div>
@@ -1938,13 +1846,55 @@ defmodule TexttileWeb.EditorLive do
                   />
                 </span>
                 <div class="hint" id="slugHint">{slug_hint(@article)}</div>
+                <%!-- every address this entry used to answer at. They
+                     are kept so a link somebody shared still arrives;
+                     a row that is not worth keeping goes with one
+                     click, and then the address is a 404 again. --%>
+                <div :if={@redirects != []} class="oldaddr" id="oldAddresses">
+                  <p class="lab">Old addresses, still arriving here</p>
+                  <div :for={old <- @redirects} class="row" id={"oldaddr-#{old.id}"}>
+                    <a
+                      class="p"
+                      href={old.path}
+                      target="_blank"
+                      rel="noopener"
+                      title="Follows the old address, in a new tab"
+                    >
+                      {old.path}
+                    </a>
+                    <button
+                      type="button"
+                      class="btn quiet sm"
+                      phx-click="delete_redirect"
+                      phx-value-id={old.id}
+                      aria-label={"Stop answering #{old.path}"}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </span>
             </div>
 
             <div class="drow gtop">
-              <label class="lab" id="edDateLab" for="edDate">
-                {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
-              </label>
+              <span class="labrow">
+                <label class="lab" id="edDateLab" for="edDate">
+                  {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
+                </label>
+                <%!-- a date field empties badly by hand, so the row
+                     offers the one word for it. On a live entry it is
+                     the same statement as Unpublish, and the hint under
+                     the field says so. --%>
+                <button
+                  :if={@article.publish_date}
+                  type="button"
+                  class="link"
+                  id="edDateReset"
+                  phx-click="clear_publish_date"
+                >
+                  Reset
+                </button>
+              </span>
               <span class="val">
                 <input type="date" id="edDate" name="publish_date" value={@article.publish_date} />
                 <div class="hint" id="edDateHint">{date_hint(@article)}</div>
@@ -1973,7 +1923,7 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.type == "page"}
                   />
                   <span>
-                    Page<span class="note">Standalone, like About or Imprint. Appears in the site menu automatically, sorted by publish date, never in the feed.</span>
+                    Page<span class="note">Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed.</span>
                   </span>
                 </label>
               </span>
@@ -2187,11 +2137,6 @@ defmodule TexttileWeb.EditorLive do
                     {tag}
                   </button>
                 </div>
-                <div class="hint">
-                  Comma separated; each tag becomes an archive page. Start typing
-                  and the field offers the tags the blog already carries, or click
-                  one below to add it or take it off.
-                </div>
               </span>
             </div>
 
@@ -2230,6 +2175,10 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
           </form>
+
+          <%!-- last in the column: the lines you hand on are the last
+               thing you want, after the entry is what it should be --%>
+          <.share_block article={@article} />
         </aside>
       </div>
 
@@ -2276,12 +2225,42 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:share_text, share_text(assigns.article, protected? && password))
 
     ~H"""
-    <div :if={@show_password? or @share_text} class="mt-[34px]" id="shareBlock">
+    <%!-- The lines to hand somebody, and nothing around them: the box
+         says what it holds by holding it. Copy stands where Reset
+         stands, at the right end of the heading row. --%>
+    <div
+      :if={@show_password? or @share_text}
+      class="mt-[34px]"
+      id="shareBlock"
+      phx-hook=".CopyShare"
+    >
       <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
         <span class="text-[13px] font-semibold">Share</span>
+        <span class="sp"></span>
+        <%!-- the button says what it did; a word beside it would push
+             the button itself out of the way --%>
+        <button :if={@share_text} type="button" class="link" data-copy>Copy</button>
       </div>
 
-      <div :if={@show_password?} class="drow pt-0.5" id="sharePassword">
+      <%!-- the lines read like every other value in this column: the
+           same size, the same ink, no box of its own and no bar down
+           its side. It grows to what it holds, so nothing scrolls. --%>
+      <div :if={@share_text} class="drow pt-0.5">
+        <span class="val">
+          <textarea
+            id="shareLines"
+            class="sharelines"
+            rows={length(String.split(@share_text, "\n"))}
+            readonly
+            spellcheck="false"
+            aria-label="The lines to pass on"
+          >{@share_text}</textarea>
+        </span>
+      </div>
+
+      <%!-- Before an entry is live there are no lines to pass on, and
+           then this is the one place the access word stands. --%>
+      <div :if={!@share_text && @show_password?} class="drow pt-0.5" id="sharePassword">
         <span class="lab">Blog password</span>
         <span class="val">
           <span :if={@password != ""} class="font-mono text-[13.5px]" id="sharePasswordWord">
@@ -2294,32 +2273,6 @@ defmodule TexttileWeb.EditorLive do
           <div class="hint" id="sharePasswordHint">{@password_hint}</div>
         </span>
       </div>
-
-      <div :if={@share_text} class="drow gtop" id="shareText">
-        <span class="lab">To pass on</span>
-        <span class="val">
-          <div phx-hook=".CopyShare" id="shareCopy">
-            <textarea
-              id="shareLines"
-              class="font-mono text-[12.5px] leading-[1.6] resize-none"
-              rows={length(String.split(@share_text, "\n"))}
-              readonly
-              spellcheck="false"
-              aria-label="The text to pass on"
-            >{@share_text}</textarea>
-            <div class="mt-[9px] btn-row">
-              <button type="button" class="btn sm" data-copy>Copy</button>
-              <span class="note" data-copied hidden>Copied</span>
-            </div>
-          </div>
-          <div class="hint">
-            The address of the text{if @protected? and @password != "",
-              do: ", and the word that opens the blog",
-              else: ""}. Subscribers get the same
-            lines by mail when the text goes live.
-          </div>
-        </span>
-      </div>
     </div>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".CopyShare">
@@ -2328,7 +2281,6 @@ defmodule TexttileWeb.EditorLive do
         updated() { this.wire() },
         wire() {
           const button = this.el.querySelector("[data-copy]")
-          const said = this.el.querySelector("[data-copied]")
           const field = this.el.querySelector("textarea")
           if (!button || button.dataset.wired) return
           button.dataset.wired = "1"
@@ -2341,11 +2293,10 @@ defmodule TexttileWeb.EditorLive do
               // still copies them.
               field.select()
             }
-            if (said) {
-              said.hidden = false
-              clearTimeout(this.timer)
-              this.timer = setTimeout(() => { said.hidden = true }, 2200)
-            }
+            // the button answers for itself, the way Save version does
+            button.textContent = "Copied"
+            clearTimeout(this.timer)
+            this.timer = setTimeout(() => { button.textContent = "Copy" }, 2200)
           })
         }
       }
@@ -2384,6 +2335,17 @@ defmodule TexttileWeb.EditorLive do
         end
     end
   end
+
+  # What the door to the reader's side promises, in the words of the
+  # state it opens: a live entry is the page everybody reads, and one
+  # that is not live yet is that page for the admins alone.
+  defp public_title(%{status: "published"}),
+    do: "Opens the entry on the public site, in a new tab"
+
+  defp public_title(_article),
+    do:
+      "Opens the entry as it was last saved, in a new tab. " <>
+        "Only somebody signed in can open this address."
 
   defp chevron_icon(assigns) do
     ~H"""
@@ -2521,10 +2483,8 @@ defmodule TexttileWeb.EditorLive do
   defp diff_class(:del), do: "dif-del"
   defp diff_class(:same), do: nil
 
-  defp will_notify?(article), do: article.type != "page" and article.notify_on_publish
-
   defp date_hint(%{status: "draft"}),
-    do: "Empty means whenever you publish. A future date schedules the text."
+    do: "Empty means whenever you publish. A future date schedules the entry."
 
   defp date_hint(%{status: "scheduled"} = article) do
     if article.publish_date,
@@ -2534,11 +2494,12 @@ defmodule TexttileWeb.EditorLive do
 
   defp date_hint(article) do
     if article.publish_date,
-      do: "Live since #{article.publish_date}. A future date puts it back in the queue.",
-      else: "Pick the day it went live. An empty field makes the text a draft again."
+      do:
+        "Live since #{article.publish_date}. A future date changes it to unpublished until the date.",
+      else: "Pick the day it went live. An empty field makes the entry a draft again."
   end
 
-  defp slug_hint(%{status: "draft"}), do: "Free to change while the text is a draft."
+  defp slug_hint(%{status: "draft"}), do: "Free to change while the entry is a draft."
 
   defp slug_hint(article) do
     "#{TexttileWeb.Endpoint.host()}#{Articles.public_path(article)} is live; changing it breaks old links."
@@ -2548,7 +2509,7 @@ defmodule TexttileWeb.EditorLive do
   # once never sends it again, whatever state it stands in now.
   defp notify_note(%{notified_on: %Date{} = day}),
     do:
-      "The subscriber email for this text went out on #{day}. It goes out once; publishing again does not send it again."
+      "The subscriber email for this entry went out on #{day}. It goes out once; publishing again does not send it again."
 
   defp notify_note(%{status: "draft", notify_on_publish: true}),
     do:
@@ -2560,11 +2521,12 @@ defmodule TexttileWeb.EditorLive do
 
   defp notify_note(%{status: "scheduled", notify_on_publish: true} = article),
     do:
-      "Goes out to the confirmed subscribers when the text goes live on #{article.publish_date}. Uncheck any time before then."
+      "Goes out to the confirmed subscribers when the entry goes live on #{article.publish_date}. Uncheck any time before then."
 
   defp notify_note(%{status: "scheduled"} = article),
     do: "No email will go out on #{article.publish_date}. Check it and it goes out at go-live."
 
   defp notify_note(_article),
-    do: "No email went out for this text. The email goes out only at the moment a text goes live."
+    do:
+      "No email went out for this entry. The email goes out only at the moment an entry goes live."
 end

@@ -116,33 +116,38 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#stateBtn .main", "Publish")
     end
 
-    test "the publish note counts the subscribers the email went to", %{conn: conn, user: user} do
+    # The click says one word. Whether an email left is not news of the
+    # click: the settings row carries the mail's whole story, and it goes
+    # on carrying it after the note has faded.
+    test "the note is one word, and the settings row carries the mail", %{
+      conn: conn,
+      user: user
+    } do
       {:ok, _} = Texttile.Newsletter.add("one@example.org")
 
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note*='on its way to 1 subscriber']")
-
-      {:ok, _} = Texttile.Newsletter.add("two@example.org")
-
-      other = draft(user, %{title: "Windows", body: "Open ones."})
-      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{other}")
-      view |> element("#stateBtn .main", "Publish") |> render_click()
-
-      assert has_element?(view, "#state[data-note*='on its way to 2 subscribers']")
+      assert has_element?(view, "#state[data-note='Published']")
+      assert Articles.get_article!(article.id).notified_on == Date.utc_today()
+      assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
     end
 
-    test "with nobody on the list the note says so", %{conn: conn, user: user} do
+    test "a scheduled entry says the day it goes live", %{conn: conn, user: user} do
       article = draft(user)
+      future = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
-      view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note*='nobody is on the newsletter list']")
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["publish_date"], publish_date: future})
+
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+      assert has_element?(view, "#state[data-note='Scheduled for #{future}']")
     end
 
-    test "an unchecked text publishes quietly, and says that", %{conn: conn, user: user} do
+    test "an unchecked entry publishes without mailing anybody", %{conn: conn, user: user} do
       {:ok, _} = Texttile.Newsletter.add("one@example.org")
 
       article = draft(user)
@@ -155,12 +160,12 @@ defmodule TexttileWeb.EditorLiveTest do
       refute Articles.get_article!(article.id).notify_on_publish
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note*='no email sent']")
+      assert has_element?(view, "#state[data-note='Published']")
       assert is_nil(Articles.get_article!(article.id).notified_on)
+      assert has_element?(view, "#notifyOpt", "No email went out for this entry")
     end
 
-    test "a text that already mailed says so, on the button and in the settings",
-         %{conn: conn, user: user} do
+    test "an entry that already mailed says so in the settings", %{conn: conn, user: user} do
       {:ok, _} = Texttile.Newsletter.add("one@example.org")
 
       article = draft(user)
@@ -173,24 +178,101 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
 
       view |> element("#stateBtn .main", "Publish") |> render_click()
-      assert has_element?(view, "#state[data-note*='already got this email']")
+
+      # publishing again sends nothing: the stamp stands from the first
+      # go-live and never moves
+      assert Articles.get_article!(article.id).notified_on == Date.utc_today()
+      assert has_element?(view, "#notifyOpt", "It goes out once")
     end
 
-    test "a live text carries the link to its address in the bar", %{conn: conn, user: user} do
+    test "the bar carries the way to the reader's page", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      # a draft has no address yet, so there is nothing to open
-      refute has_element?(view, "#btnView")
+      # a draft with no slug has no address of its own yet, and the door
+      # is still there: it opens the same page by id
+      assert view |> element("a#stamp") |> render() =~ ~s(href="/preview/#{article.id}")
+      assert view |> element("#stateLink") |> render() =~ ~s(href="/preview/#{article.id}")
+
+      # a slug is all it takes: from then on the door is the address the
+      # entry will wear, and the site serves it to whoever is signed in
+      view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "harbour"})
+      article = Articles.get_article!(article.id)
+
+      assert has_element?(view, ~s(a#stamp[target="_blank"]))
+      assert view |> element("a#stamp") |> render() =~ ~s(href="#{Articles.reader_path(article)}")
+
+      assert view |> element("#stateLink") |> render() =~
+               ~s(href="#{Articles.reader_path(article)}")
 
       view |> element("#stateBtn .main", "Publish") |> render_click()
+      article = Articles.get_article!(article.id)
+
+      assert view |> element("a#stamp") |> render() =~ ~s(href="#{Articles.public_path(article)}")
+    end
+
+    test "the Reset beside the date empties it", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      # nothing to reset while the field is empty
+      refute has_element?(view, "#edDateReset")
+
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["publish_date"], publish_date: "2026-09-01"})
+
+      assert has_element?(view, "#edDateReset")
+      view |> element("#edDateReset") |> render_click()
+
+      assert Articles.get_article!(article.id).publish_date == nil
+      refute has_element?(view, "#edDateReset")
+    end
+
+    test "the Reset takes a scheduled entry off the queue", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, Date.add(Date.utc_today(), 7))
+      {:ok, article} = Articles.publish(article, user)
+      assert article.status == "scheduled"
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      view |> element("#edDateReset") |> render_click()
 
       article = Articles.get_article!(article.id)
-      assert has_element?(view, "#btnView")
+      assert article.status == "draft"
+      assert article.publish_date == nil
+    end
 
-      assert view
-             |> element("#btnView")
-             |> render() =~ ~s(href="#{Articles.public_path(article)}")
+    test "Save version answers on the button itself", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      assert has_element?(view, "#btnSave", "Save version")
+
+      view |> element("#btnSave") |> render_click()
+      assert has_element?(view, "#btnSave", "Saved")
+
+      view |> element("#btnSave") |> render_click()
+      assert has_element?(view, "#btnSave", "Nothing changed")
+    end
+  end
+
+  describe "the addresses an entry left behind" do
+    test "stand under the address field and go on one click", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, ~D[2026-08-08])
+      {:ok, article} = Articles.publish(article, user, today: ~D[2026-08-08])
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      refute has_element?(view, "#oldAddresses")
+
+      view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "the-harbour"})
+
+      assert has_element?(view, "#oldAddresses", "/2026/08/08/doors")
+
+      view |> element("#oldAddresses button", "Delete") |> render_click()
+      refute has_element?(view, "#oldAddresses")
+      assert Articles.redirect_target("/2026/08/08/doors") == nil
     end
   end
 
@@ -585,8 +667,8 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       view |> element(".tab", "Log") |> render_click()
 
-      assert has_element?(view, "#logList .log-row", "published the text")
-      assert has_element?(view, "#logList .log-row", "started the text")
+      assert has_element?(view, "#logList .log-row", "published the entry")
+      assert has_element?(view, "#logList .log-row", "started the entry")
     end
   end
 
@@ -596,11 +678,11 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
       view |> element("#stateBtn [aria-haspopup]") |> render_click()
-      view |> element("#stateMenu button", "Delete this text") |> render_click()
+      view |> element("#stateMenu button", "Delete this entry") |> render_click()
       assert has_element?(view, "#dialog", "Delete")
 
-      view |> element("#dialog button", "Delete the text") |> render_click()
-      assert_redirect(view, "/admin")
+      view |> element("#dialog button", "Delete the entry") |> render_click()
+      assert_redirect(view, "/admin/texts")
       assert Articles.list_articles() == []
     end
   end
@@ -616,7 +698,7 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, reader_view, _} = live(conn2, ~p"/admin/texts/#{article}")
 
       reader_view |> element("#stateBtn .main", "Publish") |> render_click()
-      assert has_element?(reader_view, "#dialog", "is editing this text right now")
+      assert has_element?(reader_view, "#dialog", "is editing this entry right now")
       assert Articles.get_article!(article.id).status == "draft"
 
       reader_view |> element("#dialog button", "Publish anyway") |> render_click()
@@ -640,7 +722,7 @@ defmodule TexttileWeb.EditorLiveTest do
       reader_view |> element("#versionsList button", "Restore this version") |> render_click()
 
       assert Articles.get_article!(article.id).body == "Newer words."
-      assert has_element?(reader_view, "#stateLine", "Take the text over first")
+      assert has_element?(reader_view, "#stateLine", "Take the entry over first")
     end
   end
 
@@ -750,8 +832,8 @@ defmodule TexttileWeb.EditorLiveTest do
 
       # the read-only side clicks into the title and confirms the dialog
       second |> element("#edTitle") |> render_click()
-      assert has_element?(second, "#dialog", "Take the text over")
-      second |> element("#dialog button", "Take over the text") |> render_click()
+      assert has_element?(second, "#dialog", "Take the entry over")
+      second |> element("#dialog button", "Take over the entry") |> render_click()
 
       # the flush answers (or its fallback fires), then the lock moves
       wait_until(fn -> not has_element?(second, "#edTitle[readonly]") end)

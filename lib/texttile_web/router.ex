@@ -64,12 +64,17 @@ defmodule TexttileWeb.Router do
     # the browser feeds them one after the other.
     post "/texts/:id/gallery", GalleryController, :create
 
+    # The door of the admin area. The list of entries has an address of
+    # its own, so every screen here is a place you can bookmark, and
+    # /admin stays the one short way in.
+    get "/", AdminController, :index
+
     live_session :admin,
       on_mount: [
         {TexttileWeb.UserAuth, :ensure_authenticated},
         {TexttileWeb.Admin, :track_presence}
       ] do
-      live "/", TextsLive
+      live "/texts", TextsLive
       live "/texts/:id", EditorLive
       live "/comments", CommentsLive
       live "/newsletter", NewsletterLive
@@ -136,6 +141,11 @@ defmodule TexttileWeb.Router do
     get "/", SiteController, :front
     get "/blog", SiteController, :blog
     get "/tags/:tag", SiteController, :tag
+
+    # An entry that has no slug yet has no address of its own, and a
+    # draft carries none until it goes live. This is the door the editor
+    # offers until there is one: the reader's page, for admins only.
+    get "/preview/:id", SiteController, :preview
 
     # A reader sends a comment. Behind the gate like the text it is on.
     post "/comments/:article_id", SiteController, :post_comment

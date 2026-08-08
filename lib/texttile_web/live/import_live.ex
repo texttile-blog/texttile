@@ -102,11 +102,11 @@ defmodule TexttileWeb.ImportLive do
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Import</h1>
         <p class="lead">
-          A zip of bundles becomes texts: one folder per text, with Markdown,
+          A zip of bundles becomes entries: one folder per entry, with Markdown,
           settings and pictures. Pictures may be files in the bundle or URLs;
-          the server downloads the URLs itself, so the zip stays small.
-          IMPORT.md in the repository is the format, written so a script or
-          an AI agent can build the zip from any export.
+          the server downloads the URLs itself, so the zip stays small. <.import_doc />
+          in the repository is the format, written so a script or an AI agent
+          can build the zip from any export.
         </p>
 
         <%= case @job.phase do %>

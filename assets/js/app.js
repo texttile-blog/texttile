@@ -50,11 +50,20 @@ const SavedTicker = {
   updated() { this.paint() },
   destroyed() { clearInterval(this.timer); clearTimeout(this.fade) },
 
+  /* Where the words go. The editor's line is also a link and carries an
+     arrow inside the pill, so there the words live in a span of their
+     own and the arrow survives every repaint. Everywhere else the pill
+     holds nothing but words and is its own target. */
+  words() {
+    return this.el.querySelector("[data-words]") || this.el
+  },
+
   paint() {
     const now = Date.now()
     const at = Number(this.el.dataset.at || now)
     const note = this.el.dataset.note
     const until = Number(this.el.dataset.noteUntil || 0)
+    const words = this.words()
 
     // a note is a sentence to read, so the loud state lasts as long as
     // the sentence stands
@@ -63,20 +72,20 @@ const SavedTicker = {
       this.flash(note ? Math.max(FLASH_MS, until - now) : FLASH_MS)
     }
 
-    if (note && now < until) { this.el.textContent = note; return }
+    if (note && now < until) { words.textContent = note; return }
 
     const d = new Date(at)
     const pad = n => String(n).padStart(2, "0")
     const fresh = (now - at) / 1000 < 20
     const wide = window.matchMedia("(min-width: 768px)").matches
 
-    if (this.el.classList.contains("fresh")) { this.el.textContent = "Saved"; return }
+    if (this.el.classList.contains("fresh")) { words.textContent = "Saved"; return }
     // a phone bar has room for the stamp, not for the sentence
     if (!wide) {
-      this.el.textContent = fresh ? "saved" : `saved ${pad(d.getHours())}:${pad(d.getMinutes())}`
+      words.textContent = fresh ? "saved" : `saved ${pad(d.getHours())}:${pad(d.getMinutes())}`
       return
     }
-    this.el.textContent = fresh
+    words.textContent = fresh
       ? "Last saved · just now"
       : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
   },
