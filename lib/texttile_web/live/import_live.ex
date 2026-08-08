@@ -14,7 +14,7 @@ defmodule TexttileWeb.ImportLive do
 
     socket =
       socket
-      |> assign(:page_title, "Import")
+      |> assign(:page_title, gettext("Import"))
       |> assign(:job, Job.state())
       |> allow_upload(:zip,
         accept: ~w(.zip),
@@ -31,15 +31,18 @@ defmodule TexttileWeb.ImportLive do
 
   def handle_event("start", _params, socket) do
     case Job.start_import(socket.assigns.current_scope.user) do
-      :ok -> {:noreply, socket}
-      {:error, _} -> {:noreply, put_flash(socket, :error, "There is no report to import")}
+      :ok ->
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, gettext("There is no report to import"))}
     end
   end
 
   def handle_event("discard", _params, socket) do
     case Job.discard() do
       :ok -> {:noreply, socket}
-      {:error, :busy} -> {:noreply, put_flash(socket, :error, "The import is running")}
+      {:error, :busy} -> {:noreply, put_flash(socket, :error, gettext("The import is running"))}
     end
   end
 
@@ -67,7 +70,9 @@ defmodule TexttileWeb.ImportLive do
 
         {:error, :busy} ->
           File.rm(path)
-          {:noreply, put_flash(socket, :error, "An import is running; let it finish first")}
+
+          {:noreply,
+           put_flash(socket, :error, gettext("An import is running; let it finish first"))}
       end
     else
       {:noreply, socket}
@@ -76,8 +81,7 @@ defmodule TexttileWeb.ImportLive do
 
   defp importable(report), do: Enum.count(report.bundles, &(&1.errors == []))
 
-  defp texts(1), do: "1 text"
-  defp texts(n), do: "#{n} texts"
+  defp texts(n), do: ngettext("1 entry", "%{count} entries", n)
 
   # The address the bundle takes on the site: a post carries its date,
   # a page its slug alone. A bundle without a date lands on today, the
@@ -92,7 +96,7 @@ defmodule TexttileWeb.ImportLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Import"
+      crumb={gettext("Import")}
       active="settings"
       others={@others}
     >
@@ -100,24 +104,26 @@ defmodule TexttileWeb.ImportLive do
         <Layouts.view_site />
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">Import</h1>
+        <h1 class="page-h">{gettext("Import")}</h1>
         <p class="lead">
-          A zip of bundles becomes entries: one folder per entry, with Markdown,
-          settings and pictures. Pictures may be files in the bundle or URLs;
-          the server downloads the URLs itself, so the zip stays small. <.import_doc />
-          in the repository is the format, written so a script or an AI agent
-          can build the zip from any export.
+          {gettext(
+            "A zip of bundles becomes entries: one folder per entry, with Markdown, settings and pictures. Pictures may be files in the bundle or URLs; the server downloads the URLs itself, so the zip stays small."
+          )}
+          <.import_doc />
+          {gettext(
+            "in the repository is the format, written so a script or an AI agent can build the zip from any export."
+          )}
         </p>
 
         <%= case @job.phase do %>
           <% :idle -> %>
             <form id="import-upload" phx-change="validate_upload" class="mt-6">
               <label class="btn cursor-pointer relative overflow-hidden">
-                Upload the zip
+                {gettext("Upload the zip")}
                 <.live_file_input
                   upload={@uploads.zip}
                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  aria-label="Upload the zip"
+                  aria-label={gettext("Upload the zip")}
                 />
               </label>
               <span :for={entry <- @uploads.zip.entries} class="note ml-2 num">
@@ -130,13 +136,14 @@ defmodule TexttileWeb.ImportLive do
                 {upload_error_note(error)}
               </p>
               <p class="note mt-3">
-                Nothing is written yet: the zip is read and checked first, and
-                the report shows what an import would do.
+                {gettext(
+                  "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
+                )}
               </p>
             </form>
           <% :validating -> %>
             <div class="mt-6" id="import-validating">
-              <p>Reading {@job.name} …</p>
+              <p>{gettext("Reading %{name} …", name: @job.name)}</p>
               <p :if={@job.step} class="note mt-2 num break-all" id="import-step">
                 {@job.step}
               </p>
@@ -145,12 +152,14 @@ defmodule TexttileWeb.ImportLive do
             <div class="mt-6" id="import-failed">
               <p class="text-julia">{@job.message}</p>
               <p class="mt-4">
-                <button class="btn" phx-click="discard" id="import-discard">Start over</button>
+                <button class="btn" phx-click="discard" id="import-discard">
+                  {gettext("Start over")}
+                </button>
               </p>
             </div>
           <% :report -> %>
             <div class="mt-6" id="import-report">
-              <h2 class="set-h">The report for {@job.name}</h2>
+              <h2 class="set-h">{gettext("The report for %{name}", name: @job.name)}</h2>
               <div
                 :for={bundle <- @job.report.bundles}
                 class="py-[10px] border-b border-hair"
@@ -160,9 +169,9 @@ defmodule TexttileWeb.ImportLive do
                   <b class="text-[14.5px]">{bundle.name}</b>
                   <span :if={bundle.slug} class="note num">{bundle_address(bundle)}</span>
                   <span class="sp"></span>
-                  <span :if={bundle.errors == []} class="note">will import</span>
+                  <span :if={bundle.errors == []} class="note">{gettext("will import")}</span>
                   <span :if={bundle.errors != []} class="text-julia text-[13px]">
-                    will not import
+                    {gettext("will not import")}
                   </span>
                 </div>
                 <p :for={error <- bundle.errors} class="text-julia text-[13px] mt-[3px]">
@@ -173,14 +182,16 @@ defmodule TexttileWeb.ImportLive do
                 </p>
               </div>
               <p :if={@job.report.bundles == []} class="note mt-2">
-                The zip holds no bundle folders.
+                {gettext("The zip holds no bundle folders.")}
               </p>
               <p :for={warning <- @job.report.warnings} class="note mt-2">
                 {warning}
               </p>
               <p :if={@job.report.hosts != []} class="note mt-2" id="import-hosts">
-                Downloads from: {Enum.join(@job.report.hosts, ", ")}. Check
-                this list for hosts you do not expect.
+                {gettext(
+                  "Downloads from: %{hosts}. Check this list for hosts you do not expect.",
+                  hosts: Enum.join(@job.report.hosts, ", ")
+                )}
               </p>
               <div class="flex gap-2 mt-5">
                 <button
@@ -189,10 +200,10 @@ defmodule TexttileWeb.ImportLive do
                   phx-click="start"
                   disabled={importable(@job.report) == 0}
                 >
-                  Import {texts(importable(@job.report))}
+                  {gettext("Import %{entries}", entries: texts(importable(@job.report)))}
                 </button>
                 <button class="btn quiet" id="import-discard" phx-click="discard">
-                  Discard
+                  {gettext("Discard")}
                 </button>
               </div>
             </div>
@@ -212,16 +223,19 @@ defmodule TexttileWeb.ImportLive do
                 {@job.step}
               </p>
               <p class="note mt-3">
-                The import runs on the server; this page may close.
+                {gettext("The import runs on the server; this page may close.")}
               </p>
             </div>
           <% :done -> %>
             <div class="mt-6" id="import-summary">
-              <h2 class="set-h">Imported: {@job.name}</h2>
+              <h2 class="set-h">{gettext("Imported: %{name}", name: @job.name)}</h2>
               <p class="mt-2">
-                {@job.summary.created} created · {@job.summary.updated} updated
+                {gettext("%{created} created · %{updated} updated",
+                  created: @job.summary.created,
+                  updated: @job.summary.updated
+                )}
                 <span :if={@job.summary.skipped > 0}>
-                  · {@job.summary.skipped} skipped for errors
+                  · {gettext("%{count} skipped for errors", count: @job.summary.skipped)}
                 </span>
               </p>
               <div :if={@job.summary.failed != []} class="mt-3">
@@ -233,7 +247,7 @@ defmodule TexttileWeb.ImportLive do
                 </p>
               </div>
               <p class="mt-4">
-                <button class="btn" phx-click="discard" id="import-done">Done</button>
+                <button class="btn" phx-click="discard" id="import-done">{gettext("Done")}</button>
               </p>
             </div>
         <% end %>
@@ -242,7 +256,7 @@ defmodule TexttileWeb.ImportLive do
     """
   end
 
-  defp upload_error_note(:too_large), do: "The zip is larger than 1 GB"
-  defp upload_error_note(:not_accepted), do: "Only a .zip file works here"
-  defp upload_error_note(other), do: "The upload failed (#{other})"
+  defp upload_error_note(:too_large), do: gettext("The zip is larger than 1 GB")
+  defp upload_error_note(:not_accepted), do: gettext("Only a .zip file works here")
+  defp upload_error_note(other), do: gettext("The upload failed (%{reason})", reason: other)
 end

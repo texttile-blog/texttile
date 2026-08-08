@@ -109,14 +109,24 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert has_element?(view, "#front-page-choice")
     end
 
-    test "the language select saves and an invalid max edge says no", %{conn: conn} do
+    test "the language select saves, and the screen comes back speaking it", %{conn: conn} do
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 
-      view
-      |> form("#site-form", %{"settings" => %{"language" => "de"}})
-      |> render_change(%{"_target" => ["settings", "language"]})
+      # The screen asks for itself again: this process took its language
+      # at mount, and only a new mount can change it.
+      assert {:error, {:live_redirect, %{to: "/admin/settings"}}} =
+               view
+               |> form("#site-form", %{"settings" => %{"language" => "de"}})
+               |> render_change(%{"_target" => ["settings", "language"]})
 
       assert Settings.get(:language) == "de"
+
+      {:ok, _view, html} = live(conn, ~p"/admin/settings")
+      assert html =~ "Einstellungen"
+    end
+
+    test "an invalid max edge says no", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
 
       html =
         view

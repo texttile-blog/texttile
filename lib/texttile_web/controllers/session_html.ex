@@ -7,7 +7,7 @@ defmodule TexttileWeb.SessionHTML do
 
   def new(assigns) do
     ~H"""
-    <Layouts.auth subtitle={"Admin sign-in · #{@conn.host}"}>
+    <Layouts.auth subtitle={gettext("Admin sign-in · %{host}", host: @conn.host)}>
       <.form
         :let={_f}
         for={%{}}
@@ -17,7 +17,7 @@ defmodule TexttileWeb.SessionHTML do
         class="quiet-fields mt-[26px]"
       >
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-username">Username</label>
+          <label class="lab block mb-0" for="login-username">{gettext("Username")}</label>
           <input
             type="text"
             id="login-username"
@@ -31,7 +31,7 @@ defmodule TexttileWeb.SessionHTML do
           />
         </div>
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-password">Password</label>
+          <label class="lab block mb-0" for="login-password">{gettext("Password")}</label>
           <input
             type="password"
             id="login-password"
@@ -39,27 +39,24 @@ defmodule TexttileWeb.SessionHTML do
             autocomplete="current-password"
           />
         </div>
-        <button class="btn solid w-full h-[38px] mt-[6px]" type="submit">Sign in</button>
+        <button class="btn solid w-full h-[38px] mt-[6px]" type="submit">{gettext("Sign in")}</button>
       </.form>
       <p :if={@error == :missing} class="text-julia text-[13px] mt-[13px]" id="login-error">
-        Type your username and your password. Both fields are required.
+        {gettext("Type your username and your password. Both fields are required.")}
       </p>
       <p :if={@error == :bad} class="text-julia text-[13px] mt-[13px]" id="login-error">
-        The username and the password do not match.
+        {gettext("The username and the password do not match.")}
       </p>
       <p :if={@error == :claimed} class="text-julia text-[13px] mt-[13px]" id="login-error">
-        This account already exists. Sign in with its password.
+        {gettext("This account already exists. Sign in with its password.")}
       </p>
       <p class="mt-[13px]">
-        <a class="link text-[13px]" href={~p"/forgot"}>Forgot your password?</a>
+        <a class="link text-[13px]" href={~p"/forgot"}>{gettext("Forgot your password?")}</a>
       </p>
       <p class="note mt-[22px] leading-[1.6]">
-        This page is for admins. Readers never see it, and there is no public
-        registration. The people who may sign in stand in the configuration of
-        this server. Each of them chooses a password at the first sign-in. Your
-        username is the name you sign in with. Your email address is what a
-        password link needs. You give it at the first sign-in and can change
-        it in your profile.
+        {gettext(
+          "This page is for admins. Readers never see it, and there is no public registration. The people who may sign in stand in the configuration of this server. Each of them chooses a password at the first sign-in. Your username is the name you sign in with. Your email address is what a password link needs. You give it at the first sign-in and can change it in your profile."
+        )}
       </p>
     </Layouts.auth>
     """
@@ -71,14 +68,15 @@ defmodule TexttileWeb.SessionHTML do
   """
   def claim(assigns) do
     ~H"""
-    <Layouts.auth subtitle={"First sign-in · #{@conn.host}"}>
+    <Layouts.auth subtitle={gettext("First sign-in · %{host}", host: @conn.host)}>
       <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em] mt-[22px]">
-        Choose a password
+        {gettext("Choose a password")}
       </h2>
       <p class="text-[13.5px] mt-[9px] leading-[1.6]">
-        The name <strong>{@username}</strong>
-        has no account yet. The password you type here becomes its password,
-        and the account is yours from then on.
+        {gettext("The name")} <strong>{@username}</strong>
+        {gettext(
+          "has no account yet. The password you type here becomes its password, and the account is yours from then on."
+        )}
       </p>
       <.form
         :let={_f}
@@ -90,7 +88,7 @@ defmodule TexttileWeb.SessionHTML do
       >
         <input type="hidden" name="user[username]" value={@username} />
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="claim-password">Password</label>
+          <label class="lab block mb-0" for="claim-password">{gettext("Password")}</label>
           <input
             type="password"
             id="claim-password"
@@ -102,7 +100,7 @@ defmodule TexttileWeb.SessionHTML do
         </div>
         <div class="mb-[7px]">
           <label class="lab block mb-0" for="claim-password-confirmation">
-            Repeat the password
+            {gettext("Repeat the password")}
           </label>
           <input
             type="password"
@@ -113,14 +111,14 @@ defmodule TexttileWeb.SessionHTML do
           <.field_error changeset={@changeset} field={:password_confirmation} />
         </div>
         <div class="flex items-baseline gap-[10px]">
-          <span class="note">At least 12 characters.</span>
+          <span class="note">{gettext("At least 12 characters.")}</span>
           <span class="sp"></span>
           <button class="link text-[12.5px]" type="button" data-toggle-password="claim-password">
-            Show
+            {gettext("Show")}
           </button>
         </div>
         <div class="mt-[15px] mb-[15px]">
-          <label class="lab block mb-0" for="claim-email">Email address</label>
+          <label class="lab block mb-0" for="claim-email">{gettext("Email address")}</label>
           <input
             type="email"
             id="claim-email"
@@ -129,10 +127,12 @@ defmodule TexttileWeb.SessionHTML do
             autocomplete="email"
           />
           <.field_error changeset={@changeset} field={:email} />
-          <p class="note mt-[6px]">Where a password reset goes. No account exists without one.</p>
+          <p class="note mt-[6px]">
+            {gettext("Where a password reset goes. No account exists without one.")}
+          </p>
         </div>
         <div class="mb-[7px]">
-          <label class="lab block mb-0" for="claim-display-name">Displayed name</label>
+          <label class="lab block mb-0" for="claim-display-name">{gettext("Displayed name")}</label>
           <input
             type="text"
             id="claim-display-name"
@@ -141,20 +141,21 @@ defmodule TexttileWeb.SessionHTML do
             autocomplete="name"
           />
           <.field_error changeset={@changeset} field={:display_name} />
-          <p class="note mt-[6px]">What readers see. Empty shows your username.</p>
+          <p class="note mt-[6px]">{gettext("What readers see. Empty shows your username.")}</p>
         </div>
         <button class="btn solid w-full h-[38px] mt-[16px]" type="submit">
-          Create the account and sign in
+          {gettext("Create the account and sign in")}
         </button>
       </.form>
       <p class="note mt-[22px] leading-[1.6]">
-        A confirmation mail goes to your address: which site, which username.
-        It never contains the password, and no mail ever will. If you forget
-        the password, the sign-in screen mails your address a link that sets
-        a new one.
+        {gettext(
+          "A confirmation mail goes to your address: which site, which username. It never contains the password, and no mail ever will. If you forget the password, the sign-in screen mails your address a link that sets a new one."
+        )}
       </p>
       <p class="note mt-[10px]">
-        <.link href={~p"/login"} class="link" id="claim-back">Sign in with another name</.link>
+        <.link href={~p"/login"} class="link" id="claim-back">
+          {gettext("Sign in with another name")}
+        </.link>
       </p>
     </Layouts.auth>
     """
@@ -176,11 +177,5 @@ defmodule TexttileWeb.SessionHTML do
 
   defp errors_for(nil, _field), do: []
 
-  defp errors_for(changeset, field) do
-    for {^field, {message, opts}} <- changeset.errors do
-      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
-    end
-  end
+  defp errors_for(changeset, field), do: translate_errors(changeset.errors, field)
 end

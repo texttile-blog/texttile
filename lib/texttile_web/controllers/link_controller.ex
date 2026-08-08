@@ -88,11 +88,7 @@ defmodule TexttileWeb.LinkController do
 
   defp first_error(changeset) do
     changeset
-    |> Ecto.Changeset.traverse_errors(fn {message, opts} ->
-      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
-    end)
+    |> Ecto.Changeset.traverse_errors(&TexttileWeb.CoreComponents.translate_error/1)
     |> Map.values()
     |> List.flatten()
     |> List.first()

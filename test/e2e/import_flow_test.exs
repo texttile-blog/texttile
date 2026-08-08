@@ -38,7 +38,7 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     |> assert_has("#bundle-beach", text: "will import")
     |> assert_has("#bundle-beach", text: "nothing references stray.txt")
     |> assert_has("#bundle-broken", text: "will not import")
-    |> click_button("#import-run", "Import 1 text")
+    |> click_button("#import-run", "Import 1 entry")
     |> assert_has("#import-summary", text: "1 created")
     |> click_button("#import-done", "Done")
     |> assert_has("#import-upload", text: "Upload the zip")

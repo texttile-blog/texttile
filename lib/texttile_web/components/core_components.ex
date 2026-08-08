@@ -136,7 +136,9 @@ defmodule TexttileWeb.CoreComponents do
           <button class="btn solid" id="dialog-ok" phx-click={@on_ok} phx-value-id={@value} autofocus>
             {@ok}
           </button>
-          <button class="btn quiet" id="dialog-cancel" phx-click={@on_cancel}>Cancel</button>
+          <button class="btn quiet" id="dialog-cancel" phx-click={@on_cancel}>
+            {gettext("Cancel")}
+          </button>
         </div>
       </div>
     </div>
@@ -531,14 +533,14 @@ defmodule TexttileWeb.CoreComponents do
       class={["mdbar", @readonly && "is-readonly", @class]}
       id={@id}
       role="toolbar"
-      aria-label="Formatting"
+      aria-label={gettext("Formatting")}
     >
       <button
         type="button"
         class="mdb"
         data-cmd="heading"
-        title="Heading. Click again for the next size."
-        aria-label="Heading"
+        title={gettext("Heading. Click again for the next size.")}
+        aria-label={gettext("Heading")}
       >
         <span class="g font-serif font-semibold text-[15px]">H</span>
       </button>
@@ -546,8 +548,8 @@ defmodule TexttileWeb.CoreComponents do
         type="button"
         class="mdb"
         data-cmd="bold"
-        title="Bold (Ctrl or Cmd + B)"
-        aria-label="Bold"
+        title={gettext("Bold (Ctrl or Cmd + B)")}
+        aria-label={gettext("Bold")}
       >
         <span class="g font-serif font-bold text-[14.5px]">B</span>
       </button>
@@ -555,8 +557,8 @@ defmodule TexttileWeb.CoreComponents do
         type="button"
         class="mdb"
         data-cmd="italic"
-        title="Italic (Ctrl or Cmd + I)"
-        aria-label="Italic"
+        title={gettext("Italic (Ctrl or Cmd + I)")}
+        aria-label={gettext("Italic")}
       >
         <span class="g font-serif italic font-semibold text-[14.5px]">I</span>
       </button>
@@ -564,8 +566,8 @@ defmodule TexttileWeb.CoreComponents do
         type="button"
         class="mdb"
         data-cmd="link"
-        title="Link (Ctrl or Cmd + K)"
-        aria-label="Link"
+        title={gettext("Link (Ctrl or Cmd + K)")}
+        aria-label={gettext("Link")}
       >
         <svg
           class="g"
@@ -581,10 +583,22 @@ defmodule TexttileWeb.CoreComponents do
         </svg>
       </button>
       <span class="mdsep" aria-hidden="true"></span>
-      <button type="button" class="mdb" data-cmd="quote" title="Quote" aria-label="Quote">
+      <button
+        type="button"
+        class="mdb"
+        data-cmd="quote"
+        title={gettext("Quote")}
+        aria-label={gettext("Quote")}
+      >
         <span class="g font-serif font-bold text-[17px] leading-none pt-[5px]">&rdquo;</span>
       </button>
-      <button type="button" class="mdb" data-cmd="bullet" title="List" aria-label="List">
+      <button
+        type="button"
+        class="mdb"
+        data-cmd="bullet"
+        title={gettext("List")}
+        aria-label={gettext("List")}
+      >
         <svg
           class="g"
           viewBox="0 0 16 16"
@@ -603,8 +617,8 @@ defmodule TexttileWeb.CoreComponents do
         type="button"
         class="mdb"
         data-cmd="ordered"
-        title="Numbered list"
-        aria-label="Numbered list"
+        title={gettext("Numbered list")}
+        aria-label={gettext("Numbered list")}
       >
         <svg
           class="g"
@@ -627,8 +641,8 @@ defmodule TexttileWeb.CoreComponents do
         type="button"
         class="mdb"
         data-cmd="task"
-        title="Task list. Click a box in the text to tick it."
-        aria-label="Task list"
+        title={gettext("Task list. Click a box in the text to tick it.")}
+        aria-label={gettext("Task list")}
       >
         <svg
           class="g"
@@ -644,7 +658,13 @@ defmodule TexttileWeb.CoreComponents do
         </svg>
       </button>
       <span class="mdsep" aria-hidden="true"></span>
-      <button type="button" class="mdb" data-cmd="code" title="Code" aria-label="Code">
+      <button
+        type="button"
+        class="mdb"
+        data-cmd="code"
+        title={gettext("Code")}
+        aria-label={gettext("Code")}
+      >
         <svg
           class="g"
           viewBox="0 0 16 16"
@@ -663,8 +683,8 @@ defmodule TexttileWeb.CoreComponents do
         type="button"
         class="mdb"
         data-cmd="image"
-        title="Put an image in the text, at the caret"
-        aria-label="Image"
+        title={gettext("Put an image in the text, at the caret")}
+        aria-label={gettext("Image")}
       >
         <svg
           class="g"

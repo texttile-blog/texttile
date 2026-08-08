@@ -22,7 +22,7 @@ defmodule TexttileWeb.ProfileLive do
 
     socket =
       socket
-      |> assign(:page_title, "Your profile")
+      |> assign(:page_title, gettext("Your profile"))
       |> assign(:sessions, Accounts.list_sessions(scope.user))
       |> assign(:pw_note, nil)
       |> assign_forms(scope.user)
@@ -93,10 +93,11 @@ defmodule TexttileWeb.ProfileLive do
          |> assign(:pw_form, to_form(%{}, as: :pw))
          |> assign(
            :pw_note,
-           "Your new password is set. Every other session is signed out; this browser stays in. " <>
-             "Nothing was mailed to anyone: you changed your own."
+           gettext(
+             "Your new password is set. Every other session is signed out; this browser stays in. Nothing was mailed to anyone: you changed your own."
+           )
          )
-         |> mark_saved("Password changed · just now")}
+         |> mark_saved(gettext("Password changed · just now"))}
 
       {:error, changeset} ->
         {:noreply,
@@ -136,7 +137,7 @@ defmodule TexttileWeb.ProfileLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Your profile"
+      crumb={gettext("Your profile")}
       active="profile"
       others={@others}
     >
@@ -149,24 +150,27 @@ defmodule TexttileWeb.ProfileLive do
           data-note={@saved_note}
           data-note-until={@saved_note_until}
         >
-          Last saved · just now
+          {gettext("Last saved · just now")}
         </span>
         <Layouts.view_site />
       </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">Your profile</h1>
+        <h1 class="page-h">{gettext("Your profile")}</h1>
         <p class="lead">
-          You are signed in as <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
-          Change here your email, your password and your open sessions. Every
-          change applies the moment you make it.
+          {gettext("You are signed in as")}
+          <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>. {gettext(
+            "Change here your email, your password and your open sessions. Every change applies the moment you make it."
+          )}
         </p>
 
-        <h2 class="set-h">You</h2>
+        <h2 class="set-h">{gettext("You")}</h2>
         <%!-- fields to type into, so they look like fields; the same
              treatment the Site block of Settings wears --%>
         <.form for={@profile_form} id="profile-form" class="boxed-in" phx-change="save_profile">
           <div class="drow">
-            <label class="lab" for={@profile_form[:display_name].id}>Displayed name</label>
+            <label class="lab" for={@profile_form[:display_name].id}>
+              {gettext("Displayed name")}
+            </label>
             <span class="val">
               <input
                 type="text"
@@ -176,12 +180,12 @@ defmodule TexttileWeb.ProfileLive do
                 phx-debounce="300"
               />
               <div class="hint">
-                What others see. Empty falls back to the username.
+                {gettext("What others see. Empty falls back to the username.")}
               </div>
             </span>
           </div>
           <div class="drow">
-            <label class="lab" for={@profile_form[:username].id}>Username</label>
+            <label class="lab" for={@profile_form[:username].id}>{gettext("Username")}</label>
             <span class="val">
               <input
                 type="text"
@@ -195,14 +199,14 @@ defmodule TexttileWeb.ProfileLive do
               />
               <.field_errors field={@profile_form[:username]} />
               <div class="hint">
-                The name you sign in with. It must be unique: no two accounts
-                carry the same one. Lower case letters, digits, dot, dash and
-                underscore.
+                {gettext(
+                  "The name you sign in with. It must be unique: no two accounts carry the same one. Lower case letters, digits, dot, dash and underscore."
+                )}
               </div>
             </span>
           </div>
           <div class="drow">
-            <label class="lab" for={@profile_form[:email].id}>Email</label>
+            <label class="lab" for={@profile_form[:email].id}>{gettext("Email")}</label>
             <span class="val">
               <input
                 type="email"
@@ -213,21 +217,22 @@ defmodule TexttileWeb.ProfileLive do
               />
               <.field_errors field={@profile_form[:email]} />
               <div class="hint">
-                Where notifications and password links go. You never sign in
-                with it. Readers never see it.
+                {gettext(
+                  "Where notifications and password links go. You never sign in with it. Readers never see it."
+                )}
               </div>
             </span>
           </div>
         </.form>
 
-        <h2 class="set-h">Password</h2>
+        <h2 class="set-h">{gettext("Password")}</h2>
         <.form for={@pw_form} id="password-form" class="boxed-in" phx-submit="set_password">
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
                 <span class="flex-1 min-w-[180px] max-w-[260px]">
                   <label class="block text-[12px] text-dim mb-[3px]" for="pw-current">
-                    Current password
+                    {gettext("Current password")}
                   </label>
                   <input
                     type="password"
@@ -238,7 +243,7 @@ defmodule TexttileWeb.ProfileLive do
                 </span>
                 <span class="flex-1 min-w-[180px] max-w-[260px]">
                   <label class="block text-[12px] text-dim mb-[3px]" for="pw-new">
-                    New password
+                    {gettext("New password")}
                   </label>
                   <input
                     type="password"
@@ -247,37 +252,43 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="new-password"
                   />
                 </span>
-                <button class="btn" type="submit">Set</button>
+                <button class="btn" type="submit">{gettext("Set")}</button>
               </span>
               <.field_errors field={@pw_form[:current_password]} />
               <.field_errors field={@pw_form[:password]} />
               <div class="hint">
-                Confirm the current password once to change it. Needs to be at
-                least 12 characters.
+                {gettext(
+                  "Confirm the current password once to change it. Needs to be at least 12 characters."
+                )}
               </div>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
             </span>
           </div>
         </.form>
 
-        <h2 class="set-h">Your sessions</h2>
+        <h2 class="set-h">{gettext("Your sessions")}</h2>
         <div id="sessions">
           <div
             :for={session <- @sessions}
             class="flex items-center gap-3 py-[13px] border-b border-hair text-[13.5px]"
           >
             <span class="flex-1 min-w-0">
-              {session_label(session, @current_scope)} · signed in {signed_in_on(session)}
+              {gettext("%{browser} · signed in %{when}",
+                browser: session_label(session, @current_scope),
+                when: signed_in_on(session)
+              )}
             </span>
-            <span :if={length(@sessions) == 1} class="note">the only one open</span>
+            <span :if={length(@sessions) == 1} class="note">{gettext("the only one open")}</span>
           </div>
         </div>
         <p class="note mt-3">
-          Sign out ends this session only.<span :if={length(@sessions) > 1}>
-            Sign out everywhere ends all of them, in every browser.</span>
+          {gettext("Sign out ends this session only.")}<span :if={length(@sessions) > 1}>
+            {gettext("Sign out everywhere ends all of them, in every browser.")}</span>
         </p>
         <p class="mt-4 flex gap-2">
-          <.link href={~p"/logout"} method="delete" class="btn" id="sign-out">Sign out</.link>
+          <.link href={~p"/logout"} method="delete" class="btn" id="sign-out">
+            {gettext("Sign out")}
+          </.link>
           <.link
             :if={length(@sessions) > 1}
             href={~p"/logout/all"}
@@ -285,7 +296,7 @@ defmodule TexttileWeb.ProfileLive do
             class="btn"
             id="sign-out-all"
           >
-            Sign out everywhere
+            {gettext("Sign out everywhere")}
           </.link>
         </p>
       </div>
@@ -306,15 +317,17 @@ defmodule TexttileWeb.ProfileLive do
   end
 
   defp session_label(session, scope) do
-    if session.token == scope.session_token, do: "This browser", else: "Another browser"
+    if session.token == scope.session_token,
+      do: gettext("This browser"),
+      else: gettext("Another browser")
   end
 
   defp signed_in_on(session) do
     date = DateTime.to_date(session.inserted_at)
 
     case Date.diff(Date.utc_today(), date) do
-      0 -> "today"
-      1 -> "yesterday"
+      0 -> gettext("today")
+      1 -> gettext("yesterday")
       _ -> Date.to_string(date)
     end
   end

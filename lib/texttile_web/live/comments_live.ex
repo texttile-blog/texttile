@@ -25,7 +25,7 @@ defmodule TexttileWeb.CommentsLive do
 
     {:ok,
      socket
-     |> assign(:page_title, "Comments")
+     |> assign(:page_title, gettext("Comments"))
      |> assign(:editing, nil)
      |> assign(:edit_error, nil)
      |> assign(:dialog, nil)
@@ -111,7 +111,7 @@ defmodule TexttileWeb.CommentsLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Comments"
+      crumb={gettext("Comments")}
       active="comments"
       others={@others}
     >
@@ -119,29 +119,40 @@ defmodule TexttileWeb.CommentsLive do
         <Layouts.view_site />
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">Comments</h1>
-        <%!-- the counts carry the news, so they carry the weight --%>
+        <h1 class="page-h">{gettext("Comments")}</h1>
+        <%!-- the counts carry the news, so they carry the weight. The
+             number is bold inside the sentence, so the sentence
+             travels as one string with the markup in it. --%>
         <p class="lead" id="commentsSub">
           <%= if @total == 0 do %>
-            The latest comments across all entries, newest first.
+            {gettext("The latest comments across all entries, newest first.")}
           <% else %>
-            <b class="num">{@total}</b>
-            {plural(@total, "comment", "comments")} across all entries, newest first.
+            {Phoenix.HTML.raw(
+              ngettext(
+                "<b class='num'>1</b> comment across all entries, newest first.",
+                "<b class='num'>%{count}</b> comments across all entries, newest first.",
+                @total
+              )
+            )}
             <%= if @waiting == 0 do %>
               <%!-- not "every one is confirmed": a comment an admin let
                    through stands under its entry with an address that
                    never was --%>
-              Readers see every one of them.
+              {gettext("Readers see every one of them.")}
             <% else %>
-              <b class="num">{@waiting}</b>
-              {plural(@waiting, "comment waits", "comments wait")} for the reader to confirm the
-              email address, so readers do not see {plural(@waiting, "it", "them")} yet.
+              {Phoenix.HTML.raw(
+                ngettext(
+                  "<b class='num'>1</b> comment waits for the reader to confirm the email address, so readers do not see it yet.",
+                  "<b class='num'>%{count}</b> comments wait for the reader to confirm the email address, so readers do not see them yet.",
+                  @waiting
+                )
+              )}
             <% end %>
           <% end %>
         </p>
         <div id="commentsList">
           <p :if={@recent == []} class="note">
-            No comments yet, anywhere. Every comment a reader sends shows up here.
+            {gettext("No comments yet, anywhere. Every comment a reader sends shows up here.")}
           </p>
           <%!-- the address behind a comment is loaded with it, so the
                name can be the way to write back --%>
@@ -157,13 +168,13 @@ defmodule TexttileWeb.CommentsLive do
             :if={@total > length(@recent)}
             class="py-[11px] text-[12.5px] text-faint border-t border-hair"
           >
-            and {@total - length(@recent)} more on their entries.
+            {gettext("and %{count} more on their entries.", count: @total - length(@recent))}
           </div>
         </div>
         <p class="note mt-[22px]" id="commentsRule">{comment_rule(@require?)}</p>
 
         <section :if={@trashed != []} id="commentsTrash">
-          <h2 class="set-h">Trash</h2>
+          <h2 class="set-h">{gettext("Trash")}</h2>
           <p class="note mb-[13px]">
             {trash_line(length(@trashed) + @trashed_earlier)}
           </p>
@@ -172,11 +183,11 @@ defmodule TexttileWeb.CommentsLive do
             :if={@trashed_earlier > 0}
             class="py-[11px] text-[12.5px] text-faint border-t border-hair"
           >
-            and {@trashed_earlier} deleted earlier, closer to the day {plural(
-              @trashed_earlier,
-              "it goes",
-              "they go"
-            )} for good.
+            {ngettext(
+              "and %{count} deleted earlier, closer to the day it goes for good.",
+              "and %{count} deleted earlier, closer to the day they go for good.",
+              @trashed_earlier
+            )}
           </div>
         </section>
       </div>
@@ -196,8 +207,11 @@ defmodule TexttileWeb.CommentsLive do
 
   # The line over the trash: what stands there, and for how much longer.
   defp trash_line(count) do
-    "#{count} deleted #{plural(count, "comment waits", "comments wait")} here. " <>
-      "A comment goes for good #{Comments.trash_days()} days after you deleted it, " <>
-      "and until then Restore puts it back where it stood."
+    ngettext(
+      "1 deleted comment waits here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood.",
+      "%{count} deleted comments wait here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood.",
+      count,
+      days: Comments.trash_days()
+    )
   end
 end

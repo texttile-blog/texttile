@@ -9,6 +9,7 @@ defmodule TexttileWeb.StatsComponents do
   """
 
   use Phoenix.Component
+  use Gettext, backend: TexttileWeb.Gettext
 
   @doc """
   One bar per day of the window, oldest left, with the two dates that
@@ -26,8 +27,9 @@ defmodule TexttileWeb.StatsComponents do
 
     ~H"""
     <p :if={@max == 0} class="note" id={"#{@id}Empty"}>
-      Nothing counted in these days yet. The first reader who opens a page
-      draws the first bar.
+      {gettext(
+        "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
+      )}
     </p>
     <div :if={@max > 0}>
       <div id={@id} class="flex items-end gap-[3px] h-[132px] pt-[18px] pb-[6px]">
@@ -35,7 +37,12 @@ defmodule TexttileWeb.StatsComponents do
           :for={day <- @days}
           class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(day.views, @max)]}
           style={"height:#{height(day.views, @max)}%"}
-          title={"#{day_label(day.day)}: #{day.views} #{views_word(day.views)}"}
+          title={
+            gettext("%{day}: %{views}",
+              day: day_label(day.day),
+              views: ngettext("1 view", "%{count} views", day.views)
+            )
+          }
         >
         </i>
       </div>
@@ -61,14 +68,14 @@ defmodule TexttileWeb.StatsComponents do
       <table id={@id}>
         <thead>
           <tr>
-            <th>Source</th>
-            <th class="w-[45%]">Share</th>
+            <th>{gettext("Source")}</th>
+            <th class="w-[45%]">{gettext("Share")}</th>
             <th class="text-right num">%</th>
           </tr>
         </thead>
         <tbody>
           <tr :for={row <- @rows}>
-            <td>{row.host || "direct"}</td>
+            <td>{row.host || gettext("direct")}</td>
             <td><span class="track"><i style={"width:#{row.share}%"}></i></span></td>
             <td class="text-right num">{row.share}</td>
           </tr>
@@ -91,14 +98,11 @@ defmodule TexttileWeb.StatsComponents do
   end
 
   @doc "A day as the charts write it: 30 Jun."
-  def day_label(day), do: "#{day.day} #{Calendar.strftime(day, "%b")}"
+  defdelegate day_label(day), to: Texttile.I18n, as: :format_short_day
 
   defp bar_colour(views, max) when views == max and views > 0, do: "bg-accent"
   defp bar_colour(_views, _max), do: "bg-accentsoft"
 
   defp height(_views, 0), do: 0
   defp height(views, max), do: max(round(views / max * 100), 1)
-
-  defp views_word(1), do: "view"
-  defp views_word(_count), do: "views"
 end

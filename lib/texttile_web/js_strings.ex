@@ -83,8 +83,23 @@ defmodule TexttileWeb.JsStrings do
       "{}"
     else
       @sources
-      |> Map.new(&{&1, Gettext.gettext(TexttileWeb.Gettext, &1)})
+      |> Map.new(&{&1, translate(&1)})
       |> Jason.encode!(escape: :html_safe)
     end
+  end
+
+  # The places stay open: the hook fills them, not the server. So every
+  # %{name} is bound to itself and travels through the interpolation
+  # unchanged. Without that, Gettext would call the binding missing and
+  # hand back a sentence with a hole in it.
+  @placeholder ~r/%\{(\w+)\}/
+
+  defp translate(source) do
+    bindings =
+      @placeholder
+      |> Regex.scan(source)
+      |> Map.new(fn [whole, name] -> {String.to_atom(name), whole} end)
+
+    Gettext.gettext(TexttileWeb.Gettext, source, bindings)
   end
 end
