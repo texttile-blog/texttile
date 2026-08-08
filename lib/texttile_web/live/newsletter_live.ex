@@ -32,10 +32,7 @@ defmodule TexttileWeb.NewsletterLive do
     socket
     |> assign(:subscribers, subscribers)
     |> assign(:confirmed, Enum.count(subscribers, &Subscriber.confirmed?/1))
-    |> assign(
-      :protected?,
-      Settings.get(:site_visibility) == "protected" and Settings.get(:site_password) != ""
-    )
+    |> assign(:protected?, Settings.guarded?())
   end
 
   def handle_event("add", %{"email" => email}, socket) do

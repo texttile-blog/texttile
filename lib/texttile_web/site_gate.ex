@@ -26,7 +26,7 @@ defmodule TexttileWeb.SiteGate do
   def call(conn, _opts) do
     conn = assign(conn, :site_unlocked, unlocked?(conn))
 
-    if conn.assigns.site_unlocked or Settings.get(:site_visibility) == "public" do
+    if conn.assigns.site_unlocked or not Settings.guarded?() do
       conn
     else
       conn |> redirect(to: ~p"/unlock?to=#{way_back(conn)}") |> halt()

@@ -72,6 +72,16 @@ access word to hand around, not a login: it is stored in plain text, one
 entry opens the whole blog, and it guards the blog or nothing. No text has a
 switch of its own.
 
+## Feed
+
+The blog has an RSS feed at `/feed.xml`. It carries every published post,
+newest first, with the whole text. Each page points at it from its head, and
+the footer carries an RSS link.
+
+A blog behind the shared password has no feed: `/feed.xml` answers 404 and
+no page offers a link. A feed reader cannot enter a password, and the texts
+would travel out of the gate. Remove the password to get the feed back.
+
 ## Comments
 
 Readers can comment under every text that allows it (the switch is in the

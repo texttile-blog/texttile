@@ -12,6 +12,15 @@
     <meta :if={assigns[:page_title]} property="og:title" content={assigns[:page_title]} />
     <meta :if={assigns[:og_image]} property="og:image" content={assigns[:og_image]} />
     <.favicon_link />
+    <%!-- the feed, for readers who follow from their own reader; a
+         blog behind a password offers none --%>
+    <link
+      :if={Texttile.Feed.public?()}
+      rel="alternate"
+      type="application/rss+xml"
+      title={site_title()}
+      href={~p"/feed.xml"}
+    />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <%!-- the stored theme, or the iris default: the whole site wears it --%>
     <link rel="stylesheet" href={~p"/theme.css"} />
