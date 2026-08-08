@@ -30,7 +30,7 @@
           label="All years"
           on={is_nil(@year)}
           href={@period_path.(nil, nil)}
-          count={@total}
+          count={@across_years}
         />
         <.period
           :for={{year, count} <- @years}

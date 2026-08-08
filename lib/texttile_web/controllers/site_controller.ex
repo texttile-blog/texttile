@@ -494,6 +494,9 @@ defmodule TexttileWeb.SiteController do
       comment_counts: Comments.reader_count_map(),
       found: length(in_period),
       total: total,
+      # what the search found across every year: the number "All years"
+      # carries, so it counts the same way the years beside it do
+      across_years: length(found),
       year: year,
       month: month,
       years: years,

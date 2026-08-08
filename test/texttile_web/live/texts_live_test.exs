@@ -171,6 +171,17 @@ defmodule TexttileWeb.TextsLiveTest do
       refute has_element?(view, "#cards .card", "Desert nights")
     end
 
+    test "All years counts what the search found, like the years beside it", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+      assert has_element?(view, "#years .per.on", "All years")
+
+      view |> element("#grid-search") |> render_change(%{q: "harbour"})
+
+      # one entry carries the word, and it is the only one under 2026
+      assert has_element?(view, "#years .per", "All years1")
+      refute has_element?(view, "#years .per", "All years3")
+    end
+
     test "lets go of a year the search has emptied", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
 

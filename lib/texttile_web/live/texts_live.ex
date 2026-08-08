@@ -43,6 +43,9 @@ defmodule TexttileWeb.TextsLive do
     |> assign(:month, month)
     |> assign(:years, years)
     |> assign(:months, months)
+    # what the search and the status filter found across every year: the
+    # number "All years" carries, so it counts the way the years do
+    |> assign(:across_years, length(found))
     |> assign(:articles, articles)
     |> assign(:covers, Gallery.previews(articles))
     |> assign(:comment_counts, Comments.count_map())
@@ -136,7 +139,7 @@ defmodule TexttileWeb.TextsLive do
              the counts follow the search and the status filter. --%>
         <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
           <p class="prow" id="years">
-            <.period label="All years" on={is_nil(@year)} count={@total} />
+            <.period label="All years" on={is_nil(@year)} count={@across_years} />
             <.period
               :for={{year, count} <- @years}
               label={year}

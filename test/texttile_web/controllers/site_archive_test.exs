@@ -53,6 +53,17 @@ defmodule TexttileWeb.SiteArchiveTest do
     refute html =~ "Desert nights"
   end
 
+  test "All years counts what the search found, like the years beside it", %{conn: conn} do
+    html = conn |> get(~p"/blog") |> html_response(200)
+    assert html =~ ~r/All years<span class="cnt">3<\/span>/
+
+    # one of the three carries the word, and one of the years does too:
+    # both numbers have to come from the same list
+    html = conn |> get(~p"/blog?q=harbour") |> html_response(200)
+    assert html =~ ~r/All years<span class="cnt">1<\/span>/
+    refute html =~ ~r/All years<span class="cnt">3<\/span>/
+  end
+
   test "lets go of a year the search has emptied", %{conn: conn} do
     html = conn |> get(~p"/blog?y=2024&q=harbour") |> html_response(200)
 

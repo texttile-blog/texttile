@@ -61,6 +61,28 @@ defmodule Texttile.ArticlesRedirectsTest do
       assert Articles.redirect_target("/2026/08/08/harbour") == nil
     end
 
+    test "keeps the address a change of type left behind" do
+      # a page lives at its slug alone, a post under its day: the switch
+      # moves the entry as surely as a new slug does
+      article = published_post(slug: "about-us", publish_date: ~D[2026-08-08])
+      {:ok, article} = Articles.update_settings(article, %{type: "page"})
+
+      assert [%{path: "/2026/08/08/about-us"}] = Articles.redirects(article)
+      assert Articles.redirect_target("/2026/08/08/about-us") == "/about-us"
+    end
+
+    test "sends every address it ever had to where it stands now" do
+      user = user_fixture()
+      article = published_post(slug: "one", publish_date: ~D[2026-08-08], user: user)
+      {:ok, article} = Articles.update_settings(article, %{slug: "two"})
+      {:ok, _article} = Articles.update_settings(article, %{slug: "three"})
+
+      # no chain of hops: both old addresses answer with the address of
+      # today, so one redirect is all a reader ever follows
+      assert Articles.redirect_target("/2026/08/08/one") == "/2026/08/08/three"
+      assert Articles.redirect_target("/2026/08/08/two") == "/2026/08/08/three"
+    end
+
     test "hands the address over when another entry takes it" do
       first = published_post(slug: "harbour", publish_date: ~D[2026-08-08])
       {:ok, _first} = Articles.update_settings(first, %{slug: "quay"})
