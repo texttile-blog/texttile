@@ -5,6 +5,7 @@ defmodule TexttileWeb.SettingsLiveTest do
   import Texttile.AccountsFixtures
 
   alias Texttile.Accounts
+  alias Texttile.Articles
   alias Texttile.Settings
   alias Texttile.Uploads
 
@@ -21,7 +22,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "Settings"
       assert html =~ "Last saved"
 
-      for section <- ~w(Site About Theme Comments Users Images Storage) do
+      for section <- ~w(Site About Theme Comments Tags Users Images Storage) do
         assert has_element?(view, "h2", section)
       end
 
@@ -85,7 +86,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       user = Texttile.AccountsFixtures.user_fixture()
       page = Texttile.ArticlesFixtures.published_page(title: "Welcome", user: user)
       {:ok, _} = Settings.put(:front_page, "page:#{page.id}")
-      {:ok, _} = Texttile.Articles.unpublish(page, user)
+      {:ok, _} = Articles.unpublish(page, user)
 
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
       refute html =~ ~s(id="front-page-choice")
@@ -193,6 +194,63 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, _} = Settings.put(:site_title, "Changed elsewhere")
 
       assert render(view) =~ "Changed elsewhere"
+    end
+  end
+
+  describe "tags" do
+    setup %{user: user} do
+      {:ok, one} = Articles.create_draft(user)
+      {:ok, two} = Articles.create_draft(user)
+      {:ok, one} = Articles.update_settings(one, %{tags: "sea, fog"})
+      {:ok, two} = Articles.update_settings(two, %{tags: "sea"})
+      %{one: one, two: two}
+    end
+
+    test "lists every tag with the number of texts on it", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      assert has_element?(view, "#tagrow-sea", "sea")
+      assert has_element?(view, "#tagrow-sea", "2 texts")
+      assert has_element?(view, "#tagrow-fog", "1 text")
+    end
+
+    test "deleting a tag asks first, then takes it off every text",
+         %{conn: conn, one: one, two: two} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      view |> element("#delete-tag-sea") |> render_click()
+      assert has_element?(view, "#dialog-ok")
+
+      view |> element("#dialog-ok") |> render_click()
+
+      assert Articles.get_article!(one.id).tags == "fog"
+      assert Articles.get_article!(two.id).tags == ""
+      refute has_element?(view, "#tagrow-sea")
+      assert has_element?(view, "#tagrow-fog")
+      assert has_element?(view, "#savedSettings")
+    end
+
+    test "the way out of the question leaves every tag where it is",
+         %{conn: conn, one: one} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      view |> element("#delete-tag-sea") |> render_click()
+      view |> element("#dialog-cancel") |> render_click()
+
+      refute has_element?(view, "#dialog-ok")
+      assert Articles.get_article!(one.id).tags == "sea, fog"
+      assert has_element?(view, "#tagrow-sea")
+    end
+
+    test "a blog without tags says so", %{conn: conn, one: one, two: two} do
+      {:ok, _} = Articles.update_settings(one, %{tags: ""})
+      {:ok, _} = Articles.update_settings(two, %{tags: ""})
+
+      assert Articles.tag_counts() == []
+
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      assert has_element?(view, "#tagsList", "No text carries a tag yet")
     end
   end
 
