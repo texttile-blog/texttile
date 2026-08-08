@@ -1,6 +1,29 @@
-// The public site's whole script: the search jump, and the lightbox of
-// the reader gallery. Every page works without it; the tiles are plain
-// links to the full pictures until this runs.
+// The public site's whole script: the view counter, the search jump,
+// and the lightbox of the reader gallery. Every page works without it;
+// the tiles are plain links to the full pictures until this runs.
+
+// The view counter. One line to this server and nowhere else, once per
+// page, and the page never waits for the answer. It carries the
+// address, the entry it shows and where the reader came from: nothing
+// that says who the reader is. No cookie travels with it, because
+// nothing here reads one - the server turns the request into a hash it
+// cannot undo tomorrow.
+//
+// The page says whether it counts at all: data-count is missing while
+// an admin is signed in, and on every page that is not a reader's.
+if (document.body.dataset.count) {
+  fetch("/count", {
+    method: "POST",
+    credentials: "omit",
+    keepalive: true,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      p: location.pathname,
+      id: document.body.dataset.countEntry || null,
+      r: document.referrer || null,
+    }),
+  }).catch(() => {});
+}
 
 // "/" jumps into the search of the text list; Escape empties it.
 addEventListener("keydown", (e) => {

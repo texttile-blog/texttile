@@ -19,6 +19,7 @@ defmodule TexttileWeb.Admin do
     TexttileWeb.EditorLive => :editor,
     TexttileWeb.CommentsLive => :comments,
     TexttileWeb.NewsletterLive => :newsletter,
+    TexttileWeb.StatsLive => :stats,
     TexttileWeb.ProfileLive => :profile,
     TexttileWeb.SettingsLive => :settings
   }
@@ -137,6 +138,7 @@ defmodule TexttileWeb.Admin do
   defp activity(%{view: :texts}), do: "On the Texts overview"
   defp activity(%{view: :comments}), do: "In the comments"
   defp activity(%{view: :newsletter}), do: "In the newsletter"
+  defp activity(%{view: :stats}), do: "In the stats"
   defp activity(%{view: :profile}), do: "In the profile"
   defp activity(%{view: :settings}), do: "In Settings"
 
@@ -149,6 +151,7 @@ defmodule TexttileWeb.Admin do
 
   defp path(%{view: :comments}), do: "/admin/comments"
   defp path(%{view: :newsletter}), do: "/admin/newsletter"
+  defp path(%{view: :stats}), do: "/admin/stats"
   defp path(%{view: :profile}), do: "/admin/profile"
   defp path(%{view: :settings}), do: "/admin/settings"
   defp path(_meta), do: "/admin"

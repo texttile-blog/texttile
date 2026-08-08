@@ -32,6 +32,12 @@ defmodule TexttileWeb.SiteController do
               :confirm_subscriber
             ]
 
+  # The pages a reader reads report themselves to the view counter.
+  # The gate, the newsletter pages and the preview do not: one is not
+  # a page of the blog, and the other two are read by nobody a count
+  # is about.
+  plug :countable when action in [:front, :blog, :tag, :article, :page]
+
   @doc """
   The front door: the one fixed page, or the way to the list.
 
@@ -305,24 +311,7 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  # The caller as the rate limiter knows it: the socket address, which
-  # no caller can choose. A forwarding header is read only where the
-  # deployment names one (CLIENT_IP_HEADER, see the README): behind a
-  # proxy the socket address is the proxy's, and without the header
-  # every reader would share one bucket. Anywhere else the header is
-  # just a line the caller wrote, and trusting it would hand every
-  # spammer a fresh bucket per request.
-  defp client_ip(conn) do
-    header = Application.get_env(:texttile, :client_ip_header)
-
-    with name when is_binary(name) <- header,
-         [value | _] <- get_req_header(conn, name),
-         first when first != "" <- value |> String.split(",") |> hd() |> String.trim() do
-      first
-    else
-      _ -> conn.remote_ip |> :inet.ntoa() |> to_string()
-    end
-  end
+  defp client_ip(conn), do: TexttileWeb.ClientIP.of(conn)
 
   defp comment_sent(conn, comment) do
     waiting? =
@@ -565,6 +554,14 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
+  # Whether this page reports itself to the view counter. An admin's
+  # own visit is not a reader's, so nothing is counted while somebody
+  # is signed in - and with them go the drafts and the previews, which
+  # nobody else can reach anyway.
+  defp countable(conn, _opts) do
+    assign(conn, :count_view, is_nil(signed_in_user(conn)))
+  end
+
   defp render_text(conn, article) do
     home? = conn.assigns.home_page && conn.assigns.home_page.id == article.id
     gallery = Gallery.list(article.id)
@@ -585,9 +582,18 @@ defmodule TexttileWeb.SiteController do
     |> assign(:page_title, if(home?, do: nil, else: Articles.display_title(article)))
     |> assign(:active, if(home?, do: :home, else: article.id))
     |> assign(:og_image, og_image)
+    |> assign(:count_entry, countable_entry(conn, article))
     |> merge_assigns(comment_assigns(conn, article))
     |> render(:article, article: article, gallery: gallery, older: older, newer: newer)
   end
+
+  # The entry the beacon names, if this page counts at all and the
+  # entry is one a reader can read.
+  defp countable_entry(conn, %Article{status: "published", id: id}) do
+    if conn.assigns[:count_view], do: id
+  end
+
+  defp countable_entry(_conn, _article), do: nil
 
   # An entry that is not live takes no comments: the reader who could
   # write one cannot reach the page at all, and the form would post to
@@ -678,6 +684,9 @@ defmodule TexttileWeb.SiteController do
         |> put_status(:not_found)
         |> assign(:page_title, "Not found")
         |> assign(:active, nil)
+        # An address that holds nothing is no page of the blog, so it
+        # is nothing the counter should hear about.
+        |> assign(:count_view, false)
         |> render(:not_found)
 
       target ->

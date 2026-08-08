@@ -34,6 +34,13 @@ defmodule Texttile.Application do
       # The invisible spam filter of the public forms: a few knocks
       # per caller per minute.
       Texttile.RateLimiter,
+      # The same filter in front of the view counter, wider: a reader
+      # turns pages faster than they write comments.
+      {Texttile.RateLimiter,
+       name: Texttile.Stats.limiter(), limit: Texttile.Stats.limiter_per_minute()},
+      # The secret behind every visitor number, held here and nowhere
+      # else, thrown away when the day turns.
+      Texttile.Stats.Salt,
       # Start to serve requests, typically the last entry
       TexttileWeb.Endpoint
     ]
