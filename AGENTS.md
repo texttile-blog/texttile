@@ -33,8 +33,8 @@ The README states the principles. These are the rules behind them. They hold unt
 
 - `fly.toml` exists twice, and each file runs its own Fly app:
   - here: app `texttile-staging` on `staging.texttile.blog`, built from this checkout.
-  - in the repo `texttile-blog/deploy-demo` (usually checked out at `../deploy-demo`): app `texttile-demo` on `demo.texttile.blog`, running the published image through a `[build]` section.
-- The app name, `PHX_HOST`, and the `[build]` section are the only intended differences. When you change `fly.toml`, env vars, ports, volume paths, or the image name, apply the same change in deploy-demo and push it.
+  - in the repo `texttile-blog/demo` (usually checked out at `../demo`): app `texttile-demo` on `demo.texttile.blog`, running the published image through a `[build]` section.
+- The app name, `PHX_HOST`, and the `[build]` section are the only intended differences. When you change `fly.toml`, env vars, ports, volume paths, or the image name, apply the same change in the demo repo and push it.
 
 ## Ports
 

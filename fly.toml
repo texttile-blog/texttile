@@ -3,7 +3,7 @@
 # app itself knows nothing about Fly.
 #
 # The demo, demo.texttile.blog, is a different app: it runs the published
-# image and its configuration lives in the repository texttile-blog/deploy-demo.
+# image and its configuration lives in the repository texttile-blog/demo.
 #
 # One-time setup:
 #   fly apps create texttile-staging --org texttile
