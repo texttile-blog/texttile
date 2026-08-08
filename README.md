@@ -359,9 +359,9 @@ links that leave the server, mails included.
 
 All git worktrees of the repository share the dev state of the main
 checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
-`.env` file. `make db-pull` writes the production snapshot to
-`texttile-demo.db` in that same checkout root. Outside a git checkout,
-everything stays next to the code.
+`.env` file. `make db-pull` writes the snapshot to `texttile-snapshot.db` in
+that same checkout root. Outside a git checkout, everything stays next to the
+code.
 Stop the development server before running `make db-delete`. The next
 `make start` recreates the database and applies all migrations.
 

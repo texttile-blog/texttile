@@ -8,7 +8,7 @@ SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git
 DB_DEV := $(SHARED_ROOT)/texttile_dev.db
 
 # Local, stable path for the remote DB snapshot. Point TablePlus at this file.
-DB_LOCAL := $(SHARED_ROOT)/texttile-demo.db
+DB_LOCAL := $(SHARED_ROOT)/texttile-snapshot.db
 
 # The command line tools the app runs: ffmpeg and ffprobe for the video
 # conversion. Run this once per machine; the container has them already.
@@ -38,10 +38,11 @@ kill-port-4000:
 		fi; \
 	fi
 
-# Pull a consistent snapshot of the production SQLite DB to $(DB_LOCAL).
+# Pull a consistent snapshot of a running SQLite DB to $(DB_LOCAL).
 # VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.
-# The demo is the default; `make db-pull FLY_APP=texttile-staging` takes the other one.
-FLY_APP ?= texttile-demo
+# This repository deploys texttile-staging, so that is the default.
+# The demo: `make db-pull FLY_APP=texttile-demo`.
+FLY_APP ?= texttile-staging
 
 db-pull:
 	@echo "Waking the machine..."
