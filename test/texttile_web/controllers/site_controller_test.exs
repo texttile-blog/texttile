@@ -254,7 +254,7 @@ defmodule TexttileWeb.SiteControllerTest do
       assert band_at < about_at
     end
 
-    test "a reader never sees the way to the desk", %{conn: conn} do
+    test "a reader never sees the way to the admin area", %{conn: conn} do
       published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
 
       html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)

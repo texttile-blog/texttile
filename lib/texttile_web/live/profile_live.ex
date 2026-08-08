@@ -9,7 +9,7 @@ defmodule TexttileWeb.ProfileLive do
 
   alias Texttile.Accounts
   alias Texttile.Accounts.Scope
-  alias TexttileWeb.Desk
+  alias TexttileWeb.Admin
 
   @note_ms 4600
 
@@ -50,7 +50,7 @@ defmodule TexttileWeb.ProfileLive do
     case result do
       {:ok, user} ->
         scope = Scope.for_user(user, socket.assigns.current_scope.session_token)
-        Desk.announce_rename(user.id)
+        Admin.announce_rename(user.id)
 
         {:noreply,
          socket

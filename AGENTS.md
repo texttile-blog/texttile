@@ -14,6 +14,7 @@ The README states the principles. These are the rules behind them. They hold unt
 - Gallery order lives in `gallery_date` alone. Drag and drop and the date field write that one value; the original file and its EXIF data stay untouched.
 - A step that cannot be taken back stays separate and confirmed. A newsletter mail is never a side effect of publishing.
 - `/data` is the whole installation: database and uploads. Never copy the live database file; take a copy with `VACUUM INTO` or `.backup` (see `make db-pull`).
+- The signed-in area behind `/admin` is the admin area, in prose and in code (`TexttileWeb.Admin`). Never "the desk": that word is a leftover of a prototype variant name. "Admin" alone stays the person, so the place keeps its noun.
 
 ## Git and GitHub
 

@@ -93,7 +93,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     [image] = Gallery.list(article.id)
     assert image.path =~ ~r"^videos/"
 
-    # the desk says what is happening while ffmpeg works, and stops
+    # the admin area says what is happening while ffmpeg works, and stops
     # saying it once the poster is there
     video =
       wait_until(fn ->
@@ -111,7 +111,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     |> assert_has("#gal a[data-video='/uploads/#{video.mp4_path}']")
   end
 
-  test "the desk lightbox never lands on a tile that has nothing to show", %{
+  test "the admin lightbox never lands on a tile that has nothing to show", %{
     conn: conn,
     kb: kb
   } do

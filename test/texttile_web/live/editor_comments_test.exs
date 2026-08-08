@@ -85,7 +85,7 @@ defmodule TexttileWeb.EditorCommentsTest do
     assert [_] = Comments.for_article(other.id)
   end
 
-  test "a comment the other desk deleted first is simply gone", %{conn: conn} do
+  test "a comment another admin deleted first is simply gone", %{conn: conn} do
     article = published_post()
     comment = post!(article)
 

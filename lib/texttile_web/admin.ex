@@ -1,6 +1,6 @@
-defmodule TexttileWeb.Desk do
+defmodule TexttileWeb.Admin do
   @moduledoc """
-  The shared behaviour of every desk LiveView: presence in the wordmark
+  The shared behaviour of every admin LiveView: presence in the wordmark
   menu. Each mounted tab tracks itself; the menu shows everybody else,
   one block per person, one jump per open tab.
   """
@@ -12,7 +12,7 @@ defmodule TexttileWeb.Desk do
   alias Texttile.Accounts.Scope
   alias TexttileWeb.Presence
 
-  @topic "desk"
+  @topic "admin"
 
   @views %{
     TexttileWeb.TextsLive => :texts,
@@ -41,14 +41,14 @@ defmodule TexttileWeb.Desk do
       socket
       |> assign(:others, others(scope))
       |> assign(:online_ids, online_user_ids())
-      |> attach_hook(:desk_presence, :handle_info, &handle_info/2)
-      |> attach_hook(:desk_actions, :handle_event, &handle_event/3)
+      |> attach_hook(:admin_presence, :handle_info, &handle_info/2)
+      |> attach_hook(:admin_actions, :handle_event, &handle_event/3)
 
     {:cont, socket}
   end
 
-  # New text lives in the wordmark menu, so it must work from every desk
-  # view; this hook is the one handler behind all of them.
+  # New text lives in the wordmark menu, so it must work from every
+  # admin view; this hook is the one handler behind all of them.
   defp handle_event("new_text", _params, socket) do
     {:ok, article} = Texttile.Articles.create_draft(socket.assigns.current_scope.user)
     {:halt, Phoenix.LiveView.push_navigate(socket, to: "/admin/texts/#{article.id}")}
@@ -66,7 +66,7 @@ defmodule TexttileWeb.Desk do
   # Somebody's displayed name changed. Every tab of that person reloads
   # its own scope and rewrites its own tracked meta; everybody else then
   # sees the new name through the presence diffs that follow.
-  defp handle_info({:desk_renamed, user_id}, socket) do
+  defp handle_info({:admin_renamed, user_id}, socket) do
     scope = socket.assigns.current_scope
 
     if scope && scope.user.id == user_id do
@@ -92,9 +92,10 @@ defmodule TexttileWeb.Desk do
   defp handle_info(_message, socket), do: {:cont, socket}
 
   @doc """
-  Everybody at the desk except the current user: one entry per person,
-  their open tabs as sessions with a label and a jump target. A session
-  in a text carries its `text_id`, so the editor knows who reads along.
+  Everybody in the admin area except the current user: one entry per
+  person, their open tabs as sessions with a label and a jump target. A
+  session in a text carries its `text_id`, so the editor knows who reads
+  along.
   """
   def others(scope) do
     me = scope && to_string(scope.user.id)
@@ -125,7 +126,7 @@ defmodule TexttileWeb.Desk do
   updates its own tracked presence meta and its scope on arrival.
   """
   def announce_rename(user_id) do
-    Phoenix.PubSub.broadcast(Texttile.PubSub, @topic, {:desk_renamed, user_id})
+    Phoenix.PubSub.broadcast(Texttile.PubSub, @topic, {:admin_renamed, user_id})
   end
 
   defp activity(%{view: :editor} = meta) do
@@ -152,7 +153,7 @@ defmodule TexttileWeb.Desk do
   defp path(%{view: :settings}), do: "/admin/settings"
   defp path(_meta), do: "/admin"
 
-  @doc "The ids of everybody with at least one open desk tab, as strings."
+  @doc "The ids of everybody with at least one open admin tab, as strings."
   def online_user_ids do
     @topic |> Presence.list() |> Map.keys()
   end

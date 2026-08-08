@@ -89,7 +89,7 @@ defmodule TexttileWeb.EditorLive do
     %{article: article, current_scope: scope, holds_lock: holds} = socket.assigns
 
     if connected?(socket) do
-      TexttileWeb.Desk.update_activity(scope, %{
+      TexttileWeb.Admin.update_activity(scope, %{
         text_id: article.id,
         text_title: Articles.display_title(article),
         writing: holds
@@ -851,7 +851,7 @@ defmodule TexttileWeb.EditorLive do
     |> Map.new()
   end
 
-  # What the desk says while ffmpeg is not through with a video.
+  # What the admin area says while ffmpeg is not through with a video.
   defp conversion_note(%{state: :queued}), do: "waiting to be converted"
   defp conversion_note(%{state: :running}), do: "converting"
   defp conversion_note(%{state: :none}), do: "waiting to be converted"
@@ -2317,8 +2317,8 @@ defmodule TexttileWeb.EditorLive do
   defp log_line(%{user: nil, text: text}), do: text
   defp log_line(%{user: user, text: text}), do: "#{Accounts.display_name(user)} #{text}"
 
-  # Who else has this text open right now, by name; read from the desk
-  # presence the wordmark menu already carries.
+  # Who else has this text open right now, by name; read from the
+  # admin presence the wordmark menu already carries.
   defp reading_along(others, article) do
     for person <- others,
         Enum.any?(person.sessions, &(&1.text_id == article.id)),

@@ -4,9 +4,9 @@
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
       <%!-- the line under the title: the day, the tags, and for the
-           admin who is signed in the way straight into the desk. A page
-           has no date and no tags, so there the line is the way in and
-           nothing else. --%>
+           admin who is signed in the way straight into the admin area.
+           A page has no date and no tags, so there the line is the way
+           in and nothing else. --%>
       <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
         <%= if @article.type == "post" do %>
           <span class="num">{format_date(@article.publish_date)}</span>

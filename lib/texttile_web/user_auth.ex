@@ -16,7 +16,7 @@ defmodule TexttileWeb.UserAuth do
 
   @doc """
   Opens a session for the user, renews the cookie and redirects to the
-  desk.
+  admin area.
   """
   def log_in_user(conn, user) do
     token = Accounts.create_session(user)

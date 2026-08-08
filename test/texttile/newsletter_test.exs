@@ -99,7 +99,7 @@ defmodule Texttile.NewsletterTest do
     end
   end
 
-  describe "add/1, the desk way" do
+  describe "add/1, the admin way" do
     test "stores the address confirmed, and no mail travels" do
       assert {:ok, subscriber} = Newsletter.add(@email)
       assert Newsletter.Subscriber.confirmed?(subscriber)
@@ -136,7 +136,7 @@ defmodule Texttile.NewsletterTest do
       assert :ok = Newsletter.unsubscribe(subscriber.token)
     end
 
-    test "remove/1 takes a subscriber off the desk list" do
+    test "remove/1 takes a subscriber off the admin list" do
       {:ok, subscriber} = Newsletter.add(@email)
       Newsletter.subscribe()
 
@@ -212,7 +212,7 @@ defmodule Texttile.NewsletterTest do
       assert_receive {:email, _}, 1000
       assert_receive {:email, _}, 1000
 
-      # the other desk, or the go-live clock, holding the text as it
+      # another admin, or the go-live clock, holding the text as it
       # stood before the stamp landed
       stale = %{Articles.get_article!(article.id) | notified_on: nil}
       answered = Newsletter.notify_published(stale)

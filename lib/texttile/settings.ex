@@ -39,7 +39,7 @@ defmodule Texttile.Settings do
     favicon_name: {:file, nil}
   }
 
-  # The iris theme is the default the whole site wears, desk and public
+  # The iris theme is the default the whole site wears, admin and public
   # side alike, while no theme.css is stored. Embedded at compile time;
   # the file in assets/ stays the single source.
   @iris_theme_path Path.expand("../../assets/css/theme.css", __DIR__)

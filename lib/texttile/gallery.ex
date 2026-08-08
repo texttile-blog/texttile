@@ -484,7 +484,7 @@ defmodule Texttile.Gallery do
 
   ## PubSub
 
-  # The same two topics Texttile.Articles speaks on: the desk-wide one
+  # The same two topics Texttile.Articles speaks on: the admin-wide one
   # for the texts grid, the article's own for the open editors.
   defp broadcast(article_id, action, image_id, by) do
     message = {:gallery_changed, article_id, %{action: action, image_id: image_id, by: by}}

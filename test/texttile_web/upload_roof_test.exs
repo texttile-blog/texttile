@@ -1,7 +1,7 @@
 defmodule TexttileWeb.UploadRoofTest do
   @moduledoc """
   The two body roofs of the endpoint (see `TexttileWeb.Endpoint`). The
-  big one belongs to the desk's upload addresses and to a signed-in
+  big one belongs to the admin area's upload addresses and to a signed-in
   session; a stranger is turned away at 52 MB, before half a gigabyte
   has arrived.
   """
@@ -10,7 +10,7 @@ defmodule TexttileWeb.UploadRoofTest do
   @boundary "----texttile"
 
   # Just past the 52 MB roof everybody has, far below the 520 MB the
-  # desk gets.
+  # admin area gets.
   defp oversize_body do
     "--#{@boundary}\r\n" <>
       ~s(Content-Disposition: form-data; name="file"; filename="big.mp4"\r\n) <>
@@ -36,7 +36,7 @@ defmodule TexttileWeb.UploadRoofTest do
       |> send_body()
 
     # the body was read, so the roof was the big one; the token names no
-    # session, so the desk sends the caller to the sign-in screen
+    # session, so the admin area sends the caller to the sign-in screen
     assert redirected_to(conn) == ~p"/login"
   end
 end

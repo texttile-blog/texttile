@@ -38,7 +38,7 @@ defmodule TexttileWeb.NewsletterLiveTest do
     assert has_element?(view, "#newsletterSub", "1 address gets the texts")
   end
 
-  test "adding an address puts it on the list confirmed, live for the whole desk", %{conn: conn} do
+  test "adding an address puts it on the list confirmed, live for everybody", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/newsletter")
     {:ok, other, _html} = live(conn, ~p"/admin/newsletter")
 

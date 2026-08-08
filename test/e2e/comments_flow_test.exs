@@ -49,8 +49,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#comments", text: "More of the dog, please.")
     |> refute_has("#comments .wait")
 
-    # The desk: the overview carries it, its jump opens the text's tab,
-    # Delete takes it out.
+    # The admin area: the overview carries it, its jump opens the
+    # text's tab, Delete takes it out.
     conn
     |> sign_in()
     |> visit("/admin/comments")

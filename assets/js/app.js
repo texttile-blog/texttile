@@ -207,10 +207,10 @@ document.addEventListener("click", event => {
   if (!event.target.closest("#navMenu")) closeMenu()
 })
 
-/* THE KEY DIGITS · a digit jumps to its section from anywhere on the
-   desk. The keys sleep while you are typing in a field, and each digit
-   only works once its section exists: a section row in the wordmark
-   menu carries its digit as data-key. */
+/* THE KEY DIGITS · a digit jumps to its section from anywhere in the
+   admin area. The keys sleep while you are typing in a field, and each
+   digit only works once its section exists: a section row in the
+   wordmark menu carries its digit as data-key. */
 function typingIn(el) {
   return el && (el.isContentEditable ||
     ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))
