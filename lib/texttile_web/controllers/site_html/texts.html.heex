@@ -5,7 +5,7 @@
 
     <div class="searchrow mt-7">
       <form action={@list_path} method="get" role="search">
-        <label for="q" class="sr">Search the texts</label>
+        <label for="q" class="sr">Search the entries</label>
         <input
           type="search"
           id="q"
@@ -80,7 +80,7 @@
            the middle at either end of the row. --%>
       <span>
         <a :if={@page > 1} class="btn sm" id="prev-page" href={@page_path.(@page - 1)} rel="prev">
-          Newer texts
+          Newer
         </a>
       </span>
       <span class="f-note num">Page {@page} of {@pages}</span>
@@ -92,13 +92,13 @@
           href={@page_path.(@page + 1)}
           rel="next"
         >
-          Older texts
+          Older
         </a>
       </span>
     </nav>
 
     <p :if={@articles == [] && @q != ""} class="f-body mt-8" id="empty">
-      Nothing matches that. <a class="link" href={@list_path}>Show all texts</a>.
+      Nothing matches that. <a class="link" href={@list_path}>Show all entries</a>.
     </p>
     <p :if={@articles == [] && @q == ""} class="f-body mt-8">Nothing here yet.</p>
   </div>

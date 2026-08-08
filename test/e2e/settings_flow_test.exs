@@ -110,7 +110,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> fill_in("Repeat the password", with: "julias own password")
       |> fill_in("Email address", with: "julia@example.org")
       |> click_button("Create the account and sign in")
-      |> assert_has("#crumb", text: "Texts")
+      |> assert_has("#crumb", text: "Entries")
 
       # julia is a full admin now, equal to kb. Her own row cannot go
       # (another admin removes it, not you), but she can delete kb,

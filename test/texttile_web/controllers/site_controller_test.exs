@@ -387,7 +387,7 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/tags/sea") |> html_response(200)
 
       assert html =~ "#sea"
-      assert html =~ "text has this tag."
+      assert html =~ "entry has this tag."
       assert html =~ ~s(id="text-#{sea.id}")
       refute html =~ "Desert nights"
 

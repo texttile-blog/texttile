@@ -3,7 +3,7 @@ defmodule Texttile.ArticlesArchiveTest do
   The archive over a list: the years it touches, and the months of the
   year that is open.
   """
-  use Texttile.DataCase, async: true
+  use Texttile.DataCase, async: false
 
   import Texttile.ArticlesFixtures
 

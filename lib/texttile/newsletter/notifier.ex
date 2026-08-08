@@ -28,7 +28,7 @@ defmodule Texttile.Newsletter.Notifier do
       site,
       "Confirm your email on #{site}",
       """
-      This address asked for the new texts of #{site} by mail.
+      This address asked for the new entries of #{site} by mail.
 
       Open this link, and you are on the list:
 
@@ -82,7 +82,7 @@ defmodule Texttile.Newsletter.Notifier do
   defp password_block(site, password) do
     """
 
-    #{site} asks for its access word before it shows the text.
+    #{site} asks for its access word before it shows the entry.
     The word is: #{password}
     """
   end

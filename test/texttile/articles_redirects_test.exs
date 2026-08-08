@@ -4,7 +4,7 @@ defmodule Texttile.ArticlesRedirectsTest do
   a post carries the publish date, so the date moves it exactly as the
   slug does.
   """
-  use Texttile.DataCase, async: true
+  use Texttile.DataCase, async: false
 
   import Texttile.AccountsFixtures
   import Texttile.ArticlesFixtures

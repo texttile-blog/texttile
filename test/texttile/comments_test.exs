@@ -229,7 +229,7 @@ defmodule Texttile.CommentsTest do
       assert mail.text_body =~ "More of the dog, please."
       assert mail.text_body =~ Articles.public_path(article)
       assert mail.text_body =~ "/admin/comments"
-      assert mail.text_body =~ "stands under the text"
+      assert mail.text_body =~ "stands under the entry"
       # the address of the reader is nowhere in it
       refute mail.text_body =~ "christel@example.org"
     end
@@ -250,7 +250,7 @@ defmodule Texttile.CommentsTest do
 
       assert mail = admin_mail()
       assert mail.text_body =~ "More of the dog, please."
-      assert mail.text_body =~ "stands under the text"
+      assert mail.text_body =~ "stands under the entry"
     end
 
     test "a confirmed address travels at once with every later comment" do

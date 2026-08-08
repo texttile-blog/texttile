@@ -362,19 +362,28 @@ defmodule Texttile.Articles do
   # The address it moves to must answer the entry itself from now on, so
   # a row that claims it is dropped - that is what happens when somebody
   # moves a text and moves it straight back.
+  # Nothing is written while nothing moved. Every article setting goes
+  # through here - a tag, a checkbox, a keystroke in the tag field - and
+  # a write on each of those would hold SQLite's one write lock for a
+  # change that means nothing.
   defp remember_address(%Article{status: "published"} = before, %Article{} = now) do
     old = public_path(before)
     new = public_path(now)
 
     if is_binary(old) and old != new do
+      stamp = DateTime.utc_now(:second)
+
       Repo.insert(
-        %Redirect{article_id: now.id, path: old, inserted_at: DateTime.utc_now(:second)},
-        on_conflict: [set: [article_id: now.id, inserted_at: DateTime.utc_now(:second)]],
+        %Redirect{article_id: now.id, path: old, inserted_at: stamp},
+        on_conflict: [set: [article_id: now.id, inserted_at: stamp]],
         conflict_target: :path
       )
-    end
 
-    if is_binary(new), do: Repo.delete_all(from r in Redirect, where: r.path == ^new)
+      # Two live entries can never share an address, so a row claiming
+      # the address this one just moved to belongs to an entry that
+      # vacated it. From now on the address is this entry's own again.
+      if is_binary(new), do: Repo.delete_all(from r in Redirect, where: r.path == ^new)
+    end
 
     now
   end

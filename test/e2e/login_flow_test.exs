@@ -31,8 +31,8 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Displayed name", with: "KB")
       |> click_button("Create the account and sign in")
-      |> assert_has("#crumb", text: "Texts")
-      |> assert_has("h1", text: "Texts")
+      |> assert_has("#crumb", text: "Entries")
+      |> assert_has("h1", text: "Entries")
     end
 
     test "a name nobody configured gets the answer of a wrong password", %{conn: conn} do
@@ -85,7 +85,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("#link-who", text: "belongs to the account kb")
       |> fill_in("New password", with: "a brand new password")
       |> click_button("Set the password and sign in")
-      |> assert_has("#crumb", text: "Texts")
+      |> assert_has("#crumb", text: "Entries")
 
       assert {:ok, _} = Texttile.Accounts.authenticate_user("kb", "a brand new password")
     end
@@ -120,7 +120,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("#login-error", text: "do not match")
       |> fill_in("Password", with: valid_password())
       |> click_button("Sign in")
-      |> assert_has("#crumb", text: "Texts")
+      |> assert_has("#crumb", text: "Entries")
     end
   end
 
@@ -131,7 +131,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       conn
       |> sign_in()
       |> click_button("#wmBtn", "Texttile")
-      |> assert_has("#navMenu", text: "New text")
+      |> assert_has("#navMenu", text: "New entry")
       |> assert_has("#navMenu", text: "Here now")
       |> assert_has("#navMenu", text: "No one else right now.")
       |> assert_has("#wmMe", text: "kb")

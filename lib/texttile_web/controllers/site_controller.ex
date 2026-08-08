@@ -221,7 +221,7 @@ defmodule TexttileWeb.SiteController do
     case Comments.confirm(token) do
       {:ok, %Article{status: "published"} = article} ->
         conn
-        |> put_flash(:comment_note, "Confirmed. Your comment is under the text now.")
+        |> put_flash(:comment_note, "Confirmed. Your comment is under the entry now.")
         |> redirect(to: comments_anchor(article))
 
       {:ok, _gone} ->
@@ -313,9 +313,9 @@ defmodule TexttileWeb.SiteController do
 
     note =
       if waiting? do
-        "Sent. Follow the link in your mail and your comment appears under the text."
+        "Sent. Follow the link in your mail and your comment appears under the entry."
       else
-        "Sent. Your comment is under the text now."
+        "Sent. Your comment is under the entry now."
       end
 
     put_flash(conn, :comment_note, note)
@@ -615,17 +615,17 @@ defmodule TexttileWeb.SiteController do
   # address, so there is no link to follow and nothing to confirm.
   defp comment_rule(nil, true) do
     "Your address is never published. You get one link by mail, and " <>
-      "your comment appears under the text once you follow it."
+      "your comment appears under the entry once you follow it."
   end
 
   defp comment_rule(nil, false) do
-    "Your address is never published. Your comment appears under the text at once."
+    "Your address is never published. Your comment appears under the entry at once."
   end
 
   defp comment_rule(_user, _require?) do
     "You are signed in, so your name and your address come from your " <>
       "account. Your address is never published, and your comment " <>
-      "appears under the text at once."
+      "appears under the entry at once."
   end
 
   # The account writing the comment, as the form draws it: the name and

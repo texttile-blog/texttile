@@ -4,7 +4,7 @@ defmodule TexttileWeb.SiteUnpublishedTest do
   for whoever is signed in and nowhere else, so the editor's way out
   leads into the real reader's page instead of a second design of it.
   """
-  use TexttileWeb.ConnCase, async: true
+  use TexttileWeb.ConnCase, async: false
 
   import Texttile.AccountsFixtures
   import Texttile.ArticlesFixtures

@@ -1,5 +1,5 @@
 defmodule TexttileWeb.SiteRedirectTest do
-  use TexttileWeb.ConnCase, async: true
+  use TexttileWeb.ConnCase, async: false
 
   import Texttile.ArticlesFixtures
 

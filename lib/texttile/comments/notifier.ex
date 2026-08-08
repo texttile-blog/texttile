@@ -36,7 +36,7 @@ defmodule Texttile.Comments.Notifier do
 
       You wrote a comment on "#{title}".
 
-      Open this link, and your comment appears under the text:
+      Open this link, and your comment appears under the entry:
 
       #{url}
 
@@ -104,10 +104,10 @@ defmodule Texttile.Comments.Notifier do
   defp where_it_stands(article) do
     case Articles.public_path(article) do
       nil ->
-        "It is out of sight for now: the text itself is not on the site.\n\n"
+        "It is out of sight for now: the entry itself is not on the site.\n\n"
 
       path ->
-        "It stands under the text now.\n\n" <>
+        "It stands under the entry now.\n\n" <>
           "The text:      #{TexttileWeb.Endpoint.url()}#{path}\n"
     end
   end

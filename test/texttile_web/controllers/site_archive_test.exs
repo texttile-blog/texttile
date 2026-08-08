@@ -3,7 +3,7 @@ defmodule TexttileWeb.SiteArchiveTest do
   The archive over the reader's list: one line of years, the months of
   the open year under it, and both of them real addresses.
   """
-  use TexttileWeb.ConnCase, async: true
+  use TexttileWeb.ConnCase, async: false
 
   import Texttile.ArticlesFixtures
 

@@ -1,7 +1,7 @@
 # The import format
 
 Texttile imports texts from a zip archive of bundles. A bundle is one folder
-that holds one text: its Markdown, its settings, and its pictures. The format
+that holds one entry: its Markdown, its settings, and its pictures. The format
 is made for converters: a script or an AI agent reads an export from another
 system (for example WordPress) and writes bundles. This document is the
 complete contract. A converter that follows it needs no other knowledge of
@@ -9,15 +9,15 @@ Texttile.
 
 The import runs in two steps. First a dry run validates every bundle and
 reports errors and warnings. Nothing is created. Then the import creates or
-updates the texts. The importer downloads remote pictures itself, so a bundle
+updates the entries. The importer downloads remote pictures itself, so a bundle
 can point to pictures that are still online. The zip then stays small.
 
-The report and the import both go by date, oldest text first. A bundle
+The report and the import both go by date, oldest entry first. A bundle
 without a `date` comes last, under its folder name.
 
 ## The zip
 
-The root of the zip holds one folder per text. Each folder holds an
+The root of the zip holds one folder per entry. Each folder holds an
 `index.md` file. Everything else in the folder is bundle files, available to
 `index.md` through relative paths.
 
@@ -88,15 +88,15 @@ this subset. Do not use other YAML features.
 
 | Key              | Required | Value                                                          |
 | ---------------- | -------- | -------------------------------------------------------------- |
-| `title`          | yes      | The title of the text, up to 500 characters.                   |
-| `slug`           | no       | The address of the text. Default: made from the title.         |
+| `title`          | yes      | The title of the entry, up to 500 characters.                  |
+| `slug`           | no       | The address of the entry. Default: made from the title.        |
 | `date`           | no       | The publish date, `YYYY-MM-DD`. Default: the day of the import.|
 | `status`         | no       | `published` or `draft`. Default: `published`.                  |
 | `type`           | no       | `post` or `page`. Default: `post`.                             |
 | `tags`           | no       | A list of tags.                                                |
 | `allow_comments` | no       | `true` or `false`. Default: `true`.                            |
 | `preview`        | no       | The source of the preview picture. See below.                  |
-| `gallery`        | no       | The tiles of the text, as a list of sources. See below.        |
+| `gallery`        | no       | The tiles of the entry, as a list of sources. See below.       |
 
 Details:
 
@@ -105,14 +105,14 @@ Details:
   not resolve to the same slug. That is an error. A post then lives at
   `/2019/06/02/beach-days`, its date and its slug; a page lives at
   `/about-us`, its slug alone.
-- `status: published` with a `date` in the future schedules the text. It goes
+- `status: published` with a `date` in the future schedules the entry. It goes
   live on that day.
-- The import itself sends no mail, and a text imported as published
-  counts as already told about. A text the import schedules goes live
-  on its day like any scheduled text, subscriber notification included.
+- The import itself sends no mail, and an entry imported as published
+  counts as already told about. An entry the import schedules goes live
+  on its day like any scheduled entry, subscriber notification included.
 - `preview`: the value must be byte-identical to one picture source of the
   bundle (a `gallery` entry or a body reference). Without `preview`, the
-  first picture of the text speaks for it.
+  first picture of the entry speaks for it.
 
 ## Picture sources
 
@@ -169,14 +169,14 @@ curl -sIL -o /dev/null -w '%{http_code} %{content_type} %{url_effective}\n' URL
 ```
 
 Write a short list of every URL you dropped, and give it to the person who
-runs the import. They then know what is missing before the texts are live.
+runs the import. They then know what is missing before the entries are live.
 
 A converter that skips this check hands the dry run a list of dead pictures,
 and the work starts again at the export.
 
 ## The gallery
 
-The gallery holds the tiles of a text. There are two ways to define it:
+The gallery holds the tiles of an entry. There are two ways to define it:
 
 - The `gallery` key: a list of sources. The order of the list is the order
   of the tiles.
@@ -214,22 +214,22 @@ Warnings:
 
 - A file in the bundle that nothing references.
 - A file in `gallery/` that an explicit `gallery` key does not list.
-- A slug that already exists on the site. The import updates that text.
-- A text somebody has open in the editor right now. The run refuses
+- A slug that already exists on the site. The import updates that entry.
+- An entry somebody has open in the editor right now. The run refuses
   that bundle while the editor stays open; run the import again later.
 - A file at the zip root, or an empty folder.
 
 ## Importing twice
 
-The slug identifies the text. When the slug already exists, the import
-updates that text: title, body, settings, and date. The gallery is replaced
+The slug identifies the entry. When the slug already exists, the import
+updates that entry: title, body, settings, and date. The gallery is replaced
 with the gallery of the bundle. Pictures of the earlier import that the
 bundle no longer references are deleted. An import with the same zip twice
 gives the same site, not duplicates.
 
 ## Comments
 
-A bundle can carry the comments of its text in a `comments.yaml` file.
+A bundle can carry the comments of its entry in a `comments.yaml` file.
 The format stands now so a converter can already write it; the importer
 reads the file in a later version and ignores it today, without a
 warning. Export only the comments that belong on the site; there is no
