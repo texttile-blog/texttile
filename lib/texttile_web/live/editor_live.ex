@@ -1143,7 +1143,7 @@ defmodule TexttileWeb.EditorLive do
           {@article.status}
         </span>
         <span
-          class="hidden md:inline text-[12.5px] text-faint whitespace-nowrap num"
+          class="saved hidden md:inline-block whitespace-nowrap num"
           id="state"
           phx-hook="SavedTicker"
           data-at={@saved_at}

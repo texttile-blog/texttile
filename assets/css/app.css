@@ -117,6 +117,44 @@
     text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft);
   }
 
+  /* THE SAVED LINE · the answer of a screen without a Save button.
+
+     A grey stamp that quietly rewrites itself is no answer, so the
+     line is loud for a moment and quiet the rest of the time: the
+     save turns it to the accent, ticks it and says so, then it fades
+     back to the clock time. app.js (SavedTicker) owns .fresh and the
+     words; everything the eye reacts to is here.
+
+     The tick keeps its place while the line is quiet, so nothing on
+     the bar moves when a save lands. */
+  .saved {
+    display: inline-block; font-size: 12.5px; color: var(--tt-faint);
+    padding: 2px 9px; border-radius: var(--tt-radius-pill);
+    box-shadow: inset 0 0 0 1px transparent;
+    transition: color .5s ease, background-color .5s ease, box-shadow .5s ease;
+  }
+  .saved::before {
+    content: "\2713\00a0"; font-weight: 700;
+    opacity: 0; transition: opacity .5s ease;
+  }
+  .saved.fresh {
+    color: var(--tt-accent); font-weight: 600;
+    background-color: var(--tt-accentwash);
+    box-shadow: inset 0 0 0 1px var(--tt-accentline);
+    transition: none; animation: tt-saved .34s ease-out;
+  }
+  .saved.fresh::before { opacity: 1; transition: none; }
+  @keyframes tt-saved {
+    0%   { transform: scale(.92); }
+    55%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  /* whoever asked for less movement gets the colour and the tick, and
+     no jump */
+  @media (prefers-reduced-motion: reduce) {
+    .saved.fresh { animation: none; }
+  }
+
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -.015em; }
   .lead { color: var(--tt-dim); font-size: 13.5px; margin-top: 7px; margin-bottom: 26px; }
