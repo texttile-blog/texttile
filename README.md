@@ -53,7 +53,9 @@ Set `CLIENT_IP_HEADER` only when a proxy stands in front of Texttile and
 writes that header itself. The comment rate limit and the reader count both
 read it, so a header the caller may write is a header a spammer may change.
 Without the variable both count by the address of the connection, which is
-right everywhere except behind a proxy.
+right everywhere except behind a proxy. Of a header that carries a list
+(`X-Forwarded-For`), the last entry counts: that is the one the proxy
+appended, and everything before it is what the caller sent.
 
 ## Run with Docker
 
@@ -230,6 +232,11 @@ nobody.
 
 The numbers live in the `page_views` table in your database, one row per
 counted view. They are yours; nothing leaves the server.
+
+The referrer and the address of a page come from the browser, so the
+tables of sources and of other addresses hold the 20 biggest and say so
+when they are full. The top entries table counts entries, which the blog
+knows itself, so it holds 20 without a word.
 
 If a proxy stands in front of Texttile, set `CLIENT_IP_HEADER` (see
 [Configuration](#configuration)). Without it every reader behind the proxy

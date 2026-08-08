@@ -35,11 +35,23 @@ defmodule Texttile.Stats do
   @limiter Texttile.Stats.Limiter
   @limiter_per_minute 60
 
+  # How many rows a table of the Stats screen holds at most. Addresses
+  # and sources are written by the caller, so their number is not the
+  # blog's to trust.
+  @rows 20
+
+  # A host is at most this long. The name a browser sends is a name
+  # somebody chose, and it is stored once per view.
+  @host_max 120
+
   @doc "The name of the limiter in front of the counter."
   def limiter, do: @limiter
 
   @doc "How many views one caller may write in a minute."
   def limiter_per_minute, do: @limiter_per_minute
+
+  @doc "How many rows the tables of the Stats screen hold at most."
+  def rows, do: @rows
 
   # What a browser line says when it is not a person. Substrings, read
   # in lower case. The beacon keeps most crawlers out by itself - they
@@ -159,7 +171,7 @@ defmodule Texttile.Stats do
   defp referrer_host(referrer) when is_binary(referrer) do
     with %URI{host: host} when is_binary(host) <- URI.parse(referrer),
          host <- host |> String.downcase() |> String.replace_prefix("www.", ""),
-         true <- host != "" and host != own_host() do
+         true <- host != "" and host != own_host() and byte_size(host) <= @host_max do
       host
     else
       _ -> nil
@@ -190,17 +202,25 @@ defmodule Texttile.Stats do
   hash reaches. Somebody who reads on ten days is ten people here.
   """
   def summary(days) do
-    from(v in View, where: v.day >= ^first_day(days))
-    |> Repo.all()
-    |> then(fn views ->
-      by_day = Enum.frequencies_by(views, & &1.day)
+    # One row per day out of the database, never one row per view: the
+    # table grows with the readers, and this screen must not grow with
+    # it. Three numbers per day is all three figures need.
+    rows =
+      View
+      |> where([v], v.day >= ^first_day(days))
+      |> group_by([v], v.day)
+      |> select([v], {v.day, count(v.id), count(v.visitor, :distinct)})
+      |> Repo.all()
 
-      %{
-        views: length(views),
-        people: views |> Enum.uniq_by(&{&1.day, &1.visitor}) |> length(),
-        busiest: by_day |> Enum.max_by(&elem(&1, 1), fn -> nil end)
-      }
-    end)
+    %{
+      views: rows |> Enum.map(&elem(&1, 1)) |> Enum.sum(),
+      people: rows |> Enum.map(&elem(&1, 2)) |> Enum.sum(),
+      busiest:
+        case Enum.max_by(rows, &elem(&1, 1), fn -> nil end) do
+          nil -> nil
+          {day, views, _people} -> {day, views}
+        end
+    }
   end
 
   @doc """
@@ -247,7 +267,11 @@ defmodule Texttile.Stats do
 
   @doc """
   The reader pages that are no entry - the front door, the list, the
-  tag archives - counted by address over the window.
+  tag archives - counted by address over the window, biggest first.
+
+  At most `rows/0` of them: the address is written by the caller, so
+  the number of different ones is theirs to choose, and a screen that
+  draws a row per address is a screen they can make unusable.
   """
   def other_pages(days) do
     View
@@ -255,6 +279,7 @@ defmodule Texttile.Stats do
     |> group_by([v], v.path)
     |> select([v], %{path: v.path, views: count(v.id)})
     |> order_by([v], desc: count(v.id), asc: v.path)
+    |> limit(@rows)
     |> Repo.all()
   end
 
@@ -262,20 +287,30 @@ defmodule Texttile.Stats do
   Where the readers of the window came from, biggest source first,
   each with its share in whole percent. `host: nil` is a reader who
   arrived direct: a bookmark, a typed address, a mail program.
+
+  At most `rows/0` sources, and for the same reason: the source comes
+  from the caller too. The share is of every view of the window, so
+  the sources left out are the difference to a hundred.
   """
   def referrers(days, opts \\ []) do
-    rows =
+    window =
       View
       |> where([v], v.day >= ^first_day(days))
       |> for_article(opts[:article_id])
-      |> group_by([v], v.referrer_host)
-      |> select([v], %{host: v.referrer_host, views: count(v.id)})
-      |> order_by([v], desc: count(v.id))
-      |> Repo.all()
 
-    total = rows |> Enum.map(& &1.views) |> Enum.sum()
+    case Repo.aggregate(window, :count) do
+      0 ->
+        []
 
-    for row <- rows, do: Map.put(row, :share, round(row.views / total * 100))
+      total ->
+        window
+        |> group_by([v], v.referrer_host)
+        |> select([v], %{host: v.referrer_host, views: count(v.id)})
+        |> order_by([v], desc: count(v.id))
+        |> limit(@rows)
+        |> Repo.all()
+        |> Enum.map(&Map.put(&1, :share, round(&1.views / total * 100)))
+    end
   end
 
   @doc "How often one entry was read, for all time."

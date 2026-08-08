@@ -2,11 +2,21 @@ defmodule Texttile.StatsTest do
   use Texttile.DataCase
 
   import Texttile.ArticlesFixtures
+  import Texttile.StatsFixtures
 
   alias Texttile.Stats
 
   @agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " <>
            "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+
+  # The flood limiter lives beside the database and no sandbox rolls it
+  # back. Every caller in this file wears the same address, so without
+  # this the last tests of a run would meet a limit the first ones
+  # spent.
+  setup do
+    Texttile.RateLimiter.reset(Stats.limiter())
+    :ok
+  end
 
   defp view(attrs \\ %{}) do
     %{
@@ -154,6 +164,15 @@ defmodule Texttile.StatsTest do
   end
 
   describe "the daily salt" do
+    # The salt lives in one process for the whole run and no sandbox
+    # rolls it back. A test that turns the day here leaves the salt it
+    # read behind for everybody, so it turns the day once more on the
+    # way out: what the next test finds is a secret no test has seen.
+    setup do
+      on_exit(&Stats.Salt.roll/0)
+      :ok
+    end
+
     test "yesterday's salt is gone, so nobody is recognised across days" do
       today = Stats.Salt.current()
 
@@ -181,9 +200,9 @@ defmodule Texttile.StatsTest do
     end
 
     test "summary counts views, people and the busiest day", %{article: article} do
-      seed(article.id, Date.utc_today(), 3, "a")
-      seed(article.id, Date.add(Date.utc_today(), -1), 5, "b")
-      seed(article.id, Date.add(Date.utc_today(), -40), 9, "c")
+      seed_views(3, article_id: article.id)
+      seed_views(5, article_id: article.id, day: Date.add(Date.utc_today(), -1))
+      seed_views(9, article_id: article.id, day: Date.add(Date.utc_today(), -40))
 
       summary = Stats.summary(30)
 
@@ -197,7 +216,7 @@ defmodule Texttile.StatsTest do
     end
 
     test "by_day holds one number for every day of the window, oldest first" do
-      seed(nil, Date.utc_today(), 2, "a")
+      seed_views(2)
 
       days = Stats.by_day(30)
 
@@ -211,8 +230,8 @@ defmodule Texttile.StatsTest do
       article: article,
       other: other
     } do
-      seed(article.id, Date.add(Date.utc_today(), -200), 4, "a")
-      seed(other.id, Date.utc_today(), 7, "b")
+      seed_views(4, article_id: article.id, day: Date.add(Date.utc_today(), -200))
+      seed_views(7, article_id: other.id)
 
       assert [first, second] = Stats.top_articles(10)
 
@@ -223,15 +242,15 @@ defmodule Texttile.StatsTest do
     end
 
     test "an entry nobody read is not in the table", %{article: article} do
-      seed(article.id, Date.utc_today(), 1, "a")
+      seed_views(1, article_id: article.id)
 
       assert [row] = Stats.top_articles(10)
       assert row.article.id == article.id
     end
 
     test "the pages that are no entry are counted by address" do
-      seed(nil, Date.utc_today(), 3, "a", "/blog")
-      seed(nil, Date.utc_today(), 1, "b", "/tags/trains")
+      seed_views(3, path: "/blog")
+      seed_views(1, path: "/tags/trains")
 
       assert [blog, tag] = Stats.other_pages(30)
       assert blog == %{path: "/blog", views: 3}
@@ -239,17 +258,42 @@ defmodule Texttile.StatsTest do
     end
 
     test "referrers carry their share of the window, biggest first" do
-      seed(nil, Date.utc_today(), 3, "a", "/blog", "news.ycombinator.com")
-      seed(nil, Date.utc_today(), 1, "b", "/blog", "lobste.rs")
+      seed_views(3, path: "/blog", referrer_host: "news.ycombinator.com")
+      seed_views(1, path: "/blog", referrer_host: "lobste.rs")
 
       assert [hn, lobsters] = Stats.referrers(30)
       assert hn == %{host: "news.ycombinator.com", views: 3, share: 75}
       assert lobsters == %{host: "lobste.rs", views: 1, share: 25}
     end
 
+    test "the tables hold a bounded number of rows, whatever a caller writes" do
+      # The address and the source come from the caller, so the number
+      # of different ones is theirs to choose. The screen's is not.
+      for n <- 1..(Stats.rows() + 5) do
+        seed_views(1, path: "/made-up-#{n}", referrer_host: "host#{n}.example")
+      end
+
+      assert length(Stats.other_pages(30)) == Stats.rows()
+      assert length(Stats.referrers(30)) == Stats.rows()
+    end
+
+    test "a share is of every view of the window, not of the rows shown" do
+      seed_views(1, path: "/blog", referrer_host: "lobste.rs")
+      seed_views(3, path: "/blog")
+
+      assert %{host: nil, views: 3, share: 75} = Enum.find(Stats.referrers(30), &is_nil(&1.host))
+    end
+
+    test "a source nobody can have sent is no source" do
+      long = String.duplicate("x", 200) <> ".example"
+
+      assert :counted = Stats.count(view(%{referrer: "https://#{long}/a"}))
+      assert Repo.one!(Texttile.Stats.View).referrer_host == nil
+    end
+
     test "a reader who arrived direct is a source of their own" do
-      seed(nil, Date.utc_today(), 3, "a")
-      seed(nil, Date.utc_today(), 1, "b", "/blog", "lobste.rs")
+      seed_views(3)
+      seed_views(1, path: "/blog", referrer_host: "lobste.rs")
 
       assert [direct, lobsters] = Stats.referrers(30)
       assert direct == %{host: nil, views: 3, share: 75}
@@ -263,9 +307,9 @@ defmodule Texttile.StatsTest do
     end
 
     test "views count for all time, and the day row for the window", %{article: article} do
-      seed(article.id, Date.add(Date.utc_today(), -30), 4, "a")
-      seed(article.id, Date.utc_today(), 2, "b")
-      seed(nil, Date.utc_today(), 9, "c")
+      seed_views(4, article_id: article.id, day: Date.add(Date.utc_today(), -30))
+      seed_views(2, article_id: article.id)
+      seed_views(9)
 
       assert Stats.article_views(article.id) == 6
 
@@ -276,34 +320,17 @@ defmodule Texttile.StatsTest do
     end
 
     test "referrers are the entry's own", %{article: article} do
-      seed(article.id, Date.utc_today(), 2, "a", "/x", "lobste.rs")
-      seed(nil, Date.utc_today(), 8, "b", "/blog", "news.ycombinator.com")
+      seed_views(2, article_id: article.id, referrer_host: "lobste.rs")
+      seed_views(8, path: "/blog", referrer_host: "news.ycombinator.com")
 
       assert [%{host: "lobste.rs", views: 2, share: 100}] =
                Stats.referrers(30, article_id: article.id)
     end
 
     test "an entry counts for the whole blog too", %{article: article} do
-      seed(article.id, Date.utc_today(), 2, "a")
+      seed_views(2, article_id: article.id)
 
       assert Stats.summary(30).views == 2
-    end
-  end
-
-  # Views straight into the table: the reports are what is under test
-  # here, not the way in.
-  defp seed(article_id, day, count, tag, path \\ "/x", referrer_host \\ nil) do
-    at = DateTime.new!(day, ~T[12:00:00], "Etc/UTC")
-
-    for n <- 1..count do
-      Repo.insert!(%Stats.View{
-        day: day,
-        path: path,
-        article_id: article_id,
-        visitor: "#{tag}#{n}",
-        referrer_host: referrer_host,
-        inserted_at: at
-      })
     end
   end
 end

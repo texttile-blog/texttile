@@ -6,24 +6,9 @@ defmodule TexttileWeb.EditorStatsTest do
 
   import Phoenix.LiveViewTest
   import Texttile.ArticlesFixtures
-
-  alias Texttile.Repo
-  alias Texttile.Stats
+  import Texttile.StatsFixtures
 
   setup :register_and_log_in_user
-
-  defp seed(article_id, day, count, tag, referrer_host \\ nil) do
-    for n <- 1..count do
-      Repo.insert!(%Stats.View{
-        day: day,
-        path: "/x",
-        article_id: article_id,
-        visitor: "#{tag}#{n}",
-        referrer_host: referrer_host,
-        inserted_at: DateTime.new!(day, ~T[12:00:00], "Etc/UTC")
-      })
-    end
-  end
 
   test "the tab stands beside the others and the address opens it", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
@@ -40,7 +25,7 @@ defmodule TexttileWeb.EditorStatsTest do
 
   test "a published entry shows its views, comments and images", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers", publish_date: ~D[2026-07-01]})
-    seed(article.id, Date.utc_today(), 5, "a")
+    seed_views(5, article_id: article.id)
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=stats")
 
@@ -52,8 +37,8 @@ defmodule TexttileWeb.EditorStatsTest do
 
   test "views of all time count, the chart only shows the last 14 days", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
-    seed(article.id, Date.add(Date.utc_today(), -100), 4, "a")
-    seed(article.id, Date.utc_today(), 2, "b")
+    seed_views(4, article_id: article.id, day: Date.add(Date.utc_today(), -100))
+    seed_views(2, article_id: article.id)
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=stats")
 
@@ -76,8 +61,8 @@ defmodule TexttileWeb.EditorStatsTest do
   test "the referrers are the entry's own", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
     other = published_post(%{title: "Slow trains"})
-    seed(article.id, Date.utc_today(), 2, "a", "lobste.rs")
-    seed(other.id, Date.utc_today(), 8, "b", "news.ycombinator.com")
+    seed_views(2, article_id: article.id, referrer_host: "lobste.rs")
+    seed_views(8, article_id: other.id, referrer_host: "news.ycombinator.com")
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=stats")
 
@@ -92,6 +77,39 @@ defmodule TexttileWeb.EditorStatsTest do
 
     assert has_element?(view, "#tpStatsEmpty", "Drafts are invisible to readers")
     refute has_element?(view, "#tpDayChart")
+  end
+
+  test "publishing while the tab is open fills it, unpublishing empties it", %{conn: conn} do
+    draft = draft_post(%{title: "Fog over the harbor"})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{draft.id}?tab=stats")
+    assert has_element?(view, "#tpStatsEmpty")
+
+    view |> element("button", "Publish") |> render_click()
+
+    # The panel must never be blank, and never say "no numbers yet"
+    # over a row of them.
+    assert has_element?(view, "#tpFigViews")
+    refute has_element?(view, "#tpStatsEmpty")
+
+    view |> element("#stateBtn [aria-haspopup]") |> render_click()
+    view |> element("#stateMenu button", "Unpublish") |> render_click()
+
+    assert has_element?(view, "#tpStatsEmpty")
+    refute has_element?(view, "#tpFigViews")
+  end
+
+  test "another admin unpublishing the entry empties the open tab", %{conn: conn, user: user} do
+    article = published_post(%{title: "Concrete flowers", user: user})
+    seed_views(3, article_id: article.id)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=stats")
+    assert has_element?(view, "#tpFigViews", "3")
+
+    {:ok, _} = Texttile.Articles.unpublish(article, user)
+
+    assert has_element?(view, "#tpStatsEmpty")
+    refute has_element?(view, "#tpFigViews")
   end
 
   test "a scheduled entry says when the numbers start", %{conn: conn} do

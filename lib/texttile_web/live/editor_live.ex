@@ -279,7 +279,7 @@ defmodule TexttileWeb.EditorLive do
 
     {:noreply,
      socket
-     |> assign(:article, article)
+     |> put_article(article)
      |> assign(:state_menu, false)
      |> reload_history()
      |> mark_saved(
@@ -317,7 +317,7 @@ defmodule TexttileWeb.EditorLive do
 
     {:noreply,
      socket
-     |> assign(:article, article)
+     |> put_article(article)
      |> reload_history()
      |> load_redirects()
      |> mark_saved(note)}
@@ -755,7 +755,7 @@ defmodule TexttileWeb.EditorLive do
         else: "Published"
 
     socket
-    |> assign(:article, article)
+    |> put_article(article)
     |> assign(:state_menu, false)
     |> reload_history()
     |> mark_saved(note)
@@ -921,7 +921,7 @@ defmodule TexttileWeb.EditorLive do
 
       # Another admin may have moved the entry, and the address it left
       # behind belongs on this screen too.
-      {:noreply, socket |> assign(:article, article) |> load_redirects()}
+      {:noreply, socket |> put_article(article) |> load_redirects()}
     else
       {:noreply, socket}
     end
@@ -1185,6 +1185,14 @@ defmodule TexttileWeb.EditorLive do
   # A tag no text carries any more is off the blog, so it leaves the
   # row with the text it stood on. Without that, a word typed by
   # mistake would keep a chip until the editor is closed.
+  # The entry, as it now stands. Going live, coming back off and a
+  # moved date all change what there is to count, and any of them can
+  # happen while the Stats tab is open - from this browser or from
+  # another admin's. So the numbers come along with the entry.
+  defp put_article(socket, article) do
+    socket |> assign(:article, article) |> load_stats(socket.assigns.tab)
+  end
+
   # The numbers of this entry, read when the tab is opened. An entry
   # nobody can read has none, and says so instead.
   defp load_stats(socket, "stats") do
@@ -1652,8 +1660,12 @@ defmodule TexttileWeb.EditorLive do
               </div>
             </div>
 
+            <%!-- One value carries the whole panel: there are numbers,
+                 or there is the line that says why there are none.
+                 Two conditions could disagree, and an entry that goes
+                 live while this tab is open would make them. --%>
             <div :if={@tab == "stats"} id="tp-stats">
-              <p :if={@article.status != "published"} class="note" id="tpStatsEmpty">
+              <p :if={is_nil(@stats)} class="note" id="tpStatsEmpty">
                 {stats_empty(@article)}
               </p>
               <div :if={@stats}>

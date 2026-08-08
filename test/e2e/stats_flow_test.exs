@@ -16,27 +16,12 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
 
   import Texttile.AccountsFixtures
   import Texttile.ArticlesFixtures
+  import Texttile.StatsFixtures
   import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
-
-  alias Texttile.Repo
-  alias Texttile.Stats
 
   @moduletag :e2e
 
   setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  defp seed(article_id, day, count, tag, path \\ "/x", referrer_host \\ nil) do
-    for n <- 1..count do
-      Repo.insert!(%Stats.View{
-        day: day,
-        path: path,
-        article_id: article_id,
-        visitor: "#{tag}#{n}",
-        referrer_host: referrer_host,
-        inserted_at: DateTime.new!(day, ~T[12:00:00], "Etc/UTC")
-      })
-    end
-  end
 
   test "a reader's page reports itself, an admin's does not", %{conn: conn} do
     user_fixture(%{username: "kb"})
@@ -62,9 +47,9 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     user_fixture(%{username: "kb"})
     article = published_post(%{title: "Concrete flowers of Kaunas"})
 
-    seed(article.id, Date.utc_today(), 7, "a", "/x", "news.ycombinator.com")
-    seed(article.id, Date.add(Date.utc_today(), -1), 3, "b")
-    seed(nil, Date.utc_today(), 2, "c", "/blog")
+    seed_views(7, article_id: article.id, referrer_host: "news.ycombinator.com")
+    seed_views(3, article_id: article.id, day: Date.add(Date.utc_today(), -1))
+    seed_views(2, path: "/blog")
 
     conn
     |> sign_in()

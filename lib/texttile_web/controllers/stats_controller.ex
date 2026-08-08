@@ -31,11 +31,17 @@ defmodule TexttileWeb.StatsController do
   # The page writes its own entry id into the beacon. A caller can
   # write another one, so the counter checks it against the published
   # entries; anything else counts as a plain address.
-  defp entry_id(id) when is_integer(id), do: id
+  #
+  # A number no row can wear is thrown away here and not asked about:
+  # the database binds an id as a machine integer, and one digit too
+  # many raises instead of answering "no such entry".
+  @id_max 9_223_372_036_854_775_807
+
+  defp entry_id(id) when is_integer(id) and id > 0 and id <= @id_max, do: id
 
   defp entry_id(id) when is_binary(id) do
     case Integer.parse(id) do
-      {id, ""} -> id
+      {id, ""} -> entry_id(id)
       _ -> nil
     end
   end

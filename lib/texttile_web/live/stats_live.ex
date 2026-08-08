@@ -109,6 +109,10 @@ defmodule TexttileWeb.StatsLive do
           Nothing counted yet, so there is nowhere readers came from.
         </p>
         <.referrer_table :if={@referrers != []} id="referrers" rows={@referrers} />
+        <p :if={length(@referrers) == Stats.rows()} class="note mt-[10px]" id="referrersCapped">
+          The {Stats.rows()} biggest sources. What the shares leave short of a
+          hundred came from the others.
+        </p>
 
         <h2 :if={@pages != []} class="sec-h">Other addresses, last {@window} days</h2>
         <div :if={@pages != []} class="overflow-x-auto">
@@ -127,6 +131,9 @@ defmodule TexttileWeb.StatsLive do
             </tbody>
           </table>
         </div>
+        <p :if={length(@pages) == Stats.rows()} class="note mt-[10px]" id="pagesCapped">
+          The {Stats.rows()} most read addresses.
+        </p>
 
         <p class="note mt-[22px]" id="statsRule">
           A reader is a number for one day: their address and their browser

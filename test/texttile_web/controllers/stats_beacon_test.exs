@@ -87,6 +87,14 @@ defmodule TexttileWeb.StatsBeaconTest do
     assert Stats.top_articles(10) == []
   end
 
+  test "a number no entry can wear is answered, not raised", %{conn: conn} do
+    for id <- ["99999999999999999999999", -1, 0, 99_999_999_999_999_999_999_999] do
+      assert beacon(conn, %{p: "/blog", id: id}).status == 204
+    end
+
+    assert Stats.top_articles(10) == []
+  end
+
   test "one caller cannot flood the numbers", %{conn: conn} do
     for n <- 1..80, do: beacon(conn, %{p: "/p#{n}"})
 

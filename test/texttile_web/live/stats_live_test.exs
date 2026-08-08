@@ -3,25 +3,11 @@ defmodule TexttileWeb.StatsLiveTest do
 
   import Phoenix.LiveViewTest
   import Texttile.ArticlesFixtures
+  import Texttile.StatsFixtures
 
-  alias Texttile.Repo
   alias Texttile.Stats
 
   setup :register_and_log_in_user
-
-  # Views straight into the table: the screen is what is under test.
-  defp seed(article_id, day, count, tag, path \\ "/x", referrer_host \\ nil) do
-    for n <- 1..count do
-      Repo.insert!(%Stats.View{
-        day: day,
-        path: path,
-        article_id: article_id,
-        visitor: "#{tag}#{n}",
-        referrer_host: referrer_host,
-        inserted_at: DateTime.new!(day, ~T[12:00:00], "Etc/UTC")
-      })
-    end
-  end
 
   test "a blog nobody has read yet says so instead of showing nothing", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
@@ -46,8 +32,8 @@ defmodule TexttileWeb.StatsLiveTest do
   end
 
   test "the figures count views, people and the busiest day", %{conn: conn} do
-    seed(nil, Date.utc_today(), 3, "a")
-    seed(nil, Date.add(Date.utc_today(), -1), 5, "b")
+    seed_views(3)
+    seed_views(5, day: Date.add(Date.utc_today(), -1))
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
@@ -58,7 +44,7 @@ defmodule TexttileWeb.StatsLiveTest do
   end
 
   test "the chart holds one bar per day of the window", %{conn: conn} do
-    seed(nil, Date.utc_today(), 2, "a")
+    seed_views(2)
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
@@ -70,7 +56,7 @@ defmodule TexttileWeb.StatsLiveTest do
 
   test "the top table names the entries and jumps into their Stats tab", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
-    seed(article.id, Date.utc_today(), 4, "a")
+    seed_views(4, article_id: article.id)
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
@@ -83,8 +69,8 @@ defmodule TexttileWeb.StatsLiveTest do
   end
 
   test "the referrer table names the sources and calls the rest direct", %{conn: conn} do
-    seed(nil, Date.utc_today(), 3, "a", "/blog", "lobste.rs")
-    seed(nil, Date.utc_today(), 1, "b", "/blog")
+    seed_views(3, path: "/blog", referrer_host: "lobste.rs")
+    seed_views(1, path: "/blog")
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
@@ -94,7 +80,7 @@ defmodule TexttileWeb.StatsLiveTest do
   end
 
   test "the pages that are no entry are listed by address", %{conn: conn} do
-    seed(nil, Date.utc_today(), 3, "a", "/blog")
+    seed_views(3, path: "/blog")
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
@@ -103,15 +89,34 @@ defmodule TexttileWeb.StatsLiveTest do
 
   test "an entry's own views are not in the list of other pages", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
-    seed(article.id, Date.utc_today(), 2, "a", "/2026/08/08/concrete-flowers")
+    seed_views(2, article_id: article.id, path: "/2026/08/08/concrete-flowers")
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
     refute has_element?(view, "#otherPages")
   end
 
+  test "a full table says it is full, so no cap is silent", %{conn: conn} do
+    for n <- 1..(Stats.rows() + 3) do
+      seed_views(1, path: "/made-up-#{n}", referrer_host: "host#{n}.example")
+    end
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+
+    assert has_element?(view, "#referrersCapped")
+    assert has_element?(view, "#pagesCapped")
+  end
+
+  test "a big number is written with a space between the thousands", %{conn: conn} do
+    seed_views(1200)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+
+    assert has_element?(view, "#figViews", "1 200")
+  end
+
   test "a day older than the window is not counted", %{conn: conn} do
-    seed(nil, Date.add(Date.utc_today(), -40), 9, "a")
+    seed_views(9, day: Date.add(Date.utc_today(), -40))
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
