@@ -361,12 +361,13 @@ defmodule TexttileWeb.EditorLive do
   # gone is no error: the list reloads either way. The trash itself
   # lives on the Comments screen; a text only ever deletes into it.
   def handle_event("delete_comment", %{"id" => id}, socket) do
-    socket = own_comment(socket, id, &Comments.delete_comment(&1.id))
+    own_comment(socket, id, &Comments.delete_comment(&1.id))
     {:noreply, socket |> close_comment_edit() |> reload_comments()}
   end
 
   def handle_event("release_comment", %{"id" => id}, socket) do
-    {:noreply, socket |> own_comment(id, &Comments.release_comment(&1.id)) |> reload_comments()}
+    own_comment(socket, id, &Comments.release_comment(&1.id))
+    {:noreply, reload_comments(socket)}
   end
 
   def handle_event("start_edit", %{"id" => id}, socket) do
@@ -378,9 +379,9 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("save_comment", %{"comment_id" => id, "body" => body}, socket) do
-    case own_comment_result(socket, id, &Comments.edit_comment(&1.id, body)) do
-      {:error, %Ecto.Changeset{}} ->
-        {:noreply, assign(socket, :comment_error, empty_words())}
+    case own_comment(socket, id, &Comments.edit_comment(&1.id, body)) do
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :comment_error, edit_error(changeset))}
 
       _ ->
         {:noreply, socket |> close_comment_edit() |> reload_comments()}
@@ -1684,7 +1685,7 @@ defmodule TexttileWeb.EditorLive do
                 <.comment_item
                   :for={comment <- @comments}
                   comment={comment}
-                  waiting={comment_waiting?(comment, @cmt_require)}
+                  waiting={Comments.waiting?(comment, @cmt_require)}
                   editing={@editing_comment == to_string(comment.id)}
                   error={@comment_error}
                 />
@@ -2283,11 +2284,6 @@ defmodule TexttileWeb.EditorLive do
   # Whatever the desk does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.
   defp own_comment(socket, id, fun) do
-    own_comment_result(socket, id, fun)
-    socket
-  end
-
-  defp own_comment_result(socket, id, fun) do
     article_id = socket.assigns.article.id
 
     case Comments.get_comment(id) do
@@ -2304,16 +2300,10 @@ defmodule TexttileWeb.EditorLive do
     assign(socket, :comments, Comments.for_article(socket.assigns.article.id))
   end
 
-  # A comment waits while the setting asks for a confirmation, its
-  # reader has not given one, and the desk has not let it through.
-  defp comment_waiting?(comment, require?) do
-    require? and is_nil(comment.address.confirmed_at) and not Comments.released?(comment)
-  end
-
   # The note under the comment list: who still stands outside the text,
   # or the rule when nobody does.
   defp comments_foot(comments, require?) do
-    case Enum.count(comments, &comment_waiting?(&1, require?)) do
+    case Enum.count(comments, &Comments.waiting?(&1, require?)) do
       0 ->
         comment_rule(require?)
 

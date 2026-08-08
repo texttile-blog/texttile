@@ -167,6 +167,14 @@ defmodule Texttile.Comments do
     not require_confirmation? or Address.confirmed?(comment.address) or released?(comment)
   end
 
+  @doc """
+  The other side of `shown_to_readers?/2`, for the desk: the comment is
+  out of the text, and it is its own reader who has to act.
+  """
+  def waiting?(%Comment{} = comment, require_confirmation?) do
+    not shown_to_readers?(comment, require_confirmation?)
+  end
+
   @doc "Whether the desk let this one comment through on its own."
   def released?(%Comment{released_at: released_at}), do: not is_nil(released_at)
 
@@ -243,11 +251,28 @@ defmodule Texttile.Comments do
 
   @doc "One comment, with its address, or nil when it is already gone."
   def get_comment(id) do
-    case Repo.get(standing(), id) do
-      nil -> nil
-      comment -> Repo.preload(comment, :address)
+    with id when not is_nil(id) <- to_id(id),
+         %Comment{} = comment <- Repo.get(standing(), id) do
+      Repo.preload(comment, :address)
+    else
+      _ -> nil
     end
   end
+
+  # An id arrives from a button on a screen, so it arrives as a string,
+  # and a caller who sends a list or a map instead sends nothing at
+  # all. The same rule as on the reader's form: read as nothing, never
+  # a crash.
+  defp to_id(id) when is_integer(id), do: id
+
+  defp to_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> id
+      _ -> nil
+    end
+  end
+
+  defp to_id(_id), do: nil
 
   @doc "Every comment of one text, newest first, addresses along."
   def for_article(article_id) do
@@ -347,14 +372,33 @@ defmodule Texttile.Comments do
         {:error, :gone}
 
       comment ->
-        case comment |> Comment.edit_changeset(body) |> Repo.update() do
-          {:ok, comment} ->
-            broadcast({:comment_changed, comment})
-            {:ok, comment}
+        changeset = Comment.edit_changeset(comment, body)
 
-          {:error, changeset} ->
-            {:error, changeset}
+        if changeset.valid? do
+          write(comment, standing(), Enum.to_list(changeset.changes), :comment_changed)
+        else
+          {:error, %{changeset | action: :update}}
         end
+    end
+  end
+
+  # One change to one comment, the way two desks survive each other: the
+  # update names the row and the state it must still be in, and it
+  # counts the rows it wrote. A row that went for good underneath - the
+  # text was deleted, or the sweeper came - answers `{:error, :gone}`
+  # like every other race here, instead of raising a stale entry at
+  # whoever was slower.
+  defp write(%Comment{} = comment, query, changes, message) do
+    changes = Keyword.put(changes, :updated_at, DateTime.utc_now(:second))
+
+    case Repo.update_all(from(c in query, where: c.id == ^comment.id), set: changes) do
+      {1, _} ->
+        comment = struct(comment, changes)
+        broadcast({message, comment})
+        {:ok, comment}
+
+      {0, _} ->
+        {:error, :gone}
     end
   end
 
@@ -371,13 +415,7 @@ defmodule Texttile.Comments do
         {:error, :gone}
 
       comment ->
-        comment =
-          comment
-          |> Ecto.Changeset.change(released_at: DateTime.utc_now(:second))
-          |> Repo.update!()
-
-        broadcast({:comment_changed, comment})
-        {:ok, comment}
+        write(comment, standing(), [released_at: DateTime.utc_now(:second)], :comment_changed)
     end
   end
 
@@ -388,6 +426,9 @@ defmodule Texttile.Comments do
 
   @doc "How many days a deleted comment waits in the trash."
   def trash_days, do: @trash_days
+
+  @doc "How many characters one comment holds."
+  defdelegate body_limit, to: Comment
 
   @doc """
   Deletes a comment into the trash: readers stop seeing it at once and
@@ -403,13 +444,8 @@ defmodule Texttile.Comments do
     delete_after = DateTime.add(DateTime.utc_now(:second), @trash_days, :day)
 
     case get_comment(id) do
-      nil ->
-        {:error, :gone}
-
-      comment ->
-        comment = comment |> Ecto.Changeset.change(delete_after: delete_after) |> Repo.update!()
-        broadcast({:comment_deleted, comment})
-        {:ok, comment}
+      nil -> {:error, :gone}
+      comment -> write(comment, standing(), [delete_after: delete_after], :comment_deleted)
     end
   end
 
@@ -419,50 +455,74 @@ defmodule Texttile.Comments do
   comment that is not in the trash answers `{:error, :gone}`.
   """
   def restore_comment(id) do
-    case Repo.one(from c in Comment, where: c.id == ^id and not is_nil(c.delete_after)) do
-      nil ->
-        {:error, :gone}
-
-      comment ->
-        comment =
-          comment
-          |> Ecto.Changeset.change(delete_after: nil)
-          |> Repo.update!()
-          |> Repo.preload([:address, :article])
-
-        broadcast({:comment_changed, comment})
-        {:ok, comment}
+    with id when not is_nil(id) <- to_id(id),
+         %Comment{} = comment <- Repo.one(from c in in_trash(), where: c.id == ^id) do
+      case write(comment, in_trash(), [delete_after: nil], :comment_changed) do
+        {:ok, comment} -> {:ok, Repo.preload(comment, [:address, :article])}
+        {:error, :gone} -> {:error, :gone}
+      end
+    else
+      _ -> {:error, :gone}
     end
   end
 
-  @doc "What waits in the trash, the one deleted last on top."
+  defp in_trash, do: from(c in Comment, where: not is_nil(c.delete_after))
+
+  # How many of the trash one screen carries. The rest is a line, the
+  # way the recent list does it: the trash holds a spam wave for thirty
+  # days, and the page has to stay a page.
+  @trash_shown 8
+
+  @doc """
+  What waits in the trash, the one deleted last on top, the newest
+  #{@trash_shown} at most: the rows and how many older ones stayed out.
+  """
   def trashed do
-    from(c in Comment,
-      where: not is_nil(c.delete_after),
-      order_by: [desc: c.delete_after, desc: c.id],
-      preload: [:address, :article]
-    )
-    |> Repo.all()
+    rows =
+      from(c in in_trash(),
+        order_by: [desc: c.delete_after, desc: c.id],
+        limit: ^@trash_shown,
+        preload: [:address, :article]
+      )
+      |> Repo.all()
+
+    earlier = if length(rows) < @trash_shown, do: 0, else: trashed_count() - length(rows)
+
+    {rows, earlier}
   end
 
   @doc "How many comments the trash holds."
-  def trashed_count do
-    Repo.aggregate(from(c in Comment, where: not is_nil(c.delete_after)), :count)
-  end
+  def trashed_count, do: Repo.aggregate(in_trash(), :count)
 
   @doc """
   Makes the deletions final whose #{@trash_days} days have run out, and
-  answers how many rows went. Runs on boot and on a clock of its own,
-  see `Texttile.Comments.Sweeper`.
+  answers how many comments went. Runs on boot and on a clock of its
+  own, see `Texttile.Comments.Sweeper`.
+
+  For good means for good: an address whose last comment goes here has
+  nothing left on this site, so its row goes too, and the reader's
+  email leaves the database with the words it was attached to.
   """
   def sweep_due do
     now = DateTime.utc_now(:second)
 
-    {count, _} =
-      Repo.delete_all(
-        from c in Comment, where: not is_nil(c.delete_after) and c.delete_after <= ^now
-      )
+    {count, _} = Repo.delete_all(from c in in_trash(), where: c.delete_after <= ^now)
 
+    if count > 0, do: sweep_addresses(now)
     count
+  end
+
+  # An address is fresh for a while before its first comment stands
+  # beside it: `ensure_address/1` writes the two rows one after the
+  # other. A sweep that fell between them would take the address the
+  # comment is about to point at, so a young address is left alone.
+  defp sweep_addresses(now) do
+    Repo.delete_all(
+      from a in Address,
+        as: :address,
+        where:
+          a.inserted_at < ^DateTime.add(now, -1, :day) and
+            not exists(from c in Comment, where: c.address_id == parent_as(:address).id)
+    )
   end
 end

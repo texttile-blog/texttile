@@ -406,7 +406,7 @@ defmodule Texttile.CommentsTest do
       comment = post!(article)
       {:ok, _} = Comments.delete_comment(comment)
 
-      assert [trashed] = Comments.trashed()
+      assert {[trashed], 0} = Comments.trashed()
       assert trashed.id == comment.id
       assert trashed.article.title == "Harbor mornings"
       assert trashed.address.email == "christel@example.org"
@@ -415,7 +415,7 @@ defmodule Texttile.CommentsTest do
       Comments.subscribe()
       assert {:ok, restored} = Comments.restore_comment(comment.id)
       assert restored.delete_after == nil
-      assert Comments.trashed() == []
+      assert Comments.trashed() == {[], 0}
       assert Enum.map(Comments.for_article(article.id), & &1.id) == [comment.id]
       assert_receive {:comment_changed, %Comments.Comment{}}
     end
@@ -579,7 +579,113 @@ defmodule Texttile.CommentsTest do
     {:ok, _} = Articles.delete_article(Articles.get_article!(article.id))
 
     assert Comments.for_article(article.id) == []
-    assert Comments.trashed() == []
+    assert Comments.trashed() == {[], 0}
     assert_raise Ecto.NoResultsError, fn -> Comments.get_comment!(comment.id) end
+  end
+
+  describe "two desks on one comment" do
+    # The row can go for good under either of them: the text was
+    # deleted, or the sweeper came for a trashed one. Nobody raises.
+    test "a comment the database lost answers gone, and never raises" do
+      article = published_post()
+      comment = post!(article)
+      {:ok, _} = Comments.delete_comment(comment)
+
+      Texttile.Repo.delete_all(from c in Comments.Comment, where: c.id == ^comment.id)
+
+      assert {:error, :gone} = Comments.restore_comment(comment.id)
+      assert {:error, :gone} = Comments.edit_comment(comment.id, "Nothing")
+      assert {:error, :gone} = Comments.release_comment(comment.id)
+      assert {:error, :gone} = Comments.delete_comment(comment)
+    end
+
+    test "an id that is not one is read as nothing, not as a crash" do
+      for id <- ["", "twelve", "3x", ["1"], %{"a" => "1"}, nil] do
+        assert Comments.get_comment(id) == nil
+        assert {:error, :gone} = Comments.delete_comment(id)
+        assert {:error, :gone} = Comments.restore_comment(id)
+        assert {:error, :gone} = Comments.release_comment(id)
+        assert {:error, :gone} = Comments.edit_comment(id, "Words")
+      end
+    end
+
+    test "words that are not one line of text are read as nothing" do
+      article = published_post()
+      comment = post!(article)
+
+      for body <- [["x"], %{"a" => "x"}, nil, 12] do
+        assert {:error, changeset} = Comments.edit_comment(comment.id, body)
+        assert %{body: _} = errors_on(changeset)
+      end
+
+      assert Comments.get_comment!(comment.id).body == "More of the dog, please."
+    end
+  end
+
+  describe "the trash on one screen" do
+    test "the newest deleted are the ones it carries, and it says how many are left" do
+      article = published_post()
+
+      comments =
+        for n <- 1..10 do
+          comment =
+            post!(article, %{@attrs | "email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+
+          {:ok, comment} = Comments.delete_comment(comment)
+          comment
+        end
+
+      {rows, earlier} = Comments.trashed()
+
+      assert length(rows) == 8
+      assert earlier == 2
+      assert Comments.trashed_count() == 10
+
+      # the ones deleted last stand on top, whatever second they share
+      assert Enum.map(rows, & &1.id) ==
+               comments |> Enum.map(& &1.id) |> Enum.reverse() |> Enum.take(8)
+    end
+  end
+
+  describe "sweep_due/0 and the addresses" do
+    test "an address with nothing left goes with the last of its comments" do
+      article = published_post()
+      comment = post!(article)
+      address_id = comment.address_id
+
+      {:ok, _} = Comments.delete_comment(comment)
+
+      comment
+      |> Ecto.Changeset.change(delete_after: DateTime.add(DateTime.utc_now(:second), -1))
+      |> Texttile.Repo.update!()
+
+      # a fresh address is left alone: its first comment may be one
+      # statement away from standing beside it
+      Texttile.Repo.get!(Comments.Address, address_id)
+      |> Ecto.Changeset.change(inserted_at: DateTime.add(DateTime.utc_now(:second), -2, :day))
+      |> Texttile.Repo.update!()
+
+      assert Comments.sweep_due() == 1
+      assert Texttile.Repo.get(Comments.Address, address_id) == nil
+    end
+
+    test "an address that still owns a comment stays, and a young one too" do
+      article = published_post()
+      kept = post!(article)
+      swept = post!(article, %{@attrs | "email" => "jens@example.org", "body" => "Goes"})
+
+      {:ok, _} = Comments.delete_comment(swept)
+
+      swept
+      |> Ecto.Changeset.change(delete_after: DateTime.add(DateTime.utc_now(:second), -1))
+      |> Texttile.Repo.update!()
+
+      assert Comments.sweep_due() == 1
+
+      # the one with a comment left, and the swept one's own address,
+      # which was written minutes ago
+      assert Texttile.Repo.get(Comments.Address, kept.address_id)
+      assert Texttile.Repo.get(Comments.Address, swept.address_id)
+    end
   end
 end

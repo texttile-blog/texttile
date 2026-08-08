@@ -139,6 +139,22 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert has_element?(other, "#comment-#{comment.id}")
     end
 
+    test "the trash carries the newest deleted and counts the rest", %{conn: conn} do
+      article = published_post()
+
+      for n <- 1..9 do
+        comment = post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+        {:ok, _} = Comments.delete_comment(comment)
+      end
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments")
+
+      assert has_element?(view, "#commentsTrash", "Words 9")
+      refute has_element?(view, "#commentsTrash", "Words 1")
+      assert has_element?(view, "#commentsTrash", "and 1 deleted earlier")
+      assert has_element?(view, "#commentsTrash", "9 deleted comments wait here")
+    end
+
     test "a comment the other desk restored first is no crash", %{conn: conn} do
       article = published_post()
       comment = post!(article)
@@ -198,6 +214,22 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert Comments.get_comment!(comment.id).body == "More of the dog, please."
     end
 
+    test "words beyond the limit say so, and not that there are none", %{conn: conn} do
+      article = published_post()
+      comment = post!(article)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments")
+      view |> element("#comment-#{comment.id} button", "Edit") |> render_click()
+
+      view
+      |> form("#edit-comment-#{comment.id}", %{"body" => String.duplicate("b", 4001)})
+      |> render_submit()
+
+      assert has_element?(view, "#edit-comment-#{comment.id}", "4000 characters at most")
+      refute has_element?(view, "#edit-comment-#{comment.id}", "needs some words")
+      assert Comments.get_comment!(comment.id).body == "More of the dog, please."
+    end
+
     test "only one comment is open at a time", %{conn: conn} do
       article = published_post()
       one = post!(article)
@@ -224,7 +256,9 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       refute has_element?(view, "#comment-#{comment.id} .wait")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
-      assert has_element?(view, "#commentsSub", "Every one of them is confirmed")
+      # not "every one of them is confirmed": this one never was
+      assert has_element?(view, "#commentsSub", "Readers see every one of them")
+      refute has_element?(view, "#commentsSub", "confirmed")
       assert Comments.shown_to_readers?(Comments.get_comment!(comment.id))
 
       # the next comment from the same address waits like every other

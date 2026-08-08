@@ -49,13 +49,19 @@ defmodule TexttileWeb.CommentComponents do
         class="mt-[7px] max-w-[62ch]"
       >
         <input type="hidden" name="comment_id" value={@comment.id} />
-        <textarea
-          name="body"
-          rows="4"
-          class="w-full font-serif text-[15.5px] leading-[1.55]"
-          aria-label="The words of the comment"
-          autofocus
-        >{@comment.body}</textarea>
+        <%!-- the list behind this form reloads on every comment posted
+             anywhere on the site; ignored, the field keeps what the
+             desk has typed into it so far --%>
+        <div id={"edit-body-#{@comment.id}"} phx-update="ignore">
+          <textarea
+            name="body"
+            rows="4"
+            maxlength={Comments.body_limit()}
+            class="w-full font-serif text-[15.5px] leading-[1.55]"
+            aria-label="The words of the comment"
+            autofocus
+          >{@comment.body}</textarea>
+        </div>
         <p :if={@error} class="hint text-accent" id={"edit-error-#{@comment.id}"}>{@error}</p>
         <div class="mt-[9px] btn-row">
           <button class="btn sm solid">Save</button>
@@ -128,20 +134,33 @@ defmodule TexttileWeb.CommentComponents do
     "Readers confirm their email first. A comment stays out of the text until " <>
       "the reader follows the link in the mail. Until then only you see it, " <>
       "marked \"not confirmed yet\", and Release puts that one comment under the " <>
-      "text without waiting. Delete keeps a comment in the trash for #{trash_days()} " <>
+      "text without waiting. Delete keeps a comment in the trash for #{Comments.trash_days()} " <>
       "days, silently, and then it is gone. Spam is filtered invisibly: honeypot, " <>
       "timing, rate limit. No captcha, ever."
   end
 
   def comment_rule(false) do
     "A comment appears under the text the moment a reader sends it, and nobody " <>
-      "confirms anything. Delete keeps a comment in the trash for #{trash_days()} " <>
+      "confirms anything. Delete keeps a comment in the trash for #{Comments.trash_days()} " <>
       "days, silently, and then it is gone. Spam is filtered invisibly: honeypot, " <>
       "timing, rate limit. No captcha, ever."
   end
 
-  @doc "What the desk is told when it saves a comment with nothing in it."
-  def empty_words, do: "A comment needs some words. Nothing was saved."
+  @doc """
+  Why the last save did not take, in the words of the changeset that
+  refused it: nothing there, or more than a comment holds.
+  """
+  def edit_error(%Ecto.Changeset{} = changeset) do
+    case Keyword.get(changeset.errors, :body) do
+      {_message, opts} ->
+        if Keyword.get(opts, :validation) == :length do
+          "A comment holds #{Keyword.get(opts, :count)} characters at most. Nothing was saved."
+        else
+          "A comment needs some words. Nothing was saved."
+        end
 
-  defp trash_days, do: Comments.trash_days()
+      nil ->
+        "Those words were not saved."
+    end
+  end
 end

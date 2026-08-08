@@ -23,6 +23,13 @@ defmodule Texttile.Comments.Comment do
     timestamps(type: :utc_datetime)
   end
 
+  # How much one comment holds. The reader's form and the desk's field
+  # both stop here, and the changesets are the ones that decide.
+  @body_limit 4000
+
+  @doc "How many characters one comment holds."
+  def body_limit, do: @body_limit
+
   @doc "What the reader typed: the name and the words. The address is set apart."
   def changeset(comment, attrs) do
     comment
@@ -31,7 +38,7 @@ defmodule Texttile.Comments.Comment do
     |> update_change(:body, &String.trim/1)
     |> validate_required([:name, :body])
     |> validate_length(:name, max: 120)
-    |> validate_length(:body, max: 4000)
+    |> validate_length(:body, max: @body_limit)
   end
 
   @doc """
@@ -41,13 +48,17 @@ defmodule Texttile.Comments.Comment do
   def edit_changeset(comment, body) do
     # Trimmed before the cast, not after: the cast reads words that are
     # only spaces as nothing at all, and `update_change` would then trim
-    # a nil.
+    # a nil. A field is one piece of text, and a caller who sends a list
+    # or a map instead has sent nothing.
     comment
-    |> cast(%{body: body |> to_string() |> String.trim()}, [:body])
+    |> cast(%{body: body |> words() |> String.trim()}, [:body])
     |> validate_required([:body])
-    |> validate_length(:body, max: 4000)
+    |> validate_length(:body, max: @body_limit)
     |> put_change(:edited_at, DateTime.utc_now(:second))
   end
+
+  defp words(body) when is_binary(body), do: body
+  defp words(_body), do: ""
 
   @doc "The changeset that also checks the email, for the form's errors."
   def post_changeset(comment, attrs) do

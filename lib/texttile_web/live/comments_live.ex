@@ -32,11 +32,14 @@ defmodule TexttileWeb.CommentsLive do
   end
 
   defp load(socket) do
+    {trashed, trashed_earlier} = Comments.trashed()
+
     socket
     |> assign(:recent, Comments.recent(@shown))
     |> assign(:total, Comments.total_count())
     |> assign(:waiting, Comments.waiting_count())
-    |> assign(:trashed, Comments.trashed())
+    |> assign(:trashed, trashed)
+    |> assign(:trashed_earlier, trashed_earlier)
     |> assign(:require?, Settings.get(:comments_require_confirmation))
   end
 
@@ -71,7 +74,7 @@ defmodule TexttileWeb.CommentsLive do
     case Comments.edit_comment(id, body) do
       {:ok, _comment} -> {:noreply, socket |> close_edit() |> load()}
       {:error, :gone} -> {:noreply, socket |> close_edit() |> load()}
-      {:error, _changeset} -> {:noreply, assign(socket, :edit_error, empty_words())}
+      {:error, changeset} -> {:noreply, assign(socket, :edit_error, edit_error(changeset))}
     end
   end
 
@@ -107,7 +110,7 @@ defmodule TexttileWeb.CommentsLive do
           <.comment_item
             :for={comment <- @recent}
             comment={comment}
-            waiting={waiting?(comment, @require?)}
+            waiting={Comments.waiting?(comment, @require?)}
             article={comment.article}
             editing={@editing == to_string(comment.id)}
             error={@edit_error}
@@ -123,18 +126,24 @@ defmodule TexttileWeb.CommentsLive do
 
         <section :if={@trashed != []} id="commentsTrash">
           <h2 class="set-h">Trash</h2>
-          <p class="note mb-[13px] max-w-[62ch]">{trash_line(length(@trashed))}</p>
+          <p class="note mb-[13px] max-w-[62ch]">
+            {trash_line(length(@trashed) + @trashed_earlier)}
+          </p>
           <.trashed_item :for={comment <- @trashed} comment={comment} />
+          <div
+            :if={@trashed_earlier > 0}
+            class="py-[11px] text-[12.5px] text-faint border-t border-hair"
+          >
+            and {@trashed_earlier} deleted earlier, closer to the day {plural(
+              @trashed_earlier,
+              "it goes",
+              "they go"
+            )} for good.
+          </div>
         </section>
       </div>
     </Layouts.app>
     """
-  end
-
-  # A comment waits while the setting asks for a confirmation, its
-  # reader has not given one, and the desk has not let it through.
-  defp waiting?(comment, require?) do
-    require? and is_nil(comment.address.confirmed_at) and not Comments.released?(comment)
   end
 
   # The line over the trash: what stands there, and for how much longer.
@@ -147,13 +156,12 @@ defmodule TexttileWeb.CommentsLive do
   # The lead line: how many, and where the waiting ones stand.
   defp sub_line(0, _waiting, _require?), do: "The latest comments across all texts, newest first."
 
-  defp sub_line(total, 0, require?) do
-    "#{total} #{plural(total, "comment", "comments")} across all texts, newest first." <>
-      if require? do
-        " Every one of them is confirmed, so readers see them all."
-      else
-        " Readers see every one of them."
-      end
+  # Nothing waits: readers see them all. Not "every one is confirmed" -
+  # a comment the desk let through stands under its text with an
+  # address that never was.
+  defp sub_line(total, 0, _require?) do
+    "#{total} #{plural(total, "comment", "comments")} across all texts, newest first. " <>
+      "Readers see every one of them."
   end
 
   defp sub_line(total, waiting, _require?) do
