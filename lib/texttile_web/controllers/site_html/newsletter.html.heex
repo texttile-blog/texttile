@@ -9,35 +9,52 @@
 
     <%= case @state do %>
       <% :sent -> %>
-        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">Now check your mail.</h2>
+        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">
+          {gettext("Now check your mail.")}
+        </h2>
         <p class="note mt-[8px] leading-[1.6]">
-          One mail is on its way to {@email}. Follow the link in it, and every
-          new text of {site_title()} lands in your mailbox.
+          {gettext(
+            "One mail is on its way to %{email}. Follow the link in it, and every new entry of %{site} lands in your mailbox.",
+            email: @email,
+            site: site_title()
+          )}
         </p>
       <% :retry -> %>
-        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">That did not work.</h2>
+        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">
+          {gettext("That did not work.")}
+        </h2>
         <form id="newsletter-retry" action={~p"/newsletter"} method="post" class="mt-[18px]">
           <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
           <input type="hidden" name="t" value={@t} />
-          <label class="lab block mb-[5px]" for="email">Email</label>
+          <label class="lab block mb-[5px]" for="email">{gettext("Email")}</label>
           <input type="email" id="email" name="email" value={@email} autofocus />
           <p id="newsletter-error" class="text-[12.5px] mt-[7px]" style="color:var(--tt-julia)">
-            That does not look like an email address. Check it and send it again.
+            {gettext("That does not look like an email address. Check it and send it again.")}
           </p>
           <button type="submit" class="btn solid w-full mt-[15px] h-[34px]">
-            Get new entries by mail
+            {gettext("Get new entries by mail")}
           </button>
         </form>
       <% :confirmed -> %>
-        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">You are on the list.</h2>
+        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">
+          {gettext("You are on the list.")}
+        </h2>
         <p class="note mt-[8px] leading-[1.6]">
-          Every new text of {site_title()} now goes to {@email} by mail. Every
-          one of those mails carries the way off the list.
+          {gettext(
+            "Every new entry of %{site} now goes to %{email} by mail. Every one of those mails carries the way off the list.",
+            site: site_title(),
+            email: @email
+          )}
         </p>
       <% :leave -> %>
-        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">Leave the list?</h2>
+        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">
+          {gettext("Leave the list?")}
+        </h2>
         <p class="note mt-[8px] leading-[1.6]">
-          One click, and {@email} gets no more mail from {site_title()}.
+          {gettext("One click, and %{email} gets no more mail from %{site}.",
+            email: @email,
+            site: site_title()
+          )}
         </p>
         <form
           id="unsubscribe"
@@ -46,17 +63,21 @@
           class="mt-[18px]"
         >
           <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
-          <button type="submit" class="btn solid w-full h-[34px]">Take me off the list</button>
+          <button type="submit" class="btn solid w-full h-[34px]">
+            {gettext("Take me off the list")}
+          </button>
         </form>
       <% :left -> %>
-        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">You are off the list.</h2>
+        <h2 class="font-serif text-[19px] font-semibold mt-[26px]">
+          {gettext("You are off the list.")}
+        </h2>
         <p class="note mt-[8px] leading-[1.6]">
-          {site_title()} sends no more mail to this address.
+          {gettext("%{site} sends no more mail to this address.", site: site_title())}
         </p>
     <% end %>
 
     <p class="note mt-[18px] leading-[1.6]">
-      <a href={~p"/"} class="link">Back to {site_title()}</a>
+      <a href={~p"/"} class="link">{gettext("Back to %{site}", site: site_title())}</a>
     </p>
   </div>
 </main>

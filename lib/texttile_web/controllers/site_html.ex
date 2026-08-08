@@ -40,12 +40,12 @@ defmodule TexttileWeb.SiteHTML do
         {@brand.title}
       </a>
       <span :if={@desc != ""} class="site-desc">{@desc}</span>
-      <nav class="site-nav" aria-label="Site">
+      <nav class="site-nav" aria-label={gettext("Site")}>
         <a :if={@home_page} id="menu-home" href={~p"/"} aria-current={@active == :home && "page"}>
-          Home
+          {gettext("Home")}
         </a>
         <a id="menu-texts" href={~p"/blog"} aria-current={@active == :texts && "page"}>
-          Blog
+          {gettext("Blog")}
         </a>
         <a
           :for={page <- @menu_pages}
@@ -75,8 +75,8 @@ defmodule TexttileWeb.SiteHTML do
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
-        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>Sign in</a>
-        <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
+        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Sign in")}</a>
+        <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
       </div>
     </footer>
     """
@@ -106,17 +106,18 @@ defmodule TexttileWeb.SiteHTML do
       )
 
     ~H"""
-    <section class="foot-band" id="foot-band" aria-label="About this blog">
+    <section class="foot-band" id="foot-band" aria-label={gettext("About this blog")}>
       <div class="wrap cols">
-        <div :if={@about_html} id="about" aria-label="About">
-          <p class="f-eyebrow">About</p>
+        <div :if={@about_html} id="about" aria-label={gettext("About")}>
+          <p class="f-eyebrow">{gettext("About")}</p>
           <div class="about-md">{Phoenix.HTML.raw(@about_html)}</div>
         </div>
-        <div id="subscribe" aria-label="Subscribe">
-          <p class="f-eyebrow">Subscribe</p>
+        <div id="subscribe" aria-label={gettext("Subscribe")}>
+          <p class="f-eyebrow">{gettext("Subscribe")}</p>
           <p>
-            You get an email when a new entry goes out, nothing else.
-            Unsubscribe is one click, no questions.
+            {gettext(
+              "You get an email when a new entry goes out, nothing else. Unsubscribe is one click, no questions."
+            )}
           </p>
           <form
             id="newsletter-form"
@@ -140,10 +141,10 @@ defmodule TexttileWeb.SiteHTML do
               name="email"
               class="min-w-0 flex-1"
               placeholder="you@example.org"
-              aria-label="Email for new entries"
+              aria-label={gettext("Email for new entries")}
               required
             />
-            <button class="btn solid flex-none">Subscribe</button>
+            <button class="btn solid flex-none">{gettext("Subscribe")}</button>
           </form>
         </div>
       </div>
@@ -291,19 +292,23 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc "A date the way the example blog writes one: 2 July 2026."
-  def format_date(nil), do: ""
-
-  def format_date(date) do
-    "#{date.day} #{Calendar.strftime(date, "%B %Y")}"
-  end
+  defdelegate format_date(date), to: Texttile.I18n
 
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
   defdelegate lead(article), to: Articles
 
+  @doc """
+  What the strip over an entry that is not live calls its state. The
+  stored word is English and stays English; only what a reader sees
+  changes with the language.
+  """
+  def status_word("draft"), do: gettext("Draft")
+  def status_word("scheduled"), do: gettext("Scheduled")
+  def status_word(other), do: String.capitalize(other)
+
   @doc "The heading of the comments block: the count while there is one."
-  def comment_heading(0), do: "Comments"
-  def comment_heading(1), do: "1 comment"
-  def comment_heading(n), do: "#{n} comments"
+  def comment_heading(0), do: gettext("Comments")
+  def comment_heading(n), do: ngettext("1 comment", "%{count} comments", n)
 
   @doc """
   What a card says about the talking under a text, or nil while nobody
@@ -311,8 +316,7 @@ defmodule TexttileWeb.SiteHTML do
   """
   def comment_count(nil), do: nil
   def comment_count(0), do: nil
-  def comment_count(1), do: "1 comment"
-  def comment_count(n), do: "#{n} comments"
+  def comment_count(n), do: ngettext("1 comment", "%{count} comments", n)
 
   @doc """
   The day a comment arrived, the way the example blog writes it: bare
@@ -322,7 +326,7 @@ defmodule TexttileWeb.SiteHTML do
     date = DateTime.to_date(at)
 
     if date.year == Date.utc_today().year do
-      "#{date.day} #{Calendar.strftime(date, "%B")}"
+      Texttile.I18n.format_day_and_month(date)
     else
       format_date(date)
     end
@@ -331,9 +335,9 @@ defmodule TexttileWeb.SiteHTML do
   @doc "What the count beside the search says: all of it, or n of all."
   def count_label(shown, total) do
     if shown == total do
-      "#{total} #{if total == 1, do: "entry", else: "entries"}"
+      ngettext("1 entry", "%{count} entries", total)
     else
-      "#{shown} of #{total}"
+      gettext("%{shown} of %{total}", shown: shown, total: total)
     end
   end
 

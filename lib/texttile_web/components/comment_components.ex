@@ -6,6 +6,7 @@ defmodule TexttileWeb.CommentComponents do
   """
 
   use Phoenix.Component
+  use Gettext, backend: TexttileWeb.Gettext
 
   alias Texttile.Comments
 
@@ -28,17 +29,17 @@ defmodule TexttileWeb.CommentComponents do
     <div class="py-[14px] border-b border-hair" id={"comment-#{@comment.id}"}>
       <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
         <.writer comment={@comment} />
-        <span :if={@waiting} class="wait">not confirmed yet</span>
+        <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
         <span class="font-normal text-faint text-[12.5px]">
           <span class="num">{Calendar.strftime(@comment.inserted_at, "%Y-%m-%d %H:%M")}</span>
           <%= if @article do %>
-            · on
+            · {pgettext("before the title of an entry", "on")}
             <.link navigate={"/admin/texts/#{@article.id}?tab=comments"} class="link">
               {Texttile.Articles.display_title(@article)}
             </.link>
           <% end %>
-          <span :if={Comments.released?(@comment)}>· let through</span>
-          <span :if={Comments.edited?(@comment)}>· edited</span>
+          <span :if={Comments.released?(@comment)}>· {gettext("let through")}</span>
+          <span :if={Comments.edited?(@comment)}>· {gettext("edited")}</span>
         </span>
       </div>
 
@@ -58,14 +59,14 @@ defmodule TexttileWeb.CommentComponents do
             rows="4"
             maxlength={Comments.body_limit()}
             class="w-full font-serif text-[15.5px] leading-[1.55]"
-            aria-label="The words of the comment"
+            aria-label={gettext("The words of the comment")}
             autofocus
           >{@comment.body}</textarea>
         </div>
         <p :if={@error} class="hint text-accent" id={"edit-error-#{@comment.id}"}>{@error}</p>
         <div class="mt-[9px] btn-row">
-          <button class="btn sm solid">Save</button>
-          <button type="button" class="btn sm" phx-click="cancel_edit">Cancel</button>
+          <button class="btn sm solid">{gettext("Save")}</button>
+          <button type="button" class="btn sm" phx-click="cancel_edit">{gettext("Cancel")}</button>
         </div>
       </form>
 
@@ -80,17 +81,19 @@ defmodule TexttileWeb.CommentComponents do
       <%!-- three actions on every row would shout in a list this long,
            so they are quiet like the Restore of a version --%>
       <div :if={!@editing} class="mt-[7px] btn-row -ml-[10px]">
-        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>Edit</button>
+        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
+          {gettext("Edit")}
+        </button>
         <button
           :if={@waiting}
           class="btn quiet sm"
           phx-click="release_comment"
           phx-value-id={@comment.id}
         >
-          Release
+          {gettext("Release")}
         </button>
         <button class="btn quiet sm" phx-click="delete_comment" phx-value-id={@comment.id}>
-          Delete
+          {gettext("Delete")}
         </button>
       </div>
     </div>
@@ -110,7 +113,12 @@ defmodule TexttileWeb.CommentComponents do
     assigns = assign(assigns, :email, email_of(assigns.comment))
 
     ~H"""
-    <a :if={@email} class="writer" href={"mailto:#{@email}"} title={"Write to #{@email}"}>
+    <a
+      :if={@email}
+      class="writer"
+      href={"mailto:#{@email}"}
+      title={gettext("Write to %{email}", email: @email)}
+    >
       {@comment.name}
     </a>
     <span :if={!@email}>{@comment.name}</span>
@@ -133,11 +141,11 @@ defmodule TexttileWeb.CommentComponents do
         <.writer comment={@comment} />
         <span class="font-normal text-faint text-[12.5px]">
           <span class="num">{Calendar.strftime(@comment.inserted_at, "%Y-%m-%d %H:%M")}</span>
-          · on
+          · {pgettext("before the title of an entry", "on")}
           <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="link">
             {Texttile.Articles.display_title(@comment.article)}
           </.link>
-          · goes for good on
+          · {gettext("goes for good on")}
           <span class="num">{Calendar.strftime(@comment.delete_after, "%Y-%m-%d")}</span>
         </span>
       </div>
@@ -146,7 +154,7 @@ defmodule TexttileWeb.CommentComponents do
       </p>
       <div class="mt-[7px] -ml-[10px]">
         <button class="btn quiet sm" phx-click="restore_comment" phx-value-id={@comment.id}>
-          Restore
+          {gettext("Restore")}
         </button>
       </div>
     </div>
@@ -159,19 +167,17 @@ defmodule TexttileWeb.CommentComponents do
   time, and can take a deleted comment back out of the trash.
   """
   def comment_rule(true = _require_confirmation?) do
-    "Readers confirm their email first. A comment stays out of the entry until " <>
-      "the reader follows the link in the mail. Until then only you see it, " <>
-      "marked \"not confirmed yet\", and Release puts that one comment under the " <>
-      "entry without waiting. Delete keeps a comment in the trash for " <>
-      "#{Comments.trash_days()} days, silently, and then it is gone. Spam is filtered " <>
-      "by honeypot, timing and rate limit checks. No captcha, ever."
+    gettext(
+      "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever.",
+      days: Comments.trash_days()
+    )
   end
 
   def comment_rule(false) do
-    "A comment appears under the entry the moment a reader sends it, and nobody " <>
-      "confirms anything. Delete keeps a comment in the trash for " <>
-      "#{Comments.trash_days()} days, silently, and then it is gone. Spam is filtered " <>
-      "by honeypot, timing and rate limit checks. No captcha, ever."
+    gettext(
+      "A comment appears under the entry the moment a reader sends it, and nobody confirms anything. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever.",
+      days: Comments.trash_days()
+    )
   end
 
   @doc """
@@ -181,13 +187,15 @@ defmodule TexttileWeb.CommentComponents do
   """
   def delete_dialog(comment) do
     %{
-      title: "Delete the comment of #{comment.name}?",
+      title: gettext("Delete the comment of %{name}?", name: comment.name),
       body: [
-        "It removes the comment from the entry at once, and the reader is not told.",
-        "The trash on the Comments screen keeps it for #{Comments.trash_days()} days. " <>
-          "Restore puts it back where it stood; after that it is gone for good."
+        gettext("It removes the comment from the entry at once, and the reader is not told."),
+        gettext(
+          "The trash on the Comments screen keeps it for %{days} days. Restore puts it back where it stood; after that it is gone for good.",
+          days: Comments.trash_days()
+        )
       ],
-      ok: "Delete the comment",
+      ok: gettext("Delete the comment"),
       event: "confirm_delete_comment",
       value: comment.id
     }
@@ -201,13 +209,15 @@ defmodule TexttileWeb.CommentComponents do
     case Keyword.get(changeset.errors, :body) do
       {_message, opts} ->
         if Keyword.get(opts, :validation) == :length do
-          "A comment holds #{Keyword.get(opts, :count)} characters at most. Nothing was saved."
+          gettext("A comment holds %{count} characters at most. Nothing was saved.",
+            count: Keyword.get(opts, :count)
+          )
         else
-          "A comment needs some words. Nothing was saved."
+          gettext("A comment needs some words. Nothing was saved.")
         end
 
       nil ->
-        "Those words were not saved."
+        gettext("Those words were not saved.")
     end
   end
 end

@@ -1,9 +1,10 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
   <div class="wrap narrow pt-[46px] pb-[var(--tt-sec)]">
-    <h1 class="f-h1">Nothing here</h1>
+    <h1 class="f-h1">{gettext("Nothing here")}</h1>
     <p class="f-body mt-4">
-      There is no text at this address. <a class="link" href={~p"/"}>Back to the front page</a>.
+      {gettext("There is no text at this address.")}
+      <a class="link" href={~p"/"}>{gettext("Back to the front page")}</a>.
     </p>
   </div>
 </main>

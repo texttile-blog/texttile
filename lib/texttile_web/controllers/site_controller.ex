@@ -247,7 +247,7 @@ defmodule TexttileWeb.SiteController do
     case Comments.confirm(token) do
       {:ok, %Article{status: "published"} = article} ->
         conn
-        |> put_flash(:comment_note, "Confirmed. Your comment is under the entry now.")
+        |> put_flash(:comment_note, gettext("Confirmed. Your comment is under the entry now."))
         |> redirect(to: comments_anchor(article))
 
       {:ok, _gone} ->
@@ -322,9 +322,9 @@ defmodule TexttileWeb.SiteController do
 
     note =
       if waiting? do
-        "Sent. Follow the link in your mail and your comment appears under the entry."
+        gettext("Sent. Follow the link in your mail and your comment appears under the entry.")
       else
-        "Sent. Your comment is under the entry now."
+        gettext("Sent. Your comment is under the entry now.")
       end
 
     put_flash(conn, :comment_note, note)
@@ -395,7 +395,7 @@ defmodule TexttileWeb.SiteController do
 
   defp newsletter_page(conn, state, email, extra \\ []) do
     conn
-    |> assign(:page_title, "Newsletter")
+    |> assign(:page_title, gettext("Newsletter"))
     |> render(:newsletter,
       state: state,
       email: email,
@@ -643,18 +643,19 @@ defmodule TexttileWeb.SiteController do
   # The line under the form. Signed in, the account answers for the
   # address, so there is no link to follow and nothing to confirm.
   defp comment_rule(nil, true) do
-    "Your address is never published. You get one link by mail, and " <>
-      "your comment appears under the entry once you follow it."
+    gettext(
+      "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it."
+    )
   end
 
   defp comment_rule(nil, false) do
-    "Your address is never published. Your comment appears under the entry at once."
+    gettext("Your address is never published. Your comment appears under the entry at once.")
   end
 
   defp comment_rule(_user, _require?) do
-    "You are signed in, so your name and your address come from your " <>
-      "account. Your address is never published, and your comment " <>
-      "appears under the entry at once."
+    gettext(
+      "You are signed in, so your name and your address come from your account. Your address is never published, and your comment appears under the entry at once."
+    )
   end
 
   # The account writing the comment, as the form draws it: the name and
@@ -682,7 +683,7 @@ defmodule TexttileWeb.SiteController do
       nil ->
         conn
         |> put_status(:not_found)
-        |> assign(:page_title, "Not found")
+        |> assign(:page_title, gettext("Not found"))
         |> assign(:active, nil)
         # An address that holds nothing is no page of the blog, so it
         # is nothing the counter should hear about.

@@ -4,10 +4,11 @@
        for nobody else. The strip says so before the first line, because
        everything under it looks exactly like the published thing. --%>
   <p :if={@article.status != "published"} class="notlive" id="not-live">
-    <b>{String.capitalize(@article.status)}.</b>
-    This is the entry as it was last saved. Only somebody signed in can open
-    this address; a reader gets a 404.
-    <a href={~p"/admin/texts/#{@article.id}"}>Back to the editor</a>
+    <b>{status_word(@article.status)}.</b>
+    {gettext(
+      "This is the entry as it was last saved. Only somebody signed in can open this address; a reader gets a 404."
+    )}
+    <a href={~p"/admin/texts/#{@article.id}"}>{gettext("Back to the editor")}</a>
   </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
@@ -30,7 +31,7 @@
           class="edit-link"
           href={~p"/admin/texts/#{@article.id}"}
         >
-          Edit
+          {gettext("Edit")}
         </a>
       </p>
 
@@ -70,16 +71,16 @@
          the first block under it. It stands first because "keep
          reading" is what most readers want next. --%>
     <div :if={@older || @newer} class="wrap mt-[44px]">
-      <nav class="textnav" aria-label="More entries">
+      <nav class="textnav" aria-label={gettext("More entries")}>
         <div class="pv">
           <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
-            <span class="lab">Previous</span>
+            <span class="lab">{gettext("Previous")}</span>
             <span class="t">{Articles.display_title(@older)}</span>
           </a>
         </div>
         <div class="nx">
           <a :if={@newer} id="next-post" href={Articles.public_path(@newer)} rel="next">
-            <span class="lab">Next</span>
+            <span class="lab">{gettext("Next")}</span>
             <span class="t">{Articles.display_title(@newer)}</span>
           </a>
         </div>
@@ -89,16 +90,23 @@
     <%!-- the comments: what the rule shows to everybody, the reader's
          own waiting ones on top, and the form. No JavaScript in it;
          posting is a plain form round trip. --%>
-    <section :if={@comments} class="wrap narrow mt-[54px]" id="comments" aria-label="Comments">
+    <section
+      :if={@comments}
+      class="wrap narrow mt-[54px]"
+      id="comments"
+      aria-label={gettext("Comments")}
+    >
       <%!-- nothing said yet is nothing to head: the section starts at
            the form, and the heading arrives with the first comment --%>
       <h2 :if={@comments != []} id="comment-count" class="f-sec-h mb-4">
         {comment_heading(@comment_count)}
       </h2>
       <p :if={@comment_earlier > 0} class="f-note mb-2">
-        The {@comment_earlier} earliest {if @comment_earlier == 1,
-          do: "comment is",
-          else: "comments are"} not shown here.
+        {ngettext(
+          "The earliest comment is not shown here.",
+          "The %{count} earliest comments are not shown here.",
+          @comment_earlier
+        )}
       </p>
       <div :if={@comments != []} class="mt-[6px]">
         <div
@@ -108,7 +116,9 @@
         >
           <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
             {comment.name}
-            <span :if={kind == :own} class="wait">waiting for your confirmation</span>
+            <span :if={kind == :own} class="wait">
+              {gettext("waiting for your confirmation")}
+            </span>
             <span :if={kind == :shown} class="font-normal text-dim text-[12.5px]">
               {comment_when(comment.inserted_at)}
             </span>
@@ -117,11 +127,11 @@
             {comment.body}
           </p>
           <p :if={kind == :own} class="f-note mt-[6px]">
-            Only you see this. Follow the link in the mail and everybody sees it.
+            {gettext("Only you see this. Follow the link in the mail and everybody sees it.")}
           </p>
         </div>
       </div>
-      <h2 class={["f-sec-h mb-4", @comments != [] && "mt-10"]}>Post a comment</h2>
+      <h2 class={["f-sec-h mb-4", @comments != [] && "mt-10"]}>{gettext("Post a comment")}</h2>
       <form id="comment-form" action={~p"/comments/#{@article.id}"} method="post">
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
@@ -135,8 +145,8 @@
             name="name"
             id="comment-name"
             value={(@comment_author && @comment_author.name) || @comment_values["name"]}
-            placeholder="Name"
-            aria-label="Name"
+            placeholder={gettext("Name")}
+            aria-label={gettext("Name")}
             maxlength="120"
             required={!@comment_author}
             disabled={!!@comment_author}
@@ -146,8 +156,8 @@
             name="email"
             id="comment-email"
             value={(@comment_author && @comment_author.email) || @comment_values["email"]}
-            placeholder="Email, not public"
-            aria-label="Email"
+            placeholder={gettext("Email, not public")}
+            aria-label={gettext("Email")}
             required={!@comment_author}
             disabled={!!@comment_author}
           />
@@ -164,8 +174,8 @@
         <textarea
           name="body"
           rows="2"
-          placeholder="Say something"
-          aria-label="Comment"
+          placeholder={gettext("Say something")}
+          aria-label={gettext("Comment")}
           maxlength="4000"
           required
         >{@comment_values["body"]}</textarea>
@@ -176,11 +186,12 @@
           id="comment-error"
           style="color:var(--tt-julia)"
         >
-          A comment needs a name, an email address and some words. Check the form and send it
-          again.
+          {gettext(
+            "A comment needs a name, an email address and some words. Check the form and send it again."
+          )}
         </p>
         <p class="mt-[10px] btn-row">
-          <button class="btn solid">Post comment</button>
+          <button class="btn solid">{gettext("Post comment")}</button>
           <span :if={@comment_note} class="f-note" id="comment-note">{@comment_note}</span>
         </p>
       </form>
@@ -201,17 +212,21 @@
   hidden
   role="dialog"
   aria-modal="true"
-  aria-label="Full size"
+  aria-label={gettext("Full size")}
 >
   <div class="lb-bar">
     <span class="num" id="lbCount"></span>
     <span class="sp"></span>
-    <button class="lb-btn" type="button" id="lbClose">Close</button>
+    <button class="lb-btn" type="button" id="lbClose">{gettext("Close")}</button>
   </div>
   <div class="lb-stage" id="lbStage">
-    <button class="lb-arrow" type="button" id="lbPrev" aria-label="Previous tile">‹</button>
+    <button class="lb-arrow" type="button" id="lbPrev" aria-label={gettext("Previous tile")}>
+      ‹
+    </button>
     <div class="lb-img" id="lbArt"></div>
-    <button class="lb-arrow" type="button" id="lbNext" aria-label="Next tile">›</button>
+    <button class="lb-arrow" type="button" id="lbNext" aria-label={gettext("Next tile")}>
+      ›
+    </button>
   </div>
   <p class="lb-cap" id="lbCap"></p>
 </div>

@@ -13,6 +13,8 @@ defmodule Texttile.I18n do
   as a key.
   """
 
+  use Gettext, backend: TexttileWeb.Gettext
+
   alias Texttile.Settings
 
   # This list is the whole language model: one entry per translation
@@ -55,5 +57,78 @@ defmodule Texttile.I18n do
     locale = site_locale()
     Gettext.put_locale(TexttileWeb.Gettext, locale)
     locale
+  end
+
+  ## The words in a date
+
+  # Elixir writes month names in English and takes no other language,
+  # so the twelve names are translated here and the dates are built out
+  # of them. The feed keeps English on purpose: RFC 822 asks for it.
+  @months ~w(January February March April May June July August September October November December)
+  @short_months ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
+
+  @doc "The name of a month, 1 to 12."
+  def month_name(number) when number in 1..12 do
+    Gettext.gettext(TexttileWeb.Gettext, Enum.at(@months, number - 1))
+  end
+
+  @doc "The short name of a month, 1 to 12: what fits in a row of twelve."
+  def short_month_name(number) when number in 1..12 do
+    Gettext.gettext(TexttileWeb.Gettext, Enum.at(@short_months, number - 1))
+  end
+
+  @doc """
+  A date the way the reader pages write one: 2 July 2026. German puts
+  a dot behind the day, so the shape belongs to the language too.
+  """
+  def format_date(nil), do: ""
+
+  def format_date(date) do
+    gettext("%{day} %{month} %{year}",
+      day: date.day,
+      month: month_name(date.month),
+      year: date.year
+    )
+  end
+
+  @doc "The same date without the year, for a day inside the current one."
+  def format_day_and_month(date) do
+    gettext("%{day} %{month}", day: date.day, month: month_name(date.month))
+  end
+
+  @doc "A day in a chart: the number and the short month."
+  def format_short_day(date) do
+    gettext("%{day} %{month}", day: date.day, month: short_month_name(date.month))
+  end
+
+  # The twelve names, listed for the extractor: month_name/1 asks for
+  # them by a value, so nothing else here is a literal it could read.
+  @doc false
+  def month_catalogue do
+    [
+      gettext_noop("January"),
+      gettext_noop("February"),
+      gettext_noop("March"),
+      gettext_noop("April"),
+      gettext_noop("May"),
+      gettext_noop("June"),
+      gettext_noop("July"),
+      gettext_noop("August"),
+      gettext_noop("September"),
+      gettext_noop("October"),
+      gettext_noop("November"),
+      gettext_noop("December"),
+      gettext_noop("Jan"),
+      gettext_noop("Feb"),
+      gettext_noop("Mar"),
+      gettext_noop("Apr"),
+      gettext_noop("Jun"),
+      gettext_noop("Jul"),
+      gettext_noop("Aug"),
+      gettext_noop("Sep"),
+      gettext_noop("Oct"),
+      gettext_noop("Nov"),
+      gettext_noop("Dec")
+    ]
   end
 end
