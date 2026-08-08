@@ -14,6 +14,9 @@ defmodule TexttileWeb.StatsComponents do
   One bar per day of the window, oldest left, with the two dates that
   bound it under the row. The busiest bar carries the accent, so the
   shape of the month reads without reading a number.
+
+  A window nobody read holds no chart. Thirty flat stubs under an
+  empty box say less than one line does, and they read as a fault.
   """
   attr :id, :string, required: true
   attr :days, :list, required: true
@@ -22,18 +25,24 @@ defmodule TexttileWeb.StatsComponents do
     assigns = assign(assigns, :max, Enum.max(Enum.map(assigns.days, & &1.views), fn -> 0 end))
 
     ~H"""
-    <div id={@id} class="flex items-end gap-[3px] h-[132px] pt-[18px] pb-[6px]">
-      <i
-        :for={day <- @days}
-        class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(day.views, @max)]}
-        style={"height:#{height(day.views, @max)}%"}
-        title={"#{day_label(day.day)}: #{day.views} #{views_word(day.views)}"}
-      >
-      </i>
-    </div>
-    <div class="flex justify-between text-[12px] text-faint pb-2 border-b border-hair">
-      <span>{day_label(List.first(@days).day)}</span>
-      <span>{day_label(List.last(@days).day)}</span>
+    <p :if={@max == 0} class="note" id={"#{@id}Empty"}>
+      Nothing counted in these days yet. The first reader who opens a page
+      draws the first bar.
+    </p>
+    <div :if={@max > 0}>
+      <div id={@id} class="flex items-end gap-[3px] h-[132px] pt-[18px] pb-[6px]">
+        <i
+          :for={day <- @days}
+          class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(day.views, @max)]}
+          style={"height:#{height(day.views, @max)}%"}
+          title={"#{day_label(day.day)}: #{day.views} #{views_word(day.views)}"}
+        >
+        </i>
+      </div>
+      <div class="flex justify-between text-[12px] text-faint pb-2 border-b border-hair">
+        <span>{day_label(List.first(@days).day)}</span>
+        <span>{day_label(List.last(@days).day)}</span>
+      </div>
     </div>
     """
   end

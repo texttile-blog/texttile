@@ -63,6 +63,16 @@ defmodule TexttileWeb.EditorStatsTest do
     assert chart |> String.split("<i ") |> length() == 15
   end
 
+  test "an entry nobody has read yet shows a line, not an empty chart", %{conn: conn} do
+    article = published_post(%{title: "Concrete flowers"})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=stats")
+
+    assert has_element?(view, "#tpFigViews", "0")
+    assert has_element?(view, "#tpDayChartEmpty")
+    refute has_element?(view, "#tpDayChart")
+  end
+
   test "the referrers are the entry's own", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
     other = published_post(%{title: "Slow trains"})

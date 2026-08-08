@@ -1675,7 +1675,7 @@ defmodule TexttileWeb.EditorLive do
                 <h2 class="sec-h">Views, last 14 days</h2>
                 <.day_chart id="tpDayChart" days={@stats.days} />
 
-                <h2 class="sec-h">Referrers</h2>
+                <h2 class="sec-h">Referrers, last 14 days</h2>
                 <p :if={@stats.referrers == []} class="note" id="tpReferrersEmpty">
                   Nothing counted yet, so there is nowhere readers came from.
                 </p>

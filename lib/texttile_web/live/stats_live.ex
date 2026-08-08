@@ -5,8 +5,8 @@ defmodule TexttileWeb.StatsLive do
 
   Three figures for the last thirty days, a bar for every day of them,
   the most read entries of all time, where the readers came from, and
-  the pages that are no entry. The design comes from the round-14
-  prototype.
+  the addresses that are no entry: the front door, the list, the tag
+  archives. The design comes from the round-14 prototype.
 
   The screen shows what it loaded. Numbers that move while somebody
   watches them are a distraction, not a report.
@@ -71,7 +71,7 @@ defmodule TexttileWeb.StatsLive do
         <h2 class="sec-h">Views, last {@window} days</h2>
         <.day_chart id="dayChart" days={@days} />
 
-        <h2 class="sec-h">Top entries</h2>
+        <h2 class="sec-h">Top entries, all time</h2>
         <p :if={@top == []} class="note" id="topEmpty">
           No entry has been read yet. The first reader who opens one puts it here.
         </p>
@@ -80,18 +80,20 @@ defmodule TexttileWeb.StatsLive do
             <thead>
               <tr>
                 <th>Entry</th>
-                <th class="text-right num">Published</th>
+                <th class="text-right num hidden sm:table-cell">Published</th>
                 <th class="text-right num">Views</th>
-                <th class="text-right num">Comments</th>
+                <th class="text-right num hidden sm:table-cell">Comments</th>
                 <th class="text-right"><span class="sr">Details</span></th>
               </tr>
             </thead>
             <tbody>
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <td>{Articles.display_title(row.article)}</td>
-                <td class="text-right num">{row.article.publish_date}</td>
+                <td class="text-right num hidden sm:table-cell">{row.article.publish_date}</td>
                 <td class="text-right num">{number(row.views)}</td>
-                <td class="text-right num">{Map.get(@comment_counts, row.article.id, 0)}</td>
+                <td class="text-right num hidden sm:table-cell">
+                  {Map.get(@comment_counts, row.article.id, 0)}
+                </td>
                 <td class="text-right">
                   <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
                     details
@@ -102,13 +104,13 @@ defmodule TexttileWeb.StatsLive do
           </table>
         </div>
 
-        <h2 class="sec-h">Referrers</h2>
+        <h2 class="sec-h">Referrers, last {@window} days</h2>
         <p :if={@referrers == []} class="note" id="referrersEmpty">
           Nothing counted yet, so there is nowhere readers came from.
         </p>
         <.referrer_table :if={@referrers != []} id="referrers" rows={@referrers} />
 
-        <h2 :if={@pages != []} class="sec-h">Pages that are no entry</h2>
+        <h2 :if={@pages != []} class="sec-h">Other addresses, last {@window} days</h2>
         <div :if={@pages != []} class="overflow-x-auto">
           <table id="otherPages">
             <thead>

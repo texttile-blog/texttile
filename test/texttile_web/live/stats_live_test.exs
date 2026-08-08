@@ -32,6 +32,11 @@ defmodule TexttileWeb.StatsLiveTest do
     assert has_element?(view, "#topEmpty")
     assert has_element?(view, "#referrersEmpty")
     assert has_element?(view, "#statsRule")
+
+    # An empty chart is thirty flat stubs under an empty box: one line
+    # says more, so the chart stays away until there is one bar.
+    assert has_element?(view, "#dayChartEmpty")
+    refute has_element?(view, "#dayChart")
   end
 
   test "the wordmark menu carries the entry with its key", %{conn: conn} do
