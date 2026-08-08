@@ -72,9 +72,9 @@ defmodule TexttileWeb.SiteHTML do
     <footer class="border-t border-rule">
       <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
-        <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
         <span class="sp"></span>
-        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
+        <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
+        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Sign in</a>
         <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
       </div>
     </footer>
