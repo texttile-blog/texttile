@@ -182,8 +182,12 @@ defmodule Texttile.Comments do
             |> Repo.update!()
 
           # Everything this address wrote stands under its text from
-          # this moment, so this is when the blog hears about it.
-          Enum.each(waiting_of(address), &notify_admins/1)
+          # this moment, so this is when the blog hears about it. Not
+          # while the setting is off: the words were already under the
+          # text when they arrived, and they travelled then.
+          if Settings.get(:comments_require_confirmation) do
+            Enum.each(waiting_of(address), &notify_admins/1)
+          end
 
           broadcast({:comments_confirmed, address.id})
         end

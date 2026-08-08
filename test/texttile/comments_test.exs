@@ -267,6 +267,22 @@ defmodule Texttile.CommentsTest do
       assert mail.text_body =~ "One more thing"
     end
 
+    # An address may hold a link from a time when the blog asked for
+    # one. Following it later must not mail words that travelled the
+    # moment they arrived.
+    test "with confirmation off, a late confirmation mails nothing twice" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      comment = post!(article)
+      assert admin_mail()
+
+      {:ok, _article} = Comments.confirm(comment.address.token)
+
+      refute admin_mail(300)
+    end
+
     test "switched off in the settings, nothing is mailed" do
       {:ok, _} = Settings.put(:notify_on_comment, false)
       {:ok, _} = Settings.put(:comments_require_confirmation, false)

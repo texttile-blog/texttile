@@ -446,7 +446,9 @@ const impl = {
       e.preventDefault()
       const row = mediaRow()
       const at = row.findIndex(item => item.original === thumb.dataset.url)
-      openMedia(row, at < 0 ? 0 : at)
+      /* held, so the editor takes it with it: the dialog lives on the
+         body, outside everything LiveView tears down */
+      this.lightbox = openMedia(row, at < 0 ? 0 : at)
     }
 
     this.el.addEventListener("mousedown", this.onThumbDown)
@@ -751,6 +753,7 @@ const impl = {
     if (this.onPanelClick) document.removeEventListener("click", this.onPanelClick)
     if (this.onThumbDown) this.el.removeEventListener("mousedown", this.onThumbDown)
     if (this.onThumbClick) this.el.removeEventListener("click", this.onThumbClick)
+    if (this.lightbox) this.lightbox.close()
     if (this.uploads) {
       for (const entry of this.uploads.values()) {
         if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }

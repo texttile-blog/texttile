@@ -8,13 +8,13 @@
            has no date and no tags, so there the line is the way in and
            nothing else. --%>
       <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
-        <span :if={@article.type == "post"} class="num">
-          {format_date(@article.publish_date)}
-        </span>
-        <span :if={@article.type == "post" && Articles.tag_list(@article) != []}>·</span>
-        <span :for={tag <- Articles.tag_list(@article)}>
-          <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>
-        </span>
+        <%= if @article.type == "post" do %>
+          <span class="num">{format_date(@article.publish_date)}</span>
+          <span :if={Articles.tag_list(@article) != []}>·</span>
+          <span :for={tag <- Articles.tag_list(@article)}>
+            <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>
+          </span>
+        <% end %>
         <a
           :if={@current_scope}
           id="edit-text"

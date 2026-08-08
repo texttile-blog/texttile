@@ -14,6 +14,8 @@ defmodule Texttile.Comments.Notifier do
 
   import Swoosh.Email
 
+  require Logger
+
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Mailer
@@ -50,17 +52,20 @@ defmodule Texttile.Comments.Notifier do
 
   @doc """
   Mails the comment to everybody who runs the blog. Every account here
-  carries an address, so every account gets one. Answers the accounts
-  the mail reached.
+  carries an address, so every account gets one.
   """
   def deliver_to_admins(comment) do
     site = Settings.site_title()
     title = Articles.display_title(comment.article)
     body = admin_body(comment, site, title)
 
-    Enum.filter(Accounts.list_users(), &deliver_one(&1, site, "New comment on #{title}", body))
+    Enum.each(Accounts.list_users(), &deliver_one(&1, site, "New comment on #{title}", body))
   end
 
+  # A refused mail is nothing this can repair, and nothing the reader
+  # who wrote the comment may ever hear about. The least it owes the
+  # person running the site is a line in the log, the way the
+  # newsletter writes one.
   defp deliver_one(user, site, subject, body) do
     email =
       new()
@@ -69,7 +74,10 @@ defmodule Texttile.Comments.Notifier do
       |> subject(subject)
       |> text_body(body)
 
-    match?({:ok, _metadata}, Mailer.deliver(email))
+    case Mailer.deliver(email) do
+      {:ok, _metadata} -> :ok
+      other -> Logger.error("comment mail did not reach account #{user.id}: #{inspect(other)}")
+    end
   end
 
   defp admin_body(comment, site, title) do

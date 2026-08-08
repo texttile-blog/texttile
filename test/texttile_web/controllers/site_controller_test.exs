@@ -272,13 +272,16 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     test "the Edit link stands on a page too, which carries no date", %{conn: conn} do
-      page = published_page(title: "About", slug: "about-me")
+      # a text that was a post once may still carry tags; as a page it
+      # wears neither them nor a date
+      page = published_page(title: "About", slug: "about-me", tags: "sea")
       conn = log_in_user(conn, user_fixture())
 
       html = conn |> get(~p"/about-me") |> html_response(200)
 
       assert html =~ ~s(id="edit-text")
       assert html =~ ~s(href="/admin/texts/#{page.id}")
+      refute html =~ ~s(href="/tags/sea")
     end
   end
 

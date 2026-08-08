@@ -138,13 +138,17 @@ class MediaLightbox {
     original.hidden = !item.original
   }
 
+  /* closing twice is no error: the editor closes whatever it holds
+     when it goes, and the way out may have run already */
   close() {
+    if (!this.root) return
     /* a film that goes on playing behind a closed lightbox would be
        heard and never seen */
     const film = this.art.querySelector("video")
     if (film) film.pause()
     this.root.close()
     this.root.remove()
+    this.root = null
     document.body.classList.remove("has-overlay")
   }
 }

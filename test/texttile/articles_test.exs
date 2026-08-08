@@ -358,6 +358,14 @@ defmodule Texttile.ArticlesTest do
       assert Articles.known_tags() == ["doors", "fog"]
     end
 
+    test "delete_tag/1 leaves a tag that only holds the word inside it" do
+      {one, _} = draft()
+      {:ok, _} = Articles.update_settings(one, %{tags: "seawall, sea"})
+
+      assert Articles.delete_tag("sea") == 1
+      assert Articles.get_article!(one.id).tags == "seawall"
+    end
+
     test "delete_tag/1 answers zero for a tag no text carries" do
       {one, _} = draft()
       {:ok, _} = Articles.update_settings(one, %{tags: "sea"})

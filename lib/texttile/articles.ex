@@ -237,7 +237,14 @@ defmodule Texttile.Articles do
     if wanted == "" do
       0
     else
+      # The like narrows the rows the database hands over; a text
+      # carries its whole body, and a blog of five hundred of them is
+      # no reason to read them all. The word itself is checked after
+      # that, so "sea" never takes "seawall" with it.
+      like = "%#{wanted}%"
+
       Article
+      |> where([a], like(fragment("lower(?)", a.tags), ^like))
       |> Repo.all()
       |> Enum.filter(&(wanted in tag_list(&1)))
       |> Enum.map(&drop_tag(&1, wanted))
