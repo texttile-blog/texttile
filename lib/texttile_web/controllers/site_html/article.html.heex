@@ -1,6 +1,6 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
-  <article id="text">
+  <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
       <%!-- the line under the title: the day, the tags, and for the
@@ -51,23 +51,31 @@
       </div>
     </figure>
 
-    <%!-- the way along the row of posts: older on the left, newer on
-         the right, each with the title it leads to --%>
-    <nav
-      :if={@older || @newer}
-      class="wrap narrow mt-[46px] pt-4 border-t border-rule f-nextprev"
-      aria-label="More texts"
-    >
-      <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
-        <span class="f-note">Previous text</span>
-        <span class="t">{Articles.display_title(@older)}</span>
-      </a>
-      <span class="sp"></span>
-      <a :if={@newer} id="next-post" href={Articles.public_path(@newer)} rel="next">
-        <span class="f-note">Next text</span>
-        <span class="t">{Articles.display_title(@newer)}</span>
-      </a>
-    </nav>
+    <%!-- The way along the row of posts: older on the left, newer on
+         the right, each with the title it leads to.
+
+         It is drawn as a strip, not as a section: a rule over it and a
+         rule under it, the width of the gallery instead of the width
+         of the reading column. Nothing else on the page has that left
+         edge, so the eye takes it for the end of the text and not for
+         the first block under it. It stands first because "keep
+         reading" is what most readers want next. --%>
+    <div :if={@older || @newer} class="wrap mt-[44px]">
+      <nav class="textnav" aria-label="More texts">
+        <div class="pv">
+          <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
+            <span class="lab">Previous text</span>
+            <span class="t">{Articles.display_title(@older)}</span>
+          </a>
+        </div>
+        <div class="nx">
+          <a :if={@newer} id="next-post" href={Articles.public_path(@newer)} rel="next">
+            <span class="lab">Next text</span>
+            <span class="t">{Articles.display_title(@newer)}</span>
+          </a>
+        </div>
+      </nav>
+    </div>
 
     <%!-- the comments: what the rule shows to everybody, the reader's
          own waiting ones on top, and the form. No JavaScript in it;
@@ -162,13 +170,8 @@
     </section>
   </article>
 
-  <section :if={assigns[:about_html]} class="wrap narrow mt-[54px]" id="about" aria-label="About">
-    <h2 class="f-sec-h">About</h2>
-    <div class="f-body about-md mt-4">{Phoenix.HTML.raw(@about_html)}</div>
-  </section>
-
-  <%!-- the last thing on the page: the one email this blog sends --%>
-  <.site_subscribe />
+  <%!-- the second zone: what belongs to the blog and not to the text --%>
+  <.site_band about_html={assigns[:about_html]} />
 </main>
 <.site_foot current_scope={@current_scope} />
 

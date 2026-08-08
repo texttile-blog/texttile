@@ -234,6 +234,26 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ ~s(id="about")
     end
 
+    # Everything above the band belongs to the text, everything on it
+    # belongs to the blog. About and Subscribe stand there side by
+    # side, out of the reading column and on a ground of their own.
+    test "About and Subscribe stand on the band under the text", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+      {:ok, _} = Settings.put(:about_markdown, "We are kb and julia.")
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+
+      assert html =~ ~s(id="foot-band")
+      assert html =~ ~s(id="about")
+      assert html =~ ~s(id="subscribe")
+
+      {band_at, _} = :binary.match(html, ~s(id="foot-band"))
+      {about_at, _} = :binary.match(html, ~s(id="about"))
+      {comments_at, _} = :binary.match(html, ~s(id="comments"))
+      assert comments_at < band_at
+      assert band_at < about_at
+    end
+
     test "a reader never sees the way to the desk", %{conn: conn} do
       published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
 
@@ -278,6 +298,9 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ Texttile.Articles.public_path(old)
       assert html =~ ~s(id="next-post")
       assert html =~ Texttile.Articles.public_path(new)
+      # the strip that ends a text: the width of the gallery, not of
+      # the reading column
+      assert html =~ ~s(class="textnav")
     end
 
     test "the newest post has nothing newer, the oldest nothing older", %{conn: conn} do

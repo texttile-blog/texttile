@@ -164,4 +164,46 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     |> visit(Articles.public_path(article))
     |> assert_has("video.bodyvid[src='/uploads/#{video.mp4_path}']")
   end
+
+  test "the thumbnails in the words open full size and page through each other",
+       %{conn: conn, kb: kb} do
+    article = draft!(kb)
+    {:ok, picture} = Uploads.put_body_image(picture_file(), "Pier.jpg")
+    {:ok, relative} = Uploads.put_body_video(video_file(640, 480), "Harbour.mov")
+    Videos.queue(relative)
+
+    {:ok, article} =
+      Articles.update_text(article, %{
+        # never on the first line: the caret starts there, and the line
+        # the caret is on shows its markdown raw
+        body: "Look:\n\n![Pier](/uploads/#{picture})\n\nand\n\n![Harbour](/uploads/#{relative})"
+      })
+
+    video =
+      wait_until(fn -> match?(%{state: "done"}, Videos.get(relative)) && Videos.get(relative) end)
+
+    session =
+      conn
+      |> sign_in()
+      |> visit("/admin/texts/#{article.id}")
+      |> assert_has(".cm-mdvid[style*='#{video.poster_path}']", timeout: 10_000)
+
+    # the picture opens at its reader size, and the caption is its alt
+    session
+    |> click(".cm-mdimg[data-url='/uploads/#{picture}']")
+    |> assert_has("#mediaLb")
+    |> assert_has("#mlCount", text: "1 / 2")
+    |> assert_has("#mlArt img[src='/renditions/max/#{picture}']")
+    |> assert_has("#mlCap", text: "Pier")
+
+    # the arrow key pages to the film, which stands there ready to play
+    session
+    |> press("#mediaLb", "ArrowRight")
+    |> assert_has("#mlCount", text: "2 / 2")
+    |> assert_has("#mlArt video[src='/uploads/#{video.mp4_path}']")
+
+    session
+    |> press("#mediaLb", "Escape")
+    |> refute_has("#mediaLb")
+  end
 end

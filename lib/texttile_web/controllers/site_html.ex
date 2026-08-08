@@ -64,12 +64,17 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
-  @doc "The foot of every page: the site name, and the door to the desk."
+  @doc """
+  The foot of every page: the site name, and the door to the desk. It
+  is not the text either, so it keeps the ground of the band over it
+  and the two read as one block; a hairline is all that stands between
+  them.
+  """
   attr :current_scope, :any, default: nil
 
   def site_foot(assigns) do
     ~H"""
-    <footer class="border-t border-rule">
+    <footer class="foot-band">
       <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
@@ -82,18 +87,21 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  The last section of every reader page, straight from the example
-  blog: the one email this blog sends. The form wears the comment
-  form's invisible spam filters - a stamp of the moment it was drawn,
-  and a honeypot no person ever sees.
+  The band that ends every reader page: About on the left, Subscribe on
+  the right, both in small type on a ground of their own.
 
-  `narrow` follows the page it stands under: the reading column on a
-  text, the full width of the grid on the lists, so the heading lines
-  up with what is above it.
+  It is the second zone of round 3. Everything over it belongs to the
+  text - the neighbours, the comments, the form - and everything on it
+  belongs to the blog. The change of ground says that before a word of
+  it is read, so neither part needs a heading of the size the text
+  uses, and the page ends instead of running out.
+
+  The subscribe form wears the comment form's invisible spam filters: a
+  stamp of the moment it was drawn, and a honeypot no person ever sees.
   """
-  attr :narrow, :boolean, default: true
+  attr :about_html, :any, default: nil
 
-  def site_subscribe(assigns) do
+  def site_band(assigns) do
     assigns =
       assign(
         assigns,
@@ -102,42 +110,47 @@ defmodule TexttileWeb.SiteHTML do
       )
 
     ~H"""
-    <section
-      class={["wrap mt-[54px] pb-[var(--tt-sec)]", @narrow && "narrow"]}
-      id="subscribe"
-      aria-label="Subscribe"
-    >
-      <h2 class="f-sec-h">Subscribe</h2>
-      <p class="f-body mt-3">
-        One email when a new text goes out, nothing else. Unsubscribe is one
-        click, no questions.
-      </p>
-      <form
-        id="newsletter-form"
-        action={~p"/newsletter"}
-        method="post"
-        class="flex items-end gap-3 mt-5 max-w-[420px]"
-      >
-        <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
-        <input type="hidden" name="t" value={@newsletter_token} />
-        <input
-          type="text"
-          name="website"
-          id="nl-hp"
-          class="sr"
-          tabindex="-1"
-          aria-hidden="true"
-          autocomplete="off"
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="you@example.org"
-          aria-label="Email for new texts"
-          required
-        />
-        <button class="btn solid flex-none">Subscribe</button>
-      </form>
+    <section class="foot-band" id="foot-band" aria-label="About this blog">
+      <div class="wrap cols">
+        <div :if={@about_html} id="about" aria-label="About">
+          <p class="f-eyebrow">About</p>
+          <div class="about-md">{Phoenix.HTML.raw(@about_html)}</div>
+        </div>
+        <div id="subscribe" aria-label="Subscribe">
+          <p class="f-eyebrow">Subscribe</p>
+          <p>
+            One email when a new text goes out, nothing else. Unsubscribe is one
+            click, no questions.
+          </p>
+          <form
+            id="newsletter-form"
+            action={~p"/newsletter"}
+            method="post"
+            class="flex items-end gap-3 mt-4 max-w-[420px]"
+          >
+            <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+            <input type="hidden" name="t" value={@newsletter_token} />
+            <input
+              type="text"
+              name="website"
+              id="nl-hp"
+              class="sr"
+              tabindex="-1"
+              aria-hidden="true"
+              autocomplete="off"
+            />
+            <input
+              type="email"
+              name="email"
+              class="min-w-0 flex-1"
+              placeholder="you@example.org"
+              aria-label="Email for new texts"
+              required
+            />
+            <button class="btn solid flex-none">Subscribe</button>
+          </form>
+        </div>
+      </div>
     </section>
     """
   end

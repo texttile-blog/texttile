@@ -24,6 +24,7 @@ import {syntaxTree, syntaxHighlighting, HighlightStyle} from "@codemirror/langua
 import {defaultKeymap, history, historyKeymap} from "@codemirror/commands"
 import {markdown, markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward} from "@codemirror/lang-markdown"
 import {tags} from "@lezer/highlight"
+import {openMedia} from "./media_lightbox"
 
 /* character styling reads the theme tokens; order matters, because the
    marks' faint must win over the link's accent on shared tokens */
@@ -72,13 +73,25 @@ class CheckW extends WidgetType {
   }
 }
 class ImgW extends WidgetType {
-  constructor(css, title, video) { super(); this.css = css; this.title = title; this.video = video }
-  eq(o) { return o.css === this.css && o.title === this.title && o.video === this.video }
+  constructor(css, title, video, url) {
+    super()
+    this.css = css
+    this.title = title
+    this.video = video
+    this.url = url
+  }
+  eq(o) {
+    return o.css === this.css && o.title === this.title &&
+      o.video === this.video && o.url === this.url
+  }
   toDOM() {
     const s = document.createElement("span")
     s.className = this.video ? "cm-mdimg cm-mdvid" : "cm-mdimg"
     if (this.css) s.style.backgroundImage = this.css
     s.title = this.title
+    /* the url the words carry: the lightbox reads it off the widget
+       that was clicked and finds its place in the row from there */
+    s.dataset.url = this.url
     /* the same mark the tiles wear, so a film reads as a film here too */
     if (this.video) {
       const mark = document.createElement("span")
@@ -92,6 +105,10 @@ class ImgW extends WidgetType {
 
 /* the containers Texttile.Videos takes */
 export const VIDEO_FILE = /\.(mp4|mov|m4v|webm|avi|mkv)$/i
+
+/* a picture or a film in the words: ![alt](url), the way the markdown
+   parser reads it and the way the server writes it on an upload */
+const MEDIA_REF = /!\[([^\]]*)\]\(\s*([^()\s]+)[^)]*\)/g
 
 /* ---- the live preview --------------------------------------------- */
 const HIDE = Decoration.replace({})
@@ -156,7 +173,8 @@ function buildDeco(view, resolveImage) {
         const ms = n.node.getChildren("LinkMark")
         const alt = ms.length >= 2 ? doc.sliceString(ms[0].to, ms[1].from) : ""
         const css = resolveImage ? resolveImage(url) : null
-        deco.push(Decoration.replace({widget: new ImgW(css, alt || url, VIDEO_FILE.test(url))}).range(n.from, n.to))
+        const widget = new ImgW(css, alt || url, VIDEO_FILE.test(url), url)
+        deco.push(Decoration.replace({widget}).range(n.from, n.to))
         return false
       }
       if (name === "Link") {
@@ -369,14 +387,70 @@ const impl = {
          widget is the play mark alone, and the panel below the text
          says where the conversion stands */
       if (VIDEO_FILE.test(url)) {
-        const poster = this.posters[url]
-        return poster ? `url('${poster.replace(/'/g, "%27")}')` : null
+        const film = this.posters[url]
+        return film ? `url('${film.poster.replace(/'/g, "%27")}')` : null
       }
       const scaled = url.startsWith("/uploads/")
         ? "/renditions/320/" + url.slice("/uploads/".length)
         : url
       return `url('${scaled.replace(/'/g, "%27")}')`
     }
+
+    /* ---- the thumbnails open full size ---------------------------- */
+
+    /* One reference of the words as the lightbox wants it: the reader
+       size to show, the film to play, the file as it came. A film the
+       server has not converted yet has neither, and the lightbox says
+       that instead of fetching nothing. */
+    const itemFor = (url, alt) => {
+      if (VIDEO_FILE.test(url)) {
+        const film = this.posters[url]
+        return {
+          video: true, alt, original: url,
+          full: film ? film.full : null,
+          film: film ? film.film : null,
+        }
+      }
+
+      const full = url.startsWith("/uploads/")
+        ? "/renditions/max/" + url.slice("/uploads/".length)
+        : url
+      return {video: false, alt, original: url, full}
+    }
+
+    /* every picture and film in the words, in the order they stand
+       there. Read off the document and not off the screen: the widgets
+       only exist for the part of the text that is in view. */
+    const mediaRow = () => {
+      const row = []
+      for (const m of this.view.state.doc.toString().matchAll(MEDIA_REF)) {
+        if (/^(https?:|\/)/.test(m[2])) row.push(itemFor(m[2], m[1]))
+      }
+      return row
+    }
+
+    /* A click on a thumbnail opens it instead of moving the caret. The
+       line keeps its way back to the raw markdown: a click beside the
+       thumbnail, or the caret arriving from either side, still shows
+       the reference as it is written. */
+    const thumbOf = e => {
+      const thumb = e.target.closest && e.target.closest(".cm-mdimg")
+      return thumb && this.el.contains(thumb) ? thumb : null
+    }
+
+    this.onThumbDown = e => { if (thumbOf(e)) e.preventDefault() }
+
+    this.onThumbClick = e => {
+      const thumb = thumbOf(e)
+      if (!thumb) return
+      e.preventDefault()
+      const row = mediaRow()
+      const at = row.findIndex(item => item.original === thumb.dataset.url)
+      openMedia(row, at < 0 ? 0 : at)
+    }
+
+    this.el.addEventListener("mousedown", this.onThumbDown)
+    this.el.addEventListener("click", this.onThumbClick)
 
     const livePreview = ViewPlugin.fromClass(class {
       constructor(view) { this.deco = buildDeco(view, resolveImage) }
@@ -675,6 +749,8 @@ const impl = {
     if (this.view) this.view.destroy()
     if (this.onDocMousedown) document.removeEventListener("mousedown", this.onDocMousedown, true)
     if (this.onPanelClick) document.removeEventListener("click", this.onPanelClick)
+    if (this.onThumbDown) this.el.removeEventListener("mousedown", this.onThumbDown)
+    if (this.onThumbClick) this.el.removeEventListener("click", this.onThumbClick)
     if (this.uploads) {
       for (const entry of this.uploads.values()) {
         if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }

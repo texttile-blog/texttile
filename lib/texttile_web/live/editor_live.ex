@@ -795,11 +795,23 @@ defmodule TexttileWeb.EditorLive do
   # The poster of every converted video, for the writing surface: it
   # draws the markdown references, so it is told the body's own urls.
   # A video ffmpeg has not finished is absent and stays a play mark.
+  # What the writing surface knows about the films in the words: the
+  # poster behind the thumbnail, the poster the lightbox stands behind
+  # the film, and the film itself. A conversion that is not through has
+  # no still, so it is not in here at all and the thumbnail is the play
+  # mark alone.
   defp poster_map(media) do
     media
     |> Enum.flat_map(fn {path, entry} ->
       if Videos.video?(path) and is_binary(entry.still) do
-        [{"/uploads/#{path}", "/renditions/320/#{entry.still}"}]
+        [
+          {"/uploads/#{path}",
+           %{
+             poster: "/renditions/320/#{entry.still}",
+             full: "/renditions/max/#{entry.still}",
+             film: entry.film && "/uploads/#{entry.film}"
+           }}
+        ]
       else
         []
       end
