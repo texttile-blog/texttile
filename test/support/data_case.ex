@@ -39,8 +39,20 @@ defmodule Texttile.DataCase do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Texttile.Repo, shared: not tags[:async])
     take_write_lock()
     restore_admin_users_afterwards()
+    forget_open_editors()
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
+
+  @doc """
+  Closes every editor the tests before this one left open.
+
+  The document locks live beside the database, keyed by article id, and
+  no sandbox rolls them back. The ids do roll back: after one test the
+  next text is id 1 again. So a lock an editor of the last test still
+  holds lands on a text of this one, which then looks open in an editor
+  to anybody who asks - the importer, for one.
+  """
+  def forget_open_editors, do: Texttile.Articles.Lock.forget_all()
 
   @doc """
   Puts the configured admin usernames back after the test. Fixtures and

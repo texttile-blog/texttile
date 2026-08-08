@@ -15,6 +15,12 @@ defmodule TexttileWeb.E2E do
   synchronously.
   """
   def close_browser_context_afterwards(%{conn: conn}) do
+    # The browser tests keep their own sandbox, so they never pass
+    # through Texttile.DataCase. They open editors like nobody else,
+    # and their locks outlive them the same way, so they start from
+    # none too.
+    Texttile.DataCase.forget_open_editors()
+
     ExUnit.Callbacks.on_exit(fn ->
       try do
         PlaywrightEx.BrowserContext.close(conn.context_id, timeout: 5_000)
