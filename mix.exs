@@ -95,7 +95,14 @@ defmodule Texttile.MixProject do
         "esbuild texttile --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        # A sentence nobody extracted is a sentence nobody can translate.
+        "gettext.extract --check-up-to-date",
+        "test"
+      ]
     ]
   end
 end

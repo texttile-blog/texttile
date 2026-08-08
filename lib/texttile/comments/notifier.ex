@@ -75,9 +75,7 @@ defmodule Texttile.Comments.Notifier do
 
     Accounts.list_users()
     |> Enum.reject(&(&1.id == comment.user_id))
-    |> Enum.each(
-      &deliver_one(&1, site, gettext("New comment on %{title}", title: title), body)
-    )
+    |> Enum.each(&deliver_one(&1, site, gettext("New comment on %{title}", title: title), body))
   end
 
   # A refused mail is nothing this can repair, and nothing the reader

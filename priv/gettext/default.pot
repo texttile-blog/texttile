@@ -262,7 +262,7 @@ msgstr ""
 msgid "%{name} is bigger than the %{roof} MB roof."
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:104
+#: lib/texttile/comments/notifier.ex:102
 #, elixir-autogen, elixir-format
 msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings. Switch it off there to stop it.\n"
 msgstr ""
@@ -1198,7 +1198,7 @@ msgstr ""
 msgid "Imported: %{name}"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:130
+#: lib/texttile/comments/notifier.ex:128
 #, elixir-autogen, elixir-format
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr ""
@@ -1208,7 +1208,7 @@ msgstr ""
 msgid "It removes the comment from the entry at once, and the reader is not told."
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:133
+#: lib/texttile/comments/notifier.ex:131
 #, elixir-autogen, elixir-format
 msgid "It stands under the entry now."
 msgstr ""
@@ -1386,7 +1386,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:79
+#: lib/texttile/comments/notifier.ex:78
 #, elixir-autogen, elixir-format
 msgid "New comment on %{title}"
 msgstr ""
@@ -2396,7 +2396,7 @@ msgstr ""
 msgid "The entry was deleted while you had it open."
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:135
+#: lib/texttile/comments/notifier.ex:133
 #, elixir-autogen, elixir-format
 msgid "The entry:     %{url}"
 msgstr ""
