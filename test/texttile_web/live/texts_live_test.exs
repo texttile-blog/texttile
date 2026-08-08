@@ -54,7 +54,7 @@ defmodule TexttileWeb.TextsLiveTest do
       path = Path.join(System.tmp_dir!(), "cover-#{System.unique_integer([:positive])}.jpg")
       {:ok, black} = Vix.Vips.Operation.black(20, 10)
       :ok = Vix.Vips.Image.write_to_file(black, path)
-      {:ok, image} = Texttile.Gallery.add_image(article, path, "cover.jpg")
+      {:ok, image} = Texttile.Gallery.add_file(article, path, "cover.jpg")
 
       refute has_element?(view, "#cards .cimg.empty")
       assert render(view) =~ "/renditions/320/#{image.path}"

@@ -19,6 +19,9 @@
 
 const MAX_PARALLEL = 2
 const MAX_FILE_MB = 50
+/* a film off a phone weighs what a photograph never does; the roof for
+   a video stands where the parser's does (see endpoint.ex) */
+const MAX_VIDEO_MB = 500
 const TOUCH_DRAG_DELAY_MS = 200
 const DRAG_THRESHOLD_PX = 9
 const TAP_MS = 500
@@ -117,7 +120,7 @@ class Gallery {
     this.note.textContent = text
     this.note.classList.add("text-julia", "font-semibold")
     this.noteTimer = setTimeout(() => {
-      this.note.textContent = "Grab an image to sort it. Tap one to see it big."
+      this.note.textContent = "Grab a tile to sort it. Tap one to see it big."
       this.note.classList.remove("text-julia", "font-semibold")
     }, NOTE_MS)
   }
@@ -166,23 +169,29 @@ class Gallery {
   }
 
   addFiles(fileList) {
-    const images = [...fileList].filter(f => /^image\//.test(f.type))
+    /* pictures and videos alike; a video is converted on the server
+       after the upload, and its tile waits for the poster */
+    const images = [...fileList].filter(f => /^(image|video)\//.test(f.type))
     for (const file of images) {
       // an oversize file fails right here instead of after minutes of upload
-      const oversize = file.size > MAX_FILE_MB * 1024 * 1024
+      const roof = /^video\//.test(file.type) ? MAX_VIDEO_MB : MAX_FILE_MB
+      const oversize = file.size > roof * 1024 * 1024
 
       this.records.push({
         id: "u" + ++this.uid,
         file,
         name: file.name,
-        objurl: URL.createObjectURL(file),
+        /* only a picture can stand in for itself while it travels; a
+           video shows its name and its state until the server has a
+           poster for it */
+        objurl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null,
         status: oversize ? "failed" : "queued",
-        error: oversize ? `bigger than the ${MAX_FILE_MB} MB roof` : null,
+        error: oversize ? `bigger than the ${roof} MB roof` : null,
         noRetry: oversize,
         pct: 0,
       })
 
-      if (oversize) this.noteTile(`${file.name} is bigger than the ${MAX_FILE_MB} MB roof.`)
+      if (oversize) this.noteTile(`${file.name} is bigger than the ${roof} MB roof.`)
     }
     if (images.length) {
       this.renderLocal()
@@ -353,7 +362,8 @@ class Gallery {
         : `<button type="button" class="tile-x" data-act="cancel">Cancel</button>`
 
     return `<div class="tile up ${r.status}" data-local-id="${r.id}"
-      style="background-image:url('${r.objurl}')" aria-label="${esc(r.name)}, ${esc(r.status)}">
+      ${r.objurl ? `style="background-image:url('${r.objurl}')"` : ""}
+      aria-label="${esc(r.name)}, ${esc(r.status)}">
       <span class="tile-ov">
         <span class="fn" title="${esc(r.name)}">${esc(r.name)}</span>
         <span class="st">${st}</span>
@@ -570,8 +580,15 @@ class Gallery {
 
   /* ================= the lightbox ================= */
 
+  /* the tiles the lightbox can show. A video ffmpeg has not finished
+     has no picture and no film yet, so it stays out of the paging;
+     the sorting list above keeps every tile. */
+  shownTiles() {
+    return this.tiles().filter(t => t.dataset.full)
+  }
+
   tileData(id) {
-    const list = this.tiles()
+    const list = this.shownTiles()
     const index = list.findIndex(t => t.dataset.id === id)
     if (index < 0) return null
     const t = list[index]
@@ -582,13 +599,15 @@ class Gallery {
       filename: t.dataset.filename,
       date: t.dataset.date,
       full: t.dataset.full,
+      video: t.dataset.video,
       original: t.dataset.original,
     }
   }
 
   openLightbox(id) {
     const data = this.tileData(id)
-    if (!data || this.lb) return
+    // a video that ffmpeg has not finished has nothing to show yet
+    if (!data || !data.full || this.lb) return
 
     this.lb = {
       id,
@@ -596,6 +615,9 @@ class Gallery {
       token: 0,
       formFor: null,
       paintedUrl: null,
+      /* only the tile that was tapped starts playing by itself;
+         paging past a film must not start it */
+      opening: true,
       prevFocus: document.activeElement,
     }
     this.buildLightbox()
@@ -610,7 +632,7 @@ class Gallery {
     // quirk (the topbar's backdrop-filter) can ever paint above it
     const root = document.createElement("dialog")
     root.id = "lbRoot"
-    root.setAttribute("aria-label", "Image, full size")
+    root.setAttribute("aria-label", "Full size")
     // the dialog itself takes the focus: autofocusing the date field
     // would pop a picker over the picture on a phone
     root.tabIndex = -1
@@ -619,19 +641,19 @@ class Gallery {
       <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> image</span></button>
+        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> tile</span></button>
         <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">Open original</span><span class="lb-word-s">Original</span></a>
         <button type="button" id="lbClose" class="lb-abtn" aria-label="Close">Close</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
-           data-nav="-1" aria-label="Previous image">&#8249;</button>
+           data-nav="-1" aria-label="Previous tile">&#8249;</button>
         <div class="relative flex-1 h-full min-w-0 flex items-center justify-center">
           <div id="lbImg" class="w-full h-full bg-center bg-contain bg-no-repeat" role="img" aria-label=""></div>
           <div id="lbState" class="absolute inset-0 grid place-items-center text-white/80 text-[13px] text-center px-6" hidden></div>
         </div>
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
-           data-nav="1" aria-label="Next image">&#8250;</button>
+           data-nav="1" aria-label="Next tile">&#8250;</button>
       </div>
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
@@ -706,7 +728,7 @@ class Gallery {
     this.root.querySelector("#lbName").textContent = data.filename
 
     this.root.querySelector("#lbMeta").textContent =
-      ` · ${data.date.slice(0, 10)} · image ${data.index + 1} of ${data.count}`
+      ` · ${data.date.slice(0, 10)} · ${data.index + 1} of ${data.count}`
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {
@@ -716,7 +738,43 @@ class Gallery {
 
     // a paint from a background update must not restart a load that is
     // already on its way: on a slow line the picture would never land
-    if (lb.paintedUrl !== data.full && lb.loadingUrl !== data.full) this.loadImage(data)
+    if (lb.paintedUrl !== data.full && lb.loadingUrl !== data.full) {
+      if (data.video) this.loadVideo(data)
+      else this.loadImage(data)
+    }
+  }
+
+  // whatever was playing here stops before the next thing is painted
+  stopFilm(stage) {
+    const film = stage.querySelector("video")
+    if (film) film.pause()
+  }
+
+  // a film plays where the picture would be, with the poster behind it
+  // until the first frame arrives
+  loadVideo(data) {
+    const lb = this.lb
+    lb.token += 1
+    lb.loadingUrl = null
+    lb.paintedUrl = data.full
+    const img = this.root.querySelector("#lbImg")
+    const state = this.root.querySelector("#lbState")
+
+    state.hidden = true
+    img.style.backgroundImage = ""
+    this.stopFilm(img)
+
+    const film = document.createElement("video")
+    film.className = "lb-film"
+    film.controls = true
+    film.playsInline = true
+    film.preload = lb.opening ? "metadata" : "none"
+    film.poster = data.full
+    film.src = data.video
+    film.setAttribute("aria-label", data.filename)
+    img.replaceChildren(film)
+    if (lb.opening) film.play().catch(() => {})
+    lb.opening = false
   }
 
   loadImage(data, bust) {
@@ -726,6 +784,8 @@ class Gallery {
     const img = this.root.querySelector("#lbImg")
     const state = this.root.querySelector("#lbState")
 
+    this.stopFilm(img)
+    img.replaceChildren()
     img.style.backgroundImage = ""
     img.setAttribute("aria-label", data.filename)
     state.hidden = false
@@ -757,13 +817,14 @@ class Gallery {
   nav(direction) {
     const lb = this.lb
     if (!lb) return
-    const list = this.tiles()
+    const list = this.shownTiles()
     if (!list.length) return
     const index = list.findIndex(t => t.dataset.id === lb.id)
     const next = list[(Math.max(index, 0) + direction + list.length) % list.length]
     lb.id = next.dataset.id
     lb.formFor = null
     lb.paintedUrl = null
+    lb.opening = false
     this.paint()
   }
 
@@ -794,17 +855,21 @@ class Gallery {
       return
     }
 
-    const list = this.tiles()
+    const list = this.shownTiles()
     if (!list.length) return this.closeLightbox()
     const fallback = list[Math.min(lb.lastIndex, list.length - 1)]
     lb.id = fallback.dataset.id
     lb.formFor = null
     lb.paintedUrl = null
+    lb.opening = false
     this.paint()
   }
 
   closeLightbox(silent) {
     if (this.root) {
+      // a film goes quiet the moment the lightbox leaves
+      const film = this.root.querySelector("video")
+      if (film) film.pause()
       const bar = document.getElementById("undoBar")
       if (bar && this.root.contains(bar)) document.body.appendChild(bar)
       if (this.root.open) this.root.close()

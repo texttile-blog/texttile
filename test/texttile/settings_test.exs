@@ -13,6 +13,7 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:theme_css) == ""
       assert Settings.get(:comments_require_confirmation) == true
       assert Settings.get(:image_max_edge) == 2560
+      assert Settings.get(:video_max_edge) == 1280
       assert Settings.get(:logo) == nil
       assert Settings.get(:favicon) == nil
     end
@@ -131,6 +132,17 @@ defmodule Texttile.SettingsTest do
       assert {:error, _} = Settings.put(:image_max_edge, "huge")
       assert {:error, _} = Settings.put(:image_max_edge, "")
       assert Settings.get(:image_max_edge) == 2560
+    end
+
+    test "refuses a video edge outside 480..3840 or not a number" do
+      assert {:error, _} = Settings.put(:video_max_edge, "320")
+      assert {:error, _} = Settings.put(:video_max_edge, "4000")
+      assert {:error, _} = Settings.put(:video_max_edge, "huge")
+      assert {:error, _} = Settings.put(:video_max_edge, "")
+      assert Settings.get(:video_max_edge) == 1280
+
+      assert {:ok, 1920} = Settings.put(:video_max_edge, "1920")
+      assert Settings.get(:video_max_edge) == 1920
     end
 
     test "accepts the latest list and a fixed page as the front page" do

@@ -48,15 +48,52 @@ defmodule TexttileWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  # Multipart carries the pictures; a phone photo is far past Plug's
-  # 8 MB default. 52 MB holds a 50 MB image plus the form around it.
-  plug Plug.Parsers,
-    parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
-    pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
+  # The session stands before the parser, so the body roof can ask who
+  # is knocking. It reads no body of its own. Everything that does -
+  # the method override reads `_method` out of the form - stays behind
+  # the parser, where it was.
+  plug Plug.Session, @session_options
+
+  # Multipart carries the pictures and the videos; both are far past
+  # Plug's 8 MB default. Two roofs, because they guard different
+  # things: 52 MB for everybody, which holds a 50 MB photograph and the
+  # form around it, and 520 MB on the two upload addresses of the desk,
+  # which hold a 500 MB video (MAX_VIDEO_MB in gallery_core.js).
+  #
+  # The big roof needs a signed-in session, not merely the right
+  # address: the parser runs before the router, so without that check a
+  # stranger could push half a gigabyte at the server and only be
+  # turned away once it had all arrived. The cookie is signed, so the
+  # token cannot be invented; whether it still names a live session is
+  # the router's question, one roof later.
+  @picture_roof Plug.Parsers.init(
+                  parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
+                  pass: ["*/*"],
+                  json_decoder: Phoenix.json_library()
+                )
+
+  @video_roof Plug.Parsers.init(
+                parsers: [:urlencoded, {:multipart, length: 520_000_000}, :json],
+                pass: ["*/*"],
+                json_decoder: Phoenix.json_library()
+              )
+
+  plug :parse_body
+
+  defp parse_body(conn, _opts) do
+    conn = fetch_session(conn)
+    Plug.Parsers.call(conn, if(big_upload?(conn), do: @video_roof, else: @picture_roof))
+  end
+
+  defp big_upload?(conn) do
+    upload_address?(conn.path_info) and is_binary(get_session(conn, :user_token))
+  end
+
+  defp upload_address?(["admin", "images"]), do: true
+  defp upload_address?(["admin", "texts", _id, "gallery"]), do: true
+  defp upload_address?(_path), do: false
 
   plug Plug.MethodOverride
   plug Plug.Head
-  plug Plug.Session, @session_options
   plug TexttileWeb.Router
 end

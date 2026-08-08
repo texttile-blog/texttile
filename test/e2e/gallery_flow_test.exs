@@ -44,7 +44,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
   end
 
   defp seed!(article, name, taken) do
-    {:ok, image} = Gallery.add_image(article, jpg!(taken), name)
+    {:ok, image} = Gallery.add_file(article, jpg!(taken), name)
     image
   end
 
@@ -55,10 +55,10 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> visit("/admin/texts/#{article.id}")
-      |> assert_has("#tileCount", text: "0 images")
-      |> upload("Add images to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileCount", text: "0 tiles")
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
       |> assert_has("#tileServer [data-id]")
-      |> assert_has("#tileCount", text: "1 image")
+      |> assert_has("#tileCount", text: "1 tile")
 
       assert [%{filename: "e2e-" <> _}] = Gallery.list(article.id)
     end
@@ -76,7 +76,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> visit("/admin/texts/#{article.id}")
-      |> upload("Add images to the gallery", big)
+      |> upload("Add pictures and videos to the gallery", big)
       |> assert_has("#tileServer [data-id]", timeout: 30_000)
 
       assert [_] = Gallery.list(article.id)
@@ -93,7 +93,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> visit("/admin/texts/#{article.id}")
-      |> upload("Add images to the gallery", huge)
+      |> upload("Add pictures and videos to the gallery", huge)
       |> assert_has("#tileLocal .tile.failed", text: "50 MB")
       |> assert_has("#tileLocal button[data-act=remove]")
       |> refute_has("#tileLocal button[data-act=retry]")
@@ -112,7 +112,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> visit("/admin/texts/#{article.id}")
-      |> assert_has("#tileCount", text: "3 images")
+      |> assert_has("#tileCount", text: "3 tiles")
       |> drag("#tile-#{c.id}", to: "#tile-#{a.id}")
 
       wait_until(fn ->
@@ -135,7 +135,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         conn
         |> sign_in()
         |> visit("/admin/texts/#{article.id}")
-        |> assert_has("#tileCount", text: "2 images")
+        |> assert_has("#tileCount", text: "2 tiles")
         |> click("#tileServer [data-id='#{a.id}']")
         |> assert_has("#lbRoot")
         |> assert_has("#lbName", text: "pier.jpg")
@@ -147,7 +147,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       seed!(article, "fog.jpg", "2024:05:01 14:00:00")
 
       conn
-      |> assert_has("#tileCount", text: "3 images")
+      |> assert_has("#tileCount", text: "3 tiles")
       |> assert_has("#lbRoot")
       |> assert_has("#lbName", text: "gull.jpg")
 
@@ -175,12 +175,12 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> visit("/admin/texts/#{article.id}")
       |> click("#tileServer [data-id='#{a.id}']")
       |> assert_has("#lbRoot")
-      |> click_button("Delete image")
+      |> click_button("Delete tile")
       |> assert_has("#undoBar", text: "pier.jpg")
-      |> assert_has("#tileCount", text: "1 image")
+      |> assert_has("#tileCount", text: "1 tile")
       |> assert_has("#lbName", text: "gull.jpg")
       |> click_button("Undo")
-      |> assert_has("#tileCount", text: "2 images")
+      |> assert_has("#tileCount", text: "2 tiles")
       |> assert_has("#tileServer [data-id='#{a.id}']")
 
       assert Enum.map(Gallery.list(article.id), & &1.filename) == ["pier.jpg", "gull.jpg"]

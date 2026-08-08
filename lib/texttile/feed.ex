@@ -18,6 +18,10 @@ defmodule Texttile.Feed do
   @picture ~r{(<img[^>]*?\bsrc=")/uploads/([^"]+)"}
   @address ~r{\b(href|src)="/(?!/)([^"]*)"}
 
+  # A whole reference to an uploaded file, which a film has to become
+  # something else than a picture.
+  @upload_tag ~r{<img[^>]*?\bsrc="/uploads/([^"]+)"[^>]*?>}
+
   @doc "The one address of the feed."
   def path, do: "/feed.xml"
 
@@ -87,7 +91,34 @@ defmodule Texttile.Feed do
   defp body_html(article, base) do
     article.body
     |> Markdown.to_html()
+    |> films(base)
     |> absolute(base)
+  end
+
+  # No feed reader plays a film, and a rendition of one is nothing at
+  # all. It goes as its poster with the way to the film behind it, and
+  # while ffmpeg is not through, as the plain link it can always be.
+  # Both addresses are absolute already, so the pass below leaves them.
+  defp films(html, base) do
+    Regex.replace(@upload_tag, html, fn whole, path ->
+      if Texttile.Videos.video?(path) do
+        film(path, Markdown.alt_of(whole), base)
+      else
+        whole
+      end
+    end)
+  end
+
+  defp film(path, label, base) do
+    case Texttile.Videos.playback(path) do
+      nil ->
+        ~s(<a href="#{base}/uploads/#{path}">#{label}</a>)
+
+      play ->
+        ~s(<a href="#{base}/uploads/#{play.mp4}">) <>
+          ~s(<img src="#{base}/renditions/1320/#{play.poster}" alt="#{label}" />) <>
+          ~s(</a>)
+    end
   end
 
   # Every address the text carries, made absolute. Pictures take the

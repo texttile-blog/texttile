@@ -18,17 +18,21 @@
          Every tile links the original file, so a crawler finds it;
          the script turns the click into the lightbox, which shows the
          reader size from data-full. Without the script the link stands
-         and answers the picture itself. --%>
+         and answers the picture, or the film, itself. A video tile is
+         its poster with a play mark; the lightbox plays the film from
+         data-video. --%>
     <figure :if={@gallery != []} class="wrap mt-[38px]" id="gallery">
       <div class="gal" id="gal">
         <a
-          :for={image <- @gallery}
-          id={"tile-#{image.id}"}
-          href={"/uploads/#{image.path}"}
-          data-full={"/renditions/max/#{image.path}"}
-          data-caption={image.filename}
+          :for={tile <- @gallery}
+          id={"tile-#{tile.id}"}
+          href={"/uploads/#{tile.film || tile.original}"}
+          data-full={"/renditions/max/#{tile.still}"}
+          data-video={tile.film && "/uploads/#{tile.film}"}
+          data-caption={tile.filename}
         >
-          <img src={"/renditions/640/#{image.path}"} alt={image.filename} loading="lazy" />
+          <img src={"/renditions/640/#{tile.still}"} alt={tile.filename} loading="lazy" />
+          <span :if={tile.film} class="play-badge" aria-hidden="true"></span>
         </a>
       </div>
     </figure>
@@ -161,7 +165,7 @@
   hidden
   role="dialog"
   aria-modal="true"
-  aria-label="Photograph, full size"
+  aria-label="Full size"
 >
   <div class="lb-bar">
     <span class="num" id="lbCount"></span>
@@ -169,9 +173,9 @@
     <button class="lb-btn" type="button" id="lbClose">Close</button>
   </div>
   <div class="lb-stage" id="lbStage">
-    <button class="lb-arrow" type="button" id="lbPrev" aria-label="Previous photograph">‹</button>
+    <button class="lb-arrow" type="button" id="lbPrev" aria-label="Previous tile">‹</button>
     <div class="lb-img" id="lbArt"></div>
-    <button class="lb-arrow" type="button" id="lbNext" aria-label="Next photograph">›</button>
+    <button class="lb-arrow" type="button" id="lbNext" aria-label="Next tile">›</button>
   </div>
   <p class="lb-cap" id="lbCap"></p>
 </div>

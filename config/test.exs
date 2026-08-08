@@ -79,3 +79,7 @@ config :bcrypt_elixir, log_rounds: 4
 
 # The go-live clock: tests call Articles.go_live_due/1 directly.
 config :texttile, :start_scheduler, false
+
+# The conversion queue would run ffmpeg under a sandbox owner of
+# another test. Tests convert by hand, or start a queue of their own.
+config :texttile, :start_video_queue, false

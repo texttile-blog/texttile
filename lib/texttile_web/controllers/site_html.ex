@@ -179,33 +179,70 @@ defmodule TexttileWeb.SiteHTML do
   Each of them stands in a link to the original, so a crawler finds the
   file as it came; the script turns that link into the lightbox, which
   shows the reader size named in `data-full`.
+
+  A video reference becomes a player that fetches nothing until the
+  reader presses play: the poster is a picture, the film waits. While
+  ffmpeg is still converting, the file stands there as a plain link,
+  so the text loses nothing in the meantime.
   """
   def body_html(article) do
     article.body
     |> Texttile.Markdown.to_html()
-    |> link_pictures()
+    |> draw_media()
     |> Phoenix.HTML.raw()
   end
 
-  # The markdown renderer writes <img src="/uploads/..."> and nothing
-  # else around it, so the wrap is one pass over those tags.
-  defp link_pictures(html) do
-    Regex.replace(~r{<img([^>]*?)src="/uploads/([^"]+)"([^>]*?)/?>}, html, fn _whole,
+  # The markdown renderer writes <img src="/uploads/..."> for both, the
+  # picture and the video, and nothing else around it, so this is one
+  # pass over those tags.
+  defp draw_media(html) do
+    Regex.replace(~r{<img([^>]*?)src="/uploads/([^"]+)"([^>]*?)/?>}, html, fn whole,
                                                                               before,
                                                                               path,
                                                                               rest ->
-      ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
-        ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
-        ~s(</a>)
+      if Texttile.Videos.video?(path) do
+        video_tag(path, Texttile.Markdown.alt_of(whole))
+      else
+        ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
+          ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
+          ~s(</a>)
+      end
     end)
   end
+
+  defp video_tag(path, label) do
+    case Texttile.Videos.playback(path) do
+      nil ->
+        ~s(<a class="videofile" href="/uploads/#{path}">#{label}</a>)
+
+      play ->
+        ~s(<video class="bodyvid" controls playsinline preload="none") <>
+          ~s( poster="/renditions/1320/#{play.poster}") <>
+          size_attributes(play) <>
+          ~s( src="/uploads/#{play.mp4}"></video>)
+    end
+  end
+
+  # The size the browser keeps free before the poster arrives, so the
+  # words below do not jump when it does.
+  defp size_attributes(%{width: width, height: height})
+       when is_integer(width) and is_integer(height) do
+    ~s( width="#{width}" height="#{height}")
+  end
+
+  defp size_attributes(_play), do: ""
 
   @doc """
   Whether a text shows a picture at all: a gallery tile, or one in the
   words. The lightbox shell is only drawn where something can open it.
+  A video plays where it stands and needs no lightbox of its own.
   """
   def pictures?(article, gallery) do
-    gallery != [] or String.contains?(to_string(article.body), "](/uploads/")
+    gallery != [] or
+      Enum.any?(Articles.inline_refs(article.body), fn ref ->
+        ref.kind == :done and String.starts_with?(to_string(ref.url), "/uploads/") and
+          not Texttile.Videos.video?(ref.url)
+      end)
   end
 
   @doc "A date the way the example blog writes one: 2 July 2026."

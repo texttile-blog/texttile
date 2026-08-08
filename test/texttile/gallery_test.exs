@@ -45,7 +45,7 @@ defmodule Texttile.GalleryTest do
   end
 
   defp add!(article, name, opts \\ []) do
-    {:ok, image} = Gallery.add_image(article, source_jpg(opts), name)
+    {:ok, image} = Gallery.add_file(article, source_jpg(opts), name)
     image
   end
 
@@ -56,11 +56,11 @@ defmodule Texttile.GalleryTest do
 
   defp ids(article), do: article.id |> Gallery.list() |> Enum.map(& &1.id)
 
-  describe "add_image/4" do
+  describe "add_file/4" do
     test "stores the file below images/ and answers a finished image" do
       {article, _user} = article!()
 
-      {:ok, image} = Gallery.add_image(article, source_jpg(), "Harbor Pier.jpg")
+      {:ok, image} = Gallery.add_file(article, source_jpg(), "Harbor Pier.jpg")
 
       assert image.article_id == article.id
       assert image.path =~ ~r"^images/harbor-pier-[0-9a-f]{8}\.jpg$"
@@ -99,14 +99,14 @@ defmodule Texttile.GalleryTest do
       path = Path.join(System.tmp_dir!(), "not-an-image.jpg")
       File.write!(path, "plain words")
 
-      assert {:error, _message} = Gallery.add_image(article, path, "not-an-image.jpg")
+      assert {:error, _message} = Gallery.add_file(article, path, "not-an-image.jpg")
     end
 
     test "announces the new image on the article topic" do
       {article, user} = article!()
       Articles.subscribe(article.id)
 
-      {:ok, image} = Gallery.add_image(article, source_jpg(), "a.jpg", by: user.id)
+      {:ok, image} = Gallery.add_file(article, source_jpg(), "a.jpg", by: user.id)
 
       article_id = article.id
       image_id = image.id

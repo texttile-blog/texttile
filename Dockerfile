@@ -82,8 +82,11 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE} AS final
 
+# ffmpeg converts the uploaded videos and brings ffprobe with it.
+# util-linux carries ionice, which the conversion asks for so a long
+# encode never takes the disk away from a reader.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates gosu \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates gosu ffmpeg util-linux \
   && rm -rf /var/lib/apt/lists/*
 
 # Set the locale

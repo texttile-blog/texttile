@@ -79,7 +79,7 @@ defmodule Texttile.Gallery do
       |> Enum.group_by(& &1.article_id, & &1.path)
 
     Enum.reduce(articles, %{}, fn article, previews ->
-      case effective_preview(article, Map.get(by_article, article.id, [])) do
+      case preview_still(article, Map.get(by_article, article.id, [])) do
         nil -> previews
         path -> Map.put(previews, article.id, path)
       end
@@ -87,11 +87,15 @@ defmodule Texttile.Gallery do
   end
 
   @doc """
-  The images a preview can be chosen from: the gallery in its order,
-  then the finished pictures inside the text.
+  The pictures a preview can be chosen from: the gallery in its order,
+  then the finished pictures inside the text. A video counts with its
+  poster, so it joins the list once ffmpeg is through and not before -
+  a preview nobody can see is no preview.
   """
   def preview_candidates(article, gallery_paths) do
-    Enum.uniq(gallery_paths ++ inline_paths(article.body))
+    (gallery_paths ++ inline_paths(article.body))
+    |> Enum.uniq()
+    |> Enum.filter(&Texttile.Videos.still/1)
   end
 
   @doc """
@@ -108,6 +112,42 @@ defmodule Texttile.Gallery do
     end
   end
 
+  @doc """
+  The gallery as a reader page draws it: one map per tile, with the
+  still to show, the film to play behind it, and the original to link.
+  Tiles with nothing to show yet - a video ffmpeg has not finished -
+  stay out until they have a poster. One query for the whole gallery.
+  """
+  def tiles(images) do
+    stills = Texttile.Videos.stills(Enum.map(images, & &1.path))
+
+    images
+    |> Enum.map(fn image ->
+      media = stills[image.path]
+
+      %{
+        id: image.id,
+        filename: image.filename,
+        original: image.path,
+        still: media.still,
+        film: media.film
+      }
+    end)
+    |> Enum.filter(& &1.still)
+  end
+
+  @doc """
+  The picture a card, a link preview or the texts grid really shows:
+  the still behind the chosen preview, and where that has none yet -
+  a video still converting - the first candidate that has one.
+  """
+  def preview_still(article, gallery_paths) do
+    case effective_preview(article, gallery_paths) do
+      nil -> nil
+      path -> Texttile.Videos.still(path)
+    end
+  end
+
   defp inline_paths(body) do
     body
     |> Texttile.Articles.inline_refs()
@@ -120,12 +160,22 @@ defmodule Texttile.Gallery do
   ## Adding
 
   @doc """
-  Stores an uploaded picture and puts it into the gallery. The file is
-  kept exactly as it came; the gallery date starts as the EXIF capture
-  date when the file carries one, otherwise as the upload moment.
+  Stores an uploaded picture or video and puts it into the gallery.
+  The file is kept exactly as it came; the gallery date starts as the
+  EXIF capture date when the file carries one, otherwise as the upload
+  moment. A video stands in line for its conversion right away; the
+  tile shows its poster once ffmpeg is through (`Texttile.Videos`).
   """
-  def add_image(%Article{} = article, source_path, original_name, opts \\ []) do
-    with {:ok, relative} <- Uploads.put_body_image(source_path, original_name) do
+  def add_file(%Article{} = article, source_path, original_name, opts \\ []) do
+    if Texttile.Videos.video?(original_name) do
+      add_stored(article, Uploads.put_body_video(source_path, original_name), original_name, opts)
+    else
+      add_stored(article, Uploads.put_body_image(source_path, original_name), original_name, opts)
+    end
+  end
+
+  defp add_stored(article, stored, original_name, opts) do
+    with {:ok, relative} <- stored do
       # The file went to disk first; a failed insert (say the text was
       # deleted this second) must not leave it orphaned there.
       image =
@@ -133,7 +183,7 @@ defmodule Texttile.Gallery do
           insert_stored(article, relative, original_name, nil)
         rescue
           error ->
-            Uploads.remove_body_image(relative)
+            Uploads.remove_upload(relative)
             reraise error, __STACKTRACE__
         end
 
@@ -163,18 +213,28 @@ defmodule Texttile.Gallery do
 
   # The one way a row enters the gallery: the stored file is probed,
   # the row inserted. Without a date the picture speaks for itself
-  # (EXIF), and the fallback is this very moment.
+  # (EXIF), and the fallback is this very moment. A video says nothing
+  # here; its size comes with the conversion, and so does its poster.
   defp insert_stored(article, relative, filename, gallery_date) do
-    {taken, width, height} = probe(Uploads.absolute(relative))
+    {taken, width, height} =
+      if Texttile.Videos.video?(relative) do
+        {nil, nil, nil}
+      else
+        probe(Uploads.absolute(relative))
+      end
 
-    Repo.insert!(%Image{
-      article_id: article.id,
-      path: relative,
-      filename: String.slice(filename, 0, 120),
-      gallery_date: gallery_date || taken || DateTime.utc_now(:microsecond),
-      width: width,
-      height: height
-    })
+    image =
+      Repo.insert!(%Image{
+        article_id: article.id,
+        path: relative,
+        filename: String.slice(filename, 0, 120),
+        gallery_date: gallery_date || taken || DateTime.utc_now(:microsecond),
+        width: width,
+        height: height
+      })
+
+    if Texttile.Videos.video?(relative), do: Texttile.Videos.queue(relative)
+    image
   end
 
   # What the CMS wants to know about the stored file: the capture date,
@@ -411,7 +471,7 @@ defmodule Texttile.Gallery do
       # by id, not by struct: a row a second sweep already took must
       # not raise as stale here
       Repo.delete_all(from i in Image, where: i.id == ^image.id)
-      Uploads.remove_body_image(image.path)
+      Uploads.remove_upload(image.path)
     end)
 
     length(due)

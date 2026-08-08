@@ -13,7 +13,13 @@ defmodule TexttileWeb.UploadsController do
     ".jpg" => "image/jpeg",
     ".jpeg" => "image/jpeg",
     ".webp" => "image/webp",
-    ".gif" => "image/gif"
+    ".gif" => "image/gif",
+    ".mp4" => "video/mp4",
+    ".m4v" => "video/x-m4v",
+    ".mov" => "video/quicktime",
+    ".webm" => "video/webm",
+    ".avi" => "video/x-msvideo",
+    ".mkv" => "video/x-matroska"
   }
 
   def show(conn, %{"path" => parts}) do
@@ -82,9 +88,76 @@ defmodule TexttileWeb.UploadsController do
         "content-security-policy",
         "default-src 'none'; style-src 'unsafe-inline'"
       )
-      |> send_file(200, path)
+      |> put_resp_header("accept-ranges", "bytes")
+      |> send_part(path, File.stat!(path).size)
     else
       send_resp(conn, 404, "not found")
+    end
+  end
+
+  # A player asks for the piece it needs, not for the whole film: it
+  # seeks by asking for a range of bytes, and some browsers play
+  # nothing at all without an answer in kind.
+  defp send_part(conn, path, size) do
+    case requested_range(conn, size) do
+      :whole ->
+        send_file(conn, 200, path)
+
+      {:ok, first, last} ->
+        conn
+        |> put_resp_header("content-range", "bytes #{first}-#{last}/#{size}")
+        |> send_file(206, path, first, last - first + 1)
+
+      :beyond ->
+        conn
+        |> put_resp_header("content-range", "bytes */#{size}")
+        |> send_resp(416, "")
+    end
+  end
+
+  defp requested_range(conn, size) do
+    case get_req_header(conn, "range") do
+      ["bytes=" <> spec] -> range_from(spec, size)
+      _ -> :whole
+    end
+  end
+
+  # One range, which is what every player asks for. `first-last`,
+  # `first-` to the end, and `-count` for the last count bytes.
+  defp range_from(spec, size) do
+    case String.split(spec, "-", parts: 2) do
+      ["", count] -> take_last(count, size)
+      [first, ""] -> take_from(first, size)
+      [first, last] -> take_between(first, last, size)
+      _ -> :whole
+    end
+  end
+
+  defp take_last(count, size) do
+    case Integer.parse(count) do
+      # an empty file has no last bytes to give, like it has no others
+      {_count, ""} when size == 0 -> :beyond
+      {count, ""} when count > 0 -> {:ok, max(size - count, 0), size - 1}
+      _ -> :whole
+    end
+  end
+
+  defp take_from(first, size) do
+    case Integer.parse(first) do
+      {first, ""} when first < size -> {:ok, first, size - 1}
+      {_first, ""} -> :beyond
+      _ -> :whole
+    end
+  end
+
+  defp take_between(first, last, size) do
+    with {first, ""} <- Integer.parse(first),
+         {last, ""} <- Integer.parse(last),
+         true <- first <= last and first < size do
+      {:ok, first, min(last, size - 1)}
+    else
+      false -> :beyond
+      _ -> :whole
     end
   end
 end

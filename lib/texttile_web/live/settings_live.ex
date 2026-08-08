@@ -20,7 +20,7 @@ defmodule TexttileWeb.SettingsLive do
   # through Texttile.Uploads, never through a form.
   @editable ~w(site_title site_description language about_markdown front_page
                posts_per_page theme_css site_visibility site_password
-               comments_require_confirmation image_max_edge)
+               comments_require_confirmation image_max_edge video_max_edge)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -241,7 +241,8 @@ defmodule TexttileWeb.SettingsLive do
           "language" => settings.language,
           "about_markdown" => settings.about_markdown,
           "theme_css" => shown_theme_css(settings.theme_css),
-          "image_max_edge" => Integer.to_string(settings.image_max_edge)
+          "image_max_edge" => Integer.to_string(settings.image_max_edge),
+          "video_max_edge" => Integer.to_string(settings.video_max_edge)
         },
         as: :settings
       )
@@ -851,6 +852,40 @@ defmodule TexttileWeb.SettingsLive do
                 sizes are made on the fly when a page first needs them;
                 changing this value drops the old cached sizes so nothing
                 stale survives.
+              </div>
+            </span>
+          </div>
+        </.form>
+
+        <.section>Videos</.section>
+        <.form for={@settings_form} id="videos-form" phx-change="save_setting">
+          <div class="drow">
+            <label class="lab" for="setting-video_max_edge">Max longer edge</label>
+            <span class="val">
+              <span class="addr">
+                <input
+                  type="number"
+                  id="setting-video_max_edge"
+                  name="settings[video_max_edge]"
+                  value={@settings_form[:video_max_edge].value}
+                  min="480"
+                  step="80"
+                  class="max-w-[120px]"
+                  phx-debounce="400"
+                />
+                <span class="pre">px</span>
+              </span>
+              <p :if={@errors[:video_max_edge]} class="text-julia text-[13px] mt-[6px]">
+                The value must be {@errors[:video_max_edge]}.
+              </p>
+              <div class="hint">
+                An uploaded video is converted once, to one MP4 every browser
+                plays, with the longer edge within this; nothing is ever scaled
+                up. The original is kept on disk. ffmpeg does the work on one
+                thread at the lowest priority, one video at a time, so the site
+                stays quick while it runs. A new value applies to what is
+                converted after the change; a video already converted keeps the
+                file it has.
               </div>
             </span>
           </div>

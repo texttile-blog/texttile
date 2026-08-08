@@ -12,8 +12,9 @@
    composed on is always undecorated raw text.
 
    The interface, and nothing else crosses it:
-   in:  the initial text (the server-rendered textarea), sync_body
-        {text, caret?}, set_readonly {readOnly}
+   in:  the initial text (the server-rendered textarea), the posters of
+        its videos (data-posters), sync_body {text, caret?},
+        sync_media {posters}, set_readonly {readOnly}
    out: body_changed {text} (debounced), editor_activity (throttled),
         ask_takeover on a read-only pointer, files into uploadFiles */
 
@@ -71,20 +72,33 @@ class CheckW extends WidgetType {
   }
 }
 class ImgW extends WidgetType {
-  constructor(css, title) { super(); this.css = css; this.title = title }
-  eq(o) { return o.css === this.css && o.title === this.title }
+  constructor(css, title, video) { super(); this.css = css; this.title = title; this.video = video }
+  eq(o) { return o.css === this.css && o.title === this.title && o.video === this.video }
   toDOM() {
     const s = document.createElement("span")
-    s.className = "cm-mdimg"
+    s.className = this.video ? "cm-mdimg cm-mdvid" : "cm-mdimg"
     if (this.css) s.style.backgroundImage = this.css
     s.title = this.title
+    /* the same mark the tiles wear, so a film reads as a film here too */
+    if (this.video) {
+      const mark = document.createElement("span")
+      mark.className = "play-badge"
+      mark.setAttribute("aria-hidden", "true")
+      s.appendChild(mark)
+    }
     return s
   }
 }
 
+/* the containers Texttile.Videos takes */
+export const VIDEO_FILE = /\.(mp4|mov|m4v|webm|avi|mkv)$/i
+
 /* ---- the live preview --------------------------------------------- */
 const HIDE = Decoration.replace({})
 const remoteChange = Annotation.define()
+/* the posters changed under the text: the preview redraws, and nothing
+   else about the document has moved */
+const mediaChanged = Annotation.define()
 
 function buildDeco(view, resolveImage) {
   const {state} = view
@@ -142,7 +156,7 @@ function buildDeco(view, resolveImage) {
         const ms = n.node.getChildren("LinkMark")
         const alt = ms.length >= 2 ? doc.sliceString(ms[0].to, ms[1].from) : ""
         const css = resolveImage ? resolveImage(url) : null
-        deco.push(Decoration.replace({widget: new ImgW(css, alt || url)}).range(n.from, n.to))
+        deco.push(Decoration.replace({widget: new ImgW(css, alt || url, VIDEO_FILE.test(url))}).range(n.from, n.to))
         return false
       }
       if (name === "Link") {
@@ -312,6 +326,9 @@ const impl = {
     const seed = this.el.querySelector("textarea")
     const initial = seed ? seed.value : ""
     const readOnly = this.el.dataset.readonly === "true"
+    /* the poster of every converted video of this text, by the url the
+       body carries; the server keeps it fresh through sync_media */
+    this.posters = JSON.parse(this.el.dataset.posters || "{}")
     this.el.replaceChildren()
 
     let debounce = null
@@ -348,6 +365,13 @@ const impl = {
        drawn as they are */
     const resolveImage = url => {
       if (!/^(https?:|data:|blob:|\/)/.test(url)) return null
+      /* a video is drawn by its poster; while ffmpeg has none the
+         widget is the play mark alone, and the panel below the text
+         says where the conversion stands */
+      if (VIDEO_FILE.test(url)) {
+        const poster = this.posters[url]
+        return poster ? `url('${poster.replace(/'/g, "%27")}')` : null
+      }
       const scaled = url.startsWith("/uploads/")
         ? "/renditions/320/" + url.slice("/uploads/".length)
         : url
@@ -358,7 +382,9 @@ const impl = {
       constructor(view) { this.deco = buildDeco(view, resolveImage) }
       update(u) {
         if (u.docChanged || u.selectionSet || u.viewportChanged ||
-            u.startState.readOnly !== u.state.readOnly) this.deco = buildDeco(u.view, resolveImage)
+            u.startState.readOnly !== u.state.readOnly ||
+            u.transactions.some(t => t.annotation(mediaChanged)))
+          this.deco = buildDeco(u.view, resolveImage)
       }
     }, {decorations: v => v.deco})
 
@@ -368,7 +394,7 @@ const impl = {
       EditorView.lineWrapping,
       syntaxHighlighting(mdHighlight),
       livePreview,
-      placeholder("Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."),
+      placeholder("Write. Markdown works: ## for a heading. Paste a picture or a video, or drop one here to put it in the text."),
       EditorView.contentAttributes.of({"aria-label": "Body, Markdown"}),
       keymap.of([
         {key: "Mod-b", run: cmds.bold},
@@ -387,14 +413,14 @@ const impl = {
       }),
       EditorView.domEventHandlers({
         paste: e => {
-          const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type))
+          const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^(image|video)\//.test(f.type))
           if (!fs.length) return false
           e.preventDefault()
           this.uploadFiles(fs)
           return true
         },
         drop: (e, v) => {
-          const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => /^image\//.test(f.type))
+          const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => /^(image|video)\//.test(f.type))
           if (!fs.length) return false
           e.preventDefault()   /* the outer dropzone sees this and stands down */
           if (v.state.readOnly) { this.pushEvent("ask_takeover", {}); return true }
@@ -441,6 +467,12 @@ const impl = {
       debounce = null
       this.pushEvent("body_flushed", {text: this.view.state.doc.toString()})
     })
+    /* a conversion finished somewhere: the posters come along, and the
+       preview draws them. No change to the document, so nothing saves. */
+    this.handleEvent("sync_media", ({posters}) => {
+      this.posters = posters || {}
+      this.view.dispatch({annotations: mediaChanged.of(true)})
+    })
     this.handleEvent("set_readonly", ({readOnly: ro}) => {
       this.view.dispatch({effects: roComp.reconfigure(roExt(ro))})
       if (ro && this.view.hasFocus) this.view.contentDOM.blur()
@@ -482,7 +514,7 @@ const impl = {
         if (e.defaultPrevented) return   /* the editor already took it */
         if (!carriesFiles(e.dataTransfer)) return
         e.preventDefault()
-        const files = [...e.dataTransfer.files].filter(f => /^image\//.test(f.type))
+        const files = [...e.dataTransfer.files].filter(f => /^(image|video)\//.test(f.type))
         if (!files.length) return
         this.view.focus()
         this.uploadFiles(files)
@@ -492,7 +524,7 @@ const impl = {
     const picker = document.getElementById("mdImgFile")
     if (picker) {
       picker.addEventListener("change", () => {
-        const files = [...picker.files].filter(f => /^image\//.test(f.type))
+        const files = [...picker.files].filter(f => /^(image|video)\//.test(f.type))
         picker.value = ""
         if (!files.length) return
         this.view.focus()

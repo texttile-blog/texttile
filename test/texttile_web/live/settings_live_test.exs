@@ -126,6 +126,24 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Settings.get(:image_max_edge) == 2560
     end
 
+    test "the video edge saves, and a number nobody can use says no", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
+
+      view
+      |> form("#videos-form", %{"settings" => %{"video_max_edge" => "1920"}})
+      |> render_change(%{"_target" => ["settings", "video_max_edge"]})
+
+      assert Settings.get(:video_max_edge) == 1920
+
+      html =
+        view
+        |> form("#videos-form", %{"settings" => %{"video_max_edge" => "100"}})
+        |> render_change(%{"_target" => ["settings", "video_max_edge"]})
+
+      assert html =~ "at least 480"
+      assert Settings.get(:video_max_edge) == 1920
+    end
+
     test "the page size saves, and a number nobody can use says no", %{conn: conn} do
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 

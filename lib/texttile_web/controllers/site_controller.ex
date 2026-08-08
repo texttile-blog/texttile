@@ -444,10 +444,14 @@ defmodule TexttileWeb.SiteController do
     gallery = Gallery.list(article.id)
 
     og_image =
-      case Gallery.effective_preview(article, Enum.map(gallery, & &1.path)) do
+      case Gallery.preview_still(article, Enum.map(gallery, & &1.path)) do
         nil -> nil
         path -> TexttileWeb.Endpoint.url() <> "/renditions/max/" <> path
       end
+
+    # A video tile has nothing to show before ffmpeg is through, so the
+    # reader's gallery waits for it instead of holding an empty square.
+    gallery = Gallery.tiles(gallery)
 
     {older, newer} = Articles.neighbours(article)
 

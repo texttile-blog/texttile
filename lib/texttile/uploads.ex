@@ -6,6 +6,8 @@ defmodule Texttile.Uploads do
 
       site/    the logo and the favicon
       images/  the originals of every picture (comes with the editor)
+      videos/  the originals of every video, and what ffmpeg made of
+               them (see Texttile.Videos)
       cache/   renditions, disposable (see Texttile.Images)
   """
 
@@ -85,29 +87,61 @@ defmodule Texttile.Uploads do
   be cached hard.
   """
   def put_body_image(source_path, original_name) do
+    store(source_path, original_name,
+      directory: "images",
+      extensions: @body_image_extensions,
+      fallback: "image",
+      refusal: "PNG, JPG, WebP or GIF, please",
+      readable: fn path ->
+        if readable_image?(path),
+          do: :ok,
+          else: {:error, "The file could not be read as an image"}
+      end
+    )
+  end
+
+  @doc """
+  Stores an uploaded video below `videos/`. The file is kept exactly
+  as it came; what a page plays is derived from it later
+  (`Texttile.Videos`). Nothing is read here: a video is only opened
+  once, by ffmpeg, and a file that turns out to hold no video fails
+  there with a reason the editor shows.
+  """
+  def put_body_video(source_path, original_name) do
+    store(source_path, original_name,
+      directory: "videos",
+      extensions: Texttile.Videos.extensions(),
+      fallback: "video",
+      refusal: "MP4, MOV, M4V, WebM, AVI or MKV, please"
+    )
+  end
+
+  # The one way a body file lands on disk: the extension decides
+  # whether it may, an optional reading says whether the file is what
+  # it claims, and the readable base of the name plus a random tag make
+  # the stored name.
+  defp store(source_path, original_name, opts) do
     extension = original_name |> Path.extname() |> String.downcase()
+    readable = Keyword.get(opts, :readable, fn _path -> :ok end)
 
-    cond do
-      extension not in @body_image_extensions ->
-        {:error, "PNG, JPG, WebP or GIF, please"}
+    with :ok <- allowed(extension, opts),
+         :ok <- readable.(source_path) do
+      base =
+        case Texttile.Articles.slugify(Path.rootname(original_name)) do
+          "" -> opts[:fallback]
+          slug -> slug
+        end
 
-      not readable_image?(source_path) ->
-        {:error, "The file could not be read as an image"}
-
-      true ->
-        base =
-          case Texttile.Articles.slugify(Path.rootname(original_name)) do
-            "" -> "image"
-            slug -> slug
-          end
-
-        tag = random_tag()
-        relative = "images/#{base}-#{tag}#{extension}"
-        destination = absolute(relative)
-        File.mkdir_p!(Path.dirname(destination))
-        File.cp!(source_path, destination)
-        {:ok, relative}
+      relative = "#{opts[:directory]}/#{base}-#{random_tag()}#{extension}"
+      destination = absolute(relative)
+      File.mkdir_p!(Path.dirname(destination))
+      File.cp!(source_path, destination)
+      {:ok, relative}
     end
+  end
+
+  defp allowed(extension, opts) do
+    if extension in opts[:extensions], do: :ok, else: {:error, opts[:refusal]}
   end
 
   defp readable_image?(path) do
@@ -118,16 +152,47 @@ defmodule Texttile.Uploads do
   defp random_tag, do: 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
 
   @doc """
-  Removes a body image and its cached renditions. Only paths below
-  `images/` qualify; anything else is left alone.
+  Removes an uploaded file and everything derived from it: the cached
+  renditions of a picture, the converted file and the poster of a
+  video. Only paths below `images/` and `videos/` qualify; anything
+  else is left alone.
+
+  The paths that arrive here are not all the server's own: deleting a
+  text hands over every reference its body ever held, and a body is
+  written by hand. A name that climbs out of the uploads root with
+  `..` is no upload of ours, whatever it starts with.
   """
-  def remove_body_image("images/" <> _ = relative) do
+  def remove_upload(relative) when is_binary(relative) do
+    if inside_root?(relative) do
+      remove_stored_upload(relative)
+    else
+      :ok
+    end
+  end
+
+  def remove_upload(_other), do: :ok
+
+  defp remove_stored_upload("images/" <> _ = relative) do
     File.rm(absolute(relative))
     Texttile.Images.drop_renditions(relative)
     :ok
   end
 
-  def remove_body_image(_other), do: :ok
+  defp remove_stored_upload("videos/" <> _ = relative) do
+    Texttile.Videos.forget(relative)
+    File.rm(absolute(relative))
+    :ok
+  end
+
+  defp remove_stored_upload(_other), do: :ok
+
+  # The same reading the upload routes do: expand the name and see
+  # whether it still stands below the root.
+  defp inside_root?(relative) do
+    root = Path.expand(root())
+
+    root |> Path.join(relative) |> Path.expand() |> String.starts_with?(root <> "/")
+  end
 
   @doc "Back to the default mark: the file goes, the settings clear."
   def reset_site_mark(mark) when mark in @marks do

@@ -17,6 +17,7 @@ defmodule TexttileWeb.EditorLive do
   alias Texttile.Articles.Lock
   alias Texttile.Comments
   alias Texttile.Gallery
+  alias Texttile.Videos
 
   ## Mount
 
@@ -41,15 +42,21 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:log, Articles.log(article))
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
+      |> assign(:media_rev, 0)
       |> assign(:comments, Comments.for_article(article.id))
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
       |> known_tags()
+
+    # What the writing surface was told last. It reads the element on
+    # its way in, so at the start the two agree.
+    socket = assign(socket, :pushed_posters, poster_map(media(socket.assigns)))
 
     socket =
       if connected?(socket) do
         Articles.subscribe(article.id)
         Comments.subscribe()
         Texttile.Settings.subscribe()
+        Videos.subscribe()
 
         socket =
           case Lock.acquire(article.id, user.id, self()) do
@@ -120,7 +127,12 @@ defmodule TexttileWeb.EditorLive do
     if socket.assigns.holds_lock do
       {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
       Lock.ping(article.id, self())
-      {:noreply, socket |> assign(:article, article) |> mark_saved()}
+
+      # A video pasted a moment ago reaches the server with this text
+      # and may be converted already; its poster goes back with the
+      # answer, because the conversion's own word came too early to
+      # find the reference here.
+      {:noreply, socket |> assign(:article, article) |> sync_posters() |> mark_saved()}
     else
       {:noreply, socket}
     end
@@ -636,7 +648,7 @@ defmodule TexttileWeb.EditorLive do
     assign(socket, :gallery, Gallery.list(socket.assigns.article.id))
   end
 
-  defp gone_note, do: "That picture was deleted a moment ago"
+  defp gone_note, do: "That tile was deleted a moment ago"
 
   defp moved_note(socket, meta) do
     name =
@@ -744,10 +756,69 @@ defmodule TexttileWeb.EditorLive do
   defp thumb_url("/uploads/" <> relative), do: "/renditions/320/" <> relative
   defp thumb_url(url), do: String.replace(url, "'", "%27")
 
+  # What every video of this text shows and how far it is, in one
+  # query: the tiles of the gallery and the references in the words.
+  defp media(%{article: article, gallery: gallery}) do
+    inline =
+      article.body
+      |> Articles.inline_refs()
+      |> Enum.flat_map(fn
+        %{kind: :done, url: "/uploads/" <> relative} -> [relative]
+        _ -> []
+      end)
+
+    (Enum.map(gallery, & &1.path) ++ inline)
+    |> Enum.uniq()
+    |> Videos.stills()
+  end
+
+  # The entry behind a reference in the words, whose url carries the
+  # /uploads/ prefix the body writes.
+  defp ref_media(media, "/uploads/" <> relative), do: media[relative]
+  defp ref_media(_media, _url), do: nil
+
+  # Hands the writing surface its posters, and only when they are not
+  # the ones it already has: this runs on every body change, and a
+  # text without a video has nothing to say every time.
+  defp sync_posters(socket) do
+    posters = poster_map(media(socket.assigns))
+
+    if posters == socket.assigns.pushed_posters do
+      socket
+    else
+      socket
+      |> assign(:pushed_posters, posters)
+      |> push_event("sync_media", %{posters: posters})
+    end
+  end
+
+  # The poster of every converted video, for the writing surface: it
+  # draws the markdown references, so it is told the body's own urls.
+  # A video ffmpeg has not finished is absent and stays a play mark.
+  defp poster_map(media) do
+    media
+    |> Enum.flat_map(fn {path, entry} ->
+      if Videos.video?(path) and is_binary(entry.still) do
+        [{"/uploads/#{path}", "/renditions/320/#{entry.still}"}]
+      else
+        []
+      end
+    end)
+    |> Map.new()
+  end
+
+  # What the desk says while ffmpeg is not through with a video.
+  defp conversion_note(%{state: :queued}), do: "waiting to be converted"
+  defp conversion_note(%{state: :running}), do: "converting"
+  defp conversion_note(%{state: :none}), do: "waiting to be converted"
+  defp conversion_note(%{state: :failed, error: nil}), do: "the conversion failed"
+  defp conversion_note(%{state: :failed, error: reason}), do: "the conversion failed: #{reason}"
+  defp conversion_note(_media), do: nil
+
   defp tile_count(gallery) do
     case length(gallery) do
-      1 -> "1 image"
-      n -> "#{n} images"
+      1 -> "1 tile"
+      n -> "#{n} tiles"
     end
   end
 
@@ -926,7 +997,25 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, assign(socket, :cmt_require, value)}
   end
 
+  # A conversion moved on. The panel and the tiles read where it stands
+  # while they render; this is the nudge that makes a render happen.
+  def handle_info({:video_changed, path}, socket) do
+    socket =
+      if in_this_text?(socket, path), do: update(socket, :media_rev, &(&1 + 1)), else: socket
+
+    # The panel and the tiles read the state as they render; the
+    # writing surface is the hook's, so its posters are handed over.
+    # Every editor is asked, not only the ones that already know the
+    # video: a reference pasted a moment ago is still on its way here.
+    {:noreply, sync_posters(socket)}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp in_this_text?(socket, path) do
+    Enum.any?(socket.assigns.gallery, &(&1.path == path)) or
+      String.contains?(to_string(socket.assigns.article.body), path)
+  end
 
   defp maybe_reload_comments(socket, article_id) do
     if article_id == socket.assigns.article.id do
@@ -1027,11 +1116,13 @@ defmodule TexttileWeb.EditorLive do
   ## Render
 
   def render(assigns) do
-    # once per render, not once per tile: the candidates parse the body
+    # once per render, not once per tile: the candidates parse the body,
+    # and the stills ask in one go what every video of this text shows
     assigns =
       assigns
       |> assign(:preview_candidates, preview_candidates(assigns))
       |> assign(:effective_preview, effective_preview(assigns))
+      |> assign(:media, media(assigns))
 
     ~H"""
     <Layouts.app
@@ -1411,6 +1502,7 @@ defmodule TexttileWeb.EditorLive do
                   phx-hook="BodyEd"
                   phx-update="ignore"
                   data-readonly={to_string(!@holds_lock)}
+                  data-posters={Jason.encode!(poster_map(@media))}
                 >
                   <textarea
                     class="ed-body"
@@ -1443,8 +1535,8 @@ defmodule TexttileWeb.EditorLive do
                 id="mdImgFile"
                 class="sr"
                 multiple
-                accept="image/*"
-                aria-label="Put images in the text"
+                accept="image/*,video/*"
+                aria-label="Put pictures and videos in the text"
               />
 
               <%!-- the images in the text: a reading of the body, never
@@ -1454,7 +1546,7 @@ defmodule TexttileWeb.EditorLive do
               <div class="mt-[34px]">
                 <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
                   <span class="text-[13px] font-semibold">
-                    Images in the text
+                    Pictures and videos in the text
                     <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                   </span>
                   <span class="sp"></span>
@@ -1462,19 +1554,35 @@ defmodule TexttileWeb.EditorLive do
                 </div>
                 <div id="inlineImgs">
                   <p :if={Articles.inline_refs(@article.body) == []} class="note pt-[10px]">
-                    None in this text yet. Paste an image into the text, or drop one on it.
+                    None in this text yet. Paste a picture or a video into the text, or drop one on it.
                   </p>
                   <%= for ref <- Articles.inline_refs(@article.body) do %>
+                    <% media = ref_media(@media, ref.url) %>
+                    <%!-- a picture, or a video ffmpeg is through with:
+                         the still stands for it. A video that is not
+                         converted yet says where it stands instead. --%>
                     <div
                       :if={ref.kind == :done}
                       class="flex items-center gap-[11px] py-[9px] border-b border-hair text-[13px]"
                     >
                       <span
+                        :if={media && media.still}
+                        class="w-9 h-9 r-img bg-field bg-center bg-cover flex-none"
+                        style={"background-image:url('#{thumb_url("/uploads/" <> media.still)}')"}
+                      >
+                      </span>
+                      <span :if={media && !media.still} class="w-9 h-9 r-img bg-field flex-none">
+                      </span>
+                      <span
+                        :if={!media}
                         class="w-9 h-9 r-img bg-field bg-center bg-cover flex-none"
                         style={"background-image:url('#{thumb_url(ref.url)}')"}
                       >
                       </span>
                       <span class="font-semibold flex-none">{ref.file}</span>
+                      <span :if={media && conversion_note(media)} class="note">
+                        {conversion_note(media)}
+                      </span>
                       <span class="sp"></span>
                       <span class="text-faint text-[12px] break-words">{ref.raw}</span>
                     </div>
@@ -1647,22 +1755,29 @@ defmodule TexttileWeb.EditorLive do
               <div class="contents" id="tileServer">
                 <div
                   :for={{image, index} <- Enum.with_index(@gallery, 1)}
-                  class="tile"
+                  class={["tile", !@media[image.path].still && "tile-waiting"]}
                   id={"tile-#{image.id}"}
                   data-id={image.id}
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
                   data-date={Calendar.strftime(image.gallery_date, "%Y-%m-%dT%H:%M")}
-                  data-full={"/renditions/max/" <> image.path}
+                  data-full={
+                    @media[image.path].still && "/renditions/max/#{@media[image.path].still}"
+                  }
+                  data-video={@media[image.path].film && "/uploads/#{@media[image.path].film}"}
                   data-original={"/uploads/" <> image.path}
                   title={"#{image.filename} · #{Calendar.strftime(image.gallery_date, "%Y-%m-%d")}"}
-                  style={"background-image:url('/renditions/320/#{image.path}')"}
+                  style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"
                   tabindex="0"
-                  aria-label={"Image #{index}, #{image.filename}, grab to sort, tap to see it big"}
+                  aria-label={"Tile #{index}, #{image.filename}, grab to sort, tap to see it big"}
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
                   <span :if={@effective_preview == image.path} class="cov">preview</span>
+                  <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
+                  <span :if={conversion_note(@media[image.path])} class="tile-wait">
+                    {conversion_note(@media[image.path])}
+                  </span>
                   <button
                     type="button"
                     class="tile-del"
@@ -1678,7 +1793,7 @@ defmodule TexttileWeb.EditorLive do
                 type="button"
                 class="tile-add"
                 id="tileAdd"
-                aria-label="Add images"
+                aria-label="Add pictures and videos"
               >
                 + Add
               </button>
@@ -1688,14 +1803,14 @@ defmodule TexttileWeb.EditorLive do
               id="tileFiles"
               class="sr"
               multiple
-              accept="image/*"
-              aria-label="Add images to the gallery"
+              accept="image/*,video/*"
+              aria-label="Add pictures and videos to the gallery"
             />
             <span class="drop-flag" id="tileDropFlag" hidden>
-              Add the image to the gallery, at the end
+              Add it to the gallery, at the end
             </span>
             <p class="note mt-[10px] transition-colors" id="tileNote">
-              Grab an image to sort it. Tap one to see it big.
+              Grab a tile to sort it. Tap one to see it big.
             </p>
           </div>
 
@@ -1721,7 +1836,7 @@ defmodule TexttileWeb.EditorLive do
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
                   <%= if @preview_candidates == [] do %>
                     <span class="note">
-                      No images yet. Once the text or the gallery has one, pick it here.
+                      No pictures yet. Once the text or the gallery has one, pick it here.
                     </span>
                   <% else %>
                     <button
@@ -1730,7 +1845,7 @@ defmodule TexttileWeb.EditorLive do
                       }
                       type="button"
                       class={["cover-opt", @effective_preview == path && "on"]}
-                      style={tile_bg(path)}
+                      style={tile_bg((@media[path] && @media[path].still) || path)}
                       phx-click="set_preview"
                       phx-value-path={path}
                       aria-label={"Use image #{index} as the preview image"}
@@ -2142,7 +2257,7 @@ defmodule TexttileWeb.EditorLive do
     running = Enum.count(refs, &(&1.kind == :running))
     failed = Enum.count(refs, &(&1.kind == :failed))
 
-    "#{done} #{if done == 1, do: "image", else: "images"}" <>
+    "#{done} #{if done == 1, do: "file", else: "files"}" <>
       if(running > 0, do: " · #{running} on the way", else: "") <>
       if(failed > 0, do: " · #{failed} failed", else: "")
   end

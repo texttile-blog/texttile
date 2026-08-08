@@ -60,7 +60,7 @@ defmodule TexttileWeb.SiteControllerTest do
           tags: "sea, fog"
         )
 
-      {:ok, _image} = Texttile.Gallery.add_image(article, jpg_fixture(), "pier.jpg")
+      {:ok, _image} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
 
       html = conn |> get(~p"/") |> html_response(200)
       assert html =~ "/renditions/640/"
@@ -163,7 +163,7 @@ defmodule TexttileWeb.SiteControllerTest do
     test "shows the gallery as tiles that link the original, with the lightbox shell",
          %{conn: conn} do
       article = published_post(title: "Tiles", slug: "tiles", publish_date: ~D[2026-03-01])
-      {:ok, image} = Texttile.Gallery.add_image(article, jpg_fixture(), "pier.jpg")
+      {:ok, image} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
 
       html = conn |> get(~p"/2026/03/01/tiles") |> html_response(200)
 
@@ -506,7 +506,7 @@ defmodule TexttileWeb.SiteControllerTest do
   describe "renditions" do
     test "are public, for the tiles and the lightbox", %{conn: conn} do
       article = published_post(title: "Tiles")
-      {:ok, image} = Texttile.Gallery.add_image(article, jpg_fixture(), "pier.jpg")
+      {:ok, image} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
 
       conn = get(conn, "/renditions/320/#{image.path}")
       assert response(conn, 200)

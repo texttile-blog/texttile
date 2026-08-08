@@ -31,6 +31,7 @@ defmodule Texttile.Settings do
     comments_require_confirmation: {:boolean, true},
     posts_per_page: {:integer, 10},
     image_max_edge: {:integer, 2560},
+    video_max_edge: {:integer, 1280},
     logo: {:file, nil},
     logo_name: {:file, nil},
     favicon: {:file, nil},
@@ -282,6 +283,11 @@ defmodule Texttile.Settings do
 
   defp validate(:image_max_edge, n) when n < 800, do: {:error, "at least 800 px"}
   defp validate(:image_max_edge, n) when n > 10_000, do: {:error, "at most 10000 px"}
+
+  # A converted video is never made again, so the roof stays where a
+  # phone and a laptop both play the file without stuttering.
+  defp validate(:video_max_edge, n) when n < 480, do: {:error, "at least 480 px"}
+  defp validate(:video_max_edge, n) when n > 3840, do: {:error, "at most 3840 px"}
 
   defp validate(_key, _value), do: :ok
 

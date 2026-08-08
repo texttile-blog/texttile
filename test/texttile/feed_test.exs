@@ -130,6 +130,43 @@ defmodule Texttile.FeedTest do
       refute xml =~ "href=&quot;/tags"
     end
 
+    test "a film goes as its poster, with the way to the film behind it" do
+      {:ok, relative} =
+        Texttile.Uploads.put_body_video(
+          Texttile.VideoFixtures.video_file(320, 240),
+          "Harbour.mov"
+        )
+
+      {:ok, video} = Texttile.Videos.convert(Texttile.Videos.ensure(relative))
+
+      published_post(title: "With a film", body: "![Harbour](/uploads/#{relative})")
+
+      xml = Feed.rss(@base)
+
+      # no feed reader plays a video tag, and a rendition of a film is
+      # nothing at all
+      assert xml =~ "src=&quot;#{@base}/renditions/1320/#{video.poster_path}&quot;"
+      assert xml =~ "href=&quot;#{@base}/uploads/#{video.mp4_path}&quot;"
+      refute xml =~ "renditions/1320/#{relative}"
+      refute xml =~ "&lt;video"
+    end
+
+    test "a film that is still converting goes as a plain link" do
+      {:ok, relative} =
+        Texttile.Uploads.put_body_video(
+          Texttile.VideoFixtures.video_file(320, 240),
+          "Harbour.mov"
+        )
+
+      Texttile.Videos.ensure(relative)
+      published_post(title: "With a film", body: "![Harbour](/uploads/#{relative})")
+
+      xml = Feed.rss(@base)
+
+      assert xml =~ "href=&quot;#{@base}/uploads/#{relative}&quot;"
+      refute xml =~ "renditions/1320/#{relative}"
+    end
+
     test "leave an address that is already absolute alone" do
       published_post(
         title: "Elsewhere",
