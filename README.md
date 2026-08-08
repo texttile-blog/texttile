@@ -65,12 +65,26 @@ docker run -d --name texttile \
   -v texttile-data:/data \
   -e SECRET_KEY_BASE="$(openssl rand -base64 48)" \
   -e PHX_HOST=blog.example.com \
+  -e ADMIN_USERS=klaus,julia \
   ghcr.io/texttile-blog/texttile:latest
 ```
 
 The container prepares the data directories, runs migrations, drops root, and
-starts the server. All state lives in `/data`. An update is: pull the new
-image, start the container again.
+starts the server. All state lives in `/data`. Without `ADMIN_USERS` the site
+runs, but nobody can sign in. Put your username there before the first start.
+
+The image is `linux/amd64`. An update is: pull the new image, start the
+container again.
+
+```sh
+docker pull ghcr.io/texttile-blog/texttile:latest
+docker rm -f texttile
+# then the docker run above again
+```
+
+`latest` is the last commit on `main`. Every build also gets its commit as a
+tag (`ghcr.io/texttile-blog/texttile:<sha>`), so an installation can stay on
+one build.
 
 ## Readers and admins
 
@@ -277,7 +291,7 @@ shares one address, and the counter reads them as one person.
 separated by commas:
 
 ```sh
-ADMIN_USERS="kb,julia"
+ADMIN_USERS="klaus,julia"
 ```
 
 A name on that list has no account at first. Its owner opens the site, types
