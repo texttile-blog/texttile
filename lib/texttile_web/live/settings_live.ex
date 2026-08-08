@@ -28,7 +28,7 @@ defmodule TexttileWeb.SettingsLive do
     if connected?(socket) do
       Settings.subscribe()
       Accounts.subscribe_users()
-      Articles.subscribe_desk()
+      Articles.subscribe_admin()
     end
 
     socket =
@@ -218,8 +218,8 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply, socket |> refresh_settings() |> refresh_storage()}
   end
 
-  # A text changed or went away somewhere in the desk, so the row of
-  # tags may have changed with it. Every other message of the desk
+  # A text changed or went away somewhere in the admin area, so the row
+  # of tags may have changed with it. Every other message of the admin
   # topic is about a body, a version or a log, and none of those
   # touches a tag.
   def handle_info({message, _what}, socket)
@@ -241,7 +241,7 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply, socket}
   end
 
-  # The rest of the desk topic: a body, a version, a log. This screen
+  # The rest of the admin topic: a body, a version, a log. This screen
   # shows none of them.
   def handle_info({_message, _what}, socket), do: {:noreply, socket}
 
@@ -319,7 +319,7 @@ defmodule TexttileWeb.SettingsLive do
   defp shown_theme_css(""), do: Settings.default_theme_css()
   defp shown_theme_css(css), do: css
 
-  # :online_ids belongs to Desk: assigned on mount, refreshed on every
+  # :online_ids belongs to Admin: assigned on mount, refreshed on every
   # presence diff, so the "here now" marks stay current on their own.
   defp refresh_users(socket) do
     users = Accounts.list_users()
@@ -520,7 +520,7 @@ defmodule TexttileWeb.SettingsLive do
               </select>
               <div class="hint">
                 For readers: dates, the word "comments", the newsletter emails.
-                The desk itself stays English.
+                The admin area itself stays English.
               </div>
             </span>
           </div>
@@ -722,10 +722,11 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>Theme</.section>
         <p class="note mb-[10px]">
-          Theming is exactly one CSS file, and the desk and the public site
-          both wear it: no theme gallery, no options. The default is the iris
-          theme, and this is it below; edit it and this screen changes with
-          your next keystroke. Empty the field and the site is back in iris.
+          Theming is exactly one CSS file, and the admin area and the public
+          site both wear it: no theme gallery, no options. The default is
+          the iris theme, and this is it below; edit it and this screen
+          changes with your next keystroke. Empty the field and the site is
+          back in iris.
         </p>
         <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
           <label class="lab block mb-[6px]" for="setting-theme_css">theme.css</label>

@@ -41,7 +41,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     |> visit(link)
     |> assert_has("main", text: "You are on the list.")
 
-    # The desk: the list carries the reader, and the admin adds an
+    # The admin area: the list carries the reader, and the admin adds an
     # address by hand, confirmed at once.
     conn
     |> sign_in()

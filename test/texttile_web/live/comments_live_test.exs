@@ -83,7 +83,7 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert Comments.total_count() == 1
   end
 
-  test "delete removes the comment silently, live for the whole desk", %{conn: conn} do
+  test "delete removes the comment silently, live for everybody", %{conn: conn} do
     article = published_post()
     comment = post!(article)
 
@@ -99,7 +99,7 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert Comments.for_article(article.id) == []
   end
 
-  test "two desks deleting the same comment is no crash", %{conn: conn} do
+  test "two admins deleting the same comment is no crash", %{conn: conn} do
     article = published_post()
     comment = post!(article)
 

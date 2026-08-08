@@ -74,7 +74,7 @@ defmodule Texttile.ImagesTest do
       assert File.exists?(Path.join(Uploads.root(), kept))
     end
 
-    test "the desk thumbnail and the reader size live side by side" do
+    test "the admin thumbnail and the reader size live side by side" do
       rel = original("images/side.jpg", 4000, 2000)
 
       {:ok, thumb} = Images.rendition(rel, 320)

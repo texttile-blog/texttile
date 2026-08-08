@@ -1,4 +1,4 @@
-/* Texttile · the desk stylesheet.
+/* Texttile · the admin stylesheet.
 
    The design comes from the round-13 prototype: every colour, wash and
    radius is a --tt-* token, and theme.css sets all of them. base.css
@@ -68,14 +68,14 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* ==================================================================
-   THE FRONT TOKENS · the public site wears the desk's clothes, plus
-   the few rooms a desk has no use for. Every value is derived from
-   the theme tokens, so a stored theme.css can override any of them
-   (it loads after this sheet) and the front end follows.
+   THE FRONT TOKENS · the public site wears the admin area's clothes,
+   plus the few rooms the admin area has no use for. Every value is
+   derived from the theme tokens, so a stored theme.css can override any
+   of them (it loads after this sheet) and the front end follows.
    ================================================================== */
 :root {
   /* measure and rhythm */
-  --tt-measure: 62ch;                    /* the desk's own reading width */
+  --tt-measure: 62ch;                    /* the admin area's reading width */
   --tt-gut:     clamp(14px, 4vw, 26px);
   --tt-headh:   54px;                    /* the reader header of round-13 */
   --tt-sec:     clamp(46px, 7vw, 76px);
@@ -106,7 +106,8 @@
   .btn:disabled:hover { background-color: transparent; box-shadow: inset 0 0 0 1px var(--tt-rule); }
   .btn.sm { height: 25px; padding-left: 9px; padding-right: 9px; font-size: 12px; }
   /* the small badge on a comment whose reader has not confirmed the
-     address yet - worn on the desk and on the reader's own pending row */
+     address yet - worn in the admin area and on the reader's own
+     pending row */
   .wait {
     display: inline-block; font-size: 11px; font-weight: 500; color: var(--tt-dim);
     padding: 1px 6px; border-radius: var(--tt-radius-img);
@@ -710,8 +711,8 @@
      THE PUBLIC SITE · ported from the marketing-round-2 example blog
      (front.css): the reader header, the cards, the reader gallery and
      its lightbox, the footer on the bottom edge. Rules that would
-     restyle the desk (the quiet fields, the page column) are scoped
-     to body.site; the rest carries names the desk does not use.
+     restyle the admin area (the quiet fields, the page column) are scoped
+     to body.site; the rest carries names the admin area does not use.
      ================================================================ */
 
   /* One column, and the band with the footer under it on the bottom
@@ -725,7 +726,8 @@
   body.site > footer { margin-top: auto; }
 
   /* the fields are .quiet-fields, worn on the body (site_root.html.heex):
-     the same underline the desk's side column writes, not a second copy */
+     the same underline the side column of the admin area writes, not a
+     second copy */
 
   /* the header: the reader header of round-13, with the site menu the
      app builds out of its pages */
@@ -769,7 +771,7 @@
   .f-foot a { color: var(--tt-dim); text-decoration: none; }
   .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
 
-  /* one wrapper, two widths, both the desk's */
+  /* one wrapper, two widths, both the admin area's */
   .wrap { width: 100%; max-width: 1060px; margin: 0 auto; padding: 0 var(--tt-gut); }
   .wrap.narrow { max-width: 660px; }
 
@@ -788,7 +790,7 @@
      notes under the forms, which have to be comfortable to read */
   .f-note { font-size: 12.5px; line-height: 1.55; color: var(--tt-dim); }
 
-  /* the way into the desk, in the line under the title. Only an admin
+  /* the way into the admin area, in the line under the title. Only an admin
      who is signed in is ever served it, so it stays small and quiet
      and lets the date keep the line. */
   .edit-link {
@@ -809,7 +811,7 @@
     field-sizing: content; resize: none; min-height: 2lh; line-height: 1.6;
   }
 
-  /* the list of texts: the Texts grid of the desk, read by a reader.
+  /* the list of texts: the Texts grid of the admin area, read by a reader.
      One preview image, a title clamped to two lines, the date, a lead
      line and the tags. Same proportions, same hover. */
   .cards {
@@ -818,7 +820,7 @@
     align-items: start;
   }
   @media (max-width: 560px) { .cards { grid-template-columns: 1fr; gap: 34px; } }
-  /* the card itself is the desk's .card (same proportions, same
+  /* the card itself is the admin area's .card (same proportions, same
      two-line title, same hover); the reader only adds the link reset
      and the img child inside the square, so the two grids never drift */
   body.site .card { text-decoration: none; color: inherit; }
@@ -1142,7 +1144,7 @@
 .ed-cm .cm-mdvid .play-badge { --play: 26px; }
 
 /* THE PLAY MARK · one badge for all three places a film shows itself:
-   the gallery tile of the desk, the tile a reader sees, and the
+   the gallery tile of the admin area, the tile a reader sees, and the
    reference in the words. --play is its size, and the arrow follows.
    It stays outside the layers because the one in the body editor has
    to outweigh CodeMirror's own unlayered rules. */

@@ -57,8 +57,8 @@ defmodule TexttileWeb.Endpoint do
   # Multipart carries the pictures and the videos; both are far past
   # Plug's 8 MB default. Two roofs, because they guard different
   # things: 52 MB for everybody, which holds a 50 MB photograph and the
-  # form around it, and 520 MB on the two upload addresses of the desk,
-  # which hold a 500 MB video (MAX_VIDEO_MB in gallery_core.js).
+  # form around it, and 520 MB on the two upload addresses of the admin
+  # area, which hold a 500 MB video (MAX_VIDEO_MB in gallery_core.js).
   #
   # The big roof needs a signed-in session, not merely the right
   # address: the parser runs before the router, so without that check a

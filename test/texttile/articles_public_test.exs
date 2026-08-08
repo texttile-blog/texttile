@@ -186,7 +186,7 @@ defmodule Texttile.ArticlesPublicTest do
   end
 
   describe "known_tags/0" do
-    test "answers every tag of the desk, the most used one first" do
+    test "answers every tag of the admin area, the most used one first" do
       published_post(title: "One", tags: "sea, fog")
       draft_post(title: "Two", tags: "Sea, travel")
       published_post(title: "Three", tags: "sea")

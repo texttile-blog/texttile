@@ -6,7 +6,7 @@ defmodule Texttile.Articles do
   The concurrency model, from the collaboration spec: the title and the
   body belong to one admin at a time (see `Texttile.Articles.Lock`);
   everything else is freely editable by every admin all the time, last
-  write wins per field. Every accepted change is announced, on the desk
+  write wins per field. Every accepted change is announced, on the admin
   topic for the grid and on the article's own topic for open editors.
   """
 
@@ -17,12 +17,12 @@ defmodule Texttile.Articles do
   alias Texttile.Articles.Version
   alias Texttile.Repo
 
-  @desk_topic "articles"
+  @admin_topic "articles"
 
   ## PubSub
 
-  def subscribe_desk do
-    Phoenix.PubSub.subscribe(Texttile.PubSub, @desk_topic)
+  def subscribe_admin do
+    Phoenix.PubSub.subscribe(Texttile.PubSub, @admin_topic)
   end
 
   def subscribe(article_id) do
@@ -32,7 +32,7 @@ defmodule Texttile.Articles do
   defp topic(article_id), do: "article:#{article_id}"
 
   defp broadcast(message) do
-    Phoenix.PubSub.broadcast(Texttile.PubSub, @desk_topic, message)
+    Phoenix.PubSub.broadcast(Texttile.PubSub, @admin_topic, message)
 
     case message do
       {_, %Article{id: id}} -> Phoenix.PubSub.broadcast(Texttile.PubSub, topic(id), message)
@@ -48,9 +48,10 @@ defmodule Texttile.Articles do
   @doc """
   The texts for the grid, by date, newest first: the day a text is
   published or goes live, and while it carries no date yet, today - a
-  draft is the newest thing on the desk until it gets one. `filter:`
-  narrows to one status ("all" and nil mean everything), `search:`
-  looks through the title, the tags and the body, case-insensitively.
+  draft is the newest thing in the admin area until it gets one.
+  `filter:` narrows to one status ("all" and nil mean everything),
+  `search:` looks through the title, the tags and the body,
+  case-insensitively.
   """
   def list_articles(opts \\ []) do
     filter = opts[:filter]
@@ -207,8 +208,8 @@ defmodule Texttile.Articles do
   end
 
   @doc """
-  Every tag the desk already knows, the most used one first, then in
-  alphabetical order. The editor offers this list under the tag field,
+  Every tag the admin area already knows, the most used one first, then
+  in alphabetical order. The editor offers this list under the tag field,
   so the same word does not come back in three spellings.
   """
   def known_tags, do: Enum.map(tag_counts(), fn {tag, _count} -> tag end)

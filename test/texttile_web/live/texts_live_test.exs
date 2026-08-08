@@ -7,7 +7,7 @@ defmodule TexttileWeb.TextsLiveTest do
 
   setup :register_and_log_in_user
 
-  test "shows the desk shell with the wordmark menu", %{conn: conn} do
+  test "shows the admin shell with the wordmark menu", %{conn: conn} do
     {:ok, view, html} = live(conn, ~p"/admin")
 
     assert html =~ "Texts"
@@ -21,12 +21,12 @@ defmodule TexttileWeb.TextsLiveTest do
     assert has_element?(view, "#navMenu", "Newsletter")
     assert has_element?(view, "#navMenu", "Stats")
     assert has_element?(view, "#navMenu", "Settings")
-    # the site opens beside the desk, not over it
+    # the site opens beside the admin area, not over it
     assert has_element?(view, ~s(#navMenu a[href="/"][target="_blank"]), "View site")
     assert has_element?(view, "#navMenu a", "Your profile")
     assert has_element?(view, "#navMenu a", "Sign out")
 
-    # presence: alone at the desk
+    # presence: alone in the admin area
     assert has_element?(view, "#liveBlock", "No one else right now.")
   end
 

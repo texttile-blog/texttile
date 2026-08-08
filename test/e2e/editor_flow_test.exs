@@ -163,7 +163,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> evaluate(@stacking, [is_function: true], &assert(&1 == "menu"))
     end
 
-    test "the site opens beside the desk, in its own tab", %{conn: conn} do
+    test "the site opens beside the admin area, in its own tab", %{conn: conn} do
       conn
       |> sign_in()
       |> click("#wmBtn")

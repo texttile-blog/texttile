@@ -5,10 +5,10 @@ defmodule Texttile.Newsletter do
 
   Two ways onto the list. A reader joins through the form on the site
   and confirms by mail first - until then the address stands on the
-  list but gets nothing. An admin adds an address at the desk, and that
-  address is confirmed at once: the admin vouches for it. Every mail
-  the list sends carries the way off it. Every change is announced on
-  the newsletter topic.
+  list but gets nothing. An admin adds an address in the admin area,
+  and that address is confirmed at once: the admin vouches for it.
+  Every mail the list sends carries the way off it. Every change is
+  announced on the newsletter topic.
   """
 
   import Ecto.Query
@@ -73,7 +73,7 @@ defmodule Texttile.Newsletter do
   end
 
   # The one place an address becomes a confirmed one, whichever way it
-  # got there: the desk vouches for it, or its owner followed the link.
+  # got there: an admin vouches for it, or its owner followed the link.
   defp confirm_now(%Subscriber{} = subscriber) do
     if Subscriber.confirmed?(subscriber) do
       subscriber
@@ -160,7 +160,7 @@ defmodule Texttile.Newsletter do
   end
 
   @doc """
-  The desk takes an address off the list. An address another admin
+  The admin area takes an address off the list. An address another admin
   removed first answers `{:error, :gone}`.
   """
   def remove(id) do

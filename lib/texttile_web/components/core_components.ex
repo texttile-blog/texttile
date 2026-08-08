@@ -562,7 +562,7 @@ defmodule TexttileWeb.CoreComponents do
 
   @doc """
   The word that goes with a count: the first for one, the second for
-  everything else. The lead lines of the desk screens count things.
+  everything else. The lead lines of the admin screens count things.
   """
   def plural(1, one, _many), do: one
   def plural(_n, _one, many), do: many

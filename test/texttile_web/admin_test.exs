@@ -1,4 +1,4 @@
-defmodule TexttileWeb.DeskTest do
+defmodule TexttileWeb.AdminTest do
   # Not async: presence state is global to the node.
   use TexttileWeb.ConnCase, async: false
 

@@ -1,6 +1,6 @@
 defmodule TexttileWeb.CommentComponents do
   @moduledoc """
-  The comment row of the desk and the one rule it follows, in one
+  The comment row of the admin area and the one rule it follows, in one
   wording. The Comments overview and the editor's Comments tab both
   draw from here, so the two screens can never drift apart.
   """

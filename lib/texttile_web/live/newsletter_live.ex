@@ -45,7 +45,7 @@ defmodule TexttileWeb.NewsletterLive do
     end
   end
 
-  # An address the other desk removed a moment ago is simply gone; the
+  # An address another admin removed a moment ago is simply gone; the
   # list reloads either way.
   def handle_event("remove", %{"id" => id}, socket) do
     Newsletter.remove(id)

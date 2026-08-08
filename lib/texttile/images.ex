@@ -6,7 +6,7 @@ defmodule Texttile.Images do
 
   A rendition is made the moment a page first needs it and then answers
   from the cache. An image holds a small, known set of cached sizes:
-  the desk thumbnail, the reader size of the moment, and whatever was
+  the admin thumbnail, the reader size of the moment, and whatever was
   just asked for. Anything else is dropped on the next ask, so nothing
   stale survives. The whole cache is disposable; clearing it only
   costs the next reader a moment.
@@ -22,7 +22,7 @@ defmodule Texttile.Images do
   @scalable ~w(.jpg .jpeg .png .webp)
 
   # The fixed edges the site asks for beside the reader size: 320 for
-  # the desk thumbnails, 640 for the reader's cards and gallery tiles,
+  # the admin thumbnails, 640 for the reader's cards and gallery tiles,
   # 1320 for the pictures inside a text (the 660px column, twice). The
   # gallery lightbox asks for the reader size instead ("max" in the
   # route). Every fixed edge stays sanctioned in the cache; only stale

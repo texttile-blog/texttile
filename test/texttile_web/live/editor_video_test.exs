@@ -1,5 +1,5 @@
 defmodule TexttileWeb.EditorVideoTest do
-  @moduledoc "What the desk says about a video while ffmpeg works on it."
+  @moduledoc "What the admin area says about a video while ffmpeg works."
   use TexttileWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest

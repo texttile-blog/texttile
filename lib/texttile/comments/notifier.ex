@@ -9,7 +9,7 @@ defmodule Texttile.Comments.Notifier do
   Everybody who runs the blog gets the comment itself, while
   `notify_on_comment` stands in the settings, and never before the
   comment stands under its text. The reader's address stays out of it:
-  no screen of the desk shows one either.
+  no screen of the admin area shows one either.
   """
 
   import Swoosh.Email
@@ -81,14 +81,14 @@ defmodule Texttile.Comments.Notifier do
   end
 
   defp admin_body(comment, site, title) do
-    desk = TexttileWeb.Endpoint.url() <> "/admin/comments"
+    comments_url = TexttileWeb.Endpoint.url() <> "/admin/comments"
 
     """
     #{comment.name} wrote on "#{title}":
 
     #{comment.body}
 
-    #{where_it_stands(comment.article)}    All comments:  #{desk}
+    #{where_it_stands(comment.article)}    All comments:  #{comments_url}
 
     #{site} sends this mail because "Mail me every new comment" stands
     in its settings. Switch it off there to stop it.

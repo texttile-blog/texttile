@@ -13,7 +13,7 @@ defmodule TexttileWeb.TextsLive do
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      Articles.subscribe_desk()
+      Articles.subscribe_admin()
       Comments.subscribe()
     end
 

@@ -51,7 +51,7 @@ defmodule TexttileWeb.Router do
     post "/link/:token", LinkController, :create
   end
 
-  ## The desk, under /admin: the readers own the root
+  ## The admin area, under /admin: the readers own the root
 
   scope "/admin", TexttileWeb do
     pipe_through [:browser, :require_authenticated_user]
@@ -64,10 +64,10 @@ defmodule TexttileWeb.Router do
     # the browser feeds them one after the other.
     post "/texts/:id/gallery", GalleryController, :create
 
-    live_session :desk,
+    live_session :admin,
       on_mount: [
         {TexttileWeb.UserAuth, :ensure_authenticated},
-        {TexttileWeb.Desk, :track_presence}
+        {TexttileWeb.Admin, :track_presence}
       ] do
       live "/", TextsLive
       live "/texts/:id", EditorLive
@@ -100,7 +100,7 @@ defmodule TexttileWeb.Router do
 
   ## The public site
 
-  # The reader pages share a lean root layout without the desk bundle.
+  # The reader pages share a lean root layout without the admin bundle.
   pipeline :site do
     plug :put_root_layout, html: {TexttileWeb.Layouts, :site_root}
   end

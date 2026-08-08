@@ -65,10 +65,10 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  The foot of every page: the site name, and the door to the desk. It
-  is not the text either, so it keeps the ground of the band over it
-  and the two read as one block; a hairline is all that stands between
-  them.
+  The foot of every page: the site name, and the door to the admin
+  area. It is not the text either, so it keeps the ground of the band
+  over it and the two read as one block; a hairline is all that stands
+  between them.
   """
   attr :current_scope, :any, default: nil
 
@@ -79,7 +79,7 @@ defmodule TexttileWeb.SiteHTML do
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
-        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Sign in</a>
+        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>Sign in</a>
         <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
       </div>
     </footer>
@@ -155,7 +155,7 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
-  @doc "The card of the desk's Texts grid, drawn for a reader."
+  @doc "The card of the admin area's Texts grid, drawn for a reader."
   attr :article, :any, required: true
   attr :preview, :any, default: nil
 

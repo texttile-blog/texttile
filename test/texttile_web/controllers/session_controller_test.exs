@@ -25,7 +25,7 @@ defmodule TexttileWeb.SessionControllerTest do
       refute response =~ "margarethe"
     end
 
-    test "sends a signed-in admin to the desk", %{conn: conn} do
+    test "sends a signed-in admin to the admin area", %{conn: conn} do
       conn = conn |> log_in_user(user_fixture()) |> get(~p"/login")
       assert redirected_to(conn) == ~p"/admin"
     end

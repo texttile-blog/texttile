@@ -1,7 +1,7 @@
 defmodule TexttileWeb.Layouts do
   @moduledoc """
-  The two shells of the app: `app/1` is the desk (topbar with the
-  wordmark menu), `auth/1` is the one column the sign-in family shares.
+  The two shells of the app: `app/1` is the admin area (topbar with
+  the wordmark menu), `auth/1` is the one column the sign-in family shares.
   The design comes from the round-13 prototype.
   """
   use TexttileWeb, :html
@@ -80,8 +80,8 @@ defmodule TexttileWeb.Layouts do
   end
 
   @doc """
-  The desk. The bar reads left to right: the wordmark, which is the
-  section dropdown, the presence hint and the root of the breadcrumb;
+  The admin area. The bar reads left to right: the wordmark, which is
+  the section dropdown, the presence hint and the root of the breadcrumb;
   then the breadcrumb. No chips: everybody who is here is named in the
   dropdown. The bar does not scroll and does not clip: the menu under
   it is positioned fixed and placed by JS.
@@ -171,8 +171,8 @@ defmodule TexttileWeb.Layouts do
         >
           Settings <span class="k">9</span>
         </.link>
-        <%!-- the site opens beside the desk: the writer keeps the text
-             they were working on --%>
+        <%!-- the site opens beside the admin area: the writer keeps
+             the text they were working on --%>
         <a class="row" href={~p"/"} target="_blank" rel="noopener" data-key="0">
           View site <span class="k">0</span>
         </a>

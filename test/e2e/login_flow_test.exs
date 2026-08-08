@@ -16,7 +16,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
   end
 
   describe "the first sign-in" do
-    test "a configured name walks through the password screen onto the desk", %{conn: conn} do
+    test "a configured name walks through the password screen into the admin area", %{conn: conn} do
       configure_admins(["kb"])
 
       conn
@@ -107,7 +107,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
   end
 
   describe "sign-in" do
-    test "wrong credentials leave a quiet line, right ones open the desk", %{conn: conn} do
+    test "wrong credentials leave a quiet line, right ones open the admin area", %{conn: conn} do
       user_fixture(%{username: "kb"})
 
       conn
@@ -123,7 +123,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     end
   end
 
-  describe "the desk" do
+  describe "the admin area" do
     test "the wordmark menu opens with sections and presence", %{conn: conn} do
       user_fixture(%{username: "kb"})
 
