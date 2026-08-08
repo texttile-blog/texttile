@@ -60,6 +60,7 @@ defmodule Texttile.Articles.Article do
       :preview_path
     ])
     |> update_change(:slug, &normalize_slug/1)
+    |> update_change(:tags, &normalize_tags/1)
     |> validate_inclusion(:type, @types)
     |> validate_exclusion(:slug, @reserved_slugs, message: "is an address the site itself uses")
     |> unique_constraint(:slug)
@@ -71,6 +72,21 @@ defmodule Texttile.Articles.Article do
     |> cast(attrs, [:status, :publish_date, :slug, :notified_on])
     |> validate_inclusion(:status, @statuses)
     |> unique_constraint(:slug)
+  end
+
+  # The tag row as the field should have written it: split on the
+  # commas, trimmed, empties dropped, every tag once with the spelling
+  # it was first given. The field hands over what somebody typed, and
+  # a trailing comma is what the completion leaves behind.
+  defp normalize_tags(nil), do: ""
+
+  defp normalize_tags(tags) do
+    tags
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq_by(&String.downcase/1)
+    |> Enum.join(", ")
   end
 
   defp normalize_slug(nil), do: nil

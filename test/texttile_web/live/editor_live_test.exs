@@ -266,6 +266,29 @@ defmodule TexttileWeb.EditorLiveTest do
       assert Articles.get_article!(article.id).tags == ""
     end
 
+    test "a tag no text carries any more leaves the row", %{conn: conn, user: user} do
+      other = draft(user)
+      {:ok, _} = Articles.update_settings(other, %{tags: "sea"})
+
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["tags"], tags: "sea, lonely"})
+
+      assert has_element?(view, "#tagchip-lonely.on")
+
+      # "lonely" stood on this text alone, so it goes with it; "sea"
+      # belongs to another text and stays on offer
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["tags"], tags: "sea"})
+
+      refute has_element?(view, "#tagchip-lonely")
+      assert has_element?(view, "#tagchip-sea.on")
+    end
+
     test "a reserved address is refused with its own note", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
