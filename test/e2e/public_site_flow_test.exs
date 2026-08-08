@@ -119,4 +119,21 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> refute_has("#next-post")
     end
   end
+
+  describe "the foot" do
+    # The foot wears .wrap and .f-foot together. `.wrap` writes the
+    # padding shorthand, so the space under the last line only holds
+    # while the rule that writes it beats `.wrap`. Once it lost, the
+    # site name stood on the bottom edge of the page.
+    @foot_pad """
+    () => parseFloat(getComputedStyle(document.querySelector(".f-foot")).paddingBottom)
+    """
+
+    test "keeps space under the last line", %{conn: conn} do
+      conn
+      |> visit("/")
+      |> assert_has("#foot-signin")
+      |> evaluate(@foot_pad, [is_function: true], &assert(&1 >= 24))
+    end
+  end
 end

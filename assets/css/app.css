@@ -702,9 +702,12 @@
   /* the foot of every page: one row, dim text, links that answer the
      pointer instead of underlining themselves permanently. On a phone
      it keeps clear of the browser's own bar at the bottom edge, which
-     lies over the page and hides whatever ends under it. */
-  .f-foot { font-size: 13px; color: var(--tt-dim); padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
-  @media (max-width: 700px) { .f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
+     lies over the page and hides whatever ends under it. The padding
+     carries `.wrap` too: `.wrap` writes the padding shorthand, and it
+     stands later in this layer, so a single class would lose. */
+  .f-foot { font-size: 13px; color: var(--tt-dim); }
+  .wrap.f-foot { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+  @media (max-width: 700px) { .wrap.f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
   .f-foot a { color: var(--tt-dim); text-decoration: none; }
   .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
 
