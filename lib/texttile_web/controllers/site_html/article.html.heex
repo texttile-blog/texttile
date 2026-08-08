@@ -1,5 +1,16 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
+  <%!-- An entry that is not live wears its address for the admins and
+       for nobody else. The strip says so before the first line, because
+       everything under it looks exactly like the published thing. --%>
+  <p :if={@article.status != "published"} class="notlive" id="not-live">
+    <span class="wrap">
+      <b>{String.capitalize(@article.status)}.</b>
+      This is the entry as it was last saved. Only somebody signed in can open
+      this address; a reader gets a 404.
+      <a href={~p"/admin/texts/#{@article.id}"}>Back to the editor</a>
+    </span>
+  </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>

@@ -34,12 +34,15 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
+      |> assign(:save_label, "Save version")
+      |> assign(:save_timer, nil)
       |> assign(:holds_lock, true)
       |> assign(:holder, nil)
       |> assign(:upload_pcts, %{})
       |> assign(:flush_pending, false)
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
+      |> assign(:redirects, Articles.redirects(article))
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
       |> assign(:media_rev, 0)
@@ -159,12 +162,15 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, finish_flush(socket)}
   end
 
+  # The button answers for itself. A version is not a save of the text -
+  # the text saved itself while it was typed - so the news belongs on
+  # the control that was pressed, not on the Last-saved line beside it.
   def handle_event("save_version", _params, socket) do
     %{article: article, current_scope: scope} = socket.assigns
 
     case Articles.save_version(article, scope.user) do
-      {:ok, _version} -> {:noreply, mark_saved(socket, "Version saved · just now")}
-      :unchanged -> {:noreply, mark_saved(socket, "Nothing changed since the last version")}
+      {:ok, _version} -> {:noreply, socket |> mark_saved() |> say_on_button("Saved")}
+      :unchanged -> {:noreply, say_on_button(socket, "Nothing changed")}
     end
   end
 
@@ -304,7 +310,12 @@ defmodule TexttileWeb.EditorLive do
           nil
       end
 
-    {:noreply, socket |> assign(:article, article) |> reload_history() |> mark_saved(note)}
+    {:noreply,
+     socket
+     |> assign(:article, article)
+     |> reload_history()
+     |> load_redirects()
+     |> mark_saved(note)}
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
@@ -315,7 +326,7 @@ defmodule TexttileWeb.EditorLive do
       {:ok, article} ->
         socket = assign(socket, :article, article)
         socket = if field == "tags", do: known_tags(socket), else: socket
-        {:noreply, mark_saved(socket)}
+        {:noreply, socket |> load_redirects() |> mark_saved()}
 
       {:error, changeset} ->
         {:noreply, mark_saved(socket, slug_error(changeset))}
@@ -323,6 +334,18 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", _params, socket), do: {:noreply, socket}
+
+  # One old address off the list. The entry keeps every other one; from
+  # now on that address is a 404 like any other.
+  def handle_event("delete_redirect", %{"id" => id}, socket) do
+    %{article: article} = socket.assigns
+
+    with {id, ""} <- Integer.parse(to_string(id)) do
+      :ok = Articles.delete_redirect(article, id)
+    end
+
+    {:noreply, socket |> load_redirects() |> mark_saved("That address answers nothing again")}
+  end
 
   # The tag suggestions: one click adds a tag the blog already knows,
   # one more takes it off again. The field keeps the spelling it has;
@@ -447,7 +470,7 @@ defmodule TexttileWeb.EditorLive do
        :info,
        ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
      )
-     |> push_navigate(to: ~p"/admin")}
+     |> push_navigate(to: ~p"/admin/texts")}
   end
 
   def handle_event("cancel_dialog", _params, socket) do
@@ -904,7 +927,9 @@ defmodule TexttileWeb.EditorLive do
           do: %{incoming | title: current.title, body: current.body},
           else: incoming
 
-      {:noreply, assign(socket, :article, article)}
+      # Another admin may have moved the entry, and the address it left
+      # behind belongs on this screen too.
+      {:noreply, socket |> assign(:article, article) |> load_redirects()}
     else
       {:noreply, socket}
     end
@@ -915,7 +940,7 @@ defmodule TexttileWeb.EditorLive do
       {:noreply,
        socket
        |> put_flash(:info, "The text was deleted while you had it open.")
-       |> push_navigate(to: ~p"/admin")}
+       |> push_navigate(to: ~p"/admin/texts")}
     else
       {:noreply, socket}
     end
@@ -1058,6 +1083,10 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, sync_posters(socket)}
   end
 
+  def handle_info(:reset_save_label, socket) do
+    {:noreply, socket |> assign(:save_label, "Save version") |> assign(:save_timer, nil)}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
 
   defp in_this_text?(socket, path) do
@@ -1135,6 +1164,18 @@ defmodule TexttileWeb.EditorLive do
 
   @note_ms 4600
 
+  # How long the Save version button keeps its answer before it is a
+  # button again. The same window the Last-saved line flashes for.
+  @button_ms 2600
+
+  defp say_on_button(socket, label) do
+    if timer = socket.assigns[:save_timer], do: Process.cancel_timer(timer)
+
+    socket
+    |> assign(:save_label, label)
+    |> assign(:save_timer, Process.send_after(self(), :reset_save_label, @button_ms))
+  end
+
   defp mark_saved(socket, note \\ nil) do
     now = System.system_time(:millisecond)
 
@@ -1167,6 +1208,10 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:log, Articles.log(socket.assigns.article))
   end
 
+  defp load_redirects(socket) do
+    assign(socket, :redirects, Articles.redirects(socket.assigns.article))
+  end
+
   ## Render
 
   def render(assigns) do
@@ -1177,6 +1222,8 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:preview_candidates, preview_candidates(assigns))
       |> assign(:effective_preview, effective_preview(assigns))
       |> assign(:media, media(assigns))
+      |> assign(:public_url, Articles.public_path(assigns.article))
+      |> assign(:public_title, public_title(assigns.article))
 
     ~H"""
     <Layouts.app
@@ -1187,10 +1234,47 @@ defmodule TexttileWeb.EditorLive do
       others={@others}
     >
       <:bar>
-        <span class={["stamp hidden sm:inline", @article.status]} id="stamp">
+        <%!-- the way out to the reader's side. An entry wears its
+             address from the moment it has a slug, and the site serves
+             an unpublished one to whoever is signed in, so the stamp
+             and the Last-saved line are both that door. --%>
+        <a
+          :if={@public_url}
+          class={["stamp out hidden sm:inline-flex", @article.status]}
+          id="stamp"
+          href={@public_url}
+          target="_blank"
+          rel="noopener"
+          title={@public_title}
+        >
+          {@article.status}<.out_icon />
+        </a>
+        <span :if={!@public_url} class={["stamp hidden sm:inline", @article.status]} id="stamp">
           {@article.status}
         </span>
+        <a
+          :if={@public_url}
+          class="out hidden md:inline-flex items-baseline flex-none"
+          id="stateLink"
+          href={@public_url}
+          target="_blank"
+          rel="noopener"
+          title={@public_title}
+        >
+          <span
+            class="saved whitespace-nowrap num"
+            id="state"
+            phx-hook="SavedTicker"
+            data-at={@saved_at}
+            data-note={@saved_note}
+            data-note-until={@saved_until}
+          >
+            Last saved · just now
+          </span>
+          <.out_icon />
+        </a>
         <span
+          :if={!@public_url}
           class="saved hidden md:inline-block whitespace-nowrap num"
           id="state"
           phx-hook="SavedTicker"
@@ -1206,21 +1290,8 @@ defmodule TexttileWeb.EditorLive do
           phx-click="save_version"
           title="Keep a version of the title and the body as they stand now"
         >
-          Save version
+          {@save_label}
         </button>
-        <%!-- the way out to the reader's side: only a live text has an
-             address, so the link comes with the text going live --%>
-        <a
-          :if={@article.status == "published"}
-          class="btn hidden sm:inline-flex"
-          id="btnView"
-          href={Articles.public_path(@article)}
-          target="_blank"
-          rel="noopener"
-          title="Opens the text on the public site in a new tab"
-        >
-          View
-        </a>
         <span
           class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
           id="stateBtn"
@@ -1273,14 +1344,14 @@ defmodule TexttileWeb.EditorLive do
       >
         <button class="row sm:hidden" phx-click="save_version">Save version</button>
         <a
-          :if={@article.status == "published"}
+          :if={@public_url}
           class="row sm:hidden"
           id="viewRow"
-          href={Articles.public_path(@article)}
+          href={@public_url}
           target="_blank"
           rel="noopener"
         >
-          View the text
+          Open the entry <.out_icon />
         </a>
         <%= if @article.status == "scheduled" do %>
           <button class="row" phx-click="publish_now">Publish now</button>
@@ -1938,6 +2009,33 @@ defmodule TexttileWeb.EditorLive do
                   />
                 </span>
                 <div class="hint" id="slugHint">{slug_hint(@article)}</div>
+                <%!-- every address this entry used to answer at. They
+                     are kept so a link somebody shared still arrives;
+                     a row that is not worth keeping goes with one
+                     click, and then the address is a 404 again. --%>
+                <div :if={@redirects != []} class="oldaddr" id="oldAddresses">
+                  <p class="lab">Old addresses, still arriving here</p>
+                  <div :for={old <- @redirects} class="row" id={"oldaddr-#{old.id}"}>
+                    <a
+                      class="p"
+                      href={old.path}
+                      target="_blank"
+                      rel="noopener"
+                      title="Follows the old address, in a new tab"
+                    >
+                      {old.path}
+                    </a>
+                    <button
+                      type="button"
+                      class="btn quiet sm"
+                      phx-click="delete_redirect"
+                      phx-value-id={old.id}
+                      aria-label={"Stop answering #{old.path}"}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </span>
             </div>
 
@@ -2384,6 +2482,17 @@ defmodule TexttileWeb.EditorLive do
         end
     end
   end
+
+  # What the door to the reader's side promises, in the words of the
+  # state it opens: a live entry is the page everybody reads, and one
+  # that is not live yet is that page for the admins alone.
+  defp public_title(%{status: "published"}),
+    do: "Opens the entry on the public site, in a new tab"
+
+  defp public_title(_article),
+    do:
+      "Opens the entry as it was last saved, in a new tab. " <>
+        "Only somebody signed in can open this address."
 
   defp chevron_icon(assigns) do
     ~H"""

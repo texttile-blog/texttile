@@ -509,6 +509,30 @@ defmodule TexttileWeb.CoreComponents do
     """
   end
 
+  @doc """
+  The mark of a link that opens a tab of its own: an arrow leaving its
+  box. It stands after the words, never instead of them, so it carries
+  no label for a screen reader.
+  """
+  def out_icon(assigns) do
+    ~H"""
+    <svg
+      class="out-i"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9.5 3h3.5v3.5" />
+      <path d="M13 3 8.2 7.8" />
+      <path d="M12 9.7V12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h2.3" />
+    </svg>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

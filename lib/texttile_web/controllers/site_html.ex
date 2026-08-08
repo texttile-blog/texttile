@@ -152,6 +152,27 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
+  One word of the archive: a year, a month, or the "all" that lets go
+  of one. The one that is open says so and stops being a link, so the
+  row never sends a reader to the page they are already on.
+  """
+  attr :label, :any, required: true
+  attr :href, :string, required: true
+  attr :on, :boolean, default: false
+  attr :count, :any, default: nil
+
+  def period(assigns) do
+    ~H"""
+    <span :if={@on} class="per on" aria-current="true">
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </span>
+    <a :if={!@on} class="per" href={@href}>
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </a>
+    """
+  end
+
+  @doc """
   The card of the admin area's Texts grid, drawn for a reader. `comments`
   is how many comments stand under the text; the line under the title
   carries it beside the date, so a reader sees where the talking is

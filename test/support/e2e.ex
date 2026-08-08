@@ -82,7 +82,7 @@ defmodule TexttileWeb.E2E do
     |> PhoenixTest.fill_in("Username", with: "kb")
     |> PhoenixTest.fill_in("Password", with: Texttile.AccountsFixtures.valid_password())
     |> PhoenixTest.click_button("Sign in")
-    |> PhoenixTest.assert_has("#crumb", text: "Texts")
+    |> PhoenixTest.assert_has("#crumb", text: "Entries")
     |> await_live()
   end
 end

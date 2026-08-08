@@ -102,7 +102,7 @@ defmodule TexttileWeb.AdminShareTest do
   describe "the way out to the site" do
     test "stands on every admin screen but the editor", %{conn: conn, user: user} do
       for path <- [
-            ~p"/admin",
+            ~p"/admin/texts",
             ~p"/admin/comments",
             ~p"/admin/newsletter",
             ~p"/admin/profile",

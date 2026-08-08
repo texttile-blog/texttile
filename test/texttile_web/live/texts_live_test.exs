@@ -2,21 +2,22 @@ defmodule TexttileWeb.TextsLiveTest do
   use TexttileWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
+  import Texttile.ArticlesFixtures
 
   alias Texttile.Articles
 
   setup :register_and_log_in_user
 
   test "shows the admin shell with the wordmark menu", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/admin")
+    {:ok, view, html} = live(conn, ~p"/admin/texts")
 
-    assert html =~ "Texts"
+    assert html =~ "Entries"
     assert has_element?(view, "#topbar")
     assert has_element?(view, "#wmBtn")
-    assert has_element?(view, "#crumb", "Texts")
+    assert has_element?(view, "#crumb", "Entries")
 
     # the menu: the sections with their digits, profile, sign out
-    assert has_element?(view, "#navMenu", "New text")
+    assert has_element?(view, "#navMenu", "New entry")
     assert has_element?(view, "#navMenu", "Comments")
     assert has_element?(view, "#navMenu", "Newsletter")
     assert has_element?(view, "#navMenu", "Stats")
@@ -31,23 +32,23 @@ defmodule TexttileWeb.TextsLiveTest do
   end
 
   test "names the signed-in admin in the menu", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/admin")
+    {:ok, view, _html} = live(conn, ~p"/admin/texts")
     assert has_element?(view, "#wmMe", user.username)
   end
 
   describe "the grid" do
-    test "lists the texts as cards", %{conn: conn, user: user} do
+    test "lists the entries as cards", %{conn: conn, user: user} do
       {:ok, article} = Articles.create_draft(user)
       {:ok, _} = Articles.update_text(article, %{title: "Fourteen doors", body: "wood"})
 
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
       assert has_element?(view, "#cards .card", "Fourteen doors")
-      assert has_element?(view, "#gridCount", "1 text")
+      assert has_element?(view, "#gridCount", "1 entry")
     end
 
     test "a card wears the oldest gallery image, live", %{conn: conn, user: user} do
       {:ok, article} = Articles.create_draft(user)
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
 
       assert has_element?(view, "#cards .cimg.empty")
 
@@ -63,7 +64,7 @@ defmodule TexttileWeb.TextsLiveTest do
     test "a card counts the comments under its text, live", %{conn: conn, user: user} do
       article = Texttile.ArticlesFixtures.published_post(title: "The harbour", user: user)
 
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
       refute has_element?(view, "#cards .card .cm", "comment")
 
       {:ok, _} =
@@ -97,13 +98,13 @@ defmodule TexttileWeb.TextsLiveTest do
 
       {:ok, _} = Articles.unpublish(article, user)
 
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
       assert has_element?(view, "#cards .card .cm", "1 comment")
     end
 
     test "an untitled draft reads Untitled", %{conn: conn, user: user} do
       {:ok, _} = Articles.create_draft(user)
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
       assert has_element?(view, "#cards .card", "Untitled")
     end
 
@@ -114,7 +115,7 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, live_article} = Articles.update_text(live_article, %{title: "Live one", body: ""})
       {:ok, _} = Articles.publish(live_article, user)
 
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
 
       view |> element("[data-f=published]") |> render_click()
       refute has_element?(view, "#cards .card", "Draft one")
@@ -131,16 +132,85 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, other} = Articles.create_draft(user)
       {:ok, _} = Articles.update_text(other, %{title: "Trains", body: "slow ones"})
 
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
       view |> element("#grid-search") |> render_change(%{q: "wooden"})
       assert has_element?(view, "#cards .card", "Doors")
       refute has_element?(view, "#cards .card", "Trains")
     end
   end
 
-  describe "New text" do
+  describe "the archive" do
+    setup %{user: user} do
+      %{
+        august: published_post(title: "Harbour mornings", publish_date: ~D[2026-08-08], user: user),
+        march: published_post(title: "Desert nights", publish_date: ~D[2026-03-02], user: user),
+        older: published_post(title: "The long winter", publish_date: ~D[2024-12-24], user: user)
+      }
+    end
+
+    test "narrows the grid to one year, then to one month", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+
+      assert has_element?(view, "#years .per", "2026")
+      assert has_element?(view, "#years .per", "2024")
+      refute has_element?(view, "#months")
+
+      view |> element("#years button.per", "2026") |> render_click()
+      assert has_element?(view, "#cards .card", "Harbour mornings")
+      assert has_element?(view, "#cards .card", "Desert nights")
+      refute has_element?(view, "#cards .card", "The long winter")
+
+      # only the months that carry entries
+      assert has_element?(view, "#months .per", "Aug")
+      assert has_element?(view, "#months .per", "Mar")
+      refute has_element?(view, "#months .per", "May")
+
+      view |> element("#months button.per", "Aug") |> render_click()
+      assert has_element?(view, "#cards .card", "Harbour mornings")
+      refute has_element?(view, "#cards .card", "Desert nights")
+    end
+
+    test "lets go of a year the search has emptied", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+
+      view |> element("#years button.per", "2024") |> render_click()
+      assert has_element?(view, "#cards .card", "The long winter")
+
+      view |> element("#grid-search") |> render_change(%{q: "harbour"})
+      assert has_element?(view, "#cards .card", "Harbour mornings")
+      refute has_element?(view, "#years .per.on", "2024")
+    end
+
+    test "drops the month when another year is chosen", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+
+      view |> element("#years button.per", "2026") |> render_click()
+      view |> element("#months button.per", "Aug") |> render_click()
+      assert has_element?(view, "#months .per.on", "Aug")
+
+      view |> element("#years button.per", "2024") |> render_click()
+      assert has_element?(view, "#cards .card", "The long winter")
+      refute has_element?(view, "#months .per.on", "Aug")
+    end
+
+    test "a draft without a day stands under All years and nowhere else", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, draft} = Articles.create_draft(user)
+      {:ok, _} = Articles.update_text(draft, %{title: "No day yet", body: ""})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+      assert has_element?(view, "#cards .card", "No day yet")
+
+      view |> element("#years button.per", "2026") |> render_click()
+      refute has_element?(view, "#cards .card", "No day yet")
+    end
+  end
+
+  describe "New entry" do
     test "creates a draft and opens the editor", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
 
       view |> element("#new-text") |> render_click()
 

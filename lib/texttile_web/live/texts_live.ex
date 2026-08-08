@@ -1,9 +1,10 @@
 defmodule TexttileWeb.TextsLive do
   @moduledoc """
-  The Texts overview: the full-page grid of cards without boxes, a
-  status filter, a search over titles, tags and the texts themselves.
-  The design is the round-14 grid; a card wears its text's preview
-  image (`Texttile.Gallery.effective_preview/2`).
+  The Entries overview: the full-page grid of cards without boxes, a
+  status filter, a search over titles, tags and the entries themselves,
+  and the archive of years and months over the grid. The design is the
+  round-14 grid; a card wears its entry's preview image
+  (`Texttile.Gallery.effective_preview/2`).
   """
   use TexttileWeb, :live_view
 
@@ -19,17 +20,29 @@ defmodule TexttileWeb.TextsLive do
 
     {:ok,
      socket
-     |> assign(:page_title, "Texts")
+     |> assign(:page_title, "Entries")
      |> assign(:filter, "all")
      |> assign(:q, "")
+     |> assign(:year, nil)
+     |> assign(:month, nil)
      |> load()}
   end
 
   defp load(socket) do
     %{filter: filter, q: q} = socket.assigns
-    articles = Articles.list_articles(filter: filter, search: q)
+    found = Articles.list_articles(filter: filter, search: q)
+
+    # The search and the status filter can empty the year that is open.
+    # Then the year lets go, rather than leaving an empty grid behind.
+    {year, month} = Articles.settle_period(found, socket.assigns.year, socket.assigns.month)
+    {years, months} = Articles.periods(found, year)
+    articles = Enum.filter(found, &Articles.in_period?(&1, year, month))
 
     socket
+    |> assign(:year, year)
+    |> assign(:month, month)
+    |> assign(:years, years)
+    |> assign(:months, months)
     |> assign(:articles, articles)
     |> assign(:covers, Gallery.previews(articles))
     |> assign(:comment_counts, Comments.count_map())
@@ -42,6 +55,26 @@ defmodule TexttileWeb.TextsLive do
 
   def handle_event("search", %{"q" => q}, socket) do
     {:noreply, socket |> assign(:q, q) |> load()}
+  end
+
+  # The archive narrows the grid to one year, and then to one month of
+  # it. Choosing another year drops the month with it: a month only
+  # ever belongs to the year over it.
+  def handle_event("period", params, socket) do
+    year = number(params["year"])
+    month = year && number(params["month"])
+
+    {:noreply, socket |> assign(:year, year) |> assign(:month, month) |> load()}
+  end
+
+  defp number(nil), do: nil
+  defp number(""), do: nil
+
+  defp number(raw) do
+    case Integer.parse(to_string(raw)) do
+      {number, ""} when number > 0 -> number
+      _ -> nil
+    end
   end
 
   def handle_info({:article_changed, _article}, socket), do: {:noreply, load(socket)}
@@ -59,7 +92,7 @@ defmodule TexttileWeb.TextsLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Texts"
+      crumb="Entries"
       active="texts"
       others={@others}
     >
@@ -68,10 +101,10 @@ defmodule TexttileWeb.TextsLive do
       </:bar>
       <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <div class="flex items-baseline gap-[14px] flex-wrap">
-          <h1 class="page-h">Texts</h1>
+          <h1 class="page-h">Entries</h1>
           <span class="note num" id="gridCount">{grid_count(@articles, @total)}</span>
           <span class="sp"></span>
-          <button class="btn solid" id="new-text" phx-click="new_text">New text</button>
+          <button class="btn solid" id="new-text" phx-click="new_text">New entry</button>
         </div>
         <div class="flex items-center gap-3 flex-wrap py-3 mt-[14px] mb-6 border-y border-rule">
           <span class="flex gap-[3px] flex-none" role="group" aria-label="Filter by status">
@@ -91,13 +124,45 @@ defmodule TexttileWeb.TextsLive do
               name="q"
               value={@q}
               placeholder="Search title, tags, text"
-              aria-label="Search texts"
+              aria-label="Search entries"
               autocomplete="off"
               phx-debounce="200"
               class="w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
             />
           </form>
         </div>
+        <%!-- the archive: one line of years, and the months of the year
+             that is open under it. Only the months that carry entries;
+             the counts follow the search and the status filter. --%>
+        <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
+          <p class="prow" id="years">
+            <.period label="All years" on={is_nil(@year)} count={@total} />
+            <.period
+              :for={{year, count} <- @years}
+              label={year}
+              year={year}
+              on={@year == year}
+              count={count}
+            />
+          </p>
+          <p :if={@months != []} class="prow" id="months">
+            <.period
+              label="All months"
+              year={@year}
+              on={is_nil(@month)}
+              count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
+            />
+            <%!-- no count under a month: twelve numbers in a row is a
+                 table, not a line --%>
+            <.period
+              :for={{month, _count} <- @months}
+              label={Articles.month_name(month)}
+              year={@year}
+              month={month}
+              on={@month == month}
+            />
+          </p>
+        </nav>
         <div
           class="grid items-start gap-y-[22px] gap-x-3 md:gap-y-7 md:gap-x-5 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"
@@ -119,18 +184,51 @@ defmodule TexttileWeb.TextsLive do
         </div>
         <p :if={@articles == []} class="note">
           {if @total == 0,
-            do: "No texts yet. New text starts the first one.",
-            else: "Nothing matches. The search covers titles, tags and the text itself."}
+            do: "No entries yet. New entry starts the first one.",
+            else: "Nothing matches. The search covers titles, tags and the entry itself."}
         </p>
+        <%!-- every digit the wordmark menu carries, in the order it
+             carries them, so the two never say different things --%>
         <p class="hidden md:block text-[12.5px] text-faint mt-9 pt-[13px] border-t border-hair">
-          Press a key anywhere to jump: <b class="text-dim num">1</b>
-          New text · <b class="text-dim num">2</b>
-          Texts · <b class="text-dim num">9</b>
-          Settings · <b class="text-dim">/</b>
-          search. The keys sleep while you are typing in a field.
+          Press a key anywhere to jump:
+          <span :for={section <- Layouts.sections()} class="whitespace-nowrap">
+            <b class="text-dim num">{section.key}</b>
+            {section.label} ·
+          </span>
+          <b class="text-dim">/</b>
+          search.
         </p>
       </div>
     </Layouts.app>
+    """
+  end
+
+  @doc """
+  One word of the archive: a year, a month, or the "all" that lets go
+  of one. The open one says so and stops answering a click, so nothing
+  in the row leads to the grid that already stands there.
+  """
+  attr :label, :any, required: true
+  attr :on, :boolean, default: false
+  attr :year, :any, default: nil
+  attr :month, :any, default: nil
+  attr :count, :any, default: nil
+
+  def period(assigns) do
+    ~H"""
+    <span :if={@on} class="per on" aria-current="true">
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </span>
+    <button
+      :if={!@on}
+      type="button"
+      class="per"
+      phx-click="period"
+      phx-value-year={@year}
+      phx-value-month={@month}
+    >
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </button>
     """
   end
 
@@ -144,7 +242,7 @@ defmodule TexttileWeb.TextsLive do
     shown = length(articles)
 
     if shown == total do
-      "#{total} #{if total == 1, do: "text", else: "texts"}"
+      "#{total} #{if total == 1, do: "entry", else: "entries"}"
     else
       "#{shown} of #{total}"
     end

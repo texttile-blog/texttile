@@ -64,12 +64,17 @@ defmodule TexttileWeb.Router do
     # the browser feeds them one after the other.
     post "/texts/:id/gallery", GalleryController, :create
 
+    # The door of the admin area. The list of entries has an address of
+    # its own, so every screen here is a place you can bookmark, and
+    # /admin stays the one short way in.
+    get "/", AdminController, :index
+
     live_session :admin,
       on_mount: [
         {TexttileWeb.UserAuth, :ensure_authenticated},
         {TexttileWeb.Admin, :track_presence}
       ] do
-      live "/", TextsLive
+      live "/texts", TextsLive
       live "/texts/:id", EditorLive
       live "/comments", CommentsLive
       live "/newsletter", NewsletterLive

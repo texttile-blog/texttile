@@ -97,8 +97,8 @@ defmodule TexttileWeb.SessionControllerTest do
       assert %{email: "kb@example.org", display_name: "KB"} =
                Accounts.get_user_by_email("kb@example.org")
 
-      conn = get(conn, ~p"/admin")
-      assert html_response(conn, 200) =~ "Texts"
+      conn = get(conn, ~p"/admin/texts")
+      assert html_response(conn, 200) =~ "Entries"
     end
 
     test "keeps the screen when the two passwords differ", %{conn: conn} do
@@ -203,8 +203,8 @@ defmodule TexttileWeb.SessionControllerTest do
       assert redirected_to(conn) == ~p"/admin"
       assert get_session(conn, :user_token)
 
-      conn = get(conn, ~p"/admin")
-      assert html_response(conn, 200) =~ "Texts"
+      conn = get(conn, ~p"/admin/texts")
+      assert html_response(conn, 200) =~ "Entries"
     end
 
     test "shows the missing-fields line when a field is empty", %{conn: conn} do

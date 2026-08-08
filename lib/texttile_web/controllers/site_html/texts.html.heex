@@ -16,9 +16,42 @@
           spellcheck="false"
         />
       </form>
-      <a :if={@q != ""} class="btn sm" id="clear" href={@list_path}>Clear</a>
+      <a :if={@q != "" || @year} class="btn sm" id="clear" href={@list_path}>Clear</a>
       <span class="cnt" id="count">{count_label(@found, @total)}</span>
     </div>
+
+    <%!-- the archive: one line of years, and the months of the year
+         that is open under it. Two lines, whatever the age of the blog.
+         The counts follow the search, so a year that holds nothing for
+         the term goes quiet instead of lying about it. --%>
+    <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
+      <p class="prow" id="years">
+        <.period label="All years" on={is_nil(@year)} href={@period_path.(nil, nil)} count={@total} />
+        <.period
+          :for={{year, count} <- @years}
+          label={year}
+          on={@year == year}
+          href={@period_path.(year, nil)}
+          count={count}
+        />
+      </p>
+      <p :if={@months != []} class="prow" id="months">
+        <.period
+          label="All months"
+          on={is_nil(@month)}
+          href={@period_path.(@year, nil)}
+          count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
+        />
+        <%!-- no count under a month: twelve numbers in a row is a
+             table, not a line --%>
+        <.period
+          :for={{month, _count} <- @months}
+          label={Articles.month_name(month)}
+          on={@month == month}
+          href={@period_path.(@year, month)}
+        />
+      </p>
+    </nav>
 
     <div class="cards" id="texts">
       <.card

@@ -11,10 +11,10 @@ defmodule TexttileWeb.AdminTest do
       other = user_fixture(%{username: "julia"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
-      {:ok, _other_texts, _} = live(other_conn, ~p"/admin")
+      {:ok, _other_texts, _} = live(other_conn, ~p"/admin/texts")
       {:ok, _other_profile, _} = live(other_conn, ~p"/admin/profile")
 
-      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin")
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin/texts")
 
       render_until(view, fn html -> html =~ "julia" end)
       assert has_element?(view, "#liveBlock", "julia")
@@ -29,10 +29,10 @@ defmodule TexttileWeb.AdminTest do
       other = user_fixture(%{username: "julia"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
-      {:ok, other_texts, _} = live(other_conn, ~p"/admin")
+      {:ok, other_texts, _} = live(other_conn, ~p"/admin/texts")
       {:ok, other_profile, _} = live(other_conn, ~p"/admin/profile")
 
-      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin")
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin/texts")
       render_until(view, fn html -> html =~ "julia" end)
 
       other_profile
@@ -62,7 +62,7 @@ defmodule TexttileWeb.AdminTest do
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
       {:ok, _editor, _} = live(other_conn, ~p"/admin/texts/#{article}")
 
-      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin")
+      {:ok, view, _html} = live(log_in_user(conn, me), ~p"/admin/texts")
       render_until(view, fn html -> html =~ "Writing in" end)
 
       assert has_element?(

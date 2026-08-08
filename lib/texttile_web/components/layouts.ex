@@ -33,6 +33,32 @@ defmodule TexttileWeb.Layouts do
   defdelegate site_title, to: Texttile.Settings
 
   @doc """
+  The sections of the wordmark menu, in the order they stand there, and
+  the digit each one answers to from anywhere in the admin area.
+
+  One list, two readers: the menu draws itself from it, and the key hint
+  under the entries grid names the same digits, so the two can never
+  drift apart.
+  """
+  def sections do
+    [
+      %{key: "1", label: "New entry", kind: :new},
+      %{key: "2", label: "Entries", kind: :screen, to: ~p"/admin/texts", active: "texts"},
+      %{key: "3", label: "Comments", kind: :screen, to: ~p"/admin/comments", active: "comments"},
+      %{
+        key: "7",
+        label: "Newsletter",
+        kind: :screen,
+        to: ~p"/admin/newsletter",
+        active: "newsletter"
+      },
+      %{key: "8", label: "Stats", kind: :later},
+      %{key: "9", label: "Settings", kind: :screen, to: ~p"/admin/settings", active: "settings"},
+      %{key: "0", label: "View site", kind: :site, to: ~p"/"}
+    ]
+  end
+
+  @doc """
   The favicon of every page: the uploaded one from Settings, or the
   bundled Texttile mark. Uploaded names carry a random tag, so the
   browser cache never shows a stale icon.
@@ -143,39 +169,40 @@ defmodule TexttileWeb.Layouts do
         </button>
       </span>
       <nav class="pop min-w-[248px] max-w-[340px]" id="navMenu" hidden aria-label="Sections">
-        <button class="row" type="button" phx-click="new_text" data-key="1">
-          New text <span class="k">1</span>
-        </button>
-        <.link navigate={~p"/admin"} class={["row", @active == "texts" && "on"]} data-key="2">
-          Texts <span class="k">2</span>
-        </.link>
-        <.link
-          navigate={~p"/admin/comments"}
-          class={["row", @active == "comments" && "on"]}
-          data-key="3"
-        >
-          Comments <span class="k">3</span>
-        </.link>
-        <.link
-          navigate={~p"/admin/newsletter"}
-          class={["row", @active == "newsletter" && "on"]}
-          data-key="7"
-        >
-          Newsletter <span class="k">7</span>
-        </.link>
-        <button class="row" type="button">Stats <span class="k">8</span></button>
-        <.link
-          navigate={~p"/admin/settings"}
-          class={["row", @active == "settings" && "on"]}
-          data-key="9"
-        >
-          Settings <span class="k">9</span>
-        </.link>
-        <%!-- the site opens beside the admin area: the writer keeps
-             the text they were working on --%>
-        <a class="row" href={~p"/"} target="_blank" rel="noopener" data-key="0">
-          View site <span class="k">0</span>
-        </a>
+        <%= for section <- sections() do %>
+          <button
+            :if={section.kind == :new}
+            class="row"
+            type="button"
+            phx-click="new_text"
+            data-key={section.key}
+          >
+            {section.label} <span class="k">{section.key}</span>
+          </button>
+          <.link
+            :if={section.kind == :screen}
+            navigate={section.to}
+            class={["row", @active == section.active && "on"]}
+            data-key={section.key}
+          >
+            {section.label} <span class="k">{section.key}</span>
+          </.link>
+          <button :if={section.kind == :later} class="row" type="button">
+            {section.label} <span class="k">{section.key}</span>
+          </button>
+          <%!-- the site opens beside the admin area: the writer keeps
+               the entry they were working on --%>
+          <a
+            :if={section.kind == :site}
+            class="row"
+            href={section.to}
+            target="_blank"
+            rel="noopener"
+            data-key={section.key}
+          >
+            {section.label} <span class="k">{section.key}</span>
+          </a>
+        <% end %>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>
         <div id="liveBlock">
