@@ -3,12 +3,26 @@
   <article id="text">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
-      <p :if={@article.type == "post"} id="meta" class="f-note mt-3">
-        <span class="num">{format_date(@article.publish_date)}</span>
-        <span :if={Articles.tag_list(@article) != []}>·</span>
+      <%!-- the line under the title: the day, the tags, and for the
+           admin who is signed in the way straight into the desk. A page
+           has no date and no tags, so there the line is the way in and
+           nothing else. --%>
+      <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
+        <span :if={@article.type == "post"} class="num">
+          {format_date(@article.publish_date)}
+        </span>
+        <span :if={@article.type == "post" && Articles.tag_list(@article) != []}>·</span>
         <span :for={tag <- Articles.tag_list(@article)}>
           <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>
         </span>
+        <a
+          :if={@current_scope}
+          id="edit-text"
+          class="edit-link"
+          href={~p"/admin/texts/#{@article.id}"}
+        >
+          Edit
+        </a>
       </p>
 
       <div class="prose" id="body">{body_html(@article)}</div>
@@ -59,7 +73,11 @@
          own waiting ones on top, and the form. No JavaScript in it;
          posting is a plain form round trip. --%>
     <section :if={@comments} class="wrap narrow mt-[54px]" id="comments" aria-label="Comments">
-      <h2 class="f-sec-h mb-4">{comment_heading(@comment_count)}</h2>
+      <%!-- nothing said yet is nothing to head: the section starts at
+           the form, and the heading arrives with the first comment --%>
+      <h2 :if={@comments != []} id="comment-count" class="f-sec-h mb-4">
+        {comment_heading(@comment_count)}
+      </h2>
       <p :if={@comment_earlier > 0} class="f-note mb-2">
         The {@comment_earlier} earliest {if @comment_earlier == 1,
           do: "comment is",
@@ -86,9 +104,7 @@
           </p>
         </div>
       </div>
-      <p :if={@comments == []} class="f-note">Nobody has said anything yet.</p>
-
-      <h2 class="f-sec-h mt-10 mb-4">Post a comment</h2>
+      <h2 class={["f-sec-h mb-4", @comments != [] && "mt-10"]}>Post a comment</h2>
       <form id="comment-form" action={~p"/comments/#{@article.id}"} method="post">
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />

@@ -29,7 +29,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     # The reader writes. The comment waits, visible only to its reader.
     conn
     |> visit(Articles.public_path(article))
-    |> assert_has("#comments", text: "Nobody has said anything yet.")
+    |> assert_has("#comments", text: "Post a comment")
+    |> refute_has("#comment-count")
     |> fill_in("Name", with: "Grandma Christel")
     |> fill_in("Email", with: "christel@example.org")
     |> fill_in("Comment", with: "More of the dog, please.")

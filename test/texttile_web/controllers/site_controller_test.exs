@@ -233,6 +233,33 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
       refute html =~ ~s(id="about")
     end
+
+    test "a reader never sees the way to the desk", %{conn: conn} do
+      published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+      refute html =~ ~s(id="edit-text")
+    end
+
+    test "a signed-in admin gets an Edit link beside the date", %{conn: conn} do
+      article = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
+      conn = log_in_user(conn, user_fixture())
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+
+      assert html =~ ~s(id="edit-text")
+      assert html =~ ~s(href="/admin/texts/#{article.id}")
+    end
+
+    test "the Edit link stands on a page too, which carries no date", %{conn: conn} do
+      page = published_page(title: "About", slug: "about-me")
+      conn = log_in_user(conn, user_fixture())
+
+      html = conn |> get(~p"/about-me") |> html_response(200)
+
+      assert html =~ ~s(id="edit-text")
+      assert html =~ ~s(href="/admin/texts/#{page.id}")
+    end
   end
 
   describe "the way from one post to the next" do
