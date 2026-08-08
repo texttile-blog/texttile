@@ -296,6 +296,65 @@ defmodule TexttileWeb.SiteCommentsTest do
     end
   end
 
+  describe "what an admin did to a comment" do
+    test "a released comment stands under the text for everybody", %{conn: conn} do
+      article = published_post()
+      build_conn() |> send_comment(article)
+      [comment] = Comments.for_article(article.id)
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      refute html =~ "More of the dog"
+
+      {:ok, _} = Comments.release_comment(comment.id)
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert html =~ "More of the dog"
+      assert html =~ "1 comment"
+    end
+
+    test "an edited comment reaches readers with the new words", %{conn: conn} do
+      article = published_post()
+      comment = send_and_confirm(article, "The first words", "one@example.org")
+
+      {:ok, _} = Comments.edit_comment(comment.id, "The words the admin left")
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert html =~ "The words the admin left"
+      refute html =~ "The first words"
+    end
+
+    test "a deleted comment is gone from the text while the trash holds it", %{conn: conn} do
+      article = published_post()
+      comment = send_and_confirm(article, "Words that go", "one@example.org")
+      kept = send_and_confirm(article, "Words that stay", "two@example.org")
+
+      {:ok, _} = Comments.delete_comment(comment)
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      refute html =~ "Words that go"
+      assert html =~ "Words that stay"
+      assert html =~ "1 comment"
+
+      # and it comes back exactly where it stood
+      {:ok, _} = Comments.restore_comment(comment.id)
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert html =~ "Words that go"
+      assert html =~ "2 comments"
+      assert Comments.count_for(article.id) == 2
+      assert kept.id
+    end
+
+    test "the reader who wrote a deleted comment does not see it either", %{conn: conn} do
+      article = published_post()
+      conn = send_comment(conn, article)
+      [comment] = Comments.for_article(article.id)
+      {:ok, _} = Comments.delete_comment(comment)
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      refute html =~ "More of the dog"
+    end
+  end
+
   defp send_and_confirm(article, body, email) do
     build_conn() |> send_comment(article, %{"body" => body, "email" => email})
     comment = article.id |> Comments.for_article() |> List.first()

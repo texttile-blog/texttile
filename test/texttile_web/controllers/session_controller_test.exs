@@ -15,10 +15,14 @@ defmodule TexttileWeb.SessionControllerTest do
     end
 
     test "shows the same form on a fresh install", %{conn: conn} do
-      configure_admins(["kb"])
+      # A name of two letters also hides inside the page's own CSRF
+      # token now and then, and the refute below would read that as a
+      # leak. The name only has to be one no configured admin shares
+      # with a random string.
+      configure_admins(["margarethe"])
       response = conn |> get(~p"/login") |> html_response(200)
       assert response =~ "login-form"
-      refute response =~ "kb"
+      refute response =~ "margarethe"
     end
 
     test "sends a signed-in admin to the desk", %{conn: conn} do

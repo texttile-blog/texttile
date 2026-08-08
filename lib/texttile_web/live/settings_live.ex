@@ -1044,14 +1044,17 @@ defmodule TexttileWeb.SettingsLive do
         heading={"Delete the account of #{Accounts.display_name(@confirm_delete)}?"}
         ok="Delete the account"
         on_ok="delete_user"
+        on_cancel="cancel_delete"
       >
-        <b>{Accounts.display_name(@confirm_delete)}</b>
-        can no longer sign in from the moment you confirm, and every
-        session open right now ends. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
-        texts, the images, the comments and every line of every Log belong
-        to the site, not to the account. <br />
-        <br /> There is no undo. While the name stands in ADMIN_USERS, its
-        owner can sign in again and choose a fresh password.
+        <p>
+          <b>{Accounts.display_name(@confirm_delete)}</b>
+          can no longer sign in from the moment you confirm, and every
+          session open right now ends. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
+          texts, the images, the comments and every line of every Log belong
+          to the site, not to the account. <br />
+          <br /> There is no undo. While the name stands in ADMIN_USERS, its
+          owner can sign in again and choose a fresh password.
+        </p>
       </.ask>
 
       <.ask
@@ -1059,12 +1062,15 @@ defmodule TexttileWeb.SettingsLive do
         heading={"Delete the tag #{@confirm_tag}?"}
         ok="Delete the tag"
         on_ok="delete_tag"
+        on_cancel="cancel_delete"
       >
-        <b>{@confirm_tag}</b>
-        leaves every text that carries it, and /tags/{Articles.slugify(@confirm_tag)} answers nothing from that moment. The texts stay where they are,
-        with the rest of their tags. <br />
-        <br /> There is no undo. To have the tag back, write it on a text
-        again.
+        <p>
+          <b>{@confirm_tag}</b>
+          leaves every text that carries it, and /tags/{Articles.slugify(@confirm_tag)} answers nothing from that moment. The texts stay where they are,
+          with the rest of their tags. <br />
+          <br /> There is no undo. To have the tag back, write it on a text
+          again.
+        </p>
       </.ask>
     </Layouts.app>
     """
@@ -1075,45 +1081,6 @@ defmodule TexttileWeb.SettingsLive do
   defp section(assigns) do
     ~H"""
     <h2 class="set-h">{render_slot(@inner_block)}</h2>
-    """
-  end
-
-  # The one question this screen asks before it deletes something: a
-  # scrim, a heading, what it costs, and the two ways out. Escape and
-  # Cancel are the same way back for both of them.
-  attr :heading, :string, required: true
-  attr :ok, :string, required: true
-  attr :on_ok, :string, required: true
-  slot :inner_block, required: true
-
-  defp ask(assigns) do
-    ~H"""
-    <div
-      id="scrim"
-      class="fixed inset-0 z-[80] grid place-items-center p-5"
-      style="background:var(--tt-scrim)"
-      phx-window-keydown="cancel_delete"
-      phx-key="escape"
-    >
-      <div
-        class="w-[min(430px,100%)] bg-paper px-[22px] pt-5 pb-[18px]"
-        style="border-radius:var(--tt-radius-pop); border:1px solid var(--tt-rule); box-shadow: 0 22px 54px rgb(var(--tt-shadow) / .26)"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dlgH"
-      >
-        <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em]" id="dlgH">
-          {@heading}
-        </h2>
-        <p class="text-[13.5px] text-inksoft mt-[9px] leading-[1.55]">
-          {render_slot(@inner_block)}
-        </p>
-        <div class="flex gap-2 mt-[18px]">
-          <button class="btn solid" id="dialog-ok" phx-click={@on_ok}>{@ok}</button>
-          <button class="btn quiet" id="dialog-cancel" phx-click="cancel_delete">Cancel</button>
-        </div>
-      </div>
-    </div>
     """
   end
 end

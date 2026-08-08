@@ -80,6 +80,70 @@ defmodule TexttileWeb.CoreComponents do
   end
 
   @doc """
+  The one question the admin area asks before a step it cannot take back, or
+  before one that reaches other people: a scrim, a heading, what is
+  about to happen, and the two answers. Escape and the scrim itself
+  both mean Cancel, so nothing here is a trap.
+
+  `value` travels back with the confirming click as `phx-value-id`, for
+  a screen whose question is about one row of many.
+
+  ## Examples
+
+      <.ask
+        :if={@confirm_delete}
+        heading="Delete this comment?"
+        ok="Delete"
+        on_ok="confirm_delete_comment"
+        value={@confirm_delete.id}
+      >
+        <p>It leaves the text at once.</p>
+      </.ask>
+  """
+  attr :heading, :string, required: true
+  attr :ok, :string, required: true
+  attr :on_ok, :string, required: true
+  attr :on_cancel, :string, default: "cancel_dialog"
+  attr :value, :any, default: nil
+  slot :inner_block, required: true
+
+  def ask(assigns) do
+    ~H"""
+    <div
+      id="scrim"
+      class="fixed inset-0 z-[80] grid place-items-center p-5"
+      style="background: var(--tt-scrim)"
+      phx-click={@on_cancel}
+      phx-window-keydown={@on_cancel}
+      phx-key="escape"
+    >
+      <div
+        class="w-[min(430px,100%)] bg-paper px-[22px] pt-5 pb-[18px]"
+        style="border-radius: var(--tt-radius-pop); border: 1px solid var(--tt-rule); box-shadow: 0 22px 54px rgb(var(--tt-shadow) / .26)"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dlgH"
+        id="dialog"
+        phx-click-away={@on_cancel}
+      >
+        <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em]" id="dlgH">
+          {@heading}
+        </h2>
+        <div class="text-[13.5px] text-inksoft mt-[9px] leading-[1.55]">
+          {render_slot(@inner_block)}
+        </div>
+        <div class="flex gap-2 mt-[18px]">
+          <button class="btn solid" id="dialog-ok" phx-click={@on_ok} phx-value-id={@value} autofocus>
+            {@ok}
+          </button>
+          <button class="btn quiet" id="dialog-cancel" phx-click={@on_cancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a button with navigation support.
 
   ## Examples

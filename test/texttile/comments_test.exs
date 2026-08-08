@@ -354,6 +354,15 @@ defmodule Texttile.CommentsTest do
       assert_receive {:comment_deleted, %Comments.Comment{}}
     end
 
+    test "the row stays, stamped for the end of the trash window" do
+      article = published_post()
+      comment = post!(article)
+
+      assert {:ok, deleted} = Comments.delete_comment(comment)
+      assert DateTime.diff(deleted.delete_after, DateTime.utc_now(), :day) in 29..30
+      assert Texttile.Repo.get(Comments.Comment, comment.id)
+    end
+
     test "a comment somebody deleted first is gone, not an error" do
       article = published_post()
       comment = post!(article)
@@ -373,11 +382,310 @@ defmodule Texttile.CommentsTest do
     end
   end
 
-  test "deleting the text takes its comments with it" do
+  describe "the trash" do
+    test "a deleted comment leaves every list and every count" do
+      article = published_post()
+      kept = post!(article, %{@attrs | "email" => "jens@example.org", "body" => "Kept"})
+      gone = post!(article)
+
+      {:ok, _} = Comments.delete_comment(gone)
+
+      assert Enum.map(Comments.for_article(article.id), & &1.id) == [kept.id]
+      assert Enum.map(Comments.recent(10), & &1.id) == [kept.id]
+      assert Comments.total_count() == 1
+      assert Comments.count_for(article.id) == 1
+      assert Comments.count_map() == %{article.id => 1}
+      assert Comments.waiting_count() == 1
+      assert {[%{id: id}], 0} = Comments.for_readers(article.id)
+      assert id == kept.id
+      assert Comments.get_comment(gone.id) == nil
+    end
+
+    test "the trash holds it, with its text, until it is restored" do
+      article = published_post(title: "Harbor mornings")
+      comment = post!(article)
+      {:ok, _} = Comments.delete_comment(comment)
+
+      assert {[trashed], 0} = Comments.trashed()
+      assert trashed.id == comment.id
+      assert trashed.article.title == "Harbor mornings"
+      assert trashed.address.email == "christel@example.org"
+      assert Comments.trashed_count() == 1
+
+      Comments.subscribe()
+      assert {:ok, restored} = Comments.restore_comment(comment.id)
+      assert restored.delete_after == nil
+      assert Comments.trashed() == {[], 0}
+      assert Enum.map(Comments.for_article(article.id), & &1.id) == [comment.id]
+      assert_receive {:comment_changed, %Comments.Comment{}}
+    end
+
+    test "restoring what nobody deleted, twice, or never existed is gone" do
+      article = published_post()
+      comment = post!(article)
+
+      assert {:error, :gone} = Comments.restore_comment(comment.id)
+      {:ok, _} = Comments.delete_comment(comment)
+      assert {:ok, _} = Comments.restore_comment(comment.id)
+      assert {:error, :gone} = Comments.restore_comment(comment.id)
+      assert {:error, :gone} = Comments.restore_comment(comment.id + 1000)
+    end
+
+    test "sweep_due/0 takes what the window has run out on, and leaves the rest" do
+      article = published_post()
+      due = post!(article)
+      waiting = post!(article, %{@attrs | "email" => "jens@example.org", "body" => "Later"})
+
+      {:ok, _} = Comments.delete_comment(due)
+      {:ok, _} = Comments.delete_comment(waiting)
+
+      due
+      |> Ecto.Changeset.change(delete_after: DateTime.add(DateTime.utc_now(:second), -1))
+      |> Texttile.Repo.update!()
+
+      assert Comments.sweep_due() == 1
+      assert Texttile.Repo.get(Comments.Comment, due.id) == nil
+      assert Texttile.Repo.get(Comments.Comment, waiting.id)
+    end
+
+    test "a comment in the trash takes no edit and no release" do
+      article = published_post()
+      comment = post!(article)
+      {:ok, _} = Comments.delete_comment(comment)
+
+      assert {:error, :gone} = Comments.edit_comment(comment.id, "Rewritten")
+      assert {:error, :gone} = Comments.release_comment(comment.id)
+    end
+  end
+
+  describe "edit_comment/2" do
+    test "changes the words, keeps the name and the address, and marks the edit" do
+      article = published_post()
+      comment = post!(article)
+      Comments.subscribe()
+
+      assert {:ok, edited} = Comments.edit_comment(comment.id, "  Less of the dog, please.  ")
+      assert edited.body == "Less of the dog, please."
+      assert edited.name == "Grandma Christel"
+      assert edited.address_id == comment.address_id
+      assert Comments.edited?(edited)
+      refute Comments.edited?(comment)
+      assert_receive {:comment_changed, %Comments.Comment{}}
+    end
+
+    test "readers get the new words at once" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      article = published_post()
+      comment = post!(article)
+
+      {:ok, _} = Comments.edit_comment(comment.id, "Rewritten")
+
+      assert {[shown], 0} = Comments.for_readers(article.id)
+      assert shown.body == "Rewritten"
+    end
+
+    test "empty words are refused and the limit still holds" do
+      article = published_post()
+      comment = post!(article)
+
+      assert {:error, changeset} = Comments.edit_comment(comment.id, "   ")
+      assert %{body: _} = errors_on(changeset)
+
+      assert {:error, changeset} =
+               Comments.edit_comment(comment.id, String.duplicate("b", 4001))
+
+      assert %{body: _} = errors_on(changeset)
+      assert Comments.get_comment!(comment.id).body == "More of the dog, please."
+    end
+
+    test "a comment that is already gone is gone" do
+      article = published_post()
+      comment = post!(article)
+      assert {:error, :gone} = Comments.edit_comment(comment.id + 1000, "Nothing")
+      assert {:ok, _} = Comments.edit_comment(comment.id, "Something")
+    end
+  end
+
+  describe "release_comment/1" do
+    setup do
+      Application.put_env(:swoosh, :shared_test_process, self())
+      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+      :ok
+    end
+
+    test "one comment stands under the text while its address stays unconfirmed" do
+      article = published_post()
+      comment = post!(article)
+      refute Comments.shown_to_readers?(comment)
+
+      Comments.subscribe()
+      assert {:ok, released} = Comments.release_comment(comment.id)
+      assert Comments.shown_to_readers?(released)
+      assert Comments.released?(released)
+      assert_receive {:comment_changed, %Comments.Comment{}}
+
+      # the address itself proved nothing, so the next comment waits again
+      later = post!(article, %{@attrs | "body" => "And another thing"})
+      refute Comments.shown_to_readers?(later)
+      refute Comments.released?(later)
+      assert Comments.waiting_count() == 1
+    end
+
+    test "a released comment no longer waits" do
+      article = published_post()
+      comment = post!(article)
+      assert Comments.waiting_count() == 1
+
+      {:ok, _} = Comments.release_comment(comment.id)
+      assert Comments.waiting_count() == 0
+    end
+
+    test "releasing mails nobody: the admin did it" do
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+      comment = post!(article)
+
+      {:ok, _} = Comments.release_comment(comment.id)
+
+      refute admin_mail(300)
+    end
+
+    test "a later confirmation does not mail the released words twice" do
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      released = post!(article)
+      still_waiting = post!(article, %{@attrs | "body" => "The second one"})
+      {:ok, _} = Comments.release_comment(released.id)
+
+      {:ok, _} = Comments.confirm(released.address.token)
+
+      assert mail = admin_mail()
+      assert mail.text_body =~ still_waiting.body
+      refute admin_mail(300)
+    end
+
+    test "an unknown comment is gone" do
+      assert {:error, :gone} = Comments.release_comment(123_456)
+    end
+  end
+
+  test "deleting the text takes its comments with it, the trashed ones too" do
     article = published_post()
     comment = post!(article)
+    trashed = post!(article, %{@attrs | "email" => "jens@example.org", "body" => "Trashed"})
+    {:ok, _} = Comments.delete_comment(trashed)
+
     {:ok, _} = Articles.delete_article(Articles.get_article!(article.id))
+
     assert Comments.for_article(article.id) == []
+    assert Comments.trashed() == {[], 0}
     assert_raise Ecto.NoResultsError, fn -> Comments.get_comment!(comment.id) end
+  end
+
+  describe "two admins on one comment" do
+    # The row can go for good under either of them: the text was
+    # deleted, or the sweeper came for a trashed one. Nobody raises.
+    test "a comment the database lost answers gone, and never raises" do
+      article = published_post()
+      comment = post!(article)
+      {:ok, _} = Comments.delete_comment(comment)
+
+      Texttile.Repo.delete_all(from c in Comments.Comment, where: c.id == ^comment.id)
+
+      assert {:error, :gone} = Comments.restore_comment(comment.id)
+      assert {:error, :gone} = Comments.edit_comment(comment.id, "Nothing")
+      assert {:error, :gone} = Comments.release_comment(comment.id)
+      assert {:error, :gone} = Comments.delete_comment(comment)
+    end
+
+    test "an id that is not one is read as nothing, not as a crash" do
+      for id <- ["", "twelve", "3x", ["1"], %{"a" => "1"}, nil] do
+        assert Comments.get_comment(id) == nil
+        assert {:error, :gone} = Comments.delete_comment(id)
+        assert {:error, :gone} = Comments.restore_comment(id)
+        assert {:error, :gone} = Comments.release_comment(id)
+        assert {:error, :gone} = Comments.edit_comment(id, "Words")
+      end
+    end
+
+    test "words that are not one line of text are read as nothing" do
+      article = published_post()
+      comment = post!(article)
+
+      for body <- [["x"], %{"a" => "x"}, nil, 12] do
+        assert {:error, changeset} = Comments.edit_comment(comment.id, body)
+        assert %{body: _} = errors_on(changeset)
+      end
+
+      assert Comments.get_comment!(comment.id).body == "More of the dog, please."
+    end
+  end
+
+  describe "the trash on one screen" do
+    test "the newest deleted are the ones it carries, and it says how many are left" do
+      article = published_post()
+
+      comments =
+        for n <- 1..10 do
+          comment =
+            post!(article, %{@attrs | "email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+
+          {:ok, comment} = Comments.delete_comment(comment)
+          comment
+        end
+
+      {rows, earlier} = Comments.trashed()
+
+      assert length(rows) == 8
+      assert earlier == 2
+      assert Comments.trashed_count() == 10
+
+      # the ones deleted last stand on top, whatever second they share
+      assert Enum.map(rows, & &1.id) ==
+               comments |> Enum.map(& &1.id) |> Enum.reverse() |> Enum.take(8)
+    end
+  end
+
+  describe "sweep_due/0 and the addresses" do
+    test "an address with nothing left goes with the last of its comments" do
+      article = published_post()
+      comment = post!(article)
+      address_id = comment.address_id
+
+      {:ok, _} = Comments.delete_comment(comment)
+
+      comment
+      |> Ecto.Changeset.change(delete_after: DateTime.add(DateTime.utc_now(:second), -1))
+      |> Texttile.Repo.update!()
+
+      # a fresh address is left alone: its first comment may be one
+      # statement away from standing beside it
+      Texttile.Repo.get!(Comments.Address, address_id)
+      |> Ecto.Changeset.change(inserted_at: DateTime.add(DateTime.utc_now(:second), -2, :day))
+      |> Texttile.Repo.update!()
+
+      assert Comments.sweep_due() == 1
+      assert Texttile.Repo.get(Comments.Address, address_id) == nil
+    end
+
+    test "an address that still owns a comment stays, and a young one too" do
+      article = published_post()
+      kept = post!(article)
+      swept = post!(article, %{@attrs | "email" => "jens@example.org", "body" => "Goes"})
+
+      {:ok, _} = Comments.delete_comment(swept)
+
+      swept
+      |> Ecto.Changeset.change(delete_after: DateTime.add(DateTime.utc_now(:second), -1))
+      |> Texttile.Repo.update!()
+
+      assert Comments.sweep_due() == 1
+
+      # the one with a comment left, and the swept one's own address,
+      # which was written minutes ago
+      assert Texttile.Repo.get(Comments.Address, kept.address_id)
+      assert Texttile.Repo.get(Comments.Address, swept.address_id)
+    end
   end
 end

@@ -50,6 +50,8 @@ defmodule TexttileWeb.TextsLive do
   def handle_info({:gallery_changed, _id, _meta}, socket), do: {:noreply, load(socket)}
   def handle_info({:comment_posted, _comment}, socket), do: {:noreply, load(socket)}
   def handle_info({:comment_deleted, _comment}, socket), do: {:noreply, load(socket)}
+  # a restore puts a comment back into the count on its card
+  def handle_info({:comment_changed, _comment}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 
   def render(assigns) do
