@@ -264,6 +264,12 @@
     border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
   }
 
+  /* the name over a comment, in the admin area: it is the way to write
+     back, so it answers the pointer, but it carries no underline of its
+     own - the row is a name and a date, not a paragraph of links */
+  .writer { color: inherit; text-decoration: none; }
+  .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
+
   /* the addresses an entry has left behind, under the address field.
      A quiet list: the address in the monospace the address field uses,
      and the way to drop it at the right edge. */

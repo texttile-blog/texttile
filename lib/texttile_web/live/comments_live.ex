@@ -120,11 +120,31 @@ defmodule TexttileWeb.CommentsLive do
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Comments</h1>
-        <p class="lead" id="commentsSub">{sub_line(@total, @waiting, @require?)}</p>
+        <%!-- the counts carry the news, so they carry the weight --%>
+        <p class="lead" id="commentsSub">
+          <%= if @total == 0 do %>
+            The latest comments across all entries, newest first.
+          <% else %>
+            <b class="num">{@total}</b>
+            {plural(@total, "comment", "comments")} across all entries, newest first.
+            <%= if @waiting == 0 do %>
+              <%!-- not "every one is confirmed": a comment an admin let
+                   through stands under its entry with an address that
+                   never was --%>
+              Readers see every one of them.
+            <% else %>
+              <b class="num">{@waiting}</b>
+              {plural(@waiting, "comment waits", "comments wait")} for the reader to confirm the
+              email address, so readers do not see {plural(@waiting, "it", "them")} yet.
+            <% end %>
+          <% end %>
+        </p>
         <div id="commentsList">
           <p :if={@recent == []} class="note">
             No comments yet, anywhere. Every comment a reader sends shows up here.
           </p>
+          <%!-- the address behind a comment is loaded with it, so the
+               name can be the way to write back --%>
           <.comment_item
             :for={comment <- @recent}
             comment={comment}
@@ -137,14 +157,14 @@ defmodule TexttileWeb.CommentsLive do
             :if={@total > length(@recent)}
             class="py-[11px] text-[12.5px] text-faint border-t border-hair"
           >
-            and {@total - length(@recent)} more on their texts.
+            and {@total - length(@recent)} more on their entries.
           </div>
         </div>
-        <p class="note mt-[22px] max-w-[62ch]" id="commentsRule">{comment_rule(@require?)}</p>
+        <p class="note mt-[22px]" id="commentsRule">{comment_rule(@require?)}</p>
 
         <section :if={@trashed != []} id="commentsTrash">
           <h2 class="set-h">Trash</h2>
-          <p class="note mb-[13px] max-w-[62ch]">
+          <p class="note mb-[13px]">
             {trash_line(length(@trashed) + @trashed_earlier)}
           </p>
           <.trashed_item :for={comment <- @trashed} comment={comment} />
@@ -179,23 +199,5 @@ defmodule TexttileWeb.CommentsLive do
     "#{count} deleted #{plural(count, "comment waits", "comments wait")} here. " <>
       "A comment goes for good #{Comments.trash_days()} days after you deleted it, " <>
       "and until then Restore puts it back where it stood."
-  end
-
-  # The lead line: how many, and where the waiting ones stand.
-  defp sub_line(0, _waiting, _require?), do: "The latest comments across all texts, newest first."
-
-  # Nothing waits: readers see them all. Not "every one is confirmed" -
-  # a comment an admin let through stands under its text with an
-  # address that never was.
-  defp sub_line(total, 0, _require?) do
-    "#{total} #{plural(total, "comment", "comments")} across all texts, newest first. " <>
-      "Readers see every one of them."
-  end
-
-  defp sub_line(total, waiting, _require?) do
-    "#{total} #{plural(total, "comment", "comments")} across all texts, newest first. " <>
-      "#{waiting} #{plural(waiting, "comment waits", "comments wait")} for the reader " <>
-      "to confirm the email address, so readers do not see " <>
-      plural(waiting, "it", "them") <> " yet."
   end
 end
