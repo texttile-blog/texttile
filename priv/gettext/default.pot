@@ -180,7 +180,7 @@ msgstr[1] ""
 msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{lead}%{password}\nYou get this mail because this address is on the %{site} list.\nTo leave the list, open this link:\n\n%{unsubscribe}\n"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2686
+#: lib/texttile_web/live/editor_live.ex:2694
 #, elixir-autogen, elixir-format
 msgid "%{address} is live; changing it breaks old links."
 msgstr ""
@@ -190,13 +190,13 @@ msgstr ""
 msgid "%{browser} · signed in %{when}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2613
+#: lib/texttile_web/live/editor_live.ex:2621
 #, elixir-autogen, elixir-format
 msgid "%{count} failed"
 msgstr ""
 
 #: lib/texttile_web/js_strings.ex:36
-#: lib/texttile_web/live/editor_live.ex:2612
+#: lib/texttile_web/live/editor_live.ex:2620
 #, elixir-autogen, elixir-format
 msgid "%{count} on the way"
 msgstr ""
@@ -344,7 +344,7 @@ msgid_plural "%{count} comments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2573
+#: lib/texttile_web/live/editor_live.ex:2581
 #, elixir-autogen, elixir-format
 msgid "1 comment is still out of the entry: that reader has not followed the confirmation link yet."
 msgid_plural "%{count} comments are still out of the entry: those readers have not followed the confirmation link yet."
@@ -375,7 +375,7 @@ msgid_plural "%{count} entries"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2611
+#: lib/texttile_web/live/editor_live.ex:2619
 #, elixir-autogen, elixir-format
 msgid "1 file"
 msgid_plural "%{count} files"
@@ -442,7 +442,7 @@ msgstr ""
 msgid "A confirmation mail goes to your address: which site, which username. It never contains the password, and no mail ever will. If you forget the password, the sign-in screen mails your address a link that sets a new one."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2585
+#: lib/texttile_web/live/editor_live.ex:2593
 #, elixir-autogen, elixir-format
 msgid "A deleted account"
 msgstr ""
@@ -771,7 +771,7 @@ msgstr ""
 msgid "Confirm your email on %{site}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2702
+#: lib/texttile_web/live/editor_live.ex:2710
 #, elixir-autogen, elixir-format
 msgid "Confirmed subscribers get one plain email with the title and the first paragraph when this goes live. Uncheck to publish silently."
 msgstr ""
@@ -984,7 +984,7 @@ msgstr ""
 msgid "Email, not public"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2662
+#: lib/texttile_web/live/editor_live.ex:2670
 #, elixir-autogen, elixir-format
 msgid "Empty means whenever you publish. A future date schedules the entry."
 msgstr ""
@@ -1088,7 +1088,7 @@ msgstr ""
 msgid "Formatting"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2683
+#: lib/texttile_web/live/editor_live.ex:2691
 #, elixir-autogen, elixir-format
 msgid "Free to change while the entry is a draft."
 msgstr ""
@@ -1114,7 +1114,7 @@ msgstr ""
 msgid "Goes live"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2714
+#: lib/texttile_web/live/editor_live.ex:2722
 #, elixir-autogen, elixir-format
 msgid "Goes out to the confirmed subscribers when the entry goes live on %{date}. Uncheck any time before then."
 msgstr ""
@@ -1313,7 +1313,7 @@ msgstr ""
 msgid "Live"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2676
+#: lib/texttile_web/live/editor_live.ex:2684
 #, elixir-autogen, elixir-format
 msgid "Live since %{date}. A future date changes it to unpublished until the date."
 msgstr ""
@@ -1449,12 +1449,12 @@ msgstr ""
 msgid "No comments yet."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2727
+#: lib/texttile_web/live/editor_live.ex:2735
 #, elixir-autogen, elixir-format
 msgid "No email went out for this entry. The email goes out only at the moment an entry goes live."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2721
+#: lib/texttile_web/live/editor_live.ex:2729
 #, elixir-autogen, elixir-format
 msgid "No email will go out on %{date}. Check it and it goes out at go-live."
 msgstr ""
@@ -1519,7 +1519,7 @@ msgstr ""
 msgid "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2708
+#: lib/texttile_web/live/editor_live.ex:2716
 #, elixir-autogen, elixir-format
 msgid "Nobody will be emailed when this goes live. Check it to notify the confirmed subscribers."
 msgstr ""
@@ -1756,12 +1756,12 @@ msgstr ""
 msgid "Paste one into the text, or drop one on it."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2670
+#: lib/texttile_web/live/editor_live.ex:2678
 #, elixir-autogen, elixir-format
 msgid "Pick the day it goes live."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2680
+#: lib/texttile_web/live/editor_live.ex:2688
 #, elixir-autogen, elixir-format
 msgid "Pick the day it went live. An empty field makes the entry a draft again."
 msgstr ""
@@ -2015,7 +2015,7 @@ msgstr ""
 msgid "Scheduled for %{date}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2667
+#: lib/texttile_web/live/editor_live.ex:2675
 #, elixir-autogen, elixir-format
 msgid "Scheduled. The subscriber email goes out on %{date}."
 msgstr ""
@@ -2481,7 +2481,7 @@ msgstr ""
 msgid "The report for %{name}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2695
+#: lib/texttile_web/live/editor_live.ex:2703
 #, elixir-autogen, elixir-format
 msgid "The subscriber email for this entry went out on %{day}. It goes out once; publishing again does not send it again."
 msgstr ""
@@ -2750,6 +2750,7 @@ msgid "Unscheduled · a draft again"
 msgstr ""
 
 #: lib/texttile_web/live/settings_live.ex:625
+#: lib/texttile_web/live/settings_live.ex:671
 #, elixir-autogen, elixir-format
 msgid "Upload"
 msgstr ""
@@ -3023,6 +3024,7 @@ msgstr ""
 msgid "direct"
 msgstr ""
 
+#: lib/texttile_web/live/editor_live.ex:2549
 #: lib/texttile_web/live/texts_live.ex:265
 #, elixir-autogen, elixir-format
 msgid "draft"
@@ -3281,4 +3283,59 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "before the title of an entry"
 msgid "on"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:148
+#, elixir-autogen, elixir-format
+msgid "In Settings"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:144
+#, elixir-autogen, elixir-format
+msgid "In the comments"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:145
+#, elixir-autogen, elixir-format
+msgid "In the newsletter"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:147
+#, elixir-autogen, elixir-format
+msgid "In the profile"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:146
+#, elixir-autogen, elixir-format
+msgid "In the stats"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:140
+#, elixir-autogen, elixir-format
+msgid "In “%{title}”"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:143
+#, elixir-autogen, elixir-format
+msgid "On the Entries overview"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:136
+#, elixir-autogen, elixir-format
+msgid "Untitled"
+msgstr ""
+
+#: lib/texttile_web/admin.ex:139
+#, elixir-autogen, elixir-format
+msgid "Writing in “%{title}”"
+msgstr ""
+
+#: lib/texttile_web/live/editor_live.ex:2551
+#, elixir-autogen, elixir-format
+msgid "published"
+msgstr ""
+
+#: lib/texttile_web/live/editor_live.ex:2550
+#, elixir-autogen, elixir-format
+msgid "scheduled"
 msgstr ""

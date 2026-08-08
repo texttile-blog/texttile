@@ -772,7 +772,7 @@ defmodule Texttile.Articles do
   ## Slugs
 
   @doc "The name a text goes by on screen: its title, or Untitled."
-  def display_title(%{title: ""}), do: "Untitled"
+  def display_title(%{title: ""}), do: Gettext.gettext(TexttileWeb.Gettext, "Untitled")
   def display_title(%{title: title}), do: title
 
   @doc """

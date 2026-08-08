@@ -5,6 +5,8 @@ defmodule TexttileWeb.Admin do
   one block per person, one jump per open tab.
   """
 
+  use Gettext, backend: TexttileWeb.Gettext
+
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1]
 
@@ -131,16 +133,19 @@ defmodule TexttileWeb.Admin do
   end
 
   defp activity(%{view: :editor} = meta) do
-    title = Map.get(meta, :text_title) || "Untitled"
-    if Map.get(meta, :writing), do: "Writing in “#{title}”", else: "In “#{title}”"
+    title = Map.get(meta, :text_title) || gettext("Untitled")
+
+    if Map.get(meta, :writing),
+      do: gettext("Writing in “%{title}”", title: title),
+      else: gettext("In “%{title}”", title: title)
   end
 
-  defp activity(%{view: :texts}), do: "On the Texts overview"
-  defp activity(%{view: :comments}), do: "In the comments"
-  defp activity(%{view: :newsletter}), do: "In the newsletter"
-  defp activity(%{view: :stats}), do: "In the stats"
-  defp activity(%{view: :profile}), do: "In the profile"
-  defp activity(%{view: :settings}), do: "In Settings"
+  defp activity(%{view: :texts}), do: gettext("On the Entries overview")
+  defp activity(%{view: :comments}), do: gettext("In the comments")
+  defp activity(%{view: :newsletter}), do: gettext("In the newsletter")
+  defp activity(%{view: :stats}), do: gettext("In the stats")
+  defp activity(%{view: :profile}), do: gettext("In the profile")
+  defp activity(%{view: :settings}), do: gettext("In Settings")
 
   defp path(%{view: :editor} = meta) do
     case Map.get(meta, :text_id) do

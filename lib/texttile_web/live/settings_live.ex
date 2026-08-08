@@ -668,7 +668,7 @@ defmodule TexttileWeb.SettingsLive do
           </button>
           <form id="favicon-form" phx-change="validate_upload">
             <label class="btn sm cursor-pointer relative overflow-hidden">
-              Upload
+              {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.favicon}
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

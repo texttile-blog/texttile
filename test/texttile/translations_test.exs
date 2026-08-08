@@ -28,6 +28,8 @@ defmodule Texttile.TranslationsTest do
 
   defp fuzzy?(message), do: "fuzzy" in List.flatten(message.flags)
 
+  defp name_them(ids), do: Enum.map_join(ids, "\n", &("  " <> inspect(&1)))
+
   describe "every language but English" do
     test "has a file, and the file answers every message of the template" do
       wanted = @template |> Expo.PO.parse_file!() |> Map.fetch!(:messages) |> MapSet.new(&id/1)
@@ -51,12 +53,13 @@ defmodule Texttile.TranslationsTest do
         messages = po_path(locale) |> Expo.PO.parse_file!() |> Map.fetch!(:messages)
 
         empty = messages |> Enum.reject(&translated?/1) |> Enum.map(&id/1)
-        assert empty == [], "#{locale} has no words for these"
+        assert empty == [], "#{locale} has no words for these:\n" <> name_them(empty)
 
         fuzzy = messages |> Enum.filter(&fuzzy?/1) |> Enum.map(&id/1)
 
         assert fuzzy == [],
-               "#{locale} guessed at these when the English changed. Read them and drop the fuzzy flag."
+               "#{locale} guessed at these when the English changed. Read them and drop the " <>
+                 "fuzzy flag:\n" <> name_them(fuzzy)
       end
     end
   end

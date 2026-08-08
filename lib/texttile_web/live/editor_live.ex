@@ -1305,7 +1305,7 @@ defmodule TexttileWeb.EditorLive do
           rel="noopener"
           title={@public_title}
         >
-          {@article.status}<.out_icon />
+          {stamp_word(@article.status)}<.out_icon />
         </a>
         <a
           class="out hidden md:inline-flex flex-none"
@@ -2542,6 +2542,14 @@ defmodule TexttileWeb.EditorLive do
   defp status_word("scheduled"), do: gettext("Scheduled")
   defp status_word("published"), do: gettext("Published")
   defp status_word(other), do: String.capitalize(other)
+
+  # The stamp says the same state in a lower case of its own: it is a
+  # mark beside the words, not a button. German writes both the same
+  # way, so there the two read alike.
+  defp stamp_word("draft"), do: gettext("draft")
+  defp stamp_word("scheduled"), do: gettext("scheduled")
+  defp stamp_word("published"), do: gettext("published")
+  defp stamp_word(other), do: other
 
   # Whatever an admin does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.

@@ -18,7 +18,7 @@ defmodule TexttileWeb.AdminTest do
 
       render_until(view, fn html -> html =~ "julia" end)
       assert has_element?(view, "#liveBlock", "julia")
-      assert has_element?(view, ~s(#liveBlock a[href="/admin"]), "On the Texts overview")
+      assert has_element?(view, ~s(#liveBlock a[href="/admin"]), "On the Entries overview")
       assert has_element?(view, ~s(#liveBlock a[href="/admin/profile"]), "In the profile")
       refute has_element?(view, "#liveBlock", "No one else right now.")
       refute has_element?(view, "#wmDot[hidden]")
