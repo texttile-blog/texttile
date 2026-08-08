@@ -20,7 +20,12 @@
     </p>
 
     <div class="cards mt-8" id="texts">
-      <.card :for={article <- @articles} article={article} preview={@previews[article.id]} />
+      <.card
+        :for={article <- @articles}
+        article={article}
+        preview={@previews[article.id]}
+        comments={@comment_counts[article.id]}
+      />
     </div>
   </div>
 

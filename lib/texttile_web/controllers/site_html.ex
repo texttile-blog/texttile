@@ -44,11 +44,7 @@ defmodule TexttileWeb.SiteHTML do
         <a :if={@home_page} id="menu-home" href={~p"/"} aria-current={@active == :home && "page"}>
           Home
         </a>
-        <a
-          id="menu-texts"
-          href={if @home_page, do: ~p"/texts", else: ~p"/"}
-          aria-current={@active == :texts && "page"}
-        >
+        <a id="menu-texts" href={~p"/blog"} aria-current={@active == :texts && "page"}>
           Blog
         </a>
         <a
@@ -155,9 +151,15 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
-  @doc "The card of the admin area's Texts grid, drawn for a reader."
+  @doc """
+  The card of the admin area's Texts grid, drawn for a reader. `comments`
+  is how many comments stand under the text; the line under the title
+  carries it beside the date, so a reader sees where the talking is
+  before they open anything.
+  """
   attr :article, :any, required: true
   attr :preview, :any, default: nil
+  attr :comments, :any, default: nil
 
   def card(assigns) do
     ~H"""
@@ -173,7 +175,16 @@ defmodule TexttileWeb.SiteHTML do
         </span>
         <span class="ct">{Articles.display_title(@article)}</span>
       </a>
-      <p class="cm num">{format_date(@article.publish_date)}</p>
+      <p class="cm num">
+        {format_date(@article.publish_date)}<span :if={comment_count(@comments)}>
+          · <a
+            href={Articles.public_path(@article) <> "#comments"}
+            class="clink"
+          >
+            {comment_count(@comments)}
+          </a>
+        </span>
+      </p>
       <p :if={lead(@article) != ""} class="clead">{lead(@article)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
         <a :for={tag <- Articles.tag_list(@article)} class="ctag" href={~p"/tags/#{tag}"}>
@@ -272,6 +283,15 @@ defmodule TexttileWeb.SiteHTML do
   def comment_heading(0), do: "Comments"
   def comment_heading(1), do: "1 comment"
   def comment_heading(n), do: "#{n} comments"
+
+  @doc """
+  What a card says about the talking under a text, or nil while nobody
+  has said anything: a text without comments carries no zero.
+  """
+  def comment_count(nil), do: nil
+  def comment_count(0), do: nil
+  def comment_count(1), do: "1 comment"
+  def comment_count(n), do: "#{n} comments"
 
   @doc """
   The day a comment arrived, the way the example blog writes it: bare

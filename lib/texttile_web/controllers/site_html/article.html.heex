@@ -116,23 +116,31 @@
       <form id="comment-form" action={~p"/comments/#{@article.id}"} method="post">
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
+        <%!-- signed in, the two fields are facts and not questions: they
+             carry what the account says and take no typing. A browser
+             sends nothing for a disabled field, and the server takes
+             both from the account anyway. --%>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-7 gap-y-4 mb-5">
           <input
             type="text"
             name="name"
-            value={@comment_values["name"]}
+            id="comment-name"
+            value={(@comment_author && @comment_author.name) || @comment_values["name"]}
             placeholder="Name"
             aria-label="Name"
             maxlength="120"
-            required
+            required={!@comment_author}
+            disabled={!!@comment_author}
           />
           <input
             type="email"
             name="email"
-            value={@comment_values["email"]}
+            id="comment-email"
+            value={(@comment_author && @comment_author.email) || @comment_values["email"]}
             placeholder="Email, never published"
             aria-label="Email"
-            required
+            required={!@comment_author}
+            disabled={!!@comment_author}
           />
         </div>
         <input

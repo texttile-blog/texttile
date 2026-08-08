@@ -64,14 +64,7 @@ defmodule TexttileWeb.TextsLive do
       others={@others}
     >
       <:bar>
-        <%!-- the door to the blog itself, at the end of the bar --%>
-        <a
-          class="text-[12.5px] text-dim hover:text-accent whitespace-nowrap flex-none"
-          id="bar-view-site"
-          href={~p"/"}
-        >
-          View site
-        </a>
+        <Layouts.view_site />
       </:bar>
       <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <div class="flex items-baseline gap-[14px] flex-wrap">
@@ -172,13 +165,20 @@ defmodule TexttileWeb.TextsLive do
           ]
 
         "published" ->
-          [to_string(article.publish_date)] ++
-            case comment_count do
-              nil -> []
-              1 -> ["1 comment"]
-              n -> ["#{n} comments"]
-            end
+          [to_string(article.publish_date)]
       end
+
+    # The count stands on every card that has one, whatever state the
+    # text is in: a text taken off the site keeps the comments it
+    # collected, and the overview is where somebody looks for them.
+    bits =
+      bits ++
+        case comment_count do
+          nil -> []
+          0 -> []
+          1 -> ["1 comment"]
+          n -> ["#{n} comments"]
+        end
 
     bits = if article.type == "page", do: ["page" | bits], else: bits
     Enum.join(bits, " · ")

@@ -321,13 +321,16 @@ defmodule TexttileWeb.SettingsLive do
 
   # :online_ids belongs to Admin: assigned on mount, refreshed on every
   # presence diff, so the "here now" marks stay current on their own.
-  defp refresh_users(socket) do
-    users = Accounts.list_users()
-    taken = MapSet.new(users, & &1.username)
+  defp refresh_users(socket), do: assign(socket, :users, Accounts.list_users())
 
-    socket
-    |> assign(:users, users)
-    |> assign(:waiting, Enum.reject(Accounts.admin_usernames(), &MapSet.member?(taken, &1)))
+  # The sizes the select offers. A value that came from somewhere else -
+  # an older version of this screen, or a hand-written row - stands in
+  # the row too, in its place, so opening Settings never silently
+  # changes what the blog does.
+  @page_sizes [10, 25, 50, 100, 150, 200]
+
+  defp page_sizes(current) do
+    if current in @page_sizes, do: @page_sizes, else: Enum.sort([current | @page_sizes])
   end
 
   defp refresh_tags(socket), do: assign(socket, :tags, Articles.tag_counts())
@@ -475,6 +478,7 @@ defmodule TexttileWeb.SettingsLive do
         >
           Last saved · just now
         </span>
+        <Layouts.view_site />
       </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Settings</h1>
@@ -647,7 +651,8 @@ defmodule TexttileWeb.SettingsLive do
               <span class="text-[14.5px] font-semibold">Latest texts</span>
               <br />
               <span class="text-[11.5px] text-faint">
-                Published posts, newest first, each with its preview tile.
+                The front door sends the reader to /blog: published posts,
+                newest first, each with its preview tile.
               </span>
             </span>
           </label>
@@ -669,11 +674,12 @@ defmodule TexttileWeb.SettingsLive do
               <br />
               <span class="text-[11.5px] text-faint">
                 <%= if @pages == [] do %>
-                  One of your pages becomes the front door; the text list moves to
-                  /texts. There are no pages yet: this choice unlocks with the
-                  first one you write.
+                  One of your pages becomes the front door. The blog list keeps
+                  /blog either way. There are no pages yet: this choice unlocks
+                  with the first one you write.
                 <% else %>
-                  This page becomes the front door; the text list moves to /texts.
+                  This page becomes the front door. The blog list keeps /blog
+                  either way.
                 <% end %>
               </span>
             </span>
@@ -697,21 +703,25 @@ defmodule TexttileWeb.SettingsLive do
             </select>
           </div>
           <div class="drow gtop">
-            <label class="lab" for="setting-posts_per_page">Texts a page</label>
+            <label class="lab" for="setting-posts_per_page">
+              Number of texts a page in blog overview
+            </label>
             <span class="val">
-              <input
-                type="number"
+              <select
                 id="setting-posts_per_page"
                 name="settings[posts_per_page]"
-                value={@settings_form[:posts_per_page].value}
-                min="1"
-                max="200"
                 class="max-w-[110px]"
-                phx-debounce="300"
-              />
+              >
+                <option
+                  :for={size <- page_sizes(@settings.posts_per_page)}
+                  value={size}
+                  selected={@settings.posts_per_page == size}
+                >
+                  {size}
+                </option>
+              </select>
               <div class="hint">
-                How many texts the blog list shows before the pager. Between 1
-                and 200; the default is 10.
+                How many texts /blog shows before the pager. The default is 10.
               </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
                 The value must be {@errors[:posts_per_page]}.
@@ -915,23 +925,6 @@ defmodule TexttileWeb.SettingsLive do
           </div>
         </div>
 
-        <div class="drow gtop" id="waitingUsers">
-          <span class="lab">Not here yet</span>
-          <span class="val">
-            <p :if={@waiting == []} class="note">
-              Every name in ADMIN_USERS has an account.
-            </p>
-            <p :if={@waiting != []} class="text-[13.5px]">
-              {Enum.join(@waiting, ", ")}
-            </p>
-            <div class="hint">
-              These names may sign in but have no account yet. Whoever knows
-              such a name opens the site, types it, and chooses a password
-              there. To add or remove somebody, change ADMIN_USERS on the
-              server. A name you take out loses its access at once.
-            </div>
-          </span>
-        </div>
         <p class="note mt-3">
           Your own displayed name, address and password are on <.link
             navigate={~p"/admin/profile"}

@@ -16,7 +16,7 @@ defmodule Texttile.Articles.Article do
   @types ~w(post page)
 
   # The addresses the site itself answers on; no text may take them.
-  @reserved_slugs ~w(admin login logout forgot link unlock texts tags
+  @reserved_slugs ~w(admin login logout forgot link unlock blog tags
                      uploads renditions theme.css assets images dev)
 
   @doc "The slugs the public site keeps for its own routes."

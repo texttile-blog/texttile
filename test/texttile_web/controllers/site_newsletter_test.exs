@@ -43,7 +43,7 @@ defmodule TexttileWeb.SiteNewsletterTest do
     test "is the last section of every reader page", %{conn: conn} do
       article = published_post(tags: "harbour")
 
-      for path <- ["/", Texttile.Articles.public_path(article), "/tags/harbour"] do
+      for path <- ["/blog", Texttile.Articles.public_path(article), "/tags/harbour"] do
         html = conn |> get(path) |> html_response(200)
         assert html =~ ~s(id="subscribe")
         assert html =~ ~s(id="newsletter-form")

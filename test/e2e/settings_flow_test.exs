@@ -89,13 +89,14 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn: conn,
       kb: kb
     } do
-      # julia stands in the configuration and has no account yet
+      # julia stands in the configuration and has no account yet, so
+      # the screen that lists accounts does not know her
       configure_admins(["kb", "julia"])
 
       conn
       |> sign_in()
       |> open("/admin/settings")
-      |> assert_has("#waitingUsers", text: "julia")
+      |> refute_has("#usersList", text: "julia")
 
       # she takes the browser, types her name and chooses a password
       conn

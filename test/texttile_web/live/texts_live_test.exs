@@ -60,6 +60,47 @@ defmodule TexttileWeb.TextsLiveTest do
       assert render(view) =~ "/renditions/320/#{image.path}"
     end
 
+    test "a card counts the comments under its text, live", %{conn: conn, user: user} do
+      article = Texttile.ArticlesFixtures.published_post(title: "The harbour", user: user)
+
+      {:ok, view, _html} = live(conn, ~p"/admin")
+      refute has_element?(view, "#cards .card .cm", "comment")
+
+      {:ok, _} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "A reader", "email" => "one@example.org", "body" => "First words"},
+          confirm_url: &"http://example.org/comments/confirm/#{&1}"
+        )
+
+      assert has_element?(view, "#cards .card .cm", "1 comment")
+
+      {:ok, _} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "Another", "email" => "two@example.org", "body" => "Later words"},
+          confirm_url: &"http://example.org/comments/confirm/#{&1}"
+        )
+
+      assert has_element?(view, "#cards .card .cm", "2 comments")
+    end
+
+    test "a draft that once was live keeps its comment count", %{conn: conn, user: user} do
+      article = Texttile.ArticlesFixtures.published_post(title: "The harbour", user: user)
+
+      {:ok, _} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "A reader", "email" => "one@example.org", "body" => "First words"},
+          confirm_url: &"http://example.org/comments/confirm/#{&1}"
+        )
+
+      {:ok, _} = Articles.unpublish(article, user)
+
+      {:ok, view, _html} = live(conn, ~p"/admin")
+      assert has_element?(view, "#cards .card .cm", "1 comment")
+    end
+
     test "an untitled draft reads Untitled", %{conn: conn, user: user} do
       {:ok, _} = Articles.create_draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin")
