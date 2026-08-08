@@ -61,7 +61,10 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     |> fill_in("Title", with: "Harbor mornings")
     |> click_button("#stateBtn .main", "Publish")
     |> assert_has("#stamp", text: "published")
-    |> assert_has("#state", text: "on its way to 2 subscribers")
+    # the click says one word; the two mails below are the proof that it
+    # went out, and the settings row keeps the story
+    |> assert_has("#state", text: "Published")
+    |> assert_has("#notifyOpt", text: "went out on")
 
     mails =
       for _ <- 1..2 do

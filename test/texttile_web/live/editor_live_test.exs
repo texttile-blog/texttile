@@ -116,33 +116,38 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#stateBtn .main", "Publish")
     end
 
-    test "the publish note counts the subscribers the email went to", %{conn: conn, user: user} do
+    # The click says one word. Whether an email left is not news of the
+    # click: the settings row carries the mail's whole story, and it goes
+    # on carrying it after the note has faded.
+    test "the note is one word, and the settings row carries the mail", %{
+      conn: conn,
+      user: user
+    } do
       {:ok, _} = Texttile.Newsletter.add("one@example.org")
 
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note*='on its way to 1 subscriber']")
-
-      {:ok, _} = Texttile.Newsletter.add("two@example.org")
-
-      other = draft(user, %{title: "Windows", body: "Open ones."})
-      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{other}")
-      view |> element("#stateBtn .main", "Publish") |> render_click()
-
-      assert has_element?(view, "#state[data-note*='on its way to 2 subscribers']")
+      assert has_element?(view, "#state[data-note='Published']")
+      assert Articles.get_article!(article.id).notified_on == Date.utc_today()
+      assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
     end
 
-    test "with nobody on the list the note says so", %{conn: conn, user: user} do
+    test "a scheduled entry says the day it goes live", %{conn: conn, user: user} do
       article = draft(user)
+      future = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
-      view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note*='nobody is on the newsletter list']")
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["publish_date"], publish_date: future})
+
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+      assert has_element?(view, "#state[data-note='Scheduled for #{future}']")
     end
 
-    test "an unchecked text publishes quietly, and says that", %{conn: conn, user: user} do
+    test "an unchecked entry publishes without mailing anybody", %{conn: conn, user: user} do
       {:ok, _} = Texttile.Newsletter.add("one@example.org")
 
       article = draft(user)
@@ -155,12 +160,12 @@ defmodule TexttileWeb.EditorLiveTest do
       refute Articles.get_article!(article.id).notify_on_publish
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note*='no email sent']")
+      assert has_element?(view, "#state[data-note='Published']")
       assert is_nil(Articles.get_article!(article.id).notified_on)
+      assert has_element?(view, "#notifyOpt", "No email went out for this entry")
     end
 
-    test "a text that already mailed says so, on the button and in the settings",
-         %{conn: conn, user: user} do
+    test "an entry that already mailed says so in the settings", %{conn: conn, user: user} do
       {:ok, _} = Texttile.Newsletter.add("one@example.org")
 
       article = draft(user)
@@ -173,7 +178,11 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
 
       view |> element("#stateBtn .main", "Publish") |> render_click()
-      assert has_element?(view, "#state[data-note*='already got this email']")
+
+      # publishing again sends nothing: the stamp stands from the first
+      # go-live and never moves
+      assert Articles.get_article!(article.id).notified_on == Date.utc_today()
+      assert has_element?(view, "#notifyOpt", "It goes out once")
     end
 
     test "the bar carries the way to the reader's page", %{conn: conn, user: user} do

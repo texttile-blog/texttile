@@ -465,6 +465,11 @@
      both places. */
   .out { text-decoration: none; align-items: center; gap: 5px; }
   .out .out-i { width: 12px; height: 12px; flex: none; opacity: .7; }
+  /* The Last-saved line is a pill with 9px of padding of its own, and
+     the arrow stands beside the pill, not inside it. Left alone the two
+     would sit 14px apart and read as two things; the arrow reaches back
+     into the padding so they read as one control. */
+  .out > .saved + .out-i { margin-left: -9px; }
   .out:hover { color: var(--tt-accent); }
   .out:hover .out-i { opacity: 1; }
   .stamp.out.published:hover { color: var(--tt-onsolid); opacity: .85; }

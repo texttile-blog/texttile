@@ -31,16 +31,22 @@ defmodule TexttileWeb.AdminShareTest do
   end
 
   describe "the blog password in the editor" do
-    test "stands on a draft, on a live post and on a page", %{conn: conn, user: user} do
+    # Once an entry is live the word stands inside the lines to pass on,
+    # so the row of its own would say it twice.
+    test "stands on a draft, and inside the lines once the entry is live", %{
+      conn: conn,
+      user: user
+    } do
       protect("seaweed")
 
       {:ok, draft} = Articles.create_draft(user)
-      post = published_post(title: "The harbour")
-      page = published_page(title: "About")
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{draft}")
+      assert has_element?(view, "#sharePasswordWord", "seaweed")
 
-      for article <- [draft, post, page] do
-        {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
-        assert has_element?(view, "#sharePasswordWord", "seaweed")
+      for article <- [published_post(title: "The harbour"), published_page(title: "About")] do
+        {:ok, view, html} = live(conn, ~p"/admin/texts/#{article}")
+        refute has_element?(view, "#sharePassword")
+        assert html =~ "The blog password is: seaweed"
       end
     end
 
@@ -79,12 +85,14 @@ defmodule TexttileWeb.AdminShareTest do
     test "arrive with the text going live, and carry the address", %{conn: conn, user: user} do
       {:ok, draft} = Articles.create_draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{draft}")
-      refute has_element?(view, "#shareText")
+      refute has_element?(view, "#shareLines")
 
       article = published_post(title: "The harbour", slug: "the-harbour")
       {:ok, view, html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#shareText")
+      assert has_element?(view, "#shareLines")
+      # Copy stands at the right end of the heading, where Reset does
+      assert has_element?(view, "#shareBlock button[data-copy]", "Copy")
       assert html =~ "New on Texttile: The harbour"
       assert html =~ Articles.public_path(article)
       refute html =~ "The blog password is"

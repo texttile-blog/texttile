@@ -740,43 +740,20 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
+  # One word for what happened. Whether an email left is not news of the
+  # click: the settings row beside it carries the mail's whole story, and
+  # it goes on carrying it after the note has faded.
   defp publish_done(socket, article) do
     note =
-      if article.status == "scheduled" do
-        "Scheduled for #{article.publish_date}" <>
-          if(will_notify?(article),
-            do: " · subscribers get the email then",
-            else: " · no email will go out"
-          )
-      else
-        "Published just now" <> published_mail_note(socket.assigns.article, article)
-      end
+      if article.status == "scheduled",
+        do: "Scheduled for #{article.publish_date}",
+        else: "Published"
 
     socket
     |> assign(:article, article)
     |> assign(:state_menu, false)
     |> reload_history()
     |> mark_saved(note)
-  end
-
-  # What the publish click owes the writer: whether the email left. The
-  # stamp appearing on the text is the send; a text that carried one
-  # already went out at an earlier go-live and stays quiet.
-  defp published_mail_note(before, article) do
-    cond do
-      not will_notify?(article) ->
-        ", quietly · no email sent"
-
-      is_nil(before.notified_on) and not is_nil(article.notified_on) ->
-        case Texttile.Newsletter.confirmed_count() do
-          0 -> " · nobody is on the newsletter list, so no email went out"
-          1 -> " · the email is on its way to 1 subscriber"
-          n -> " · the email is on its way to #{n} subscribers"
-        end
-
-      true ->
-        " · the subscribers already got this email"
-    end
   end
 
   # What the takeover dialog owes the person asking: not a generic "are
@@ -1264,7 +1241,7 @@ defmodule TexttileWeb.EditorLive do
         </span>
         <a
           :if={@public_url}
-          class="out hidden md:inline-flex items-baseline flex-none"
+          class="out hidden md:inline-flex flex-none"
           id="stateLink"
           href={@public_url}
           target="_blank"
@@ -1785,8 +1762,6 @@ defmodule TexttileWeb.EditorLive do
             <p class="note mt-[10px] transition-colors empty:hidden" id="tileNote"></p>
           </div>
 
-          <.share_block article={@article} />
-
           <%!-- article settings: what the text wears first (preview,
                address, date), then what it is, then its community.
                No Status row - the stamp and the button in the bar
@@ -2182,6 +2157,10 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
           </form>
+
+          <%!-- last in the column: the lines you hand on are the last
+               thing you want, after the entry is what it should be --%>
+          <.share_block article={@article} />
         </aside>
       </div>
 
@@ -2228,12 +2207,35 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:share_text, share_text(assigns.article, protected? && password))
 
     ~H"""
-    <div :if={@show_password? or @share_text} class="mt-[34px]" id="shareBlock">
+    <%!-- The lines to hand somebody, and nothing around them: the box
+         says what it holds by holding it. Copy stands where Reset
+         stands, at the right end of the heading row. --%>
+    <div
+      :if={@show_password? or @share_text}
+      class="mt-[34px]"
+      id="shareBlock"
+      phx-hook=".CopyShare"
+    >
       <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
         <span class="text-[13px] font-semibold">Share</span>
+        <span class="sp"></span>
+        <button :if={@share_text} type="button" class="link" data-copy>Copy</button>
+        <span class="note" data-copied hidden>Copied</span>
       </div>
 
-      <div :if={@show_password?} class="drow pt-0.5" id="sharePassword">
+      <textarea
+        :if={@share_text}
+        id="shareLines"
+        class="font-mono text-[12.5px] leading-[1.6] resize-none mt-[10px]"
+        rows={length(String.split(@share_text, "\n"))}
+        readonly
+        spellcheck="false"
+        aria-label="The lines to pass on"
+      >{@share_text}</textarea>
+
+      <%!-- Before an entry is live there are no lines to pass on, and
+           then this is the one place the access word stands. --%>
+      <div :if={!@share_text && @show_password?} class="drow pt-0.5" id="sharePassword">
         <span class="lab">Blog password</span>
         <span class="val">
           <span :if={@password != ""} class="font-mono text-[13.5px]" id="sharePasswordWord">
@@ -2244,32 +2246,6 @@ defmodule TexttileWeb.EditorLive do
             is protected.
           </span>
           <div class="hint" id="sharePasswordHint">{@password_hint}</div>
-        </span>
-      </div>
-
-      <div :if={@share_text} class="drow gtop" id="shareText">
-        <span class="lab">To pass on</span>
-        <span class="val">
-          <div phx-hook=".CopyShare" id="shareCopy">
-            <textarea
-              id="shareLines"
-              class="font-mono text-[12.5px] leading-[1.6] resize-none"
-              rows={length(String.split(@share_text, "\n"))}
-              readonly
-              spellcheck="false"
-              aria-label="The text to pass on"
-            >{@share_text}</textarea>
-            <div class="mt-[9px] btn-row">
-              <button type="button" class="btn sm" data-copy>Copy</button>
-              <span class="note" data-copied hidden>Copied</span>
-            </div>
-          </div>
-          <div class="hint">
-            The address of the text{if @protected? and @password != "",
-              do: ", and the word that opens the blog",
-              else: ""}. Subscribers get the same
-            lines by mail when the text goes live.
-          </div>
         </span>
       </div>
     </div>
@@ -2483,8 +2459,6 @@ defmodule TexttileWeb.EditorLive do
   defp diff_class(:add), do: "dif-add"
   defp diff_class(:del), do: "dif-del"
   defp diff_class(:same), do: nil
-
-  defp will_notify?(article), do: article.type != "page" and article.notify_on_publish
 
   defp date_hint(%{status: "draft"}),
     do: "Empty means whenever you publish. A future date schedules the entry."
