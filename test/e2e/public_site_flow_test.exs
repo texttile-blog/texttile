@@ -58,14 +58,27 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     # the left edge, so the mark, the title and the button each began
     # somewhere else. The gate is four short things, not a form to work
     # through, so they stand on one axis.
-    # Full-width boxes are centred whatever they hold, so the measure
-    # is what is drawn: the mark and the title from the left edge of
-    # the one to the right edge of the other, and the rendered range of
-    # each line of words.
+    # Two things, and the first one is the one that was wrong: the card
+    # itself against the middle of the page. `body.site > main` is a
+    # flex column, which turned the card's `justify-center` into
+    # vertical centring and left it against the left edge.
+    #
+    # Then what is drawn on the card, because a full-width box is
+    # centred whatever it holds: the mark and the title from the left
+    # edge of the one to the right edge of the other, and the rendered
+    # range of each line of words.
     @gate_axis """
     () => {
       const card = document.querySelector("#unlock").parentElement
       const box = card.getBoundingClientRect()
+      // the space the card has, measured on the element that gives it:
+      // the viewport is the wrong ruler, because the site layout
+      // scrolls the body and a scrollbar takes part of the width
+      const main = document.querySelector("main")
+      const mb = main.getBoundingClientRect(), ms = getComputedStyle(main)
+      const room = [mb.left + parseFloat(ms.paddingLeft),
+                    mb.right - parseFloat(ms.paddingRight)]
+      const page = Math.abs((box.left - room[0]) - (room[1] - box.right))
       const axis = box.left + box.width / 2
       const off = r => Math.abs(r.left + r.width / 2 - axis)
       const kids = [...card.firstElementChild.children].map(k => k.getBoundingClientRect())
@@ -75,7 +88,8 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
         range.selectNodeContents(el)
         return range.getBoundingClientRect()
       }
-      return Math.max(off(head),
+      return Math.max(page,
+                      off(head),
                       off(words(card.querySelector("p"))),
                       off(words(document.querySelector("#unlock button"))))
     }

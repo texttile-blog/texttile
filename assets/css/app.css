@@ -162,13 +162,28 @@
      bar is allowed. LiveView writes .phx-client-error on an element
      above the bar the moment the socket drops, so the two lines change
      places without an event and without a timer of their own. */
-  .saved.warn { color: var(--tt-livetext); font-weight: 600; }
+  .saved.warn { color: var(--tt-julia); font-weight: 600; }
   .saved.warn::before { content: none; }
+  /* Both halves are written here and not with utilities: a utility
+     lives in a later layer, where it would beat the swap below however
+     specific the swap is, and both lines would stand in the bar at
+     once. The quiet half is a desk thing, because a phone bar has no
+     room for a sentence; the loud half shows at every width, because
+     it is the one save state that must be seen. */
+  .save-on { display: none; }
+  @media (min-width: 768px) { .save-on { display: inline-block; } }
   .save-off { display: none; }
   .phx-client-error .save-off,
   .phx-server-error .save-off { display: inline-block; }
   .phx-client-error .save-on,
   .phx-server-error .save-on { display: none; }
+  /* A phone bar cannot hold the warning and the state word and still
+     leave a letter of the title, and of those three the state word is
+     the one nobody needs while the connection is gone. */
+  @media (max-width: 639px) {
+    .phx-client-error .st,
+    .phx-server-error .st { display: none; }
+  }
 
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -.015em; }
@@ -515,11 +530,12 @@
   .st.live i { background-color: var(--tt-accent); box-shadow: none; }
   .st b { font-weight: 600; color: var(--tt-inksoft); }
 
-  /* somebody else holds the words. One fact, in the live ink the
-     banner under the bar uses, so the two read as one thing. */
+  /* somebody else holds the words. One fact, in the rust the whole
+     admin area uses for another person, so the bar and the banner
+     under it read as one thing. */
   .pres {
     display: inline-flex; align-items: center; gap: 6px; flex: none;
-    font-size: 12.5px; color: var(--tt-livetext); white-space: nowrap;
+    font-size: 12.5px; color: var(--tt-julia); white-space: nowrap;
   }
   .pres i {
     width: 7px; height: 7px; flex: none; border-radius: 50%;
@@ -535,11 +551,15 @@
      both wear it, so the way to the reader's side reads the same in
      both places. */
   .out { text-decoration: none; align-items: center; gap: 5px; }
-  /* The arrow carries its own size, wherever it stands. An SVG without
-     one grows to fill the box it lands in, and next to the IMPORT.md
-     link, which is a .link and not an .out, there was no other rule to
-     take a size from. */
-  .out-i { width: 12px; height: 12px; flex: none; vertical-align: -2px; opacity: .7; }
+  /* The arrow carries its own size and its own line behaviour,
+     wherever it stands. An SVG without a size grows to fill the box it
+     lands in, and the reset makes every bare svg a block, so inside a
+     .link, which is no flex container, the arrow was both huge and on
+     a line of its own. Both rules only ever held inside .out. */
+  .out-i {
+    display: inline-block; vertical-align: -2px;
+    width: 12px; height: 12px; flex: none; opacity: .7;
+  }
   /* The Last-saved line is a pill, and the arrow belongs inside it: the
      flashed state draws a ground and a border, and an arrow beside that
      would crowd the rounded edge. Inside, the pill wraps both and
@@ -624,11 +644,11 @@
   .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
   .ed-title[readonly]:hover, .ed-title[readonly]:focus,
   .ed-body[readonly]:hover, .ed-body[readonly]:focus {
-    background: var(--tt-livetint); border-bottom-color: var(--tt-liveline); box-shadow: none;
+    background: var(--tt-juliatint); border-bottom-color: var(--tt-julialine); box-shadow: none;
   }
   #bodyWrap.is-readonly .ed-cm,
   #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
-  #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-livetint); }
+  #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-juliatint); }
   /* THE SAME EDITOR, IN A BOX
      Settings gives About the entry editor with the pictures taken out.
      There the surface is one field among many, not the page, so it
@@ -915,8 +935,8 @@
     box-shadow: inset 0 0 0 1px var(--tt-accentline);
   }
   .jbar.theirs {
-    background-color: var(--tt-livetint); color: var(--tt-livetext);
-    box-shadow: inset 0 0 0 1px var(--tt-liveline);
+    background-color: var(--tt-juliatint); color: var(--tt-julia);
+    box-shadow: inset 0 0 0 1px var(--tt-julialine);
   }
   /* the presence hint on the wordmark: one small dot in julia's
      colour, no motion, no count. It says "open the menu", nothing more. */
@@ -945,7 +965,7 @@
   .pop .row.on { color: var(--tt-accent); font-weight: 600; }
   /* the one row that cannot be taken back: behind a hairline, at the
      end, and in the ink of a warning as soon as the pointer is on it */
-  .pop .row.far:hover { background-color: var(--tt-livetint); color: var(--tt-livetext); }
+  .pop .row.far:hover { background-color: var(--tt-juliatint); color: var(--tt-julia); }
   /* a line in a menu that is not an action but a fact, so it reads as
      one: no hover, no pointer, the size of a note */
   .pop .fact {
@@ -1414,7 +1434,7 @@
 /* while the other admin holds the text the bar stays, faded; a click
    on any button asks for the takeover instead of formatting */
 .mdbar.is-readonly .mdb { color: var(--tt-slash); }
-.mdbar.is-readonly .mdb:hover { background: var(--tt-livetint); color: var(--tt-livetext); }
+.mdbar.is-readonly .mdb:hover { background: var(--tt-juliatint); color: var(--tt-julia); }
 
 /* the editor: the same flush surface the textarea was */
 .ed-cm { cursor: text; }

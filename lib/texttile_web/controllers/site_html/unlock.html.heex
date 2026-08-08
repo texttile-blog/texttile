@@ -2,8 +2,12 @@
      stands in the middle of the card: the mark, the title, the one
      line that says why, and the field. Nothing here is a form to work
      through, so nothing needs a left edge to run down. --%>
-<main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[13vh] pb-10">
-  <div class="w-[min(374px,100%)] text-center">
+<%!-- The card is placed with a margin and not with a flex rule: the
+     site layout makes every `main` a flex column of its own
+     (`body.site > main`), which turned `justify-center` into vertical
+     centring and left the card against the left edge. --%>
+<main class="min-h-[100dvh] px-5 pt-[13vh] pb-10">
+  <div class="w-[min(374px,100%)] mx-auto text-center">
     <div class="flex items-center justify-center gap-[11px]">
       <Layouts.mark size={28} ink="var(--tt-ink)" />
       <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">

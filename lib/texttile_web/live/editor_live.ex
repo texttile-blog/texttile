@@ -1428,7 +1428,7 @@ defmodule TexttileWeb.EditorLive do
              lives in the tooltip, where a moving number cannot pull at
              the eye. --%>
         <span
-          class="saved whitespace-nowrap num hidden md:inline-block save-on"
+          class="saved whitespace-nowrap num save-on"
           id="state"
           phx-hook="SavedTicker"
           data-at={@saved_at}
