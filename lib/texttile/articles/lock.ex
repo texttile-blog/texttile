@@ -48,6 +48,19 @@ defmodule Texttile.Articles.Lock do
 
   defp via(article_id), do: {:via, Registry, {@registry, article_id}}
 
+  @doc """
+  Every text is free again: each lock process is stopped, whoever held
+  it. The locks live beside the database, not in it, so nothing rolls
+  them back - a test starts from no open editors with this.
+  """
+  def forget_all do
+    for {_, pid, _, _} <- DynamicSupervisor.which_children(@supervisor), is_pid(pid) do
+      DynamicSupervisor.terminate_child(@supervisor, pid)
+    end
+
+    :ok
+  end
+
   @doc "The lock process of an article, started if it is not running."
   def ensure(article_id) do
     case DynamicSupervisor.start_child(@supervisor, {__MODULE__, article_id: article_id}) do

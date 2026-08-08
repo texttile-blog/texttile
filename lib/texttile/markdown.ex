@@ -12,4 +12,17 @@ defmodule Texttile.Markdown do
       render: [escape: true]
     )
   end
+
+  @doc """
+  The alt text of a rendered `<img>` tag, and a word to stand in for it
+  when the reference carries none. Whoever turns such a tag into
+  something else - a player, a link in a feed - needs the same reading.
+  """
+  def alt_of(tag) do
+    case Regex.run(~r/alt="([^"]*)"/, tag) do
+      [_whole, ""] -> "Video"
+      [_whole, alt] -> alt
+      nil -> "Video"
+    end
+  end
 end

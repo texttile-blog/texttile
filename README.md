@@ -96,6 +96,16 @@ text; the reader's page shows the video once it is ready. The upload takes
 The container brings ffmpeg. On a development machine, `make tools` installs
 it.
 
+## Feed
+
+The blog has an RSS feed at `/feed.xml`. It carries every published post,
+newest first, with the whole text. Each page points at it from its head, and
+the footer carries an RSS link.
+
+A blog behind the shared password has no feed: `/feed.xml` answers 404 and
+no page offers a link. A feed reader cannot enter a password, and the texts
+would travel out of the gate. Remove the password to get the feed back.
+
 ## Comments
 
 Readers can comment under every text that allows it (the switch is in the

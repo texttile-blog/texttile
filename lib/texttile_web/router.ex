@@ -20,6 +20,10 @@ defmodule TexttileWeb.Router do
     get "/uploads/*path", UploadsController, :show
     get "/renditions/:edge/*path", UploadsController, :rendition
     get "/theme.css", ThemeController, :show
+
+    # The feed. Outside the gate and outside the session: it answers a
+    # reader's program, not a browser, and a guarded blog has none.
+    get "/feed.xml", FeedController, :show
   end
 
   ## The sign-in family

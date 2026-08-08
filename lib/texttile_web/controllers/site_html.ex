@@ -73,7 +73,8 @@ defmodule TexttileWeb.SiteHTML do
       <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
-        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Desk</a>
+        <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
+        <a :if={@current_scope} id="foot-desk" href={~p"/admin"}>Sign in</a>
         <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>Sign in</a>
       </div>
     </footer>
@@ -200,7 +201,7 @@ defmodule TexttileWeb.SiteHTML do
                                                                               path,
                                                                               rest ->
       if Texttile.Videos.video?(path) do
-        video_tag(path, alt_of(whole))
+        video_tag(path, Texttile.Markdown.alt_of(whole))
       else
         ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
           ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
@@ -230,14 +231,6 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   defp size_attributes(_play), do: ""
-
-  defp alt_of(tag) do
-    case Regex.run(~r/alt="([^"]*)"/, tag) do
-      [_whole, ""] -> "Video"
-      [_whole, alt] -> alt
-      nil -> "Video"
-    end
-  end
 
   @doc """
   Whether a text shows a picture at all: a gallery tile, or one in the

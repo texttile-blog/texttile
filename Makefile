@@ -1,11 +1,7 @@
 # Port 4000 belongs to the human developer (make start).
 # Agents never use it; they run on 4440+ (see AGENTS.md).
 
-# The product notes live in the personal vault. The copies in this repo are
-# read-only mirrors, see the `idea` target.
-VAULT ?= $(HOME)/vault/texttile
-
-.PHONY: prepare tools test kill-port-4000 start idea db-delete db-pull
+.PHONY: prepare tools test kill-port-4000 start db-delete db-pull
 
 # Development state is shared by all worktrees, see config/dev.exs.
 SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; if [ -n "$$common_dir" ]; then dirname "$$common_dir"; else pwd; fi)
@@ -41,15 +37,6 @@ kill-port-4000:
 			kill -9 $$pids 2>/dev/null || true; \
 		fi; \
 	fi
-
-# Overwrite the product notes from the vault. The vault always wins.
-# Edit the notes in the vault, never here.
-idea:
-	@test -d "$(VAULT)" || { echo "Vault not found: $(VAULT)" >&2; exit 1; }
-	@mkdir -p idea
-	@rsync -a --delete --exclude '.DS_Store' --exclude '.obsidian/' "$(VAULT)/" idea/
-	@echo "Synced from $(VAULT):"
-	@git status --short idea/ || true
 
 # Pull a consistent snapshot of the production SQLite DB to $(DB_LOCAL).
 # VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.

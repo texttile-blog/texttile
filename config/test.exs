@@ -31,7 +31,13 @@ config :phoenix_test,
   endpoint: TexttileWeb.Endpoint,
   playwright: [
     browser: :chromium,
-    headless: true
+    headless: true,
+    # How long the browser waits for what a test asks for. The default
+    # two seconds fit a developer machine; the CI runner has two cores
+    # for the server, the browser and SQLite together, and a page that
+    # mounts a LiveView first can take longer than that. The ceiling
+    # only costs time where something is broken anyway.
+    timeout: 10_000
   ]
 
 # A browser test types faster than a person, so the comment form's time

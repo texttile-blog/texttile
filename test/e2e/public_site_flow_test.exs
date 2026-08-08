@@ -91,6 +91,31 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
+  describe "the feed" do
+    test "the foot points at it, and the feed carries the texts", %{conn: conn} do
+      published_post(title: "Harbor mornings", body: "Fog over the pier.")
+
+      conn
+      |> visit("/")
+      |> assert_has("#foot-feed", text: "RSS")
+      |> click_link("#foot-feed", "RSS")
+      |> assert_has("body", text: "Harbor mornings")
+    end
+
+    test "is gone once a password guards the blog", %{conn: conn} do
+      published_post(title: "Behind the wall")
+      {:ok, _} = Settings.put(:site_visibility, "protected")
+      {:ok, _} = Settings.put(:site_password, "sesame")
+
+      conn
+      |> visit("/")
+      |> fill_in("Password", with: "sesame")
+      |> click_button("Read on")
+      |> assert_has("a", text: "Behind the wall")
+      |> refute_has("#foot-feed")
+    end
+  end
+
   describe "walking the blog" do
     test "the pager walks the pages and the text points at the next one", %{conn: conn} do
       {:ok, _} = Settings.put(:posts_per_page, 2)
@@ -117,6 +142,23 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> click_link("#next-post", "Text 3")
       |> assert_has("h1", text: "Text 3")
       |> refute_has("#next-post")
+    end
+  end
+
+  describe "the foot" do
+    # The foot wears .wrap and .f-foot together. `.wrap` writes the
+    # padding shorthand, so the space under the last line only holds
+    # while the rule that writes it beats `.wrap`. Once it lost, the
+    # site name stood on the bottom edge of the page.
+    @foot_pad """
+    () => parseFloat(getComputedStyle(document.querySelector(".f-foot")).paddingBottom)
+    """
+
+    test "keeps space under the last line", %{conn: conn} do
+      conn
+      |> visit("/")
+      |> assert_has("#foot-signin")
+      |> evaluate(@foot_pad, [is_function: true], &assert(&1 >= 24))
     end
   end
 end
