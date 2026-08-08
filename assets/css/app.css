@@ -520,27 +520,42 @@
     width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
     font-family: var(--tt-font-serif); font-size: 25px; font-weight: 600;
     line-height: 1.15; letter-spacing: -.02em;
-    background: transparent; border: 0; border-radius: 0;
+    /* The two writing surfaces carry the ground of a field, like every
+       other input: at rest they are what you type into, and a surface
+       that only appears under the pointer asks to be found first. The
+       washes are translucent tints, so hover and focus layer over the
+       ground instead of replacing it, and the two steps read exactly as
+       they did before. */
+    background-color: var(--tt-field); border: 0;
+    border-radius: var(--tt-radius) var(--tt-radius) 0 0;
     padding: 6px 6px 9px;
     border-bottom: 2px solid var(--tt-inksoft);
     transition: border-color .15s ease, background-color .18s ease, box-shadow .15s ease;
   }
   @media (min-width: 768px) { .ed-title { font-size: 30px; } }
-  .ed-title:hover { background: var(--tt-wash1); border-bottom-color: var(--tt-ink); }
+  .ed-title:hover {
+    background-image: linear-gradient(var(--tt-wash1), var(--tt-wash1));
+    border-bottom-color: var(--tt-ink);
+  }
   .ed-title:focus {
-    outline: none; background: var(--tt-wash2);
+    outline: none;
+    background-image: linear-gradient(var(--tt-wash2), var(--tt-wash2));
     border-color: transparent; border-bottom-color: var(--tt-accent); box-shadow: none;
   }
   .ed-body {
     display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
     margin-top: 22px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
-    color: var(--tt-ink); background: transparent; border: 0; border-radius: 0;
+    color: var(--tt-ink); background-color: var(--tt-field); border: 0;
+    border-radius: var(--tt-radius);
     padding: 6px 6px 7px; resize: none; min-height: 100px;
     field-sizing: content;
     transition: background-color .18s ease;
   }
-  .ed-body:hover { background: var(--tt-wash1); }
-  .ed-body:focus, .ed-cm:focus-within { outline: none; background: var(--tt-wash2); border-color: transparent; }
+  .ed-body:hover { background-image: linear-gradient(var(--tt-wash1), var(--tt-wash1)); }
+  .ed-body:focus, .ed-cm:focus-within {
+    outline: none; border-color: transparent;
+    background-image: linear-gradient(var(--tt-wash2), var(--tt-wash2));
+  }
   .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
   /* while the other admin holds the text both fields are read-only and
      say so by staying quiet, with a pointer that offers the takeover */
