@@ -10,7 +10,14 @@ defmodule Texttile.Comments.Notifier do
   `notify_on_comment` stands in the settings, and never before the
   comment stands under its text. The reader's address stays out of it:
   no screen of the admin area shows one either.
+
+  Both write in the language of the process that calls them, and ask
+  for none of their own. The admin mail leaves in a task, and a task
+  nobody waits for owns no database connection, so its language is
+  handed in where the task is started. See `Texttile.I18n`.
   """
+
+  use Gettext, backend: TexttileWeb.Gettext
 
   import Swoosh.Email
 
@@ -30,20 +37,28 @@ defmodule Texttile.Comments.Notifier do
       new()
       |> to({comment.name, comment.address.email})
       |> from({site, Application.fetch_env!(:texttile, :mail_from)})
-      |> subject("Confirm your email on #{site}")
-      |> text_body("""
-      Hello #{comment.name},
+      |> subject(gettext("Confirm your email on %{site}", site: site))
+      |> text_body(
+        gettext(
+          """
+          Hello %{name},
 
-      You wrote a comment on "#{title}".
+          You wrote a comment on "%{title}".
 
-      Open this link, and your comment appears under the entry:
+          Open this link, and your comment appears under the entry:
 
-      #{url}
+          %{url}
 
-      You confirm this address once. Every comment you write after
-      that appears at once. If you did not write a comment on #{site},
-      ignore this mail.
-      """)
+          You confirm this address once. Every comment you write after
+          that appears at once. If you did not write a comment on %{site},
+          ignore this mail.
+          """,
+          name: comment.name,
+          title: title,
+          url: url,
+          site: site
+        )
+      )
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
@@ -62,7 +77,7 @@ defmodule Texttile.Comments.Notifier do
 
     Accounts.list_users()
     |> Enum.reject(&(&1.id == comment.user_id))
-    |> Enum.each(&deliver_one(&1, site, "New comment on #{title}", body))
+    |> Enum.each(&deliver_one(&1, site, gettext("New comment on %{title}", title: title), body))
   end
 
   # A refused mail is nothing this can repair, and nothing the reader
@@ -86,16 +101,24 @@ defmodule Texttile.Comments.Notifier do
   defp admin_body(comment, site, title) do
     comments_url = TexttileWeb.Endpoint.url() <> "/admin/comments"
 
-    """
-    #{comment.name} wrote on "#{title}":
+    gettext(
+      """
+      %{name} wrote on "%{title}":
 
-    #{comment.body}
+      %{body}
 
-    #{where_it_stands(comment.article)}    All comments:  #{comments_url}
+      %{where}    All comments:  %{url}
 
-    #{site} sends this mail because "Mail me every new comment" stands
-    in its settings. Switch it off there to stop it.
-    """
+      %{site} sends this mail because "Mail me every new comment" stands
+      in its settings. Switch it off there to stop it.
+      """,
+      name: comment.name,
+      title: title,
+      body: comment.body,
+      where: where_it_stands(comment.article),
+      url: comments_url,
+      site: site
+    )
   end
 
   # A text that went off the site between the comment and the mail has
@@ -104,11 +127,12 @@ defmodule Texttile.Comments.Notifier do
   defp where_it_stands(article) do
     case Articles.public_path(article) do
       nil ->
-        "It is out of sight for now: the entry itself is not on the site.\n\n"
+        gettext("It is out of sight for now: the entry itself is not on the site.") <> "\n\n"
 
       path ->
-        "It stands under the entry now.\n\n" <>
-          "The text:      #{TexttileWeb.Endpoint.url()}#{path}\n"
+        gettext("It stands under the entry now.") <>
+          "\n\n" <>
+          gettext("The entry:     %{url}", url: TexttileWeb.Endpoint.url() <> path) <> "\n"
     end
   end
 end

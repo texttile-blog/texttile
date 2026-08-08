@@ -6,11 +6,11 @@
         {Texttile.Settings.site_title()}
       </h1>
     </div>
-    <p class="text-faint text-[13px] mt-[6px]">This blog asks for its password.</p>
+    <p class="text-faint text-[13px] mt-[6px]">{gettext("This blog asks for its password.")}</p>
     <form id="unlock" action={~p"/unlock"} method="post" class="mt-[26px]">
       <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
       <input type="hidden" name="to" value={@to} />
-      <label class="lab block mb-[5px]" for="password">Password</label>
+      <label class="lab block mb-[5px]" for="password">{gettext("Password")}</label>
       <input
         type="password"
         id="password"
@@ -24,13 +24,16 @@
         class="text-[12.5px] mt-[7px]"
         style="color:var(--tt-julia)"
       >
-        That is not the password. Check it and try again.
+        {gettext("That is not the password. Check it and try again.")}
       </p>
-      <button type="submit" class="btn solid w-full mt-[15px] h-[34px]">Read on</button>
+      <button type="submit" class="btn solid w-full mt-[15px] h-[34px]">
+        {gettext("Read on")}
+      </button>
     </form>
     <p class="note mt-[18px] leading-[1.6]">
-      One password opens the whole blog, and this browser remembers it.
-      If you do not have it, ask the person who gave you the address.
+      {gettext(
+        "One password opens the whole blog, and this browser remembers it. If you do not have it, ask the person who gave you the address."
+      )}
     </p>
   </div>
 </main>

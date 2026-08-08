@@ -50,13 +50,20 @@ defmodule Texttile.DataCase do
   Waits for the mail a test sent to leave the building.
 
   A comment hands its mail to a task of its own, so the reader who
-  wrote it never waits for another server. A task still running when
-  the sandbox owner goes holds a connection nobody owns any more, and
-  the next test then meets a busy database instead of its own.
+  wrote it never waits for another server, and an entry going live
+  hands the list to another. A task still running when the sandbox
+  owner goes holds a connection nobody owns any more, and the next test
+  then meets a busy database instead of its own.
+
+  Both supervisors are waited for. Watching only one is how this bites:
+  the other task runs on, and what it says arrives as a stray error on
+  a test that has nothing to do with it.
   """
+  @mail_supervisors [Texttile.Comments.TaskSupervisor, Texttile.Newsletter.TaskSupervisor]
+
   def settle_mail_tasks(timeout \\ 2_000) do
-    Texttile.Comments.TaskSupervisor
-    |> Task.Supervisor.children()
+    @mail_supervisors
+    |> Enum.flat_map(&Task.Supervisor.children/1)
     |> Enum.each(fn pid ->
       ref = Process.monitor(pid)
 

@@ -14,6 +14,8 @@
  * with `full` as its poster; `film` null on a film means ffmpeg is
  * not through with it yet and says so instead.
  */
+import {t, esc} from "./i18n"
+
 export function openMedia(items, at) {
   if (!items.length) return null
   return new MediaLightbox(items, at)
@@ -33,7 +35,7 @@ class MediaLightbox {
     const root = document.createElement("dialog")
     root.className = "lb-root"
     root.id = "mediaLb"
-    root.setAttribute("aria-label", "Full size")
+    root.setAttribute("aria-label", t("Full size"))
     root.tabIndex = -1
 
     const many = this.items.length > 1
@@ -42,15 +44,15 @@ class MediaLightbox {
         <span id="mlCount" class="num"></span>
         <span class="sp"></span>
         <a id="mlOrig" class="lb-abtn plain" target="_blank" rel="noopener"
-           ><span class="lb-word">Open original</span><span class="lb-word-s">Original</span></a>
-        <button type="button" id="mlClose" class="lb-abtn">Close</button>
+           ><span class="lb-word">${esc(t("Open original"))}</span><span class="lb-word-s">${esc(t("Original"))}</span></a>
+        <button type="button" id="mlClose" class="lb-abtn">${esc(t("Close"))}</button>
       </div>
       <div class="lb-stage" id="mlStage">
         <button type="button" class="lb-arrow lb-nav" data-nav="-1"
-          aria-label="Previous" ${many ? "" : "hidden"}>&#8249;</button>
+          aria-label="${esc(t("Previous"))}" ${many ? "" : "hidden"}>&#8249;</button>
         <div class="lb-img" id="mlArt"></div>
         <button type="button" class="lb-arrow lb-nav" data-nav="1"
-          aria-label="Next" ${many ? "" : "hidden"}>&#8250;</button>
+          aria-label="${esc(t("Next"))}" ${many ? "" : "hidden"}>&#8250;</button>
       </div>
       <p class="lb-cap" id="mlCap"></p>`
 
@@ -111,7 +113,7 @@ class MediaLightbox {
          is fetched that does not exist yet */
       const said = document.createElement("p")
       said.className = "lb-cap"
-      said.textContent = "This film is still being converted. It plays here once that is done."
+      said.textContent = t("This film is still being converted. It plays here once that is done.")
       this.art.replaceChildren(said)
     } else if (item.video) {
       const film = document.createElement("video")

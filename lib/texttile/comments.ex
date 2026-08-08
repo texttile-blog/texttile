@@ -100,7 +100,12 @@ defmodule Texttile.Comments do
   # comment waits for this server and not for another one.
   defp notify_admins(comment) do
     if Settings.get(:notify_on_comment) do
+      # Read here, where this process owns its database connection; the
+      # task below owns none.
+      locale = Texttile.I18n.site_locale()
+
       Task.Supervisor.start_child(Texttile.Comments.TaskSupervisor, fn ->
+        Texttile.I18n.put_locale(locale)
         Notifier.deliver_to_admins(comment)
       end)
     end

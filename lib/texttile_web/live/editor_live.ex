@@ -36,7 +36,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
-      |> assign(:save_label, "Save version")
+      |> assign(:save_label, gettext("Save version"))
       |> assign(:save_timer, nil)
       |> assign(:holds_lock, true)
       |> assign(:holder, nil)
@@ -174,8 +174,8 @@ defmodule TexttileWeb.EditorLive do
     %{article: article, current_scope: scope} = socket.assigns
 
     case Articles.save_version(article, scope.user) do
-      {:ok, _version} -> {:noreply, socket |> mark_saved() |> say_on_button("Saved")}
-      :unchanged -> {:noreply, say_on_button(socket, "Nothing changed")}
+      {:ok, _version} -> {:noreply, socket |> mark_saved() |> say_on_button(gettext("Saved"))}
+      :unchanged -> {:noreply, say_on_button(socket, gettext("Nothing changed"))}
     end
   end
 
@@ -184,7 +184,7 @@ defmodule TexttileWeb.EditorLive do
 
     cond do
       not socket.assigns.holds_lock ->
-        {:noreply, mark_saved(socket, "Take the entry over first; restoring needs it")}
+        {:noreply, mark_saved(socket, gettext("Take the entry over first; restoring needs it"))}
 
       version = Enum.find(versions, &(to_string(&1.id) == id)) ->
         {:ok, article} = Articles.restore_version(article, version, scope.user)
@@ -193,7 +193,9 @@ defmodule TexttileWeb.EditorLive do
          socket
          |> assign(:article, article)
          |> push_event("sync_body", %{text: article.body})
-         |> mark_saved("Version from #{stamp(version.inserted_at)} restored")}
+         |> mark_saved(
+           gettext("Version from %{stamp} restored", stamp: stamp(version.inserted_at))
+         )}
 
       true ->
         {:noreply, socket}
@@ -218,12 +220,12 @@ defmodule TexttileWeb.EditorLive do
         {:noreply,
          assign(socket, :dialog, %{
            id: "takeover",
-           title: "Take the entry over from #{name}?",
+           title: gettext("Take the entry over from %{name}?", name: name),
            body: [
              activity_line(name, holder),
              "A takeover stops that mid-sentence. The title and the body turn read-only on the other side, and a note says who took the entry. Nothing is lost, and the entry can go straight back."
            ],
-           ok: "Take over the entry",
+           ok: gettext("Take over the entry"),
            event: "confirm_takeover"
          })}
     end
@@ -257,8 +259,8 @@ defmodule TexttileWeb.EditorLive do
        assign(socket, :dialog, %{
          id: "publish-anyway",
          title: "#{name} is editing this entry right now",
-         body: ["Publish it anyway, as it stands this second?"],
-         ok: "Publish anyway",
+         body: [gettext("Publish it anyway, as it stands this second?")],
+         ok: gettext("Publish anyway"),
          event: "do_publish"
        })}
     end
@@ -284,8 +286,8 @@ defmodule TexttileWeb.EditorLive do
      |> reload_history()
      |> mark_saved(
        if(was == "scheduled",
-         do: "Unscheduled · a draft again",
-         else: "Unpublished · a draft again"
+         do: gettext("Unscheduled · a draft again"),
+         else: gettext("Unpublished · a draft again")
        )
      )}
   end
@@ -308,8 +310,8 @@ defmodule TexttileWeb.EditorLive do
       cond do
         was != "draft" and article.status == "draft" ->
           if was == "scheduled",
-            do: "The date is empty · unscheduled, a draft again",
-            else: "The date is empty · unpublished, a draft again"
+            do: gettext("The date is empty · unscheduled, a draft again"),
+            else: gettext("The date is empty · unpublished, a draft again")
 
         true ->
           nil
@@ -359,7 +361,8 @@ defmodule TexttileWeb.EditorLive do
       :ok = Articles.delete_redirect(article, id)
     end
 
-    {:noreply, socket |> load_redirects() |> mark_saved("That address answers nothing again")}
+    {:noreply,
+     socket |> load_redirects() |> mark_saved(gettext("That address answers nothing again"))}
   end
 
   # The tag suggestions: one click adds a tag the blog already knows,
@@ -454,7 +457,10 @@ defmodule TexttileWeb.EditorLive do
         address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
 
         [
-          "The entry is live. From now on, a reader who follows an old link to #{address} gets a 404 page."
+          gettext(
+            "The entry is live. From now on, a reader who follows an old link to %{address} gets a 404 page.",
+            address: address
+          )
         ]
       else
         []
@@ -465,12 +471,14 @@ defmodule TexttileWeb.EditorLive do
      |> assign(:state_menu, false)
      |> assign(:dialog, %{
        id: "delete",
-       title: ~s(Delete "#{Articles.display_title(article)}"?),
+       title: gettext("Delete \"%{title}\"?", title: Articles.display_title(article)),
        body:
          [
-           "This deletes the entry and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
-         ] ++ live_line ++ ["There is no undo."],
-       ok: "Delete the entry",
+           gettext(
+             "This deletes the entry and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
+           )
+         ] ++ live_line ++ [gettext("There is no undo.")],
+       ok: gettext("Delete the entry"),
        event: "confirm_delete"
      })}
   end
@@ -483,7 +491,9 @@ defmodule TexttileWeb.EditorLive do
      socket
      |> put_flash(
        :info,
-       ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
+       gettext("\"%{title}\" is deleted. Its versions and its log went with it.",
+         title: Articles.display_title(article)
+       )
      )
      |> push_navigate(to: ~p"/admin/texts")}
   end
@@ -566,7 +576,10 @@ defmodule TexttileWeb.EditorLive do
     {:noreply,
      mark_saved(
        socket,
-       "The file for #{clean_file(file)} is not in this browser any more · remove the marker and paste the image again"
+       gettext(
+         "The file for %{file} is not in this browser any more · remove the marker and paste the image again",
+         file: clean_file(file)
+       )
      )}
   end
 
@@ -611,7 +624,7 @@ defmodule TexttileWeb.EditorLive do
         {:noreply,
          socket
          |> assign_gallery()
-         |> mark_saved("The gallery changed under your hands · fresh order loaded")}
+         |> mark_saved(gettext("The gallery changed under your hands · fresh order loaded"))}
     end
   end
 
@@ -629,7 +642,7 @@ defmodule TexttileWeb.EditorLive do
       {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
     else
       {:error, :invalid_date} ->
-        {:reply, %{ok: false}, mark_saved(socket, "That date could not be read")}
+        {:reply, %{ok: false}, mark_saved(socket, gettext("That date could not be read"))}
 
       _ ->
         {:reply, %{ok: false}, socket |> assign_gallery() |> mark_saved(gone_note())}
@@ -659,7 +672,7 @@ defmodule TexttileWeb.EditorLive do
        socket |> assign_gallery() |> mark_saved("#{image.filename} is back in the gallery")}
     else
       _ ->
-        {:noreply, mark_saved(socket, "Too late · the picture is gone for good")}
+        {:noreply, mark_saved(socket, gettext("Too late · the picture is gone for good"))}
     end
   end
 
@@ -718,12 +731,12 @@ defmodule TexttileWeb.EditorLive do
     assign(socket, :gallery, Gallery.list(socket.assigns.article.id))
   end
 
-  defp gone_note, do: "That tile was deleted a moment ago"
+  defp gone_note, do: gettext("That tile was deleted a moment ago")
 
   defp moved_note(socket, meta) do
     name =
       case Accounts.get_user(meta.by) do
-        nil -> "Someone"
+        nil -> gettext("Someone")
         user -> Accounts.display_name(user)
       end
 
@@ -740,8 +753,11 @@ defmodule TexttileWeb.EditorLive do
     %{article: article, current_scope: scope} = socket.assigns
 
     case Articles.publish(article, scope.user, opts) do
-      {:ok, article} -> publish_done(socket, article)
-      {:error, _changeset} -> mark_saved(socket, "That address is taken by another entry")
+      {:ok, article} ->
+        publish_done(socket, article)
+
+      {:error, _changeset} ->
+        mark_saved(socket, gettext("That address is taken by another entry"))
     end
   end
 
@@ -751,8 +767,8 @@ defmodule TexttileWeb.EditorLive do
   defp publish_done(socket, article) do
     note =
       if article.status == "scheduled",
-        do: "Scheduled for #{article.publish_date}",
-        else: "Published"
+        do: gettext("Scheduled for %{date}", date: article.publish_date),
+        else: gettext("Published")
 
     socket
     |> put_article(article)
@@ -794,7 +810,8 @@ defmodule TexttileWeb.EditorLive do
             {:noreply, socket |> assign(:article, article) |> announce_activity() |> mark_saved()}
 
           {:error, _changeset} ->
-            {:noreply, mark_saved(socket, "That title is too long; 500 characters is the roof")}
+            {:noreply,
+             mark_saved(socket, gettext("That title is too long; 500 characters is the roof"))}
         end
     end
   end
@@ -867,18 +884,18 @@ defmodule TexttileWeb.EditorLive do
   end
 
   # What the admin area says while ffmpeg is not through with a video.
-  defp conversion_note(%{state: :queued}), do: "waiting to be converted"
-  defp conversion_note(%{state: :running}), do: "converting"
-  defp conversion_note(%{state: :none}), do: "waiting to be converted"
-  defp conversion_note(%{state: :failed, error: nil}), do: "the conversion failed"
-  defp conversion_note(%{state: :failed, error: reason}), do: "the conversion failed: #{reason}"
+  defp conversion_note(%{state: :queued}), do: gettext("waiting to be converted")
+  defp conversion_note(%{state: :running}), do: gettext("converting")
+  defp conversion_note(%{state: :none}), do: gettext("waiting to be converted")
+  defp conversion_note(%{state: :failed, error: nil}), do: gettext("the conversion failed")
+
+  defp conversion_note(%{state: :failed, error: reason}),
+    do: gettext("the conversion failed: %{reason}", reason: reason)
+
   defp conversion_note(_media), do: nil
 
   defp tile_count(gallery) do
-    case length(gallery) do
-      1 -> "1 tile"
-      n -> "#{n} tiles"
-    end
+    ngettext("1 tile", "%{count} tiles", length(gallery))
   end
 
   defp preview_candidates(%{article: article, gallery: gallery}) do
@@ -931,7 +948,7 @@ defmodule TexttileWeb.EditorLive do
     if id == socket.assigns.article.id do
       {:noreply,
        socket
-       |> put_flash(:info, "The entry was deleted while you had it open.")
+       |> put_flash(:info, gettext("The entry was deleted while you had it open."))
        |> push_navigate(to: ~p"/admin/texts")}
     else
       {:noreply, socket}
@@ -1031,8 +1048,11 @@ defmodule TexttileWeb.EditorLive do
 
       note =
         if displaced,
-          do: "You have the entry · #{Accounts.display_name(displaced)} was told",
-          else: "You have the entry"
+          do:
+            gettext("You have the entry · %{name} was told",
+              name: Accounts.display_name(displaced)
+            ),
+          else: gettext("You have the entry")
 
       {:noreply, socket |> refresh_lock() |> mark_saved(note)}
     else
@@ -1076,7 +1096,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_info(:reset_save_label, socket) do
-    {:noreply, socket |> assign(:save_label, "Save version") |> assign(:save_timer, nil)}
+    {:noreply, socket |> assign(:save_label, gettext("Save version")) |> assign(:save_timer, nil)}
   end
 
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -1097,7 +1117,7 @@ defmodule TexttileWeb.EditorLive do
   defp taken_note(socket) do
     case Lock.state(socket.assigns.article.id) do
       %{user_id: _} = holder -> "#{holder_name(holder)} is editing now. Your changes are saved."
-      :free -> "Your changes are saved."
+      :free -> gettext("Your changes are saved.")
     end
   end
 
@@ -1147,8 +1167,11 @@ defmodule TexttileWeb.EditorLive do
   # The two ways an address can be refused, in the words of the note.
   defp slug_error(changeset) do
     case changeset.errors[:slug] do
-      {"is an address the site itself uses", _} -> "That address belongs to the site itself"
-      _ -> "That address is taken by another entry"
+      {"is an address the site itself uses", _} ->
+        gettext("That address belongs to the site itself")
+
+      _ ->
+        gettext("That address is taken by another entry")
     end
   end
 
@@ -1212,16 +1235,18 @@ defmodule TexttileWeb.EditorLive do
   defp load_stats(socket, _tab), do: socket
 
   defp stats_empty(%{status: "scheduled", publish_date: date}) do
-    "No numbers yet. It goes live on #{date}."
+    gettext("No numbers yet. It goes live on %{date}.", date: date)
   end
 
   defp stats_empty(_article) do
-    "No numbers yet. Drafts are invisible to readers, so nothing is counted."
+    gettext("No numbers yet. Drafts are invisible to readers, so nothing is counted.")
   end
 
   # The date the counting started is the day the entry went live.
-  defp views_label(%{publish_date: %Date{} = date}), do: "views since #{date}"
-  defp views_label(_article), do: "views"
+  defp views_label(%{publish_date: %Date{} = date}),
+    do: gettext("views since %{date}", date: date)
+
+  defp views_label(_article), do: gettext("views")
 
   defp known_tags(socket) do
     standing = socket.assigns[:known_tags] || []
@@ -1282,7 +1307,7 @@ defmodule TexttileWeb.EditorLive do
           rel="noopener"
           title={@public_title}
         >
-          {@article.status}<.out_icon />
+          {stamp_word(@article.status)}<.out_icon />
         </a>
         <a
           class="out hidden md:inline-flex flex-none"
@@ -1304,7 +1329,7 @@ defmodule TexttileWeb.EditorLive do
             data-note={@saved_note}
             data-note-until={@saved_until}
           >
-            <span data-words>Last saved · just now</span> <.out_icon />
+            <span data-words>{gettext("Last saved · just now")}</span> <.out_icon />
           </span>
         </a>
         <span
@@ -1316,13 +1341,13 @@ defmodule TexttileWeb.EditorLive do
           data-note={@saved_note}
           data-note-until={@saved_until}
         >
-          Last saved · just now
+          {gettext("Last saved · just now")}
         </span>
         <button
           class="btn hidden sm:inline-flex"
           id="btnSave"
           phx-click="save_version"
-          title="Keep a version of the title and the body as they stand now"
+          title={gettext("Keep a version of the title and the body as they stand now")}
         >
           {@save_label}
         </button>
@@ -1334,9 +1359,13 @@ defmodule TexttileWeb.EditorLive do
             <button
               class="main"
               phx-click="publish"
-              title="Publishes the text now. A future publish date in the settings schedules it instead."
+              title={
+                gettext(
+                  "Publishes the entry now. A future publish date in the settings schedules it instead."
+                )
+              }
             >
-              Publish
+              {gettext("Publish")}
             </button>
             <span class="div" aria-hidden="true"></span>
             <button
@@ -1345,7 +1374,7 @@ defmodule TexttileWeb.EditorLive do
               phx-click="toggle_state_menu"
               aria-haspopup="true"
               aria-expanded={to_string(@state_menu)}
-              aria-label="More actions for this draft"
+              aria-label={gettext("More actions for this draft")}
             >
               <.chevron_icon />
             </button>
@@ -1356,9 +1385,9 @@ defmodule TexttileWeb.EditorLive do
               phx-click="toggle_state_menu"
               aria-haspopup="true"
               aria-expanded={to_string(@state_menu)}
-              aria-label={"#{String.capitalize(@article.status)}, state actions"}
+              aria-label={gettext("%{state}, state actions", state: status_word(@article.status))}
             >
-              {String.capitalize(@article.status)}
+              {status_word(@article.status)}
               <span class="cv" aria-hidden="true"><.chevron_icon /></span>
             </button>
           <% end %>
@@ -1376,7 +1405,7 @@ defmodule TexttileWeb.EditorLive do
         phx-window-keydown="close_state_menu"
         phx-key="escape"
       >
-        <button class="row sm:hidden" phx-click="save_version">Save version</button>
+        <button class="row sm:hidden" phx-click="save_version">{gettext("Save version")}</button>
         <a
           :if={@public_url}
           class="row sm:hidden"
@@ -1385,16 +1414,16 @@ defmodule TexttileWeb.EditorLive do
           target="_blank"
           rel="noopener"
         >
-          Open the entry <.out_icon />
+          {gettext("Open the entry")} <.out_icon />
         </a>
         <%= if @article.status == "scheduled" do %>
-          <button class="row" phx-click="publish_now">Publish now</button>
-          <button class="row" phx-click="unpublish">Unschedule</button>
+          <button class="row" phx-click="publish_now">{gettext("Publish now")}</button>
+          <button class="row" phx-click="unpublish">{gettext("Unschedule")}</button>
         <% end %>
         <%= if @article.status == "published" do %>
-          <button class="row" phx-click="unpublish">Unpublish</button>
+          <button class="row" phx-click="unpublish">{gettext("Unpublish")}</button>
         <% end %>
-        <button class="row" phx-click="ask_delete">Delete this entry</button>
+        <button class="row" phx-click="ask_delete">{gettext("Delete this entry")}</button>
       </div>
 
       <p :if={@saved_note} class="state-live" id="stateLine" role="status" aria-live="polite">
@@ -1436,25 +1465,29 @@ defmodule TexttileWeb.EditorLive do
               </b>
               <span class="opacity-85">
                 <%= if @holds_lock do %>
-                  reads along while you write. The article settings stay open to every admin, at the same time.
+                  {gettext(
+                    "reads along while you write. The article settings stay open to every admin, at the same time."
+                  )}
                 <% else %>
-                  writes the text now, and you see it in real time. Click into the title or the body to take the text over. The article settings can be changed by everyone independently from title or body.
+                  {gettext(
+                    "writes the entry now, and you see it in real time. Click into the title or the body to take the entry over. The article settings can be changed by everyone independently from title or body."
+                  )}
                 <% end %>
               </span>
             </div>
 
             <nav
               class="flex gap-0.5 border-b border-rule mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              aria-label="Text sections"
+              aria-label={gettext("Entry sections")}
             >
               <button
                 :for={
                   {tab, label} <- [
-                    {"text", "Text"},
-                    {"comments", "Comments"},
-                    {"stats", "Stats"},
-                    {"log", "Log"},
-                    {"versions", "Versions"}
+                    {"text", gettext("Text")},
+                    {"comments", gettext("Comments")},
+                    {"stats", gettext("Stats")},
+                    {"log", gettext("Log")},
+                    {"versions", gettext("Versions")}
                   ]
                 }
                 class={["tab", @tab == tab && "on"]}
@@ -1479,8 +1512,8 @@ defmodule TexttileWeb.EditorLive do
                   id="edTitle"
                   name="title"
                   value={@article.title}
-                  placeholder="Title"
-                  aria-label="Title"
+                  placeholder={gettext("Title")}
+                  aria-label={gettext("Title")}
                   autocomplete="off"
                   phx-debounce="300"
                   readonly={!@holds_lock}
@@ -1496,6 +1529,9 @@ defmodule TexttileWeb.EditorLive do
                    after the body. --%>
               <div class="flex flex-col">
                 <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
+                  <%!-- the hook replaces the textarea below, and its
+                       placeholder and label with it, so the words the
+                       writing surface shows arrive on the host --%>
                   <div
                     id="edBodyHost"
                     class="ed-body ed-cm"
@@ -1503,38 +1539,54 @@ defmodule TexttileWeb.EditorLive do
                     phx-update="ignore"
                     data-readonly={to_string(!@holds_lock)}
                     data-posters={Jason.encode!(poster_map(@media))}
+                    data-label={gettext("Body, Markdown")}
+                    data-placeholder={
+                      gettext(
+                        "Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
+                      )
+                    }
                   >
                     <textarea
                       class="ed-body"
-                      aria-label="Body, Markdown"
+                      aria-label={gettext("Body, Markdown")}
                       spellcheck="false"
-                      placeholder="Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
+                      placeholder={
+                        gettext(
+                          "Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
+                        )
+                      }
                       readonly={!@holds_lock}
                     >{@article.body}</textarea>
                   </div>
                   <p class="ed-foot" id="edFoot">
                     <span class="flag">
-                      <i class="inline-block w-[6px] h-[6px] rounded-full bg-accent"></i>Editing
+                      <i class="inline-block w-[6px] h-[6px] rounded-full bg-accent"></i>{gettext(
+                        "Editing"
+                      )}
                     </span>
                     <span id="edFootText">
                       <%= if @holds_lock do %>
-                        The draft saves as you type. <b>Save version</b>
-                        takes a snapshot of the title and the body that you can go back to.
+                        {gettext("The draft saves as you type.")}
+                        <b>{gettext("Save version")}</b>
+                        {gettext(
+                          "takes a snapshot of the title and the body that you can go back to."
+                        )}
                       <% else %>
-                        The title and the body are read-only right now. <b>Save version</b>
-                        and the Versions tab still work.
+                        {gettext("The title and the body are read-only right now.")}
+                        <b>{gettext("Save version")}</b>
+                        {gettext("and the Versions tab still work.")}
                       <% end %>
                     </span>
                   </p>
                   <span class="drop-flag" id="bodyDropFlag" hidden>
-                    Put the image in the text, where the caret is
+                    {gettext("Put the image in the text, where the caret is")}
                   </span>
                 </div>
                 <.md_bar
                   id="mdBar"
                   class="order-first"
                   readonly={!@holds_lock}
-                  note="Markdown Editor"
+                  note={gettext("Markdown Editor")}
                 />
               </div>
               <input
@@ -1543,7 +1595,7 @@ defmodule TexttileWeb.EditorLive do
                 class="sr"
                 multiple
                 accept="image/*,video/*"
-                aria-label="Put pictures and videos in the text"
+                aria-label={gettext("Put pictures and videos in the text")}
               />
 
               <%!-- the images in the text: a reading of the body, never
@@ -1553,15 +1605,17 @@ defmodule TexttileWeb.EditorLive do
               <div class="mt-[34px]">
                 <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
                   <span class="text-[13px] font-semibold">
-                    Pictures and videos in the text
+                    {gettext("Pictures and videos in the text")}
                     <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                   </span>
                   <span class="sp"></span>
-                  <span class="note">Paste one into the text, or drop one on it.</span>
+                  <span class="note">{gettext("Paste one into the text, or drop one on it.")}</span>
                 </div>
                 <div id="inlineImgs">
                   <p :if={Articles.inline_refs(@article.body) == []} class="note pt-[10px]">
-                    None in this text yet. Paste a picture or a video into the text, or drop one on it.
+                    {gettext(
+                      "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
+                    )}
                   </p>
                   <%= for ref <- Articles.inline_refs(@article.body) do %>
                     <% media = ref_media(@media, ref.url) %>
@@ -1600,15 +1654,18 @@ defmodule TexttileWeb.EditorLive do
                         <span class="sp"></span>
                         <%= if @holds_lock do %>
                           <button class="btn sm" data-img-action="retry" data-img-file={ref.file}>
-                            Retry
+                            {gettext("Retry")}
                           </button>
                           <button class="btn sm" data-img-action="remove" data-img-file={ref.file}>
-                            Remove
+                            {gettext("Remove")}
                           </button>
                         <% end %>
                       </div>
                       <p class="note mt-[5px] max-w-[62ch]">
-                        The upload stopped at {@upload_pcts[ref.file] || 0}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text.
+                        {gettext(
+                          "The upload stopped at %{pct}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text.",
+                          pct: @upload_pcts[ref.file] || 0
+                        )}
                       </p>
                     </div>
                     <div :if={ref.kind == :running} class="py-[9px] border-b border-hair text-[13px]">
@@ -1617,8 +1674,8 @@ defmodule TexttileWeb.EditorLive do
                         <span class="font-semibold flex-none">{ref.file}</span>
                         <span class="note num">
                           {if (@upload_pcts[ref.file] || 0) == 0,
-                            do: "queued",
-                            else: "uploading #{@upload_pcts[ref.file]}%"}
+                            do: gettext("queued"),
+                            else: gettext("uploading %{pct}%", pct: @upload_pcts[ref.file])}
                         </span>
                         <span class="sp"></span>
                         <button
@@ -1627,14 +1684,16 @@ defmodule TexttileWeb.EditorLive do
                           data-img-action="cancel"
                           data-img-file={ref.file}
                         >
-                          Cancel
+                          {gettext("Cancel")}
                         </button>
                       </div>
                       <span class="track mt-[7px]">
                         <i style={"width:#{@upload_pcts[ref.file] || 0}%"}></i>
                       </span>
                       <p class="note mt-[5px]">
-                        The text holds the place. The marker becomes the image when the upload finishes.
+                        {gettext(
+                          "The text holds the place. The marker becomes the image when the upload finishes."
+                        )}
                       </p>
                     </div>
                   <% end %>
@@ -1644,7 +1703,7 @@ defmodule TexttileWeb.EditorLive do
 
             <div :if={@tab == "comments"} id="tp-comments">
               <p :if={@comments == []} class="note max-w-[62ch]">
-                No comments yet. {comment_rule(@cmt_require)}
+                {gettext("No comments yet.")} {comment_rule(@cmt_require)}
               </p>
               <div :if={@comments != []}>
                 <.comment_item
@@ -1676,20 +1735,20 @@ defmodule TexttileWeb.EditorLive do
                   </div>
                   <div class="fig py-4 md:px-5 border-t border-hair md:border-t-0 md:border-l md:border-l-hair">
                     <div class="n" id="tpFigComments">{length(@comments)}</div>
-                    <div class="l">comments</div>
+                    <div class="l">{gettext("comments")}</div>
                   </div>
                   <div class="fig py-4 md:px-5 border-t border-hair md:border-t-0 md:border-l md:border-l-hair">
                     <div class="n" id="tpFigTiles">{length(@gallery)}</div>
-                    <div class="l">images in the gallery</div>
+                    <div class="l">{gettext("images in the gallery")}</div>
                   </div>
                 </div>
 
-                <h2 class="sec-h">Views, last 14 days</h2>
+                <h2 class="sec-h">{gettext("Views, last 14 days")}</h2>
                 <.day_chart id="tpDayChart" days={@stats.days} />
 
-                <h2 class="sec-h">Referrers, last 14 days</h2>
+                <h2 class="sec-h">{gettext("Referrers, last 14 days")}</h2>
                 <p :if={@stats.referrers == []} class="note" id="tpReferrersEmpty">
-                  Nothing counted yet, so there is nowhere readers came from.
+                  {gettext("Nothing counted yet, so there is nowhere readers came from.")}
                 </p>
                 <.referrer_table
                   :if={@stats.referrers != []}
@@ -1698,18 +1757,19 @@ defmodule TexttileWeb.EditorLive do
                 />
 
                 <p class="note mt-[22px]">
-                  Counted by this server alone. No cookie, no fingerprint, no
-                  third party. The whole blog is on the <.link
-                    class="link"
-                    navigate={~p"/admin/stats"}
-                  >Stats screen</.link>.
+                  {gettext(
+                    "Counted by this server alone. No cookie, no fingerprint, no third party. The whole blog is on the"
+                  )}
+                  <.link class="link" navigate={~p"/admin/stats"}>{gettext("Stats screen")}</.link>.
                 </p>
               </div>
             </div>
 
             <div :if={@tab == "log"} id="tp-log">
               <p class="note mb-4">
-                Everything that happened to this entry, newest first: your edits, the edits of every other admin, every handover of the entry, and every version anybody saved.
+                {gettext(
+                  "Everything that happened to this entry, newest first: your edits, the edits of every other admin, every handover of the entry, and every version anybody saved."
+                )}
               </p>
               <div id="logList">
                 <div :for={entry <- @log} class="log-row">
@@ -1723,13 +1783,17 @@ defmodule TexttileWeb.EditorLive do
 
             <div :if={@tab == "versions"} id="tp-versions">
               <p class="note mb-4">
-                The <b>Save version</b>
-                button in the bar saves the current version of the title and the body. Article settings are never versioned, because they are shared and live. Every version below shows what changed against the one before it, and can be restored.
+                <b>{gettext("Save version")}</b>
+                {gettext(
+                  "in the bar saves the current version of the title and the body. Article settings are never versioned, because they are shared and live. Every version below shows what changed against the one before it, and can be restored."
+                )}
               </p>
               <div id="versionsList">
                 <p :if={@versions == []} class="note">
-                  No versions yet. <b>Save version</b>
-                  in the bar writes the first one, and every one after it shows what changed.
+                  {gettext("No versions yet.")} <b>{gettext("Save version")}</b>
+                  {gettext(
+                    "in the bar writes the first one, and every one after it shows what changed."
+                  )}
                 </p>
                 <div
                   :for={{version, index} <- Enum.with_index(@versions)}
@@ -1748,24 +1812,26 @@ defmodule TexttileWeb.EditorLive do
                     ]}>
                       {author_name(version)}
                     </span>
-                    <span class="note num">{word_count(version.body)} words</span>
-                    <span :if={index == 0} class="note">newest</span>
+                    <span class="note num">
+                      {gettext("%{count} words", count: word_count(version.body))}
+                    </span>
+                    <span :if={index == 0} class="note">{gettext("newest")}</span>
                     <span class="sp"></span>
                     <button
                       class="btn quiet sm"
                       phx-click="restore_version"
                       phx-value-id={version.id}
                     >
-                      Restore this version
+                      {gettext("Restore this version")}
                     </button>
                   </div>
                   <p class="note mt-[6px]">
                     <%= if index + 1 < length(@versions) do %>
-                      What changed against the version from {stamp(
+                      {gettext("What changed against the version from")} {stamp(
                         Enum.at(@versions, index + 1).inserted_at
-                      )}: <span class="dif-add">added</span>, <span class="dif-del">removed</span>.
+                      )}: <span class="dif-add">{gettext("added")}</span>, <span class="dif-del">{gettext("removed")}</span>.
                     <% else %>
-                      The first version of the entry.
+                      {gettext("The first version of the entry.")}
                     <% end %>
                   </p>
                   <%!-- pre-wrap renders template whitespace, so the marked
@@ -1782,7 +1848,7 @@ defmodule TexttileWeb.EditorLive do
 
         <aside
           id="sideCol"
-          aria-label="Article settings"
+          aria-label={gettext("Article settings")}
           class="sidecol min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
@@ -1800,11 +1866,11 @@ defmodule TexttileWeb.EditorLive do
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">
-                Tiles <span class="note num" id="tileCount">{tile_count(@gallery)}</span>
+                {gettext("Tiles")} <span class="note num" id="tileCount">{tile_count(@gallery)}</span>
                 <span class="note num" id="tileOnWay" phx-update="ignore"></span>
               </span>
               <span class="sp"></span>
-              <span class="note">Grab a tile to sort it.</span>
+              <span class="note">{gettext("Grab a tile to sort it.")}</span>
             </div>
             <div class="grid gap-[6px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3" id="tileGrid">
               <div class="contents" id="tileServer">
@@ -1825,10 +1891,15 @@ defmodule TexttileWeb.EditorLive do
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"
                   tabindex="0"
-                  aria-label={"Tile #{index}, #{image.filename}, grab to sort, tap to see it big"}
+                  aria-label={
+                    gettext("Tile %{index}, %{file}, grab to sort, tap to see it big",
+                      index: index,
+                      file: image.filename
+                    )
+                  }
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
-                  <span :if={@effective_preview == image.path} class="cov">preview</span>
+                  <span :if={@effective_preview == image.path} class="cov">{gettext("preview")}</span>
                   <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
                   <span :if={conversion_note(@media[image.path])} class="tile-wait">
                     {conversion_note(@media[image.path])}
@@ -1837,7 +1908,7 @@ defmodule TexttileWeb.EditorLive do
                     type="button"
                     class="tile-del"
                     data-del
-                    aria-label={"Delete #{image.filename}"}
+                    aria-label={gettext("Delete %{file}", file: image.filename)}
                   >
                     &times;
                   </button>
@@ -1848,9 +1919,9 @@ defmodule TexttileWeb.EditorLive do
                 type="button"
                 class="tile-add"
                 id="tileAdd"
-                aria-label="Add pictures and videos"
+                aria-label={gettext("Add pictures and videos")}
               >
-                + Add
+                {gettext("+ Add")}
               </button>
             </div>
             <input
@@ -1859,10 +1930,10 @@ defmodule TexttileWeb.EditorLive do
               class="sr"
               multiple
               accept="image/*,video/*"
-              aria-label="Add pictures and videos to the gallery"
+              aria-label={gettext("Add pictures and videos to the gallery")}
             />
             <span class="drop-flag" id="tileDropFlag" hidden>
-              Add it to the gallery, at the end
+              {gettext("Add it to the gallery, at the end")}
             </span>
             <%!-- what the grid has to say for a moment: a tile another
                  admin moved, a file over the roof, an upload that
@@ -1882,18 +1953,20 @@ defmodule TexttileWeb.EditorLive do
             phx-submit="settings_changed"
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
-              <span class="text-[13px] font-semibold">Article settings</span>
+              <span class="text-[13px] font-semibold">{gettext("Article settings")}</span>
               <span class="sp"></span>
-              <span class="note">Every change saves itself.</span>
+              <span class="note">{gettext("Every change saves itself.")}</span>
             </div>
 
             <div class="drow pt-0.5">
-              <span class="lab">Preview image</span>
+              <span class="lab">{gettext("Preview image")}</span>
               <span class="val">
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
                   <%= if @preview_candidates == [] do %>
                     <span class="note">
-                      No pictures yet. Once the entry or the gallery has one, pick it here.
+                      {gettext(
+                        "No pictures yet. Once the entry or the gallery has one, pick it here."
+                      )}
                     </span>
                   <% else %>
                     <button
@@ -1905,22 +1978,24 @@ defmodule TexttileWeb.EditorLive do
                       style={tile_bg((@media[path] && @media[path].still) || path)}
                       phx-click="set_preview"
                       phx-value-path={path}
-                      aria-label={"Use image #{index} as the preview image"}
+                      aria-label={gettext("Use image %{index} as the preview image", index: index)}
                     >
                     </button>
                     <span :if={length(@preview_candidates) > 8} class="note">
-                      +{length(@preview_candidates) - 8} more in the gallery
+                      {gettext("+%{count} more in the gallery",
+                        count: length(@preview_candidates) - 8
+                      )}
                     </span>
                   <% end %>
                 </div>
                 <div class="hint">
-                  Used in the entries grid, on the front page and in link previews.
+                  {gettext("Used in the entries grid, on the front page and in link previews.")}
                 </div>
               </span>
             </div>
 
             <div class="drow gtop">
-              <span class="lab">Address</span>
+              <span class="lab">{gettext("Address")}</span>
               <span class="val">
                 <span class="addr">
                   <span class="pre">
@@ -1942,14 +2017,14 @@ defmodule TexttileWeb.EditorLive do
                      a row that is not worth keeping goes with one
                      click, and then the address is a 404 again. --%>
                 <div :if={@redirects != []} class="oldaddr" id="oldAddresses">
-                  <p class="lab">Old addresses, still arriving here</p>
+                  <p class="lab">{gettext("Old addresses, still arriving here")}</p>
                   <div :for={old <- @redirects} class="row" id={"oldaddr-#{old.id}"}>
                     <a
                       class="p"
                       href={old.path}
                       target="_blank"
                       rel="noopener"
-                      title="Follows the old address, in a new tab"
+                      title={gettext("Follows the old address, in a new tab")}
                     >
                       {old.path}
                     </a>
@@ -1958,9 +2033,9 @@ defmodule TexttileWeb.EditorLive do
                       class="btn quiet sm"
                       phx-click="delete_redirect"
                       phx-value-id={old.id}
-                      aria-label={"Stop answering #{old.path}"}
+                      aria-label={gettext("Stop answering %{path}", path: old.path)}
                     >
-                      Delete
+                      {gettext("Delete")}
                     </button>
                   </div>
                 </div>
@@ -1970,7 +2045,9 @@ defmodule TexttileWeb.EditorLive do
             <div class="drow gtop">
               <span class="labrow">
                 <label class="lab" id="edDateLab" for="edDate">
-                  {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
+                  {if @article.status == "scheduled",
+                    do: gettext("Goes live"),
+                    else: gettext("Publish date")}
                 </label>
                 <%!-- a date field empties badly by hand, so the row
                      offers the one word for it. On a live entry it is
@@ -1983,7 +2060,7 @@ defmodule TexttileWeb.EditorLive do
                   id="edDateReset"
                   phx-click="clear_publish_date"
                 >
-                  Reset
+                  {gettext("Reset")}
                 </button>
               </span>
               <span class="val">
@@ -1993,7 +2070,7 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow gtop">
-              <span class="lab">Type</span>
+              <span class="lab">{gettext("Type")}</span>
               <span class="val">
                 <label class="opt">
                   <input
@@ -2003,7 +2080,9 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.type == "post"}
                   />
                   <span>
-                    Blog post<span class="note">Listed on the front page and in the feed, has tags, can email subscribers.</span>
+                    {gettext("Blog post")}<span class="note">{gettext(
+                      "Listed on the front page and in the feed, has tags, can email subscribers."
+                    )}</span>
                   </span>
                 </label>
                 <label class="opt">
@@ -2014,14 +2093,16 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.type == "page"}
                   />
                   <span>
-                    Page<span class="note">Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed.</span>
+                    {gettext("Page")}<span class="note">{gettext(
+                      "Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
+                    )}</span>
                   </span>
                 </label>
               </span>
             </div>
 
             <div :if={@article.type != "page"} class="drow" id="fieldTags">
-              <span class="lab">Tags</span>
+              <span class="lab">{gettext("Tags")}</span>
               <span class="val">
                 <%!-- the field completes itself out of the tags the
                      blog already carries; the hook owns the list it
@@ -2036,7 +2117,7 @@ defmodule TexttileWeb.EditorLive do
                   id="edTags"
                   name="tags"
                   value={@article.tags}
-                  aria-label="Tags"
+                  aria-label={gettext("Tags")}
                   phx-debounce="blur"
                   phx-hook=".TagType"
                   data-tags={Enum.join(@known_tags, "\n")}
@@ -2232,7 +2313,7 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow gtop">
-              <span class="lab">Community</span>
+              <span class="lab">{gettext("Community")}</span>
               <span class="val">
                 <label class="opt">
                   <input type="hidden" name="allow_comments" value="false" />
@@ -2242,11 +2323,11 @@ defmodule TexttileWeb.EditorLive do
                     name="allow_comments"
                     value="true"
                     checked={@article.allow_comments}
-                  /> <span>Allow comments</span>
+                  /> <span>{gettext("Allow comments")}</span>
                 </label>
                 <span id="notifyOpt">
                   <%= if @article.type == "page" do %>
-                    <span class="note">Pages never email anyone.</span>
+                    <span class="note">{gettext("Pages never email anyone.")}</span>
                   <% else %>
                     <label class="opt">
                       <input type="hidden" name="notify_on_publish" value="false" />
@@ -2258,7 +2339,7 @@ defmodule TexttileWeb.EditorLive do
                         checked={@article.notify_on_publish}
                       />
                       <span>
-                        Email subscribers<span class="note">{notify_note(@article)}</span>
+                        {gettext("Email subscribers")}<span class="note">{notify_note(@article)}</span>
                       </span>
                     </label>
                   <% end %>
@@ -2326,11 +2407,11 @@ defmodule TexttileWeb.EditorLive do
       phx-hook=".CopyShare"
     >
       <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
-        <span class="text-[13px] font-semibold">Share</span>
+        <span class="text-[13px] font-semibold">{gettext("Share")}</span>
         <span class="sp"></span>
         <%!-- the button says what it did; a word beside it would push
              the button itself out of the way --%>
-        <button :if={@share_text} type="button" class="link" data-copy>Copy</button>
+        <button :if={@share_text} type="button" class="link" data-copy>{gettext("Copy")}</button>
       </div>
 
       <%!-- the lines read like every other value in this column: the
@@ -2344,7 +2425,7 @@ defmodule TexttileWeb.EditorLive do
             rows={length(String.split(@share_text, "\n"))}
             readonly
             spellcheck="false"
-            aria-label="The lines to pass on"
+            aria-label={gettext("The lines to pass on")}
           >{@share_text}</textarea>
         </span>
       </div>
@@ -2352,7 +2433,7 @@ defmodule TexttileWeb.EditorLive do
       <%!-- Before an entry is live there are no lines to pass on, and
            then this is the one place the access word stands. --%>
       <div :if={!@share_text && @show_password?} class="drow pt-0.5" id="sharePassword">
-        <span class="lab">Blog password</span>
+        <span class="lab">{gettext("Blog password")}</span>
         <span class="val">
           <span :if={@password != ""} class="font-mono text-[13.5px]" id="sharePasswordWord">
             {@password}
@@ -2399,13 +2480,15 @@ defmodule TexttileWeb.EditorLive do
   # the blog asks for. Nil while the text has no address of its own,
   # which is every text that is not live yet.
   defp password_hint(true = _protected?, _password) do
-    "The whole blog waits behind this one word, this text with it. " <>
-      "Settings > Access is where it changes."
+    gettext(
+      "The whole blog waits behind this one word, this entry with it. Settings > Access is where it changes."
+    )
   end
 
   defp password_hint(false, _password) do
-    "The blog is open right now, so nobody is asked for this word. " <>
-      "Settings > Access turns the gate on."
+    gettext(
+      "The blog is open right now, so nobody is asked for this word. Settings > Access turns the gate on."
+    )
   end
 
   defp share_text(%{status: status}, _password) when status != "published", do: nil
@@ -2417,12 +2500,15 @@ defmodule TexttileWeb.EditorLive do
 
       path ->
         head =
-          "New on #{Texttile.Settings.site_title()}: " <>
+          gettext("New on %{site}: ", site: Texttile.Settings.site_title()) <>
             Articles.display_title(article) <> "\n" <> TexttileWeb.Endpoint.url() <> path
 
         case password do
-          word when is_binary(word) and word != "" -> head <> "\nThe blog password is: " <> word
-          _ -> head
+          word when is_binary(word) and word != "" ->
+            head <> "\n" <> gettext("The blog password is: ") <> word
+
+          _ ->
+            head
         end
     end
   end
@@ -2431,12 +2517,13 @@ defmodule TexttileWeb.EditorLive do
   # state it opens: a live entry is the page everybody reads, and one
   # that is not live yet is that page for the admins alone.
   defp public_title(%{status: "published"}),
-    do: "Opens the entry on the public site, in a new tab"
+    do: gettext("Opens the entry on the public site, in a new tab")
 
   defp public_title(_article),
     do:
-      "Opens the entry as it was last saved, in a new tab. " <>
-        "Only somebody signed in can open this address."
+      gettext(
+        "Opens the entry as it was last saved, in a new tab. Only somebody signed in can open this address."
+      )
 
   defp chevron_icon(assigns) do
     ~H"""
@@ -2459,6 +2546,21 @@ defmodule TexttileWeb.EditorLive do
   ## Copy
 
   defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+
+  # The state of an entry, in words. The stored word is English and
+  # stays English; only what an admin reads changes with the language.
+  defp status_word("draft"), do: gettext("Draft")
+  defp status_word("scheduled"), do: gettext("Scheduled")
+  defp status_word("published"), do: gettext("Published")
+  defp status_word(other), do: String.capitalize(other)
+
+  # The stamp says the same state in a lower case of its own: it is a
+  # mark beside the words, not a button. German writes both the same
+  # way, so there the two read alike.
+  defp stamp_word("draft"), do: gettext("draft")
+  defp stamp_word("scheduled"), do: gettext("scheduled")
+  defp stamp_word("published"), do: gettext("published")
+  defp stamp_word(other), do: other
 
   # Whatever an admin does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.
@@ -2486,11 +2588,12 @@ defmodule TexttileWeb.EditorLive do
       0 ->
         comment_rule(require?)
 
-      1 ->
-        "1 comment is still out of the text: that reader has not followed the confirmation link yet."
-
       n ->
-        "#{n} comments are still out of the text: those readers have not followed the confirmation link yet."
+        ngettext(
+          "1 comment is still out of the entry: that reader has not followed the confirmation link yet.",
+          "%{count} comments are still out of the entry: those readers have not followed the confirmation link yet.",
+          n
+        )
     end
   end
 
@@ -2498,7 +2601,7 @@ defmodule TexttileWeb.EditorLive do
   # the text; the banner still needs a word for the person.
   defp holder_name(%{user_id: user_id}) do
     case Accounts.get_user(user_id) do
-      nil -> "A deleted account"
+      nil -> gettext("A deleted account")
       user -> Accounts.display_name(user)
     end
   end
@@ -2524,9 +2627,9 @@ defmodule TexttileWeb.EditorLive do
     running = Enum.count(refs, &(&1.kind == :running))
     failed = Enum.count(refs, &(&1.kind == :failed))
 
-    "#{done} #{if done == 1, do: "file", else: "files"}" <>
-      if(running > 0, do: " · #{running} on the way", else: "") <>
-      if(failed > 0, do: " · #{failed} failed", else: "")
+    ngettext("1 file", "%{count} files", done) <>
+      if(running > 0, do: " · " <> gettext("%{count} on the way", count: running), else: "") <>
+      if(failed > 0, do: " · " <> gettext("%{count} failed", count: failed), else: "")
   end
 
   defp word_count(text) do
@@ -2575,49 +2678,72 @@ defmodule TexttileWeb.EditorLive do
   defp diff_class(:same), do: nil
 
   defp date_hint(%{status: "draft"}),
-    do: "Empty means whenever you publish. A future date schedules the entry."
+    do: gettext("Empty means whenever you publish. A future date schedules the entry.")
 
   defp date_hint(%{status: "scheduled"} = article) do
     if article.publish_date,
-      do: "Scheduled. The subscriber email goes out on #{article.publish_date}.",
-      else: "Pick the day it goes live."
+      do:
+        gettext("Scheduled. The subscriber email goes out on %{date}.",
+          date: article.publish_date
+        ),
+      else: gettext("Pick the day it goes live.")
   end
 
   defp date_hint(article) do
     if article.publish_date,
       do:
-        "Live since #{article.publish_date}. A future date changes it to unpublished until the date.",
-      else: "Pick the day it went live. An empty field makes the entry a draft again."
+        gettext(
+          "Live since %{date}. A future date changes it to unpublished until the date.",
+          date: article.publish_date
+        ),
+      else: gettext("Pick the day it went live. An empty field makes the entry a draft again.")
   end
 
-  defp slug_hint(%{status: "draft"}), do: "Free to change while the entry is a draft."
+  defp slug_hint(%{status: "draft"}), do: gettext("Free to change while the entry is a draft.")
 
   defp slug_hint(article) do
-    "#{TexttileWeb.Endpoint.host()}#{Articles.public_path(article)} is live; changing it breaks old links."
+    gettext("%{address} is live; changing it breaks old links.",
+      address: TexttileWeb.Endpoint.host() <> Articles.public_path(article)
+    )
   end
 
   # The stamp outranks the status: a text that carried its email out
   # once never sends it again, whatever state it stands in now.
   defp notify_note(%{notified_on: %Date{} = day}),
     do:
-      "The subscriber email for this entry went out on #{day}. It goes out once; publishing again does not send it again."
+      gettext(
+        "The subscriber email for this entry went out on %{day}. It goes out once; publishing again does not send it again.",
+        day: day
+      )
 
   defp notify_note(%{status: "draft", notify_on_publish: true}),
     do:
-      "Confirmed subscribers get one plain email with the title and the first paragraph when this goes live. Uncheck to publish silently."
+      gettext(
+        "Confirmed subscribers get one plain email with the title and the first paragraph when this goes live. Uncheck to publish silently."
+      )
 
   defp notify_note(%{status: "draft"}),
     do:
-      "Nobody will be emailed when this goes live. Check it to notify the confirmed subscribers."
+      gettext(
+        "Nobody will be emailed when this goes live. Check it to notify the confirmed subscribers."
+      )
 
   defp notify_note(%{status: "scheduled", notify_on_publish: true} = article),
     do:
-      "Goes out to the confirmed subscribers when the entry goes live on #{article.publish_date}. Uncheck any time before then."
+      gettext(
+        "Goes out to the confirmed subscribers when the entry goes live on %{date}. Uncheck any time before then.",
+        date: article.publish_date
+      )
 
   defp notify_note(%{status: "scheduled"} = article),
-    do: "No email will go out on #{article.publish_date}. Check it and it goes out at go-live."
+    do:
+      gettext("No email will go out on %{date}. Check it and it goes out at go-live.",
+        date: article.publish_date
+      )
 
   defp notify_note(_article),
     do:
-      "No email went out for this entry. The email goes out only at the moment an entry goes live."
+      gettext(
+        "No email went out for this entry. The email goes out only at the moment an entry goes live."
+      )
 end

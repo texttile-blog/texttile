@@ -42,19 +42,37 @@ defmodule TexttileWeb.Layouts do
   """
   def sections do
     [
-      %{key: "1", label: "New entry", kind: :new},
-      %{key: "2", label: "Entries", kind: :screen, to: ~p"/admin/texts", active: "texts"},
-      %{key: "3", label: "Comments", kind: :screen, to: ~p"/admin/comments", active: "comments"},
+      %{key: "1", label: gettext("New entry"), kind: :new},
+      %{
+        key: "2",
+        label: gettext("Entries"),
+        kind: :screen,
+        to: ~p"/admin/texts",
+        active: "texts"
+      },
+      %{
+        key: "3",
+        label: gettext("Comments"),
+        kind: :screen,
+        to: ~p"/admin/comments",
+        active: "comments"
+      },
       %{
         key: "7",
-        label: "Newsletter",
+        label: gettext("Newsletter"),
         kind: :screen,
         to: ~p"/admin/newsletter",
         active: "newsletter"
       },
-      %{key: "8", label: "Stats", kind: :screen, to: ~p"/admin/stats", active: "stats"},
-      %{key: "9", label: "Settings", kind: :screen, to: ~p"/admin/settings", active: "settings"},
-      %{key: "0", label: "View site", kind: :site, to: ~p"/"}
+      %{key: "8", label: gettext("Stats"), kind: :screen, to: ~p"/admin/stats", active: "stats"},
+      %{
+        key: "9",
+        label: gettext("Settings"),
+        kind: :screen,
+        to: ~p"/admin/settings",
+        active: "settings"
+      },
+      %{key: "0", label: gettext("View site"), kind: :site, to: ~p"/"}
     ]
   end
 
@@ -151,7 +169,7 @@ defmodule TexttileWeb.Layouts do
           aria-haspopup="true"
           aria-expanded="false"
           aria-controls="navMenu"
-          aria-label={"#{@brand.title}, sections menu"}
+          aria-label={gettext("%{site}, sections menu", site: @brand.title)}
         >
           <span class="relative flex-none">
             <img
@@ -168,7 +186,12 @@ defmodule TexttileWeb.Layouts do
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
       </span>
-      <nav class="pop min-w-[248px] max-w-[340px]" id="navMenu" hidden aria-label="Sections">
+      <nav
+        class="pop min-w-[248px] max-w-[340px]"
+        id="navMenu"
+        hidden
+        aria-label={gettext("Sections")}
+      >
         <%= for section <- sections() do %>
           <button
             :if={section.kind == :new}
@@ -204,17 +227,17 @@ defmodule TexttileWeb.Layouts do
         <%!-- who is here: one block per person, every open tab a jump --%>
         <div id="liveBlock">
           <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]">
-            Here now
+            {gettext("Here now")}
           </p>
           <%= for person <- @others do %>
             <div class="who text-julia"><span class="dot live"></span>{person.name}</div>
             <.link :for={session <- person.sessions} navigate={session.path} class="row sub">
               <span class="flex-1 min-w-0 truncate">{session.label}</span>
-              <span class="go">go</span>
+              <span class="go">{gettext("go")}</span>
             </.link>
           <% end %>
           <p :if={@others == []} class="px-[10px] pb-[4px] text-[12.5px] text-faint">
-            No one else right now.
+            {gettext("No one else right now.")}
           </p>
         </div>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
@@ -222,9 +245,9 @@ defmodule TexttileWeb.Layouts do
           {@current_scope && Texttile.Accounts.display_name(@current_scope.user)}
         </p>
         <.link navigate={~p"/admin/profile"} class={["row", @active == "profile" && "on"]}>
-          Your profile
+          {gettext("Your profile")}
         </.link>
-        <.link href={~p"/logout"} method="delete" class="row">Sign out</.link>
+        <.link href={~p"/logout"} method="delete" class="row">{gettext("Sign out")}</.link>
       </nav>
 
       <%!-- the crumb is the one flexible thing in the bar, so the open
@@ -265,7 +288,7 @@ defmodule TexttileWeb.Layouts do
       id="bar-view-site"
       href={~p"/"}
     >
-      View site
+      {gettext("View site")}
     </a>
     """
   end
@@ -291,15 +314,15 @@ defmodule TexttileWeb.Layouts do
 
   defp here_now_sr(others) do
     names = Enum.map(others, & &1.name)
-    verb = if length(names) == 1, do: "is here", else: "are here"
-    ", " <> and_list(names) <> " " <> verb
+
+    ngettext(", %{names} is here", ", %{names} are here", length(names), names: and_list(names))
   end
 
   defp and_list([name]), do: name
 
   defp and_list(names) do
     {last, rest} = List.pop_at(names, -1)
-    Enum.join(rest, ", ") <> " and " <> last
+    gettext("%{names} and %{last}", names: Enum.join(rest, ", "), last: last)
   end
 
   @doc """

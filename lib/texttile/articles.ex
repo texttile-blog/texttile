@@ -254,10 +254,8 @@ defmodule Texttile.Articles do
 
   ## The archive: one line of years, the months of the open year
 
-  @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
-
-  @doc "The short name of a month, 1 to 12."
-  def month_name(number) when number in 1..12, do: Enum.at(@months, number - 1)
+  @doc "The short name of a month, 1 to 12, in the language of the site."
+  defdelegate month_name(number), to: Texttile.I18n, as: :short_month_name
 
   @doc """
   Whether an entry falls in a period. `nil` for the year means every
@@ -774,7 +772,7 @@ defmodule Texttile.Articles do
   ## Slugs
 
   @doc "The name a text goes by on screen: its title, or Untitled."
-  def display_title(%{title: ""}), do: "Untitled"
+  def display_title(%{title: ""}), do: Gettext.gettext(TexttileWeb.Gettext, "Untitled")
   def display_title(%{title: title}), do: title
 
   @doc """

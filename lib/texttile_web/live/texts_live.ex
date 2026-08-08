@@ -20,7 +20,7 @@ defmodule TexttileWeb.TextsLive do
 
     {:ok,
      socket
-     |> assign(:page_title, "Entries")
+     |> assign(:page_title, gettext("Entries"))
      |> assign(:filter, "all")
      |> assign(:q, "")
      |> assign(:year, nil)
@@ -95,7 +95,7 @@ defmodule TexttileWeb.TextsLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Entries"
+      crumb={gettext("Entries")}
       active="texts"
       others={@others}
     >
@@ -104,15 +104,21 @@ defmodule TexttileWeb.TextsLive do
       </:bar>
       <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <div class="flex items-baseline gap-[14px] flex-wrap">
-          <h1 class="page-h">Entries</h1>
+          <h1 class="page-h">{gettext("Entries")}</h1>
           <span class="note num" id="gridCount">{grid_count(@articles, @total)}</span>
           <span class="sp"></span>
-          <button class="btn solid" id="new-text" phx-click="new_text">New entry</button>
+          <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
         <div class="flex items-center gap-3 flex-wrap py-3 mt-[14px] mb-6 border-y border-rule">
-          <span class="flex gap-[3px] flex-none" role="group" aria-label="Filter by status">
+          <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
             <button
-              :for={{value, label} <- [{"all", "All"}, {"published", "Live"}, {"draft", "Drafts"}]}
+              :for={
+                {value, label} <- [
+                  {"all", gettext("All")},
+                  {"published", gettext("Live")},
+                  {"draft", gettext("Drafts")}
+                ]
+              }
               class={["seg-b", @filter == value && "on"]}
               data-f={value}
               phx-click="filter"
@@ -126,8 +132,8 @@ defmodule TexttileWeb.TextsLive do
               type="search"
               name="q"
               value={@q}
-              placeholder="Search title, tags, text"
-              aria-label="Search entries"
+              placeholder={gettext("Search title, tags, text")}
+              aria-label={gettext("Search entries")}
               autocomplete="off"
               phx-debounce="200"
               class="w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
@@ -137,9 +143,9 @@ defmodule TexttileWeb.TextsLive do
         <%!-- the archive: one line of years, and the months of the year
              that is open under it. Only the months that carry entries;
              the counts follow the search and the status filter. --%>
-        <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
+        <nav :if={@years != []} class="periods" id="periods" aria-label={gettext("Archive")}>
           <p class="prow" id="years">
-            <.period label="All years" on={is_nil(@year)} count={@across_years} />
+            <.period label={gettext("All years")} on={is_nil(@year)} count={@across_years} />
             <.period
               :for={{year, count} <- @years}
               label={year}
@@ -150,7 +156,7 @@ defmodule TexttileWeb.TextsLive do
           </p>
           <p :if={@months != []} class="prow" id="months">
             <.period
-              label="All months"
+              label={gettext("All months")}
               year={@year}
               on={is_nil(@month)}
               count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
@@ -174,7 +180,7 @@ defmodule TexttileWeb.TextsLive do
             <%= if cover = @covers[article.id] do %>
               <span class="cimg" style={cover_bg(cover)}></span>
             <% else %>
-              <span class="cimg empty">no images yet</span>
+              <span class="cimg empty">{gettext("no images yet")}</span>
             <% end %>
             <span class="ct">{Articles.display_title(article)}</span>
             <span class="cm">
@@ -187,19 +193,19 @@ defmodule TexttileWeb.TextsLive do
         </div>
         <p :if={@articles == []} class="note">
           {if @total == 0,
-            do: "No entries yet. New entry starts the first one.",
-            else: "Nothing matches. The search covers titles, tags and the entry itself."}
+            do: gettext("No entries yet. New entry starts the first one."),
+            else: gettext("Nothing matches. The search covers titles, tags and the entry itself.")}
         </p>
         <%!-- every digit the wordmark menu carries, in the order it
              carries them, so the two never say different things --%>
         <p class="hidden md:block text-[12.5px] text-faint mt-9 pt-[13px] border-t border-hair">
-          Press a key anywhere to jump:
+          {gettext("Press a key anywhere to jump:")}
           <span :for={section <- Layouts.sections()} class="whitespace-nowrap">
             <b class="text-dim num">{section.key}</b>
             {section.label} ·
           </span>
           <b class="text-dim">/</b>
-          search.
+          {gettext("search.")}
         </p>
       </div>
     </Layouts.app>
@@ -245,9 +251,9 @@ defmodule TexttileWeb.TextsLive do
     shown = length(articles)
 
     if shown == total do
-      "#{total} #{if total == 1, do: "entry", else: "entries"}"
+      ngettext("1 entry", "%{count} entries", total)
     else
-      "#{shown} of #{total}"
+      gettext("%{shown} of %{total}", shown: shown, total: total)
     end
   end
 
@@ -255,13 +261,18 @@ defmodule TexttileWeb.TextsLive do
     bits =
       case article.status do
         "draft" ->
-          ["draft", "last edited #{Calendar.strftime(article.updated_at, "%Y-%m-%d")}"]
+          [
+            gettext("draft"),
+            gettext("last edited %{date}",
+              date: Calendar.strftime(article.updated_at, "%Y-%m-%d")
+            )
+          ]
 
         "scheduled" ->
           [
             if(article.publish_date,
-              do: "goes live #{article.publish_date}",
-              else: "scheduled, no date yet"
+              do: gettext("goes live %{date}", date: article.publish_date),
+              else: gettext("scheduled, no date yet")
             )
           ]
 
@@ -277,11 +288,10 @@ defmodule TexttileWeb.TextsLive do
         case comment_count do
           nil -> []
           0 -> []
-          1 -> ["1 comment"]
-          n -> ["#{n} comments"]
+          n -> [ngettext("1 comment", "%{count} comments", n)]
         end
 
-    bits = if article.type == "page", do: ["page" | bits], else: bits
+    bits = if article.type == "page", do: [gettext("page") | bits], else: bits
     Enum.join(bits, " · ")
   end
 end

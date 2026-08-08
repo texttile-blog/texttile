@@ -3,7 +3,11 @@
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1" id="title">#{@tag}</h1>
     <p class="f-lead mt-3" id="sub">
-      {length(@articles)} {if length(@articles) == 1, do: "entry has", else: "entries have"} this tag.
+      {ngettext(
+        "One entry has this tag.",
+        "%{count} entries have this tag.",
+        length(@articles)
+      )}
     </p>
 
     <%!-- every tag of the blog; the one being read is marked and does

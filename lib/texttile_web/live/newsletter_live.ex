@@ -21,7 +21,7 @@ defmodule TexttileWeb.NewsletterLive do
 
     {:ok,
      socket
-     |> assign(:page_title, "Newsletter")
+     |> assign(:page_title, gettext("Newsletter"))
      |> assign(:add_error, false)
      |> assign(:confirm_remove, nil)
      |> load()}
@@ -83,7 +83,7 @@ defmodule TexttileWeb.NewsletterLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Newsletter"
+      crumb={gettext("Newsletter")}
       active="newsletter"
       others={@others}
     >
@@ -91,28 +91,29 @@ defmodule TexttileWeb.NewsletterLive do
         <Layouts.view_site />
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">Newsletter</h1>
+        <h1 class="page-h">{gettext("Newsletter")}</h1>
         <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
 
         <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2 mt-[6px]">
           <input
             type="email"
             name="email"
-            placeholder="Email"
-            aria-label="Email"
+            placeholder={gettext("Email")}
+            aria-label={gettext("Email")}
             required
             class="flex-1 min-w-[200px] max-w-[290px]"
           />
-          <button class="btn">Add</button>
+          <button class="btn">{gettext("Add")}</button>
           <span :if={@add_error} id="subAddError" class="text-[12.5px]" style="color:var(--tt-julia)">
-            That does not look like an email address.
+            {gettext("That does not look like an email address.")}
           </span>
         </form>
 
         <div id="subList" class="mt-[18px]">
           <p :if={@subscribers == []} class="note">
-            Nobody is on the list yet. Every reader who subscribes on the site
-            shows up here, and so does every address you add.
+            {gettext(
+              "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
+            )}
           </p>
           <div
             :for={subscriber <- @subscribers}
@@ -124,7 +125,7 @@ defmodule TexttileWeb.NewsletterLive do
                 {subscriber.email}
               </span>
               <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
-                waits for their confirmation
+                {gettext("waits for their confirmation")}
               </span>
             </span>
             <span class="hidden sm:inline text-[12.5px] text-faint num flex-none">
@@ -137,37 +138,40 @@ defmodule TexttileWeb.NewsletterLive do
               phx-click="ask_remove"
               phx-value-id={subscriber.id}
             >
-              Remove
+              {gettext("Remove")}
             </button>
           </div>
         </div>
 
         <p class="note mt-[22px]" id="newsletterRule">
-          A reader who subscribes on the site confirms the address by mail
-          first; until then it gets no updates. An address you add here is
-          directly confirmed. When an entry goes live with Email subscribers
-          checked, it goes to every confirmed address.
+          {gettext(
+            "A reader who subscribes on the site confirms the address by mail first; until then it gets no updates. An address you add here is directly confirmed. When an entry goes live with Email subscribers checked, it goes to every confirmed address."
+          )}
           <span :if={@protected?}>
-            This blog asks for its access word, and every one of those mails
-            carries it, so this list is who can read the blog.
+            {gettext(
+              "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
+            )}
           </span>
         </p>
       </div>
 
       <.ask
         :if={@confirm_remove}
-        heading={"Take #{@confirm_remove.email} off the list?"}
-        ok="Remove the address"
+        heading={gettext("Take %{email} off the list?", email: @confirm_remove.email)}
+        ok={gettext("Remove the address")}
         on_ok="remove"
         on_cancel="cancel_remove"
       >
         <p>
           <b>{@confirm_remove.email}</b>
-          gets no mail from this blog from the moment you confirm, and the
-          reader is not told. <br />
-          <br /> There is no undo, and nobody can put the address back on
-          the list for them: a reader subscribes on the site, or you add the
-          address here again and vouch for it yourself.
+          {gettext(
+            "gets no mail from this blog from the moment you confirm, and the reader is not told."
+          )}
+          <br />
+          <br />
+          {gettext(
+            "There is no undo, and nobody can put the address back on the list for them: a reader subscribes on the site, or you add the address here again and vouch for it yourself."
+          )}
         </p>
       </.ask>
     </Layouts.app>
@@ -176,22 +180,28 @@ defmodule TexttileWeb.NewsletterLive do
 
   # The lead line: how many addresses get the entries, and who still waits.
   defp sub_line([], _confirmed) do
-    "Everybody who gets a mail when a new entry goes live."
+    gettext("Everybody who gets a mail when a new entry goes live.")
   end
 
   defp sub_line(subscribers, confirmed) do
     waiting = length(subscribers) - confirmed
 
-    "#{confirmed} #{plural(confirmed, "email gets", "emails get")} updates." <>
-      if waiting == 0 do
-        ""
-      else
-        " #{waiting} more #{plural(waiting, "waits", "wait")} for their confirmation."
-      end
+    line = ngettext("1 email gets updates.", "%{count} emails get updates.", confirmed)
+
+    if waiting == 0 do
+      line
+    else
+      line <>
+        " " <>
+        ngettext(
+          "1 more waits for their confirmation.",
+          "%{count} more wait for their confirmation.",
+          waiting
+        )
+    end
   end
 
   defp since(subscriber) do
-    date = DateTime.to_date(subscriber.inserted_at)
-    "#{date.day} #{Calendar.strftime(date, "%B %Y")}"
+    subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_date()
   end
 end

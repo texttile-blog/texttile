@@ -35,7 +35,7 @@ defmodule TexttileWeb.SettingsLive do
 
     socket =
       socket
-      |> assign(:page_title, "Settings")
+      |> assign(:page_title, gettext("Settings"))
       |> assign(:errors, %{})
       |> assign(:confirm_delete, nil)
       |> assign(:confirm_tag, nil)
@@ -86,7 +86,16 @@ defmodule TexttileWeb.SettingsLive do
             socket
           end
 
-        {:noreply, socket}
+        # A new language needs the whole page again, not a live step.
+        # The shell around this view carries the language too - the
+        # lang attribute, and the words the hooks say - and only a
+        # fresh request draws that shell. Every other open tab changes
+        # over on its next full page.
+        if key_atom == :language do
+          {:noreply, redirect(socket, to: ~p"/admin/settings")}
+        else
+          {:noreply, socket}
+        end
 
       {:error, message} ->
         {:noreply, assign(socket, :errors, Map.put(socket.assigns.errors, key_atom, message))}
@@ -136,7 +145,7 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply,
      socket
      |> refresh_settings()
-     |> mark_saved("The #{mark} is the Texttile mark again")}
+     |> mark_saved(gettext("The %{mark} is the Texttile mark again", mark: mark))}
   end
 
   ## Theme
@@ -150,7 +159,7 @@ defmodule TexttileWeb.SettingsLive do
      socket
      |> refresh_settings()
      |> push_event("theme_saved", %{})
-     |> mark_saved("The theme is the iris default again")}
+     |> mark_saved(gettext("The theme is the iris default again"))}
   end
 
   ## Users
@@ -199,7 +208,9 @@ defmodule TexttileWeb.SettingsLive do
              socket
              |> assign(:confirm_delete, nil)
              |> refresh_users()
-             |> mark_saved("The account of #{Accounts.display_name(user)} is deleted")}
+             |> mark_saved(
+               gettext("The account of %{name} is deleted", name: Accounts.display_name(user))
+             )}
 
           {:error, _reason} ->
             # :gone, :last or :yourself: the world moved; show it as it is
@@ -239,7 +250,7 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply,
      socket
      |> refresh_storage()
-     |> mark_saved("Image cache cleared · variants regenerate on demand")}
+     |> mark_saved(gettext("Image cache cleared · variants regenerate on demand"))}
   end
 
   ## Somebody else changed something
@@ -289,18 +300,23 @@ defmodule TexttileWeb.SettingsLive do
           {:noreply,
            socket
            |> refresh_settings()
-           |> mark_saved("#{mark_label(mark)} uploaded · #{entry.client_name}")}
+           |> mark_saved(
+             gettext("%{mark} uploaded · %{file}",
+               mark: mark_label(mark),
+               file: entry.client_name
+             )
+           )}
 
         {:error, message} ->
-          {:noreply, mark_saved(socket, "Not stored · #{message}")}
+          {:noreply, mark_saved(socket, gettext("Not stored · %{message}", message: message))}
       end
     else
       {:noreply, socket}
     end
   end
 
-  defp mark_label(:logo), do: "Logo"
-  defp mark_label(:favicon), do: "Favicon"
+  defp mark_label(:logo), do: gettext("Logo")
+  defp mark_label(:favicon), do: gettext("Favicon")
 
   defp refresh_settings(socket) do
     settings = Settings.all()
@@ -364,11 +380,12 @@ defmodule TexttileWeb.SettingsLive do
 
   defp refresh_tags(socket), do: assign(socket, :tags, Articles.tag_counts())
 
-  defp tag_texts(1), do: "1 entry"
-  defp tag_texts(count), do: "#{count} entries"
+  defp tag_texts(count), do: ngettext("1 entry", "%{count} entries", count)
 
-  defp tag_deleted_note(tag, 0), do: "No entry carried #{tag} any more"
-  defp tag_deleted_note(tag, count), do: "#{tag} is off #{tag_texts(count)}"
+  defp tag_deleted_note(tag, 0), do: gettext("No entry carried %{tag} any more", tag: tag)
+
+  defp tag_deleted_note(tag, count),
+    do: gettext("%{tag} is off %{entries}", tag: tag, entries: tag_texts(count))
 
   defp refresh_storage(socket) do
     db_path = Texttile.Repo.config()[:database]
@@ -386,34 +403,36 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:cache_size, human_size(Images.cache_bytes()))
   end
 
-  defp human_size(bytes) when bytes < 1024 * 1024, do: "#{div(bytes, 1024)} KB"
-  defp human_size(bytes), do: "#{Float.round(bytes / (1024 * 1024), 1)} MB"
+  defp human_size(bytes) when bytes < 1024 * 1024,
+    do: gettext("%{size} KB", size: div(bytes, 1024))
+
+  defp human_size(bytes), do: gettext("%{size} MB", size: Float.round(bytes / (1024 * 1024), 1))
 
   defp saved_note(:comments_require_confirmation, true),
-    do: "Readers confirm their email · new comments wait for the link"
+    do: gettext("Readers confirm their email · new comments wait for the link")
 
   defp saved_note(:comments_require_confirmation, false),
-    do: "Comments appear at once · no confirmation asked"
+    do: gettext("Comments appear at once · no confirmation asked")
 
   defp saved_note(:notify_on_comment, true),
-    do: "Every new comment travels to everybody with an account here"
+    do: gettext("Every new comment travels to everybody with an account here")
 
-  defp saved_note(:notify_on_comment, false), do: "No mail goes out for a comment"
+  defp saved_note(:notify_on_comment, false), do: gettext("No mail goes out for a comment")
 
   # The gate only locks with a password in it, so the note tells the
   # truth for both states instead of announcing a protection that is
   # not there yet.
   defp saved_note(:site_visibility, "protected") do
     if Settings.get(:site_password) == "" do
-      "Protected once the blog password below is set"
+      gettext("Protected once the blog password below is set")
     else
-      "The blog waits behind the password now"
+      gettext("The blog waits behind the password now")
     end
   end
 
-  defp saved_note(:site_visibility, "public"), do: "The blog is open to everyone"
+  defp saved_note(:site_visibility, "public"), do: gettext("The blog is open to everyone")
 
-  defp saved_note(:site_password, ""), do: "Without a password nothing is protected"
+  defp saved_note(:site_password, ""), do: gettext("Without a password nothing is protected")
 
   # A new word is often meant to shut somebody out, and the next text
   # mails it to everybody on the list. This is the moment to say so;
@@ -422,8 +441,11 @@ defmodule TexttileWeb.SettingsLive do
     count = Newsletter.confirmed_count()
 
     if Settings.get(:site_visibility) == "protected" and count > 0 do
-      "Saved · the next text mails the new word to " <>
-        "#{count} #{plural(count, "subscriber", "subscribers")}"
+      ngettext(
+        "Saved · the next entry mails the new word to 1 subscriber",
+        "Saved · the next entry mails the new word to %{count} subscribers",
+        count
+      )
     end
   end
 
@@ -442,15 +464,16 @@ defmodule TexttileWeb.SettingsLive do
   # puts them into words.
   defp delete_block(user, users, me) do
     case Accounts.delete_user_block(user, me, length(users)) do
-      :last -> "The only account left: deleting it would leave nobody who can sign in."
-      :yourself -> "This one is you"
+      :last -> gettext("The only account left: deleting it would leave nobody who can sign in.")
+      :yourself -> gettext("This one is you")
       nil -> nil
     end
   end
 
   defp user_meta(user) do
     state =
-      unless Accounts.admin_username?(user.username), do: "not in ADMIN_USERS · cannot sign in"
+      unless Accounts.admin_username?(user.username),
+        do: gettext("not in ADMIN_USERS · cannot sign in")
 
     [user.username, user.email, state]
     |> Enum.reject(&(&1 in [nil, ""]))
@@ -458,31 +481,27 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   defp comments_note(true) do
-    "The reader gets one confirmation link per address. The comment stays " <>
-      "hidden from readers until the reader follows it, and it carries the " <>
-      "mark \"not confirmed yet\" here. Turn this off and every comment " <>
-      "appears at once. Spam is filtered by honeypot, timing and rate limit " <>
-      "checks either way."
+    gettext(
+      "The reader gets one confirmation link per address. The comment stays hidden from readers until the reader follows it, and it carries the mark \"not confirmed yet\" here. Turn this off and every comment appears at once. Spam is filtered by honeypot, timing and rate limit checks either way."
+    )
   end
 
   defp comments_note(false) do
-    "Every comment appears under the entry at once, and nobody confirms " <>
-      "anything. Turn this on and a comment waits for the reader to follow " <>
-      "a confirmation link. Spam is filtered by honeypot, timing and rate " <>
-      "limit checks either way."
+    gettext(
+      "Every comment appears under the entry at once, and nobody confirms anything. Turn this on and a comment waits for the reader to follow a confirmation link. Spam is filtered by honeypot, timing and rate limit checks either way."
+    )
   end
 
   defp notify_note(true) do
-    "Everybody with an account here and an address gets one mail per " <>
-      "comment: who wrote it, what it says, and the way to it. The mail " <>
-      "leaves when the comment stands under the text, so a comment that " <>
-      "still waits for its reader mails nobody. The address of the reader " <>
-      "is never in it."
+    gettext(
+      "Everybody with an account here and an address gets one mail per comment: who wrote it, what it says, and the way to it. The mail leaves when the comment stands under the entry, so a comment that still waits for its reader mails nobody. The address of the reader is never in it."
+    )
   end
 
   defp notify_note(false) do
-    "No mail goes out for a comment. New comments stand on the Comments " <>
-      "screen and in the text they belong to."
+    gettext(
+      "No mail goes out for a comment. New comments stand on the Comments screen and in the entry they belong to."
+    )
   end
 
   def render(assigns) do
@@ -490,7 +509,7 @@ defmodule TexttileWeb.SettingsLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      crumb="Settings"
+      crumb={gettext("Settings")}
       active="settings"
       others={@others}
     >
@@ -505,23 +524,22 @@ defmodule TexttileWeb.SettingsLive do
           data-note={@saved_note}
           data-note-until={@saved_note_until}
         >
-          Last saved · just now
+          {gettext("Last saved · just now")}
         </span>
         <Layouts.view_site />
       </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">Settings</h1>
+        <h1 class="page-h">{gettext("Settings")}</h1>
         <p class="lead">
-          Nothing here has a Save button: every change applies the moment you
-          make it.
+          {gettext("Nothing here has a Save button: every change applies the moment you make it.")}
         </p>
 
-        <.section>Site</.section>
+        <.section>{gettext("Site")}</.section>
         <%!-- three fields somebody fills in on their first visit here,
              so all three look like fields and not like values --%>
         <.form for={@settings_form} id="site-form" class="boxed-in" phx-change="save_setting">
           <div class="drow">
-            <label class="lab" for="setting-site_title">Site title</label>
+            <label class="lab" for="setting-site_title">{gettext("Site title")}</label>
             <span class="val">
               <input
                 type="text"
@@ -533,7 +551,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
           </div>
           <div class="drow">
-            <label class="lab" for="setting-site_description">Description</label>
+            <label class="lab" for="setting-site_description">{gettext("Description")}</label>
             <span class="val">
               <input
                 type="text"
@@ -545,22 +563,30 @@ defmodule TexttileWeb.SettingsLive do
             </span>
           </div>
           <div class="drow">
-            <label class="lab" for="setting-language">Language</label>
+            <label class="lab" for="setting-language">{gettext("Language")}</label>
             <span class="val">
+              <%!-- every language carries the name it calls itself, so
+                   the row reads for somebody who cannot read the one
+                   the blog is set to right now --%>
               <select id="setting-language" name="settings[language]">
-                <option value="en" selected={@settings.language == "en"}>English</option>
-                <option value="de" selected={@settings.language == "de"}>Deutsch</option>
-                <option value="lt" selected={@settings.language == "lt"}>Lietuvių</option>
+                <option
+                  :for={{code, name} <- Texttile.I18n.languages()}
+                  value={code}
+                  selected={@settings.language == code}
+                >
+                  {name}
+                </option>
               </select>
               <div class="hint">
-                For readers: dates, the word "comments", the newsletter emails.
-                The admin area itself stays English.
+                {gettext(
+                  "The whole blog speaks it: the reader pages, this admin area, the dates and the mails. What you write yourself stays as you wrote it."
+                )}
               </div>
             </span>
           </div>
         </.form>
 
-        <.section>Logo &amp; favicon</.section>
+        <.section>{gettext("Logo & favicon")}</.section>
         <div class="flex items-center gap-3 py-[11px] border-b border-hair">
           <span
             class="w-[42px] h-[42px] flex-none grid place-items-center bg-field rounded"
@@ -575,14 +601,15 @@ defmodule TexttileWeb.SettingsLive do
             <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
           </span>
           <span class="flex flex-col">
-            <b>Logo</b>
+            <b>{gettext("Logo")}</b>
             <span class="note" id="name-logo">
-              {@settings.logo_name || "Default: the Texttile mark"}
+              {@settings.logo_name || gettext("Default: the Texttile mark")}
             </span>
             <span class="note">
-              The bar here and the public site use it. SVG, PNG, JPG or WebP;
-              a raster file is scaled down on arrival to {Uploads.mark_max_edge()} px
-              on the longer edge.
+              {gettext(
+                "The bar here and the public site use it. SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge.",
+                px: Uploads.mark_max_edge()
+              )}
             </span>
           </span>
           <span class="sp"></span>
@@ -593,15 +620,15 @@ defmodule TexttileWeb.SettingsLive do
             phx-click="reset_mark"
             phx-value-mark="logo"
           >
-            Use default
+            {gettext("Use default")}
           </button>
           <form id="logo-form" phx-change="validate_upload">
             <label class="btn sm cursor-pointer relative overflow-hidden">
-              Upload
+              {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.logo}
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                aria-label="Upload a logo"
+                aria-label={gettext("Upload a logo")}
               />
             </label>
           </form>
@@ -620,14 +647,15 @@ defmodule TexttileWeb.SettingsLive do
             <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
           </span>
           <span class="flex flex-col">
-            <b>Favicon</b>
+            <b>{gettext("Favicon")}</b>
             <span class="note" id="name-favicon">
-              {@settings.favicon_name || "Default: the Texttile mark"}
+              {@settings.favicon_name || gettext("Default: the Texttile mark")}
             </span>
             <span class="note">
-              The browser-tab icon. Square SVG, PNG, JPG or WebP; a raster file
-              is scaled down on arrival to {Uploads.mark_max_edge()} px on the
-              longer edge.
+              {gettext(
+                "The browser-tab icon. Square SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge.",
+                px: Uploads.mark_max_edge()
+              )}
             </span>
           </span>
           <span class="sp"></span>
@@ -642,19 +670,19 @@ defmodule TexttileWeb.SettingsLive do
           </button>
           <form id="favicon-form" phx-change="validate_upload">
             <label class="btn sm cursor-pointer relative overflow-hidden">
-              Upload
+              {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.favicon}
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                aria-label="Upload a favicon"
+                aria-label={gettext("Upload a favicon")}
               />
             </label>
           </form>
         </div>
 
-        <.section>About</.section>
+        <.section>{gettext("About")}</.section>
         <label class="lab block mb-[6px]" for="setting-about_markdown">
-          About this blog
+          {gettext("About this blog")}
         </label>
         <%!-- the editor of an entry, with the pictures taken out: About
              stands in the band under every page and carries words, not
@@ -668,17 +696,19 @@ defmodule TexttileWeb.SettingsLive do
           data-event="about_changed"
           data-bar="#aboutBar"
           data-files="false"
-          data-label="About this blog, Markdown"
-          data-placeholder="Who writes here, and what this blog is. Markdown works: ## for a heading."
+          data-label={gettext("About this blog, Markdown")}
+          data-placeholder={
+            gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
+          }
         >
           <textarea>{@settings.about_markdown}</textarea>
         </div>
-        <div class="lab mt-[14px]">Preview</div>
+        <div class="lab mt-[14px]">{gettext("Preview")}</div>
         <div class="md-preview text-[13.5px] mt-[10px] pt-3 border-t border-hair" id="aboutPreview">
           {Phoenix.HTML.raw(@about_html)}
         </div>
 
-        <.section>Front page</.section>
+        <.section>{gettext("Front page")}</.section>
         <.form for={@settings_form} id="front-page-form" phx-change="save_setting">
           <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
             <input
@@ -690,11 +720,12 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">Latest entries</span>
+              <span class="text-[14.5px] font-semibold">{gettext("Latest entries")}</span>
               <br />
               <span class="text-[11.5px] text-faint">
-                The front door sends the reader to /blog: published posts,
-                newest first, each with its preview tile.
+                {gettext(
+                  "The front door sends the reader to /blog: published entries, newest first, each with its preview tile."
+                )}
               </span>
             </span>
           </label>
@@ -712,16 +743,15 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">A fixed page</span>
+              <span class="text-[14.5px] font-semibold">{gettext("A fixed page")}</span>
               <br />
               <span class="text-[11.5px] text-faint">
                 <%= if @pages == [] do %>
-                  One of your pages becomes the front door. The blog list keeps
-                  /blog either way. There are no pages yet: this choice unlocks
-                  with the first one you write.
+                  {gettext(
+                    "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
+                  )}
                 <% else %>
-                  This page becomes the front door. The blog list keeps /blog
-                  either way.
+                  {gettext("This page becomes the front door. The blog list keeps /blog either way.")}
                 <% end %>
               </span>
             </span>
@@ -733,7 +763,7 @@ defmodule TexttileWeb.SettingsLive do
           >
             <%!-- its own name: with the radios' name, its value would
                  shadow a click back to "Latest entries" --%>
-            <label class="lab block mb-[5px]" for="setting-front_page">The page</label>
+            <label class="lab block mb-[5px]" for="setting-front_page">{gettext("The page")}</label>
             <select id="setting-front_page" name="settings[front_page_choice]">
               <option
                 :for={page <- @pages}
@@ -745,7 +775,7 @@ defmodule TexttileWeb.SettingsLive do
             </select>
           </div>
           <div class="drow gtop">
-            <label class="lab" for="setting-posts_per_page">Pagination</label>
+            <label class="lab" for="setting-posts_per_page">{gettext("Pagination")}</label>
             <span class="val">
               <select
                 id="setting-posts_per_page"
@@ -761,19 +791,18 @@ defmodule TexttileWeb.SettingsLive do
                 </option>
               </select>
               <div class="hint">
-                How many entries /blog shows before the pager. The default is 10.
+                {gettext("How many entries /blog shows before the pager. The default is 10.")}
               </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
-                The value must be {@errors[:posts_per_page]}.
+                {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}
               </p>
             </span>
           </div>
         </.form>
 
-        <.section>Theme</.section>
+        <.section>{gettext("Theme")}</.section>
         <p class="note mb-[10px]">
-          Theming is exactly one CSS file, used for the admin area and the
-          public site.
+          {gettext("Theming is exactly one CSS file, used for the admin area and the public site.")}
         </p>
         <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
           <span class="labrow">
@@ -787,7 +816,7 @@ defmodule TexttileWeb.SettingsLive do
               id="reset-theme"
               phx-click="reset_theme"
             >
-              Reset
+              {gettext("Reset")}
             </button>
           </span>
           <textarea
@@ -810,7 +839,7 @@ defmodule TexttileWeb.SettingsLive do
           }
         </script>
 
-        <.section>Access</.section>
+        <.section>{gettext("Access")}</.section>
         <.form for={@settings_form} id="access-form" phx-change="save_setting">
           <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
             <input
@@ -822,9 +851,9 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">Public</span>
+              <span class="text-[14.5px] font-semibold">{gettext("Public")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">Anyone can read the blog.</span>
+              <span class="text-[11.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
           </label>
           <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
@@ -837,37 +866,39 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">Password-protected</span>
+              <span class="text-[14.5px] font-semibold">{gettext("Password-protected")}</span>
               <br />
               <span class="text-[11.5px] text-faint">
-                One password for the whole blog. Readers enter it once and are
-                remembered. Search engines see nothing.
+                {gettext(
+                  "One password for the whole blog. Readers enter it once and are remembered. Search engines see nothing."
+                )}
               </span>
             </span>
           </label>
           <%!-- the field is short, the sentence under it is not: the
                hint keeps the width of the column --%>
           <div class="py-3" id="pwRow">
-            <label class="lab block mb-[5px]" for="setting-site_password">Blog password</label>
+            <label class="lab block mb-[5px]" for="setting-site_password">
+              {gettext("Blog password")}
+            </label>
             <input
               type="text"
               id="setting-site_password"
               name="settings[site_password]"
               value={@settings_form[:site_password].value}
-              placeholder="Choose a password"
+              placeholder={gettext("Choose a password")}
               phx-debounce="300"
               class="max-w-[280px]"
             />
             <div class="hint">
-              A shared access word, not a login: it goes into every entry mail,
-              so everybody on the newsletter list gets it, and you pass it on.
-              It is stored as it is written. It is the password of the whole
-              blog; without one nothing is protected.
+              {gettext(
+                "A shared access word, not a login: it goes into every entry mail, so everybody on the newsletter list gets it, and you pass it on. It is stored as it is written. It is the password of the whole blog; without one nothing is protected."
+              )}
             </div>
           </div>
         </.form>
 
-        <.section>Comments</.section>
+        <.section>{gettext("Comments")}</.section>
         <.form for={@settings_form} id="comments-form" phx-change="save_setting">
           <label class="opt">
             <input type="hidden" name="settings[comments_require_confirmation]" value="false" />
@@ -879,7 +910,7 @@ defmodule TexttileWeb.SettingsLive do
               checked={@settings.comments_require_confirmation}
             />
             <span>
-              Readers confirm their email before the comment appears
+              {gettext("Readers confirm their email before the comment appears")}
               <span class="note" id="setCmtNote">
                 {comments_note(@settings.comments_require_confirmation)}
               </span>
@@ -895,7 +926,7 @@ defmodule TexttileWeb.SettingsLive do
               checked={@settings.notify_on_comment}
             />
             <span>
-              Mail me every new comment
+              {gettext("Mail me every new comment")}
               <span class="note" id="setNotifyNote">
                 {notify_note(@settings.notify_on_comment)}
               </span>
@@ -903,16 +934,17 @@ defmodule TexttileWeb.SettingsLive do
           </label>
         </.form>
 
-        <.section>Tags</.section>
+        <.section>{gettext("Tags")}</.section>
         <p class="note mb-1 leading-[1.6]">
-          Every tag any entry carries. Deleting one takes it off all of them at
-          once and closes its archive page. The entries themselves stay, and so
-          do all the other tags.
+          {gettext(
+            "Every tag any entry carries. Deleting one takes it off all of them at once and closes its archive page. The entries themselves stay, and so do all the other tags."
+          )}
         </p>
         <div id="tagsList">
           <p :if={@tags == []} class="note">
-            No entry carries a tag yet. Tags are written beside the entry, in
-            the settings of the entry itself.
+            {gettext(
+              "No entry carries a tag yet. Tags are written beside the entry, in the settings of the entry itself."
+            )}
           </p>
           <div
             :for={{tag, count} <- @tags}
@@ -928,23 +960,22 @@ defmodule TexttileWeb.SettingsLive do
               phx-click="ask_delete_tag"
               phx-value-tag={tag}
             >
-              Delete
+              {gettext("Delete")}
             </button>
           </div>
         </div>
 
-        <.section>Users</.section>
+        <.section>{gettext("Users")}</.section>
         <p class="note mb-1 leading-[1.6]">
-          There is no registration: the ADMIN_USERS setting of this server
-          names everybody who may sign in, and each of them chooses a password
-          at the first sign-in. Everybody with an account here is an admin, and
-          all admins are equal: no roles, no permissions.
+          {gettext(
+            "There is no registration: the ADMIN_USERS setting of this server names everybody who may sign in, and each of them chooses a password at the first sign-in. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
+          )}
         </p>
         <div id="usersList">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
             <div class="flex items-center gap-[10px] flex-wrap">
               <b class="text-[14.5px]">{Accounts.display_name(user)}</b>
-              <span :if={user.id == @current_scope.user.id} class="note">you</span>
+              <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
               <span
                 :if={
                   user.id != @current_scope.user.id and
@@ -952,7 +983,7 @@ defmodule TexttileWeb.SettingsLive do
                 }
                 class="text-julia text-[12.5px] font-semibold inline-flex items-center gap-[6px]"
               >
-                <span class="dot live"></span>here now
+                <span class="dot live"></span>{gettext("here now")}
               </span>
               <span class="sp"></span>
               <button
@@ -962,7 +993,7 @@ defmodule TexttileWeb.SettingsLive do
                 phx-value-id={user.id}
                 disabled={delete_block(user, @users, @current_scope.user) != nil}
               >
-                Delete
+                {gettext("Delete")}
               </button>
             </div>
             <%!-- why the Delete is off, if it is. It is the one thing
@@ -978,16 +1009,14 @@ defmodule TexttileWeb.SettingsLive do
         </div>
 
         <p class="note mt-3">
-          Change your own displayed name, address and password on <.link
-            navigate={~p"/admin/profile"}
-            class="link"
-          >your profile</.link>.
+          {gettext("Change your own displayed name, address and password on")}
+          <.link navigate={~p"/admin/profile"} class="link">{gettext("your profile")}</.link>.
         </p>
 
-        <.section>Images</.section>
+        <.section>{gettext("Images")}</.section>
         <.form for={@settings_form} id="images-form" phx-change="save_setting">
           <div class="drow">
-            <label class="lab" for="setting-image_max_edge">Max longer edge</label>
+            <label class="lab" for="setting-image_max_edge">{gettext("Max longer edge")}</label>
             <span class="val">
               <span class="addr">
                 <input
@@ -1003,23 +1032,21 @@ defmodule TexttileWeb.SettingsLive do
                 <span class="pre">px</span>
               </span>
               <p :if={@errors[:image_max_edge]} class="text-julia text-[13px] mt-[6px]">
-                The value must be {@errors[:image_max_edge]}.
+                {gettext("The value must be %{rule}.", rule: @errors[:image_max_edge])}
               </p>
               <div class="hint">
-                Uploads are scaled down so the longer edge stays within this;
-                nothing is ever scaled up. Originals are kept on disk. Display
-                sizes are made on the fly when a page first needs them;
-                changing this value drops the old cached sizes so nothing
-                stale survives.
+                {gettext(
+                  "Uploads are scaled down so the longer edge stays within this; nothing is ever scaled up. Originals are kept on disk. Display sizes are made on the fly when a page first needs them; changing this value drops the old cached sizes so nothing stale survives."
+                )}
               </div>
             </span>
           </div>
         </.form>
 
-        <.section>Videos</.section>
+        <.section>{gettext("Videos")}</.section>
         <.form for={@settings_form} id="videos-form" phx-change="save_setting">
           <div class="drow">
-            <label class="lab" for="setting-video_max_edge">Max longer edge</label>
+            <label class="lab" for="setting-video_max_edge">{gettext("Max longer edge")}</label>
             <span class="val">
               <span class="addr">
                 <input
@@ -1035,86 +1062,97 @@ defmodule TexttileWeb.SettingsLive do
                 <span class="pre">px</span>
               </span>
               <p :if={@errors[:video_max_edge]} class="text-julia text-[13px] mt-[6px]">
-                The value must be {@errors[:video_max_edge]}.
+                {gettext("The value must be %{rule}.", rule: @errors[:video_max_edge])}
               </p>
               <div class="hint">
-                An uploaded video is converted once, to one MP4 every browser
-                plays, with the longer edge within this; nothing is ever scaled
-                up. The original is kept on disk. ffmpeg does the work on one
-                thread at the lowest priority, one video at a time, so the site
-                stays quick while it runs. A new value applies to what is
-                converted after the change; a video already converted keeps the
-                file it has.
+                {gettext(
+                  "An uploaded video is converted once, to one MP4 every browser plays, with the longer edge within this; nothing is ever scaled up. The original is kept on disk. ffmpeg does the work on one thread at the lowest priority, one video at a time, so the site stays quick while it runs. A new value applies to what is converted after the change; a video already converted keeps the file it has."
+                )}
               </div>
             </span>
           </div>
         </.form>
 
-        <.section>Storage</.section>
+        <.section>{gettext("Storage")}</.section>
         <div class="drow">
-          <span class="lab">Images</span>
+          <span class="lab">{gettext("Images")}</span>
           <span class="val">
-            {@uploads_root} · originals plus cached variants · {@cache_size} cache
+            {gettext("%{root} · originals plus cached variants · %{size} cache",
+              root: @uploads_root,
+              size: @cache_size
+            )}
           </span>
         </div>
         <div class="drow">
-          <span class="lab">Database</span>
-          <span class="val">{@db_path} · {@db_size} SQLite</span>
+          <span class="lab">{gettext("Database")}</span>
+          <span class="val">
+            {gettext("%{path} · %{size} SQLite", path: @db_path, size: @db_size)}
+          </span>
         </div>
         <p class="note mt-3">
-          Both paths come from the install config and cannot change while the
-          site runs. The backup is the volume; there is no export and no site
-          deletion.
+          {gettext(
+            "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
+          )}
         </p>
         <p class="mt-3">
           <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>
         </p>
 
-        <.section>Import</.section>
+        <.section>{gettext("Import")}</.section>
         <p class="note mb-2 leading-[1.6]">
-          Texttile imports entries from a zip of bundles: Markdown, settings and
-          pictures, made from another system's export. <.import_doc />
-          in the repository is the format contract.
+          {gettext(
+            "Texttile imports entries from a zip of bundles: Markdown, settings and pictures, made from another systems export."
+          )}
+          <.import_doc />
+          {gettext("in the repository is the format contract.")}
         </p>
         <p>
           <.link navigate={~p"/admin/settings/import"} class="btn sm" id="open-import">
-            Open the import
+            {gettext("Open the import")}
           </.link>
         </p>
       </div>
 
       <.ask
         :if={@confirm_delete}
-        heading={"Delete the account of #{Accounts.display_name(@confirm_delete)}?"}
-        ok="Delete the account"
+        heading={
+          gettext("Delete the account of %{name}?", name: Accounts.display_name(@confirm_delete))
+        }
+        ok={gettext("Delete the account")}
         on_ok="delete_user"
         on_cancel="cancel_delete"
       >
         <p>
           <b>{Accounts.display_name(@confirm_delete)}</b>
-          can no longer sign in from the moment you confirm, and every
-          session open right now ends. What {Accounts.display_name(@confirm_delete)} already wrote stays: the
-          texts, the images, the comments and every line of every Log belong
-          to the site, not to the account. <br />
-          <br /> There is no undo. While the name stands in ADMIN_USERS, its
-          owner can sign in again and choose a fresh password.
+          {gettext(
+            "can no longer sign in from the moment you confirm, and every session open right now ends. What %{name} already wrote stays: the entries, the images, the comments and every line of every Log belong to the site, not to the account.",
+            name: Accounts.display_name(@confirm_delete)
+          )}
+          <br />
+          <br />
+          {gettext(
+            "There is no undo. While the name stands in ADMIN_USERS, its owner can sign in again and choose a fresh password."
+          )}
         </p>
       </.ask>
 
       <.ask
         :if={@confirm_tag}
-        heading={"Delete the tag #{@confirm_tag}?"}
-        ok="Delete the tag"
+        heading={gettext("Delete the tag %{tag}?", tag: @confirm_tag)}
+        ok={gettext("Delete the tag")}
         on_ok="delete_tag"
         on_cancel="cancel_delete"
       >
         <p>
           <b>{@confirm_tag}</b>
-          leaves every text that carries it, and /tags/{Articles.slugify(@confirm_tag)} answers nothing from that moment. The texts stay where they are,
-          with the rest of their tags. <br />
-          <br /> There is no undo. To have the tag back, write it on a text
-          again.
+          {gettext(
+            "leaves every entry that carries it, and /tags/%{slug} answers nothing from that moment. The entries stay where they are, with the rest of their tags.",
+            slug: Articles.slugify(@confirm_tag)
+          )}
+          <br />
+          <br />
+          {gettext("There is no undo. To have the tag back, write it on an entry again.")}
         </p>
       </.ask>
     </Layouts.app>

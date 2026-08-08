@@ -135,6 +135,35 @@ takes `.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`.
 The container brings ffmpeg. On a development machine, `make tools` installs
 it.
 
+## Language
+
+A blog has one language, and Settings > Site is where you pick it. English
+and German are shipped. The choice reaches everything a person reads: the
+reader pages, the admin area, the dates, and every mail the blog sends. It
+also sets `lang` on every page and `<language>` in the feed.
+
+What you write yourself is not touched. Titles, entries, tags, the About
+text and the site description stay in the language you wrote them in; only
+the words around them change.
+
+English is the language of the source, so it has no translation file: a
+sentence nobody translated is shown in English. Each other language is
+exactly one file, `priv/gettext/<code>/LC_MESSAGES/default.po`, and it holds
+all of them, the error messages and the sentences the browser says included.
+
+To add a language:
+
+```sh
+# 1. add {"fr", "Français"} to @languages in lib/texttile/i18n.ex
+# 2. write the file
+mix gettext.merge priv/gettext --locale fr
+# 3. translate every msgstr in priv/gettext/fr/LC_MESSAGES/default.po
+mix test test/texttile/translations_test.exs   # names every gap
+```
+
+Nothing else changes: the settings menu reads the list, and the new language
+is there.
+
 ## Feed
 
 The blog has an RSS feed at `/feed.xml`. It carries every published post,
@@ -335,6 +364,14 @@ checkout: the `texttile_dev.db` database, the `priv/uploads` folder, and the
 everything stays next to the code.
 Stop the development server before running `make db-delete`. The next
 `make start` recreates the database and applies all migrations.
+
+Text a person reads goes through `gettext`. After you write a new sentence,
+`mix gettext.extract --merge` puts it into the template and into every
+language file; `mix precommit` refuses a template that is out of date, so a
+sentence cannot slip past the translations unnoticed. The sentences the
+browser hooks say are the exception the tool cannot see by itself: they are
+listed in `TexttileWeb.JsStrings`, and the layout hands them to
+`assets/js/i18n.js` as `data-words`.
 
 In development the sign-in list holds `admin`, so the first sign-in with that
 name creates the account. `ADMIN_USERS` in `.env` replaces the list. To test

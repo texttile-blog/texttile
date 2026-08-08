@@ -1,22 +1,24 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
-    <h1 class="f-h1">Blog Entries</h1>
+    <h1 class="f-h1">{gettext("Blog Entries")}</h1>
 
     <div class="searchrow mt-7">
       <form action={@list_path} method="get" role="search">
-        <label for="q" class="sr">Search the entries</label>
+        <label for="q" class="sr">{gettext("Search the entries")}</label>
         <input
           type="search"
           id="q"
           name="q"
           value={@q}
-          placeholder="Search titles, tags and text"
+          placeholder={gettext("Search titles, tags and text")}
           autocomplete="off"
           spellcheck="false"
         />
       </form>
-      <a :if={@q != "" || @year} class="btn sm" id="clear" href={@list_path}>Clear</a>
+      <a :if={@q != "" || @year} class="btn sm" id="clear" href={@list_path}>
+        {gettext("Clear")}
+      </a>
       <span class="cnt" id="count">{count_label(@found, @total)}</span>
     </div>
 
@@ -24,10 +26,10 @@
          that is open under it. Two lines, whatever the age of the blog.
          The counts follow the search, so a year that holds nothing for
          the term goes quiet instead of lying about it. --%>
-    <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
+    <nav :if={@years != []} class="periods" id="periods" aria-label={gettext("Archive")}>
       <p class="prow" id="years">
         <.period
-          label="All years"
+          label={gettext("All years")}
           on={is_nil(@year)}
           href={@period_path.(nil, nil)}
           count={@across_years}
@@ -42,7 +44,7 @@
       </p>
       <p :if={@months != []} class="prow" id="months">
         <.period
-          label="All months"
+          label={gettext("All months")}
           on={is_nil(@month)}
           href={@period_path.(@year, nil)}
           count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
@@ -73,17 +75,19 @@
       :if={@pages > 1}
       class="f-pager mt-10 pt-4 border-t border-rule"
       id="pager"
-      aria-label="Pages"
+      aria-label={gettext("Pages")}
     >
       <%!-- three cells, always: the step back, where the reader
            stands, the step on. An empty cell keeps the middle one in
            the middle at either end of the row. --%>
       <span>
         <a :if={@page > 1} class="btn sm" id="prev-page" href={@page_path.(@page - 1)} rel="prev">
-          Newer
+          {gettext("Newer")}
         </a>
       </span>
-      <span class="f-note num">Page {@page} of {@pages}</span>
+      <span class="f-note num">
+        {gettext("Page %{page} of %{pages}", page: @page, pages: @pages)}
+      </span>
       <span>
         <a
           :if={@page < @pages}
@@ -92,15 +96,16 @@
           href={@page_path.(@page + 1)}
           rel="next"
         >
-          Older
+          {gettext("Older")}
         </a>
       </span>
     </nav>
 
     <p :if={@articles == [] && @q != ""} class="f-body mt-8" id="empty">
-      Nothing matches that. <a class="link" href={@list_path}>Show all entries</a>.
+      {gettext("Nothing matches that.")}
+      <a class="link" href={@list_path}>{gettext("Show all entries")}</a>.
     </p>
-    <p :if={@articles == [] && @q == ""} class="f-body mt-8">Nothing here yet.</p>
+    <p :if={@articles == [] && @q == ""} class="f-body mt-8">{gettext("Nothing here yet.")}</p>
   </div>
 
   <%!-- the second zone: what belongs to the blog and not to the list --%>

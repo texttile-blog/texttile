@@ -37,7 +37,7 @@ defmodule TexttileWeb.EditorCommentsTest do
     assert has_element?(view, "#tp-comments #comment-#{waiting.id}", "not confirmed yet")
     assert has_element?(view, "#tp-comments #comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
-    assert has_element?(view, "#tp-comments", "1 comment is still out of the text")
+    assert has_element?(view, "#tp-comments", "1 comment is still out of the entry")
   end
 
   test "an empty tab explains the rule", %{conn: conn} do

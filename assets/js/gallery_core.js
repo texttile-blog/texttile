@@ -17,6 +17,8 @@
    whose rev bump guarantees a diff that morphs the whole grid back
    to the server's truth. */
 
+import {t, esc} from "./i18n"
+
 const MAX_PARALLEL = 2
 const MAX_FILE_MB = 50
 /* a film off a phone weighs what a photograph never does; the roof for
@@ -34,11 +36,6 @@ const UNDO_S = 10
 const SAVED_MS = 4000
 
 const FOCUSABLE = "a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex='-1'])"
-
-function esc(text) {
-  return String(text).replace(/[&<>"']/g, c =>
-    ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c])
-}
 
 export function mount(hook) {
   const core = new Gallery(hook)
@@ -188,12 +185,13 @@ class Gallery {
            poster for it */
         objurl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null,
         status: oversize ? "failed" : "queued",
-        error: oversize ? `bigger than the ${roof} MB roof` : null,
+        error: oversize ? t("bigger than the %{roof} MB roof", {roof}) : null,
         noRetry: oversize,
         pct: 0,
       })
 
-      if (oversize) this.noteTile(`${file.name} is bigger than the ${roof} MB roof.`)
+      if (oversize)
+        this.noteTile(t("%{name} is bigger than the %{roof} MB roof.", {name: file.name, roof}))
     }
     if (images.length) {
       this.renderLocal()
@@ -240,8 +238,8 @@ class Gallery {
         this.settleDone()
       } else {
         record.status = "failed"
-        record.error = (xhr.response && xhr.response.error) || "upload failed"
-        this.noteTile(`${record.name} failed to upload. Retry or remove it.`)
+        record.error = (xhr.response && xhr.response.error) || t("upload failed")
+        this.noteTile(t("%{name} failed to upload. Retry or remove it.", {name: record.name}))
       }
       this.scheduleRender()
       this.pump()
@@ -250,8 +248,8 @@ class Gallery {
       this.active -= 1
       record.xhr = null
       record.status = "failed"
-      record.error = "upload failed"
-      this.noteTile(`${record.name} failed to upload. Retry or remove it.`)
+      record.error = t("upload failed")
+      this.noteTile(t("%{name} failed to upload. Retry or remove it.", {name: record.name}))
       this.scheduleRender()
       this.pump()
     }
@@ -341,16 +339,24 @@ class Gallery {
     this.local.innerHTML = html
 
     const away = this.records.filter(r => !r.done && r.status !== "failed").length
-    this.onWay.textContent = away ? ` · ${away} on the way` : ""
+    this.onWay.textContent = away ? ` · ${t("%{count} on the way", {count: away})}` : ""
+  }
+
+  // What a travelling tile says about itself, in words. The screen
+  // reader gets the same sentence as the eye, so it is built once.
+  statusWord(r) {
+    return r.status === "queued" ? t("queued")
+      : r.status === "uploading" ? t("uploading %{pct}%", {pct: r.pct})
+      : r.status === "processing" ? t("processing")
+      : r.error || t("upload failed")
   }
 
   localTile(r) {
+    const word = this.statusWord(r)
     const st =
-      r.status === "queued" ? "queued"
-      : r.status === "uploading" ? `uploading ${r.pct}%`
-      : r.status === "processing"
-        ? `<i class="spin inline-block w-[8px] h-[8px] rounded-full border border-white border-t-transparent"></i>processing`
-        : esc(r.error || "upload failed")
+      r.status === "processing"
+        ? `<i class="spin inline-block w-[8px] h-[8px] rounded-full border border-white border-t-transparent"></i>${esc(word)}`
+        : esc(word)
 
     const bar =
       r.status === "failed"
@@ -359,13 +365,13 @@ class Gallery {
 
     const buttons =
       r.status === "failed"
-        ? (r.noRetry ? "" : `<button type="button" class="tile-x" data-act="retry">Retry</button>`) +
-          `<button type="button" class="tile-x" data-act="remove">Remove</button>`
-        : `<button type="button" class="tile-x" data-act="cancel">Cancel</button>`
+        ? (r.noRetry ? "" : `<button type="button" class="tile-x" data-act="retry">${esc(t("Retry"))}</button>`) +
+          `<button type="button" class="tile-x" data-act="remove">${esc(t("Remove"))}</button>`
+        : `<button type="button" class="tile-x" data-act="cancel">${esc(t("Cancel"))}</button>`
 
     return `<div class="tile up ${r.status}" data-local-id="${r.id}"
       ${r.objurl ? `style="background-image:url('${r.objurl}')"` : ""}
-      aria-label="${esc(r.name)}, ${esc(r.status)}">
+      aria-label="${esc(r.name)}, ${esc(word)}">
       <span class="tile-ov">
         <span class="fn" title="${esc(r.name)}">${esc(r.name)}</span>
         <span class="st">${st}</span>
@@ -635,38 +641,41 @@ class Gallery {
     const root = document.createElement("dialog")
     root.id = "lbRoot"
     root.className = "lb-root"
-    root.setAttribute("aria-label", "Full size")
+    root.setAttribute("aria-label", t("Full size"))
     // the dialog itself takes the focus: autofocusing the date field
     // would pop a picker over the picture on a phone
     root.tabIndex = -1
 
+    // aria-label on the delete button: its name stays whole for a
+    // screen reader whatever the width, only the eye sees the short
+    // word on a phone
     root.innerHTML = `
       <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <button type="button" id="lbDelete" class="lb-abtn danger">Delete<span class="lb-word"> tile</span></button>
-        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">Open original</span><span class="lb-word-s">Original</span></a>
-        <button type="button" id="lbClose" class="lb-abtn" aria-label="Close">Close</button>
+        <button type="button" id="lbDelete" class="lb-abtn danger" aria-label="${esc(t("Delete tile"))}"><span class="lb-word">${esc(t("Delete tile"))}</span><span class="lb-word-s">${esc(t("Delete"))}</span></button>
+        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">${esc(t("Open original"))}</span><span class="lb-word-s">${esc(t("Original"))}</span></a>
+        <button type="button" id="lbClose" class="lb-abtn" aria-label="${esc(t("Close"))}">${esc(t("Close"))}</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
-           data-nav="-1" aria-label="Previous tile">&#8249;</button>
+           data-nav="-1" aria-label="${esc(t("Previous tile"))}">&#8249;</button>
         <div class="relative flex-1 h-full min-w-0 flex items-center justify-center">
           <div id="lbImg" class="w-full h-full bg-center bg-contain bg-no-repeat" role="img" aria-label=""></div>
           <div id="lbState" class="absolute inset-0 grid place-items-center text-white/80 text-[13px] text-center px-6" hidden></div>
         </div>
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
-           data-nav="1" aria-label="Next tile">&#8250;</button>
+           data-nav="1" aria-label="${esc(t("Next tile"))}">&#8250;</button>
       </div>
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
           <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
           <div class="flex flex-wrap items-end gap-x-3 gap-y-2 mt-2">
             <span class="min-w-[220px]">
-              <label class="lab block mb-[3px]" for="lbDate">Date</label>
+              <label class="lab block mb-[3px]" for="lbDate">${esc(t("Date"))}</label>
               <input type="datetime-local" id="lbDate" step="60">
             </span>
-            <span class="note pb-[6px]" id="lbSaved">The date saves itself and sorts the gallery.</span>
+            <span class="note pb-[6px]" id="lbSaved">${esc(t("The date saves itself and sorts the gallery."))}</span>
           </div>
         </div>
       </div>`
@@ -696,7 +705,7 @@ class Gallery {
         } else {
           const data = this.tileData(id)
           if (data) date.value = data.date
-          this.savedNote("That date could not be read")
+          this.savedNote(t("That date could not be read"))
         }
       })
     })
@@ -731,7 +740,12 @@ class Gallery {
     this.root.querySelector("#lbName").textContent = data.filename
 
     this.root.querySelector("#lbMeta").textContent =
-      ` · ${data.date.slice(0, 10)} · ${data.index + 1} of ${data.count}`
+      " · " +
+      t("%{date} · %{index} of %{count}", {
+        date: data.date.slice(0, 10),
+        index: data.index + 1,
+        count: data.count,
+      })
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {
@@ -792,7 +806,7 @@ class Gallery {
     img.style.backgroundImage = ""
     img.setAttribute("aria-label", data.filename)
     state.hidden = false
-    state.textContent = "Loading the full size…"
+    state.textContent = t("Loading the full size…")
 
     const url = bust ? `${data.full}${data.full.includes("?") ? "&" : "?"}r=${Date.now()}` : data.full
     const probe = new Image()
@@ -894,9 +908,9 @@ class Gallery {
     const el = this.root && this.root.querySelector("#lbSaved")
     if (!el) return
     clearTimeout(this.savedTimer)
-    el.textContent = problem || "Saved · just now"
+    el.textContent = problem || t("Saved · just now")
     this.savedTimer = setTimeout(() => {
-      el.textContent = "The date saves itself and sorts the gallery."
+      el.textContent = t("The date saves itself and sorts the gallery.")
     }, SAVED_MS)
   }
 
@@ -950,8 +964,14 @@ class Gallery {
     bar.style.borderRadius = "var(--tt-radius-pop)"
     bar.style.border = "1px solid var(--tt-rule)"
     bar.style.boxShadow = "0 14px 34px rgb(var(--tt-shadow) / .2)"
-    bar.innerHTML = `<span><b>${esc(filename)}</b> deleted</span>
-      <button type="button" class="link" id="undoBtn">Undo</button>
+    // The file name goes into the sentence rather than in front of it,
+    // so the sentence is split at its place and every part is escaped.
+    // The <b> is ours: a translation file is prose, and prose must not
+    // be able to write markup into this page.
+    const said = t("%{name} deleted").split("%{name}").map(esc)
+
+    bar.innerHTML = `<span>${said.join(`<b>${esc(filename)}</b>`)}</span>
+      <button type="button" class="link" id="undoBtn">${esc(t("Undo"))}</button>
       <span class="note num" id="undoLeft">${UNDO_S} s</span>`
 
     // a modal dialog makes the page inert; while the lightbox is open
