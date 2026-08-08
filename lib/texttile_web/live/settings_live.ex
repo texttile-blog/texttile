@@ -86,11 +86,13 @@ defmodule TexttileWeb.SettingsLive do
             socket
           end
 
-        # A new language reaches this process by its mount and by
-        # nothing else, so the screen is asked for again. Every other
-        # open tab changes over on its next step.
+        # A new language needs the whole page again, not a live step.
+        # The shell around this view carries the language too - the
+        # lang attribute, and the words the hooks say - and only a
+        # fresh request draws that shell. Every other open tab changes
+        # over on its next full page.
         if key_atom == :language do
-          {:noreply, push_navigate(socket, to: ~p"/admin/settings")}
+          {:noreply, redirect(socket, to: ~p"/admin/settings")}
         else
           {:noreply, socket}
         end

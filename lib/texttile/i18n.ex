@@ -49,12 +49,24 @@ defmodule Texttile.I18n do
 
   @doc """
   Puts the site language on the process that calls it, and answers with
-  it. Gettext keeps the locale per process, so everything that writes
-  words outside a plain request - a connected LiveView, a mail task,
-  the scheduler - has to ask for it once.
+  it. Gettext keeps the locale per process, so a plain request and a
+  connected LiveView each ask once.
+
+  This reads the settings, so it belongs where a database connection
+  belongs to the process. A task that is started and never waited for
+  owns none: hand it `site_locale/0` from the process that started it
+  and let it call `put_locale/1`.
   """
   def put_site_locale do
     locale = site_locale()
+    put_locale(locale)
+  end
+
+  @doc """
+  Puts a language that was read somewhere else on this process, and
+  answers with it. Touches nothing but the process.
+  """
+  def put_locale(locale) do
     Gettext.put_locale(TexttileWeb.Gettext, locale)
     locale
   end

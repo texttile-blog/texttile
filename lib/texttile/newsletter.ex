@@ -247,9 +247,15 @@ defmodule Texttile.Newsletter do
       subscribers ->
         site = Settings.site_title()
         password = access_word()
+        # Read here, where this process owns its database connection.
+        # The task below owns none: nobody waits for it, so it may
+        # outlive whoever started it.
+        locale = Texttile.I18n.site_locale()
 
         {:ok, _pid} =
           Task.Supervisor.start_child(Texttile.Newsletter.TaskSupervisor, fn ->
+            Texttile.I18n.put_locale(locale)
+
             Enum.each(subscribers, fn subscriber ->
               deliver_one(subscriber, article, site, password)
               # One pause after each address. Every mail provider counts

@@ -249,7 +249,7 @@ class Gallery {
       record.xhr = null
       record.status = "failed"
       record.error = t("upload failed")
-      this.noteTile(`${record.name} failed to upload. Retry or remove it.`)
+      this.noteTile(t("%{name} failed to upload. Retry or remove it.", {name: record.name}))
       this.scheduleRender()
       this.pump()
     }
@@ -964,9 +964,13 @@ class Gallery {
     bar.style.borderRadius = "var(--tt-radius-pop)"
     bar.style.border = "1px solid var(--tt-rule)"
     bar.style.boxShadow = "0 14px 34px rgb(var(--tt-shadow) / .2)"
-    // the file name is the only part that is not a sentence, so it is
-    // put into the sentence rather than glued in front of it
-    bar.innerHTML = `<span>${t("%{name} deleted", {name: `<b>${esc(filename)}</b>`})}</span>
+    // The file name goes into the sentence rather than in front of it,
+    // so the sentence is split at its place and every part is escaped.
+    // The <b> is ours: a translation file is prose, and prose must not
+    // be able to write markup into this page.
+    const said = t("%{name} deleted").split("%{name}").map(esc)
+
+    bar.innerHTML = `<span>${said.join(`<b>${esc(filename)}</b>`)}</span>
       <button type="button" class="link" id="undoBtn">${esc(t("Undo"))}</button>
       <span class="note num" id="undoLeft">${UNDO_S} s</span>`
 

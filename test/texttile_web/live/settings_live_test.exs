@@ -112,9 +112,10 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the language select saves, and the screen comes back speaking it", %{conn: conn} do
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 
-      # The screen asks for itself again: this process took its language
-      # at mount, and only a new mount can change it.
-      assert {:error, {:live_redirect, %{to: "/admin/settings"}}} =
+      # The whole page is asked for again, not a live step: the shell
+      # around this view carries the language too, and only a fresh
+      # request draws the shell.
+      assert {:error, {:redirect, %{to: "/admin/settings"}}} =
                view
                |> form("#site-form", %{"settings" => %{"language" => "de"}})
                |> render_change(%{"_target" => ["settings", "language"]})
@@ -123,6 +124,9 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
       assert html =~ "Einstellungen"
+      # the shell, which a live step would have left in English
+      assert html =~ ~s(<html lang="de")
+      assert html =~ "Erneut versuchen"
     end
 
     test "an invalid max edge says no", %{conn: conn} do

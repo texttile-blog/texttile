@@ -70,9 +70,6 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Last saved %{time}")
   ]
 
-  @doc "Every sentence the hooks say, in English."
-  def sources, do: @sources
-
   @doc """
   What the hooks should say instead, as JSON. An empty object while the
   site speaks the language of the source: then the hooks are already

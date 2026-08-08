@@ -121,18 +121,18 @@ defmodule TexttileWeb.CommentsLive do
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">{gettext("Comments")}</h1>
         <%!-- the counts carry the news, so they carry the weight. The
-             number is bold inside the sentence, so the sentence
-             travels as one string with the markup in it. --%>
+             number keeps its own tag here and stays out of the
+             message: a translation file is prose, and prose must not
+             be able to write markup into this page. --%>
         <p class="lead" id="commentsSub">
           <%= if @total == 0 do %>
             {gettext("The latest comments across all entries, newest first.")}
           <% else %>
-            {Phoenix.HTML.raw(
-              ngettext(
-                "<b class='num'>1</b> comment across all entries, newest first.",
-                "<b class='num'>%{count}</b> comments across all entries, newest first.",
-                @total
-              )
+            <b class="num">{@total}</b>
+            {ngettext(
+              "comment across all entries, newest first.",
+              "comments across all entries, newest first.",
+              @total
             )}
             <%= if @waiting == 0 do %>
               <%!-- not "every one is confirmed": a comment an admin let
@@ -140,12 +140,11 @@ defmodule TexttileWeb.CommentsLive do
                    never was --%>
               {gettext("Readers see every one of them.")}
             <% else %>
-              {Phoenix.HTML.raw(
-                ngettext(
-                  "<b class='num'>1</b> comment waits for the reader to confirm the email address, so readers do not see it yet.",
-                  "<b class='num'>%{count}</b> comments wait for the reader to confirm the email address, so readers do not see them yet.",
-                  @waiting
-                )
+              <b class="num">{@waiting}</b>
+              {ngettext(
+                "comment waits for the reader to confirm the email address, so readers do not see it yet.",
+                "comments wait for the reader to confirm the email address, so readers do not see them yet.",
+                @waiting
               )}
             <% end %>
           <% end %>

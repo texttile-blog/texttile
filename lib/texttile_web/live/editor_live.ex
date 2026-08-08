@@ -491,7 +491,9 @@ defmodule TexttileWeb.EditorLive do
      socket
      |> put_flash(
        :info,
-       ~s("#{Articles.display_title(article)}" is deleted. Its versions and its log went with it.)
+       gettext("\"%{title}\" is deleted. Its versions and its log went with it.",
+         title: Articles.display_title(article)
+       )
      )
      |> push_navigate(to: ~p"/admin/texts")}
   end
@@ -1527,6 +1529,9 @@ defmodule TexttileWeb.EditorLive do
                    after the body. --%>
               <div class="flex flex-col">
                 <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
+                  <%!-- the hook replaces the textarea below, and its
+                       placeholder and label with it, so the words the
+                       writing surface shows arrive on the host --%>
                   <div
                     id="edBodyHost"
                     class="ed-body ed-cm"
@@ -1534,6 +1539,12 @@ defmodule TexttileWeb.EditorLive do
                     phx-update="ignore"
                     data-readonly={to_string(!@holds_lock)}
                     data-posters={Jason.encode!(poster_map(@media))}
+                    data-label={gettext("Body, Markdown")}
+                    data-placeholder={
+                      gettext(
+                        "Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
+                      )
+                    }
                   >
                     <textarea
                       class="ed-body"

@@ -8,6 +8,11 @@ defmodule Texttile.Newsletter.Notifier do
   The new-text mail may leave from the go-live clock, where no request
   stands behind it, so this module asks the endpoint for the site's
   address instead of taking a URL from a caller.
+
+  Both write in the language of the process that calls them, and ask
+  for none of their own. The new-entry mail leaves in a task, and a
+  task nobody waits for owns no database connection, so its language is
+  handed in where the task is started. See `Texttile.I18n`.
   """
 
   use Gettext, backend: TexttileWeb.Gettext
@@ -15,13 +20,11 @@ defmodule Texttile.Newsletter.Notifier do
   import Swoosh.Email
 
   alias Texttile.Articles
-  alias Texttile.I18n
   alias Texttile.Mailer
   alias Texttile.Newsletter.Subscriber
 
   @doc "Mails the link that puts the address on the list."
   def deliver_confirmation(%Subscriber{} = subscriber, url) do
-    I18n.put_site_locale()
     site = Texttile.Settings.site_title()
 
     # The subject and the shape are the comment confirmation's, word for
@@ -54,7 +57,6 @@ defmodule Texttile.Newsletter.Notifier do
   the blog asks for one.
   """
   def deliver_new_text(%Subscriber{} = subscriber, article, site, password) do
-    I18n.put_site_locale()
     title = Articles.display_title(article)
     url = TexttileWeb.Endpoint.url() <> Articles.public_path(article)
 

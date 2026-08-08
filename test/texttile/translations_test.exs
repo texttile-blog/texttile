@@ -30,6 +30,24 @@ defmodule Texttile.TranslationsTest do
 
   defp name_them(ids), do: Enum.map_join(ids, "\n", &("  " <> inspect(&1)))
 
+  @place ~r/%\{(\w+)\}/
+
+  defp places(text), do: @place |> Regex.scan(text) |> MapSet.new(fn [_, name] -> name end)
+
+  # Every translated form beside the English it answers. A plural form
+  # answers the singular English for form 0 and the plural for the
+  # rest, which is what German has.
+  defp said_and_wanted(%Expo.Message.Singular{msgid: msgid, msgstr: msgstr}) do
+    [{IO.iodata_to_binary(msgstr), IO.iodata_to_binary(msgid)}]
+  end
+
+  defp said_and_wanted(%Expo.Message.Plural{msgid: one, msgid_plural: many, msgstr: msgstr}) do
+    for {index, said} <- msgstr do
+      wanted = if index == 0, do: one, else: many
+      {IO.iodata_to_binary(said), IO.iodata_to_binary(wanted)}
+    end
+  end
+
   describe "every language but English" do
     test "has a file, and the file answers every message of the template" do
       wanted = @template |> Expo.PO.parse_file!() |> Map.fetch!(:messages) |> MapSet.new(&id/1)
@@ -45,6 +63,22 @@ defmodule Texttile.TranslationsTest do
 
         assert MapSet.difference(have, wanted) |> MapSet.to_list() == [],
                "#{path} still carries these, and the code no longer says them."
+      end
+    end
+
+    test "keeps every place the English sentence opens" do
+      # A %{name} carries the thing the sentence is about: a link, a
+      # password, an address. One dropped in a translation ships a mail
+      # with a hole where its link belongs, and Gettext says nothing
+      # about a place nobody asked to fill.
+      for locale <- I18n.locales(), locale != I18n.default_locale() do
+        for message <- locale |> po_path() |> Expo.PO.parse_file!() |> Map.fetch!(:messages),
+            {said, wanted} <- said_and_wanted(message) do
+          missing = MapSet.difference(places(wanted), places(said))
+
+          assert MapSet.to_list(missing) == [],
+                 "#{locale} lost #{inspect(MapSet.to_list(missing))} out of #{inspect(wanted)}"
+        end
       end
     end
 

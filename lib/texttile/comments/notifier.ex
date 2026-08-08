@@ -10,6 +10,11 @@ defmodule Texttile.Comments.Notifier do
   `notify_on_comment` stands in the settings, and never before the
   comment stands under its text. The reader's address stays out of it:
   no screen of the admin area shows one either.
+
+  Both write in the language of the process that calls them, and ask
+  for none of their own. The admin mail leaves in a task, and a task
+  nobody waits for owns no database connection, so its language is
+  handed in where the task is started. See `Texttile.I18n`.
   """
 
   use Gettext, backend: TexttileWeb.Gettext
@@ -20,13 +25,11 @@ defmodule Texttile.Comments.Notifier do
 
   alias Texttile.Accounts
   alias Texttile.Articles
-  alias Texttile.I18n
   alias Texttile.Mailer
   alias Texttile.Settings
 
   @doc "Mails the confirmation link for the comment's address."
   def deliver_confirmation(comment, url) do
-    I18n.put_site_locale()
     site = Settings.site_title()
     title = Texttile.Articles.display_title(comment.article)
 
@@ -68,7 +71,6 @@ defmodule Texttile.Comments.Notifier do
   that wrote the comment, which was there when it was written.
   """
   def deliver_to_admins(comment) do
-    I18n.put_site_locale()
     site = Settings.site_title()
     title = Articles.display_title(comment.article)
     body = admin_body(comment, site, title)

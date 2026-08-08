@@ -52,6 +52,50 @@ defmodule Texttile.I18nTest do
     end
   end
 
+  describe "the words in a date" do
+    test "English writes the day before the month, and German puts a dot behind it" do
+      day = ~D[2026-07-02]
+
+      assert I18n.format_date(day) == "2 July 2026"
+      assert I18n.format_day_and_month(day) == "2 July"
+      assert I18n.format_short_day(day) == "2 Jul"
+
+      {:ok, _} = Settings.put(:language, "de")
+      I18n.put_site_locale()
+
+      assert I18n.format_date(day) == "2. Juli 2026"
+      assert I18n.format_day_and_month(day) == "2. Juli"
+      assert I18n.format_short_day(day) == "2. Jul"
+    end
+
+    test "a date without a day is no date" do
+      assert I18n.format_date(nil) == ""
+    end
+
+    test "every month has a name, long and short, in both languages" do
+      for locale <- I18n.locales() do
+        I18n.put_locale(locale)
+
+        for month <- 1..12 do
+          assert I18n.month_name(month) != ""
+          assert I18n.short_month_name(month) != ""
+        end
+      end
+
+      I18n.put_locale("de")
+      assert I18n.month_name(3) == "März"
+      assert I18n.short_month_name(3) == "Mär"
+      assert I18n.month_name(12) == "Dezember"
+    end
+
+    test "the archive row of the admin area reads the same names" do
+      I18n.put_locale("de")
+
+      assert Texttile.Articles.month_name(1) == "Jan"
+      assert Texttile.Articles.month_name(3) == "Mär"
+    end
+  end
+
   describe "the settings only take a language the site speaks" do
     test "English and German go in" do
       assert {:ok, "de"} = Settings.put(:language, "de")

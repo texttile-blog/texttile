@@ -4,16 +4,15 @@ defmodule Texttile.Accounts.UserNotifier do
   sets a new password. Nothing in here ever contains a password.
 
   Mail leaves in the language of the site, like every other word the
-  blog says. It is written by a process of its own, and Gettext holds
-  the locale per process, so each of these asks for the language before
-  it writes a line.
+  blog says. Nothing here asks for that language: it writes in the
+  language of whoever calls it, which is a request, and the plug put it
+  there. See `Texttile.I18n`.
   """
 
   use Gettext, backend: TexttileWeb.Gettext
 
   import Swoosh.Email
 
-  alias Texttile.I18n
   alias Texttile.Mailer
   alias Texttile.Settings
 
@@ -22,8 +21,6 @@ defmodule Texttile.Accounts.UserNotifier do
   password stays out on purpose.
   """
   def deliver_registration_confirmation(user, site) do
-    I18n.put_site_locale()
-
     deliver(
       user,
       gettext("Your admin account on %{site}", site: site),
@@ -50,8 +47,6 @@ defmodule Texttile.Accounts.UserNotifier do
   themselves. Nobody types a password for anybody else.
   """
   def deliver_password_reset(user, url, site) do
-    I18n.put_site_locale()
-
     deliver(
       user,
       gettext("Set a new password on %{site}", site: site),

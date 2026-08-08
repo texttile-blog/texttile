@@ -146,11 +146,11 @@ msgid_plural "should have at most %{count} item(s)"
 msgstr[0] "höchstens %{count} Eintrag haben"
 msgstr[1] "höchstens %{count} Einträge haben"
 
-#: lib/texttile/newsletter/notifier.ex:68
+#: lib/texttile/newsletter/notifier.ex:70
 msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{lead}%{password}\nYou get this mail because this address is on the %{site} list.\nTo leave the list, open this link:\n\n%{unsubscribe}\n"
 msgstr "\"%{title}\" steht jetzt auf %{site}:\n\n%{url}\n%{lead}%{password}\nDu bekommst diese Mail, weil diese Adresse auf der Liste von %{site}\nsteht. Um die Liste zu verlassen, öffne diesen Link:\n\n%{unsubscribe}\n"
 
-#: lib/texttile_web/live/editor_live.ex:2694
+#: lib/texttile_web/live/editor_live.ex:2705
 msgid "%{address} is live; changing it breaks old links."
 msgstr "%{address} ist live. Eine Änderung macht alte Links kaputt."
 
@@ -158,12 +158,12 @@ msgstr "%{address} ist live. Eine Änderung macht alte Links kaputt."
 msgid "%{browser} · signed in %{when}"
 msgstr "%{browser} · angemeldet %{when}"
 
-#: lib/texttile_web/live/editor_live.ex:2621
+#: lib/texttile_web/live/editor_live.ex:2632
 msgid "%{count} failed"
 msgstr "%{count} fehlgeschlagen"
 
 #: lib/texttile_web/js_strings.ex:36
-#: lib/texttile_web/live/editor_live.ex:2620
+#: lib/texttile_web/live/editor_live.ex:2631
 msgid "%{count} on the way"
 msgstr "%{count} unterwegs"
 
@@ -171,7 +171,7 @@ msgstr "%{count} unterwegs"
 msgid "%{count} skipped for errors"
 msgstr "%{count} wegen Fehlern übersprungen"
 
-#: lib/texttile_web/live/editor_live.ex:1805
+#: lib/texttile_web/live/editor_live.ex:1816
 msgid "%{count} words"
 msgstr "%{count} Wörter"
 
@@ -183,12 +183,12 @@ msgstr "%{created} angelegt · %{updated} aktualisiert"
 msgid "%{date} · %{index} of %{count}"
 msgstr "%{date} · %{index} von %{count}"
 
-#: lib/texttile/i18n.ex:96
-#: lib/texttile/i18n.ex:101
+#: lib/texttile/i18n.ex:108
+#: lib/texttile/i18n.ex:113
 msgid "%{day} %{month}"
 msgstr "%{day}. %{month}"
 
-#: lib/texttile/i18n.ex:87
+#: lib/texttile/i18n.ex:99
 msgid "%{day} %{month} %{year}"
 msgstr "%{day}. %{month} %{year}"
 
@@ -196,7 +196,7 @@ msgstr "%{day}. %{month} %{year}"
 msgid "%{day}: %{views}"
 msgstr "%{day}: %{views}"
 
-#: lib/texttile_web/live/settings_live.ex:302
+#: lib/texttile_web/live/settings_live.ex:304
 msgid "%{mark} uploaded · %{file}"
 msgstr "%{mark} hochgeladen · %{file}"
 
@@ -216,15 +216,15 @@ msgstr "%{name} konnte nicht hochgeladen werden. Erneut versuchen oder entfernen
 msgid "%{name} is bigger than the %{roof} MB roof."
 msgstr "%{name} ist größer als die Grenze von %{roof} MB."
 
-#: lib/texttile/comments/notifier.ex:102
+#: lib/texttile/comments/notifier.ex:104
 msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings. Switch it off there to stop it.\n"
 msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n%{where}    Alle Kommentare: %{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen\nKommentar mailen\" steht. Dort schaltest du es wieder aus.\n"
 
-#: lib/texttile_web/live/settings_live.ex:1087
+#: lib/texttile_web/live/settings_live.ex:1089
 msgid "%{path} · %{size} SQLite"
 msgstr "%{path} · %{size} SQLite"
 
-#: lib/texttile_web/live/settings_live.ex:1078
+#: lib/texttile_web/live/settings_live.ex:1080
 msgid "%{root} · originals plus cached variants · %{size} cache"
 msgstr "%{root} · Originale und zwischengespeicherte Größen · %{size} Cache"
 
@@ -233,7 +233,7 @@ msgstr "%{root} · Originale und zwischengespeicherte Größen · %{size} Cache"
 msgid "%{shown} of %{total}"
 msgstr "%{shown} von %{total}"
 
-#: lib/texttile/newsletter/notifier.ex:105
+#: lib/texttile/newsletter/notifier.ex:107
 msgid "%{site} asks for its access word before it shows the entry.\nThe word is: %{password}\n"
 msgstr "%{site} fragt nach seinem Zugangswort, bevor es den Eintrag zeigt.\nDas Wort lautet: %{password}\n"
 
@@ -245,27 +245,27 @@ msgstr "%{site} schickt keine Mail mehr an diese Adresse."
 msgid "%{site}, sections menu"
 msgstr "%{site}, Menü der Bereiche"
 
-#: lib/texttile_web/live/settings_live.ex:405
+#: lib/texttile_web/live/settings_live.ex:407
 msgid "%{size} KB"
 msgstr "%{size} KB"
 
-#: lib/texttile_web/live/settings_live.ex:407
+#: lib/texttile_web/live/settings_live.ex:409
 msgid "%{size} MB"
 msgstr "%{size} MB"
 
-#: lib/texttile_web/live/editor_live.ex:1386
+#: lib/texttile_web/live/editor_live.ex:1388
 msgid "%{state}, state actions"
 msgstr "%{state}, Aktionen zum Status"
 
-#: lib/texttile_web/live/settings_live.ex:386
+#: lib/texttile_web/live/settings_live.ex:388
 msgid "%{tag} is off %{entries}"
 msgstr "%{tag} ist von %{entries} entfernt"
 
-#: lib/texttile_web/live/editor_live.ex:1913
+#: lib/texttile_web/live/editor_live.ex:1924
 msgid "+ Add"
 msgstr "+ Hinzufügen"
 
-#: lib/texttile_web/live/editor_live.ex:1974
+#: lib/texttile_web/live/editor_live.ex:1985
 msgid "+%{count} more in the gallery"
 msgstr "+%{count} weitere in der Galerie"
 
@@ -283,13 +283,13 @@ msgid_plural "%{count} comments"
 msgstr[0] "1 Kommentar"
 msgstr[1] "%{count} Kommentare"
 
-#: lib/texttile_web/live/editor_live.ex:2581
+#: lib/texttile_web/live/editor_live.ex:2592
 msgid "1 comment is still out of the entry: that reader has not followed the confirmation link yet."
 msgid_plural "%{count} comments are still out of the entry: those readers have not followed the confirmation link yet."
 msgstr[0] "1 Kommentar steht noch nicht im Eintrag: diese Person ist dem Bestätigungslink noch nicht gefolgt."
 msgstr[1] "%{count} Kommentare stehen noch nicht im Eintrag: diese Personen sind dem Bestätigungslink noch nicht gefolgt."
 
-#: lib/texttile_web/live/comments_live.ex:210
+#: lib/texttile_web/live/comments_live.ex:209
 msgid "1 deleted comment waits here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood."
 msgid_plural "%{count} deleted comments wait here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood."
 msgstr[0] "1 gelöschter Kommentar wartet hier. Ein Kommentar ist %{days} Tage nach dem Löschen endgültig weg, und bis dahin setzt Wiederherstellen ihn zurück, wo er stand."
@@ -303,14 +303,14 @@ msgstr[1] "%{count} Adressen bekommen Neues."
 
 #: lib/texttile_web/controllers/site_html.ex:338
 #: lib/texttile_web/live/import_live.ex:84
-#: lib/texttile_web/live/settings_live.ex:381
+#: lib/texttile_web/live/settings_live.ex:383
 #: lib/texttile_web/live/texts_live.ex:254
 msgid "1 entry"
 msgid_plural "%{count} entries"
 msgstr[0] "1 Eintrag"
 msgstr[1] "%{count} Einträge"
 
-#: lib/texttile_web/live/editor_live.ex:2619
+#: lib/texttile_web/live/editor_live.ex:2630
 msgid "1 file"
 msgid_plural "%{count} files"
 msgstr[0] "1 Datei"
@@ -322,7 +322,7 @@ msgid_plural "%{count} more wait for their confirmation."
 msgstr[0] "1 weitere wartet auf ihre Bestätigung."
 msgstr[1] "%{count} weitere warten auf ihre Bestätigung."
 
-#: lib/texttile_web/live/editor_live.ex:896
+#: lib/texttile_web/live/editor_live.ex:898
 msgid "1 tile"
 msgid_plural "%{count} tiles"
 msgstr[0] "1 Kachel"
@@ -333,18 +333,6 @@ msgid "1 view"
 msgid_plural "%{count} views"
 msgstr[0] "1 Aufruf"
 msgstr[1] "%{count} Aufrufe"
-
-#: lib/texttile_web/live/comments_live.ex:131
-msgid "<b class='num'>1</b> comment across all entries, newest first."
-msgid_plural "<b class='num'>%{count}</b> comments across all entries, newest first."
-msgstr[0] "<b class='num'>1</b> Kommentar über alle Einträge hinweg, die neuesten zuerst."
-msgstr[1] "<b class='num'>%{count}</b> Kommentare über alle Einträge hinweg, die neuesten zuerst."
-
-#: lib/texttile_web/live/comments_live.ex:144
-msgid "<b class='num'>1</b> comment waits for the reader to confirm the email address, so readers do not see it yet."
-msgid_plural "<b class='num'>%{count}</b> comments wait for the reader to confirm the email address, so readers do not see them yet."
-msgstr[0] "<b class='num'>1</b> Kommentar wartet darauf, dass die Adresse bestätigt wird, Lesende sehen ihn also noch nicht."
-msgstr[1] "<b class='num'>%{count}</b> Kommentare warten darauf, dass die Adresse bestätigt wird, Lesende sehen sie also noch nicht."
 
 #: lib/texttile_web/components/comment_components.ex:177
 msgid "A comment appears under the entry the moment a reader sends it, and nobody confirms anything. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever."
@@ -366,11 +354,11 @@ msgstr "Ein Kommentar braucht ein paar Worte. Es wurde nichts gespeichert."
 msgid "A confirmation mail goes to your address: which site, which username. It never contains the password, and no mail ever will. If you forget the password, the sign-in screen mails your address a link that sets a new one."
 msgstr "Eine Bestätigung geht an deine Adresse: welche Site, welcher Benutzername. Sie enthält nie das Passwort, und keine Mail wird das je tun. Wenn du das Passwort vergisst, schickt die Anmeldeseite dir einen Link, mit dem du ein neues setzt."
 
-#: lib/texttile_web/live/editor_live.ex:2593
+#: lib/texttile_web/live/editor_live.ex:2604
 msgid "A deleted account"
 msgstr "Ein gelöschtes Konto"
 
-#: lib/texttile_web/live/settings_live.ex:744
+#: lib/texttile_web/live/settings_live.ex:746
 msgid "A fixed page"
 msgstr "Eine feste Seite"
 
@@ -392,7 +380,7 @@ msgstr "Wer liest, ist für einen Tag eine Zahl: die Adresse und die Browser-Ken
 msgid "A reader who subscribes on the site confirms the address by mail first; until then it gets no updates. An address you add here is directly confirmed. When an entry goes live with Email subscribers checked, it goes to every confirmed address."
 msgstr "Wer sich auf der Site einträgt, bestätigt die Adresse zuerst per Mail. Bis dahin bekommt sie nichts. Eine Adresse, die du hier hinzufügst, gilt sofort als bestätigt. Geht ein Eintrag live und ist \"Abonnenten benachrichtigen\" angehakt, geht er an jede bestätigte Adresse."
 
-#: lib/texttile_web/live/settings_live.ex:892
+#: lib/texttile_web/live/settings_live.ex:894
 msgid "A shared access word, not a login: it goes into every entry mail, so everybody on the newsletter list gets it, and you pass it on. It is stored as it is written. It is the password of the whole blog; without one nothing is protected."
 msgstr "Ein gemeinsames Zugangswort, keine Anmeldung: es steht in jeder Mail zu einem Eintrag, geht also an alle auf der Newsletter-Liste, und du gibst es weiter. Es wird im Klartext gespeichert. Es ist das Passwort des ganzen Blogs. Ohne eines ist nichts geschützt."
 
@@ -402,20 +390,20 @@ msgstr "Aus einem ZIP mit Bündeln werden Einträge: ein Ordner pro Eintrag, mit
 
 #: lib/texttile_web/controllers/site_html.ex:111
 #: lib/texttile_web/controllers/site_html.ex:112
-#: lib/texttile_web/live/settings_live.ex:681
+#: lib/texttile_web/live/settings_live.ex:683
 msgid "About"
 msgstr "Über"
 
 #: lib/texttile_web/controllers/site_html.ex:109
-#: lib/texttile_web/live/settings_live.ex:683
+#: lib/texttile_web/live/settings_live.ex:685
 msgid "About this blog"
 msgstr "Über dieses Blog"
 
-#: lib/texttile_web/live/settings_live.ex:697
+#: lib/texttile_web/live/settings_live.ex:699
 msgid "About this blog, Markdown"
 msgstr "Über dieses Blog, Markdown"
 
-#: lib/texttile_web/live/settings_live.ex:840
+#: lib/texttile_web/live/settings_live.ex:842
 msgid "Access"
 msgstr "Zugang"
 
@@ -423,19 +411,19 @@ msgstr "Zugang"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: lib/texttile_web/live/editor_live.ex:1925
+#: lib/texttile_web/live/editor_live.ex:1936
 msgid "Add it to the gallery, at the end"
 msgstr "In die Galerie legen, ans Ende"
 
-#: lib/texttile_web/live/editor_live.ex:1911
+#: lib/texttile_web/live/editor_live.ex:1922
 msgid "Add pictures and videos"
 msgstr "Bilder und Videos hinzufügen"
 
-#: lib/texttile_web/live/editor_live.ex:1922
+#: lib/texttile_web/live/editor_live.ex:1933
 msgid "Add pictures and videos to the gallery"
 msgstr "Bilder und Videos zur Galerie hinzufügen"
 
-#: lib/texttile_web/live/editor_live.ex:1987
+#: lib/texttile_web/live/editor_live.ex:1998
 #: lib/texttile_web/live/stats_live.ex:126
 msgid "Address"
 msgstr "Adresse"
@@ -458,7 +446,7 @@ msgstr "Alle Monate"
 msgid "All years"
 msgstr "Alle Jahre"
 
-#: lib/texttile_web/live/editor_live.ex:2315
+#: lib/texttile_web/live/editor_live.ex:2326
 msgid "Allow comments"
 msgstr "Kommentare erlauben"
 
@@ -466,7 +454,7 @@ msgstr "Kommentare erlauben"
 msgid "An import is running; let it finish first"
 msgstr "Ein Import läuft. Lass ihn erst zu Ende laufen"
 
-#: lib/texttile_web/live/settings_live.ex:1066
+#: lib/texttile_web/live/settings_live.ex:1068
 msgid "An uploaded video is converted once, to one MP4 every browser plays, with the longer edge within this; nothing is ever scaled up. The original is kept on disk. ffmpeg does the work on one thread at the lowest priority, one video at a time, so the site stays quick while it runs. A new value applies to what is converted after the change; a video already converted keeps the file it has."
 msgstr "Ein hochgeladenes Video wird einmal umgewandelt, in ein MP4, das jeder Browser abspielt, mit der längeren Kante innerhalb dieses Werts. Vergrößert wird nie. Das Original bleibt auf der Platte. ffmpeg arbeitet auf einem Kern mit der niedrigsten Priorität, ein Video nach dem anderen, damit die Site währenddessen schnell bleibt. Ein neuer Wert gilt für alles, was danach umgewandelt wird. Ein bereits umgewandeltes Video behält seine Datei."
 
@@ -474,15 +462,15 @@ msgstr "Ein hochgeladenes Video wird einmal umgewandelt, in ein MP4, das jeder B
 msgid "Another browser"
 msgstr "Ein anderer Browser"
 
-#: lib/texttile_web/live/settings_live.ex:854
+#: lib/texttile_web/live/settings_live.ex:856
 msgid "Anyone can read the blog."
 msgstr "Jede und jeder kann das Blog lesen."
 
-#: lib/texttile/i18n.ex:124
+#: lib/texttile/i18n.ex:136
 msgid "Apr"
 msgstr "Apr"
 
-#: lib/texttile/i18n.ex:112
+#: lib/texttile/i18n.ex:124
 msgid "April"
 msgstr "April"
 
@@ -491,8 +479,8 @@ msgstr "April"
 msgid "Archive"
 msgstr "Archiv"
 
-#: lib/texttile_web/live/editor_live.ex:1840
-#: lib/texttile_web/live/editor_live.ex:1945
+#: lib/texttile_web/live/editor_live.ex:1851
+#: lib/texttile_web/live/editor_live.ex:1956
 msgid "Article settings"
 msgstr "Einstellungen des Eintrags"
 
@@ -508,11 +496,11 @@ msgstr "Mindestens 12 Zeichen."
 msgid "At least 12 characters. Nothing else is required."
 msgstr "Mindestens 12 Zeichen. Mehr wird nicht verlangt."
 
-#: lib/texttile/i18n.ex:127
+#: lib/texttile/i18n.ex:139
 msgid "Aug"
 msgstr "Aug"
 
-#: lib/texttile/i18n.ex:116
+#: lib/texttile/i18n.ex:128
 msgid "August"
 msgstr "August"
 
@@ -542,17 +530,18 @@ msgstr "Blog"
 msgid "Blog Entries"
 msgstr "Blogeinträge"
 
-#: lib/texttile_web/live/editor_live.ex:2425
-#: lib/texttile_web/live/settings_live.ex:880
+#: lib/texttile_web/live/editor_live.ex:2436
+#: lib/texttile_web/live/settings_live.ex:882
 msgid "Blog password"
 msgstr "Blog-Passwort"
 
-#: lib/texttile_web/live/editor_live.ex:2072
+#: lib/texttile_web/live/editor_live.ex:2083
 msgid "Blog post"
 msgstr "Blogeintrag"
 
 #: lib/texttile_web/js_strings.ex:64
-#: lib/texttile_web/live/editor_live.ex:1540
+#: lib/texttile_web/live/editor_live.ex:1542
+#: lib/texttile_web/live/editor_live.ex:1551
 msgid "Body, Markdown"
 msgstr "Text, Markdown"
 
@@ -564,14 +553,14 @@ msgstr "Fett"
 msgid "Bold (Ctrl or Cmd + B)"
 msgstr "Fett (Strg oder Cmd + B)"
 
-#: lib/texttile_web/live/settings_live.ex:1091
+#: lib/texttile_web/live/settings_live.ex:1093
 msgid "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
 msgstr "Beide Pfade kommen aus der Installationskonfiguration und ändern sich nicht, während die Site läuft. Die Sicherung ist das Volume. Es gibt keinen Export und kein Löschen der Site."
 
 #: lib/texttile_web/components/comment_components.ex:69
 #: lib/texttile_web/components/core_components.ex:140
 #: lib/texttile_web/js_strings.ex:39
-#: lib/texttile_web/live/editor_live.ex:1676
+#: lib/texttile_web/live/editor_live.ex:1687
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -579,12 +568,12 @@ msgstr "Abbrechen"
 msgid "Change here your email, your password and your open sessions. Every change applies the moment you make it."
 msgstr "Hier änderst du deine Adresse, dein Passwort und deine offenen Sitzungen. Jede Änderung gilt sofort."
 
-#: lib/texttile_web/live/settings_live.ex:1010
+#: lib/texttile_web/live/settings_live.ex:1012
 msgid "Change your own displayed name, address and password on"
 msgstr "Deinen angezeigten Namen, deine Adresse und dein Passwort änderst du in"
 
 #: lib/texttile_web/controllers/session_html.ex:73
-#: lib/texttile_web/live/settings_live.ex:887
+#: lib/texttile_web/live/settings_live.ex:889
 msgid "Choose a password"
 msgstr "Wähle ein Passwort"
 
@@ -612,17 +601,17 @@ msgstr "Kommentar"
 #: lib/texttile_web/live/comments_live.ex:28
 #: lib/texttile_web/live/comments_live.ex:114
 #: lib/texttile_web/live/comments_live.ex:122
-#: lib/texttile_web/live/editor_live.ex:1485
-#: lib/texttile_web/live/settings_live.ex:899
+#: lib/texttile_web/live/editor_live.ex:1487
+#: lib/texttile_web/live/settings_live.ex:901
 #: lib/texttile_web/live/stats_live.ex:85
 msgid "Comments"
 msgstr "Kommentare"
 
-#: lib/texttile_web/live/settings_live.ex:413
+#: lib/texttile_web/live/settings_live.ex:415
 msgid "Comments appear at once · no confirmation asked"
 msgstr "Kommentare erscheinen sofort · keine Bestätigung nötig"
 
-#: lib/texttile_web/live/editor_live.ex:2305
+#: lib/texttile_web/live/editor_live.ex:2316
 msgid "Community"
 msgstr "Austausch"
 
@@ -630,12 +619,12 @@ msgstr "Austausch"
 msgid "Confirm the current password once to change it. Needs to be at least 12 characters."
 msgstr "Bestätige einmal das aktuelle Passwort, um es zu ändern. Mindestens 12 Zeichen."
 
-#: lib/texttile/comments/notifier.ex:37
-#: lib/texttile/newsletter/notifier.ex:33
+#: lib/texttile/comments/notifier.ex:40
+#: lib/texttile/newsletter/notifier.ex:36
 msgid "Confirm your email on %{site}"
 msgstr "Bestätige deine Adresse auf %{site}"
 
-#: lib/texttile_web/live/editor_live.ex:2710
+#: lib/texttile_web/live/editor_live.ex:2721
 msgid "Confirmed subscribers get one plain email with the title and the first paragraph when this goes live. Uncheck to publish silently."
 msgstr "Bestätigte Abonnenten bekommen eine schlichte Mail mit dem Titel und dem ersten Absatz, sobald das hier live geht. Haken weg, und es wird still veröffentlicht."
 
@@ -643,7 +632,7 @@ msgstr "Bestätigte Abonnenten bekommen eine schlichte Mail mit dem Titel und de
 msgid "Confirmed. Your comment is under the entry now."
 msgstr "Bestätigt. Dein Kommentar steht jetzt unter dem Eintrag."
 
-#: lib/texttile_web/live/editor_live.ex:2403
+#: lib/texttile_web/live/editor_live.ex:2414
 msgid "Copy"
 msgstr "Kopieren"
 
@@ -651,7 +640,7 @@ msgstr "Kopieren"
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party."
 msgstr "Gezählt allein von diesem Server. Kein Cookie, kein Fingerabdruck, kein Dritter."
 
-#: lib/texttile_web/live/editor_live.ex:1749
+#: lib/texttile_web/live/editor_live.ex:1760
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party. The whole blog is on the"
 msgstr "Gezählt allein von diesem Server. Kein Cookie, kein Fingerabdruck, kein Dritter. Das ganze Blog steht auf der"
 
@@ -663,7 +652,7 @@ msgstr "Konto anlegen und anmelden"
 msgid "Current password"
 msgstr "Aktuelles Passwort"
 
-#: lib/texttile_web/live/settings_live.ex:1085
+#: lib/texttile_web/live/settings_live.ex:1087
 msgid "Database"
 msgstr "Datenbank"
 
@@ -671,24 +660,24 @@ msgstr "Datenbank"
 msgid "Date"
 msgstr "Datum"
 
-#: lib/texttile/i18n.ex:131
+#: lib/texttile/i18n.ex:143
 msgid "Dec"
 msgstr "Dez"
 
-#: lib/texttile/i18n.ex:120
+#: lib/texttile/i18n.ex:132
 msgid "December"
 msgstr "Dezember"
 
-#: lib/texttile_web/live/settings_live.ex:604
-#: lib/texttile_web/live/settings_live.ex:650
+#: lib/texttile_web/live/settings_live.ex:606
+#: lib/texttile_web/live/settings_live.ex:652
 msgid "Default: the Texttile mark"
 msgstr "Vorgabe: das Texttile-Zeichen"
 
 #: lib/texttile_web/components/comment_components.ex:96
 #: lib/texttile_web/js_strings.ex:50
-#: lib/texttile_web/live/editor_live.ex:2027
-#: lib/texttile_web/live/settings_live.ex:961
-#: lib/texttile_web/live/settings_live.ex:994
+#: lib/texttile_web/live/editor_live.ex:2038
+#: lib/texttile_web/live/settings_live.ex:963
+#: lib/texttile_web/live/settings_live.ex:996
 msgid "Delete"
 msgstr "Löschen"
 
@@ -696,15 +685,15 @@ msgstr "Löschen"
 msgid "Delete \"%{title}\"?"
 msgstr "\"%{title}\" löschen?"
 
-#: lib/texttile_web/live/editor_live.ex:1900
+#: lib/texttile_web/live/editor_live.ex:1911
 msgid "Delete %{file}"
 msgstr "%{file} löschen"
 
-#: lib/texttile_web/live/settings_live.ex:1120
+#: lib/texttile_web/live/settings_live.ex:1122
 msgid "Delete the account"
 msgstr "Konto löschen"
 
-#: lib/texttile_web/live/settings_live.ex:1118
+#: lib/texttile_web/live/settings_live.ex:1120
 msgid "Delete the account of %{name}?"
 msgstr "Das Konto von %{name} löschen?"
 
@@ -720,15 +709,15 @@ msgstr "Den Kommentar von %{name} löschen?"
 msgid "Delete the entry"
 msgstr "Eintrag löschen"
 
-#: lib/texttile_web/live/settings_live.ex:1141
+#: lib/texttile_web/live/settings_live.ex:1143
 msgid "Delete the tag"
 msgstr "Schlagwort löschen"
 
-#: lib/texttile_web/live/settings_live.ex:1140
+#: lib/texttile_web/live/settings_live.ex:1142
 msgid "Delete the tag %{tag}?"
 msgstr "Das Schlagwort %{tag} löschen?"
 
-#: lib/texttile_web/live/editor_live.ex:1424
+#: lib/texttile_web/live/editor_live.ex:1426
 msgid "Delete this entry"
 msgstr "Diesen Eintrag löschen"
 
@@ -736,7 +725,7 @@ msgstr "Diesen Eintrag löschen"
 msgid "Delete tile"
 msgstr "Kachel löschen"
 
-#: lib/texttile_web/live/settings_live.ex:552
+#: lib/texttile_web/live/settings_live.ex:554
 msgid "Description"
 msgstr "Beschreibung"
 
@@ -766,7 +755,7 @@ msgid "Downloads from: %{hosts}. Check this list for hosts you do not expect."
 msgstr "Downloads von: %{hosts}. Prüfe die Liste auf Hosts, die du nicht erwartest."
 
 #: lib/texttile_web/controllers/site_html.ex:305
-#: lib/texttile_web/live/editor_live.ex:2541
+#: lib/texttile_web/live/editor_live.ex:2552
 msgid "Draft"
 msgstr "Entwurf"
 
@@ -779,7 +768,7 @@ msgstr "Entwürfe"
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: lib/texttile_web/live/editor_live.ex:1552
+#: lib/texttile_web/live/editor_live.ex:1563
 msgid "Editing"
 msgstr "Bearbeiten"
 
@@ -800,7 +789,7 @@ msgstr "E-Mail-Adresse"
 msgid "Email for new entries"
 msgstr "E-Mail für neue Einträge"
 
-#: lib/texttile_web/live/editor_live.ex:2331
+#: lib/texttile_web/live/editor_live.ex:2342
 msgid "Email subscribers"
 msgstr "Abonnenten benachrichtigen"
 
@@ -808,7 +797,7 @@ msgstr "Abonnenten benachrichtigen"
 msgid "Email, not public"
 msgstr "E-Mail, nicht öffentlich"
 
-#: lib/texttile_web/live/editor_live.ex:2670
+#: lib/texttile_web/live/editor_live.ex:2681
 msgid "Empty means whenever you publish. A future date schedules the entry."
 msgstr "Leer heißt: sobald du veröffentlichst. Ein Datum in der Zukunft plant den Eintrag ein."
 
@@ -823,19 +812,19 @@ msgstr "Einträge"
 msgid "Entry"
 msgstr "Eintrag"
 
-#: lib/texttile_web/live/editor_live.ex:1479
+#: lib/texttile_web/live/editor_live.ex:1481
 msgid "Entry sections"
 msgstr "Bereiche des Eintrags"
 
-#: lib/texttile_web/live/editor_live.ex:1947
+#: lib/texttile_web/live/editor_live.ex:1958
 msgid "Every change saves itself."
 msgstr "Jede Änderung speichert sich selbst."
 
-#: lib/texttile_web/live/settings_live.ex:488
+#: lib/texttile_web/live/settings_live.ex:490
 msgid "Every comment appears under the entry at once, and nobody confirms anything. Turn this on and a comment waits for the reader to follow a confirmation link. Spam is filtered by honeypot, timing and rate limit checks either way."
 msgstr "Jeder Kommentar steht sofort unter dem Eintrag, und niemand bestätigt etwas. Schalte es ein, und ein Kommentar wartet darauf, dass die schreibende Person einem Bestätigungslink folgt. Spam wird so oder so über Honeypot, Zeitfalle und Ratenbegrenzung gefiltert."
 
-#: lib/texttile_web/live/settings_live.ex:416
+#: lib/texttile_web/live/settings_live.ex:418
 msgid "Every new comment travels to everybody with an account here"
 msgstr "Jeder neue Kommentar geht an alle mit einem Konto hier"
 
@@ -843,7 +832,7 @@ msgstr "Jeder neue Kommentar geht an alle mit einem Konto hier"
 msgid "Every new entry of %{site} now goes to %{email} by mail. Every one of those mails carries the way off the list."
 msgstr "Jeder neue Eintrag von %{site} geht ab jetzt per Mail an %{email}. Jede dieser Mails enthält den Weg von der Liste herunter."
 
-#: lib/texttile_web/live/settings_live.ex:937
+#: lib/texttile_web/live/settings_live.ex:939
 msgid "Every tag any entry carries. Deleting one takes it off all of them at once and closes its archive page. The entries themselves stay, and so do all the other tags."
 msgstr "Jedes Schlagwort, das irgendein Eintrag trägt. Löschen nimmt es allen auf einmal ab und schließt seine Archivseite. Die Einträge selbst bleiben, und alle anderen Schlagwörter auch."
 
@@ -851,24 +840,24 @@ msgstr "Jedes Schlagwort, das irgendein Eintrag trägt. Löschen nimmt es allen 
 msgid "Everybody who gets a mail when a new entry goes live."
 msgstr "Alle, die eine Mail bekommen, wenn ein neuer Eintrag live geht."
 
-#: lib/texttile_web/live/settings_live.ex:494
+#: lib/texttile_web/live/settings_live.ex:496
 msgid "Everybody with an account here and an address gets one mail per comment: who wrote it, what it says, and the way to it. The mail leaves when the comment stands under the entry, so a comment that still waits for its reader mails nobody. The address of the reader is never in it."
 msgstr "Alle mit einem Konto hier und einer Adresse bekommen eine Mail pro Kommentar: wer ihn geschrieben hat, was darin steht, und den Weg dorthin. Die Mail geht raus, wenn der Kommentar unter dem Eintrag steht. Ein Kommentar, der noch auf seine Bestätigung wartet, schickt also niemandem etwas. Die Adresse der schreibenden Person steht nie darin."
 
-#: lib/texttile_web/live/editor_live.ex:1759
+#: lib/texttile_web/live/editor_live.ex:1770
 msgid "Everything that happened to this entry, newest first: your edits, the edits of every other admin, every handover of the entry, and every version anybody saved."
 msgstr "Alles, was mit diesem Eintrag geschehen ist, das Neueste zuerst: deine Änderungen, die aller anderen Admins, jede Übernahme des Eintrags und jede Version, die jemand gesichert hat."
 
-#: lib/texttile_web/live/settings_live.ex:317
-#: lib/texttile_web/live/settings_live.ex:648
+#: lib/texttile_web/live/settings_live.ex:319
+#: lib/texttile_web/live/settings_live.ex:650
 msgid "Favicon"
 msgstr "Favicon"
 
-#: lib/texttile/i18n.ex:122
+#: lib/texttile/i18n.ex:134
 msgid "Feb"
 msgstr "Feb"
 
-#: lib/texttile/i18n.ex:110
+#: lib/texttile/i18n.ex:122
 msgid "February"
 msgstr "Februar"
 
@@ -880,7 +869,7 @@ msgstr "Nach Status filtern"
 msgid "First sign-in · %{host}"
 msgstr "Erste Anmeldung · %{host}"
 
-#: lib/texttile_web/live/editor_live.ex:2016
+#: lib/texttile_web/live/editor_live.ex:2027
 msgid "Follows the old address, in a new tab"
 msgstr "Folgt der alten Adresse, in einem neuen Tab"
 
@@ -892,11 +881,11 @@ msgstr "Passwort vergessen?"
 msgid "Formatting"
 msgstr "Formatierung"
 
-#: lib/texttile_web/live/editor_live.ex:2691
+#: lib/texttile_web/live/editor_live.ex:2702
 msgid "Free to change while the entry is a draft."
 msgstr "Frei änderbar, solange der Eintrag ein Entwurf ist."
 
-#: lib/texttile_web/live/settings_live.ex:709
+#: lib/texttile_web/live/settings_live.ex:711
 msgid "Front page"
 msgstr "Startseite"
 
@@ -909,15 +898,15 @@ msgstr "Volle Größe"
 msgid "Get new entries by mail"
 msgstr "Neue Einträge per Mail bekommen"
 
-#: lib/texttile_web/live/editor_live.ex:2038
+#: lib/texttile_web/live/editor_live.ex:2049
 msgid "Goes live"
 msgstr "Geht live"
 
-#: lib/texttile_web/live/editor_live.ex:2722
+#: lib/texttile_web/live/editor_live.ex:2733
 msgid "Goes out to the confirmed subscribers when the entry goes live on %{date}. Uncheck any time before then."
 msgstr "Geht an die bestätigten Abonnenten, wenn der Eintrag am %{date} live geht. Bis dahin kannst du den Haken jederzeit entfernen."
 
-#: lib/texttile_web/live/editor_live.ex:1862
+#: lib/texttile_web/live/editor_live.ex:1873
 msgid "Grab a tile to sort it."
 msgstr "Fasse eine Kachel an, um sie zu sortieren."
 
@@ -929,15 +918,15 @@ msgstr "Überschrift"
 msgid "Heading. Click again for the next size."
 msgstr "Überschrift. Noch ein Klick für die nächste Größe."
 
-#: lib/texttile/accounts/user_notifier.ex:58
+#: lib/texttile/accounts/user_notifier.ex:53
 msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n\n%{url}\n\nThe link works once and for 24 hours. The old password works until\nyou set the new one. If you did not ask for this, you can ignore\nthis mail.\n"
 msgstr "Hallo %{name},\n\njemand hat für dein Konto auf %{site} ein neues Passwort angefordert.\n\nÖffne diesen Link und setze ein neues Passwort:\n\n%{url}\n\nDer Link gilt einmal und 24 Stunden lang. Das alte Passwort gilt, bis\ndu das neue gesetzt hast. Wenn du das nicht angefordert hast, kannst\ndu diese Mail einfach liegen lassen.\n"
 
-#: lib/texttile/accounts/user_notifier.ex:30
+#: lib/texttile/accounts/user_notifier.ex:27
 msgid "Hello %{name},\n\nYou have an admin account on %{site} now.\n\nYour username is: %{username}\n\nSign in with this username and the password you chose. This mail\ndoes not contain the password, and no mail ever will.\n"
 msgstr "Hallo %{name},\n\ndu hast jetzt ein Admin-Konto auf %{site}.\n\nDein Benutzername lautet: %{username}\n\nMelde dich mit diesem Namen und dem Passwort an, das du gewählt hast.\nDiese Mail enthält das Passwort nicht, und keine Mail wird das je tun.\n"
 
-#: lib/texttile/comments/notifier.ex:39
+#: lib/texttile/comments/notifier.ex:42
 msgid "Hello %{name},\n\nYou wrote a comment on \"%{title}\".\n\nOpen this link, and your comment appears under the entry:\n\n%{url}\n\nYou confirm this address once. Every comment you write after\nthat appears at once. If you did not write a comment on %{site},\nignore this mail.\n"
 msgstr "Hallo %{name},\n\ndu hast einen Kommentar zu \"%{title}\" geschrieben.\n\nÖffne diesen Link, dann erscheint dein Kommentar unter dem Eintrag:\n\n%{url}\n\nDu bestätigst diese Adresse einmal. Jeder Kommentar, den du danach\nschreibst, erscheint sofort. Wenn du auf %{site} keinen Kommentar\ngeschrieben hast, lass diese Mail einfach liegen.\n"
 
@@ -949,7 +938,7 @@ msgstr "Gerade hier"
 msgid "Home"
 msgstr "Start"
 
-#: lib/texttile_web/live/settings_live.ex:792
+#: lib/texttile_web/live/settings_live.ex:794
 msgid "How many entries /blog shows before the pager. The default is 10."
 msgstr "Wie viele Einträge /blog zeigt, bevor geblättert wird. Die Vorgabe ist 10."
 
@@ -957,19 +946,19 @@ msgstr "Wie viele Einträge /blog zeigt, bevor geblättert wird. Die Vorgabe ist
 msgid "Image"
 msgstr "Bild"
 
-#: lib/texttile_web/live/settings_live.ex:251
+#: lib/texttile_web/live/settings_live.ex:253
 msgid "Image cache cleared · variants regenerate on demand"
 msgstr "Bild-Cache geleert · Größen entstehen bei Bedarf neu"
 
-#: lib/texttile_web/live/settings_live.ex:1014
-#: lib/texttile_web/live/settings_live.ex:1076
+#: lib/texttile_web/live/settings_live.ex:1016
+#: lib/texttile_web/live/settings_live.ex:1078
 msgid "Images"
 msgstr "Bilder"
 
 #: lib/texttile_web/live/import_live.ex:17
 #: lib/texttile_web/live/import_live.ex:99
 #: lib/texttile_web/live/import_live.ex:107
-#: lib/texttile_web/live/settings_live.ex:1100
+#: lib/texttile_web/live/settings_live.ex:1102
 msgid "Import"
 msgstr "Import"
 
@@ -981,7 +970,7 @@ msgstr "%{entries} importieren"
 msgid "Imported: %{name}"
 msgstr "Importiert: %{name}"
 
-#: lib/texttile/comments/notifier.ex:128
+#: lib/texttile/comments/notifier.ex:130
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr "Er ist vorerst nicht zu sehen: der Eintrag selbst steht nicht auf der Site."
 
@@ -989,7 +978,7 @@ msgstr "Er ist vorerst nicht zu sehen: der Eintrag selbst steht nicht auf der Si
 msgid "It removes the comment from the entry at once, and the reader is not told."
 msgstr "Der Kommentar verschwindet sofort aus dem Eintrag, und die schreibende Person erfährt nichts davon."
 
-#: lib/texttile/comments/notifier.ex:131
+#: lib/texttile/comments/notifier.ex:133
 msgid "It stands under the entry now."
 msgstr "Er steht jetzt unter dem Eintrag."
 
@@ -1001,35 +990,35 @@ msgstr "Kursiv"
 msgid "Italic (Ctrl or Cmd + I)"
 msgstr "Kursiv (Strg oder Cmd + I)"
 
-#: lib/texttile/i18n.ex:121
+#: lib/texttile/i18n.ex:133
 msgid "Jan"
 msgstr "Jan"
 
-#: lib/texttile/i18n.ex:109
+#: lib/texttile/i18n.ex:121
 msgid "January"
 msgstr "Januar"
 
-#: lib/texttile/i18n.ex:126
+#: lib/texttile/i18n.ex:138
 msgid "Jul"
 msgstr "Jul"
 
-#: lib/texttile/i18n.ex:115
+#: lib/texttile/i18n.ex:127
 msgid "July"
 msgstr "Juli"
 
-#: lib/texttile/i18n.ex:125
+#: lib/texttile/i18n.ex:137
 msgid "Jun"
 msgstr "Jun"
 
-#: lib/texttile/i18n.ex:114
+#: lib/texttile/i18n.ex:126
 msgid "June"
 msgstr "Juni"
 
-#: lib/texttile_web/live/editor_live.ex:1348
+#: lib/texttile_web/live/editor_live.ex:1350
 msgid "Keep a version of the title and the body as they stand now"
 msgstr "Sichert Titel und Text so, wie sie gerade stehen"
 
-#: lib/texttile_web/live/settings_live.ex:564
+#: lib/texttile_web/live/settings_live.ex:566
 msgid "Language"
 msgstr "Sprache"
 
@@ -1038,14 +1027,14 @@ msgid "Last saved %{time}"
 msgstr "Zuletzt gesichert %{time}"
 
 #: lib/texttile_web/js_strings.ex:69
-#: lib/texttile_web/live/editor_live.ex:1330
-#: lib/texttile_web/live/editor_live.ex:1342
+#: lib/texttile_web/live/editor_live.ex:1332
+#: lib/texttile_web/live/editor_live.ex:1344
 #: lib/texttile_web/live/profile_live.ex:153
-#: lib/texttile_web/live/settings_live.ex:525
+#: lib/texttile_web/live/settings_live.ex:527
 msgid "Last saved · just now"
 msgstr "Zuletzt gesichert · gerade eben"
 
-#: lib/texttile_web/live/settings_live.ex:721
+#: lib/texttile_web/live/settings_live.ex:723
 msgid "Latest entries"
 msgstr "Neueste Einträge"
 
@@ -1066,7 +1055,7 @@ msgstr "Link (Strg oder Cmd + K)"
 msgid "List"
 msgstr "Liste"
 
-#: lib/texttile_web/live/editor_live.ex:2072
+#: lib/texttile_web/live/editor_live.ex:2083
 msgid "Listed on the front page and in the feed, has tags, can email subscribers."
 msgstr "Steht auf der Startseite und im Feed, hat Schlagwörter, kann Abonnenten benachrichtigen."
 
@@ -1074,7 +1063,7 @@ msgstr "Steht auf der Startseite und im Feed, hat Schlagwörter, kann Abonnenten
 msgid "Live"
 msgstr "Live"
 
-#: lib/texttile_web/live/editor_live.ex:2684
+#: lib/texttile_web/live/editor_live.ex:2695
 msgid "Live since %{date}. A future date changes it to unpublished until the date."
 msgstr "Live seit %{date}. Ein Datum in der Zukunft nimmt den Eintrag bis dahin von der Site."
 
@@ -1082,45 +1071,45 @@ msgstr "Live seit %{date}. Ein Datum in der Zukunft nimmt den Eintrag bis dahin 
 msgid "Loading the full size…"
 msgstr "Volle Größe wird geladen …"
 
-#: lib/texttile_web/live/editor_live.ex:1487
+#: lib/texttile_web/live/editor_live.ex:1489
 msgid "Log"
 msgstr "Protokoll"
 
-#: lib/texttile_web/live/settings_live.ex:316
-#: lib/texttile_web/live/settings_live.ex:602
+#: lib/texttile_web/live/settings_live.ex:318
+#: lib/texttile_web/live/settings_live.ex:604
 msgid "Logo"
 msgstr "Logo"
 
-#: lib/texttile_web/live/settings_live.ex:587
+#: lib/texttile_web/live/settings_live.ex:589
 msgid "Logo & favicon"
 msgstr "Logo und Favicon"
 
-#: lib/texttile_web/live/settings_live.ex:927
+#: lib/texttile_web/live/settings_live.ex:929
 msgid "Mail me every new comment"
 msgstr "Mir jeden neuen Kommentar mailen"
 
-#: lib/texttile/i18n.ex:123
+#: lib/texttile/i18n.ex:135
 msgid "Mar"
 msgstr "Mär"
 
-#: lib/texttile/i18n.ex:111
+#: lib/texttile/i18n.ex:123
 msgid "March"
 msgstr "März"
 
-#: lib/texttile_web/live/editor_live.ex:1578
+#: lib/texttile_web/live/editor_live.ex:1589
 msgid "Markdown Editor"
 msgstr "Markdown-Editor"
 
-#: lib/texttile_web/live/settings_live.ex:1017
-#: lib/texttile_web/live/settings_live.ex:1047
+#: lib/texttile_web/live/settings_live.ex:1019
+#: lib/texttile_web/live/settings_live.ex:1049
 msgid "Max longer edge"
 msgstr "Längere Kante höchstens"
 
-#: lib/texttile/i18n.ex:113
+#: lib/texttile/i18n.ex:125
 msgid "May"
 msgstr "Mai"
 
-#: lib/texttile_web/live/editor_live.ex:1375
+#: lib/texttile_web/live/editor_live.ex:1377
 msgid "More actions for this draft"
 msgstr "Weitere Aktionen für diesen Entwurf"
 
@@ -1133,7 +1122,7 @@ msgstr "Weitere Einträge"
 msgid "Name"
 msgstr "Name"
 
-#: lib/texttile/comments/notifier.ex:78
+#: lib/texttile/comments/notifier.ex:80
 msgid "New comment on %{title}"
 msgstr "Neuer Kommentar zu %{title}"
 
@@ -1142,11 +1131,11 @@ msgstr "Neuer Kommentar zu %{title}"
 msgid "New entry"
 msgstr "Neuer Eintrag"
 
-#: lib/texttile_web/live/editor_live.ex:2492
+#: lib/texttile_web/live/editor_live.ex:2503
 msgid "New on %{site}: "
 msgstr "Neu auf %{site}: "
 
-#: lib/texttile/newsletter/notifier.ex:67
+#: lib/texttile/newsletter/notifier.ex:69
 msgid "New on %{site}: %{title}"
 msgstr "Neu auf %{site}: %{title}"
 
@@ -1177,19 +1166,19 @@ msgstr "Weiter"
 msgid "Next tile"
 msgstr "Nächste Kachel"
 
-#: lib/texttile_web/live/comments_live.ex:155
+#: lib/texttile_web/live/comments_live.ex:154
 msgid "No comments yet, anywhere. Every comment a reader sends shows up here."
 msgstr "Noch keine Kommentare, nirgends. Jeder Kommentar, den jemand abschickt, taucht hier auf."
 
-#: lib/texttile_web/live/editor_live.ex:1695
+#: lib/texttile_web/live/editor_live.ex:1706
 msgid "No comments yet."
 msgstr "Noch keine Kommentare."
 
-#: lib/texttile_web/live/editor_live.ex:2735
+#: lib/texttile_web/live/editor_live.ex:2746
 msgid "No email went out for this entry. The email goes out only at the moment an entry goes live."
 msgstr "Für diesen Eintrag ging keine Mail raus. Die Mail geht nur in dem Moment raus, in dem ein Eintrag live geht."
 
-#: lib/texttile_web/live/editor_live.ex:2729
+#: lib/texttile_web/live/editor_live.ex:2740
 msgid "No email will go out on %{date}. Check it and it goes out at go-live."
 msgstr "Am %{date} geht keine Mail raus. Setz den Haken, dann geht sie beim Livegang raus."
 
@@ -1197,11 +1186,11 @@ msgstr "Am %{date} geht keine Mail raus. Setz den Haken, dann geht sie beim Live
 msgid "No entries yet. New entry starts the first one."
 msgstr "Noch keine Einträge. Neuer Eintrag beginnt den ersten."
 
-#: lib/texttile_web/live/settings_live.ex:383
+#: lib/texttile_web/live/settings_live.ex:385
 msgid "No entry carried %{tag} any more"
 msgstr "Kein Eintrag trug %{tag} noch"
 
-#: lib/texttile_web/live/settings_live.ex:943
+#: lib/texttile_web/live/settings_live.ex:945
 msgid "No entry carries a tag yet. Tags are written beside the entry, in the settings of the entry itself."
 msgstr "Noch kein Eintrag trägt ein Schlagwort. Schlagwörter stehen neben dem Eintrag, in seinen eigenen Einstellungen."
 
@@ -1209,19 +1198,19 @@ msgstr "Noch kein Eintrag trägt ein Schlagwort. Schlagwörter stehen neben dem 
 msgid "No entry has been read yet. The first reader who opens one puts it here."
 msgstr "Noch wurde kein Eintrag gelesen. Wer als Erstes einen öffnet, setzt ihn hierher."
 
-#: lib/texttile_web/live/settings_live.ex:418
+#: lib/texttile_web/live/settings_live.ex:420
 msgid "No mail goes out for a comment"
 msgstr "Für einen Kommentar geht keine Mail raus"
 
-#: lib/texttile_web/live/settings_live.ex:500
+#: lib/texttile_web/live/settings_live.ex:502
 msgid "No mail goes out for a comment. New comments stand on the Comments screen and in the entry they belong to."
 msgstr "Für einen Kommentar geht keine Mail raus. Neue Kommentare stehen auf der Seite Kommentare und in dem Eintrag, zu dem sie gehören."
 
-#: lib/texttile_web/live/editor_live.ex:1240
+#: lib/texttile_web/live/editor_live.ex:1242
 msgid "No numbers yet. Drafts are invisible to readers, so nothing is counted."
 msgstr "Noch keine Zahlen. Entwürfe sind für Lesende unsichtbar, also wird nichts gezählt."
 
-#: lib/texttile_web/live/editor_live.ex:1236
+#: lib/texttile_web/live/editor_live.ex:1238
 msgid "No numbers yet. It goes live on %{date}."
 msgstr "Noch keine Zahlen. Der Eintrag geht am %{date} live."
 
@@ -1229,11 +1218,11 @@ msgstr "Noch keine Zahlen. Der Eintrag geht am %{date} live."
 msgid "No one else right now."
 msgstr "Gerade sonst niemand."
 
-#: lib/texttile_web/live/editor_live.ex:1956
+#: lib/texttile_web/live/editor_live.ex:1967
 msgid "No pictures yet. Once the entry or the gallery has one, pick it here."
 msgstr "Noch keine Bilder. Sobald der Eintrag oder die Galerie eines hat, wählst du es hier."
 
-#: lib/texttile_web/live/editor_live.ex:1782
+#: lib/texttile_web/live/editor_live.ex:1793
 msgid "No versions yet."
 msgstr "Noch keine Versionen."
 
@@ -1241,11 +1230,11 @@ msgstr "Noch keine Versionen."
 msgid "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
 msgstr "Noch steht niemand auf der Liste. Wer sich auf der Site einträgt, taucht hier auf, und jede Adresse, die du hinzufügst, auch."
 
-#: lib/texttile_web/live/editor_live.ex:2716
+#: lib/texttile_web/live/editor_live.ex:2727
 msgid "Nobody will be emailed when this goes live. Check it to notify the confirmed subscribers."
 msgstr "Beim Livegang wird niemand benachrichtigt. Setz den Haken, um die bestätigten Abonnenten zu benachrichtigen."
 
-#: lib/texttile_web/live/editor_live.ex:1605
+#: lib/texttile_web/live/editor_live.ex:1616
 msgid "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
 msgstr "Noch nichts in diesem Eintrag. Füge ein Bild oder ein Video in den Text ein, oder lass eines darauf fallen."
 
@@ -1253,7 +1242,7 @@ msgstr "Noch nichts in diesem Eintrag. Füge ein Bild oder ein Video in den Text
 msgid "Not found"
 msgstr "Nicht gefunden"
 
-#: lib/texttile_web/live/settings_live.ex:309
+#: lib/texttile_web/live/settings_live.ex:311
 msgid "Not stored · %{message}"
 msgstr "Nicht gespeichert · %{message}"
 
@@ -1265,7 +1254,7 @@ msgstr "Nichts geändert"
 msgid "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
 msgstr "In diesen Tagen wurde noch nichts gezählt. Wer als Erstes eine Seite öffnet, zeichnet den ersten Balken."
 
-#: lib/texttile_web/live/editor_live.ex:1740
+#: lib/texttile_web/live/editor_live.ex:1751
 #: lib/texttile_web/live/stats_live.ex:109
 msgid "Nothing counted yet, so there is nowhere readers came from."
 msgstr "Noch nichts gezählt, also gibt es auch keine Herkunft."
@@ -1274,7 +1263,7 @@ msgstr "Noch nichts gezählt, also gibt es auch keine Herkunft."
 msgid "Nothing here"
 msgstr "Hier ist nichts"
 
-#: lib/texttile_web/live/settings_live.ex:532
+#: lib/texttile_web/live/settings_live.ex:534
 msgid "Nothing here has a Save button: every change applies the moment you make it."
 msgstr "Nichts hier hat einen Speichern-Knopf: jede Änderung gilt sofort."
 
@@ -1294,11 +1283,11 @@ msgstr "Dazu passt nichts."
 msgid "Nothing matches. The search covers titles, tags and the entry itself."
 msgstr "Dazu passt nichts. Die Suche geht über Titel, Schlagwörter und den Eintrag selbst."
 
-#: lib/texttile/i18n.ex:130
+#: lib/texttile/i18n.ex:142
 msgid "Nov"
 msgstr "Nov"
 
-#: lib/texttile/i18n.ex:119
+#: lib/texttile/i18n.ex:131
 msgid "November"
 msgstr "November"
 
@@ -1311,15 +1300,15 @@ msgstr "Sieh jetzt in dein Postfach."
 msgid "Numbered list"
 msgstr "Nummerierte Liste"
 
-#: lib/texttile/i18n.ex:129
+#: lib/texttile/i18n.ex:141
 msgid "Oct"
 msgstr "Okt"
 
-#: lib/texttile/i18n.ex:118
+#: lib/texttile/i18n.ex:130
 msgid "October"
 msgstr "Oktober"
 
-#: lib/texttile_web/live/editor_live.ex:2009
+#: lib/texttile_web/live/editor_live.ex:2020
 msgid "Old addresses, still arriving here"
 msgstr "Alte Adressen, die weiter hier ankommen"
 
@@ -1341,11 +1330,11 @@ msgstr[1] "%{count} Einträge tragen dieses Schlagwort."
 msgid "One mail is on its way to %{email}. Follow the link in it, and every new entry of %{site} lands in your mailbox."
 msgstr "Eine Mail ist unterwegs zu %{email}. Folge dem Link darin, und jeder neue Eintrag von %{site} landet in deinem Postfach."
 
-#: lib/texttile_web/live/settings_live.ex:748
+#: lib/texttile_web/live/settings_live.ex:750
 msgid "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
 msgstr "Eine deiner Seiten wird die Eingangstür. Die Blogliste bleibt so oder so unter /blog. Es gibt noch keine Seiten: diese Wahl öffnet sich mit der ersten, die du schreibst."
 
-#: lib/texttile_web/live/settings_live.ex:870
+#: lib/texttile_web/live/settings_live.ex:872
 msgid "One password for the whole blog. Readers enter it once and are remembered. Search engines see nothing."
 msgstr "Ein Passwort für das ganze Blog. Wer liest, gibt es einmal ein und wird wiedererkannt. Suchmaschinen sehen nichts."
 
@@ -1365,11 +1354,11 @@ msgstr "Das siehst nur du. Folge dem Link in der Mail, dann sehen es alle."
 msgid "Open original"
 msgstr "Original öffnen"
 
-#: lib/texttile_web/live/editor_live.ex:1415
+#: lib/texttile_web/live/editor_live.ex:1417
 msgid "Open the entry"
 msgstr "Eintrag öffnen"
 
-#: lib/texttile_web/live/settings_live.ex:1110
+#: lib/texttile_web/live/settings_live.ex:1112
 msgid "Open the import"
 msgstr "Import öffnen"
 
@@ -1377,11 +1366,11 @@ msgstr "Import öffnen"
 msgid "Open. Tick it off."
 msgstr "Offen. Haken setzen."
 
-#: lib/texttile_web/live/editor_live.ex:2513
+#: lib/texttile_web/live/editor_live.ex:2524
 msgid "Opens the entry as it was last saved, in a new tab. Only somebody signed in can open this address."
 msgstr "Öffnet den Eintrag so, wie er zuletzt gesichert wurde, in einem neuen Tab. Diese Adresse öffnet nur, wer angemeldet ist."
 
-#: lib/texttile_web/live/editor_live.ex:2509
+#: lib/texttile_web/live/editor_live.ex:2520
 msgid "Opens the entry on the public site, in a new tab"
 msgstr "Öffnet den Eintrag auf der öffentlichen Site, in einem neuen Tab"
 
@@ -1393,7 +1382,7 @@ msgstr "Original"
 msgid "Other addresses, last %{days} days"
 msgstr "Andere Adressen, letzte %{days} Tage"
 
-#: lib/texttile_web/live/editor_live.ex:2085
+#: lib/texttile_web/live/editor_live.ex:2096
 msgid "Page"
 msgstr "Seite"
 
@@ -1405,11 +1394,11 @@ msgstr "Seite %{page} von %{pages}"
 msgid "Pages"
 msgstr "Seiten"
 
-#: lib/texttile_web/live/editor_live.ex:2319
+#: lib/texttile_web/live/editor_live.ex:2330
 msgid "Pages never email anyone."
 msgstr "Seiten benachrichtigen nie jemanden."
 
-#: lib/texttile_web/live/settings_live.ex:776
+#: lib/texttile_web/live/settings_live.ex:778
 msgid "Pagination"
 msgstr "Blättern"
 
@@ -1424,23 +1413,23 @@ msgstr "Passwort"
 msgid "Password changed · just now"
 msgstr "Passwort geändert · gerade eben"
 
-#: lib/texttile_web/live/settings_live.ex:867
+#: lib/texttile_web/live/settings_live.ex:869
 msgid "Password-protected"
 msgstr "Passwortgeschützt"
 
-#: lib/texttile_web/live/editor_live.ex:1601
+#: lib/texttile_web/live/editor_live.ex:1612
 msgid "Paste one into the text, or drop one on it."
 msgstr "Füge eines in den Text ein, oder lass eines darauf fallen."
 
-#: lib/texttile_web/live/editor_live.ex:2678
+#: lib/texttile_web/live/editor_live.ex:2689
 msgid "Pick the day it goes live."
 msgstr "Wähle den Tag, an dem er live geht."
 
-#: lib/texttile_web/live/editor_live.ex:2688
+#: lib/texttile_web/live/editor_live.ex:2699
 msgid "Pick the day it went live. An empty field makes the entry a draft again."
 msgstr "Wähle den Tag, an dem er live ging. Ein leeres Feld macht den Eintrag wieder zum Entwurf."
 
-#: lib/texttile_web/live/editor_live.ex:1597
+#: lib/texttile_web/live/editor_live.ex:1608
 msgid "Pictures and videos in the text"
 msgstr "Bilder und Videos im Text"
 
@@ -1456,11 +1445,11 @@ msgstr "Kommentar abschicken"
 msgid "Press a key anywhere to jump:"
 msgstr "Drücke irgendwo eine Taste, um zu springen:"
 
-#: lib/texttile_web/live/settings_live.ex:704
+#: lib/texttile_web/live/settings_live.ex:706
 msgid "Preview"
 msgstr "Vorschau"
 
-#: lib/texttile_web/live/editor_live.ex:1951
+#: lib/texttile_web/live/editor_live.ex:1962
 msgid "Preview image"
 msgstr "Vorschaubild"
 
@@ -1474,15 +1463,15 @@ msgstr "Zurück"
 msgid "Previous tile"
 msgstr "Vorige Kachel"
 
-#: lib/texttile_web/live/settings_live.ex:425
+#: lib/texttile_web/live/settings_live.ex:427
 msgid "Protected once the blog password below is set"
 msgstr "Geschützt, sobald das Blog-Passwort unten gesetzt ist"
 
-#: lib/texttile_web/live/settings_live.ex:852
+#: lib/texttile_web/live/settings_live.ex:854
 msgid "Public"
 msgstr "Öffentlich"
 
-#: lib/texttile_web/live/editor_live.ex:1366
+#: lib/texttile_web/live/editor_live.ex:1368
 msgid "Publish"
 msgstr "Veröffentlichen"
 
@@ -1490,7 +1479,7 @@ msgstr "Veröffentlichen"
 msgid "Publish anyway"
 msgstr "Trotzdem veröffentlichen"
 
-#: lib/texttile_web/live/editor_live.ex:2039
+#: lib/texttile_web/live/editor_live.ex:2050
 msgid "Publish date"
 msgstr "Datum der Veröffentlichung"
 
@@ -1498,17 +1487,17 @@ msgstr "Datum der Veröffentlichung"
 msgid "Publish it anyway, as it stands this second?"
 msgstr "Trotzdem veröffentlichen, so wie er in dieser Sekunde steht?"
 
-#: lib/texttile_web/live/editor_live.ex:1418
+#: lib/texttile_web/live/editor_live.ex:1420
 msgid "Publish now"
 msgstr "Jetzt veröffentlichen"
 
-#: lib/texttile_web/live/editor_live.ex:769
-#: lib/texttile_web/live/editor_live.ex:2543
+#: lib/texttile_web/live/editor_live.ex:771
+#: lib/texttile_web/live/editor_live.ex:2554
 #: lib/texttile_web/live/stats_live.ex:83
 msgid "Published"
 msgstr "Veröffentlicht"
 
-#: lib/texttile_web/live/editor_live.ex:1361
+#: lib/texttile_web/live/editor_live.ex:1363
 msgid "Publishes the entry now. A future publish date in the settings schedules it instead."
 msgstr "Veröffentlicht den Eintrag sofort. Ein Datum in der Zukunft in den Einstellungen plant ihn stattdessen ein."
 
@@ -1516,11 +1505,11 @@ msgstr "Veröffentlicht den Eintrag sofort. Ein Datum in der Zukunft in den Eins
 msgid "Put an image in the text, at the caret"
 msgstr "Ein Bild in den Text setzen, an der Schreibmarke"
 
-#: lib/texttile_web/live/editor_live.ex:1587
+#: lib/texttile_web/live/editor_live.ex:1598
 msgid "Put pictures and videos in the text"
 msgstr "Bilder und Videos in den Text setzen"
 
-#: lib/texttile_web/live/editor_live.ex:1571
+#: lib/texttile_web/live/editor_live.ex:1582
 msgid "Put the image in the text, where the caret is"
 msgstr "Das Bild in den Text setzen, wo die Schreibmarke steht"
 
@@ -1533,7 +1522,7 @@ msgstr "Zitat"
 msgid "Read on"
 msgstr "Weiterlesen"
 
-#: lib/texttile_web/live/settings_live.ex:911
+#: lib/texttile_web/live/settings_live.ex:913
 msgid "Readers confirm their email before the comment appears"
 msgstr "Lesende bestätigen ihre Adresse, bevor der Kommentar erscheint"
 
@@ -1541,7 +1530,7 @@ msgstr "Lesende bestätigen ihre Adresse, bevor der Kommentar erscheint"
 msgid "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever."
 msgstr "Lesende bestätigen zuerst ihre Adresse. Ein Kommentar bleibt aus dem Eintrag heraus, bis die schreibende Person dem Link in der Mail folgt. Bis dahin siehst nur du ihn, mit dem Vermerk \"noch nicht bestätigt\", und Freigeben stellt genau diesen einen Kommentar ohne Warten unter den Eintrag. Löschen legt einen Kommentar für %{days} Tage in den Papierkorb, stillschweigend, danach ist er weg. Spam wird über Honeypot, Zeitfalle und Ratenbegrenzung gefiltert. Kein Captcha, nie."
 
-#: lib/texttile_web/live/settings_live.ex:410
+#: lib/texttile_web/live/settings_live.ex:412
 msgid "Readers confirm their email · new comments wait for the link"
 msgstr "Lesende bestätigen ihre Adresse · neue Kommentare warten auf den Link"
 
@@ -1557,7 +1546,7 @@ msgstr "%{name} wird gelesen …"
 msgid "Referrers, last %{days} days"
 msgstr "Herkunft, letzte %{days} Tage"
 
-#: lib/texttile_web/live/editor_live.ex:1738
+#: lib/texttile_web/live/editor_live.ex:1749
 msgid "Referrers, last 14 days"
 msgstr "Herkunft, letzte 14 Tage"
 
@@ -1566,7 +1555,7 @@ msgid "Release"
 msgstr "Freigeben"
 
 #: lib/texttile_web/js_strings.ex:38
-#: lib/texttile_web/live/editor_live.ex:1649
+#: lib/texttile_web/live/editor_live.ex:1660
 #: lib/texttile_web/live/newsletter_live.ex:141
 msgid "Remove"
 msgstr "Entfernen"
@@ -1583,8 +1572,8 @@ msgstr "Passwort wiederholen"
 msgid "Request a new link"
 msgstr "Neuen Link anfordern"
 
-#: lib/texttile_web/live/editor_live.ex:2052
-#: lib/texttile_web/live/settings_live.ex:817
+#: lib/texttile_web/live/editor_live.ex:2063
+#: lib/texttile_web/live/settings_live.ex:819
 msgid "Reset"
 msgstr "Zurücksetzen"
 
@@ -1592,12 +1581,12 @@ msgstr "Zurücksetzen"
 msgid "Restore"
 msgstr "Wiederherstellen"
 
-#: lib/texttile_web/live/editor_live.ex:1814
+#: lib/texttile_web/live/editor_live.ex:1825
 msgid "Restore this version"
 msgstr "Diese Version wiederherstellen"
 
 #: lib/texttile_web/js_strings.ex:37
-#: lib/texttile_web/live/editor_live.ex:1646
+#: lib/texttile_web/live/editor_live.ex:1657
 msgid "Retry"
 msgstr "Erneut versuchen"
 
@@ -1606,12 +1595,12 @@ msgid "Save"
 msgstr "Speichern"
 
 #: lib/texttile_web/live/editor_live.ex:39
-#: lib/texttile_web/live/editor_live.ex:1097
-#: lib/texttile_web/live/editor_live.ex:1406
-#: lib/texttile_web/live/editor_live.ex:1559
-#: lib/texttile_web/live/editor_live.ex:1565
-#: lib/texttile_web/live/editor_live.ex:1775
-#: lib/texttile_web/live/editor_live.ex:1782
+#: lib/texttile_web/live/editor_live.ex:1099
+#: lib/texttile_web/live/editor_live.ex:1408
+#: lib/texttile_web/live/editor_live.ex:1570
+#: lib/texttile_web/live/editor_live.ex:1576
+#: lib/texttile_web/live/editor_live.ex:1786
+#: lib/texttile_web/live/editor_live.ex:1793
 msgid "Save version"
 msgstr "Version sichern"
 
@@ -1624,7 +1613,7 @@ msgstr "Gesichert"
 msgid "Saved · just now"
 msgstr "Gesichert · gerade eben"
 
-#: lib/texttile_web/live/settings_live.ex:442
+#: lib/texttile_web/live/settings_live.ex:444
 msgid "Saved · the next entry mails the new word to 1 subscriber"
 msgid_plural "Saved · the next entry mails the new word to %{count} subscribers"
 msgstr[0] "Gesichert · der nächste Eintrag mailt das neue Wort an 1 Abonnenten"
@@ -1635,15 +1624,15 @@ msgid "Say something"
 msgstr "Sag etwas"
 
 #: lib/texttile_web/controllers/site_html.ex:306
-#: lib/texttile_web/live/editor_live.ex:2542
+#: lib/texttile_web/live/editor_live.ex:2553
 msgid "Scheduled"
 msgstr "Geplant"
 
-#: lib/texttile_web/live/editor_live.ex:768
+#: lib/texttile_web/live/editor_live.ex:770
 msgid "Scheduled for %{date}"
 msgstr "Geplant für %{date}"
 
-#: lib/texttile_web/live/editor_live.ex:2675
+#: lib/texttile_web/live/editor_live.ex:2686
 msgid "Scheduled. The subscriber email goes out on %{date}."
 msgstr "Geplant. Die Mail an die Abonnenten geht am %{date} raus."
 
@@ -1679,11 +1668,11 @@ msgstr "Abgeschickt. Folge dem Link in deiner Mail, dann erscheint dein Kommenta
 msgid "Sent. Your comment is under the entry now."
 msgstr "Abgeschickt. Dein Kommentar steht jetzt unter dem Eintrag."
 
-#: lib/texttile/i18n.ex:128
+#: lib/texttile/i18n.ex:140
 msgid "Sep"
 msgstr "Sep"
 
-#: lib/texttile/i18n.ex:117
+#: lib/texttile/i18n.ex:129
 msgid "September"
 msgstr "September"
 
@@ -1691,7 +1680,7 @@ msgstr "September"
 msgid "Set"
 msgstr "Setzen"
 
-#: lib/texttile/accounts/user_notifier.ex:57
+#: lib/texttile/accounts/user_notifier.ex:52
 msgid "Set a new password on %{site}"
 msgstr "Neues Passwort auf %{site} setzen"
 
@@ -1701,13 +1690,13 @@ msgstr "Passwort setzen und anmelden"
 
 #: lib/texttile_web/components/layouts.ex:70
 #: lib/texttile_web/live/settings_live.ex:38
-#: lib/texttile_web/live/settings_live.ex:510
-#: lib/texttile_web/live/settings_live.ex:530
+#: lib/texttile_web/live/settings_live.ex:512
+#: lib/texttile_web/live/settings_live.ex:532
 msgid "Settings"
 msgstr "Einstellungen"
 
 #: lib/texttile_web/components/stats_components.ex:72
-#: lib/texttile_web/live/editor_live.ex:2399
+#: lib/texttile_web/live/editor_live.ex:2410
 msgid "Share"
 msgstr "Teilen"
 
@@ -1748,15 +1737,15 @@ msgid "Sign out everywhere ends all of them, in every browser."
 msgstr "Überall abmelden beendet alle, in jedem Browser."
 
 #: lib/texttile_web/controllers/site_html.ex:43
-#: lib/texttile_web/live/settings_live.ex:535
+#: lib/texttile_web/live/settings_live.ex:537
 msgid "Site"
 msgstr "Site"
 
-#: lib/texttile_web/live/settings_live.ex:540
+#: lib/texttile_web/live/settings_live.ex:542
 msgid "Site title"
 msgstr "Titel der Site"
 
-#: lib/texttile_web/live/editor_live.ex:737
+#: lib/texttile_web/live/editor_live.ex:739
 msgid "Someone"
 msgstr "Jemand"
 
@@ -1764,7 +1753,7 @@ msgstr "Jemand"
 msgid "Source"
 msgstr "Herkunft"
 
-#: lib/texttile_web/live/editor_live.ex:2085
+#: lib/texttile_web/live/editor_live.ex:2096
 msgid "Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
 msgstr "Eigenständige Seite, wie Über oder Impressum. Steht im Menü der Site, sortiert nach Datum, nie im Feed."
 
@@ -1773,22 +1762,22 @@ msgid "Start over"
 msgstr "Von vorn beginnen"
 
 #: lib/texttile_web/components/layouts.ex:67
-#: lib/texttile_web/live/editor_live.ex:1486
+#: lib/texttile_web/live/editor_live.ex:1488
 #: lib/texttile_web/live/stats_live.ex:28
 #: lib/texttile_web/live/stats_live.ex:43
 #: lib/texttile_web/live/stats_live.ex:51
 msgid "Stats"
 msgstr "Statistik"
 
-#: lib/texttile_web/live/editor_live.ex:1752
+#: lib/texttile_web/live/editor_live.ex:1763
 msgid "Stats screen"
 msgstr "Statistik-Seite"
 
-#: lib/texttile_web/live/editor_live.ex:2025
+#: lib/texttile_web/live/editor_live.ex:2036
 msgid "Stop answering %{path}"
 msgstr "%{path} nicht mehr beantworten"
 
-#: lib/texttile_web/live/settings_live.ex:1074
+#: lib/texttile_web/live/settings_live.ex:1076
 msgid "Storage"
 msgstr "Speicher"
 
@@ -1798,9 +1787,9 @@ msgstr "Speicher"
 msgid "Subscribe"
 msgstr "Abonnieren"
 
-#: lib/texttile_web/live/editor_live.ex:2094
-#: lib/texttile_web/live/editor_live.ex:2109
-#: lib/texttile_web/live/settings_live.ex:935
+#: lib/texttile_web/live/editor_live.ex:2105
+#: lib/texttile_web/live/editor_live.ex:2120
+#: lib/texttile_web/live/settings_live.ex:937
 msgid "Tags"
 msgstr "Schlagwörter"
 
@@ -1832,11 +1821,11 @@ msgstr "Aufgabenliste"
 msgid "Task list. Click a box in the text to tick it."
 msgstr "Aufgabenliste. Klicke ein Kästchen im Text an, um es abzuhaken."
 
-#: lib/texttile_web/live/editor_live.ex:1484
+#: lib/texttile_web/live/editor_live.ex:1486
 msgid "Text"
 msgstr "Text"
 
-#: lib/texttile_web/live/settings_live.ex:1102
+#: lib/texttile_web/live/settings_live.ex:1104
 msgid "Texttile imports entries from a zip of bundles: Markdown, settings and pictures, made from another systems export."
 msgstr "Texttile importiert Einträge aus einem ZIP mit Bündeln: Markdown, Einstellungen und Bilder, gebaut aus dem Export eines anderen Systems."
 
@@ -1844,17 +1833,17 @@ msgstr "Texttile importiert Einträge aus einem ZIP mit Bündeln: Markdown, Eins
 msgid "That address answers nothing again"
 msgstr "Diese Adresse beantwortet wieder nichts"
 
-#: lib/texttile_web/live/editor_live.ex:1169
+#: lib/texttile_web/live/editor_live.ex:1171
 msgid "That address belongs to the site itself"
 msgstr "Diese Adresse gehört der Site selbst"
 
-#: lib/texttile_web/live/editor_live.ex:758
-#: lib/texttile_web/live/editor_live.ex:1172
+#: lib/texttile_web/live/editor_live.ex:760
+#: lib/texttile_web/live/editor_live.ex:1174
 msgid "That address is taken by another entry"
 msgstr "Diese Adresse ist von einem anderen Eintrag belegt"
 
 #: lib/texttile_web/js_strings.ex:53
-#: lib/texttile_web/live/editor_live.ex:643
+#: lib/texttile_web/live/editor_live.ex:645
 msgid "That date could not be read"
 msgstr "Dieses Datum war nicht lesbar"
 
@@ -1874,15 +1863,15 @@ msgstr "Das sieht nicht nach einer E-Mail-Adresse aus. Prüfe sie und schicke si
 msgid "That is not the password. Check it and try again."
 msgstr "Das ist nicht das Passwort. Prüfe es und versuche es noch einmal."
 
-#: lib/texttile_web/live/editor_live.ex:732
+#: lib/texttile_web/live/editor_live.ex:734
 msgid "That tile was deleted a moment ago"
 msgstr "Diese Kachel wurde gerade eben gelöscht"
 
-#: lib/texttile_web/live/editor_live.ex:812
+#: lib/texttile_web/live/editor_live.ex:814
 msgid "That title is too long; 500 characters is the roof"
 msgstr "Dieser Titel ist zu lang, 500 Zeichen sind die Grenze"
 
-#: lib/texttile_web/live/settings_live.ex:146
+#: lib/texttile_web/live/settings_live.ex:148
 msgid "The %{mark} is the Texttile mark again"
 msgstr "Das %{mark} ist wieder das Texttile-Zeichen"
 
@@ -1894,31 +1883,31 @@ msgstr "Die %{rows} größten Quellen. Was den Anteilen auf hundert fehlt, kam v
 msgid "The %{rows} most read addresses."
 msgstr "Die %{rows} meistgelesenen Adressen."
 
-#: lib/texttile_web/live/settings_live.ex:210
+#: lib/texttile_web/live/settings_live.ex:212
 msgid "The account of %{name} is deleted"
 msgstr "Das Konto von %{name} ist gelöscht"
 
-#: lib/texttile_web/live/settings_live.ex:607
+#: lib/texttile_web/live/settings_live.ex:609
 msgid "The bar here and the public site use it. SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge."
 msgstr "Die Leiste hier und die öffentliche Site zeigen es. SVG, PNG, JPG oder WebP. Eine Rasterdatei wird beim Hochladen auf %{px} px an der längeren Kante verkleinert."
 
-#: lib/texttile_web/live/editor_live.ex:2478
+#: lib/texttile_web/live/editor_live.ex:2489
 msgid "The blog is open right now, so nobody is asked for this word. Settings > Access turns the gate on."
 msgstr "Das Blog steht gerade offen, also wird niemand nach diesem Wort gefragt. Einstellungen > Zugang schaltet das Tor ein."
 
-#: lib/texttile_web/live/settings_live.ex:431
+#: lib/texttile_web/live/settings_live.ex:433
 msgid "The blog is open to everyone"
 msgstr "Das Blog steht allen offen"
 
-#: lib/texttile_web/live/editor_live.ex:2497
+#: lib/texttile_web/live/editor_live.ex:2508
 msgid "The blog password is: "
 msgstr "Das Blog-Passwort lautet: "
 
-#: lib/texttile_web/live/settings_live.ex:427
+#: lib/texttile_web/live/settings_live.ex:429
 msgid "The blog waits behind the password now"
 msgstr "Das Blog wartet jetzt hinter dem Passwort"
 
-#: lib/texttile_web/live/settings_live.ex:653
+#: lib/texttile_web/live/settings_live.ex:655
 msgid "The browser-tab icon. Square SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge."
 msgstr "Das Zeichen im Browser-Tab. Quadratisch, als SVG, PNG, JPG oder WebP. Eine Rasterdatei wird beim Hochladen auf %{px} px an der längeren Kante verkleinert."
 
@@ -1934,7 +1923,7 @@ msgstr "Das Datum ist leer · nicht mehr geplant, wieder ein Entwurf"
 msgid "The date saves itself and sorts the gallery."
 msgstr "Das Datum speichert sich selbst und sortiert die Galerie."
 
-#: lib/texttile_web/live/editor_live.ex:1558
+#: lib/texttile_web/live/editor_live.ex:1569
 msgid "The draft saves as you type."
 msgstr "Der Entwurf speichert sich beim Tippen."
 
@@ -1948,27 +1937,27 @@ msgstr[1] "Die %{count} ältesten Kommentare stehen nicht hier."
 msgid "The entry is live. From now on, a reader who follows an old link to %{address} gets a 404 page."
 msgstr "Der Eintrag ist live. Ab jetzt bekommt jede und jeder, die einem alten Link auf %{address} folgen, eine 404-Seite."
 
-#: lib/texttile_web/live/editor_live.ex:949
+#: lib/texttile_web/live/editor_live.ex:951
 msgid "The entry was deleted while you had it open."
 msgstr "Der Eintrag wurde gelöscht, während du ihn offen hattest."
 
-#: lib/texttile/comments/notifier.ex:133
+#: lib/texttile/comments/notifier.ex:135
 msgid "The entry:     %{url}"
 msgstr "Der Eintrag:   %{url}"
 
-#: lib/texttile_web/live/editor_live.ex:577
+#: lib/texttile_web/live/editor_live.ex:579
 msgid "The file for %{file} is not in this browser any more · remove the marker and paste the image again"
 msgstr "Die Datei zu %{file} liegt nicht mehr in diesem Browser · nimm die Markierung heraus und füge das Bild noch einmal ein"
 
-#: lib/texttile_web/live/editor_live.ex:1823
+#: lib/texttile_web/live/editor_live.ex:1834
 msgid "The first version of the entry."
 msgstr "Die erste Version des Eintrags."
 
-#: lib/texttile_web/live/settings_live.ex:724
+#: lib/texttile_web/live/settings_live.ex:726
 msgid "The front door sends the reader to /blog: published entries, newest first, each with its preview tile."
 msgstr "Die Eingangstür führt auf /blog: veröffentlichte Einträge, die neuesten zuerst, jeder mit seinem Vorschaubild."
 
-#: lib/texttile_web/live/editor_live.ex:625
+#: lib/texttile_web/live/editor_live.ex:627
 msgid "The gallery changed under your hands · fresh order loaded"
 msgstr "Die Galerie hat sich unter deinen Händen geändert · neue Reihenfolge geladen"
 
@@ -1980,11 +1969,11 @@ msgstr "Der Import läuft"
 msgid "The import runs on the server; this page may close."
 msgstr "Der Import läuft auf dem Server, diese Seite darf zugehen."
 
-#: lib/texttile_web/live/comments_live.ex:128
+#: lib/texttile_web/live/comments_live.ex:129
 msgid "The latest comments across all entries, newest first."
 msgstr "Die neuesten Kommentare über alle Einträge hinweg, die neuesten zuerst."
 
-#: lib/texttile_web/live/editor_live.ex:2417
+#: lib/texttile_web/live/editor_live.ex:2428
 msgid "The lines to pass on"
 msgstr "Die Zeilen zum Weitergeben"
 
@@ -2004,15 +1993,15 @@ msgstr "Der Name, mit dem du dich anmeldest. Er muss einmalig sein: keine zwei K
 msgid "The old password stops working the moment you set a new one."
 msgstr "Das alte Passwort gilt nicht mehr, sobald du ein neues setzt."
 
-#: lib/texttile_web/live/settings_live.ex:465
+#: lib/texttile_web/live/settings_live.ex:467
 msgid "The only account left: deleting it would leave nobody who can sign in."
 msgstr "Das letzte Konto: es zu löschen ließe niemanden übrig, der sich anmelden kann."
 
-#: lib/texttile_web/live/settings_live.ex:764
+#: lib/texttile_web/live/settings_live.ex:766
 msgid "The page"
 msgstr "Die Seite"
 
-#: lib/texttile_web/live/settings_live.ex:482
+#: lib/texttile_web/live/settings_live.ex:484
 msgid "The reader gets one confirmation link per address. The comment stays hidden from readers until the reader follows it, and it carries the mark \"not confirmed yet\" here. Turn this off and every comment appears at once. Spam is filtered by honeypot, timing and rate limit checks either way."
 msgstr "Pro Adresse geht ein Bestätigungslink raus. Der Kommentar bleibt für Lesende verborgen, bis die schreibende Person ihm folgt, und trägt hier den Vermerk \"noch nicht bestätigt\". Schalte es aus, und jeder Kommentar erscheint sofort. Spam wird so oder so über Honeypot, Zeitfalle und Ratenbegrenzung gefiltert."
 
@@ -2020,19 +2009,19 @@ msgstr "Pro Adresse geht ein Bestätigungslink raus. Der Kommentar bleibt für L
 msgid "The report for %{name}"
 msgstr "Der Bericht zu %{name}"
 
-#: lib/texttile_web/live/editor_live.ex:2703
+#: lib/texttile_web/live/editor_live.ex:2714
 msgid "The subscriber email for this entry went out on %{day}. It goes out once; publishing again does not send it again."
 msgstr "Die Mail an die Abonnenten ging für diesen Eintrag am %{day} raus. Sie geht einmal raus, ein erneutes Veröffentlichen schickt sie nicht noch einmal."
 
-#: lib/texttile_web/live/editor_live.ex:1683
+#: lib/texttile_web/live/editor_live.ex:1694
 msgid "The text holds the place. The marker becomes the image when the upload finishes."
 msgstr "Der Text hält den Platz. Aus der Markierung wird das Bild, sobald der Upload fertig ist."
 
-#: lib/texttile_web/live/settings_live.ex:160
+#: lib/texttile_web/live/settings_live.ex:162
 msgid "The theme is the iris default again"
 msgstr "Das Theme ist wieder die Iris-Vorgabe"
 
-#: lib/texttile_web/live/editor_live.ex:1564
+#: lib/texttile_web/live/editor_live.ex:1575
 msgid "The title and the body are read-only right now."
 msgstr "Titel und Text sind gerade nur lesbar."
 
@@ -2044,7 +2033,7 @@ msgstr "Der Papierkorb auf der Seite Kommentare behält ihn %{days} Tage. Wieder
 msgid "The upload failed (%{reason})"
 msgstr "Der Upload ist fehlgeschlagen (%{reason})"
 
-#: lib/texttile_web/live/editor_live.ex:1654
+#: lib/texttile_web/live/editor_live.ex:1665
 msgid "The upload stopped at %{pct}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text."
 msgstr "Der Upload blieb bei %{pct}% stehen, die Datei hat den Server also nie erreicht. Der Text behält eine Markierung an der Stelle, an die das Bild gehört. Erneut versuchen schickt dieselbe Datei noch einmal. Entfernen nimmt die Markierung aus dem Text."
 
@@ -2052,17 +2041,17 @@ msgstr "Der Upload blieb bei %{pct}% stehen, die Datei hat den Server also nie e
 msgid "The username and the password do not match."
 msgstr "Benutzername und Passwort passen nicht zusammen."
 
-#: lib/texttile_web/live/settings_live.ex:795
-#: lib/texttile_web/live/settings_live.ex:1033
-#: lib/texttile_web/live/settings_live.ex:1063
+#: lib/texttile_web/live/settings_live.ex:797
+#: lib/texttile_web/live/settings_live.ex:1035
+#: lib/texttile_web/live/settings_live.ex:1065
 msgid "The value must be %{rule}."
 msgstr "Der Wert muss %{rule}."
 
-#: lib/texttile_web/live/settings_live.ex:579
+#: lib/texttile_web/live/settings_live.ex:581
 msgid "The whole blog speaks it: the reader pages, this admin area, the dates and the mails. What you write yourself stays as you wrote it."
 msgstr "Das ganze Blog spricht sie: die Leseseiten, dieser Admin-Bereich, die Datumsangaben und die Mails. Was du selbst schreibst, bleibt so, wie du es geschrieben hast."
 
-#: lib/texttile_web/live/editor_live.ex:2472
+#: lib/texttile_web/live/editor_live.ex:2483
 msgid "The whole blog waits behind this one word, this entry with it. Settings > Access is where it changes."
 msgstr "Das ganze Blog wartet hinter diesem einen Wort, dieser Eintrag mit ihm. Geändert wird es unter Einstellungen > Zugang."
 
@@ -2078,15 +2067,15 @@ msgstr "Das ZIP enthält keine Bündel-Ordner."
 msgid "The zip is larger than 1 GB"
 msgstr "Das ZIP ist größer als 1 GB"
 
-#: lib/texttile_web/live/settings_live.ex:801
+#: lib/texttile_web/live/settings_live.ex:803
 msgid "Theme"
 msgstr "Theme"
 
-#: lib/texttile_web/live/settings_live.ex:803
+#: lib/texttile_web/live/settings_live.ex:805
 msgid "Theming is exactly one CSS file, used for the admin area and the public site."
 msgstr "Das Theme ist genau eine CSS-Datei, für den Admin-Bereich und die öffentliche Site."
 
-#: lib/texttile_web/live/settings_live.ex:968
+#: lib/texttile_web/live/settings_live.ex:970
 msgid "There is no registration: the ADMIN_USERS setting of this server names everybody who may sign in, and each of them chooses a password at the first sign-in. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
 msgstr "Es gibt keine Registrierung: die Einstellung ADMIN_USERS dieses Servers nennt alle, die sich anmelden dürfen, und jede und jeder wählt bei der ersten Anmeldung ein Passwort. Alle mit einem Konto hier sind Admin, und alle Admins sind gleich: keine Rollen, keine Rechte."
 
@@ -2106,11 +2095,11 @@ msgstr "Das lässt sich nicht rückgängig machen, und niemand kann die Adresse 
 msgid "There is no undo."
 msgstr "Das lässt sich nicht rückgängig machen."
 
-#: lib/texttile_web/live/settings_live.ex:1153
+#: lib/texttile_web/live/settings_live.ex:1155
 msgid "There is no undo. To have the tag back, write it on an entry again."
 msgstr "Das lässt sich nicht rückgängig machen. Damit es das Schlagwort wieder gibt, schreib es erneut an einen Eintrag."
 
-#: lib/texttile_web/live/settings_live.ex:1132
+#: lib/texttile_web/live/settings_live.ex:1134
 msgid "There is no undo. While the name stands in ADMIN_USERS, its owner can sign in again and choose a fresh password."
 msgstr "Das lässt sich nicht rückgängig machen. Solange der Name in ADMIN_USERS steht, kann seine Inhaberin oder sein Inhaber sich wieder anmelden und ein frisches Passwort wählen."
 
@@ -2118,7 +2107,7 @@ msgstr "Das lässt sich nicht rückgängig machen. Solange der Name in ADMIN_USE
 msgid "This account already exists. Sign in with its password."
 msgstr "Dieses Konto gibt es schon. Melde dich mit seinem Passwort an."
 
-#: lib/texttile/newsletter/notifier.ex:34
+#: lib/texttile/newsletter/notifier.ex:37
 msgid "This address asked for the new entries of %{site} by mail.\n\nOpen this link, and you are on the list:\n\n%{url}\n\nYou confirm this address once. If you did not ask for this,\nignore this mail. Without the link, the address gets nothing.\n"
 msgstr "Diese Adresse hat die neuen Einträge von %{site} per Mail angefordert.\n\nÖffne diesen Link, dann stehst du auf der Liste:\n\n%{url}\n\nDu bestätigst diese Adresse einmal. Wenn du das nicht angefordert\nhast, lass diese Mail einfach liegen. Ohne den Link bekommt die\nAdresse nichts.\n"
 
@@ -2158,11 +2147,11 @@ msgstr "Dieser Link geht nicht mehr"
 msgid "This link works one time, and for 24 hours. Nobody else sets your password, and nobody else can read it."
 msgstr "Dieser Link gilt einmal und 24 Stunden lang. Niemand sonst setzt dein Passwort, und niemand sonst kann es lesen."
 
-#: lib/texttile_web/live/settings_live.ex:466
+#: lib/texttile_web/live/settings_live.ex:468
 msgid "This one is you"
 msgstr "Das bist du"
 
-#: lib/texttile_web/live/settings_live.ex:752
+#: lib/texttile_web/live/settings_live.ex:754
 msgid "This page becomes the front door. The blog list keeps /blog either way."
 msgstr "Diese Seite wird die Eingangstür. Die Blogliste bleibt so oder so unter /blog."
 
@@ -2178,20 +2167,20 @@ msgstr "Diese Seite sagt nie, ob zu einer Adresse ein Konto gehört. Der Link gi
 msgid "Those words were not saved."
 msgstr "Diese Worte wurden nicht gespeichert."
 
-#: lib/texttile_web/live/editor_live.ex:1884
+#: lib/texttile_web/live/editor_live.ex:1895
 msgid "Tile %{index}, %{file}, grab to sort, tap to see it big"
 msgstr "Kachel %{index}, %{file}, anfassen zum Sortieren, antippen für groß"
 
-#: lib/texttile_web/live/editor_live.ex:1858
+#: lib/texttile_web/live/editor_live.ex:1869
 msgid "Tiles"
 msgstr "Kacheln"
 
-#: lib/texttile_web/live/editor_live.ex:1513
-#: lib/texttile_web/live/editor_live.ex:1514
+#: lib/texttile_web/live/editor_live.ex:1515
+#: lib/texttile_web/live/editor_live.ex:1516
 msgid "Title"
 msgstr "Titel"
 
-#: lib/texttile_web/live/editor_live.ex:673
+#: lib/texttile_web/live/editor_live.ex:675
 msgid "Too late · the picture is gone for good"
 msgstr "Zu spät · das Bild ist endgültig weg"
 
@@ -2199,11 +2188,11 @@ msgstr "Zu spät · das Bild ist endgültig weg"
 msgid "Top entries, all time"
 msgstr "Meistgelesene Einträge, seit Beginn"
 
-#: lib/texttile_web/live/comments_live.ex:177
+#: lib/texttile_web/live/comments_live.ex:176
 msgid "Trash"
 msgstr "Papierkorb"
 
-#: lib/texttile_web/live/editor_live.ex:2062
+#: lib/texttile_web/live/editor_live.ex:2073
 msgid "Type"
 msgstr "Art"
 
@@ -2219,7 +2208,7 @@ msgstr "Gib deinen Benutzernamen und dein Passwort ein. Beide Felder sind nötig
 msgid "Undo"
 msgstr "Rückgängig"
 
-#: lib/texttile_web/live/editor_live.ex:1422
+#: lib/texttile_web/live/editor_live.ex:1424
 msgid "Unpublish"
 msgstr "Zurückziehen"
 
@@ -2227,7 +2216,7 @@ msgstr "Zurückziehen"
 msgid "Unpublished · a draft again"
 msgstr "Zurückgezogen · wieder ein Entwurf"
 
-#: lib/texttile_web/live/editor_live.ex:1419
+#: lib/texttile_web/live/editor_live.ex:1421
 msgid "Unschedule"
 msgstr "Planung aufheben"
 
@@ -2235,16 +2224,16 @@ msgstr "Planung aufheben"
 msgid "Unscheduled · a draft again"
 msgstr "Planung aufgehoben · wieder ein Entwurf"
 
-#: lib/texttile_web/live/settings_live.ex:625
-#: lib/texttile_web/live/settings_live.ex:671
+#: lib/texttile_web/live/settings_live.ex:627
+#: lib/texttile_web/live/settings_live.ex:673
 msgid "Upload"
 msgstr "Hochladen"
 
-#: lib/texttile_web/live/settings_live.ex:675
+#: lib/texttile_web/live/settings_live.ex:677
 msgid "Upload a favicon"
 msgstr "Ein Favicon hochladen"
 
-#: lib/texttile_web/live/settings_live.ex:629
+#: lib/texttile_web/live/settings_live.ex:631
 msgid "Upload a logo"
 msgstr "Ein Logo hochladen"
 
@@ -2253,19 +2242,19 @@ msgstr "Ein Logo hochladen"
 msgid "Upload the zip"
 msgstr "Das ZIP hochladen"
 
-#: lib/texttile_web/live/settings_live.ex:1036
+#: lib/texttile_web/live/settings_live.ex:1038
 msgid "Uploads are scaled down so the longer edge stays within this; nothing is ever scaled up. Originals are kept on disk. Display sizes are made on the fly when a page first needs them; changing this value drops the old cached sizes so nothing stale survives."
 msgstr "Hochgeladenes wird so verkleinert, dass die längere Kante innerhalb dieses Werts bleibt. Vergrößert wird nie. Die Originale bleiben auf der Platte. Anzeigegrößen entstehen, sobald eine Seite sie zum ersten Mal braucht. Ein neuer Wert wirft die alten zwischengespeicherten Größen weg, damit nichts Veraltetes überlebt."
 
-#: lib/texttile_web/live/settings_live.ex:621
+#: lib/texttile_web/live/settings_live.ex:623
 msgid "Use default"
 msgstr "Vorgabe benutzen"
 
-#: lib/texttile_web/live/editor_live.ex:1970
+#: lib/texttile_web/live/editor_live.ex:1981
 msgid "Use image %{index} as the preview image"
 msgstr "Bild %{index} als Vorschaubild benutzen"
 
-#: lib/texttile_web/live/editor_live.ex:1981
+#: lib/texttile_web/live/editor_live.ex:1992
 msgid "Used in the entries grid, on the front page and in link previews."
 msgstr "Steht im Raster der Einträge, auf der Startseite und in Linkvorschauen."
 
@@ -2274,7 +2263,7 @@ msgstr "Steht im Raster der Einträge, auf der Startseite und in Linkvorschauen.
 msgid "Username"
 msgstr "Benutzername"
 
-#: lib/texttile_web/live/settings_live.ex:966
+#: lib/texttile_web/live/settings_live.ex:968
 msgid "Users"
 msgstr "Konten"
 
@@ -2282,11 +2271,11 @@ msgstr "Konten"
 msgid "Version from %{stamp} restored"
 msgstr "Version vom %{stamp} wiederhergestellt"
 
-#: lib/texttile_web/live/editor_live.ex:1488
+#: lib/texttile_web/live/editor_live.ex:1490
 msgid "Versions"
 msgstr "Versionen"
 
-#: lib/texttile_web/live/settings_live.ex:1044
+#: lib/texttile_web/live/settings_live.ex:1046
 msgid "Videos"
 msgstr "Videos"
 
@@ -2304,11 +2293,11 @@ msgstr "Aufrufe"
 msgid "Views, last %{days} days"
 msgstr "Aufrufe, letzte %{days} Tage"
 
-#: lib/texttile_web/live/editor_live.ex:1735
+#: lib/texttile_web/live/editor_live.ex:1746
 msgid "Views, last 14 days"
 msgstr "Aufrufe, letzte 14 Tage"
 
-#: lib/texttile_web/live/editor_live.ex:1819
+#: lib/texttile_web/live/editor_live.ex:1830
 msgid "What changed against the version from"
 msgstr "Was sich geändert hat gegenüber der Version vom"
 
@@ -2328,11 +2317,11 @@ msgstr "Wohin ein neues Passwort geht. Ohne Adresse gibt es kein Konto."
 msgid "Where notifications and password links go. You never sign in with it. Readers never see it."
 msgstr "Wohin Benachrichtigungen und Passwort-Links gehen. Angemeldet wird damit nie. Lesende sehen sie nie."
 
-#: lib/texttile_web/live/settings_live.ex:699
+#: lib/texttile_web/live/settings_live.ex:701
 msgid "Who writes here, and what this blog is. Markdown works: ## for a heading."
 msgstr "Wer hier schreibt, und was dieses Blog ist. Markdown geht: ## für eine Überschrift."
 
-#: lib/texttile_web/live/settings_live.ex:433
+#: lib/texttile_web/live/settings_live.ex:435
 msgid "Without a password nothing is protected"
 msgstr "Ohne Passwort ist nichts geschützt"
 
@@ -2340,7 +2329,8 @@ msgstr "Ohne Passwort ist nichts geschützt"
 msgid "Write to %{email}"
 msgstr "An %{email} schreiben"
 
-#: lib/texttile_web/live/editor_live.ex:1543
+#: lib/texttile_web/live/editor_live.ex:1544
+#: lib/texttile_web/live/editor_live.ex:1554
 msgid "Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
 msgstr "Schreib. Markdown geht: ## für eine Überschrift. Füge ein Bild ein oder lass eines hier fallen, um es in den Text zu setzen."
 
@@ -2368,11 +2358,11 @@ msgstr "Du bist angemeldet, also kommen dein Name und deine Adresse aus deinem K
 msgid "You get an email when a new entry goes out, nothing else. Unsubscribe is one click, no questions."
 msgstr "Du bekommst eine Mail, wenn ein neuer Eintrag rausgeht, sonst nichts. Abbestellen ist ein Klick, ohne Rückfragen."
 
-#: lib/texttile_web/live/editor_live.ex:1053
+#: lib/texttile_web/live/editor_live.ex:1055
 msgid "You have the entry"
 msgstr "Du hast den Eintrag"
 
-#: lib/texttile_web/live/editor_live.ex:1050
+#: lib/texttile_web/live/editor_live.ex:1052
 msgid "You have the entry · %{name} was told"
 msgstr "Du hast den Eintrag · %{name} wurde benachrichtigt"
 
@@ -2384,11 +2374,11 @@ msgstr "Deine Adresse wird nie veröffentlicht. Du bekommst einen Link per Mail,
 msgid "Your address is never published. Your comment appears under the entry at once."
 msgstr "Deine Adresse wird nie veröffentlicht. Dein Kommentar erscheint sofort unter dem Eintrag."
 
-#: lib/texttile/accounts/user_notifier.ex:29
+#: lib/texttile/accounts/user_notifier.ex:26
 msgid "Your admin account on %{site}"
 msgstr "Dein Admin-Konto auf %{site}"
 
-#: lib/texttile_web/live/editor_live.ex:1118
+#: lib/texttile_web/live/editor_live.ex:1120
 msgid "Your changes are saved."
 msgstr "Deine Änderungen sind gesichert."
 
@@ -2407,21 +2397,21 @@ msgstr "Dein Profil"
 msgid "Your sessions"
 msgstr "Deine Sitzungen"
 
-#: lib/texttile_web/live/editor_live.ex:1821
+#: lib/texttile_web/live/editor_live.ex:1832
 msgid "added"
 msgstr "hinzugefügt"
 
-#: lib/texttile_web/live/comments_live.ex:186
+#: lib/texttile_web/live/comments_live.ex:185
 msgid "and %{count} deleted earlier, closer to the day it goes for good."
 msgid_plural "and %{count} deleted earlier, closer to the day they go for good."
 msgstr[0] "und %{count} früher gelöschter, näher an dem Tag, an dem er endgültig weg ist."
 msgstr[1] "und %{count} früher gelöschte, näher an dem Tag, an dem sie endgültig weg sind."
 
-#: lib/texttile_web/live/comments_live.ex:171
+#: lib/texttile_web/live/comments_live.ex:170
 msgid "and %{count} more on their entries."
 msgstr "und %{count} weitere bei ihren Einträgen."
 
-#: lib/texttile_web/live/editor_live.ex:1566
+#: lib/texttile_web/live/editor_live.ex:1577
 msgid "and the Versions tab still work."
 msgstr "und der Reiter Versionen gehen weiterhin."
 
@@ -2437,15 +2427,15 @@ msgstr "stärkster Tag"
 msgid "busiest day, %{day}"
 msgstr "stärkster Tag, %{day}"
 
-#: lib/texttile_web/live/settings_live.ex:1126
+#: lib/texttile_web/live/settings_live.ex:1128
 msgid "can no longer sign in from the moment you confirm, and every session open right now ends. What %{name} already wrote stays: the entries, the images, the comments and every line of every Log belong to the site, not to the account."
 msgstr "kann sich ab dem Moment, in dem du bestätigst, nicht mehr anmelden, und jede gerade offene Sitzung endet. Was %{name} geschrieben hat, bleibt: die Einträge, die Bilder, die Kommentare und jede Zeile jedes Protokolls gehören der Site, nicht dem Konto."
 
-#: lib/texttile_web/live/editor_live.ex:1727
+#: lib/texttile_web/live/editor_live.ex:1738
 msgid "comments"
 msgstr "Kommentare"
 
-#: lib/texttile_web/live/editor_live.ex:886
+#: lib/texttile_web/live/editor_live.ex:888
 msgid "converting"
 msgstr "wird umgewandelt"
 
@@ -2457,7 +2447,7 @@ msgstr "Details"
 msgid "direct"
 msgstr "direkt"
 
-#: lib/texttile_web/live/editor_live.ex:2549
+#: lib/texttile_web/live/editor_live.ex:2560
 #: lib/texttile_web/live/texts_live.ex:265
 msgid "draft"
 msgstr "Entwurf"
@@ -2486,23 +2476,23 @@ msgstr "geht live am %{date}"
 msgid "has no account yet. The password you type here becomes its password, and the account is yours from then on."
 msgstr "hat noch kein Konto. Das Passwort, das du hier eingibst, wird sein Passwort, und das Konto gehört von da an dir."
 
-#: lib/texttile_web/live/settings_live.ex:984
+#: lib/texttile_web/live/settings_live.ex:986
 msgid "here now"
 msgstr "gerade hier"
 
-#: lib/texttile_web/live/editor_live.ex:1731
+#: lib/texttile_web/live/editor_live.ex:1742
 msgid "images in the gallery"
 msgstr "Bilder in der Galerie"
 
-#: lib/texttile_web/live/editor_live.ex:1776
+#: lib/texttile_web/live/editor_live.ex:1787
 msgid "in the bar saves the current version of the title and the body. Article settings are never versioned, because they are shared and live. Every version below shows what changed against the one before it, and can be restored."
 msgstr "in der Leiste sichert Titel und Text, wie sie gerade stehen. Die Einstellungen des Eintrags werden nie versioniert, weil sie geteilt sind und sofort gelten. Jede Version unten zeigt, was sich gegenüber der vorigen geändert hat, und lässt sich wiederherstellen."
 
-#: lib/texttile_web/live/editor_live.ex:1783
+#: lib/texttile_web/live/editor_live.ex:1794
 msgid "in the bar writes the first one, and every one after it shows what changed."
 msgstr "in der Leiste schreibt die erste, und jede weitere zeigt, was sich geändert hat."
 
-#: lib/texttile_web/live/settings_live.ex:1106
+#: lib/texttile_web/live/settings_live.ex:1108
 msgid "in the repository is the format contract."
 msgstr "im Repository ist der Formatvertrag."
 
@@ -2514,7 +2504,7 @@ msgstr "im Repository ist das Format, so geschrieben, dass ein Skript oder ein K
 msgid "last edited %{date}"
 msgstr "zuletzt bearbeitet %{date}"
 
-#: lib/texttile_web/live/settings_live.ex:1147
+#: lib/texttile_web/live/settings_live.ex:1149
 msgid "leaves every entry that carries it, and /tags/%{slug} answers nothing from that moment. The entries stay where they are, with the rest of their tags."
 msgstr "verlässt jeden Eintrag, der es trägt, und /tags/%{slug} beantwortet ab dann nichts mehr. Die Einträge bleiben, wo sie sind, mit ihren übrigen Schlagwörtern."
 
@@ -2522,7 +2512,7 @@ msgstr "verlässt jeden Eintrag, der es trägt, und /tags/%{slug} beantwortet ab
 msgid "let through"
 msgstr "durchgelassen"
 
-#: lib/texttile_web/live/editor_live.ex:1807
+#: lib/texttile_web/live/editor_live.ex:1818
 msgid "newest"
 msgstr "neueste"
 
@@ -2534,7 +2524,7 @@ msgstr "noch keine Bilder"
 msgid "not confirmed yet"
 msgstr "noch nicht bestätigt"
 
-#: lib/texttile_web/live/settings_live.ex:474
+#: lib/texttile_web/live/settings_live.ex:476
 msgid "not in ADMIN_USERS · cannot sign in"
 msgstr "nicht in ADMIN_USERS · kann sich nicht anmelden"
 
@@ -2546,7 +2536,7 @@ msgstr "Seite"
 msgid "people, last %{days} days"
 msgstr "Personen, letzte %{days} Tage"
 
-#: lib/texttile_web/live/editor_live.ex:1891
+#: lib/texttile_web/live/editor_live.ex:1902
 msgid "preview"
 msgstr "Vorschau"
 
@@ -2555,15 +2545,15 @@ msgid "processing"
 msgstr "wird verarbeitet"
 
 #: lib/texttile_web/js_strings.ex:29
-#: lib/texttile_web/live/editor_live.ex:1666
+#: lib/texttile_web/live/editor_live.ex:1677
 msgid "queued"
 msgstr "in der Schlange"
 
-#: lib/texttile_web/live/editor_live.ex:1466
+#: lib/texttile_web/live/editor_live.ex:1468
 msgid "reads along while you write. The article settings stay open to every admin, at the same time."
 msgstr "liest mit, während du schreibst. Die Einstellungen des Eintrags bleiben für alle Admins offen, gleichzeitig."
 
-#: lib/texttile_web/live/editor_live.ex:1821
+#: lib/texttile_web/live/editor_live.ex:1832
 msgid "removed"
 msgstr "entfernt"
 
@@ -2583,15 +2573,15 @@ msgstr "geplant, noch ohne Datum"
 msgid "search."
 msgstr "suchen."
 
-#: lib/texttile_web/live/editor_live.ex:1560
+#: lib/texttile_web/live/editor_live.ex:1571
 msgid "takes a snapshot of the title and the body that you can go back to."
 msgstr "hält Titel und Text so fest, dass du dorthin zurück kannst."
 
-#: lib/texttile_web/live/editor_live.ex:888
+#: lib/texttile_web/live/editor_live.ex:890
 msgid "the conversion failed"
 msgstr "die Umwandlung ist fehlgeschlagen"
 
-#: lib/texttile_web/live/editor_live.ex:891
+#: lib/texttile_web/live/editor_live.ex:893
 msgid "the conversion failed: %{reason}"
 msgstr "die Umwandlung ist fehlgeschlagen: %{reason}"
 
@@ -2608,15 +2598,15 @@ msgid "upload failed"
 msgstr "Upload fehlgeschlagen"
 
 #: lib/texttile_web/js_strings.ex:30
-#: lib/texttile_web/live/editor_live.ex:1667
+#: lib/texttile_web/live/editor_live.ex:1678
 msgid "uploading %{pct}%"
 msgstr "lädt hoch, %{pct}%"
 
-#: lib/texttile_web/live/editor_live.ex:1247
+#: lib/texttile_web/live/editor_live.ex:1249
 msgid "views"
 msgstr "Aufrufe"
 
-#: lib/texttile_web/live/editor_live.ex:1245
+#: lib/texttile_web/live/editor_live.ex:1247
 msgid "views since %{date}"
 msgstr "Aufrufe seit %{date}"
 
@@ -2628,8 +2618,8 @@ msgstr "Aufrufe, letzte %{days} Tage"
 msgid "waiting for your confirmation"
 msgstr "wartet auf deine Bestätigung"
 
-#: lib/texttile_web/live/editor_live.ex:885
 #: lib/texttile_web/live/editor_live.ex:887
+#: lib/texttile_web/live/editor_live.ex:889
 msgid "waiting to be converted"
 msgstr "wartet auf die Umwandlung"
 
@@ -2645,7 +2635,7 @@ msgstr "wird importiert"
 msgid "will not import"
 msgstr "wird nicht importiert"
 
-#: lib/texttile_web/live/editor_live.ex:1470
+#: lib/texttile_web/live/editor_live.ex:1472
 msgid "writes the entry now, and you see it in real time. Click into the title or the body to take the entry over. The article settings can be changed by everyone independently from title or body."
 msgstr "schreibt den Eintrag gerade, und du siehst es in Echtzeit. Klick in den Titel oder in den Text, um den Eintrag zu übernehmen. Die Einstellungen des Eintrags kann jede und jeder ändern, unabhängig von Titel und Text."
 
@@ -2653,11 +2643,11 @@ msgstr "schreibt den Eintrag gerade, und du siehst es in Echtzeit. Klick in den 
 msgid "yesterday"
 msgstr "gestern"
 
-#: lib/texttile_web/live/settings_live.ex:976
+#: lib/texttile_web/live/settings_live.ex:978
 msgid "you"
 msgstr "du"
 
-#: lib/texttile_web/live/settings_live.ex:1011
+#: lib/texttile_web/live/settings_live.ex:1013
 msgid "your profile"
 msgstr "deinem Profil"
 
@@ -2703,10 +2693,26 @@ msgstr "Ohne Titel"
 msgid "Writing in “%{title}”"
 msgstr "Schreibt in „%{title}“"
 
-#: lib/texttile_web/live/editor_live.ex:2551
+#: lib/texttile_web/live/editor_live.ex:2562
 msgid "published"
 msgstr "Veröffentlicht"
 
-#: lib/texttile_web/live/editor_live.ex:2550
+#: lib/texttile_web/live/editor_live.ex:2561
 msgid "scheduled"
 msgstr "Geplant"
+
+#: lib/texttile_web/live/editor_live.ex:494
+msgid "\"%{title}\" is deleted. Its versions and its log went with it."
+msgstr "\"%{title}\" ist gelöscht. Seine Versionen und sein Protokoll sind mitgegangen."
+
+#: lib/texttile_web/live/comments_live.ex:132
+msgid "comment across all entries, newest first."
+msgid_plural "comments across all entries, newest first."
+msgstr[0] "Kommentar über alle Einträge hinweg, der neueste zuerst."
+msgstr[1] "Kommentare über alle Einträge hinweg, die neuesten zuerst."
+
+#: lib/texttile_web/live/comments_live.ex:144
+msgid "comment waits for the reader to confirm the email address, so readers do not see it yet."
+msgid_plural "comments wait for the reader to confirm the email address, so readers do not see them yet."
+msgstr[0] "Kommentar wartet darauf, dass die Adresse bestätigt wird, Lesende sehen ihn also noch nicht."
+msgstr[1] "Kommentare warten darauf, dass die Adresse bestätigt wird, Lesende sehen sie also noch nicht."
