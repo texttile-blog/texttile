@@ -1,19 +1,24 @@
-# Deploy configuration for Fly.io. This file is an example of how to host the
-# generic Docker image. The app itself knows nothing about Fly.
+# Deploy configuration for Fly.io. It builds this checkout from source and
+# deploys it to staging.texttile.blog, the test site of this repository. The
+# app itself knows nothing about Fly.
+#
+# The demo, demo.texttile.blog, is a different app: it runs the published
+# image and its configuration lives in the repository texttile-blog/deploy-demo.
 #
 # One-time setup:
-#   fly launch --no-deploy   (or: fly apps create texttile)
-#   fly volumes create data --size 3
-#   fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret)
-#   fly secrets set ADMIN_USERS="kb"   (who may sign in, comma separated)
+#   fly apps create texttile-staging --org texttile
+#   fly volumes create data --size 3 --region fra -a texttile-staging
+#   fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret) -a texttile-staging
+#   fly secrets set ADMIN_USERS="kb" -a texttile-staging   (comma separated)
+#   fly certs add staging.texttile.blog -a texttile-staging
 # Deploy:
 #   fly deploy
 
-app = "texttile"
+app = "texttile-staging"
 primary_region = "fra"
 
 [env]
-  PHX_HOST = "demo.texttile.blog"
+  PHX_HOST = "staging.texttile.blog"
   # Fly machines mount a single volume, so the database and the uploads
   # share it in separate directories.
   DATABASE_PATH = "/data/db/texttile.db"
@@ -22,10 +27,11 @@ primary_region = "fra"
   # can count by the reader instead of by the proxy.
   CLIENT_IP_HEADER = "fly-client-ip"
   # Mail: uncomment after setting the credential secret, e.g.
-  #   fly secrets set RESEND_API_KEY=... -a texttile
+  #   fly secrets set RESEND_API_KEY=... -a texttile-staging
   # Valid adapters: resend, postmark, brevo, smtp, ses. Unset = local preview.
+  # The sender domain has to be verified at the provider first.
   # MAIL_ADAPTER = "resend"
-  # MAIL_FROM = "hello@demo.texttile.blog"
+  # MAIL_FROM = "blog@staging.texttile.blog"
 
 [mounts]
   source = "data"
