@@ -330,6 +330,26 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> refute_has(".cm-editor.cm-focused")
     end
 
+    # The body had no roof of its own: an oversize paste put a token in
+    # the words, uploaded for as long as it took, and ended at the
+    # parser. Now it is turned away before anything is written.
+    test "a file over the roof never reaches the words", %{conn: conn} do
+      {:ok, _} = Texttile.Settings.put(:max_upload_mb, 10)
+
+      huge = Path.join(System.tmp_dir!(), "huge-#{System.unique_integer([:positive])}.jpg")
+      {:ok, file} = File.open(huge, [:write])
+      :ok = :file.pwrite(file, 11 * 1024 * 1024, <<0>>)
+      :ok = File.close(file)
+
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> assert_has(".mdbar")
+      |> upload("Put pictures and videos in the text", huge)
+      |> assert_has("#state", text: "over the 10 MB roof")
+      |> refute_has(".cm-content", text: "Uploading")
+    end
+
     # The lines to hand on are a field of the pane, in the same clothes
     # as every other field beside them. They were a bare paragraph.
     @share_ground """

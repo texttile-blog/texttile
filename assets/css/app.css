@@ -222,6 +222,24 @@
   .drow > .lab { display: block; padding-bottom: 3px; font-size: 12.5px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
   .drow .hint { margin-top: 4px; font-size: 11.5px; line-height: 1.45; }
+  /* What lies on the volume: a folder, a count and a weight. Numbers
+     are read against each other, so they sit at the right edge in the
+     tabular figures, and the sum stands off behind a rule. */
+  .tally { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tally th, .tally td { padding: 5px 0; text-align: left; vertical-align: baseline; }
+  .tally th {
+    font-size: 11.5px; font-weight: 600; color: var(--tt-dim);
+    padding-bottom: 3px; border-bottom: 1px solid var(--tt-hair);
+  }
+  .tally .n { text-align: right; padding-left: 14px; white-space: nowrap; }
+  .tally td .p { font-family: var(--tt-font-mono); font-size: 12px; }
+  .tally td .note { margin-left: 7px; }
+  .tally tbody tr + tr td { border-top: 1px solid var(--tt-hair); }
+  .tally tfoot td {
+    border-top: 1px solid var(--tt-rule); font-weight: 600; color: var(--tt-ink);
+  }
+  .tally tfoot tr + tr td { border-top: 0; color: var(--tt-dim); font-weight: 400; }
+
   /* a group name with one quiet word at the right edge of its row: the
      Reset of the publish date, the Reset of the theme */
   .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 3px; }

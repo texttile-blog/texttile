@@ -62,6 +62,7 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Done. Untick it."),
     gettext_noop("Open. Tick it off."),
     gettext_noop("Body, Markdown"),
+    gettext_noop("the pasted picture"),
     # app.js: the saved mark in the topbar
     gettext_noop("Saved"),
     gettext_noop("saved"),

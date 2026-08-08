@@ -31,6 +31,7 @@ defmodule Texttile.Settings do
     posts_per_page: {:integer, 10},
     image_max_edge: {:integer, 2560},
     video_max_edge: {:integer, 1280},
+    max_upload_mb: {:integer, 512},
     logo: {:file, nil},
     logo_name: {:file, nil},
     favicon: {:file, nil},
@@ -178,6 +179,17 @@ defmodule Texttile.Settings do
   end
 
   @doc """
+  The biggest file the admin area takes, in bytes.
+
+  One roof for pictures and for videos, so there is one number to say
+  and one number to change. Three places read it and they must agree,
+  or a file is refused after it has travelled: the browser, which turns
+  a file away before the upload starts; the endpoint, which stops
+  reading a body past it; and the words on the settings screen.
+  """
+  def max_upload_bytes, do: get(:max_upload_mb) * 1024 * 1024
+
+  @doc """
   The name the site goes by: its title, or Texttile while the title is
   blank. It names the browser tab, the wordmark and the sender of mail.
   """
@@ -290,6 +302,12 @@ defmodule Texttile.Settings do
   # phone and a laptop both play the file without stuttering.
   defp validate(:video_max_edge, n) when n < 480, do: {:error, "at least 480 px"}
   defp validate(:video_max_edge, n) when n > 3840, do: {:error, "at most 3840 px"}
+
+  # The floor holds a photograph off any phone. The ceiling is the one
+  # the endpoint is built for: past it the parser would take a body
+  # this server has no plan for.
+  defp validate(:max_upload_mb, n) when n < 10, do: {:error, "at least 10 MB"}
+  defp validate(:max_upload_mb, n) when n > 2048, do: {:error, "at most 2048 MB"}
 
   defp validate(_key, _value), do: :ok
 

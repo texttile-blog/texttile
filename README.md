@@ -132,6 +132,12 @@ drop one on it, or add it to the entry's gallery. Every original file is kept
 as it came, below `UPLOADS_PATH`, and nothing leaves the server: no external
 player, no third-party host.
 
+One roof holds for a picture and for a video: Settings > Storage > Biggest
+upload, 512 MB by default. The browser turns a bigger file away before the
+upload starts, and the server stops reading one that arrives anyway.
+Settings > Storage also reports what lies in each folder of the volume, how
+much it weighs, and how much room is left.
+
 A picture is scaled to display sizes on demand, capped by Settings > Images
 > Max longer edge. A video is converted once, by ffmpeg, into one MP4 (H.264
 and AAC) that every browser plays, plus a poster frame. Settings > Videos >
@@ -342,11 +348,28 @@ validation report, start the import.
 and the uploads. Its header documents the one-time setup (app, volume,
 secrets, certificate).
 
-Videos need room on that volume: the original and the converted file live
-side by side. Give the machine at least 512 MB of memory; ffmpeg runs on one
-thread, but it still wants some. A machine that stops mid-conversion loses
-nothing: the queue picks up every unfinished video when the app starts
-again.
+### How big the machine must be
+
+The video conversion decides this, and nothing else does. A blog of words
+and pictures runs on one shared CPU and 512 MB of memory (`shared-cpu-1x`,
+the `[[vm]]` section of `fly.toml` as it stands).
+
+Videos want more. Give the machine four shared CPUs and 1 GB
+(`shared-cpu-4x`) before you upload the first one:
+
+```toml
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 4
+  memory = "1gb"
+```
+
+ffmpeg runs on one thread at the lowest priority, so the other three keep
+the site quick while a video converts, and the gigabyte is what the
+conversion itself needs. Videos also need room on the volume: the original
+and the converted file live side by side. A machine that stops
+mid-conversion loses nothing; the queue picks up every unfinished video when
+the app starts again.
 
 ## Development
 

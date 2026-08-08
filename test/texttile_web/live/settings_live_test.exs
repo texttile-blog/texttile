@@ -443,5 +443,42 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       assert view |> element("button", "Clear image cache") |> render_click() =~ "cache cleared"
     end
+
+    test "names every folder, counts what is in it, and says what is left", %{conn: conn} do
+      {:ok, _} = Uploads.put_body_image(Texttile.ArticlesFixtures.jpg_fixture(), "pier.jpg")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      for dir <- ~w(images videos site cache) do
+        assert has_element?(view, "#usage-#{dir}", "#{dir}/")
+      end
+
+      assert has_element?(view, "#usage-images", "1")
+      assert has_element?(view, "#usage-db")
+      assert has_element?(view, "#usage-total")
+      # df answers on every machine this runs on
+      assert has_element?(view, "#usage-free")
+    end
+
+    test "the biggest upload is a setting, and it has a floor and a ceiling", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/admin/settings")
+
+      assert html =~ "Biggest upload"
+      assert has_element?(view, "#setting-max_upload_mb[value='512']")
+
+      view
+      |> form("#upload-form", %{"settings" => %{"max_upload_mb" => "256"}})
+      |> render_change(%{"_target" => ["settings", "max_upload_mb"]})
+
+      assert Settings.get(:max_upload_mb) == 256
+
+      html =
+        view
+        |> form("#upload-form", %{"settings" => %{"max_upload_mb" => "4000"}})
+        |> render_change(%{"_target" => ["settings", "max_upload_mb"]})
+
+      assert html =~ "at most 2048 MB"
+      assert Settings.get(:max_upload_mb) == 256
+    end
   end
 end

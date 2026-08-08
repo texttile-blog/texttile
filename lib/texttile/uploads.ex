@@ -21,6 +21,78 @@ defmodule Texttile.Uploads do
   @doc "The absolute path behind a stored relative one."
   def absolute(relative), do: Path.join(root(), relative)
 
+  # The folders of the layout above, in the order the settings screen
+  # names them: what came in first, then what the server made of it.
+  @report_dirs ~w(images videos site cache)
+
+  @doc """
+  What lies below the root, one row per folder: how many files and how
+  many bytes. A folder that does not exist yet answers with zeros
+  instead of an error, because an empty blog has none of them.
+
+  This walks the tree. It is for the settings screen, which one person
+  opens now and then, and not for a page a reader loads.
+  """
+  def usage do
+    Enum.map(@report_dirs, fn dir ->
+      {files, bytes} = weigh(absolute(dir))
+      %{dir: dir, files: files, bytes: bytes}
+    end)
+  end
+
+  defp weigh(path) do
+    case File.ls(path) do
+      {:ok, names} ->
+        Enum.reduce(names, {0, 0}, fn name, {files, bytes} ->
+          full = Path.join(path, name)
+
+          case File.stat(full) do
+            {:ok, %File.Stat{type: :directory}} ->
+              {f, b} = weigh(full)
+              {files + f, bytes + b}
+
+            {:ok, %File.Stat{size: size}} ->
+              {files + 1, bytes + size}
+
+            {:error, _reason} ->
+              {files, bytes}
+          end
+        end)
+
+      {:error, _reason} ->
+        {0, 0}
+    end
+  end
+
+  @doc """
+  How many bytes the volume that carries the uploads still has, or nil
+  when the system will not say.
+
+  `df` is the one answer every place this runs agrees on: the Debian
+  image, a Mac and a Linux laptop. `-P` promises one line per
+  filesystem, so the columns can be counted; `-k` promises kilobytes,
+  so the number means the same everywhere. It spawns a process, so ask
+  it when the screen is opened and not on every keystroke it saves.
+  """
+  def free_bytes do
+    case System.cmd("df", ["-Pk", root()], stderr_to_stdout: true) do
+      {out, 0} -> available(out)
+      {_out, _code} -> nil
+    end
+  rescue
+    # no df on this system, or a line that does not read as numbers
+    _error -> nil
+  end
+
+  defp available(out) do
+    with [_head, line | _rest] <- String.split(out, "\n", trim: true),
+         [_fs, _blocks, _used, avail | _rest] <- String.split(line) do
+      String.to_integer(avail) * 1024
+    else
+      _ -> nil
+    end
+  end
+
   @marks [:logo, :favicon]
   @mark_extensions ~w(.svg .png .jpg .jpeg .webp)
 

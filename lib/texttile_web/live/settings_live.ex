@@ -24,7 +24,7 @@ defmodule TexttileWeb.SettingsLive do
   @editable ~w(site_title site_description language front_page
                posts_per_page theme_css site_visibility site_password
                comments_require_confirmation notify_on_comment
-               image_max_edge video_max_edge)
+               image_max_edge video_max_edge max_upload_mb)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -75,7 +75,10 @@ defmodule TexttileWeb.SettingsLive do
           socket
           |> assign(:errors, Map.delete(socket.assigns.errors, key_atom))
           |> refresh_settings()
-          |> refresh_storage()
+          # The report walks the tree and asks df, so it is read when
+          # the screen opens and again only when a saved value moved
+          # files: a new image roof drops every cached rendition.
+          |> then(&if key_atom == :image_max_edge, do: refresh_storage(&1), else: &1)
           |> mark_saved(saved_note(key_atom, value))
 
         # A saved theme is worn at once: the browser refetches the sheet.
@@ -396,17 +399,37 @@ defmodule TexttileWeb.SettingsLive do
         {:error, _} -> 0
       end
 
+    usage = Uploads.usage()
+    free = Uploads.free_bytes()
+
     socket
     |> assign(:uploads_root, Uploads.root())
     |> assign(:db_path, db_path)
     |> assign(:db_size, human_size(db_bytes))
-    |> assign(:cache_size, human_size(Images.cache_bytes()))
+    |> assign(:usage, usage)
+    |> assign(:usage_files, Enum.sum_by(usage, & &1.files) + 1)
+    |> assign(:usage_size, human_size(Enum.sum_by(usage, & &1.bytes) + db_bytes))
+    |> assign(:free_size, free && human_size(free))
   end
 
-  defp human_size(bytes) when bytes < 1024 * 1024,
-    do: gettext("%{size} KB", size: div(bytes, 1024))
+  # What each folder of the uploads root is for. The layout itself is
+  # documented on Texttile.Uploads; this is the one line beside a count.
+  defp dir_note("images"), do: gettext("every picture as it came")
+  defp dir_note("videos"), do: gettext("every video, and the MP4 ffmpeg made of it")
+  defp dir_note("site"), do: gettext("the logo and the favicon")
+  defp dir_note("cache"), do: gettext("display sizes, disposable")
+  defp dir_note(_dir), do: ""
 
-  defp human_size(bytes), do: gettext("%{size} MB", size: Float.round(bytes / (1024 * 1024), 1))
+  @kb 1024
+  @mb 1024 * 1024
+  @gb 1024 * 1024 * 1024
+
+  defp human_size(bytes) when bytes < @mb, do: gettext("%{size} KB", size: div(bytes, @kb))
+
+  defp human_size(bytes) when bytes < @gb,
+    do: gettext("%{size} MB", size: Float.round(bytes / @mb, 1))
+
+  defp human_size(bytes), do: gettext("%{size} GB", size: Float.round(bytes / @gb, 1))
 
   defp saved_note(:comments_require_confirmation, true),
     do: gettext("Readers confirm their email · new comments wait for the link")
@@ -1082,26 +1105,92 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Storage")}</.section>
+        <.form for={@settings_form} id="upload-form" phx-change="save_setting">
+          <div class="drow">
+            <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
+            <span class="val">
+              <span class="flex items-baseline gap-[7px]">
+                <input
+                  type="number"
+                  id="setting-max_upload_mb"
+                  name="settings[max_upload_mb]"
+                  value={@settings.max_upload_mb}
+                  min="10"
+                  max="2048"
+                  step="1"
+                  phx-debounce="500"
+                  class="max-w-[110px]"
+                />
+                <span class="note">{gettext("MB")}</span>
+              </span>
+              <p :if={@errors[:max_upload_mb]} class="text-julia text-[13px] mt-[6px]">
+                {gettext("The value must be %{rule}.", rule: @errors[:max_upload_mb])}
+              </p>
+            </span>
+            <div class="hint">
+              {gettext(
+                "One roof for a picture and for a video. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB."
+              )}
+            </div>
+          </div>
+        </.form>
+
+        <%!-- What is on the volume, folder by folder, and what is left
+             of it. The counts are walked on every render of this
+             screen, which one person opens now and then. --%>
         <div class="drow">
-          <span class="lab">{gettext("Images")}</span>
+          <span class="lab">{gettext("What lies on the volume")}</span>
           <span class="val">
-            {gettext("%{root} · originals plus cached variants · %{size} cache",
+            <table class="tally" id="storageTally">
+              <thead>
+                <tr>
+                  <th>{gettext("Folder")}</th>
+                  <th class="n">{gettext("Files")}</th>
+                  <th class="n">{gettext("Size")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={row <- @usage} id={"usage-#{row.dir}"}>
+                  <td>
+                    <span class="p">{row.dir}/</span>
+                    <span class="note">{dir_note(row.dir)}</span>
+                  </td>
+                  <td class="n num">{row.files}</td>
+                  <td class="n num">{human_size(row.bytes)}</td>
+                </tr>
+                <tr id="usage-db">
+                  <td>
+                    <span class="p">{Path.basename(@db_path)}</span>
+                    <span class="note">{gettext("the database, one SQLite file")}</span>
+                  </td>
+                  <td class="n num">1</td>
+                  <td class="n num">{@db_size}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr id="usage-total">
+                  <td>{gettext("Together")}</td>
+                  <td class="n num">{@usage_files}</td>
+                  <td class="n num">{@usage_size}</td>
+                </tr>
+                <tr :if={@free_size} id="usage-free">
+                  <td>{gettext("Free on this volume")}</td>
+                  <td></td>
+                  <td class="n num">{@free_size}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </span>
+          <div class="hint">
+            {gettext("The uploads stand below %{root} and the database is %{db}.",
               root: @uploads_root,
-              size: @cache_size
+              db: @db_path
             )}
-          </span>
+            {gettext(
+              "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
+            )}
+          </div>
         </div>
-        <div class="drow">
-          <span class="lab">{gettext("Database")}</span>
-          <span class="val">
-            {gettext("%{path} · %{size} SQLite", path: @db_path, size: @db_size)}
-          </span>
-        </div>
-        <p class="note mt-3">
-          {gettext(
-            "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
-          )}
-        </p>
         <p class="mt-3">
           <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>

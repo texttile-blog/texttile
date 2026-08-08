@@ -563,6 +563,28 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("image_failed", _params, socket), do: {:noreply, socket}
 
+  # The browser turned a file away before it travelled, so nothing
+  # stands in the text and nothing needs removing. The state line says
+  # what happened and what the roof is.
+  def handle_event("upload_too_big", %{"files" => files, "roof" => roof}, socket)
+      when is_list(files) and is_number(roof) do
+    names = files |> Enum.map(&clean_file/1) |> Enum.join(", ")
+
+    {:noreply,
+     mark_saved(
+       socket,
+       ngettext(
+         "%{names} is over the %{roof} MB roof and was not uploaded",
+         "%{names} are over the %{roof} MB roof and were not uploaded",
+         length(files),
+         names: names,
+         roof: roof
+       )
+     )}
+  end
+
+  def handle_event("upload_too_big", _params, socket), do: {:noreply, socket}
+
   def handle_event("image_retry", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
@@ -1538,6 +1560,7 @@ defmodule TexttileWeb.EditorLive do
                     phx-hook="BodyEd"
                     phx-update="ignore"
                     data-readonly={to_string(!@holds_lock)}
+                    data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
                     data-posters={Jason.encode!(poster_map(@media))}
                     data-label={gettext("Body, Markdown")}
                     data-placeholder={
@@ -1863,6 +1886,7 @@ defmodule TexttileWeb.EditorLive do
             data-article-id={@article.id}
             data-upload-url={~p"/admin/texts/#{@article.id}/gallery"}
             data-csrf={Phoenix.Controller.get_csrf_token()}
+            data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">
