@@ -50,6 +50,21 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
     end
   end
 
+  # Every address a "New comment" mail reached. The mails leave in
+  # tasks of their own, so the first one is waited for and the rest are
+  # drained behind it.
+  defp drain_comment_mails(reached \\ [], wait \\ 2000) do
+    receive do
+      {:email, %Swoosh.Email{subject: "New comment" <> _, to: to}} ->
+        drain_comment_mails(reached ++ Enum.map(to, &elem(&1, 1)), 400)
+
+      {:email, _other} ->
+        drain_comment_mails(reached, wait)
+    after
+      wait -> reached
+    end
+  end
+
   describe "posting while signed in" do
     test "stores the account's name and address, and points the comment at it", %{conn: conn} do
       user = user_fixture(%{display_name: "Katharina", email: "kb@example.org"})
@@ -120,6 +135,44 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
 
       assert [comment] = Comments.for_article(article.id)
       assert comment.body == "Through the traps."
+    end
+
+    test "nobody is mailed about their own comment, everybody else is", %{conn: conn} do
+      {:ok, _} = Settings.put(:notify_on_comment, true)
+      author = user_fixture(%{username: "author", email: "author@example.org"})
+      other = user_fixture(%{username: "other", email: "other@example.org"})
+      article = published_post()
+
+      # The mail leaves in a task of its own, so it has to land here.
+      Application.put_env(:swoosh, :shared_test_process, self())
+      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+
+      conn
+      |> log_in_user(author)
+      |> post(~p"/comments/#{article.id}", %{"body" => "One mail, not two."})
+
+      # Everybody the mail reached, once the whole run is through.
+      reached = drain_comment_mails()
+
+      assert other.email in reached
+      refute author.email in reached
+    end
+
+    test "the comment outlives the account that wrote it", %{conn: conn} do
+      author = user_fixture(%{username: "author", display_name: "Katharina"})
+      keeper = user_fixture(%{username: "keeper"})
+      article = published_post()
+
+      conn
+      |> log_in_user(author)
+      |> post(~p"/comments/#{article.id}", %{"body" => "Still here afterwards."})
+
+      {:ok, _} = Texttile.Accounts.delete_user(author, by: keeper)
+
+      assert [comment] = Comments.for_article(article.id)
+      assert is_nil(comment.user_id)
+      assert comment.name == "Katharina"
+      assert comment.body == "Still here afterwards."
     end
 
     test "words that are empty still get the form back", %{conn: conn} do

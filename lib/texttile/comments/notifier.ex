@@ -52,14 +52,17 @@ defmodule Texttile.Comments.Notifier do
 
   @doc """
   Mails the comment to everybody who runs the blog. Every account here
-  carries an address, so every account gets one.
+  carries an address, so every account gets one - except the account
+  that wrote the comment, which was there when it was written.
   """
   def deliver_to_admins(comment) do
     site = Settings.site_title()
     title = Articles.display_title(comment.article)
     body = admin_body(comment, site, title)
 
-    Enum.each(Accounts.list_users(), &deliver_one(&1, site, "New comment on #{title}", body))
+    Accounts.list_users()
+    |> Enum.reject(&(&1.id == comment.user_id))
+    |> Enum.each(&deliver_one(&1, site, "New comment on #{title}", body))
   end
 
   # A refused mail is nothing this can repair, and nothing the reader
