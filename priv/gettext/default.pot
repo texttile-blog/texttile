@@ -1,0 +1,176 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
+msgid ""
+msgstr ""
+
+#: lib/texttile_web/components/core_components.ex:432
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr ""
+
+#: lib/texttile_web/components/layouts.ex:329
+#: lib/texttile_web/components/layouts.ex:341
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr ""
+
+#: lib/texttile_web/components/layouts.ex:336
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr ""
+
+#: lib/texttile_web/components/layouts.ex:324
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:42
+#, elixir-autogen, elixir-format
+msgid "are still associated with this entry"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:25
+#, elixir-autogen, elixir-format
+msgid "can't be blank"
+msgstr ""
+
+#: lib/texttile_web/components/core_components.ex:75
+#, elixir-autogen, elixir-format
+msgid "close"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:39
+#, elixir-autogen, elixir-format
+msgid "does not match confirmation"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:27
+#, elixir-autogen, elixir-format
+msgid "has already been taken"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:35
+#, elixir-autogen, elixir-format
+msgid "has an invalid entry"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:33
+#, elixir-autogen, elixir-format
+msgid "has invalid format"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:29
+#, elixir-autogen, elixir-format
+msgid "is invalid"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:37
+#, elixir-autogen, elixir-format
+msgid "is reserved"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:41
+#, elixir-autogen, elixir-format
+msgid "is still associated with this entry"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:31
+#, elixir-autogen, elixir-format
+msgid "must be accepted"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:67
+#, elixir-autogen, elixir-format
+msgid "must be equal to %{number}"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:64
+#, elixir-autogen, elixir-format
+msgid "must be greater than %{number}"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:66
+#, elixir-autogen, elixir-format
+msgid "must be greater than or equal to %{number}"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:63
+#, elixir-autogen, elixir-format
+msgid "must be less than %{number}"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:65
+#, elixir-autogen, elixir-format
+msgid "must be less than or equal to %{number}"
+msgstr ""
+
+#: lib/texttile_web/ecto_messages.ex:46
+#, elixir-autogen, elixir-format
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:45
+#, elixir-autogen, elixir-format
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:55
+#, elixir-autogen, elixir-format
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:51
+#, elixir-autogen, elixir-format
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:61
+#, elixir-autogen, elixir-format
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:57
+#, elixir-autogen, elixir-format
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:44
+#, elixir-autogen, elixir-format
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:47
+#, elixir-autogen, elixir-format
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/ecto_messages.ex:56
+#, elixir-autogen, elixir-format
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] ""
+msgstr[1] ""

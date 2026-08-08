@@ -32,6 +32,7 @@ import {defaultKeymap, history, historyKeymap} from "@codemirror/commands"
 import {markdown, markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward} from "@codemirror/lang-markdown"
 import {tags} from "@lezer/highlight"
 import {openMedia} from "./media_lightbox"
+import {t} from "./i18n"
 
 /* character styling reads the theme tokens; order matters, because the
    marks' faint must win over the link's accent on shared tokens */
@@ -67,7 +68,7 @@ class CheckW extends WidgetType {
     b.className = "cm-mdcheck"
     b.checked = this.checked
     b.disabled = this.ro
-    b.setAttribute("aria-label", this.checked ? "Done. Untick it." : "Open. Tick it off.")
+    b.setAttribute("aria-label", this.checked ? t("Done. Untick it.") : t("Open. Tick it off."))
     b.addEventListener("mousedown", e => e.preventDefault())   /* the caret stays where it is */
     b.addEventListener("click", e => {
       e.preventDefault()
@@ -485,7 +486,7 @@ const impl = {
       livePreview,
       placeholder(this.el.dataset.placeholder ||
         "Write. Markdown works: ## for a heading. Paste a picture or a video, or drop one here to put it in the text."),
-      EditorView.contentAttributes.of({"aria-label": this.el.dataset.label || "Body, Markdown"}),
+      EditorView.contentAttributes.of({"aria-label": this.el.dataset.label || t("Body, Markdown")}),
       keymap.of([
         {key: "Mod-b", run: cmds.bold},
         {key: "Mod-i", run: cmds.italic},

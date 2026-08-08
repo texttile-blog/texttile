@@ -15,8 +15,6 @@ defmodule Texttile.Settings do
 
   @topic "settings"
 
-  @languages ~w(en de lt)
-
   # key => {type, default}. A :file value is a path below the uploads
   # root, written by Texttile.Uploads, never by a form field.
   @keys %{
@@ -262,8 +260,11 @@ defmodule Texttile.Settings do
 
   defp validate(_key, nil), do: :ok
 
+  # Texttile.I18n owns the list: a language exists when its translation
+  # file does. Asked at runtime, so the two modules stay free of each
+  # other at compile time.
   defp validate(:language, value) do
-    if value in @languages, do: :ok, else: {:error, "unknown language"}
+    if Texttile.I18n.known?(value), do: :ok, else: {:error, "unknown language"}
   end
 
   # The front page is the latest-texts list, or one fixed page as

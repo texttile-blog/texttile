@@ -57,6 +57,12 @@ config :texttile, Texttile.Mailer, adapter: Swoosh.Adapters.Local
 config :swoosh, :api_client, Swoosh.ApiClient.Req
 config :texttile, :mail_from, "texttile@localhost"
 
+# Translations. English is the language of the source: every msgid is
+# the English sentence itself, so English needs no catalogue of its own
+# and an untranslated string reads as English. Each other language is
+# one file, priv/gettext/<locale>/LC_MESSAGES/default.po.
+config :texttile, TexttileWeb.Gettext, default_locale: "en"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

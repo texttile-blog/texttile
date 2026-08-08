@@ -752,23 +752,19 @@ defmodule TexttileWeb.CoreComponents do
   end
 
   @doc """
-  Translates an error message using gettext.
+  Translates one error message.
+
+  A changeset writes its messages while it runs, so the string arrives
+  here as a value and not as a literal the extractor could read. The
+  literals stand in `TexttileWeb.EctoMessages` instead, in the same
+  domain as every other word of the site: one file per language holds
+  all of them.
   """
   def translate_error({msg, opts}) do
-    # When using gettext, we typically pass the strings we want
-    # to translate as a static argument:
-    #
-    #     # Translate the number of files with plural rules
-    #     dngettext("errors", "1 file", "%{count} files", count)
-    #
-    # However the error messages in our forms and APIs are generated
-    # dynamically, so we need to translate them by calling Gettext
-    # with our gettext backend as first argument. Translations are
-    # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
-      Gettext.dngettext(TexttileWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.ngettext(TexttileWeb.Gettext, msg, msg, count, opts)
     else
-      Gettext.dgettext(TexttileWeb.Gettext, "errors", msg, opts)
+      Gettext.gettext(TexttileWeb.Gettext, msg, opts)
     end
   end
 

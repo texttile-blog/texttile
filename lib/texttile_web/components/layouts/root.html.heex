@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang={Texttile.I18n.site_locale()}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,7 +17,10 @@
     <script phx-track-static type="module" src={~p"/assets/js/app.js"}>
     </script>
   </head>
-  <body>
+  <%!-- data-words carries what the hooks should say instead of the
+       English they are written in. It is "{}" while the site speaks
+       English, see TexttileWeb.JsStrings. --%>
+  <body data-words={TexttileWeb.JsStrings.json()}>
     {@inner_content}
   </body>
 </html>

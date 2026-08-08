@@ -5,6 +5,7 @@ defmodule TexttileWeb.Router do
 
   pipeline :browser do
     plug :accepts, ["html"]
+    plug TexttileWeb.Locale
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {TexttileWeb.Layouts, :root}
@@ -79,6 +80,7 @@ defmodule TexttileWeb.Router do
 
     live_session :admin,
       on_mount: [
+        {TexttileWeb.Locale, :put_locale},
         {TexttileWeb.UserAuth, :ensure_authenticated},
         {TexttileWeb.Admin, :track_presence}
       ] do

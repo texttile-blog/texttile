@@ -26,6 +26,7 @@ import {hooks as colocatedHooks} from "phoenix-colocated/texttile"
 import topbar from "../vendor/topbar"
 import BodyEd from "./body_ed"
 import Gallery from "./gallery"
+import {t} from "./i18n"
 
 /* The Last-saved line of a screen that saves instantly.
 
@@ -79,15 +80,19 @@ const SavedTicker = {
     const fresh = (now - at) / 1000 < 20
     const wide = window.matchMedia("(min-width: 768px)").matches
 
-    if (this.el.classList.contains("fresh")) { words.textContent = "Saved"; return }
+    if (this.el.classList.contains("fresh")) { words.textContent = t("Saved"); return }
     // a phone bar has room for the stamp, not for the sentence
     if (!wide) {
-      words.textContent = fresh ? "saved" : `saved ${pad(d.getHours())}:${pad(d.getMinutes())}`
+      words.textContent = fresh
+        ? t("saved")
+        : t("saved %{time}", {time: `${pad(d.getHours())}:${pad(d.getMinutes())}`})
       return
     }
     words.textContent = fresh
-      ? "Last saved · just now"
-      : `Last saved ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+      ? t("Last saved · just now")
+      : t("Last saved %{time}", {
+          time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`,
+        })
   },
 
   // The class carries the whole loud state, and taking it off and
