@@ -93,6 +93,46 @@ defmodule TexttileWeb.EditorCommentsTest do
     refute has_element?(view, "#comment-#{comment.id}")
   end
 
+  test "the tab edits and releases, and keeps the trash off the text", %{conn: conn} do
+    article = published_post()
+    comment = post!(article)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
+
+    view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+    refute has_element?(view, "#comment-#{comment.id} .wait")
+    assert Comments.released?(Comments.get_comment!(comment.id))
+
+    view |> element("#comment-#{comment.id} button", "Edit") |> render_click()
+
+    view
+    |> form("#edit-comment-#{comment.id}", %{"body" => "Less of the dog, please."})
+    |> render_submit()
+
+    assert has_element?(view, "#comment-#{comment.id}", "Less of the dog, please.")
+    assert has_element?(view, "#comment-#{comment.id}", "edited")
+
+    # the trash lives on the Comments screen, never on one text
+    view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+    refute has_element?(view, "#tp-comments", "Restore")
+    assert Comments.trashed_count() == 1
+  end
+
+  test "a comment of another text is never edited or released from here", %{conn: conn} do
+    article = published_post()
+    other = published_post()
+    stranger = post!(other, %{"email" => "other@example.org"})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
+
+    render_click(view, "release_comment", %{"id" => stranger.id})
+    render_click(view, "save_comment", %{"comment_id" => stranger.id, "body" => "Not yours"})
+
+    kept = Comments.get_comment!(stranger.id)
+    refute Comments.released?(kept)
+    assert kept.body == "More of the dog, please."
+  end
+
   test "a comment arriving on the open text shows up live", %{conn: conn} do
     article = published_post()
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")

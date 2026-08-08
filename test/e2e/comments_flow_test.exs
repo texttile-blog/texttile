@@ -64,6 +64,77 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     assert Texttile.Comments.total_count() == 0
   end
 
+  test "the desk releases one comment, rewrites it, trashes it and takes it back", %{conn: conn} do
+    user_fixture(%{username: "kb"})
+    article = published_post(title: "Harbor mornings", body: "Fog over the pier.")
+
+    Application.put_env(:swoosh, :shared_test_process, self())
+    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+
+    # The reader writes and never touches the mail: the comment stands
+    # for its own writer and for nobody else.
+    session =
+      conn
+      |> visit(Articles.public_path(article))
+      |> fill_in("Name", with: "Grandma Christel")
+      |> fill_in("Email", with: "christel@example.org")
+      |> fill_in("Comment", with: "More of the dog, please.")
+      |> click_button("Post comment")
+      |> assert_has("#comment-note", text: "Sent. Follow the link in your mail")
+      |> assert_has("#comments", text: "waiting for your confirmation")
+      |> assert_has("#comment-count", text: "Comments")
+      |> refute_has("#comment-count", text: "1 comment")
+
+    # The desk lets this one comment through, and the text carries it.
+    session =
+      session
+      |> sign_in()
+      |> visit("/admin/comments")
+      |> assert_has("#commentsList", text: "not confirmed yet")
+      |> click_button("Release")
+      |> assert_has("#commentsList", text: "let through")
+      |> refute_has("#commentsList .wait")
+      |> visit(Articles.public_path(article))
+      |> assert_has("#comment-count", text: "1 comment")
+      |> refute_has("#comments", text: "waiting for your confirmation")
+
+    # And rewrites the words the reader sent.
+    session =
+      session
+      |> visit("/admin/comments")
+      |> click_button("Edit")
+      |> fill_in("The words of the comment", with: "Less of the dog, please.")
+      |> click_button("Save")
+      |> assert_has("#commentsList", text: "Less of the dog, please.")
+      |> assert_has("#commentsList", text: "edited")
+      |> visit(Articles.public_path(article))
+      |> assert_has("#comments", text: "Less of the dog, please.")
+      |> refute_has("#comments", text: "More of the dog, please.")
+
+    # Delete is the trash now: out of the text, kept on the desk.
+    session =
+      session
+      |> visit("/admin/comments")
+      |> click_button("Delete")
+      |> assert_has("#commentsTrash", text: "Less of the dog, please.")
+      |> assert_has("#commentsTrash", text: "goes for good")
+      |> visit(Articles.public_path(article))
+      |> refute_has("#comments", text: "Less of the dog, please.")
+
+    # And the way back puts it exactly where it stood.
+    session
+    |> visit("/admin/comments")
+    |> click_button("Restore")
+    |> refute_has("#commentsTrash")
+    |> assert_has("#commentsList", text: "Less of the dog, please.")
+    |> visit(Articles.public_path(article))
+    |> assert_has("#comment-count", text: "1 comment")
+    |> assert_has("#comments", text: "Less of the dog, please.")
+
+    assert Texttile.Comments.total_count() == 1
+    assert Texttile.Comments.trashed_count() == 0
+  end
+
   defp sign_in(conn) do
     conn
     |> visit("/login")

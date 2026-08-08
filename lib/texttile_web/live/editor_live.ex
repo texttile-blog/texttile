@@ -45,6 +45,8 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:media_rev, 0)
       |> assign(:comments, Comments.for_article(article.id))
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
+      |> assign(:editing_comment, nil)
+      |> assign(:comment_error, nil)
       |> known_tags()
 
     # What the writing surface was told last. It reads the element on
@@ -356,16 +358,33 @@ defmodule TexttileWeb.EditorLive do
   end
 
   # Only the open text's own comments, and a comment that is already
-  # gone is no error: the list reloads either way.
+  # gone is no error: the list reloads either way. The trash itself
+  # lives on the Comments screen; a text only ever deletes into it.
   def handle_event("delete_comment", %{"id" => id}, socket) do
-    article_id = socket.assigns.article.id
+    socket = own_comment(socket, id, &Comments.delete_comment(&1.id))
+    {:noreply, socket |> close_comment_edit() |> reload_comments()}
+  end
 
-    case Comments.get_comment(id) do
-      %{article_id: ^article_id} = comment -> Comments.delete_comment(comment)
-      _ -> :ok
+  def handle_event("release_comment", %{"id" => id}, socket) do
+    {:noreply, socket |> own_comment(id, &Comments.release_comment(&1.id)) |> reload_comments()}
+  end
+
+  def handle_event("start_edit", %{"id" => id}, socket) do
+    {:noreply, socket |> assign(:editing_comment, to_string(id)) |> assign(:comment_error, nil)}
+  end
+
+  def handle_event("cancel_edit", _params, socket) do
+    {:noreply, close_comment_edit(socket)}
+  end
+
+  def handle_event("save_comment", %{"comment_id" => id, "body" => body}, socket) do
+    case own_comment_result(socket, id, &Comments.edit_comment(&1.id, body)) do
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, assign(socket, :comment_error, empty_words())}
+
+      _ ->
+        {:noreply, socket |> close_comment_edit() |> reload_comments()}
     end
-
-    {:noreply, assign(socket, :comments, Comments.for_article(article_id))}
   end
 
   def handle_event("toggle_state_menu", _params, socket) do
@@ -998,6 +1017,10 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_info({:comment_deleted, %{article_id: id}}, socket) do
+    {:noreply, maybe_reload_comments(socket, id)}
+  end
+
+  def handle_info({:comment_changed, %{article_id: id}}, socket) do
     {:noreply, maybe_reload_comments(socket, id)}
   end
 
@@ -1661,7 +1684,9 @@ defmodule TexttileWeb.EditorLive do
                 <.comment_item
                   :for={comment <- @comments}
                   comment={comment}
-                  waiting={@cmt_require && is_nil(comment.address.confirmed_at)}
+                  waiting={comment_waiting?(comment, @cmt_require)}
+                  editing={@editing_comment == to_string(comment.id)}
+                  error={@comment_error}
                 />
                 <p class="note mt-[14px] max-w-[62ch]">
                   {comments_foot(@comments, @cmt_require)}
@@ -2255,10 +2280,40 @@ defmodule TexttileWeb.EditorLive do
 
   defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
 
+  # Whatever the desk does on the Comments tab, it does it to a comment
+  # of the open text. Anything else is left alone without a word.
+  defp own_comment(socket, id, fun) do
+    own_comment_result(socket, id, fun)
+    socket
+  end
+
+  defp own_comment_result(socket, id, fun) do
+    article_id = socket.assigns.article.id
+
+    case Comments.get_comment(id) do
+      %{article_id: ^article_id} = comment -> fun.(comment)
+      _ -> {:error, :gone}
+    end
+  end
+
+  defp close_comment_edit(socket) do
+    socket |> assign(:editing_comment, nil) |> assign(:comment_error, nil)
+  end
+
+  defp reload_comments(socket) do
+    assign(socket, :comments, Comments.for_article(socket.assigns.article.id))
+  end
+
+  # A comment waits while the setting asks for a confirmation, its
+  # reader has not given one, and the desk has not let it through.
+  defp comment_waiting?(comment, require?) do
+    require? and is_nil(comment.address.confirmed_at) and not Comments.released?(comment)
+  end
+
   # The note under the comment list: who still stands outside the text,
   # or the rule when nobody does.
   defp comments_foot(comments, require?) do
-    case Enum.count(comments, &(require? && is_nil(&1.address.confirmed_at))) do
+    case Enum.count(comments, &comment_waiting?(&1, require?)) do
       0 ->
         comment_rule(require?)
 
