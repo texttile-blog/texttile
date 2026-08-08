@@ -113,7 +113,19 @@ text's settings). There is no approval queue. By default a new address gets
 one confirmation mail. The comment appears when its reader follows the
 mailed link, and every later comment from that address appears at once.
 Turn the confirmation off in Settings > Comments and no comment waits for
-anything. Admins see all comments at `/admin/comments` and can delete them.
+anything.
+
+Admins see all comments at `/admin/comments` and on the Comments tab of each
+text. There they can do three things to a comment:
+
+- **Release** a comment whose reader has not confirmed the address. It puts
+  that one comment under the text. The address itself stays unconfirmed, so
+  the next comment from it waits again.
+- **Edit** the words. The name and the address stay as the reader sent them,
+  and the comment is marked "edited" on the desk.
+- **Delete** it into the trash. Readers stop seeing it at once, and it waits
+  30 days at the foot of `/admin/comments`, where Restore puts it back. After
+  30 days the comment is removed from the database for good.
 
 Every admin also gets the comment by mail, unless "Mail me every new
 comment" is switched off in Settings > Comments. The mail leaves when the
