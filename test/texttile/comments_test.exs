@@ -540,7 +540,7 @@ defmodule Texttile.CommentsTest do
       assert Comments.waiting_count() == 0
     end
 
-    test "releasing mails nobody: the desk did it" do
+    test "releasing mails nobody: the admin did it" do
       kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
       article = published_post(user: kb)
       comment = post!(article)
@@ -583,7 +583,7 @@ defmodule Texttile.CommentsTest do
     assert_raise Ecto.NoResultsError, fn -> Comments.get_comment!(comment.id) end
   end
 
-  describe "two desks on one comment" do
+  describe "two admins on one comment" do
     # The row can go for good under either of them: the text was
     # deleted, or the sweeper came for a trashed one. Nobody raises.
     test "a comment the database lost answers gone, and never raises" do

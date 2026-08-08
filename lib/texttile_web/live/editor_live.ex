@@ -361,8 +361,20 @@ defmodule TexttileWeb.EditorLive do
   # gone is no error: the list reloads either way. The trash itself
   # lives on the Comments screen; a text only ever deletes into it.
   def handle_event("delete_comment", %{"id" => id}, socket) do
+    case own_comment(socket, id, & &1) do
+      {:error, :gone} -> {:noreply, reload_comments(socket)}
+      comment -> {:noreply, assign(socket, :dialog, delete_dialog(comment))}
+    end
+  end
+
+  def handle_event("confirm_delete_comment", %{"id" => id}, socket) do
     own_comment(socket, id, &Comments.delete_comment(&1.id))
-    {:noreply, socket |> close_comment_edit() |> reload_comments()}
+
+    {:noreply,
+     socket
+     |> assign(:dialog, nil)
+     |> close_comment_edit()
+     |> reload_comments()}
   end
 
   def handle_event("release_comment", %{"id" => id}, socket) do
@@ -2219,42 +2231,17 @@ defmodule TexttileWeb.EditorLive do
         </aside>
       </div>
 
-      <%!-- the one small dialog: delete, publish-anyway, the takeover --%>
-      <div
+      <%!-- the one small dialog: delete, publish-anyway, the takeover,
+           and the question before a comment goes --%>
+      <.ask
         :if={@dialog}
-        class="fixed inset-0 z-[80] grid place-items-center p-5"
-        style="background: var(--tt-scrim)"
-        id="scrim"
-        phx-click="cancel_dialog"
-        phx-window-keydown="cancel_dialog"
-        phx-key="escape"
+        heading={@dialog.title}
+        ok={@dialog.ok}
+        on_ok={@dialog.event}
+        value={@dialog[:value]}
       >
-        <div
-          class="w-[min(430px,100%)] bg-paper px-[22px] pt-5 pb-[18px]"
-          style="border-radius: var(--tt-radius-pop); border: 1px solid var(--tt-rule); box-shadow: 0 22px 54px rgb(var(--tt-shadow) / .26)"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="dlgH"
-          id="dialog"
-          phx-click-away="cancel_dialog"
-        >
-          <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em]" id="dlgH">
-            {@dialog.title}
-          </h2>
-          <p
-            :for={line <- @dialog.body}
-            class="text-[13.5px] text-inksoft mt-[9px] leading-[1.55]"
-          >
-            {line}
-          </p>
-          <div class="flex gap-2 mt-[18px]">
-            <button class="btn solid" id="dlgOk" phx-click={@dialog.event} autofocus>
-              {@dialog.ok}
-            </button>
-            <button class="btn quiet" id="dlgNo" phx-click="cancel_dialog">Cancel</button>
-          </div>
-        </div>
-      </div>
+        <p :for={line <- @dialog.body} class="mt-[9px] first:mt-0">{line}</p>
+      </.ask>
     </Layouts.app>
     """
   end
@@ -2281,7 +2268,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
 
-  # Whatever the desk does on the Comments tab, it does it to a comment
+  # Whatever an admin does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.
   defp own_comment(socket, id, fun) do
     article_id = socket.assigns.article.id

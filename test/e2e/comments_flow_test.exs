@@ -59,33 +59,43 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")
     |> click_button("Delete")
+    |> assert_has("#dialog", text: "Delete the comment of Grandma Christel?")
+    |> click_button("Delete the comment")
     |> assert_has("#tp-comments", text: "No comments yet.")
 
     assert Texttile.Comments.total_count() == 0
   end
 
-  test "the desk releases one comment, rewrites it, trashes it and takes it back", %{conn: conn} do
+  test "an admin releases one comment, rewrites it, trashes it and takes it back", %{conn: conn} do
     user_fixture(%{username: "kb"})
     article = published_post(title: "Harbor mornings", body: "Fog over the pier.")
 
     Application.put_env(:swoosh, :shared_test_process, self())
     on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
 
-    # The reader writes and never touches the mail: the comment stands
-    # for its own writer and for nobody else.
+    # A reader wrote and never touched the mail. The form itself is the
+    # test above; this one starts where that one ends, and it knocks on
+    # nothing, so it never spends the rate limit a browser test running
+    # beside it is about to need.
+    {:ok, _} =
+      Texttile.Comments.post(
+        article,
+        %{
+          "name" => "Grandma Christel",
+          "email" => "christel@example.org",
+          "body" => "More of the dog, please."
+        },
+        confirm_url: &"http://localhost/comments/confirm/#{&1}"
+      )
+
+    # Nobody sees it while it waits, not even the count.
     session =
       conn
       |> visit(Articles.public_path(article))
-      |> fill_in("Name", with: "Grandma Christel")
-      |> fill_in("Email", with: "christel@example.org")
-      |> fill_in("Comment", with: "More of the dog, please.")
-      |> click_button("Post comment")
-      |> assert_has("#comment-note", text: "Sent. Follow the link in your mail")
-      |> assert_has("#comments", text: "waiting for your confirmation")
-      |> assert_has("#comment-count", text: "Comments")
-      |> refute_has("#comment-count", text: "1 comment")
+      |> refute_has("#comments", text: "More of the dog, please.")
+      |> refute_has("#comment-count")
 
-    # The desk lets this one comment through, and the text carries it.
+    # The admin lets this one comment through, and the text carries it.
     session =
       session
       |> sign_in()
@@ -111,11 +121,12 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       |> assert_has("#comments", text: "Less of the dog, please.")
       |> refute_has("#comments", text: "More of the dog, please.")
 
-    # Delete is the trash now: out of the text, kept on the desk.
+    # Delete is the trash now: out of the text, kept in the admin area.
     session =
       session
       |> visit("/admin/comments")
       |> click_button("Delete")
+      |> click_button("Delete the comment")
       |> assert_has("#commentsTrash", text: "Less of the dog, please.")
       |> assert_has("#commentsTrash", text: "goes for good")
       |> visit(Articles.public_path(article))

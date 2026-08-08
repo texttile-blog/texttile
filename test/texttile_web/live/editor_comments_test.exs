@@ -63,10 +63,11 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
 
-    view
-    |> element("#comment-#{comment.id} button", "Delete")
-    |> render_click()
+    view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+    assert has_element?(view, "#dialog", "Delete the comment of Grandma Christel?")
+    view |> element("#dialog-ok") |> render_click()
 
+    refute has_element?(view, "#dialog")
     refute has_element?(view, "#comment-#{comment.id}")
     assert Comments.for_article(article.id) == []
   end
@@ -78,6 +79,8 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
     render_click(view, "delete_comment", %{"id" => stranger.id})
+    refute has_element?(view, "#dialog")
+    render_click(view, "confirm_delete_comment", %{"id" => stranger.id})
 
     assert [_] = Comments.for_article(other.id)
   end
@@ -90,6 +93,7 @@ defmodule TexttileWeb.EditorCommentsTest do
     {:ok, _} = Comments.delete_comment(comment)
 
     render_click(view, "delete_comment", %{"id" => comment.id})
+    refute has_element?(view, "#dialog")
     refute has_element?(view, "#comment-#{comment.id}")
   end
 
@@ -114,6 +118,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     # the trash lives on the Comments screen, never on one text
     view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+    view |> element("#dialog-ok") |> render_click()
     refute has_element?(view, "#tp-comments", "Restore")
     assert Comments.trashed_count() == 1
   end

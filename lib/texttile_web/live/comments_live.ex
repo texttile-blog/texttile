@@ -28,6 +28,7 @@ defmodule TexttileWeb.CommentsLive do
      |> assign(:page_title, "Comments")
      |> assign(:editing, nil)
      |> assign(:edit_error, nil)
+     |> assign(:dialog, nil)
      |> load()}
   end
 
@@ -43,11 +44,25 @@ defmodule TexttileWeb.CommentsLive do
     |> assign(:require?, Settings.get(:comments_require_confirmation))
   end
 
-  # A comment the other desk deleted a moment ago is simply gone; the
-  # list reloads either way. The same for the restore and the release.
+  # Delete asks first. Not because the trash could lose the comment -
+  # it keeps it for a month - but because the words leave the text the
+  # second the button is pressed, and readers are already reading them.
   def handle_event("delete_comment", %{"id" => id}, socket) do
+    case Comments.get_comment(id) do
+      nil -> {:noreply, load(socket)}
+      comment -> {:noreply, assign(socket, :dialog, delete_dialog(comment))}
+    end
+  end
+
+  # A comment another admin deleted a moment ago is simply gone; the
+  # list reloads either way. The same for the restore and the release.
+  def handle_event("confirm_delete_comment", %{"id" => id}, socket) do
     Comments.delete_comment(id)
-    {:noreply, socket |> close_edit() |> load()}
+    {:noreply, socket |> assign(:dialog, nil) |> close_edit() |> load()}
+  end
+
+  def handle_event("cancel_dialog", _params, socket) do
+    {:noreply, assign(socket, :dialog, nil)}
   end
 
   def handle_event("restore_comment", %{"id" => id}, socket) do
@@ -142,6 +157,16 @@ defmodule TexttileWeb.CommentsLive do
           </div>
         </section>
       </div>
+
+      <.ask
+        :if={@dialog}
+        heading={@dialog.title}
+        ok={@dialog.ok}
+        on_ok={@dialog.event}
+        value={@dialog.value}
+      >
+        <p :for={line <- @dialog.body} class="mt-[9px] first:mt-0">{line}</p>
+      </.ask>
     </Layouts.app>
     """
   end
@@ -157,7 +182,7 @@ defmodule TexttileWeb.CommentsLive do
   defp sub_line(0, _waiting, _require?), do: "The latest comments across all texts, newest first."
 
   # Nothing waits: readers see them all. Not "every one is confirmed" -
-  # a comment the desk let through stands under its text with an
+  # a comment an admin let through stands under its text with an
   # address that never was.
   defp sub_line(total, 0, _require?) do
     "#{total} #{plural(total, "comment", "comments")} across all texts, newest first. " <>

@@ -2,9 +2,9 @@ defmodule Texttile.Comments.Comment do
   @moduledoc """
   One reader's comment on one text: a name, the words, and the address
   it came from. Whether readers see it follows the address and the site
-  setting, and `released_at` is the one exception the desk can make; see
-  `Texttile.Comments`. `delete_after` is the trash, `edited_at` says the
-  desk changed the words.
+  setting, and `released_at` is the one exception an admin can make; see
+  `Texttile.Comments`. `delete_after` is the trash, `edited_at` says an
+  admin changed the words.
   """
 
   use Ecto.Schema
@@ -23,7 +23,7 @@ defmodule Texttile.Comments.Comment do
     timestamps(type: :utc_datetime)
   end
 
-  # How much one comment holds. The reader's form and the desk's field
+  # How much one comment holds. The reader's form and the admin's field
   # both stop here, and the changesets are the ones that decide.
   @body_limit 4000
 
@@ -42,7 +42,7 @@ defmodule Texttile.Comments.Comment do
   end
 
   @doc """
-  The desk rewrote the words. The body and nothing else: the name and
+  An admin rewrote the words. The body and nothing else: the name and
   the address stay as the reader sent them.
   """
   def edit_changeset(comment, body) do

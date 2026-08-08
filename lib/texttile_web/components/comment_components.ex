@@ -10,9 +10,9 @@ defmodule TexttileWeb.CommentComponents do
   alias Texttile.Comments
 
   @doc """
-  One comment on a desk screen: the name, the waiting mark while the
+  One comment on an admin screen: the name, the waiting mark while the
   reader has not confirmed, the moment it arrived, the words, and what
-  the desk can do with it - Edit, Release while it waits, Delete.
+  an admin can do with it - Edit, Release while it waits, Delete.
   `article` set draws the "on <text>" jump of the overview. `editing`
   puts the words in a field instead, `error` says why the last save
   did not take.
@@ -51,7 +51,7 @@ defmodule TexttileWeb.CommentComponents do
         <input type="hidden" name="comment_id" value={@comment.id} />
         <%!-- the list behind this form reloads on every comment posted
              anywhere on the site; ignored, the field keeps what the
-             desk has typed into it so far --%>
+             admin has typed into it so far --%>
         <div id={"edit-body-#{@comment.id}"} phx-update="ignore">
           <textarea
             name="body"
@@ -69,7 +69,12 @@ defmodule TexttileWeb.CommentComponents do
         </div>
       </form>
 
-      <p :if={!@editing} class="mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]">
+      <%!-- comment-body: the words stand here the way the reader typed
+           them, line breaks and all, exactly as under the text --%>
+      <p
+        :if={!@editing}
+        class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
+      >
         {@comment.body}
       </p>
       <%!-- three actions on every row would shout in a list this long,
@@ -113,7 +118,7 @@ defmodule TexttileWeb.CommentComponents do
           <span class="num">{Calendar.strftime(@comment.delete_after, "%Y-%m-%d")}</span>
         </span>
       </div>
-      <p class="mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim">
+      <p class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim">
         {@comment.body}
       </p>
       <div class="mt-[7px] -ml-[10px]">
@@ -127,8 +132,8 @@ defmodule TexttileWeb.CommentComponents do
 
   @doc """
   The one rule, in the one wording. Nothing here is an approval queue:
-  nothing waits for the desk. The desk can make one exception at a
-  time, and it can take its own back out of the trash.
+  nothing waits for an admin. An admin can make one exception at a
+  time, and can take a deleted comment back out of the trash.
   """
   def comment_rule(true = _require_confirmation?) do
     "Readers confirm their email first. A comment stays out of the text until " <>
@@ -144,6 +149,25 @@ defmodule TexttileWeb.CommentComponents do
       "confirms anything. Delete keeps a comment in the trash for #{Comments.trash_days()} " <>
       "days, silently, and then it is gone. Spam is filtered invisibly: honeypot, " <>
       "timing, rate limit. No captcha, ever."
+  end
+
+  @doc """
+  The question an admin answers before a comment goes, in one wording
+  for both screens: what it does, and what it does not do. The shape is
+  the one `<.ask>` reads, so it travels there as it stands.
+  """
+  def delete_dialog(comment) do
+    %{
+      title: "Delete the comment of #{comment.name}?",
+      body: [
+        "It leaves the text at once, and the reader is never told.",
+        "The trash on the Comments screen keeps it for #{Comments.trash_days()} days. " <>
+          "Restore puts it back where it stood; after that it is gone for good."
+      ],
+      ok: "Delete the comment",
+      event: "confirm_delete_comment",
+      value: comment.id
+    }
   end
 
   @doc """

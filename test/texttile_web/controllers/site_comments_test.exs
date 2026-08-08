@@ -296,7 +296,7 @@ defmodule TexttileWeb.SiteCommentsTest do
     end
   end
 
-  describe "what the desk did to a comment" do
+  describe "what an admin did to a comment" do
     test "a released comment stands under the text for everybody", %{conn: conn} do
       article = published_post()
       build_conn() |> send_comment(article)
@@ -316,10 +316,10 @@ defmodule TexttileWeb.SiteCommentsTest do
       article = published_post()
       comment = send_and_confirm(article, "The first words", "one@example.org")
 
-      {:ok, _} = Comments.edit_comment(comment.id, "The words the desk left")
+      {:ok, _} = Comments.edit_comment(comment.id, "The words the admin left")
 
       html = conn |> get(Articles.public_path(article)) |> html_response(200)
-      assert html =~ "The words the desk left"
+      assert html =~ "The words the admin left"
       refute html =~ "The first words"
     end
 

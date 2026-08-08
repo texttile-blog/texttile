@@ -9,13 +9,13 @@ defmodule Texttile.Comments do
   address remembers it was followed, and every later comment from it
   appears at once.
 
-  This is still not an approval queue: nothing waits for the desk, and
-  the desk lets nothing through by default. What the desk can do is make
-  one exception, one comment at a time - `release_comment/1` puts a
-  single comment under the text while its address stays unconfirmed, so
-  the next comment from that address waits like every other. It can also
-  rewrite the words of a comment, and it deletes into a trash that keeps
-  a comment for 30 days before the row goes for good.
+  This is still not an approval queue: nothing waits for an admin, and
+  no comment needs one to appear. What an admin can do is make one
+  exception at a time - `release_comment/1` puts a single comment under
+  the text while its address stays unconfirmed, so the next comment from
+  that address waits like every other. An admin can also rewrite the
+  words of a comment, and a delete goes into a trash that keeps the
+  comment for 30 days before the row goes for good.
 
   Every change is announced on the comments topic.
   """
@@ -154,7 +154,7 @@ defmodule Texttile.Comments do
 
   @doc """
   Whether readers see the comment: yes while the setting asks for no
-  confirmation, otherwise once its address is confirmed or the desk let
+  confirmation, otherwise once its address is confirmed or an admin let
   this one comment through. The one exception - the reader who just sent
   it sees their own - lives where the session is, in the web layer.
   """
@@ -168,17 +168,17 @@ defmodule Texttile.Comments do
   end
 
   @doc """
-  The other side of `shown_to_readers?/2`, for the desk: the comment is
-  out of the text, and it is its own reader who has to act.
+  The other side of `shown_to_readers?/2`, for the admin screens: the
+  comment is out of the text, and it is its own reader who has to act.
   """
   def waiting?(%Comment{} = comment, require_confirmation?) do
     not shown_to_readers?(comment, require_confirmation?)
   end
 
-  @doc "Whether the desk let this one comment through on its own."
+  @doc "Whether an admin let this one comment through on its own."
   def released?(%Comment{released_at: released_at}), do: not is_nil(released_at)
 
-  @doc "Whether the desk changed the words after the reader sent them."
+  @doc "Whether an admin changed the words after the reader sent them."
   def edited?(%Comment{edited_at: edited_at}), do: not is_nil(edited_at)
 
   ## Confirming
@@ -229,7 +229,7 @@ defmodule Texttile.Comments do
 
   # Every comment of an address that has just been confirmed, with the
   # text it stands under and the address itself, the way the mail
-  # needs them. A comment the desk already released is left out: it has
+  # needs them. A comment an admin already released is left out: it has
   # stood under the text since then, and it travelled then.
   defp waiting_of(%Address{} = address) do
     from(c in standing(), where: c.address_id == ^address.id and is_nil(c.released_at))
@@ -242,7 +242,7 @@ defmodule Texttile.Comments do
   ## Reading and counting
 
   # Every comment except the ones in the trash. Nothing outside the
-  # trash itself ever asks for those: to the desk and to the reader a
+  # trash itself ever asks for those: to an admin and to a reader a
   # deleted comment is gone from the moment it is deleted.
   defp standing, do: from(c in Comment, where: is_nil(c.delete_after))
 
@@ -334,8 +334,8 @@ defmodule Texttile.Comments do
 
   @doc """
   How many comments wait for their reader's confirmation - zero by
-  definition while the setting does not ask for one, and a comment the
-  desk released waits for nobody.
+  definition while the setting does not ask for one, and a comment an
+  admin released waits for nobody.
   """
   def waiting_count do
     if Settings.get(:comments_require_confirmation) do
@@ -356,12 +356,12 @@ defmodule Texttile.Comments do
     |> Map.new()
   end
 
-  ## What the desk does to one comment
+  ## What an admin does to one comment
 
   @doc """
   Rewrites the words of one comment. Only the words: the name and the
   address stay as the reader sent them, and the comment keeps the mark
-  that says the desk changed it. Readers get the new words at once.
+  that says an admin changed it. Readers get the new words at once.
 
   Answers `{:error, :gone}` for a comment that is not there any more,
   and `{:error, changeset}` for words that are empty or too long.
@@ -382,7 +382,7 @@ defmodule Texttile.Comments do
     end
   end
 
-  # One change to one comment, the way two desks survive each other: the
+  # One change to one comment, the way two admins survive each other: the
   # update names the row and the state it must still be in, and it
   # counts the rows it wrote. A row that went for good underneath - the
   # text was deleted, or the sweeper came - answers `{:error, :gone}`
@@ -407,7 +407,7 @@ defmodule Texttile.Comments do
   stands under the text from now on, and nothing else changes. The
   address proved nothing, so the next comment from it waits again.
 
-  Nobody is mailed about it - the desk is the one doing it.
+  Nobody is mailed about it - the admin is the one doing it.
   """
   def release_comment(id) do
     case get_comment(id) do
@@ -432,11 +432,11 @@ defmodule Texttile.Comments do
 
   @doc """
   Deletes a comment into the trash: readers stop seeing it at once and
-  it leaves every list on the desk, but the row waits #{@trash_days}
+  it leaves every list in the admin area, but the row waits #{@trash_days}
   days for a `restore_comment/1`. Silent as before - no mail, no trace
   for the reader - and announced on the topic. Takes the comment or its
-  id. A comment another desk deleted first answers `{:error, :gone}`;
-  two desks working the same list must not raise at each other.
+  id. A comment another admin deleted first answers `{:error, :gone}`;
+  two admins working the same list must not raise at each other.
   """
   def delete_comment(%Comment{} = comment), do: delete_comment(comment.id)
 

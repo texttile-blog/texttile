@@ -122,7 +122,7 @@ text. There they can do three things to a comment:
   that one comment under the text. The address itself stays unconfirmed, so
   the next comment from it waits again.
 - **Edit** the words. The name and the address stay as the reader sent them,
-  and the comment is marked "edited" on the desk.
+  and the comment is marked "edited" in the admin area.
 - **Delete** it into the trash. Readers stop seeing it at once, and it waits
   30 days at the foot of `/admin/comments`, where Restore puts it back. After
   30 days the comment is removed from the database for good.

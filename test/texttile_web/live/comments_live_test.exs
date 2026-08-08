@@ -64,6 +64,25 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#commentsList", "and 1 more on their texts.")
   end
 
+  test "delete asks first, and the words stay while the question stands", %{conn: conn} do
+    article = published_post()
+    comment = post!(article)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/comments")
+
+    view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+
+    assert has_element?(view, "#dialog", "Delete the comment of Grandma Christel?")
+    assert has_element?(view, "#dialog", "keeps it for 30 days")
+    assert has_element?(view, "#comment-#{comment.id}")
+    assert Comments.total_count() == 1
+
+    view |> element("#dialog-cancel") |> render_click()
+
+    refute has_element?(view, "#dialog")
+    assert Comments.total_count() == 1
+  end
+
   test "delete removes the comment silently, live for the whole desk", %{conn: conn} do
     article = published_post()
     comment = post!(article)
@@ -71,10 +90,10 @@ defmodule TexttileWeb.CommentsLiveTest do
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
     {:ok, other, _html} = live(conn, ~p"/admin/comments")
 
-    view
-    |> element("#comment-#{comment.id} button", "Delete")
-    |> render_click()
+    view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+    view |> element("#dialog-ok") |> render_click()
 
+    refute has_element?(view, "#dialog")
     refute has_element?(view, "#comment-#{comment.id}")
     refute has_element?(other, "#comment-#{comment.id}")
     assert Comments.for_article(article.id) == []
@@ -88,10 +107,24 @@ defmodule TexttileWeb.CommentsLiveTest do
     {:ok, two, _html} = live(conn, ~p"/admin/comments")
 
     one |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+    one |> element("#dialog-ok") |> render_click()
+
     render_click(two, "delete_comment", %{"id" => comment.id})
+    render_click(two, "confirm_delete_comment", %{"id" => comment.id})
 
     refute has_element?(two, "#comment-#{comment.id}")
     assert Comments.total_count() == 0
+  end
+
+  test "the words keep the line breaks the reader typed", %{conn: conn} do
+    article = published_post()
+    comment = post!(article, %{"body" => "One line.\n\nAnd another one."})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/comments")
+
+    html = view |> element("#comment-#{comment.id} p.comment-body") |> render()
+    assert html =~ "One line.\n\nAnd another one."
+    refute html =~ ">\n  One line"
   end
 
   test "a fresh comment arrives without a reload", %{conn: conn} do
@@ -111,6 +144,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       refute has_element?(view, "#commentsTrash")
 
       view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+      view |> element("#dialog-ok") |> render_click()
 
       refute has_element?(view, "#comment-#{comment.id}")
       assert has_element?(view, "#commentsTrash #trash-#{comment.id}", "More of the dog")
@@ -124,7 +158,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert Enum.map(Comments.for_article(article.id), & &1.id) == [comment.id]
     end
 
-    test "the trash of the one desk shows on the other", %{conn: conn} do
+    test "the trash of one screen shows on the other", %{conn: conn} do
       article = published_post()
       comment = post!(article)
 
@@ -132,6 +166,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       {:ok, other, _html} = live(conn, ~p"/admin/comments")
 
       view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
+      view |> element("#dialog-ok") |> render_click()
       assert has_element?(other, "#trash-#{comment.id}")
 
       view |> element("#trash-#{comment.id} button", "Restore") |> render_click()
@@ -155,7 +190,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert has_element?(view, "#commentsTrash", "9 deleted comments wait here")
     end
 
-    test "a comment the other desk restored first is no crash", %{conn: conn} do
+    test "a comment another admin restored first is no crash", %{conn: conn} do
       article = published_post()
       comment = post!(article)
       {:ok, _} = Comments.delete_comment(comment)
