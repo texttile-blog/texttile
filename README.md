@@ -50,10 +50,10 @@ A missing variable stops the app at boot with a message that names it. Without
 `MAIL_ADAPTER`, mail goes to a preview mailbox (`/dev/mailbox`, dev only).
 
 Set `CLIENT_IP_HEADER` only when a proxy stands in front of Texttile and
-writes that header itself. The comment rate limit counts by it, so a header
-the caller may write is a header a spammer may change. Without the variable
-the rate limit counts by the address of the connection, which is right
-everywhere except behind a proxy.
+writes that header itself. The comment rate limit and the reader count both
+read it, so a header the caller may write is a header a spammer may change.
+Without the variable both count by the address of the connection, which is
+right everywhere except behind a proxy.
 
 ## Run with Docker
 
@@ -194,6 +194,46 @@ carries the way off the list. The email goes out once per entry;
 publishing the same entry again does not send it again.
 
 The subscribe form wears the same spam protection as the comment form.
+
+## Stats
+
+Texttile counts its own readers at `/admin/stats`, and each entry again on
+its Stats tab in the editor. Nothing is loaded from anywhere else and
+nothing is sent anywhere else.
+
+Every reader page reports itself to this server with one small request. It
+carries three things: the address of the page, the entry it shows, and the
+address the reader came from. No cookie is set, none is read, and none is
+sent with that request.
+
+The server turns the caller into one number for the day: their IP address
+and their browser line, hashed together with a secret this server draws
+every morning and keeps in memory only. The secret is never written to
+disk and is gone at midnight, so no row can be traced back to an address,
+and nothing links the same reader to two days. That is what "people" counts:
+a reader who comes back next week counts as one person each time. The IP
+address itself is never stored.
+
+Four rules keep the numbers about people, not machines:
+
+- The report needs JavaScript, so almost everything that crawls the web
+  never reports at all.
+- A browser line that says bot is dropped, and so is a page the browser
+  only fetched ahead.
+- One reader counts once per page every half hour, so reloading changes
+  nothing.
+- One caller writes at most 60 views a minute.
+
+An admin reading their own blog is not a reader: while you are signed in,
+no page reports itself. Drafts, scheduled entries and previews count for
+nobody.
+
+The numbers live in the `page_views` table in your database, one row per
+counted view. They are yours; nothing leaves the server.
+
+If a proxy stands in front of Texttile, set `CLIENT_IP_HEADER` (see
+[Configuration](#configuration)). Without it every reader behind the proxy
+shares one address, and the counter reads them as one person.
 
 ## Accounts
 

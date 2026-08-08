@@ -26,6 +26,14 @@ defmodule TexttileWeb.Router do
     get "/feed.xml", FeedController, :show
   end
 
+  # The view counter. It stands outside every browser pipeline on
+  # purpose: no session is fetched, no cookie is read or written, and
+  # no token is asked for. Counting a page must touch nothing that
+  # belongs to the reader.
+  scope "/", TexttileWeb do
+    post "/count", StatsController, :count
+  end
+
   ## The sign-in family
 
   scope "/", TexttileWeb do
@@ -78,6 +86,7 @@ defmodule TexttileWeb.Router do
       live "/texts/:id", EditorLive
       live "/comments", CommentsLive
       live "/newsletter", NewsletterLive
+      live "/stats", StatsLive
       live "/profile", ProfileLive
       live "/settings", SettingsLive
       live "/settings/import", ImportLive

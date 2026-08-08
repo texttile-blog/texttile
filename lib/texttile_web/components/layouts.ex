@@ -52,7 +52,7 @@ defmodule TexttileWeb.Layouts do
         to: ~p"/admin/newsletter",
         active: "newsletter"
       },
-      %{key: "8", label: "Stats", kind: :later},
+      %{key: "8", label: "Stats", kind: :screen, to: ~p"/admin/stats", active: "stats"},
       %{key: "9", label: "Settings", kind: :screen, to: ~p"/admin/settings", active: "settings"},
       %{key: "0", label: "View site", kind: :site, to: ~p"/"}
     ]
@@ -187,9 +187,6 @@ defmodule TexttileWeb.Layouts do
           >
             {section.label} <span class="k">{section.key}</span>
           </.link>
-          <button :if={section.kind == :later} class="row" type="button">
-            {section.label} <span class="k">{section.key}</span>
-          </button>
           <%!-- the site opens beside the admin area: the writer keeps
                the entry they were working on --%>
           <a

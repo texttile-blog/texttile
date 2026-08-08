@@ -171,6 +171,12 @@
     line-height: 1.2; letter-spacing: -.01em; color: var(--tt-ink);
     margin-top: 44px; margin-bottom: 12px;
   }
+  /* the section heading on Stats: quieter than .set-h, because the
+     blocks under it are rows of numbers, not fields to fill in */
+  .sec-h { font-size: 13px; font-weight: 600; color: var(--tt-dim); margin-top: 32px; margin-bottom: 10px; }
+  /* one number and what it counts */
+  .fig .n { font-family: var(--tt-font-serif); font-size: 26px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+  .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; }
   .lab { font-size: 12.5px; color: var(--tt-dim); }
   .note { font-size: 12.5px; color: var(--tt-faint); }
   .hint { font-size: 12px; color: var(--tt-faint); margin-top: 5px; }

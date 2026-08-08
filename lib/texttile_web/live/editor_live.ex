@@ -11,12 +11,14 @@ defmodule TexttileWeb.EditorLive do
   use TexttileWeb, :live_view
 
   import TexttileWeb.CommentComponents
+  import TexttileWeb.StatsComponents
 
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Lock
   alias Texttile.Comments
   alias Texttile.Gallery
+  alias Texttile.Stats
   alias Texttile.Videos
 
   ## Mount
@@ -50,6 +52,9 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
       |> assign(:editing_comment, nil)
       |> assign(:comment_error, nil)
+      # The numbers are read when the Stats tab is opened, not on the
+      # way into the editor: most visits here are to write.
+      |> assign(:stats, nil)
       |> known_tags()
 
     # What the writing surface was told last. It reads the element on
@@ -80,8 +85,8 @@ defmodule TexttileWeb.EditorLive do
   # The Comments overview jumps straight into a text's Comments tab;
   # the address may name any tab.
   def handle_params(%{"tab" => tab}, _uri, socket)
-      when tab in ~w(text comments log versions) do
-    {:noreply, assign(socket, :tab, tab)}
+      when tab in ~w(text comments stats log versions) do
+    {:noreply, socket |> assign(:tab, tab) |> load_stats(tab)}
   end
 
   def handle_params(_params, _uri, socket), do: {:noreply, socket}
@@ -386,8 +391,8 @@ defmodule TexttileWeb.EditorLive do
   ## Events · chrome
 
   def handle_event("set_tab", %{"tab" => tab}, socket)
-      when tab in ~w(text comments log versions) do
-    {:noreply, assign(socket, :tab, tab)}
+      when tab in ~w(text comments stats log versions) do
+    {:noreply, socket |> assign(:tab, tab) |> load_stats(tab)}
   end
 
   # Only the open text's own comments, and a comment that is already
@@ -1180,6 +1185,36 @@ defmodule TexttileWeb.EditorLive do
   # A tag no text carries any more is off the blog, so it leaves the
   # row with the text it stood on. Without that, a word typed by
   # mistake would keep a chip until the editor is closed.
+  # The numbers of this entry, read when the tab is opened. An entry
+  # nobody can read has none, and says so instead.
+  defp load_stats(socket, "stats") do
+    article = socket.assigns.article
+
+    if article.status == "published" do
+      assign(socket, :stats, %{
+        views: Stats.article_views(article.id),
+        days: Stats.by_day(14, article_id: article.id),
+        referrers: Stats.referrers(14, article_id: article.id)
+      })
+    else
+      assign(socket, :stats, nil)
+    end
+  end
+
+  defp load_stats(socket, _tab), do: socket
+
+  defp stats_empty(%{status: "scheduled", publish_date: date}) do
+    "No numbers yet. It goes live on #{date}."
+  end
+
+  defp stats_empty(_article) do
+    "No numbers yet. Drafts are invisible to readers, so nothing is counted."
+  end
+
+  # The date the counting started is the day the entry went live.
+  defp views_label(%{publish_date: %Date{} = date}), do: "views since #{date}"
+  defp views_label(_article), do: "views"
+
   defp known_tags(socket) do
     standing = socket.assigns[:known_tags] || []
     carried = Articles.known_tags() ++ Articles.tag_list(socket.assigns.article)
@@ -1409,6 +1444,7 @@ defmodule TexttileWeb.EditorLive do
                   {tab, label} <- [
                     {"text", "Text"},
                     {"comments", "Comments"},
+                    {"stats", "Stats"},
                     {"log", "Log"},
                     {"versions", "Versions"}
                   ]
@@ -1612,6 +1648,49 @@ defmodule TexttileWeb.EditorLive do
                 />
                 <p class="note mt-[14px] max-w-[62ch]">
                   {comments_foot(@comments, @cmt_require)}
+                </p>
+              </div>
+            </div>
+
+            <div :if={@tab == "stats"} id="tp-stats">
+              <p :if={@article.status != "published"} class="note" id="tpStatsEmpty">
+                {stats_empty(@article)}
+              </p>
+              <div :if={@stats}>
+                <div class="grid grid-cols-1 md:grid-cols-3 border-y border-rule">
+                  <div class="fig py-4 md:pr-5">
+                    <div class="n" id="tpFigViews">{number(@stats.views)}</div>
+                    <div class="l">{views_label(@article)}</div>
+                  </div>
+                  <div class="fig py-4 md:px-5 border-t border-hair md:border-t-0 md:border-l md:border-l-hair">
+                    <div class="n" id="tpFigComments">{length(@comments)}</div>
+                    <div class="l">comments</div>
+                  </div>
+                  <div class="fig py-4 md:px-5 border-t border-hair md:border-t-0 md:border-l md:border-l-hair">
+                    <div class="n" id="tpFigTiles">{length(@gallery)}</div>
+                    <div class="l">images in the gallery</div>
+                  </div>
+                </div>
+
+                <h2 class="sec-h">Views, last 14 days</h2>
+                <.day_chart id="tpDayChart" days={@stats.days} />
+
+                <h2 class="sec-h">Referrers</h2>
+                <p :if={@stats.referrers == []} class="note" id="tpReferrersEmpty">
+                  Nothing counted yet, so there is nowhere readers came from.
+                </p>
+                <.referrer_table
+                  :if={@stats.referrers != []}
+                  id="tpReferrers"
+                  rows={@stats.referrers}
+                />
+
+                <p class="note mt-[22px]">
+                  Counted by this server alone. No cookie, no fingerprint, no
+                  third party. The whole blog is on the <.link
+                    class="link"
+                    navigate={~p"/admin/stats"}
+                  >Stats screen</.link>.
                 </p>
               </div>
             </div>

@@ -29,7 +29,14 @@
     <script phx-track-static defer src={~p"/assets/js/public.js"}>
     </script>
   </head>
-  <body class="site quiet-fields">
+  <%!-- data-count says: report this page to the view counter. It
+       stands on the reader pages only, and never while an admin is
+       signed in. data-count-entry names the entry the page shows. --%>
+  <body
+    class="site quiet-fields"
+    data-count={assigns[:count_view] && "1"}
+    data-count-entry={assigns[:count_entry]}
+  >
     {@inner_content}
   </body>
 </html>
