@@ -40,12 +40,15 @@ kill-port-4000:
 
 # Pull a consistent snapshot of the production SQLite DB to $(DB_LOCAL).
 # VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.
+# The demo is the default; `make db-pull FLY_APP=texttile-staging` takes the other one.
+FLY_APP ?= texttile-demo
+
 db-pull:
 	@echo "Waking the machine..."
-	@curl -fs -o /dev/null --max-time 30 https://texttile.fly.dev/ || true
-	fly ssh console -a texttile -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
+	@curl -fs -o /dev/null --max-time 30 https://$(FLY_APP).fly.dev/ || true
+	fly ssh console -a $(FLY_APP) -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
 	@rm -f -- "$(DB_LOCAL)"
-	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a texttile
+	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a $(FLY_APP)
 	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
 
 # Delete the shared development database. The next `make start` recreates it.
