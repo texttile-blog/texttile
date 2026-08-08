@@ -290,8 +290,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> fill_in("Title", with: "Logged")
       |> click_button("#stateBtn .main", "Publish")
       |> click_button(".tab", "Log")
-      |> assert_has("#logList", text: "published the text")
-      |> assert_has("#logList", text: "started the text")
+      |> assert_has("#logList", text: "published the entry")
+      |> assert_has("#logList", text: "started the entry")
     end
   end
 

@@ -364,10 +364,10 @@ defmodule TexttileWeb.SettingsLive do
 
   defp refresh_tags(socket), do: assign(socket, :tags, Articles.tag_counts())
 
-  defp tag_texts(1), do: "1 text"
-  defp tag_texts(count), do: "#{count} texts"
+  defp tag_texts(1), do: "1 entry"
+  defp tag_texts(count), do: "#{count} entries"
 
-  defp tag_deleted_note(tag, 0), do: "No text carried #{tag} any more"
+  defp tag_deleted_note(tag, 0), do: "No entry carried #{tag} any more"
   defp tag_deleted_note(tag, count), do: "#{tag} is off #{tag_texts(count)}"
 
   defp refresh_storage(socket) do
@@ -659,7 +659,7 @@ defmodule TexttileWeb.SettingsLive do
         <%!-- the editor of an entry, with the pictures taken out: About
              stands in the band under every page and carries words, not
              a gallery. One hook, one behaviour, one set of keys. --%>
-        <.md_bar id="aboutBar" />
+        <.md_bar id="aboutBar" files={false} />
         <div
           id="setting-about_markdown"
           class="ed-body ed-cm boxed-cm"
@@ -690,7 +690,7 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">Latest texts</span>
+              <span class="text-[14.5px] font-semibold">Latest entries</span>
               <br />
               <span class="text-[11.5px] text-faint">
                 The front door sends the reader to /blog: published posts,
@@ -732,7 +732,7 @@ defmodule TexttileWeb.SettingsLive do
             id="front-page-choice"
           >
             <%!-- its own name: with the radios' name, its value would
-                 shadow a click back to "Latest texts" --%>
+                 shadow a click back to "Latest entries" --%>
             <label class="lab block mb-[5px]" for="setting-front_page">The page</label>
             <select id="setting-front_page" name="settings[front_page_choice]">
               <option

@@ -470,7 +470,7 @@ defmodule Texttile.Articles do
   @doc "A new, empty draft, and the first line of its Log."
   def create_draft(user) do
     {:ok, article} = Repo.insert(%Article{})
-    push_log(article, user, "started the text")
+    push_log(article, user, "started the entry")
     broadcast({:article_changed, article})
     {:ok, article}
   end
@@ -516,7 +516,7 @@ defmodule Texttile.Articles do
       push_log(
         article,
         user,
-        if(future?, do: "scheduled the text for #{day}", else: "published the text")
+        if(future?, do: "scheduled the entry for #{day}", else: "published the entry")
       )
 
       article = if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
@@ -537,7 +537,7 @@ defmodule Texttile.Articles do
       push_log(
         article,
         user,
-        if(was == "scheduled", do: "unscheduled the text", else: "unpublished the text")
+        if(was == "scheduled", do: "unscheduled the entry", else: "unpublished the entry")
       )
 
       broadcast({:article_changed, article})
@@ -600,7 +600,7 @@ defmodule Texttile.Articles do
     |> Repo.all()
     |> Enum.map(fn article ->
       {:ok, article} = article |> Article.state_changeset(%{status: "published"}) |> Repo.update()
-      push_log(article, nil, "the text went live as scheduled")
+      push_log(article, nil, "the entry went live as scheduled")
       article = Texttile.Newsletter.notify_published(article)
       broadcast({:article_changed, article})
       article
@@ -658,7 +658,7 @@ defmodule Texttile.Articles do
   def save_version(%Article{} = article, user) do
     case snapshot(article, user) do
       {:ok, version} ->
-        push_log(article, user, "saved a version of the text")
+        push_log(article, user, "saved a version of the entry")
         broadcast({:versions_changed, article.id})
         {:ok, version}
 

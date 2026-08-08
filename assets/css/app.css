@@ -271,6 +271,9 @@
     background-color: var(--tt-paper); box-shadow: none;
     border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
   }
+  /* a field is as wide as what it holds: a title or a description can
+     run, a choice out of three words cannot */
+  .quiet-fields .boxed-in select { max-width: 280px; }
 
   /* a text area is a region, not a line. One underline under nine rows
      leaves the writing surface invisible, so among the quiet fields a
@@ -425,7 +428,27 @@
       height: calc(100dvh - 52px);
       overflow-y: scroll;
       overscroll-behavior: contain;
+      /* the lane is reserved whether or not anything overflows, so the
+         column never shifts sideways as the settings grow */
+      scrollbar-gutter: stable;
     }
+    /* Drawn, always. A macOS browser hides its overlay scrollbar until
+       something moves, and a column that stands still then reads as a
+       column that ends at the bottom edge of the window. Naming the
+       parts turns the overlay bar into one that keeps its place.
+       `scrollbar-width` is deliberately not set: declaring it puts the
+       browser back on its own overlay bar and drops everything below. */
+    .sidecol::-webkit-scrollbar { width: 11px; }
+    .sidecol::-webkit-scrollbar-track { background: transparent; }
+    .sidecol::-webkit-scrollbar-thumb {
+      /* the hairline of a rule disappears against paper, and a bar
+         nobody can see is the thing this was meant to fix */
+      background-color: var(--tt-faint);
+      border: 3px solid transparent;
+      background-clip: content-box;
+      border-radius: 999px;
+    }
+    .sidecol::-webkit-scrollbar-thumb:hover { background-color: var(--tt-inksoft); }
   }
 
   /* the status stamp in the bar */
@@ -999,7 +1022,9 @@
      under it is the published design and must not be mistaken for it. */
   .notlive {
     background: var(--tt-accentwash); color: var(--tt-accent);
-    font-size: 12.5px; line-height: 1.5; padding: 9px 0;
+    font-size: 12.5px; line-height: 1.5;
+    /* the gutter of the header it sits under, so the two line up */
+    padding: 9px var(--tt-gut);
     border-bottom: 1px solid var(--tt-accentline);
   }
   .notlive b { font-weight: 600; }

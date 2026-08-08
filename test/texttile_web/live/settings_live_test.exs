@@ -229,8 +229,8 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 
       assert has_element?(view, "#tagrow-sea", "sea")
-      assert has_element?(view, "#tagrow-sea", "2 texts")
-      assert has_element?(view, "#tagrow-fog", "1 text")
+      assert has_element?(view, "#tagrow-sea", "2 entries")
+      assert has_element?(view, "#tagrow-fog", "1 entry")
     end
 
     test "deleting a tag asks first, then takes it off every text",

@@ -179,7 +179,7 @@ defmodule TexttileWeb.EditorLive do
 
     cond do
       not socket.assigns.holds_lock ->
-        {:noreply, mark_saved(socket, "Take the text over first; restoring needs it")}
+        {:noreply, mark_saved(socket, "Take the entry over first; restoring needs it")}
 
       version = Enum.find(versions, &(to_string(&1.id) == id)) ->
         {:ok, article} = Articles.restore_version(article, version, scope.user)
@@ -213,12 +213,12 @@ defmodule TexttileWeb.EditorLive do
         {:noreply,
          assign(socket, :dialog, %{
            id: "takeover",
-           title: "Take the text over from #{name}?",
+           title: "Take the entry over from #{name}?",
            body: [
              activity_line(name, holder),
-             "A takeover stops that mid-sentence. The title and the body turn read-only on the other side, and a note says who took the text. Nothing is lost, and the text can go straight back."
+             "A takeover stops that mid-sentence. The title and the body turn read-only on the other side, and a note says who took the entry. Nothing is lost, and the entry can go straight back."
            ],
-           ok: "Take over the text",
+           ok: "Take over the entry",
            event: "confirm_takeover"
          })}
     end
@@ -251,7 +251,7 @@ defmodule TexttileWeb.EditorLive do
       {:noreply,
        assign(socket, :dialog, %{
          id: "publish-anyway",
-         title: "#{name} is editing this text right now",
+         title: "#{name} is editing this entry right now",
          body: ["Publish it anyway, as it stands this second?"],
          ok: "Publish anyway",
          event: "do_publish"
@@ -449,7 +449,7 @@ defmodule TexttileWeb.EditorLive do
         address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
 
         [
-          "The text is live. From now on, a reader who follows an old link to #{address} gets a 404 page."
+          "The entry is live. From now on, a reader who follows an old link to #{address} gets a 404 page."
         ]
       else
         []
@@ -463,9 +463,9 @@ defmodule TexttileWeb.EditorLive do
        title: ~s(Delete "#{Articles.display_title(article)}"?),
        body:
          [
-           "This deletes the text and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
+           "This deletes the entry and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
          ] ++ live_line ++ ["There is no undo."],
-       ok: "Delete the text",
+       ok: "Delete the entry",
        event: "confirm_delete"
      })}
   end
@@ -736,7 +736,7 @@ defmodule TexttileWeb.EditorLive do
 
     case Articles.publish(article, scope.user, opts) do
       {:ok, article} -> publish_done(socket, article)
-      {:error, _changeset} -> mark_saved(socket, "That address is taken by another text")
+      {:error, _changeset} -> mark_saved(socket, "That address is taken by another entry")
     end
   end
 
@@ -949,7 +949,7 @@ defmodule TexttileWeb.EditorLive do
     if id == socket.assigns.article.id do
       {:noreply,
        socket
-       |> put_flash(:info, "The text was deleted while you had it open.")
+       |> put_flash(:info, "The entry was deleted while you had it open.")
        |> push_navigate(to: ~p"/admin/texts")}
     else
       {:noreply, socket}
@@ -1045,12 +1045,12 @@ defmodule TexttileWeb.EditorLive do
         end
 
       if displaced, do: Articles.snapshot(article, displaced)
-      Articles.push_log(article, scope.user, "took over the text")
+      Articles.push_log(article, scope.user, "took over the entry")
 
       note =
         if displaced,
-          do: "You have the text · #{Accounts.display_name(displaced)} was told",
-          else: "You have the text"
+          do: "You have the entry · #{Accounts.display_name(displaced)} was told",
+          else: "You have the entry"
 
       {:noreply, socket |> refresh_lock() |> mark_saved(note)}
     else
@@ -1166,7 +1166,7 @@ defmodule TexttileWeb.EditorLive do
   defp slug_error(changeset) do
     case changeset.errors[:slug] do
       {"is an address the site itself uses", _} -> "That address belongs to the site itself"
-      _ -> "That address is taken by another text"
+      _ -> "That address is taken by another entry"
     end
   end
 
@@ -1370,7 +1370,7 @@ defmodule TexttileWeb.EditorLive do
         <%= if @article.status == "published" do %>
           <button class="row" phx-click="unpublish">Unpublish</button>
         <% end %>
-        <button class="row" phx-click="ask_delete">Delete this text</button>
+        <button class="row" phx-click="ask_delete">Delete this entry</button>
       </div>
 
       <p :if={@saved_note} class="state-live" id="stateLine" role="status" aria-live="polite">
@@ -1623,7 +1623,7 @@ defmodule TexttileWeb.EditorLive do
 
             <div :if={@tab == "log"} id="tp-log">
               <p class="note mb-4">
-                Everything that happened to this text, newest first: your edits, the edits of every other admin, every handover of the text, and every version anybody saved.
+                Everything that happened to this entry, newest first: your edits, the edits of every other admin, every handover of the entry, and every version anybody saved.
               </p>
               <div id="logList">
                 <div :for={entry <- @log} class="log-row">
@@ -1679,7 +1679,7 @@ defmodule TexttileWeb.EditorLive do
                         Enum.at(@versions, index + 1).inserted_at
                       )}: <span class="dif-add">added</span>, <span class="dif-del">removed</span>.
                     <% else %>
-                      The first version of the text.
+                      The first version of the entry.
                     <% end %>
                   </p>
                   <%!-- pre-wrap renders template whitespace, so the marked
@@ -1809,7 +1809,7 @@ defmodule TexttileWeb.EditorLive do
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
                   <%= if @preview_candidates == [] do %>
                     <span class="note">
-                      No pictures yet. Once the text or the gallery has one, pick it here.
+                      No pictures yet. Once the entry or the gallery has one, pick it here.
                     </span>
                   <% else %>
                     <button
@@ -1830,7 +1830,7 @@ defmodule TexttileWeb.EditorLive do
                   <% end %>
                 </div>
                 <div class="hint">
-                  Used in the texts grid, on the front page and in link previews.
+                  Used in the entries grid, on the front page and in link previews.
                 </div>
               </span>
             </div>
@@ -2487,7 +2487,7 @@ defmodule TexttileWeb.EditorLive do
   defp will_notify?(article), do: article.type != "page" and article.notify_on_publish
 
   defp date_hint(%{status: "draft"}),
-    do: "Empty means whenever you publish. A future date schedules the text."
+    do: "Empty means whenever you publish. A future date schedules the entry."
 
   defp date_hint(%{status: "scheduled"} = article) do
     if article.publish_date,
@@ -2502,7 +2502,7 @@ defmodule TexttileWeb.EditorLive do
       else: "Pick the day it went live. An empty field makes the entry a draft again."
   end
 
-  defp slug_hint(%{status: "draft"}), do: "Free to change while the text is a draft."
+  defp slug_hint(%{status: "draft"}), do: "Free to change while the entry is a draft."
 
   defp slug_hint(article) do
     "#{TexttileWeb.Endpoint.host()}#{Articles.public_path(article)} is live; changing it breaks old links."
@@ -2512,7 +2512,7 @@ defmodule TexttileWeb.EditorLive do
   # once never sends it again, whatever state it stands in now.
   defp notify_note(%{notified_on: %Date{} = day}),
     do:
-      "The subscriber email for this text went out on #{day}. It goes out once; publishing again does not send it again."
+      "The subscriber email for this entry went out on #{day}. It goes out once; publishing again does not send it again."
 
   defp notify_note(%{status: "draft", notify_on_publish: true}),
     do:
@@ -2524,11 +2524,12 @@ defmodule TexttileWeb.EditorLive do
 
   defp notify_note(%{status: "scheduled", notify_on_publish: true} = article),
     do:
-      "Goes out to the confirmed subscribers when the text goes live on #{article.publish_date}. Uncheck any time before then."
+      "Goes out to the confirmed subscribers when the entry goes live on #{article.publish_date}. Uncheck any time before then."
 
   defp notify_note(%{status: "scheduled"} = article),
     do: "No email will go out on #{article.publish_date}. Check it and it goes out at go-live."
 
   defp notify_note(_article),
-    do: "No email went out for this text. The email goes out only at the moment a text goes live."
+    do:
+      "No email went out for this entry. The email goes out only at the moment an entry goes live."
 end

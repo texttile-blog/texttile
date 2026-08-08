@@ -4,12 +4,10 @@
        for nobody else. The strip says so before the first line, because
        everything under it looks exactly like the published thing. --%>
   <p :if={@article.status != "published"} class="notlive" id="not-live">
-    <span class="wrap">
-      <b>{String.capitalize(@article.status)}.</b>
-      This is the entry as it was last saved. Only somebody signed in can open
-      this address; a reader gets a 404.
-      <a href={~p"/admin/texts/#{@article.id}"}>Back to the editor</a>
-    </span>
+    <b>{String.capitalize(@article.status)}.</b>
+    This is the entry as it was last saved. Only somebody signed in can open
+    this address; a reader gets a 404.
+    <a href={~p"/admin/texts/#{@article.id}"}>Back to the editor</a>
   </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">

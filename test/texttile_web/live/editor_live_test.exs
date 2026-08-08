@@ -658,8 +658,8 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       view |> element(".tab", "Log") |> render_click()
 
-      assert has_element?(view, "#logList .log-row", "published the text")
-      assert has_element?(view, "#logList .log-row", "started the text")
+      assert has_element?(view, "#logList .log-row", "published the entry")
+      assert has_element?(view, "#logList .log-row", "started the entry")
     end
   end
 
@@ -669,10 +669,10 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
       view |> element("#stateBtn [aria-haspopup]") |> render_click()
-      view |> element("#stateMenu button", "Delete this text") |> render_click()
+      view |> element("#stateMenu button", "Delete this entry") |> render_click()
       assert has_element?(view, "#dialog", "Delete")
 
-      view |> element("#dialog button", "Delete the text") |> render_click()
+      view |> element("#dialog button", "Delete the entry") |> render_click()
       assert_redirect(view, "/admin/texts")
       assert Articles.list_articles() == []
     end
@@ -689,7 +689,7 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, reader_view, _} = live(conn2, ~p"/admin/texts/#{article}")
 
       reader_view |> element("#stateBtn .main", "Publish") |> render_click()
-      assert has_element?(reader_view, "#dialog", "is editing this text right now")
+      assert has_element?(reader_view, "#dialog", "is editing this entry right now")
       assert Articles.get_article!(article.id).status == "draft"
 
       reader_view |> element("#dialog button", "Publish anyway") |> render_click()
@@ -713,7 +713,7 @@ defmodule TexttileWeb.EditorLiveTest do
       reader_view |> element("#versionsList button", "Restore this version") |> render_click()
 
       assert Articles.get_article!(article.id).body == "Newer words."
-      assert has_element?(reader_view, "#stateLine", "Take the text over first")
+      assert has_element?(reader_view, "#stateLine", "Take the entry over first")
     end
   end
 
@@ -823,8 +823,8 @@ defmodule TexttileWeb.EditorLiveTest do
 
       # the read-only side clicks into the title and confirms the dialog
       second |> element("#edTitle") |> render_click()
-      assert has_element?(second, "#dialog", "Take the text over")
-      second |> element("#dialog button", "Take over the text") |> render_click()
+      assert has_element?(second, "#dialog", "Take the entry over")
+      second |> element("#dialog button", "Take over the entry") |> render_click()
 
       # the flush answers (or its fallback fires), then the lock moves
       wait_until(fn -> not has_element?(second, "#edTitle[readonly]") end)
