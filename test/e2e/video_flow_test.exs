@@ -152,6 +152,12 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     video =
       wait_until(fn -> match?(%{state: "done"}, Videos.get(relative)) && Videos.get(relative) end)
 
+    # the writing surface draws the reference as its poster
+    conn
+    |> sign_in()
+    |> visit("/admin/texts/#{article.id}")
+    |> assert_has(".cm-mdvid[style*='#{video.poster_path}']", timeout: 10_000)
+
     {:ok, article} = Articles.publish(article, kb)
 
     conn

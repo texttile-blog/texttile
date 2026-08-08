@@ -12,8 +12,9 @@
    composed on is always undecorated raw text.
 
    The interface, and nothing else crosses it:
-   in:  the initial text (the server-rendered textarea), sync_body
-        {text, caret?}, set_readonly {readOnly}
+   in:  the initial text (the server-rendered textarea), the posters of
+        its videos (data-posters), sync_body {text, caret?},
+        sync_media {posters}, set_readonly {readOnly}
    out: body_changed {text} (debounced), editor_activity (throttled),
         ask_takeover on a read-only pointer, files into uploadFiles */
 
@@ -88,6 +89,9 @@ export const VIDEO_FILE = /\.(mp4|mov|m4v|webm|avi|mkv)$/i
 /* ---- the live preview --------------------------------------------- */
 const HIDE = Decoration.replace({})
 const remoteChange = Annotation.define()
+/* the posters changed under the text: the preview redraws, and nothing
+   else about the document has moved */
+const mediaChanged = Annotation.define()
 
 function buildDeco(view, resolveImage) {
   const {state} = view
@@ -315,6 +319,9 @@ const impl = {
     const seed = this.el.querySelector("textarea")
     const initial = seed ? seed.value : ""
     const readOnly = this.el.dataset.readonly === "true"
+    /* the poster of every converted video of this text, by the url the
+       body carries; the server keeps it fresh through sync_media */
+    this.posters = JSON.parse(this.el.dataset.posters || "{}")
     this.el.replaceChildren()
 
     let debounce = null
@@ -351,10 +358,13 @@ const impl = {
        drawn as they are */
     const resolveImage = url => {
       if (!/^(https?:|data:|blob:|\/)/.test(url)) return null
-      /* a video has no thumbnail of its own here; the widget wears a
-         play mark, and the panel below the text says where its
-         conversion stands */
-      if (VIDEO_FILE.test(url)) return null
+      /* a video is drawn by its poster; while ffmpeg has none the
+         widget is the play mark alone, and the panel below the text
+         says where the conversion stands */
+      if (VIDEO_FILE.test(url)) {
+        const poster = this.posters[url]
+        return poster ? `url('${poster.replace(/'/g, "%27")}')` : null
+      }
       const scaled = url.startsWith("/uploads/")
         ? "/renditions/320/" + url.slice("/uploads/".length)
         : url
@@ -365,7 +375,9 @@ const impl = {
       constructor(view) { this.deco = buildDeco(view, resolveImage) }
       update(u) {
         if (u.docChanged || u.selectionSet || u.viewportChanged ||
-            u.startState.readOnly !== u.state.readOnly) this.deco = buildDeco(u.view, resolveImage)
+            u.startState.readOnly !== u.state.readOnly ||
+            u.transactions.some(t => t.annotation(mediaChanged)))
+          this.deco = buildDeco(u.view, resolveImage)
       }
     }, {decorations: v => v.deco})
 
@@ -447,6 +459,12 @@ const impl = {
       clearTimeout(debounce)
       debounce = null
       this.pushEvent("body_flushed", {text: this.view.state.doc.toString()})
+    })
+    /* a conversion finished somewhere: the posters come along, and the
+       preview draws them. No change to the document, so nothing saves. */
+    this.handleEvent("sync_media", ({posters}) => {
+      this.posters = posters || {}
+      this.view.dispatch({annotations: mediaChanged.of(true)})
     })
     this.handleEvent("set_readonly", ({readOnly: ro}) => {
       this.view.dispatch({effects: roComp.reconfigure(roExt(ro))})

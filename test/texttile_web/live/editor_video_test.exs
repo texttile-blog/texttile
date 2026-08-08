@@ -31,6 +31,14 @@ defmodule TexttileWeb.EditorVideoTest do
     article
   end
 
+  # What the writing surface gets to draw its inline previews with, out
+  # of the rendered attribute; HEEx escapes the quotes of the JSON.
+  defp posters_of(html) do
+    [_whole, raw] = Regex.run(~r/data-posters="([^"]*)"/, html)
+
+    raw |> String.replace("&quot;", "\"") |> Jason.decode!()
+  end
+
   defp body_video(article) do
     {:ok, relative} = Uploads.put_body_video(video_file(320, 240), "Harbour.mov")
     Videos.ensure(relative)
@@ -82,6 +90,43 @@ defmodule TexttileWeb.EditorVideoTest do
       {:ok, video} = Videos.convert(Videos.get(relative))
 
       assert render(view) =~ video.poster_path
+    end
+  end
+
+  describe "the poster in the writing surface" do
+    test "the editor carries the poster of every converted video", %{conn: conn, user: user} do
+      {article, relative} = body_video(draft(user))
+      {:ok, video} = Videos.convert(Videos.get(relative))
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      posters = posters_of(render(view))
+      assert posters == %{"/uploads/#{relative}" => "/renditions/320/#{video.poster_path}"}
+    end
+
+    test "a video that is not converted carries none", %{conn: conn, user: user} do
+      {article, _relative} = body_video(draft(user))
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      assert posters_of(render(view)) == %{}
+    end
+
+    test "a conversion that finishes hands the poster to the open editor", %{
+      conn: conn,
+      user: user
+    } do
+      {article, relative} = body_video(draft(user))
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      {:ok, video} = Videos.convert(Videos.get(relative))
+      render(view)
+
+      # the conversion says twice where it stands, and only the second
+      # word carries a poster
+      url = "/uploads/#{relative}"
+      assert_push_event(view, "sync_media", %{posters: %{^url => poster}})
+      assert poster == "/renditions/320/#{video.poster_path}"
     end
   end
 

@@ -768,6 +768,21 @@ defmodule TexttileWeb.EditorLive do
   defp ref_media(media, "/uploads/" <> relative), do: media[relative]
   defp ref_media(_media, _url), do: nil
 
+  # The poster of every converted video, for the writing surface: it
+  # draws the markdown references, so it is told the body's own urls.
+  # A video ffmpeg has not finished is absent and stays a play mark.
+  defp poster_map(media) do
+    media
+    |> Enum.flat_map(fn {path, entry} ->
+      if Videos.video?(path) and is_binary(entry.still) do
+        [{"/uploads/#{path}", "/renditions/320/#{entry.still}"}]
+      else
+        []
+      end
+    end)
+    |> Map.new()
+  end
+
   # What the desk says while ffmpeg is not through with a video.
   defp conversion_note(%{state: :queued}), do: "waiting to be converted"
   defp conversion_note(%{state: :running}), do: "converting"
@@ -962,7 +977,12 @@ defmodule TexttileWeb.EditorLive do
   # while they render; this is the nudge that makes a render happen.
   def handle_info({:video_changed, path}, socket) do
     if in_this_text?(socket, path) do
-      {:noreply, update(socket, :media_rev, &(&1 + 1))}
+      # The panel and the tiles read the state as they render; the
+      # writing surface is the hook's, so its posters are handed over.
+      {:noreply,
+       socket
+       |> update(:media_rev, &(&1 + 1))
+       |> push_event("sync_media", %{posters: poster_map(media(socket.assigns))})}
     else
       {:noreply, socket}
     end
@@ -1460,6 +1480,7 @@ defmodule TexttileWeb.EditorLive do
                   phx-hook="BodyEd"
                   phx-update="ignore"
                   data-readonly={to_string(!@holds_lock)}
+                  data-posters={Jason.encode!(poster_map(@media))}
                 >
                   <textarea
                     class="ed-body"
