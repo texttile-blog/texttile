@@ -140,8 +140,15 @@ defmodule TexttileWeb.Layouts do
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
 
+  slot :lead,
+    doc: """
+    what stands beside the breadcrumb and belongs to it: the editor's
+    state word. The left of the bar says what this screen is, the right
+    says what you can do about it (round-15, variant A).
+    """
+
   slot :bar,
-    doc: "the right end of the bar, like the editor's in round-13: the Last-saved line"
+    doc: "the right end of the bar: presence, the save state, the one control"
 
   slot :inner_block, required: true
 
@@ -250,9 +257,11 @@ defmodule TexttileWeb.Layouts do
         <.link href={~p"/logout"} method="delete" class="row">{gettext("Sign out")}</.link>
       </nav>
 
-      <%!-- the crumb is the one flexible thing in the bar, so the open
-           section stays readable on a phone --%>
-      <span class="flex items-baseline gap-[6px] md:gap-2 flex-1 min-w-0 text-[13.5px] text-dim">
+      <%!-- Two zones. This is the left one: what this screen is. The
+           crumb is the one flexible thing in it, so the open section
+           stays readable on a phone, and whatever the screen puts in
+           :lead stands beside it as part of the same fact. --%>
+      <span class="flex items-center gap-[6px] md:gap-2 min-w-0 text-[13.5px] text-dim">
         <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
           /
         </span>
@@ -263,7 +272,11 @@ defmodule TexttileWeb.Layouts do
         >
           {@crumb}
         </span>
+        {render_slot(@lead)}
       </span>
+      <%!-- the gap between the zones, and the only thing in the bar
+           that gives way --%>
+      <span class="flex-1 min-w-[6px]" aria-hidden="true"></span>
       {render_slot(@bar)}
     </header>
 

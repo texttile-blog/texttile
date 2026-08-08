@@ -36,8 +36,6 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
-      |> assign(:save_label, gettext("Save version"))
-      |> assign(:save_timer, nil)
       |> assign(:holds_lock, true)
       |> assign(:holder, nil)
       |> assign(:upload_pcts, %{})
@@ -170,12 +168,23 @@ defmodule TexttileWeb.EditorLive do
   # The button answers for itself. A version is not a save of the text -
   # the text saved itself while it was typed - so the news belongs on
   # the control that was pressed, not on the Last-saved line beside it.
+  # Save version is a row of the publish menu now, and a row that is
+  # clicked closes its menu, so the answer cannot be written on the
+  # control itself. It goes where every other answer of this screen
+  # goes: the state line.
   def handle_event("save_version", _params, socket) do
     %{article: article, current_scope: scope} = socket.assigns
+    socket = assign(socket, :state_menu, false)
 
     case Articles.save_version(article, scope.user) do
-      {:ok, _version} -> {:noreply, socket |> mark_saved() |> say_on_button(gettext("Saved"))}
-      :unchanged -> {:noreply, say_on_button(socket, gettext("Nothing changed"))}
+      {:ok, _version} ->
+        {:noreply,
+         socket
+         |> reload_history()
+         |> mark_saved(gettext("Version saved · the Versions tab shows what changed"))}
+
+      :unchanged ->
+        {:noreply, mark_saved(socket, gettext("Nothing changed since the last version"))}
     end
   end
 
@@ -243,35 +252,42 @@ defmodule TexttileWeb.EditorLive do
 
   ## Events · publish and its undos
 
-  def handle_event("publish", _params, socket) do
-    article = socket.assigns.article
-    holder = Lock.state(article.id)
+  # The one button at the end of the bar. It publishes and it lets the
+  # mail go, which is the step that cannot be taken back, so it asks
+  # first whenever there is somebody to mail.
+  def handle_event("publish", _params, socket), do: {:noreply, ask_publish(socket, :mail)}
 
-    if socket.assigns.holds_lock or holder == :free do
-      {:noreply, do_publish(socket, [])}
-    else
-      # not a merge problem, a side-effect problem: the person writing
-      # right now deserves a word before their half-finished draft goes
-      # public
-      name = holder_name(holder)
+  # The same step with the mail left out. Nothing here is irreversible,
+  # so nothing but the lock is worth a question.
+  def handle_event("publish_quietly", _params, socket),
+    do: {:noreply, ask_publish(socket, :quiet)}
 
-      {:noreply,
-       assign(socket, :dialog, %{
-         id: "publish-anyway",
-         title: "#{name} is editing this entry right now",
-         body: [gettext("Publish it anyway, as it stands this second?")],
-         ok: gettext("Publish anyway"),
-         event: "do_publish"
-       })}
-    end
+  def handle_event("do_publish", %{"id" => "quiet"}, socket) do
+    {:noreply, socket |> assign(:dialog, nil) |> publish_with(:quiet)}
   end
 
   def handle_event("do_publish", _params, socket) do
-    {:noreply, socket |> assign(:dialog, nil) |> do_publish([])}
+    {:noreply, socket |> assign(:dialog, nil) |> publish_with(:mail)}
   end
 
-  def handle_event("publish_now", _params, socket) do
-    {:noreply, do_publish(socket, force: true)}
+  # A scheduled entry keeps its date; only the mail at go-live changes.
+  def handle_event("toggle_notify", _params, socket) do
+    %{article: article} = socket.assigns
+    wanted = !article.notify_on_publish
+
+    {:ok, article} = Articles.update_settings(article, %{"notify_on_publish" => wanted})
+
+    {:noreply,
+     socket
+     |> put_article(article)
+     |> assign(:state_menu, false)
+     |> reload_history()
+     |> mark_saved(
+       if(wanted,
+         do: gettext("The subscribers get the mail when this goes live"),
+         else: gettext("No mail goes out when this goes live")
+       )
+     )}
   end
 
   def handle_event("unpublish", _params, socket) do
@@ -771,8 +787,84 @@ defmodule TexttileWeb.EditorLive do
     "#{name} moved #{file}."
   end
 
-  defp do_publish(socket, opts) do
+  # Two things can make a publish worth a question, and one dialog asks
+  # both at once: somebody else is writing in it this second, and the
+  # mail is about to go to people who cannot be unsent. Neither of them
+  # true is the common case, and then the click is the whole step.
+  defp ask_publish(socket, mail) do
+    %{article: article, holds_lock: mine} = socket.assigns
+    holder = Lock.state(article.id)
+    busy = if mine or holder == :free, do: nil, else: holder_name(holder)
+    readers = if mail == :mail, do: mail_count(article), else: 0
+
+    case {busy, readers} do
+      {nil, 0} ->
+        publish_with(socket, mail)
+
+      _ ->
+        assign(socket, :dialog, publish_dialog(busy, readers, mail))
+    end
+  end
+
+  defp publish_dialog(busy, readers, mail) do
+    %{
+      id: "publish-anyway",
+      title:
+        if(readers > 0,
+          do: gettext("Publish and email %{count} subscribers?", count: readers),
+          else: gettext("%{name} is editing this entry right now", name: busy)
+        ),
+      body:
+        Enum.reject(
+          [
+            busy &&
+              gettext("%{name} is writing in it this second, and it goes out as it stands.",
+                name: busy
+              ),
+            readers > 0 &&
+              ngettext(
+                "One confirmed subscriber gets a mail with the title and the first paragraph. It goes out once and cannot be called back.",
+                "%{count} confirmed subscribers get a mail with the title and the first paragraph. It goes out once and cannot be called back.",
+                readers,
+                count: readers
+              ),
+            readers == 0 && gettext("Publish it anyway, as it stands this second?")
+          ],
+          &(&1 in [nil, false])
+        ),
+      ok: if(readers > 0, do: gettext("Publish and send"), else: gettext("Publish anyway")),
+      event: "do_publish",
+      value: to_string(mail)
+    }
+  end
+
+  # How many people a publish would mail. A page never mails anybody,
+  # and a mail that has already gone never goes twice.
+  defp mail_count(%{type: "post", notified_on: nil}),
+    do: length(Texttile.Newsletter.confirmed())
+
+  defp mail_count(_article), do: 0
+
+  defp publish_with(socket, mail) do
     %{article: article, current_scope: scope} = socket.assigns
+    wanted = mail == :mail
+
+    # The verb carries the decision, so the record follows it: what the
+    # article remembers is what the click asked for, and the scheduler
+    # reads the same field when a scheduled entry goes live on its own.
+    article =
+      if article.notify_on_publish == wanted do
+        article
+      else
+        {:ok, moved} = Articles.update_settings(article, %{"notify_on_publish" => wanted})
+        moved
+      end
+
+    socket = assign(socket, :article, article)
+
+    # "Publish now" on a scheduled entry means today, whatever date the
+    # entry carries.
+    opts = if article.status == "scheduled", do: [force: true], else: []
 
     case Articles.publish(article, scope.user, opts) do
       {:ok, article} ->
@@ -783,14 +875,23 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  # One word for what happened. Whether an email left is not news of the
-  # click: the settings row beside it carries the mail's whole story, and
-  # it goes on carrying it after the note has faded.
+  # One word for what happened, and the mail is part of it now: the
+  # click decided it, so the click answers for it.
   defp publish_done(socket, article) do
     note =
-      if article.status == "scheduled",
-        do: gettext("Scheduled for %{date}", date: article.publish_date),
-        else: gettext("Published")
+      cond do
+        article.status == "scheduled" and article.notify_on_publish ->
+          gettext("Scheduled for %{date} · the mail goes out then", date: article.publish_date)
+
+        article.status == "scheduled" ->
+          gettext("Scheduled for %{date} · no mail", date: article.publish_date)
+
+        article.notified_on ->
+          gettext("Published · the mail is on its way")
+
+        true ->
+          gettext("Published quietly · no mail went out")
+      end
 
     socket
     |> put_article(article)
@@ -1117,10 +1218,6 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, sync_posters(socket)}
   end
 
-  def handle_info(:reset_save_label, socket) do
-    {:noreply, socket |> assign(:save_label, gettext("Save version")) |> assign(:save_timer, nil)}
-  end
-
   def handle_info(_message, socket), do: {:noreply, socket}
 
   defp in_this_text?(socket, path) do
@@ -1200,18 +1297,6 @@ defmodule TexttileWeb.EditorLive do
   ## Saved state
 
   @note_ms 4600
-
-  # How long the Save version button keeps its answer before it is a
-  # button again. The same window the Last-saved line flashes for.
-  @button_ms 2600
-
-  defp say_on_button(socket, label) do
-    if timer = socket.assigns[:save_timer], do: Process.cancel_timer(timer)
-
-    socket
-    |> assign(:save_label, label)
-    |> assign(:save_timer, Process.send_after(self(), :reset_save_label, @button_ms))
-  end
 
   defp mark_saved(socket, note \\ nil) do
     now = System.system_time(:millisecond)
@@ -1316,47 +1401,34 @@ defmodule TexttileWeb.EditorLive do
       active="texts"
       others={@others}
     >
+      <%!-- The state, said once and in one place. It used to be said
+           twice, and three times on a live entry: a pill, a chip and a
+           button all carrying the same word. Nothing here is a button,
+           so "Draft" and "Publish" stop saying the same thing. --%>
+      <:lead>
+        <span class={["st", state_tone(@article.status)]} id="stateWord">
+          <i aria-hidden="true"></i>
+          <b>{status_word(@article.status)}</b>
+        </span>
+      </:lead>
+
       <:bar>
-        <%!-- the way out to the reader's side, and there is always one.
-             The site serves an entry that is not live to whoever is
-             signed in, so the stamp and the Last-saved line are both
-             that door, whatever state the entry stands in. --%>
-        <a
-          class={["stamp out hidden sm:inline-flex", @article.status]}
-          id="stamp"
-          href={@public_url}
-          target="_blank"
-          rel="noopener"
-          title={@public_title}
-        >
-          {stamp_word(@article.status)}<.out_icon />
-        </a>
-        <a
-          class="out hidden md:inline-flex flex-none"
-          id="stateLink"
-          href={@public_url}
-          target="_blank"
-          rel="noopener"
-          title={@public_title}
-        >
-          <%!-- the arrow lives inside the pill, so the flashed state
-               wraps both and nothing moves when a save lands. The words
-               are a span of their own: the ticker rewrites them every
-               second and would carry the arrow away with them. --%>
-          <span
-            class="saved whitespace-nowrap num"
-            id="state"
-            phx-hook="SavedTicker"
-            data-at={@saved_at}
-            data-note={@saved_note}
-            data-note-until={@saved_until}
-          >
-            <span data-words>{gettext("Last saved · just now")}</span> <.out_icon />
-          </span>
-        </a>
+        <%!-- Somebody else is in this text. The offer that used to
+             stand beside this is gone: clicking into the title or the
+             body already asks for the takeover. --%>
+        <span :if={@holder} class="pres" id="barPres">
+          <i aria-hidden="true"></i>
+          <span class="w">{holder_name(@holder)} {gettext("is writing")}</span>
+        </span>
+
+        <%!-- The save state, and no longer a link with a bare arrow on
+             it: the way to the reader's side is the button at the end
+             of this bar, or a row of its menu, and it carries a word.
+             The clock reading is gone with the link; the exact second
+             lives in the tooltip, where a moving number cannot pull at
+             the eye. --%>
         <span
-          :if={!@public_url}
-          class="saved hidden md:inline-block whitespace-nowrap num"
+          class="saved whitespace-nowrap num hidden md:inline-block save-on"
           id="state"
           phx-hook="SavedTicker"
           data-at={@saved_at}
@@ -1365,21 +1437,35 @@ defmodule TexttileWeb.EditorLive do
         >
           {gettext("Last saved · just now")}
         </span>
-        <button
-          class="btn hidden sm:inline-flex"
-          id="btnSave"
-          phx-click="save_version"
-          title={gettext("Keep a version of the title and the body as they stand now")}
-        >
-          {@save_label}
-        </button>
+        <%!-- the one save state that needs the eye. LiveView puts the
+             class on an element above this one the moment the socket
+             drops, so no event and no timer is needed. --%>
+        <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
+          {gettext("Not saved · offline")}
+        </span>
+
+        <%!-- One control, one shape at the right edge in every state.
+             A live entry gets View, because looking at it is what you
+             want from a text that is already out. --%>
         <span
           class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
           id="stateBtn"
         >
-          <%= if @article.status == "draft" do %>
+          <%= if @article.status == "published" do %>
+            <a
+              class="main"
+              id="stateMain"
+              href={@public_url}
+              target="_blank"
+              rel="noopener"
+              title={@public_title}
+            >
+              {gettext("View")}
+            </a>
+          <% else %>
             <button
               class="main"
+              id="stateMain"
               phx-click="publish"
               title={
                 gettext(
@@ -1387,32 +1473,22 @@ defmodule TexttileWeb.EditorLive do
                 )
               }
             >
-              {gettext("Publish")}
-            </button>
-            <span class="div" aria-hidden="true"></span>
-            <button
-              class="chev"
-              id="stateChev"
-              phx-click="toggle_state_menu"
-              aria-haspopup="true"
-              aria-expanded={to_string(@state_menu)}
-              aria-label={gettext("More actions for this draft")}
-            >
-              <.chevron_icon />
-            </button>
-          <% else %>
-            <button
-              class="main one"
-              id="stateChev"
-              phx-click="toggle_state_menu"
-              aria-haspopup="true"
-              aria-expanded={to_string(@state_menu)}
-              aria-label={gettext("%{state}, state actions", state: status_word(@article.status))}
-            >
-              {status_word(@article.status)}
-              <span class="cv" aria-hidden="true"><.chevron_icon /></span>
+              {if @article.status == "scheduled",
+                do: gettext("Publish now"),
+                else: gettext("Publish")}
             </button>
           <% end %>
+          <span class="div" aria-hidden="true"></span>
+          <button
+            class="chev"
+            id="stateChev"
+            phx-click="toggle_state_menu"
+            aria-haspopup="true"
+            aria-expanded={to_string(@state_menu)}
+            aria-label={gettext("More actions for this entry")}
+          >
+            <.chevron_icon />
+          </button>
         </span>
       </:bar>
 
@@ -1427,10 +1503,19 @@ defmodule TexttileWeb.EditorLive do
         phx-window-keydown="close_state_menu"
         phx-key="escape"
       >
-        <button class="row sm:hidden" phx-click="save_version">{gettext("Save version")}</button>
+        <%!-- The mail is the one thing here that cannot be taken back,
+             so once it has gone the menu says so before it offers
+             anything else. --%>
+        <p :if={@article.notified_on} class="fact" id="mailSaid">
+          {gettext("The subscriber email went out on %{day}.", day: @article.notified_on)}
+        </p>
+
+        <button class="row" id="saveVersionRow" phx-click="save_version">
+          {gettext("Save version")}
+        </button>
         <a
-          :if={@public_url}
-          class="row sm:hidden"
+          :if={@public_url && @article.status != "published"}
+          class="row"
           id="viewRow"
           href={@public_url}
           target="_blank"
@@ -1438,14 +1523,36 @@ defmodule TexttileWeb.EditorLive do
         >
           {gettext("Open the entry")} <.out_icon />
         </a>
+
+        <%!-- The mail decision is a verb, not a switch on a pane. It
+             used to be a checkbox in the article settings, where it
+             armed a thing that then happened as a side effect of a
+             click somewhere else. --%>
+        <%= if @article.status == "draft" do %>
+          <button class="row" id="publishQuietRow" phx-click="publish_quietly">
+            {gettext("Publish quietly, no mail")}
+          </button>
+        <% end %>
         <%= if @article.status == "scheduled" do %>
-          <button class="row" phx-click="publish_now">{gettext("Publish now")}</button>
-          <button class="row" phx-click="unpublish">{gettext("Unschedule")}</button>
+          <button class="row" id="goliveMailRow" phx-click="toggle_notify">
+            {if @article.notify_on_publish,
+              do: gettext("No mail at go-live"),
+              else: gettext("Email subscribers at go-live")}
+          </button>
+          <button class="row" id="unscheduleRow" phx-click="unpublish">
+            {gettext("Unschedule")}
+          </button>
         <% end %>
         <%= if @article.status == "published" do %>
-          <button class="row" phx-click="unpublish">{gettext("Unpublish")}</button>
+          <button class="row" id="unpublishRow" phx-click="unpublish">
+            {gettext("Unpublish")}
+          </button>
         <% end %>
-        <button class="row" phx-click="ask_delete">{gettext("Delete this entry")}</button>
+
+        <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
+        <button class="row far" id="deleteRow" phx-click="ask_delete">
+          {gettext("Delete this entry")}
+        </button>
       </div>
 
       <p :if={@saved_note} class="state-live" id="stateLine" role="status" aria-live="polite">
@@ -1461,40 +1568,40 @@ defmodule TexttileWeb.EditorLive do
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px]">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
-            <%!-- the lock banner: the only place that tells the lock
+            <%!-- The lock banner: the only place that tells the lock
                  story. There is no button on it, because clicking into
-                 the title or the body already asks. --%>
-            <div
-              :if={
-                (!@holds_lock && @holder) || (@holds_lock && reading_along(@others, @article) != [])
-              }
-              class={[
-                "rounded-[5px] px-[13px] py-2 text-[13px] leading-[1.55] mb-5",
-                if(@holds_lock, do: "bg-accentwash text-accent", else: "bg-livetint text-livetext")
-              ]}
-              id="jbar"
-              style={"box-shadow: inset 0 0 0 1px var(--tt-#{if @holds_lock, do: "accentline", else: "liveline"})"}
-            >
-              <%!-- one running line, not a name column and a text
-                   column: a second line of it starts at the left edge
-                   like the first, and nothing is indented under the
-                   name --%>
-              <span class="dot live text-julia"></span>
-              <b class="text-julia">
-                {if @holds_lock,
-                  do: Enum.join(reading_along(@others, @article), ", "),
-                  else: holder_name(@holder)}
-              </b>
-              <span class="opacity-85">
-                <%= if @holds_lock do %>
-                  {gettext(
-                    "reads along while you write. The article settings stay open to every admin, at the same time."
-                  )}
-                <% else %>
-                  {gettext(
-                    "writes the entry now, and you see it in real time. Click into the title or the body to take the entry over. The article settings can be changed by everyone independently from title or body."
-                  )}
-                <% end %>
+                 the title or the body already asks.
+
+                 Two banners and not one with a switch inside it. They
+                 used to open the same way, with the same live dot and
+                 the same name in the same ink, and the only difference
+                 was the sentence after it: writing and being watched
+                 looked alike at a glance. Now the one that is yours
+                 wears the accent the admin area uses for what is
+                 yours, and leads with You. --%>
+            <div :if={@holds_lock && reading_along(@others, @article) != []} class="jbar mine" id="jbar">
+              <span class="dot" aria-hidden="true"></span>
+              <b>{gettext("You are writing.")}</b>
+              <span class="w">
+                {ngettext(
+                  "%{names} reads along and sees it as you type. The title and the body are read-only for them until you stop.",
+                  "%{names} read along and see it as you type. The title and the body are read-only for them until you stop.",
+                  length(reading_along(@others, @article)),
+                  names: Enum.join(reading_along(@others, @article), ", ")
+                )}
+              </span>
+            </div>
+
+            <%!-- one running line, not a name column and a text column:
+                 a second line of it starts at the left edge like the
+                 first, and nothing is indented under the name --%>
+            <div :if={!@holds_lock && @holder} class="jbar theirs" id="jbar">
+              <span class="dot" aria-hidden="true"></span>
+              <b>{gettext("%{name} is writing.", name: holder_name(@holder))}</b>
+              <span class="w">
+                {gettext(
+                  "The title and the body are read-only for you until they stop. Click into either one to take the entry over. Everything else, the tiles and the settings and the publish controls, stays open to everybody at the same time."
+                )}
               </span>
             </div>
 
@@ -2349,24 +2456,18 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.allow_comments}
                   /> <span>{gettext("Allow comments")}</span>
                 </label>
+                <%!-- The mail used to be a switch here, armed on a pane
+                     and fired by a click at the other end of the
+                     screen. It is a verb in the publish menu now, so
+                     the step that cannot be taken back is the step you
+                     ask for. What is left here is the one fact this
+                     pane still owes: whether this kind of entry mails
+                     anybody at all. --%>
                 <span id="notifyOpt">
-                  <%= if @article.type == "page" do %>
-                    <span class="note">{gettext("Pages never email anyone.")}</span>
-                  <% else %>
-                    <label class="opt">
-                      <input type="hidden" name="notify_on_publish" value="false" />
-                      <input
-                        type="checkbox"
-                        id="optNotify"
-                        name="notify_on_publish"
-                        value="true"
-                        checked={@article.notify_on_publish}
-                      />
-                      <span>
-                        {gettext("Email subscribers")}<span class="note">{notify_note(@article)}</span>
-                      </span>
-                    </label>
-                  <% end %>
+                  <span :if={@article.type == "page"} class="note">
+                    {gettext("Pages never email anyone.")}
+                  </span>
+                  <span :if={@article.type != "page"} class="note">{notify_note(@article)}</span>
                 </span>
               </span>
             </div>
@@ -2578,14 +2679,6 @@ defmodule TexttileWeb.EditorLive do
   defp status_word("published"), do: gettext("Published")
   defp status_word(other), do: String.capitalize(other)
 
-  # The stamp says the same state in a lower case of its own: it is a
-  # mark beside the words, not a button. German writes both the same
-  # way, so there the two read alike.
-  defp stamp_word("draft"), do: gettext("draft")
-  defp stamp_word("scheduled"), do: gettext("scheduled")
-  defp stamp_word("published"), do: gettext("published")
-  defp stamp_word(other), do: other
-
   # Whatever an admin does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.
   defp own_comment(socket, id, fun) do
@@ -2733,6 +2826,9 @@ defmodule TexttileWeb.EditorLive do
 
   # The stamp outranks the status: a text that carried its email out
   # once never sends it again, whatever state it stands in now.
+  # What this pane still says about the mail. The decision is a verb in
+  # the publish menu; this is the standing fact beside it, and it never
+  # asks anybody to tick anything.
   defp notify_note(%{notified_on: %Date{} = day}),
     do:
       gettext(
@@ -2740,29 +2836,19 @@ defmodule TexttileWeb.EditorLive do
         day: day
       )
 
-  defp notify_note(%{status: "draft", notify_on_publish: true}),
-    do:
-      gettext(
-        "Confirmed subscribers get one plain email with the title and the first paragraph when this goes live. Uncheck to publish silently."
-      )
-
-  defp notify_note(%{status: "draft"}),
-    do:
-      gettext(
-        "Nobody will be emailed when this goes live. Check it to notify the confirmed subscribers."
-      )
-
   defp notify_note(%{status: "scheduled", notify_on_publish: true} = article),
     do:
-      gettext(
-        "Goes out to the confirmed subscribers when the entry goes live on %{date}. Uncheck any time before then.",
+      gettext("Goes out to the confirmed subscribers when this goes live on %{date}.",
         date: article.publish_date
       )
 
   defp notify_note(%{status: "scheduled"} = article),
+    do: gettext("No email will go out on %{date}.", date: article.publish_date)
+
+  defp notify_note(%{status: "draft"}),
     do:
-      gettext("No email will go out on %{date}. Check it and it goes out at go-live.",
-        date: article.publish_date
+      gettext(
+        "Publish sends one plain email with the title and the first paragraph to the confirmed subscribers. Publish quietly sends none."
       )
 
   defp notify_note(_article),
@@ -2770,4 +2856,10 @@ defmodule TexttileWeb.EditorLive do
       gettext(
         "No email went out for this entry. The email goes out only at the moment an entry goes live."
       )
+
+  # The dot beside the state word: hollow while nothing is out,
+  # outlined once a date stands, filled once a reader can reach it.
+  defp state_tone("published"), do: "live"
+  defp state_tone("scheduled"), do: "sched"
+  defp state_tone(_status), do: "draft"
 end

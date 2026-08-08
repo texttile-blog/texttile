@@ -68,7 +68,8 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("saved"),
     gettext_noop("saved %{time}"),
     gettext_noop("Last saved · just now"),
-    gettext_noop("Last saved %{time}")
+    gettext_noop("Last saved %{time}"),
+    gettext_noop("The last save was at %{time}.")
   ]
 
   @doc """

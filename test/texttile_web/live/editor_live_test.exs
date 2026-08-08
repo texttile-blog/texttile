@@ -25,6 +25,21 @@ defmodule TexttileWeb.EditorLiveTest do
     article
   end
 
+  # Save version lives behind the chevron of the one control, so every
+  # click on it opens the menu first.
+  defp save_version(view) do
+    view |> element("#stateBtn [aria-haspopup]") |> render_click()
+    view |> element("#saveVersionRow") |> render_click()
+  end
+
+  # Only a confirmed address counts as somebody to mail, and only a
+  # confirmed address makes Publish ask. An admin who adds one vouches
+  # for it, so it is confirmed from the start.
+  defp confirmed_subscriber(address) do
+    {:ok, subscriber} = Texttile.Newsletter.add(address)
+    subscriber
+  end
+
   describe "the editor" do
     test "shows the text and the crumb", %{conn: conn, user: user} do
       article = draft(user)
@@ -33,7 +48,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#crumb", "Doors")
       assert has_element?(view, "#edTitle[value='Doors']")
       assert html =~ "Wooden ones."
-      assert has_element?(view, "#stamp", "draft")
+      assert has_element?(view, "#stateWord", "Draft")
     end
 
     test "autosaves the title", %{conn: conn, user: user} do
@@ -55,6 +70,8 @@ defmodule TexttileWeb.EditorLiveTest do
   end
 
   describe "publish" do
+    # Nobody subscribes, so nothing can be unsent and the click is the
+    # whole step.
     test "one click publishes a draft", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
@@ -64,8 +81,11 @@ defmodule TexttileWeb.EditorLiveTest do
       article = Articles.get_article!(article.id)
       assert article.status == "published"
       assert article.slug == "doors"
-      assert has_element?(view, "#stamp", "published")
-      assert has_element?(view, "#stateBtn .main", "Published")
+
+      # the state is said once, beside the title, and never in a button
+      assert has_element?(view, "#stateWord", "Published")
+      assert has_element?(view, "#stateBtn .main", "View")
+      refute has_element?(view, "#stateBtn .main", "Published")
     end
 
     test "a future date makes the click a scheduling", %{conn: conn, user: user} do
@@ -80,12 +100,13 @@ defmodule TexttileWeb.EditorLiveTest do
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
       assert Articles.get_article!(article.id).status == "scheduled"
-      assert has_element?(view, "#stateBtn .main", "Scheduled")
+      assert has_element?(view, "#stateWord", "Scheduled")
+      assert has_element?(view, "#stateBtn .main", "Publish now")
 
-      # the chevron menu of a scheduled text: publish now and unschedule
+      # the chevron menu of a scheduled text: the mail and the undo
       view |> element("#stateBtn [aria-haspopup]") |> render_click()
-      assert has_element?(view, "#stateMenu", "Publish now")
       assert has_element?(view, "#stateMenu", "Unschedule")
+      assert has_element?(view, "#goliveMailRow")
     end
 
     test "publish now forces a scheduled text live", %{conn: conn, user: user} do
@@ -98,8 +119,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert article.status == "scheduled"
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
-      view |> element("#stateBtn [aria-haspopup]") |> render_click()
-      view |> element("#stateMenu button", "Publish now") |> render_click()
+      view |> element("#stateBtn .main", "Publish now") |> render_click()
 
       assert Articles.get_article!(article.id).status == "published"
     end
@@ -113,23 +133,29 @@ defmodule TexttileWeb.EditorLiveTest do
       view |> element("#stateMenu button", "Unpublish") |> render_click()
 
       assert Articles.get_article!(article.id).status == "draft"
+      assert has_element?(view, "#stateWord", "Draft")
       assert has_element?(view, "#stateBtn .main", "Publish")
     end
 
-    # The click says one word. Whether an email left is not news of the
-    # click: the settings row carries the mail's whole story, and it goes
-    # on carrying it after the note has faded.
-    test "the note is one word, and the settings row carries the mail", %{
+    # The mail cannot be called back, so the click that sends it asks
+    # first, and the question names the number of people.
+    test "Publish asks before it mails, and the note says the mail went", %{
       conn: conn,
       user: user
     } do
-      {:ok, _} = Texttile.Newsletter.add("one@example.org")
+      confirmed_subscriber("one@example.org")
 
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       view |> element("#stateBtn .main", "Publish") |> render_click()
 
-      assert has_element?(view, "#state[data-note='Published']")
+      # nothing has happened yet
+      assert has_element?(view, "#dialog", "Publish and email 1 subscribers?")
+      assert Articles.get_article!(article.id).status == "draft"
+
+      view |> element("#dialog-ok") |> render_click()
+
+      assert has_element?(view, "#state[data-note='Published \u00b7 the mail is on its way']")
       assert Articles.get_article!(article.id).notified_on == Date.utc_today()
       assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
     end
@@ -144,25 +170,50 @@ defmodule TexttileWeb.EditorLiveTest do
       |> render_change(%{_target: ["publish_date"], publish_date: future})
 
       view |> element("#stateBtn .main", "Publish") |> render_click()
-      assert has_element?(view, "#state[data-note='Scheduled for #{future}']")
+
+      assert has_element?(
+               view,
+               "#state[data-note='Scheduled for #{future} \u00b7 the mail goes out then']"
+             )
     end
 
-    test "an unchecked entry publishes without mailing anybody", %{conn: conn, user: user} do
-      {:ok, _} = Texttile.Newsletter.add("one@example.org")
+    # The quiet verb: it goes live, nobody is mailed, and because
+    # nothing about it can be regretted, nothing is asked.
+    test "Publish quietly mails nobody and asks nothing", %{conn: conn, user: user} do
+      confirmed_subscriber("one@example.org")
 
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      view
-      |> element("#artSettings")
-      |> render_change(%{_target: ["notify_on_publish"], notify_on_publish: "false"})
+      view |> element("#stateBtn [aria-haspopup]") |> render_click()
+      view |> element("#publishQuietRow") |> render_click()
+
+      refute has_element?(view, "#dialog")
+      assert Articles.get_article!(article.id).status == "published"
+      assert is_nil(Articles.get_article!(article.id).notified_on)
+      assert has_element?(view, "#state[data-note='Published quietly \u00b7 no mail went out']")
+      assert has_element?(view, "#notifyOpt", "No email went out for this entry")
+    end
+
+    # The switch that used to arm this lived on the settings pane, where
+    # it fired as a side effect of a click at the other end of the bar.
+    test "a scheduled entry turns its go-live mail off from the menu", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, Date.add(Date.utc_today(), 7))
+      {:ok, article} = Articles.publish(article, user)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      assert Articles.get_article!(article.id).notify_on_publish
+
+      view |> element("#stateBtn [aria-haspopup]") |> render_click()
+      assert has_element?(view, "#goliveMailRow", "No mail at go-live")
+      view |> element("#goliveMailRow") |> render_click()
 
       refute Articles.get_article!(article.id).notify_on_publish
-      view |> element("#stateBtn .main", "Publish") |> render_click()
+      assert has_element?(view, "#notifyOpt", "No email will go out")
 
-      assert has_element?(view, "#state[data-note='Published']")
-      assert is_nil(Articles.get_article!(article.id).notified_on)
-      assert has_element?(view, "#notifyOpt", "No email went out for this entry")
+      view |> element("#stateBtn [aria-haspopup]") |> render_click()
+      assert has_element?(view, "#goliveMailRow", "Email subscribers at go-live")
     end
 
     test "an entry that already mailed says so in the settings", %{conn: conn, user: user} do
@@ -177,7 +228,9 @@ defmodule TexttileWeb.EditorLiveTest do
       # the stamp outranks the draft status in the settings note
       assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
 
+      # and nothing is asked: a mail that has gone never goes twice
       view |> element("#stateBtn .main", "Publish") |> render_click()
+      refute has_element?(view, "#dialog")
 
       # publishing again sends nothing: the stamp stands from the first
       # go-live and never moves
@@ -185,30 +238,39 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#notifyOpt", "It goes out once")
     end
 
-    test "the bar carries the way to the reader's page", %{conn: conn, user: user} do
+    # One way out of this screen and it carries a word. There used to be
+    # two bare arrows side by side, one of them on a status pill.
+    test "one door to the reader's page, and it says where it goes", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
+      # nothing in the bar leads away while the entry is not live
+      refute has_element?(view, "#stateBtn a")
+
       # a draft with no slug has no address of its own yet, and the door
       # is still there: it opens the same page by id
-      assert view |> element("a#stamp") |> render() =~ ~s(href="/preview/#{article.id}")
-      assert view |> element("#stateLink") |> render() =~ ~s(href="/preview/#{article.id}")
+      view |> element("#stateBtn [aria-haspopup]") |> render_click()
+      assert view |> element("#viewRow") |> render() =~ ~s(href="/preview/#{article.id}")
+      assert has_element?(view, "#viewRow", "Open the entry")
 
       # a slug is all it takes: from then on the door is the address the
       # entry will wear, and the site serves it to whoever is signed in
       view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "harbour"})
       article = Articles.get_article!(article.id)
 
-      assert has_element?(view, ~s(a#stamp[target="_blank"]))
-      assert view |> element("a#stamp") |> render() =~ ~s(href="#{Articles.reader_path(article)}")
+      assert has_element?(view, ~s(a#viewRow[target="_blank"]))
+      assert view |> element("#viewRow") |> render() =~ ~s(href="#{Articles.reader_path(article)}")
 
-      assert view |> element("#stateLink") |> render() =~
-               ~s(href="#{Articles.reader_path(article)}")
-
+      # once it is live, looking at it is the primary action, so the
+      # menu stops carrying a second way to the same page
       view |> element("#stateBtn .main", "Publish") |> render_click()
       article = Articles.get_article!(article.id)
 
-      assert view |> element("a#stamp") |> render() =~ ~s(href="#{Articles.public_path(article)}")
+      assert view |> element("#stateBtn a#stateMain") |> render() =~
+               ~s(href="#{Articles.public_path(article)}")
+
+      view |> element("#stateBtn [aria-haspopup]") |> render_click()
+      refute has_element?(view, "#viewRow")
     end
 
     test "the Reset beside the date empties it", %{conn: conn, user: user} do
@@ -243,17 +305,20 @@ defmodule TexttileWeb.EditorLiveTest do
       assert article.publish_date == nil
     end
 
-    test "Save version answers on the button itself", %{conn: conn, user: user} do
+    # Save version is a row of the one menu now, and a clicked row
+    # closes its menu, so the answer goes to the state line.
+    test "Save version answers on the state line", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#btnSave", "Save version")
+      refute has_element?(view, "#btnSave")
 
-      view |> element("#btnSave") |> render_click()
-      assert has_element?(view, "#btnSave", "Saved")
+      save_version(view)
+      assert has_element?(view, "#stateLine", "Version saved")
+      refute has_element?(view, "#stateMenu")
 
-      view |> element("#btnSave") |> render_click()
-      assert has_element?(view, "#btnSave", "Nothing changed")
+      save_version(view)
+      assert has_element?(view, "#stateLine", "Nothing changed")
     end
   end
 
@@ -403,9 +468,9 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      view |> element("#btnSave") |> render_click()
+      save_version(view)
       render_hook(view, "body_changed", %{"text" => "Iron ones."})
-      view |> element("#btnSave") |> render_click()
+      save_version(view)
 
       view |> element(".tab", "Versions") |> render_click()
       assert has_element?(view, "#versionsList .dif-add", "Iron")
@@ -416,7 +481,7 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      view |> element("#btnSave") |> render_click()
+      save_version(view)
       render_hook(view, "body_changed", %{"text" => "Iron ones."})
 
       view |> element(".tab", "Versions") |> render_click()

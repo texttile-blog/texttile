@@ -81,15 +81,15 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stamp", text: "published")
+        |> assert_has("#stateWord", text: "Published")
         |> assert_has("#slugHint", text: "is live")
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
 
       conn
-      |> click_button("#stateChev", "Published")
+      |> click("#stateChev")
       |> click_button("Unpublish")
-      |> assert_has("#stamp", text: "draft")
+      |> assert_has("#stateWord", text: "Draft")
 
       assert [%{status: "draft"}] = Articles.list_articles()
     end
@@ -103,7 +103,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> fill_in("Title", with: "Later")
       |> fill_in("Publish date", with: future)
       |> click_button("#stateBtn .main", "Publish")
-      |> assert_has("#stamp", text: "scheduled")
+      |> assert_has("#stateWord", text: "Scheduled")
       |> assert_has("#edDateHint", text: "The subscriber email goes out on #{future}")
 
       assert [%{status: "scheduled"}] = Articles.list_articles()
@@ -117,18 +117,21 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> sign_in()
         |> click_button("New entry")
         # a draft with no slug has no address of its own yet, and the
-        # door is still there: it opens the same page by id
-        |> assert_has("a#stamp[href^='/preview/']", text: "draft")
+        # door is still there: it opens the same page by id, from the
+        # one menu the bar carries
+        |> click("#stateChev")
+        |> assert_has("a#viewRow[href^='/preview/']", text: "Open the entry")
+        |> click("#stateChev")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stamp", text: "published")
+        |> assert_has("#stateWord", text: "Published")
 
       address =
         "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
           "#{String.pad_leading("#{today.day}", 2, "0")}/going-live"
 
       conn
-      |> assert_has("a#stamp[href='#{address}']")
+      |> assert_has("#stateBtn a#stateMain[href='#{address}']", text: "View")
       |> visit(address)
       |> assert_has("h1", text: "Going live")
 
@@ -258,14 +261,16 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> fill_in("Title", with: "Versioned")
         |> type(".ed-cm .cm-content", "First words.")
         |> assert_has("#state", text: "Last saved · just now")
-        |> click_button("Save version")
-        |> assert_has("#btnSave", text: "Saved")
+        |> click("#stateChev")
+        |> click_button("#saveVersionRow", "Save version")
+        |> assert_has("#stateLine", text: "Version saved")
 
       conn =
         conn
         |> press(".ed-cm .cm-content", "ControlOrMeta+a")
         |> type(".ed-cm .cm-content", "Second words.")
-        |> click_button("Save version")
+        |> click("#stateChev")
+        |> click_button("#saveVersionRow", "Save version")
         |> click_button(".tab", "Versions")
         |> assert_has("#versionsList .dif-add", text: "Second")
         |> assert_has("#versionsList .dif-del", text: "First")
