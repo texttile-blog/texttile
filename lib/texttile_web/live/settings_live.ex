@@ -1061,8 +1061,7 @@ defmodule TexttileWeb.SettingsLive do
         on_ok="delete_tag"
       >
         <b>{@confirm_tag}</b>
-        leaves every text that carries it, and /tags/{Articles.slugify(@confirm_tag)}
-        answers nothing from that moment. The texts stay where they are,
+        leaves every text that carries it, and /tags/{Articles.slugify(@confirm_tag)} answers nothing from that moment. The texts stay where they are,
         with the rest of their tags. <br />
         <br /> There is no undo. To have the tag back, write it on a text
         again.
@@ -1079,11 +1078,9 @@ defmodule TexttileWeb.SettingsLive do
     """
   end
 
-  @doc """
-  The one question this screen asks before it deletes something: a
-  scrim, a heading, what it costs, and the two ways out. Escape and
-  Cancel are the same way back for both of them.
-  """
+  # The one question this screen asks before it deletes something: a
+  # scrim, a heading, what it costs, and the two ways out. Escape and
+  # Cancel are the same way back for both of them.
   attr :heading, :string, required: true
   attr :ok, :string, required: true
   attr :on_ok, :string, required: true
