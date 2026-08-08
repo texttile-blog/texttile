@@ -252,18 +252,30 @@ defmodule TexttileWeb.EditorLive do
 
   ## Events · publish and its undos
 
-  # The one button at the end of the bar. It publishes and it lets the
-  # mail go, which is the step that cannot be taken back, so it asks
-  # first whenever there is somebody to mail.
-  def handle_event("publish", _params, socket), do: {:noreply, ask_publish(socket, :mail)}
+  # The one button at the end of the bar, and it means two different
+  # things by the state it stands in.
+  #
+  # On a draft it is Publish, and the mail is part of it: the entry has
+  # never been out, so this click is where the decision belongs.
+  #
+  # On a scheduled entry it is Publish now, which only moves the day
+  # forward. The mail was decided when the entry was scheduled and the
+  # menu beside this button still carries that decision, so the click
+  # takes it as it stands instead of arming it again behind the
+  # admin's back.
+  def handle_event("publish", _params, socket) do
+    mode = if socket.assigns.article.status == "scheduled", do: :as_set, else: :mail
+    {:noreply, ask_publish(socket, mode)}
+  end
 
   # The same step with the mail left out. Nothing here is irreversible,
   # so nothing but the lock is worth a question.
   def handle_event("publish_quietly", _params, socket),
     do: {:noreply, ask_publish(socket, :quiet)}
 
-  def handle_event("do_publish", %{"id" => "quiet"}, socket) do
-    {:noreply, socket |> assign(:dialog, nil) |> publish_with(:quiet)}
+  def handle_event("do_publish", %{"id" => mode}, socket)
+      when mode in ~w(mail quiet as_set) do
+    {:noreply, socket |> assign(:dialog, nil) |> publish_with(String.to_existing_atom(mode))}
   end
 
   def handle_event("do_publish", _params, socket) do
@@ -795,7 +807,7 @@ defmodule TexttileWeb.EditorLive do
     %{article: article, holds_lock: mine} = socket.assigns
     holder = Lock.state(article.id)
     busy = if mine or holder == :free, do: nil, else: holder_name(holder)
-    readers = if mail == :mail, do: mail_count(article), else: 0
+    readers = mail_count(article, mail)
 
     case {busy, readers} do
       {nil, 0} ->
@@ -838,16 +850,45 @@ defmodule TexttileWeb.EditorLive do
     }
   end
 
-  # How many people a publish would mail. A page never mails anybody,
-  # and a mail that has already gone never goes twice.
-  defp mail_count(%{type: "post", notified_on: nil}),
-    do: length(Texttile.Newsletter.confirmed())
+  # What the click means for the mail, and it is the one place that
+  # decides. A page never mails anybody, so a click records that
+  # instead of leaving a flag armed for the day somebody turns the page
+  # into a post.
+  defp wanted_mail(%{type: type}, _mode) when type != "post", do: false
+  defp wanted_mail(_article, :mail), do: true
+  defp wanted_mail(_article, :quiet), do: false
+  defp wanted_mail(article, :as_set), do: article.notify_on_publish
 
-  defp mail_count(_article), do: 0
+  # How many people this click would mail, which is what the question
+  # before it is allowed to name. Nobody, unless the entry both goes
+  # live this second and carries the mail: a click that only moves a
+  # future date is a scheduling, and a mail that has already gone never
+  # goes twice.
+  defp mail_count(article, mode) do
+    if wanted_mail(article, mode) and is_nil(article.notified_on) and
+         goes_live_now?(article, publish_opts(article)) do
+      length(Texttile.Newsletter.confirmed())
+    else
+      0
+    end
+  end
+
+  # "Publish now" on a scheduled entry means today, whatever date the
+  # entry carries. Everything else keeps the date it has.
+  defp publish_opts(%{status: "scheduled"}), do: [force: true]
+  defp publish_opts(_article), do: []
+
+  # The same reading Articles.publish/3 does of the date, so the words
+  # before the click and what the click does cannot drift apart.
+  defp goes_live_now?(article, opts) do
+    today = Date.utc_today()
+    day = if opts[:force], do: today, else: article.publish_date || today
+    Date.compare(day, today) != :gt
+  end
 
   defp publish_with(socket, mail) do
     %{article: article, current_scope: scope} = socket.assigns
-    wanted = mail == :mail
+    wanted = wanted_mail(article, mail)
 
     # The verb carries the decision, so the record follows it: what the
     # article remembers is what the click asked for, and the scheduler
@@ -861,10 +902,7 @@ defmodule TexttileWeb.EditorLive do
       end
 
     socket = assign(socket, :article, article)
-
-    # "Publish now" on a scheduled entry means today, whatever date the
-    # entry carries.
-    opts = if article.status == "scheduled", do: [force: true], else: []
+    opts = publish_opts(article)
 
     case Articles.publish(article, scope.user, opts) do
       {:ok, article} ->

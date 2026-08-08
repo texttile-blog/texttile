@@ -152,5 +152,23 @@ defmodule Texttile.UploadsTest do
       # machine is not that place
       assert is_integer(free) and free > 0
     end
+
+    # The settings screen promises the row is absent instead of wrong
+    # where the question cannot be asked, so the nil has to be real and
+    # not an exception on its way out.
+    test "answers nil instead of raising when df cannot say" do
+      root = Application.fetch_env!(:texttile, :uploads_path)
+      on_exit(fn -> Application.put_env(:texttile, :uploads_path, root) end)
+
+      Application.put_env(
+        :texttile,
+        :uploads_path,
+        "/no/such/volume-#{System.unique_integer([:positive])}"
+      )
+
+      assert Uploads.free_bytes() == nil
+      # and the folder rows still answer, with zeros
+      assert Enum.all?(Uploads.usage(), &(&1.files == 0 and &1.bytes == 0))
+    end
   end
 end

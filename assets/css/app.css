@@ -547,9 +547,7 @@
   @media (max-width: 639px) { .pres .w { display: none; } }
 
   /* a link that opens a tab of its own: the arrow leaving its box, in
-     the ink of the words it follows. The stamp and the Last-saved line
-     both wear it, so the way to the reader's side reads the same in
-     both places. */
+     the ink of the words it follows */
   .out { text-decoration: none; align-items: center; gap: 5px; }
   /* The arrow carries its own size and its own line behaviour,
      wherever it stands. An SVG without a size grows to fill the box it
@@ -570,7 +568,6 @@
   .out > .saved::before { content: "\2713" / ""; }
   .out:hover { color: var(--tt-accent); }
   .out:hover .out-i { opacity: 1; }
-  .stamp.out.published:hover { color: var(--tt-onsolid); opacity: .85; }
   .pop .row .out-i { margin-left: 5px; }
 
   /* the editor's tab row */

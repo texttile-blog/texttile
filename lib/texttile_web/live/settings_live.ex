@@ -75,10 +75,10 @@ defmodule TexttileWeb.SettingsLive do
           socket
           |> assign(:errors, Map.delete(socket.assigns.errors, key_atom))
           |> refresh_settings()
-          # The report walks the tree and asks df, so it is read when
-          # the screen opens and again only when a saved value moved
-          # files: a new image roof drops every cached rendition.
-          |> then(&if key_atom == :image_max_edge, do: refresh_storage(&1), else: &1)
+          # The storage report is not refreshed here: the broadcast
+          # this save sends comes back to this tab as well, and
+          # handle_info decides there whether the report has to be
+          # read again.
           |> mark_saved(saved_note(key_atom, value))
 
         # A saved theme is worn at once: the browser refetches the sheet.
@@ -258,8 +258,15 @@ defmodule TexttileWeb.SettingsLive do
 
   ## Somebody else changed something
 
-  def handle_info({:setting_changed, _key, _value}, socket) do
-    {:noreply, socket |> refresh_settings() |> refresh_storage()}
+  # This arrives for a change anybody made, this tab included:
+  # Settings.put broadcasts to every subscriber and does not leave the
+  # sender out. The storage report walks the whole uploads tree and
+  # forks df, so it is read again only for the one setting that moves
+  # files. Without that test it ran on every keystroke pause of every
+  # field on the screen.
+  def handle_info({:setting_changed, key, _value}, socket) do
+    socket = refresh_settings(socket)
+    {:noreply, if(key == :image_max_edge, do: refresh_storage(socket), else: socket)}
   end
 
   # A text changed or went away somewhere in the admin area, so the row

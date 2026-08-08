@@ -195,6 +195,98 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#notifyOpt", "No email went out for this entry")
     end
 
+    # Publish now on a scheduled entry only moves the day forward. The
+    # mail was decided when the entry was scheduled, and the menu
+    # beside the button still shows that decision, so the button must
+    # not arm it again behind the admin's back.
+    test "Publish now keeps the mail decision the scheduled entry carries", %{
+      conn: conn,
+      user: user
+    } do
+      confirmed_subscriber("one@example.org")
+
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, Date.add(Date.utc_today(), 7))
+      {:ok, article} = Articles.publish(article, user)
+      assert article.status == "scheduled"
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      # the admin turns the go-live mail off
+      view |> element("#stateBtn [aria-haspopup]") |> render_click()
+      view |> element("#goliveMailRow") |> render_click()
+      refute Articles.get_article!(article.id).notify_on_publish
+
+      # and then releases it early: no question, and no mail
+      view |> element("#stateBtn .main", "Publish now") |> render_click()
+
+      refute has_element?(view, "#dialog")
+      article = Articles.get_article!(article.id)
+      assert article.status == "published"
+      assert is_nil(article.notified_on)
+      refute article.notify_on_publish
+    end
+
+    test "Publish now asks first while the scheduled entry still carries its mail", %{
+      conn: conn,
+      user: user
+    } do
+      confirmed_subscriber("one@example.org")
+
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, Date.add(Date.utc_today(), 7))
+      {:ok, article} = Articles.publish(article, user)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      view |> element("#stateBtn .main", "Publish now") |> render_click()
+
+      assert has_element?(view, "#dialog", "Publish and email 1 subscribers?")
+      view |> element("#dialog-ok") |> render_click()
+
+      assert Articles.get_article!(article.id).notified_on == Date.utc_today()
+    end
+
+    # The question names a mail that goes out on this click. A future
+    # date makes the click a scheduling, and nothing leaves today.
+    test "a click that only schedules does not ask about the mail", %{conn: conn, user: user} do
+      confirmed_subscriber("one@example.org")
+
+      article = draft(user)
+      future = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["publish_date"], publish_date: future})
+
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      refute has_element?(view, "#dialog")
+      assert Articles.get_article!(article.id).status == "scheduled"
+      assert is_nil(Articles.get_article!(article.id).notified_on)
+    end
+
+    # A page never mails anybody, so publishing one records that
+    # instead of leaving a flag armed for the day it becomes a post.
+    test "publishing a page disarms the mail instead of arming it", %{conn: conn, user: user} do
+      confirmed_subscriber("one@example.org")
+
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      view |> element("#artSettings") |> render_change(%{_target: ["type"], type: "page"})
+      view |> element("#stateBtn .main", "Publish") |> render_click()
+
+      refute has_element?(view, "#dialog")
+      article = Articles.get_article!(article.id)
+      assert article.status == "published"
+      refute article.notify_on_publish
+
+      # and it stays disarmed when the type changes later
+      view |> element("#artSettings") |> render_change(%{_target: ["type"], type: "post"})
+      refute Articles.get_article!(article.id).notify_on_publish
+    end
+
     # The switch that used to arm this lived on the settings pane, where
     # it fired as a side effect of a click at the other end of the bar.
     test "a scheduled entry turns its go-live mail off from the menu", %{conn: conn, user: user} do

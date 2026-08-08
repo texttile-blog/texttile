@@ -145,6 +145,27 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:video_max_edge) == 1920
     end
 
+    # The floor is what keeps a typo from locking the blog out of its
+    # own uploads: below it a photograph off any phone is refused.
+    test "refuses an upload roof outside 10..2048 or not a number" do
+      assert {:error, _} = Settings.put(:max_upload_mb, "1")
+      assert {:error, _} = Settings.put(:max_upload_mb, "9")
+      assert {:error, _} = Settings.put(:max_upload_mb, "2049")
+      assert {:error, _} = Settings.put(:max_upload_mb, "lots")
+      assert {:error, _} = Settings.put(:max_upload_mb, "")
+      assert Settings.get(:max_upload_mb) == 512
+
+      assert {:ok, 10} = Settings.put(:max_upload_mb, "10")
+      assert {:ok, 2048} = Settings.put(:max_upload_mb, "2048")
+    end
+
+    test "max_upload_bytes/0 is the setting, in bytes" do
+      assert Settings.max_upload_bytes() == 512 * 1024 * 1024
+
+      {:ok, _} = Settings.put(:max_upload_mb, 64)
+      assert Settings.max_upload_bytes() == 64 * 1024 * 1024
+    end
+
     test "accepts the latest list and a fixed page as the front page" do
       assert {:ok, "page:7"} = Settings.put(:front_page, "page:7")
       assert Settings.get(:front_page) == "page:7"

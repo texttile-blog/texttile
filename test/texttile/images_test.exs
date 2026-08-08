@@ -109,14 +109,20 @@ defmodule Texttile.ImagesTest do
   end
 
   describe "the cache" do
-    test "clear_cache/0 empties it and cache_bytes/0 counts it" do
+    # Uploads.usage/0 weighs the cache now, and the settings screen
+    # reads it there with every other folder of the volume.
+    defp cache_bytes do
+      Enum.find_value(Uploads.usage(), 0, &if(&1.dir == "cache", do: &1.bytes))
+    end
+
+    test "clear_cache/0 empties it and leaves the original" do
       rel = original("images/d.jpg", 4000, 2000)
       {:ok, _} = Images.rendition(rel, 1600)
-      assert Images.cache_bytes() > 0
+      assert cache_bytes() > 0
 
       :ok = Images.clear_cache()
 
-      assert Images.cache_bytes() == 0
+      assert cache_bytes() == 0
       assert File.exists?(Path.join(Uploads.root(), rel))
     end
 
@@ -126,7 +132,7 @@ defmodule Texttile.ImagesTest do
 
       {:ok, _} = Settings.put(:image_max_edge, 2000)
 
-      assert Images.cache_bytes() == 0
+      assert cache_bytes() == 0
     end
   end
 end

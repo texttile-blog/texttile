@@ -460,6 +460,31 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert has_element?(view, "#usage-free")
     end
 
+    # Reading the report walks every folder of the volume and forks df.
+    # Settings.put broadcasts to every subscriber, this tab included,
+    # so without a test on the key it ran again on every debounce of
+    # every field on the screen. A slightly stale count is the trade,
+    # and the one setting that moves files still refreshes it.
+    test "the volume report is not walked again on every field that saves", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+      images = fn -> view |> element("#usage-images") |> render() end
+      assert images.() =~ ~s(<td class="n num">0</td>)
+
+      {:ok, _} = Uploads.put_body_image(Texttile.ArticlesFixtures.jpg_fixture(), "pier.jpg")
+
+      view
+      |> form("#site-form", %{"settings" => %{"site_title" => "Two of us"}})
+      |> render_change(%{"_target" => ["settings", "site_title"]})
+
+      assert images.() =~ ~s(<td class="n num">0</td>)
+
+      view
+      |> form("#images-form", %{"settings" => %{"image_max_edge" => "2000"}})
+      |> render_change(%{"_target" => ["settings", "image_max_edge"]})
+
+      assert images.() =~ ~s(<td class="n num">1</td>)
+    end
+
     test "the biggest upload is a setting, and it has a floor and a ceiling", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 

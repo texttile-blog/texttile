@@ -356,10 +356,6 @@ const impl = {
     this.event = this.el.dataset.event || "body_changed"
     this.barId = this.el.dataset.bar || "#mdBar"
     this.files = this.el.dataset.files !== "false"
-    /* the biggest file this blog takes: Settings > Storage > Biggest
-       upload, the same number the tiles and the parser use. 512 is the
-       default of that setting. */
-    this.maxMb = parseInt(this.el.dataset.maxUploadMb, 10) || 512
     /* the poster of every converted video of this text, by the url the
        body carries; the server keeps it fresh through sync_media */
     this.posters = JSON.parse(this.el.dataset.posters || "{}")
@@ -655,15 +651,22 @@ const impl = {
   uploadFiles(files) {
     if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
 
-    /* a file over the roof is turned away here, before a token stands
+    /* A file over the roof is turned away here, before a token stands
        in the text: sending it would end at the parser after the whole
        upload, and the words would carry a failed picture until
-       somebody removed it by hand */
-    const roof = this.maxMb * 1024 * 1024
+       somebody removed it by hand.
+
+       The number is read now and not kept from the mount. The editor
+       listens for setting changes, so the host carries the current
+       roof; a value kept from the mount would let an editor that has
+       been open all morning send a file the server has stopped
+       taking. */
+    const maxMb = parseInt(this.el.dataset.maxUploadMb, 10) || 512
+    const roof = maxMb * 1024 * 1024
     const tooBig = files.filter(f => f.size > roof)
     if (tooBig.length) {
       this.pushEvent("upload_too_big", {files: tooBig.map(f => f.name || t("the pasted picture")),
-                                        roof: this.maxMb})
+                                        roof: maxMb})
       files = files.filter(f => f.size <= roof)
       if (!files.length) return
     }

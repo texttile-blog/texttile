@@ -52,7 +52,6 @@ class Gallery {
     this.el = hook.el
     this.uploadUrl = this.el.dataset.uploadUrl
     this.csrf = this.el.dataset.csrf
-    this.maxMb = parseInt(this.el.dataset.maxUploadMb, 10) || DEFAULT_MAX_MB
 
     this.grid = this.el.querySelector("#tileGrid")
     this.server = this.el.querySelector("#tileServer")
@@ -177,7 +176,9 @@ class Gallery {
     const images = [...fileList].filter(f => /^(image|video)\//.test(f.type))
     for (const file of images) {
       // an oversize file fails right here instead of after minutes of upload
-      const roof = this.maxMb
+      // read now, not kept from the mount: the screen listens for
+      // setting changes, so the host carries the current roof
+      const roof = parseInt(this.el.dataset.maxUploadMb, 10) || DEFAULT_MAX_MB
       const oversize = file.size > roof * 1024 * 1024
 
       this.records.push({
