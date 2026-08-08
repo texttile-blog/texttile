@@ -974,11 +974,20 @@
     padding: 8px 10px;
     box-shadow: none;
   }
+  /* The subscribe field stands on the band, which has a ground of its
+     own. The field grey of the admin area is close enough to it to read
+     as a smudge, so this one field is white: on a coloured ground white
+     is the thing that says "type here". */
+  body.site #newsletter-form input[type=email] {
+    background-color: var(--tt-paper);
+  }
   body.site #comment-form input:not([type=hidden]):not(.sr):hover:not(:disabled),
-  body.site #comment-form textarea:hover,
-  body.site #newsletter-form input[type=email]:hover {
+  body.site #comment-form textarea:hover {
     background-color: var(--tt-fieldhover);
     border-bottom-color: var(--tt-rule);
+  }
+  body.site #newsletter-form input[type=email]:hover {
+    border-bottom-color: var(--tt-inksoft);
   }
   body.site #comment-form input:not([type=hidden]):not(.sr):focus,
   body.site #comment-form textarea:focus,
@@ -988,18 +997,11 @@
     border-bottom-color: var(--tt-accent);
     box-shadow: none;
   }
-  /* signed in, the name and the address are facts the account carries,
-     not questions. They keep the place of the two fields so the form
-     still reads as one row, and they drop the ground of a field: no
-     fill, one hairline under them, dimmer ink. Nothing there invites a
-     click, and nothing answers one. */
+  /* Signed in, the name and the address are facts the account carries,
+     not questions. They keep the ground of a field, so the form reads as
+     one block of fields, and dimmer ink and the plain cursor are what
+     say the two take no typing. */
   body.site #comment-form input[disabled]:not([type=hidden]):not(.sr) {
-    background-color: transparent;
-    border-color: transparent;
-    border-bottom: 1px solid var(--tt-hair);
-    border-radius: 0;
-    padding-left: 0;
-    padding-right: 0;
     color: var(--tt-dim);
     cursor: default;
   }
