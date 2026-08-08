@@ -176,21 +176,94 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#state[data-note*='already got this email']")
     end
 
-    test "a live text carries the link to its address in the bar", %{conn: conn, user: user} do
+    test "the bar carries the way to the reader's page", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      # a draft has no address yet, so there is nothing to open
-      refute has_element?(view, "#btnView")
+      # a draft with no slug has no address yet, so there is nothing to
+      # open and the stamp is a stamp
+      refute has_element?(view, "#stateLink")
+      assert has_element?(view, "span#stamp")
+
+      # a slug is all it takes: the site serves an entry that is not
+      # live to whoever is signed in
+      view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "harbour"})
+      article = Articles.get_article!(article.id)
+
+      assert has_element?(view, ~s(a#stamp[target="_blank"]))
+      assert view |> element("a#stamp") |> render() =~ ~s(href="#{Articles.reader_path(article)}")
+
+      assert view |> element("#stateLink") |> render() =~
+               ~s(href="#{Articles.reader_path(article)}")
 
       view |> element("#stateBtn .main", "Publish") |> render_click()
+      article = Articles.get_article!(article.id)
+
+      assert view |> element("a#stamp") |> render() =~ ~s(href="#{Articles.public_path(article)}")
+    end
+
+    test "the Reset beside the date empties it", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      # nothing to reset while the field is empty
+      refute has_element?(view, "#edDateReset")
+
+      view
+      |> element("#artSettings")
+      |> render_change(%{_target: ["publish_date"], publish_date: "2026-09-01"})
+
+      assert has_element?(view, "#edDateReset")
+      view |> element("#edDateReset") |> render_click()
+
+      assert Articles.get_article!(article.id).publish_date == nil
+      refute has_element?(view, "#edDateReset")
+    end
+
+    test "the Reset takes a scheduled entry off the queue", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, Date.add(Date.utc_today(), 7))
+      {:ok, article} = Articles.publish(article, user)
+      assert article.status == "scheduled"
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      view |> element("#edDateReset") |> render_click()
 
       article = Articles.get_article!(article.id)
-      assert has_element?(view, "#btnView")
+      assert article.status == "draft"
+      assert article.publish_date == nil
+    end
 
-      assert view
-             |> element("#btnView")
-             |> render() =~ ~s(href="#{Articles.public_path(article)}")
+    test "Save version answers on the button itself", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      assert has_element?(view, "#btnSave", "Save version")
+
+      view |> element("#btnSave") |> render_click()
+      assert has_element?(view, "#btnSave", "Saved")
+
+      view |> element("#btnSave") |> render_click()
+      assert has_element?(view, "#btnSave", "Nothing changed")
+    end
+  end
+
+  describe "the addresses an entry left behind" do
+    test "stand under the address field and go on one click", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, article} = Articles.set_publish_date(article, user, ~D[2026-08-08])
+      {:ok, article} = Articles.publish(article, user, today: ~D[2026-08-08])
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      refute has_element?(view, "#oldAddresses")
+
+      view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "the-harbour"})
+
+      assert has_element?(view, "#oldAddresses", "/2026/08/08/doors")
+
+      view |> element("#oldAddresses button", "Delete") |> render_click()
+      refute has_element?(view, "#oldAddresses")
+      assert Articles.redirect_target("/2026/08/08/doors") == nil
     end
   end
 
@@ -600,7 +673,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#dialog", "Delete")
 
       view |> element("#dialog button", "Delete the text") |> render_click()
-      assert_redirect(view, "/admin")
+      assert_redirect(view, "/admin/texts")
       assert Articles.list_articles() == []
     end
   end

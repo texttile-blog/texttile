@@ -119,8 +119,10 @@ class Gallery {
     clearTimeout(this.noteTimer)
     this.note.textContent = text
     this.note.classList.add("text-julia", "font-semibold")
+    /* the line has nothing to say the rest of the time, and an empty
+       one is not drawn at all: the rule stands over the grid */
     this.noteTimer = setTimeout(() => {
-      this.note.textContent = "Grab a tile to sort it. Tap one to see it big."
+      this.note.textContent = ""
       this.note.classList.remove("text-julia", "font-semibold")
     }, NOTE_MS)
   }

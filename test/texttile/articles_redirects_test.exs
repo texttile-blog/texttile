@@ -13,7 +13,9 @@ defmodule Texttile.ArticlesRedirectsTest do
 
   describe "a live entry that moves" do
     test "keeps the address the slug left behind" do
-      article = published_post(title: "The harbour", slug: "harbour", publish_date: ~D[2026-08-08])
+      article =
+        published_post(title: "The harbour", slug: "harbour", publish_date: ~D[2026-08-08])
+
       {:ok, article} = Articles.update_settings(article, %{slug: "the-harbour"})
 
       assert [%{path: "/2026/08/08/harbour"}] = Articles.redirects(article)

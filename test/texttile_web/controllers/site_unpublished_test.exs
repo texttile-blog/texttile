@@ -55,6 +55,33 @@ defmodule TexttileWeb.SiteUnpublishedTest do
     end
   end
 
+  describe "a draft with no day yet" do
+    test "answers at the address it borrows from today", %{conn: conn} do
+      article = draft_post(title: "The harbour", slug: "harbour")
+      assert Articles.public_path(article) == nil
+      path = Articles.reader_path(article)
+      assert String.starts_with?(path, "/#{Date.utc_today().year}/")
+
+      html = conn |> log_in_user(user_fixture()) |> get(path) |> html_response(200)
+      assert html =~ "The harbour"
+    end
+
+    test "has no address at all while it has no slug" do
+      assert Articles.reader_path(draft_post(title: "The harbour")) == nil
+    end
+
+    test "does not answer at yesterday's address", %{conn: conn} do
+      draft_post(title: "The harbour", slug: "harbour")
+      yesterday = Date.add(Date.utc_today(), -1)
+
+      path =
+        "/#{yesterday.year}/#{String.pad_leading("#{yesterday.month}", 2, "0")}" <>
+          "/#{String.pad_leading("#{yesterday.day}", 2, "0")}/harbour"
+
+      assert conn |> log_in_user(user_fixture()) |> get(path) |> html_response(404)
+    end
+  end
+
   describe "a scheduled entry at its address" do
     test "answers a signed-in admin and says which state it is in", %{conn: conn} do
       article = scheduled_post(title: "Next week", slug: "next-week")

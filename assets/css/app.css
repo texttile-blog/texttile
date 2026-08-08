@@ -216,6 +216,14 @@
   .drow > .lab { display: block; padding-bottom: 3px; font-size: 12.5px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
   .drow .hint { margin-top: 4px; font-size: 11.5px; line-height: 1.45; }
+  /* a group name with one quiet word at the right edge of its row: the
+     Reset of the publish date, the Reset of the theme */
+  .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 3px; }
+  .labrow > .lab {
+    flex: 1; min-width: 0; padding-bottom: 0;
+    font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em;
+  }
+  .labrow > .link { flex: none; font-size: 11.5px; }
 
   /* the quiet underline field: one container class instead of the
      same eight utilities on forty inputs. Used by the sign-in family
@@ -369,6 +377,26 @@
   .split.calm .div { background: var(--tt-rule); }
   .split.calm .main:hover, .split.calm .chev:hover,
   .split.calm .main[aria-expanded="true"], .split.calm .chev[aria-expanded="true"] { background-color: var(--tt-field); }
+
+  /* THE EDITOR'S SECOND COLUMN
+     The article settings stand still while the words scroll. One screen
+     tall under the bar, stuck there, with a scrollbar of its own that
+     is always drawn: `scroll`, not `auto`, so the column reads as a
+     column whatever the height of the window, and nothing on the page
+     moves when the settings grow past the bottom edge.
+     On a narrow window the settings simply follow the words, and this
+     whole arrangement is off. */
+  @media (min-width: 1024px) {
+    .sidecol {
+      position: sticky;
+      /* the bar is 52px and sticky, so the column starts under it */
+      top: 52px;
+      align-self: start;
+      height: calc(100dvh - 52px);
+      overflow-y: scroll;
+      overscroll-behavior: contain;
+    }
+  }
 
   /* the status stamp in the bar */
   .stamp {

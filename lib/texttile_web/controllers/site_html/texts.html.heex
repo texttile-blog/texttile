@@ -26,7 +26,12 @@
          the term goes quiet instead of lying about it. --%>
     <nav :if={@years != []} class="periods" id="periods" aria-label="Archive">
       <p class="prow" id="years">
-        <.period label="All years" on={is_nil(@year)} href={@period_path.(nil, nil)} count={@total} />
+        <.period
+          label="All years"
+          on={is_nil(@year)}
+          href={@period_path.(nil, nil)}
+          count={@total}
+        />
         <.period
           :for={{year, count} <- @years}
           label={year}

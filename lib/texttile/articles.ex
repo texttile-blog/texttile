@@ -218,8 +218,31 @@ defmodule Texttile.Articles do
   def get_post(%Date{} = date, slug) when is_binary(slug) do
     Repo.one(
       from a in Article, where: a.slug == ^slug and a.type == "post" and a.publish_date == ^date
-    )
+    ) || dateless_post(date, slug)
   end
+
+  # A post with no day yet borrows today, exactly as `public_prefix/1`
+  # does, so the address the editor prints is the address that answers.
+  # Tomorrow it borrows tomorrow, and so would publishing it.
+  defp dateless_post(date, slug) do
+    if Date.compare(date, Date.utc_today()) == :eq do
+      Repo.one(
+        from a in Article,
+          where: a.slug == ^slug and a.type == "post" and is_nil(a.publish_date)
+      )
+    end
+  end
+
+  @doc """
+  The address an entry can be read at right now, live or not: its
+  public address, and while a post has no day yet, the address it
+  borrows from today. Nil until the entry has a slug, because until
+  then there is nothing to open.
+  """
+  def reader_path(%Article{slug: slug}) when slug in [nil, ""], do: nil
+
+  def reader_path(%Article{slug: slug} = article),
+    do: public_path(article) || public_prefix(article) <> slug
 
   @doc "The page behind a short address whatever state it is in, or nil."
   def get_page(slug) when is_binary(slug) do

@@ -142,7 +142,8 @@ defmodule TexttileWeb.TextsLiveTest do
   describe "the archive" do
     setup %{user: user} do
       %{
-        august: published_post(title: "Harbour mornings", publish_date: ~D[2026-08-08], user: user),
+        august:
+          published_post(title: "Harbour mornings", publish_date: ~D[2026-08-08], user: user),
         march: published_post(title: "Desert nights", publish_date: ~D[2026-03-02], user: user),
         older: published_post(title: "The long winter", publish_date: ~D[2024-12-24], user: user)
       }

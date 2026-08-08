@@ -335,6 +335,16 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("settings_changed", _params, socket), do: {:noreply, socket}
 
+  # The Reset beside the date label: the same thing as emptying the
+  # field, which a date input makes hard by hand.
+  def handle_event("clear_publish_date", _params, socket) do
+    handle_event(
+      "settings_changed",
+      %{"_target" => ["publish_date"], "publish_date" => ""},
+      socket
+    )
+  end
+
   # One old address off the list. The entry keeps every other one; from
   # now on that address is a 404 like any other.
   def handle_event("delete_redirect", %{"id" => id}, socket) do
@@ -1222,7 +1232,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:preview_candidates, preview_candidates(assigns))
       |> assign(:effective_preview, effective_preview(assigns))
       |> assign(:media, media(assigns))
-      |> assign(:public_url, Articles.public_path(assigns.article))
+      |> assign(:public_url, Articles.reader_path(assigns.article))
       |> assign(:public_title, public_title(assigns.article))
 
     ~H"""
@@ -1367,8 +1377,14 @@ defmodule TexttileWeb.EditorLive do
         {@saved_note}
       </p>
 
-      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:h-[calc(100dvh-52px)]">
-        <div class="lg:overflow-y-auto min-w-0" id="textCol">
+      <%!-- Two columns, one scrollbar each and no third one. The words
+           are the page: they scroll with the browser's own bar, however
+           long the entry gets. The article settings stand still beside
+           them, one screen tall, with a bar of their own that is always
+           drawn (.sidecol), so the column never looks like it ends
+           where the window does. --%>
+      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
             <%!-- the lock banner: the only place that tells the lock
                  story. There is no button on it, because clicking into
@@ -1378,25 +1394,27 @@ defmodule TexttileWeb.EditorLive do
                 (!@holds_lock && @holder) || (@holds_lock && reading_along(@others, @article) != [])
               }
               class={[
-                "flex items-baseline gap-[9px] flex-wrap rounded-[5px] px-[13px] py-2 text-[13px] mb-5",
+                "rounded-[5px] px-[13px] py-2 text-[13px] leading-[1.55] mb-5",
                 if(@holds_lock, do: "bg-accentwash text-accent", else: "bg-livetint text-livetext")
               ]}
               id="jbar"
               style={"box-shadow: inset 0 0 0 1px var(--tt-#{if @holds_lock, do: "accentline", else: "liveline"})"}
             >
-              <span class="flex items-center gap-[9px] flex-none">
-                <span class="dot live text-julia"></span>
-                <b class="text-julia">
-                  {if @holds_lock,
-                    do: Enum.join(reading_along(@others, @article), ", "),
-                    else: holder_name(@holder)}
-                </b>
-              </span>
-              <span class="opacity-85 flex-1 min-w-[220px]">
+              <%!-- one running line, not a name column and a text
+                   column: a second line of it starts at the left edge
+                   like the first, and nothing is indented under the
+                   name --%>
+              <span class="dot live text-julia"></span>
+              <b class="text-julia">
+                {if @holds_lock,
+                  do: Enum.join(reading_along(@others, @article), ", "),
+                  else: holder_name(@holder)}
+              </b>
+              <span class="opacity-85">
                 <%= if @holds_lock do %>
                   reads along while you write. The article settings stay open to every admin, at the same time.
                 <% else %>
-                  writes the text now, and you see every word arrive. Click into the title or the body to take the text over. The article settings stay open to every admin, at the same time.
+                  writes the text now, and you see it in real time. Click into the title or the body to take the text over. The article settings can be changed by everyone independently from title or body.
                 <% end %>
               </span>
             </div>
@@ -1618,7 +1636,7 @@ defmodule TexttileWeb.EditorLive do
                   </svg>
                 </button>
                 <span class="sp"></span>
-                <span class="note hidden sm:inline self-center">Markdown works too.</span>
+                <span class="note hidden sm:inline self-center">Markdown Editor</span>
               </div>
               <div class={["relative", !@holds_lock && "is-readonly"]} id="bodyWrap">
                 <div
@@ -1643,10 +1661,10 @@ defmodule TexttileWeb.EditorLive do
                   </span>
                   <span id="edFootText">
                     <%= if @holds_lock do %>
-                      Markdown. The draft saves as you type. <b>Save version</b>
-                      keeps the title and the body as they stand, and the Versions tab shows what changed.
+                      The draft saves as you type. <b>Save version</b>
+                      takes a snapshot of the title and the body that you can go back to.
                     <% else %>
-                      Markdown. The title and the body are read-only right now. <b>Save version</b>
+                      The title and the body are read-only right now. <b>Save version</b>
                       and the Versions tab still work.
                     <% end %>
                   </span>
@@ -1794,9 +1812,8 @@ defmodule TexttileWeb.EditorLive do
 
             <div :if={@tab == "versions"} id="tp-versions">
               <p class="note mb-4">
-                A version is the main text and nothing else: the title and the body. Article settings are never versioned, because they are shared and live.
-                <b>Save version</b>
-                in the bar writes one; every version below shows what changed against the one before it, and can be put back into the editor.
+                The <b>Save version</b>
+                button in the bar saves the current version of the title and the body. Article settings are never versioned, because they are shared and live. Every version below shows what changed against the one before it, and can be restored.
               </p>
               <div id="versionsList">
                 <p :if={@versions == []} class="note">
@@ -1855,7 +1872,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label="Article settings"
-          class="lg:overflow-y-auto min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[100px] lg:pb-[110px]"
+          class="sidecol min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -1876,7 +1893,7 @@ defmodule TexttileWeb.EditorLive do
                 <span class="note num" id="tileOnWay" phx-update="ignore"></span>
               </span>
               <span class="sp"></span>
-              <span class="note">The order is the gallery.</span>
+              <span class="note">Grab a tile to sort it.</span>
             </div>
             <div class="grid gap-[6px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3" id="tileGrid">
               <div class="contents" id="tileServer">
@@ -1936,9 +1953,11 @@ defmodule TexttileWeb.EditorLive do
             <span class="drop-flag" id="tileDropFlag" hidden>
               Add it to the gallery, at the end
             </span>
-            <p class="note mt-[10px] transition-colors" id="tileNote">
-              Grab a tile to sort it. Tap one to see it big.
-            </p>
+            <%!-- what the grid has to say for a moment: a tile another
+                 admin moved, a file over the roof, an upload that
+                 failed. The rule stands over the grid, so this line has
+                 nothing to say the rest of the time and is not there. --%>
+            <p class="note mt-[10px] transition-colors empty:hidden" id="tileNote"></p>
           </div>
 
           <.share_block article={@article} />
@@ -2040,9 +2059,24 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow gtop">
-              <label class="lab" id="edDateLab" for="edDate">
-                {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
-              </label>
+              <span class="labrow">
+                <label class="lab" id="edDateLab" for="edDate">
+                  {if @article.status == "scheduled", do: "Goes live", else: "Publish date"}
+                </label>
+                <%!-- a date field empties badly by hand, so the row
+                     offers the one word for it. On a live entry it is
+                     the same statement as Unpublish, and the hint under
+                     the field says so. --%>
+                <button
+                  :if={@article.publish_date}
+                  type="button"
+                  class="link"
+                  id="edDateReset"
+                  phx-click="clear_publish_date"
+                >
+                  Reset
+                </button>
+              </span>
               <span class="val">
                 <input type="date" id="edDate" name="publish_date" value={@article.publish_date} />
                 <div class="hint" id="edDateHint">{date_hint(@article)}</div>
@@ -2071,7 +2105,7 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.type == "page"}
                   />
                   <span>
-                    Page<span class="note">Standalone, like About or Imprint. Appears in the site menu automatically, sorted by publish date, never in the feed.</span>
+                    Page<span class="note">Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed.</span>
                   </span>
                 </label>
               </span>
@@ -2284,11 +2318,6 @@ defmodule TexttileWeb.EditorLive do
                   >
                     {tag}
                   </button>
-                </div>
-                <div class="hint">
-                  Comma separated; each tag becomes an archive page. Start typing
-                  and the field offers the tags the blog already carries, or click
-                  one below to add it or take it off.
                 </div>
               </span>
             </div>
@@ -2643,8 +2672,9 @@ defmodule TexttileWeb.EditorLive do
 
   defp date_hint(article) do
     if article.publish_date,
-      do: "Live since #{article.publish_date}. A future date puts it back in the queue.",
-      else: "Pick the day it went live. An empty field makes the text a draft again."
+      do:
+        "Live since #{article.publish_date}. A future date changes it to unpublished until the date.",
+      else: "Pick the day it went live. An empty field makes the entry a draft again."
   end
 
   defp slug_hint(%{status: "draft"}), do: "Free to change while the text is a draft."
