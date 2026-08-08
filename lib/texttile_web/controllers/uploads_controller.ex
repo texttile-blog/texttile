@@ -135,6 +135,8 @@ defmodule TexttileWeb.UploadsController do
 
   defp take_last(count, size) do
     case Integer.parse(count) do
+      # an empty file has no last bytes to give, like it has no others
+      {_count, ""} when size == 0 -> :beyond
       {count, ""} when count > 0 -> {:ok, max(size - count, 0), size - 1}
       _ -> :whole
     end

@@ -99,7 +99,7 @@ defmodule Texttile.VideosInTextsTest do
       refute File.exists?(Uploads.absolute(image.path))
       refute File.exists?(Uploads.absolute(video.mp4_path))
       refute File.exists?(Uploads.absolute(video.poster_path))
-      assert Videos.state(image.path) == :none
+      assert Videos.get(image.path) == nil
     end
 
     test "a video without a poster is no preview of a text", %{article: article} do
@@ -113,6 +113,24 @@ defmodule Texttile.VideosInTextsTest do
     end
   end
 
+  describe "removing a path the writer typed" do
+    test "a name that climbs out of the uploads root takes nothing with it" do
+      File.mkdir_p!(Uploads.absolute("videos"))
+      File.mkdir_p!(Uploads.absolute("images"))
+      outside = Path.expand(Path.join(Uploads.root(), "../not-an-upload.txt"))
+      File.mkdir_p!(Path.dirname(outside))
+      File.write!(outside, "somebody else's file")
+      on_exit(fn -> File.rm(outside) end)
+
+      # what a body reference of ![x](/uploads/videos/../../not-an-upload.txt)
+      # hands to the delete of a text
+      :ok = Uploads.remove_upload("videos/../../not-an-upload.txt")
+      :ok = Uploads.remove_upload("images/../../not-an-upload.txt")
+
+      assert File.exists?(outside)
+    end
+  end
+
   describe "the text itself" do
     test "deleting a text takes its videos along", %{article: article} do
       relative = stored_video()
@@ -123,7 +141,7 @@ defmodule Texttile.VideosInTextsTest do
 
       refute File.exists?(Uploads.absolute(relative))
       refute File.exists?(Uploads.absolute(video.mp4_path))
-      assert Videos.state(relative) == :none
+      assert Videos.get(relative) == nil
     end
   end
 end

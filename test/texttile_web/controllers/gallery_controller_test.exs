@@ -41,7 +41,7 @@ defmodule TexttileWeb.GalleryControllerTest do
 
     assert %{"id" => id} = json_response(conn, 200)
     assert [%{id: ^id, path: path}] = Gallery.list(article.id)
-    assert Texttile.Videos.state(path) == :queued
+    assert Texttile.Videos.get(path).state == "queued"
   end
 
   test "a file that is no image is refused", %{conn: conn, article: article} do

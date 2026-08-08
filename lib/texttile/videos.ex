@@ -34,6 +34,16 @@ defmodule Texttile.Videos do
   # What a camera, a phone and a screen recorder hand over.
   @extensions ~w(.mp4 .mov .m4v .webm .avi .mkv)
 
+  # How much processor time one conversion may have. The queue holds a
+  # single worker, so a video that would run for days would hold up
+  # every other one; it fails after half an hour of its own time.
+  @cpu_seconds 1800
+
+  # A half written file this old belongs to a run that is gone. One
+  # that is younger may be under an ffmpeg that is writing it right
+  # now, which a restarted queue must not take away.
+  @partial_grace_seconds 600
+
   @doc "The upload extensions a video may arrive in."
   def extensions, do: @extensions
 
@@ -72,21 +82,6 @@ defmodule Texttile.Videos do
 
   @doc "The row behind a stored original, or nil."
   def get(relative), do: Repo.one(from v in Video, where: v.path == ^relative)
-
-  @doc """
-  How far the conversion of one original has got: `:queued`,
-  `:running`, `:done`, `:failed`, or `:none` for a path nobody
-  uploaded.
-  """
-  def state(relative) do
-    case get(relative) do
-      nil -> :none
-      %Video{state: "queued"} -> :queued
-      %Video{state: "running"} -> :running
-      %Video{state: "done"} -> :done
-      %Video{state: "failed"} -> :failed
-    end
-  end
 
   @doc """
   What a page needs to play one video, or nil while the conversion is
@@ -207,18 +202,32 @@ defmodule Texttile.Videos do
   Removes the half written files of conversions that a stopped server
   never finished. The queue sweeps on its way up, before it takes the
   first video of the new run.
+
+  Only files nobody has touched for a while: the queue can come back
+  while a conversion of the run before it is still going, and that
+  ffmpeg is writing into a file of exactly this kind.
   """
   def sweep_partials do
     case File.ls(Uploads.absolute(@directory)) do
       {:ok, names} ->
+        cutoff = System.os_time(:second) - @partial_grace_seconds
+
         for name <- names, String.starts_with?(name, ".tmp-") do
-          File.rm(Uploads.absolute("#{@directory}/#{name}"))
+          path = Uploads.absolute("#{@directory}/#{name}")
+          if untouched_since?(path, cutoff), do: File.rm(path)
         end
 
         :ok
 
       {:error, _} ->
         :ok
+    end
+  end
+
+  defp untouched_since?(path, cutoff) do
+    case File.stat(path, time: :posix) do
+      {:ok, %File.Stat{mtime: mtime}} -> mtime < cutoff
+      {:error, _} -> false
     end
   end
 
@@ -277,39 +286,56 @@ defmodule Texttile.Videos do
 
     with :ok <- ensure_readable(original),
          :ok <- run(encode_command(original, Uploads.absolute(partial_mp4), max_edge)),
-         :ok <-
-           run(poster_command(Uploads.absolute(partial_mp4), Uploads.absolute(partial_poster))),
+         :ok <- grab_poster(Uploads.absolute(partial_mp4), Uploads.absolute(partial_poster)),
          {:ok, probed} <- probe(Uploads.absolute(partial_mp4)) do
       settle(video, {mp4, partial_mp4}, {poster, partial_poster}, probed)
     else
       {:error, reason} ->
-        File.rm(Uploads.absolute(partial_mp4))
-        File.rm(Uploads.absolute(partial_poster))
+        discard(partial_mp4, partial_poster)
         {:error, fail(video, reason)}
+    end
+  end
+
+  # Half a second in, where a film has usually begun; a clip shorter
+  # than that has nothing there, and its first frame has to do.
+  defp grab_poster(input, output) do
+    case run(poster_command(input, output, "0.5")) do
+      :ok -> :ok
+      {:error, _too_short} -> run(poster_command(input, output, "0"))
     end
   end
 
   # ffmpeg took minutes; the text may be gone by now. A conversion
   # nobody waits for keeps its files to itself: it drops them instead
   # of leaving two big ones on the volume with no row to name them.
+  # And a file that could not be put in place is a failure, never a
+  # row that says done over two names nobody can open.
   defp settle(video, {mp4, partial_mp4}, {poster, partial_poster}, probed) do
     if get(video.path) do
-      File.rename(Uploads.absolute(partial_mp4), Uploads.absolute(mp4))
-      File.rename(Uploads.absolute(partial_poster), Uploads.absolute(poster))
-
-      case finish(video, mp4, poster, probed) do
+      with :ok <- File.rename(Uploads.absolute(partial_mp4), Uploads.absolute(mp4)),
+           :ok <- File.rename(Uploads.absolute(partial_poster), Uploads.absolute(poster)),
+           %Video{} = finished <- finish(video, mp4, poster, probed) do
+        {:ok, finished}
+      else
         nil ->
           drop_derived(video.path)
           {:error, :gone}
 
-        finished ->
-          {:ok, finished}
+        {:error, reason} ->
+          discard(partial_mp4, partial_poster)
+          drop_derived(video.path)
+          {:error, fail(video, "the converted file stayed put: #{inspect(reason)}")}
       end
     else
-      File.rm(Uploads.absolute(partial_mp4))
-      File.rm(Uploads.absolute(partial_poster))
+      discard(partial_mp4, partial_poster)
       {:error, :gone}
     end
+  end
+
+  defp discard(partial_mp4, partial_poster) do
+    File.rm(Uploads.absolute(partial_mp4))
+    File.rm(Uploads.absolute(partial_poster))
+    :ok
   end
 
   defp ensure_readable(original) do
@@ -323,7 +349,10 @@ defmodule Texttile.Videos do
 
   It runs on one thread and at the lowest priority the machine
   offers. A conversion is never the most important thing on this
-  server; answering a reader is.
+  server; answering a reader is. And it runs under a clock: one video
+  may take long, but none may take the queue for itself forever, so
+  ffmpeg gives up after #{div(@cpu_seconds, 60)} minutes of its own
+  processor time and the video fails with a reason.
   """
   def encode_command(input, output, max_edge) do
     gentle([
@@ -332,6 +361,8 @@ defmodule Texttile.Videos do
       "-hide_banner",
       "-loglevel",
       "error",
+      "-timelimit",
+      to_string(@cpu_seconds),
       "-y",
       "-i",
       input,
@@ -357,17 +388,22 @@ defmodule Texttile.Videos do
     ])
   end
 
-  @doc "The ffmpeg call that takes the poster out of the converted file."
-  def poster_command(input, output) do
+  @doc """
+  The ffmpeg call that takes the poster out of the converted file,
+  `seconds` into it.
+  """
+  def poster_command(input, output, seconds) do
     gentle([
       "ffmpeg",
       "-nostdin",
       "-hide_banner",
       "-loglevel",
       "error",
+      "-timelimit",
+      to_string(@cpu_seconds),
       "-y",
       "-ss",
-      "0.5",
+      seconds,
       "-i",
       input,
       "-frames:v",

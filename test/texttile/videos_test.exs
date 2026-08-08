@@ -65,6 +65,13 @@ defmodule Texttile.VideosTest do
       assert filter =~ "force_original_aspect_ratio=decrease"
       assert filter =~ "force_divisible_by=2"
     end
+
+    test "gives up before it can hold the queue for a day" do
+      {_command, args} = Videos.encode_command("in.mov", "out.mp4", 1280)
+      limit = Enum.at(args, Enum.find_index(args, &(&1 == "-timelimit")) + 1)
+
+      assert String.to_integer(limit) > 0
+    end
   end
 
   describe "converting" do
@@ -121,6 +128,36 @@ defmodule Texttile.VideosTest do
       assert {video.width, video.height} == {320, 240}
     end
 
+    test "a clip too short for the poster frame still comes through" do
+      relative = stored(video_file(320, 240, seconds: 0.4))
+
+      assert {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+      assert video.state == "done"
+      assert File.exists?(Uploads.absolute(video.mp4_path))
+      assert File.exists?(Uploads.absolute(video.poster_path))
+    end
+
+    test "a converted file that cannot be put in place fails, and leaves nothing" do
+      relative = stored(video_file(320, 240))
+      video = Videos.ensure(relative)
+
+      # a directory where the converted file wants to go: the rename
+      # cannot happen, whatever ffmpeg made
+      File.mkdir_p!(Uploads.absolute(String.replace(relative, ".mp4", ".web.mp4")))
+
+      assert {:error, failed} = Videos.convert(video)
+
+      assert failed.state == "failed"
+      assert failed.error =~ "stayed put"
+      assert Videos.playback(relative) == nil
+
+      leftovers =
+        Uploads.absolute("videos") |> File.ls!() |> Enum.filter(&String.starts_with?(&1, ".tmp-"))
+
+      assert leftovers == []
+    end
+
     test "a file ffmpeg cannot read fails with a reason" do
       relative = stored(broken_video_file())
 
@@ -148,7 +185,7 @@ defmodule Texttile.VideosTest do
       relative = stored(video_file(320, 240))
       Videos.ensure(relative)
 
-      assert Videos.state(relative) == :queued
+      assert Videos.get(relative).state == "queued"
       assert Videos.playback(relative) == nil
       assert Videos.poster(relative) == nil
     end
@@ -157,7 +194,7 @@ defmodule Texttile.VideosTest do
       relative = stored(video_file(320, 240))
       {:ok, video} = Videos.convert(Videos.ensure(relative))
 
-      assert Videos.state(relative) == :done
+      assert Videos.get(relative).state == "done"
       assert Videos.poster(relative) == video.poster_path
 
       assert %{mp4: mp4, poster: poster, width: 320, height: 240} = Videos.playback(relative)
@@ -166,7 +203,7 @@ defmodule Texttile.VideosTest do
     end
 
     test "nothing at all for a file nobody uploaded" do
-      assert Videos.state("videos/never-there.mp4") == :none
+      assert Videos.get("videos/never-there.mp4") == nil
       assert Videos.playback("videos/never-there.mp4") == nil
     end
   end
@@ -188,7 +225,7 @@ defmodule Texttile.VideosTest do
         Uploads.absolute("videos") |> File.ls!() |> Enum.reject(&(&1 == Path.basename(relative)))
 
       assert leftovers == []
-      assert Videos.state(relative) == :none
+      assert Videos.get(relative) == nil
     end
 
     test "removing takes the derived files even while none are recorded" do
@@ -207,10 +244,23 @@ defmodule Texttile.VideosTest do
       stored(video_file(320, 240))
       partial = Uploads.absolute("videos/.tmp-99-something.web.mp4")
       File.write!(partial, "half")
+      File.touch!(partial, System.os_time(:second) - 3600)
 
       :ok = Videos.sweep_partials()
 
       refute File.exists?(partial)
+    end
+
+    test "a half written file that is still being written stays" do
+      stored(video_file(320, 240))
+      partial = Uploads.absolute("videos/.tmp-98-underway.web.mp4")
+      File.write!(partial, "half")
+
+      :ok = Videos.sweep_partials()
+
+      # a queue that comes back while the run before it still converts
+      # must not take the file out from under that ffmpeg
+      assert File.exists?(partial)
     end
   end
 
@@ -224,7 +274,7 @@ defmodule Texttile.VideosTest do
       refute File.exists?(Uploads.absolute(relative))
       refute File.exists?(Uploads.absolute(video.mp4_path))
       refute File.exists?(Uploads.absolute(video.poster_path))
-      assert Videos.state(relative) == :none
+      assert Videos.get(relative) == nil
     end
   end
 end

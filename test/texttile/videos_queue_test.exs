@@ -39,7 +39,7 @@ defmodule Texttile.VideosQueueTest do
 
     Queue.push(queue, relative)
 
-    until(fn -> Videos.state(relative) == :done end)
+    until(fn -> Videos.get(relative).state == "done" end)
     assert %{mp4: _, poster: _} = Videos.playback(relative)
   end
 
@@ -53,7 +53,7 @@ defmodule Texttile.VideosQueueTest do
     Queue.push(queue, first)
     Queue.push(queue, second)
 
-    until(fn -> Videos.state(first) == :done and Videos.state(second) == :done end)
+    until(fn -> Videos.get(first).state == "done" and Videos.get(second).state == "done" end)
     assert Queue.running(queue) == nil
   end
 
@@ -67,27 +67,47 @@ defmodule Texttile.VideosQueueTest do
     Queue.push(queue, broken)
     Queue.push(queue, good)
 
-    until(fn -> Videos.state(good) == :done end)
-    assert Videos.state(broken) == :failed
+    until(fn -> Videos.get(good).state == "done" end)
+    assert Videos.get(broken).state == "failed"
   end
 
-  test "a conversion that dies without a word marks its video and frees the line" do
-    # long enough that the death below lands while ffmpeg still runs
+  test "the word for a conversion that died without one" do
+    relative = stored(video_file(320, 240))
+    Videos.ensure(relative)
+
+    # what the queue does when it hears that the work is gone. Called
+    # here as the callback it is: a real kill would take the test's
+    # database connection with it, and racing a live ffmpeg to the
+    # message would only sometimes prove anything.
+    task = %Task{ref: make_ref(), owner: self(), pid: self(), mfa: {Videos, :convert, 1}}
+    state = %{waiting: :queue.new(), running: relative, task: task}
+
+    {:noreply, after_death} =
+      Queue.handle_info({:DOWN, task.ref, :process, self(), :killed}, state)
+
+    assert %{state: "failed", error: ":killed"} = Videos.get(relative)
+    assert after_death.running == nil
+    assert after_death.task == nil
+  end
+
+  test "a conversion that dies does not hold up the one behind it" do
     dies = stored(video_file(1280, 720, seconds: 3))
+    next = stored(video_file(320, 240))
     Videos.ensure(dies)
+    Videos.ensure(next)
     queue = start_queue()
 
     Queue.push(queue, dies)
     until(fn -> Queue.running(queue) == dies end)
 
-    # the work died without a word, the way an out-of-memory kill leaves
-    # it. Killing the task for real would take the test's database
-    # connection with it, so the queue hears the same message instead.
     server = Process.whereis(queue)
     %{task: %Task{ref: ref}} = :sys.get_state(server)
     send(server, {:DOWN, ref, :process, self(), :killed})
+    Queue.push(queue, next)
 
-    until(fn -> match?(%{state: "failed", error: ":killed"}, Videos.get(dies)) end)
+    # whichever word reaches the queue first, the death or the end of
+    # the work, the line moves on
+    until(fn -> Videos.get(next).state == "done" end)
     assert Queue.running(queue) == nil
   end
 
@@ -97,7 +117,7 @@ defmodule Texttile.VideosQueueTest do
 
     start_queue()
 
-    until(fn -> Videos.state(relative) == :done end)
+    until(fn -> Videos.get(relative).state == "done" end)
   end
 
   test "the same video is never queued twice" do
@@ -109,7 +129,7 @@ defmodule Texttile.VideosQueueTest do
     Queue.push(queue, relative)
     Queue.push(queue, relative)
 
-    until(fn -> Videos.state(relative) == :done end)
+    until(fn -> Videos.get(relative).state == "done" end)
     Process.sleep(100)
     assert Queue.running(queue) == nil
   end

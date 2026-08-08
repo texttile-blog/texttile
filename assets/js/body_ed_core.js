@@ -79,6 +79,13 @@ class ImgW extends WidgetType {
     s.className = this.video ? "cm-mdimg cm-mdvid" : "cm-mdimg"
     if (this.css) s.style.backgroundImage = this.css
     s.title = this.title
+    /* the same mark the tiles wear, so a film reads as a film here too */
+    if (this.video) {
+      const mark = document.createElement("span")
+      mark.className = "play-badge"
+      mark.setAttribute("aria-hidden", "true")
+      s.appendChild(mark)
+    }
     return s
   }
 }

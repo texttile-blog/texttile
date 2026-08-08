@@ -156,20 +156,43 @@ defmodule Texttile.Uploads do
   renditions of a picture, the converted file and the poster of a
   video. Only paths below `images/` and `videos/` qualify; anything
   else is left alone.
+
+  The paths that arrive here are not all the server's own: deleting a
+  text hands over every reference its body ever held, and a body is
+  written by hand. A name that climbs out of the uploads root with
+  `..` is no upload of ours, whatever it starts with.
   """
-  def remove_upload("images/" <> _ = relative) do
+  def remove_upload(relative) when is_binary(relative) do
+    if inside_root?(relative) do
+      remove_stored_upload(relative)
+    else
+      :ok
+    end
+  end
+
+  def remove_upload(_other), do: :ok
+
+  defp remove_stored_upload("images/" <> _ = relative) do
     File.rm(absolute(relative))
     Texttile.Images.drop_renditions(relative)
     :ok
   end
 
-  def remove_upload("videos/" <> _ = relative) do
+  defp remove_stored_upload("videos/" <> _ = relative) do
     Texttile.Videos.forget(relative)
     File.rm(absolute(relative))
     :ok
   end
 
-  def remove_upload(_other), do: :ok
+  defp remove_stored_upload(_other), do: :ok
+
+  # The same reading the upload routes do: expand the name and see
+  # whether it still stands below the root.
+  defp inside_root?(relative) do
+    root = Path.expand(root())
+
+    root |> Path.join(relative) |> Path.expand() |> String.starts_with?(root <> "/")
+  end
 
   @doc "Back to the default mark: the file goes, the settings clear."
   def reset_site_mark(mark) when mark in @marks do

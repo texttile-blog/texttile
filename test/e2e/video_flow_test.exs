@@ -121,13 +121,13 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
 
     # back to where a long conversion keeps a video: no poster, no
     # film, and a tile with nothing to show
-    wait_until(fn -> Videos.state(waiting.path) == :done end)
+    wait_until(fn -> Videos.get(waiting.path).state == "done" end)
 
     Texttile.Repo.update_all(from(v in Texttile.Videos.Video, where: v.path == ^waiting.path),
       set: [state: "queued", mp4_path: nil, poster_path: nil]
     )
 
-    assert Videos.state(waiting.path) == :queued
+    assert Videos.get(waiting.path).state == "queued"
 
     conn
     |> sign_in()

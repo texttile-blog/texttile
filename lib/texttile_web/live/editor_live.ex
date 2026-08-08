@@ -47,6 +47,10 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
       |> known_tags()
 
+    # What the writing surface was told last. It reads the element on
+    # its way in, so at the start the two agree.
+    socket = assign(socket, :pushed_posters, poster_map(media(socket.assigns)))
+
     socket =
       if connected?(socket) do
         Articles.subscribe(article.id)
@@ -123,7 +127,12 @@ defmodule TexttileWeb.EditorLive do
     if socket.assigns.holds_lock do
       {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
       Lock.ping(article.id, self())
-      {:noreply, socket |> assign(:article, article) |> mark_saved()}
+
+      # A video pasted a moment ago reaches the server with this text
+      # and may be converted already; its poster goes back with the
+      # answer, because the conversion's own word came too early to
+      # find the reference here.
+      {:noreply, socket |> assign(:article, article) |> sync_posters() |> mark_saved()}
     else
       {:noreply, socket}
     end
@@ -768,6 +777,21 @@ defmodule TexttileWeb.EditorLive do
   defp ref_media(media, "/uploads/" <> relative), do: media[relative]
   defp ref_media(_media, _url), do: nil
 
+  # Hands the writing surface its posters, and only when they are not
+  # the ones it already has: this runs on every body change, and a
+  # text without a video has nothing to say every time.
+  defp sync_posters(socket) do
+    posters = poster_map(media(socket.assigns))
+
+    if posters == socket.assigns.pushed_posters do
+      socket
+    else
+      socket
+      |> assign(:pushed_posters, posters)
+      |> push_event("sync_media", %{posters: posters})
+    end
+  end
+
   # The poster of every converted video, for the writing surface: it
   # draws the markdown references, so it is told the body's own urls.
   # A video ffmpeg has not finished is absent and stays a play mark.
@@ -976,16 +1000,14 @@ defmodule TexttileWeb.EditorLive do
   # A conversion moved on. The panel and the tiles read where it stands
   # while they render; this is the nudge that makes a render happen.
   def handle_info({:video_changed, path}, socket) do
-    if in_this_text?(socket, path) do
-      # The panel and the tiles read the state as they render; the
-      # writing surface is the hook's, so its posters are handed over.
-      {:noreply,
-       socket
-       |> update(:media_rev, &(&1 + 1))
-       |> push_event("sync_media", %{posters: poster_map(media(socket.assigns))})}
-    else
-      {:noreply, socket}
-    end
+    socket =
+      if in_this_text?(socket, path), do: update(socket, :media_rev, &(&1 + 1)), else: socket
+
+    # The panel and the tiles read the state as they render; the
+    # writing surface is the hook's, so its posters are handed over.
+    # Every editor is asked, not only the ones that already know the
+    # video: a reference pasted a moment ago is still on its way here.
+    {:noreply, sync_posters(socket)}
   end
 
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -1752,7 +1774,7 @@ defmodule TexttileWeb.EditorLive do
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
                   <span :if={@effective_preview == image.path} class="cov">preview</span>
-                  <span :if={@media[image.path].film} class="tile-play" aria-hidden="true"></span>
+                  <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
                   <span :if={conversion_note(@media[image.path])} class="tile-wait">
                     {conversion_note(@media[image.path])}
                   </span>

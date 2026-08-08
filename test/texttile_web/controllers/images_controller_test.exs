@@ -37,7 +37,7 @@ defmodule TexttileWeb.ImagesControllerTest do
     assert %{"url" => "/uploads/videos/" <> stored} = json_response(conn, 200)
     assert stored =~ ~r/^harbour-morning-\w+\.mov$/
     assert File.exists?(Uploads.absolute("videos/" <> stored))
-    assert Texttile.Videos.state("videos/" <> stored) == :queued
+    assert Texttile.Videos.get("videos/" <> stored).state == "queued"
   end
 
   test "a file that is no image is refused", %{conn: conn} do

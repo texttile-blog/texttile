@@ -63,6 +63,34 @@ defmodule TexttileWeb.SiteVideoTest do
     end
   end
 
+  describe "the lightbox shell" do
+    test "stands where a picture can open it", %{article: article} do
+      article = %{article | body: "![A pier](/uploads/images/pier-1234.jpg)"}
+
+      assert SiteHTML.pictures?(article, [])
+    end
+
+    test "stays away from a text whose only file is a video", %{article: article} do
+      relative = stored_video()
+      {:ok, _} = Videos.convert(Videos.ensure(relative))
+      article = %{article | body: "![Harbour](/uploads/#{relative})"}
+
+      # a video plays where it stands; nothing here opens a lightbox
+      refute SiteHTML.pictures?(article, [])
+    end
+
+    test "stands as soon as the gallery has a tile", %{article: article} do
+      assert SiteHTML.pictures?(%{article | body: "Only words."}, [%{id: 1}])
+      refute SiteHTML.pictures?(%{article | body: "Only words."}, [])
+    end
+
+    test "ignores an upload that is still on its way", %{article: article} do
+      article = %{article | body: "![Uploading pier.jpg…]()"}
+
+      refute SiteHTML.pictures?(article, [])
+    end
+  end
+
   describe "a video in the gallery" do
     test "the tile is the poster, and it opens the film", %{article: article, user: user} do
       {:ok, article} =
