@@ -19,12 +19,21 @@ defmodule Texttile.VideosQueueTest do
 
   # The conversion runs in a task; the test waits for its result the
   # way a page does, by looking at the state.
-  defp until(condition, tries \\ 200) do
+  defp until(condition, message \\ "the conversion never finished", tries \\ 200)
+
+  defp until(condition, message, tries) do
     cond do
       condition.() -> :ok
-      tries == 0 -> flunk("the conversion never finished")
-      true -> Process.sleep(50) && until(condition, tries - 1)
+      tries == 0 -> flunk(message)
+      true -> Process.sleep(50) && until(condition, message, tries - 1)
     end
+  end
+
+  # The row says "done" inside the task, and the queue learns that the
+  # task ended one message later. So the line is empty a moment after
+  # the row is, and a test that asks the line waits for the line.
+  defp until_empty(queue) do
+    until(fn -> Queue.running(queue) == nil end, "the queue never emptied")
   end
 
   defp start_queue do
@@ -54,7 +63,7 @@ defmodule Texttile.VideosQueueTest do
     Queue.push(queue, second)
 
     until(fn -> Videos.get(first).state == "done" and Videos.get(second).state == "done" end)
-    assert Queue.running(queue) == nil
+    until_empty(queue)
   end
 
   test "a failed conversion does not hold up the one behind it" do
@@ -108,7 +117,7 @@ defmodule Texttile.VideosQueueTest do
     # whichever word reaches the queue first, the death or the end of
     # the work, the line moves on
     until(fn -> Videos.get(next).state == "done" end)
-    assert Queue.running(queue) == nil
+    until_empty(queue)
   end
 
   test "picks up what a stopped server left behind" do
@@ -130,6 +139,9 @@ defmodule Texttile.VideosQueueTest do
     Queue.push(queue, relative)
 
     until(fn -> Videos.get(relative).state == "done" end)
+    until_empty(queue)
+
+    # and it stays empty: a second start would show up here
     Process.sleep(100)
     assert Queue.running(queue) == nil
   end
