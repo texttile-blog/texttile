@@ -135,7 +135,10 @@ defmodule Texttile.VideosTest do
 
       assert video.state == "done"
       assert File.exists?(Uploads.absolute(video.mp4_path))
-      assert File.exists?(Uploads.absolute(video.poster_path))
+
+      # an empty poster is no poster: one ffmpeg refuses the seek past
+      # the end, another answers yes and writes nothing
+      assert File.stat!(Uploads.absolute(video.poster_path)).size > 0
     end
 
     test "a converted file that cannot be put in place fails, and leaves nothing" do

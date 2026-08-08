@@ -299,9 +299,22 @@ defmodule Texttile.Videos do
   # Half a second in, where a film has usually begun; a clip shorter
   # than that has nothing there, and its first frame has to do.
   defp grab_poster(input, output) do
-    case run(poster_command(input, output, "0.5")) do
+    case frame_at(input, output, "0.5") do
       :ok -> :ok
-      {:error, _too_short} -> run(poster_command(input, output, "0"))
+      {:error, _nothing_there} -> frame_at(input, output, "0")
+    end
+  end
+
+  # The file is the answer, not the exit code: asked for a frame past
+  # the end of a very short clip, one ffmpeg says so and another says
+  # nothing at all and writes no file.
+  defp frame_at(input, output, seconds) do
+    with :ok <- run(poster_command(input, output, seconds)),
+         {:ok, %File.Stat{size: size}} when size > 0 <- File.stat(output) do
+      :ok
+    else
+      {:error, reason} when is_binary(reason) -> {:error, reason}
+      _no_frame -> {:error, "the film has no frame at #{seconds} seconds"}
     end
   end
 
