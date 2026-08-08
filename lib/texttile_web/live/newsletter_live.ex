@@ -70,6 +70,9 @@ defmodule TexttileWeb.NewsletterLive do
       active="newsletter"
       others={@others}
     >
+      <:bar>
+        <Layouts.view_site />
+      </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Newsletter</h1>
         <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>

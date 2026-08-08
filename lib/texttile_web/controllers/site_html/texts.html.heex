@@ -1,7 +1,7 @@
 <.site_head active={@active} home_page={@home_page} menu_pages={@menu_pages} />
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
-    <h1 class="f-h1">Texts</h1>
+    <h1 class="f-h1">Blog Entries</h1>
 
     <div class="searchrow mt-7">
       <form action={@list_path} method="get" role="search">
@@ -21,7 +21,12 @@
     </div>
 
     <div class="cards" id="texts">
-      <.card :for={article <- @articles} article={article} preview={@previews[article.id]} />
+      <.card
+        :for={article <- @articles}
+        article={article}
+        preview={@previews[article.id]}
+        comments={@comment_counts[article.id]}
+      />
     </div>
 
     <%!-- the pager: one step each way, and where the reader stands.

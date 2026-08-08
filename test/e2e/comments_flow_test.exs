@@ -146,4 +146,33 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     assert Texttile.Comments.total_count() == 1
     assert Texttile.Comments.trashed_count() == 0
   end
+
+  test "an admin comments under their own name, and the list counts it", %{conn: conn} do
+    user = user_fixture(%{username: "kb", display_name: "Katharina"})
+    article = published_post(title: "Harbor mornings", body: "Fog over the pier.")
+
+    session = conn |> sign_in() |> visit(Articles.public_path(article))
+
+    # The two fields carry the account and take no typing.
+    session
+    |> assert_has("#comment-name[disabled][value='Katharina']")
+    |> assert_has("#comment-email[disabled][value='#{user.email}']")
+    |> assert_has("#comments", text: "You are signed in")
+    |> fill_in("Comment", with: "Writing under my own name.")
+    |> click_button("Post comment")
+    # No link to follow: it stands under the text at once.
+    |> assert_has("#comment-count", text: "1 comment")
+    |> assert_has("#comments", text: "Writing under my own name.")
+    |> refute_has("#comments", text: "waiting for your confirmation")
+
+    # And the count travels to both lists.
+    session
+    |> visit("/blog")
+    |> assert_has("#texts", text: "1 comment")
+    |> open("/admin")
+    |> assert_has("#cards", text: "1 comment")
+
+    assert [comment] = Texttile.Comments.for_article(article.id)
+    assert comment.user_id == user.id
+  end
 end

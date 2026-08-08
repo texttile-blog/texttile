@@ -811,6 +811,55 @@
     field-sizing: content; resize: none; min-height: 2lh; line-height: 1.6;
   }
 
+  /* THE TWO SURFACES A READER WRITES ON
+
+     Everything else on the reader's side is a quiet line: the search
+     over the list, the password of the gate. These two are not. The
+     comment form and the subscribe field ask for words, and a field
+     that asks has to look like one before it is clicked, so both wear
+     the filled field of the admin area instead of the underline of the
+     site chrome: a ground of its own, a hover that answers the pointer,
+     the accent on focus. */
+  body.site #comment-form input:not([type=hidden]):not(.sr),
+  body.site #comment-form textarea,
+  body.site #newsletter-form input[type=email] {
+    background-color: var(--tt-field);
+    border: 1px solid transparent;
+    border-bottom: 1px solid var(--tt-rule);
+    border-radius: var(--tt-radius);
+    padding: 8px 10px;
+    box-shadow: none;
+  }
+  body.site #comment-form input:not([type=hidden]):not(.sr):hover:not(:disabled),
+  body.site #comment-form textarea:hover,
+  body.site #newsletter-form input[type=email]:hover {
+    background-color: var(--tt-fieldhover);
+    border-bottom-color: var(--tt-rule);
+  }
+  body.site #comment-form input:not([type=hidden]):not(.sr):focus,
+  body.site #comment-form textarea:focus,
+  body.site #newsletter-form input[type=email]:focus {
+    background-color: var(--tt-paper);
+    border-color: var(--tt-accentsoft);
+    border-bottom-color: var(--tt-accent);
+    box-shadow: none;
+  }
+  /* signed in, the name and the address are facts the account carries,
+     not questions. They keep the place of the two fields so the form
+     still reads as one row, and they drop the ground of a field: no
+     fill, one hairline under them, dimmer ink. Nothing there invites a
+     click, and nothing answers one. */
+  body.site #comment-form input[disabled]:not([type=hidden]):not(.sr) {
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 1px solid var(--tt-hair);
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+    color: var(--tt-dim);
+    cursor: default;
+  }
+
   /* the list of texts: the Texts grid of the admin area, read by a reader.
      One preview image, a title clamped to two lines, the date, a lead
      line and the tags. Same proportions, same hover. */
@@ -831,6 +880,11 @@
   body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
   body.site .card .cimg.blank svg { width: clamp(34px, 19%, 78px); height: auto; opacity: .22; }
   .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 3px; }
+  /* how many comments stand under the text, beside its date. It is a
+     way in, not a badge: the same quiet ink as the date, and the
+     pointer is what tells it apart. */
+  .card-wrap .cm .clink { color: inherit; text-decoration: none; }
+  .card-wrap .cm .clink:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
   .card-wrap .clead { font-size: 13.5px; line-height: 1.5; color: var(--tt-dim); margin-top: 6px; }
   .card-wrap .ctags { margin-top: 7px; }
   .ctag {

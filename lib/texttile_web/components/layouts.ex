@@ -228,6 +228,24 @@ defmodule TexttileWeb.Layouts do
     """
   end
 
+  @doc """
+  The door to the blog itself, at the end of the admin bar. Every screen
+  of the admin area wears it; the editor is the exception, because there
+  the way out leads to the one text on the screen and not to the front
+  door.
+  """
+  def view_site(assigns) do
+    ~H"""
+    <a
+      class="text-[12.5px] text-dim hover:text-accent whitespace-nowrap flex-none"
+      id="bar-view-site"
+      href={~p"/"}
+    >
+      View site
+    </a>
+    """
+  end
+
   defp chevron(assigns) do
     ~H"""
     <svg

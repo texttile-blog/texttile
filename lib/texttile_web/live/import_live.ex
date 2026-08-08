@@ -96,6 +96,9 @@ defmodule TexttileWeb.ImportLive do
       active="settings"
       others={@others}
     >
+      <:bar>
+        <Layouts.view_site />
+      </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Import</h1>
         <p class="lead">

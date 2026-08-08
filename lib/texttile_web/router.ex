@@ -134,7 +134,7 @@ defmodule TexttileWeb.Router do
     pipe_through [:browser, :site, :site_gate]
 
     get "/", SiteController, :front
-    get "/texts", SiteController, :texts
+    get "/blog", SiteController, :blog
     get "/tags/:tag", SiteController, :tag
 
     # A reader sends a comment. Behind the gate like the text it is on.

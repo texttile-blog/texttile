@@ -151,6 +151,7 @@ defmodule TexttileWeb.ProfileLive do
         >
           Last saved · just now
         </span>
+        <Layouts.view_site />
       </:bar>
       <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">Your profile</h1>

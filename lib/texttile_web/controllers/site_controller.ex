@@ -7,6 +7,7 @@ defmodule TexttileWeb.SiteController do
   """
   use TexttileWeb, :controller
 
+  alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Article
   alias Texttile.Comments
@@ -21,7 +22,7 @@ defmodule TexttileWeb.SiteController do
   plug :load_chrome
        when action in [
               :front,
-              :texts,
+              :blog,
               :tag,
               :article,
               :page,
@@ -30,16 +31,38 @@ defmodule TexttileWeb.SiteController do
               :confirm_subscriber
             ]
 
-  @doc "The front door: the latest texts, or the one fixed page."
+  @doc """
+  The front door: the one fixed page, or the way to the list.
+
+  The list has one address of its own, `/blog`, and keeps it whether or
+  not a page stands at the front. So `/` never draws the list; it sends
+  the reader on, and what they bookmark from there is the address that
+  still answers after somebody makes a page the front door.
+  """
   def front(conn, params) do
     case conn.assigns.home_page do
-      nil -> render_list(conn, params)
+      nil -> redirect(conn, to: blog_path(params))
       page -> render_text(conn, page)
     end
   end
 
-  @doc "The text list at /texts, the home of the list when a page is the front."
-  def texts(conn, params), do: render_list(conn, params)
+  @doc "The list of texts, at /blog."
+  def blog(conn, params), do: render_list(conn, params)
+
+  # The search and the page number travel along, so an old link to the
+  # front door with a query on it lands on the same list it named.
+  defp blog_path(params) do
+    pairs =
+      for key <- ["q", "page"],
+          value = text_value(params[key]),
+          value != "",
+          do: {key, value}
+
+    case pairs do
+      [] -> ~p"/blog"
+      pairs -> ~p"/blog" <> "?" <> URI.encode_query(pairs)
+    end
+  end
 
   @doc """
   One published post, under the day it went live. The date is part of
@@ -92,7 +115,8 @@ defmodule TexttileWeb.SiteController do
         tag: tag,
         tags: tags,
         articles: articles,
-        previews: Gallery.previews(articles)
+        previews: Gallery.previews(articles),
+        comment_counts: Comments.reader_count_map()
       )
     end
   end
@@ -104,24 +128,38 @@ defmodule TexttileWeb.SiteController do
   filled honeypot, a form younger than a person's typing or a caller
   over the rate limit is dropped without a trace - the sender is told
   that it worked, and nothing is stored.
+
+  Somebody signed in passes all of them. They came through the sign-in,
+  so they are no stranger, and their name and their address come from
+  the account instead of from the form: the two fields stand there
+  filled and disabled, and a browser sends nothing at all for a
+  disabled field.
   """
   def post_comment(conn, %{"article_id" => id} = params) do
     article = fetch_commentable(id)
+    author = signed_in_user(conn)
 
     cond do
       is_nil(article) ->
         not_found(conn)
 
-      spam?(article, params) ->
+      is_nil(author) and spam?(article, params) ->
         conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
 
       true ->
-        store_comment(conn, article, params)
+        store_comment(conn, article, params, author)
     end
   end
 
-  defp store_comment(conn, article, params) do
-    attrs = params |> Map.take(["name", "email", "body"]) |> Map.new(&text_field/1)
+  defp signed_in_user(conn) do
+    case conn.assigns[:current_scope] do
+      %{user: %{} = user} -> user
+      _ -> nil
+    end
+  end
+
+  defp store_comment(conn, article, params, author) do
+    attrs = comment_attrs(params, author)
     changeset = Comments.Comment.post_changeset(%Comments.Comment{}, attrs)
 
     cond do
@@ -137,12 +175,15 @@ defmodule TexttileWeb.SiteController do
         |> render_text(article)
 
       # The limit is spent on storable comments only, so a reader who
-      # corrects a form mistake never loses a slot to the mistake.
-      not RateLimiter.allow?(client_ip(conn)) ->
+      # corrects a form mistake never loses a slot to the mistake. It is
+      # a limit on strangers: an account is not one.
+      is_nil(author) and not RateLimiter.allow?(client_ip(conn)) ->
         conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
 
       true ->
-        case Comments.post(article, attrs, confirm_url: &url(~p"/comments/confirm/#{&1}")) do
+        opts = [confirm_url: &url(~p"/comments/confirm/#{&1}"), user: author]
+
+        case Comments.post(article, attrs, opts) do
           {:ok, comment} ->
             conn
             |> put_session(:own_comments, Enum.take([comment.id | own_comment_ids(conn)], 20))
@@ -182,6 +223,21 @@ defmodule TexttileWeb.SiteController do
     else
       _ -> nil
     end
+  end
+
+  # What goes into the comment. The words are always the writer's; the
+  # name and the address come from the account while somebody is signed
+  # in, so nothing a form could carry can put another name on them.
+  defp comment_attrs(params, nil) do
+    params |> Map.take(["name", "email", "body"]) |> Map.new(&text_field/1)
+  end
+
+  defp comment_attrs(params, user) do
+    %{
+      "name" => Accounts.display_name(user),
+      "email" => to_string(user.email),
+      "body" => text_value(params["body"])
+    }
   end
 
   defp spam?(article, params) do
@@ -402,7 +458,7 @@ defmodule TexttileWeb.SiteController do
     pages = max(div(length(found) - 1, per_page) + 1, 1)
     page = page_number(params["page"], pages)
     articles = Enum.slice(found, (page - 1) * per_page, per_page)
-    list_path = if conn.assigns.home_page, do: ~p"/texts", else: ~p"/"
+    list_path = ~p"/blog"
 
     conn
     |> assign(:active, :texts)
@@ -410,6 +466,7 @@ defmodule TexttileWeb.SiteController do
       q: q,
       articles: articles,
       previews: Gallery.previews(articles),
+      comment_counts: Comments.reader_count_map(),
       found: length(found),
       total: total,
       page: page,
@@ -492,19 +549,41 @@ defmodule TexttileWeb.SiteController do
             {article.id, System.system_time(:second)}
           ),
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
-      comment_rule:
-        if(require?,
-          do:
-            "Your address is never published. You get one link by mail, and " <>
-              "your comment appears under the text once you follow it.",
-          else: "Your address is never published. Your comment appears under the text at once."
-        ),
+      comment_rule: comment_rule(signed_in_user(conn), require?),
       comment_values: conn.assigns[:comment_values] || %{},
-      comment_error: conn.assigns[:comment_error] || false
+      comment_error: conn.assigns[:comment_error] || false,
+      comment_author: comment_author(conn)
     }
   end
 
   defp comment_assigns(_conn, _article), do: %{comments: nil}
+
+  # The line under the form. Signed in, the account answers for the
+  # address, so there is no link to follow and nothing to confirm.
+  defp comment_rule(nil, true) do
+    "Your address is never published. You get one link by mail, and " <>
+      "your comment appears under the text once you follow it."
+  end
+
+  defp comment_rule(nil, false) do
+    "Your address is never published. Your comment appears under the text at once."
+  end
+
+  defp comment_rule(_user, _require?) do
+    "You are signed in, so your name and your address come from your " <>
+      "account. Your address is never published, and your comment " <>
+      "appears under the text at once."
+  end
+
+  # The account writing the comment, as the form draws it: the name and
+  # the address it will carry, so the two fields can stand there filled
+  # and disabled instead of asking for what the site already knows.
+  defp comment_author(conn) do
+    case signed_in_user(conn) do
+      nil -> nil
+      user -> %{name: Accounts.display_name(user), email: to_string(user.email)}
+    end
+  end
 
   defp about_html do
     case String.trim(Settings.get(:about_markdown)) do

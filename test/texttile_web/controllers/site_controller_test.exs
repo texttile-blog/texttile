@@ -19,7 +19,7 @@ defmodule TexttileWeb.SiteControllerTest do
       scheduled_post(title: "Not yet")
       page = published_page(title: "About the blog")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
 
       assert html =~ ~s(id="text-#{new.id}")
       assert html =~ ~s(id="text-#{old.id}")
@@ -40,14 +40,14 @@ defmodule TexttileWeb.SiteControllerTest do
       published_post(title: "Harbor mornings", tags: "sea")
       published_post(title: "Desert nights", body: "Sand everywhere.")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ ~s(id="q")
 
-      html = conn |> get(~p"/?q=harbor") |> html_response(200)
+      html = conn |> get(~p"/blog?q=harbor") |> html_response(200)
       assert html =~ "Harbor mornings"
       refute html =~ "Desert nights"
 
-      html = conn |> get(~p"/?q=sand") |> html_response(200)
+      html = conn |> get(~p"/blog?q=sand") |> html_response(200)
       assert html =~ "Desert nights"
       refute html =~ "Harbor mornings"
     end
@@ -62,7 +62,7 @@ defmodule TexttileWeb.SiteControllerTest do
 
       {:ok, _image} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ "/renditions/640/"
       assert html =~ "The first paragraph carries the lead."
       refute html =~ "The second stays home."
@@ -74,7 +74,7 @@ defmodule TexttileWeb.SiteControllerTest do
     test "a text without a picture keeps the square, so the grid holds", %{conn: conn} do
       published_post(title: "Without a picture")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
 
       assert html =~ "cimg blank"
       refute html =~ "/renditions/640/"
@@ -83,16 +83,16 @@ defmodule TexttileWeb.SiteControllerTest do
     test "the about block sits at the foot of every reader page once filled", %{conn: conn} do
       published_post(title: "A text", slug: "a-text", publish_date: ~D[2026-03-01])
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       refute html =~ ~s(id="about")
 
       {:ok, _} = Settings.put(:about_markdown, "We **write** here.")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ ~s(id="about")
       assert html =~ "<strong>write</strong>"
 
-      assert conn |> get(~p"/texts") |> html_response(200) =~ ~s(id="about")
+      assert conn |> get(~p"/blog") |> html_response(200) =~ ~s(id="about")
       assert conn |> get(~p"/2026/03/01/a-text") |> html_response(200) =~ ~s(id="about")
     end
   end
@@ -333,20 +333,20 @@ defmodule TexttileWeb.SiteControllerTest do
 
       {:ok, _} = Settings.put(:posts_per_page, 3)
 
-      first = conn |> get(~p"/") |> html_response(200)
+      first = conn |> get(~p"/blog") |> html_response(200)
       assert first =~ "Text 7"
       assert first =~ "Text 5"
       refute first =~ "Text 4"
       refute first =~ ~s(id="prev-page")
       assert first =~ ~s(id="next-page")
 
-      second = conn |> get(~p"/?page=2") |> html_response(200)
+      second = conn |> get(~p"/blog?page=2") |> html_response(200)
       assert second =~ "Text 4"
       refute second =~ "Text 7"
       assert second =~ ~s(id="prev-page")
       assert second =~ ~s(id="next-page")
 
-      last = conn |> get(~p"/?page=3") |> html_response(200)
+      last = conn |> get(~p"/blog?page=3") |> html_response(200)
       assert last =~ "Text 1"
       refute last =~ ~s(id="next-page")
     end
@@ -354,7 +354,7 @@ defmodule TexttileWeb.SiteControllerTest do
     test "ten texts a page by default, and no pager while one page holds all", %{conn: conn} do
       published_post(title: "The only one")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       assert Settings.get(:posts_per_page) == 10
       refute html =~ ~s(id="pager")
     end
@@ -362,7 +362,7 @@ defmodule TexttileWeb.SiteControllerTest do
     test "a page number nobody has answers with the last one", %{conn: conn} do
       published_post(title: "Alone")
 
-      html = conn |> get(~p"/?page=99") |> html_response(200)
+      html = conn |> get(~p"/blog?page=99") |> html_response(200)
       assert html =~ "Alone"
     end
 
@@ -373,7 +373,7 @@ defmodule TexttileWeb.SiteControllerTest do
 
       {:ok, _} = Settings.put(:posts_per_page, 2)
 
-      html = conn |> get(~p"/?q=harbor") |> html_response(200)
+      html = conn |> get(~p"/blog?q=harbor") |> html_response(200)
       assert html =~ "q=harbor"
       assert html =~ ~s(id="next-page")
     end
@@ -409,7 +409,7 @@ defmodule TexttileWeb.SiteControllerTest do
       draft_post(title: "Draft page", type: "page")
       published_post(title: "A post title")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
 
       assert html =~ ~s(id="menu-page-#{early.id}")
       assert html =~ ~s(id="menu-page-#{late.id}")
@@ -423,7 +423,7 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ ~s(id="menu-page-) <> "A post title"
     end
 
-    test "a fixed front page becomes Home and moves the list to /texts", %{conn: conn} do
+    test "a fixed front page stands at the door and Blog keeps /blog", %{conn: conn} do
       page = published_page(title: "Welcome", slug: "welcome", body: "The front door.")
       published_post(title: "A post")
       {:ok, _} = Settings.put(:front_page, "page:#{page.id}")
@@ -431,24 +431,24 @@ defmodule TexttileWeb.SiteControllerTest do
       front = conn |> get(~p"/") |> html_response(200)
       assert front =~ "The front door."
       assert front =~ ~s(id="menu-home")
-      assert front =~ ~s(id="menu-texts" href="/texts")
+      assert front =~ ~s(id="menu-texts" href="/blog")
 
       # the front page never doubles as a menu page
       refute front =~ ~s(id="menu-page-#{page.id}")
 
-      texts = conn |> get(~p"/texts") |> html_response(200)
+      texts = conn |> get(~p"/blog") |> html_response(200)
       assert texts =~ "A post"
     end
 
     test "without a fixed front page, Blog is the first door and Home is gone", %{conn: conn} do
       published_post(title: "A post")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       refute html =~ ~s(id="menu-home")
-      assert html =~ ~s(id="menu-texts" href="/")
+      assert html =~ ~s(id="menu-texts" href="/blog")
     end
 
-    test "a fixed front page that disappears falls back to the list", %{conn: conn} do
+    test "a fixed front page that disappears sends the door to the list", %{conn: conn} do
       user = Texttile.AccountsFixtures.user_fixture()
       page = published_page(title: "Welcome", user: user)
       published_post(title: "A post")
@@ -456,9 +456,27 @@ defmodule TexttileWeb.SiteControllerTest do
 
       {:ok, _} = Texttile.Articles.unpublish(page, user)
 
-      html = conn |> get(~p"/") |> html_response(200)
+      assert redirected_to(get(conn, ~p"/")) == "/blog"
+
+      html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ "A post"
       refute html =~ ~s(id="menu-home")
+    end
+  end
+
+  describe "the front door" do
+    test "without a fixed page it sends the reader to /blog, search and all", %{conn: conn} do
+      published_post(title: "A post")
+
+      assert redirected_to(get(conn, ~p"/")) == "/blog"
+      assert redirected_to(get(conn, ~p"/?q=post")) == "/blog?q=post"
+      assert redirected_to(get(conn, ~p"/?page=2")) == "/blog?page=2"
+    end
+
+    test "the old /texts address is gone", %{conn: conn} do
+      published_post(title: "A post")
+
+      assert conn |> get("/texts") |> html_response(404)
     end
   end
 
@@ -551,7 +569,7 @@ defmodule TexttileWeb.SiteControllerTest do
       {:ok, _} = Settings.put(:site_password, "")
       published_post(title: "Open after all")
 
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ "Open after all"
     end
   end

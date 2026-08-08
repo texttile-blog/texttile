@@ -55,16 +55,24 @@ defmodule Texttile.Comments do
   gets the confirmation mail when the setting asks for one; an address
   that is still unconfirmed gets the same link again, so a lost mail is
   never a dead end. `confirm_url:` builds the link from the token.
+
+  `user:` names the account that wrote the comment while signed in. That
+  account already proved the address at its first sign-in, so no
+  confirmation mail goes out and the comment stands under the text at
+  once: the address is confirmed here, the way the mailed link would
+  have confirmed it.
   """
   def post(%Article{} = article, attrs, opts) do
     confirm_url = Keyword.fetch!(opts, :confirm_url)
+    user = Keyword.get(opts, :user)
 
     with :ok <- open_for_comments(article),
          {:ok, attrs} <- validate(attrs) do
       address = ensure_address(attrs)
+      address = if user, do: confirm_address(address), else: address
 
       comment =
-        %Comment{article_id: article.id, address_id: address.id}
+        %Comment{article_id: article.id, address_id: address.id, user_id: user && user.id}
         |> Comment.changeset(attrs)
         |> Repo.insert!()
         |> Map.put(:address, address)
@@ -117,6 +125,20 @@ defmodule Texttile.Comments do
 
       address
       |> Ecto.Changeset.change(confirmation_mailed_at: now)
+      |> Repo.update!()
+    end
+  end
+
+  # An account signing in proved this address once. Marking it here
+  # means the same as following the mailed link: everything the address
+  # already wrote stands under its text from now on, and so does
+  # everything it writes later, signed in or not.
+  defp confirm_address(%Address{} = address) do
+    if Address.confirmed?(address) do
+      address
+    else
+      address
+      |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
       |> Repo.update!()
     end
   end
@@ -352,6 +374,28 @@ defmodule Texttile.Comments do
   @doc "Comment counts per text, one map, texts without comments absent."
   def count_map do
     from(c in standing(), group_by: c.article_id, select: {c.article_id, count(c.id)})
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  @doc """
+  The same map for the reader's side of the site: only the comments the
+  rule shows to everybody. While the confirmation setting is on, a
+  comment that still waits for its reader counts for nobody, so the
+  number on a card is the number under the text.
+  """
+  def reader_count_map do
+    query =
+      if Settings.get(:comments_require_confirmation) do
+        from(c in standing(),
+          join: a in assoc(c, :address),
+          where: not is_nil(a.confirmed_at) or not is_nil(c.released_at)
+        )
+      else
+        standing()
+      end
+
+    from(c in query, group_by: c.article_id, select: {c.article_id, count(c.id)})
     |> Repo.all()
     |> Map.new()
   end

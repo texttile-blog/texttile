@@ -65,5 +65,18 @@ start:
 	@$(MAKE) kill-port-4000
 	@$(MAKE) prepare
 	mix ecto.migrate
-	@host="$$(bin/dev-host)"; echo "Server: http://$$host:4000"; open "http://$$host:4000"
+	@host="$$(bin/dev-host)"; \
+	echo "Server: http://$$host:4000"; \
+	( \
+		tries=0; \
+		while [ $$tries -lt 300 ]; do \
+			if curl -fsS -o /dev/null --max-time 2 "http://$$host:4000/"; then \
+				open "http://$$host:4000"; \
+				exit 0; \
+			fi; \
+			tries=$$((tries + 1)); \
+			sleep 0.4; \
+		done; \
+		echo "The server did not answer within two minutes; open http://$$host:4000 yourself." >&2 \
+	) &
 	@if [ -f .env ]; then set -a && . ./.env && set +a; fi; mix phx.server

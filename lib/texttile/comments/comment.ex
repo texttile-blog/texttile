@@ -5,6 +5,10 @@ defmodule Texttile.Comments.Comment do
   setting, and `released_at` is the one exception an admin can make; see
   `Texttile.Comments`. `delete_after` is the trash, `edited_at` says an
   admin changed the words.
+
+  `user_id` is set while somebody wrote the comment signed in. The name
+  and the address are still stored on the comment and the address row:
+  the words stay as they were written, whatever the account does later.
   """
 
   use Ecto.Schema
@@ -19,6 +23,8 @@ defmodule Texttile.Comments.Comment do
 
     belongs_to :article, Texttile.Articles.Article
     belongs_to :address, Texttile.Comments.Address
+    # Set while somebody wrote the comment signed in; nil for a reader.
+    belongs_to :user, Texttile.Accounts.User
 
     timestamps(type: :utc_datetime)
   end

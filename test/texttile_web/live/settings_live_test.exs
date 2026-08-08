@@ -145,22 +145,28 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Settings.get(:video_max_edge) == 1920
     end
 
-    test "the page size saves, and a number nobody can use says no", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/admin/settings")
+    test "the page size is a row of sizes, and picking one saves it", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/admin/settings")
+
+      assert html =~ "Number of texts a page in blog overview"
+
+      for size <- [10, 25, 50, 100, 150, 200] do
+        assert has_element?(view, ~s(#setting-posts_per_page option[value="#{size}"]))
+      end
 
       view
-      |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "4"}})
+      |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "50"}})
       |> render_change(%{"_target" => ["settings", "posts_per_page"]})
 
-      assert Settings.get(:posts_per_page) == 4
+      assert Settings.get(:posts_per_page) == 50
+    end
 
-      html =
-        view
-        |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "0"}})
-        |> render_change(%{"_target" => ["settings", "posts_per_page"]})
+    test "a size from somewhere else keeps its place in the row", %{conn: conn} do
+      {:ok, _} = Settings.put(:posts_per_page, 4)
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "at least 1"
-      assert Settings.get(:posts_per_page) == 4
+      assert has_element?(view, ~s(#setting-posts_per_page option[value="4"][selected]))
+      assert has_element?(view, ~s(#setting-posts_per_page option[value="10"]))
     end
 
     test "the comments toggle rewrites its own explanation", %{conn: conn} do
@@ -277,20 +283,14 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ other.email
     end
 
-    test "names in the configuration without an account are waiting", %{conn: conn} do
+    test "a name in the configuration without an account is not listed", %{conn: conn} do
       configure_admins(["kb", "julia"])
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "Not here yet"
-      assert html =~ "julia"
-      assert html =~ "These names may sign in but have no account yet"
-    end
-
-    test "with every configured name in use, nobody is waiting", %{conn: conn, user: user} do
-      configure_admins([user.username])
-      {:ok, _view, html} = live(conn, ~p"/admin/settings")
-
-      assert html =~ "Every name in ADMIN_USERS has an account"
+      # The screen lists accounts, not names that could become one:
+      # nobody can act on a name that has never signed in.
+      refute html =~ "Not here yet"
+      refute html =~ "These names may sign in but have no account yet"
     end
 
     # An account whose name left the configuration is still a row here,

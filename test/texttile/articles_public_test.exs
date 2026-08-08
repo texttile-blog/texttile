@@ -172,16 +172,16 @@ defmodule Texttile.ArticlesPublicTest do
     test "a slug the site itself uses is refused" do
       article = draft_post(title: "Innocent")
 
-      for slug <- ~w(admin login texts tags unlock uploads renditions) do
+      for slug <- ~w(admin login blog tags unlock uploads renditions) do
         assert {:error, changeset} = Articles.update_settings(article, %{slug: slug})
         assert %{slug: [_message]} = errors_on(changeset)
       end
     end
 
     test "publishing a text whose title is a reserved word walks past it" do
-      article = published_post(title: "Texts")
-      assert article.slug != "texts"
-      assert article.slug =~ ~r/^texts-/
+      article = published_post(title: "Blog")
+      assert article.slug != "blog"
+      assert article.slug =~ ~r/^blog-/
     end
   end
 

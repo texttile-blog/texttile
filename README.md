@@ -72,10 +72,15 @@ image, start the container again.
 
 ## Readers and admins
 
-Readers get the blog at the root: the list of published texts at `/`, each
-text at its own address, and every published page in the menu. A post lives
-under the day it went live, `/2026/08/23/harbor-mornings`; a page lives at
-its slug alone, `/about-us`. Admins sign in at `/login` and work at `/admin`.
+Readers get the list of published texts at `/blog`, each text at its own
+address, and every published page in the menu. A post lives under the day it
+went live, `/2026/08/23/harbor-mornings`; a page lives at its slug alone,
+`/about-us`. Admins sign in at `/login` and work at `/admin`.
+
+The root, `/`, is the front door. It sends the reader to `/blog`, or it
+shows the one page you picked in Settings > Front page. The list keeps
+`/blog` either way, so a bookmark of it stays good when you change your
+mind.
 
 The list shows ten texts a page and then a pager. Change the number in
 Settings > Front page. Under a text stand the way to the text before it and
@@ -85,6 +90,11 @@ The blog can sit behind one shared password (Settings > Access). It is an
 access word to hand around, not a login: it is stored in plain text, one
 entry opens the whole blog, and it guards the blog or nothing. No text has a
 switch of its own.
+
+While the blog is protected, the editor of every text shows the word under
+Share, so you never have to go and look it up. Once a text is live, the same
+block holds the lines to hand on: the title, the address, and the password
+under it. Copy puts them on the clipboard.
 
 ## Pictures and videos
 
@@ -128,6 +138,12 @@ one confirmation mail. The comment appears when its reader follows the
 mailed link, and every later comment from that address appears at once.
 Turn the confirmation off in Settings > Comments and no comment waits for
 anything.
+
+Comment while signed in and the form fills itself: the name and the address
+come from your account, the two fields take no typing, and the comment
+stands under the text at once. The sign-in already proved the address, so no
+confirmation mail goes out. The comment counts show under each card, on
+`/blog` and on `/admin`.
 
 Admins see all comments at `/admin/comments` and on the Comments tab of each
 text. There they can do three things to a comment:

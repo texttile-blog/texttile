@@ -1870,6 +1870,8 @@ defmodule TexttileWeb.EditorLive do
             </p>
           </div>
 
+          <.share_block article={@article} />
+
           <%!-- article settings: what the text wears first (preview,
                address, date), then what it is, then its community.
                No Status row - the stamp and the button in the bar
@@ -2244,6 +2246,143 @@ defmodule TexttileWeb.EditorLive do
       </.ask>
     </Layouts.app>
     """
+  end
+
+  @doc """
+  What to hand somebody so they can read this text: the address it
+  lives at, and the word the blog asks for while it is protected.
+
+  The password stands here whatever the text is, a post or a page, and
+  whether or not the text is live: a protected blog is protected
+  everywhere, and the one place a writer looks at a text is this
+  screen. The line to pass on arrives with the text going live, because
+  before that there is no address to pass on.
+  """
+  attr :article, :any, required: true
+
+  def share_block(assigns) do
+    password = Texttile.Settings.get(:site_password)
+    protected? = Texttile.Settings.get(:site_visibility) == "protected"
+
+    assigns =
+      assigns
+      |> assign(:protected?, protected?)
+      |> assign(:password, password)
+      # A word nobody is asked for is worth showing anyway: it is the
+      # word this blog uses, and the line beside it says whether the
+      # gate is open. A blog that has neither says nothing at all.
+      |> assign(:show_password?, protected? or password != "")
+      |> assign(:password_hint, password_hint(protected?, password))
+      |> assign(:share_text, share_text(assigns.article, protected? && password))
+
+    ~H"""
+    <div :if={@show_password? or @share_text} class="mt-[34px]" id="shareBlock">
+      <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
+        <span class="text-[13px] font-semibold">Share</span>
+      </div>
+
+      <div :if={@show_password?} class="drow pt-0.5" id="sharePassword">
+        <span class="lab">Blog password</span>
+        <span class="val">
+          <span :if={@password != ""} class="font-mono text-[13.5px]" id="sharePasswordWord">
+            {@password}
+          </span>
+          <span :if={@password == ""} class="note" id="sharePasswordMissing">
+            None yet. The blog is set to protected, and without a word nothing
+            is protected.
+          </span>
+          <div class="hint" id="sharePasswordHint">{@password_hint}</div>
+        </span>
+      </div>
+
+      <div :if={@share_text} class="drow gtop" id="shareText">
+        <span class="lab">To pass on</span>
+        <span class="val">
+          <div phx-hook=".CopyShare" id="shareCopy">
+            <textarea
+              id="shareLines"
+              class="font-mono text-[12.5px] leading-[1.6] resize-none"
+              rows={length(String.split(@share_text, "\n"))}
+              readonly
+              spellcheck="false"
+              aria-label="The text to pass on"
+            >{@share_text}</textarea>
+            <div class="mt-[9px] btn-row">
+              <button type="button" class="btn sm" data-copy>Copy</button>
+              <span class="note" data-copied hidden>Copied</span>
+            </div>
+          </div>
+          <div class="hint">
+            The address of the text{if @protected? and @password != "",
+              do: ", and the word that opens the blog",
+              else: ""}. Subscribers get the same
+            lines by mail when the text goes live.
+          </div>
+        </span>
+      </div>
+    </div>
+
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".CopyShare">
+      export default {
+        mounted() { this.wire() },
+        updated() { this.wire() },
+        wire() {
+          const button = this.el.querySelector("[data-copy]")
+          const said = this.el.querySelector("[data-copied]")
+          const field = this.el.querySelector("textarea")
+          if (!button || button.dataset.wired) return
+          button.dataset.wired = "1"
+          button.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(field.value)
+            } catch (_error) {
+              // No clipboard permission, and no browser offers one on
+              // plain http. The words are selected instead, so one key
+              // still copies them.
+              field.select()
+            }
+            if (said) {
+              said.hidden = false
+              clearTimeout(this.timer)
+              this.timer = setTimeout(() => { said.hidden = true }, 2200)
+            }
+          })
+        }
+      }
+    </script>
+    """
+  end
+
+  # The lines a writer hands on: the title, the address, and the word
+  # the blog asks for. Nil while the text has no address of its own,
+  # which is every text that is not live yet.
+  defp password_hint(true = _protected?, _password) do
+    "The whole blog waits behind this one word, this text with it. " <>
+      "Settings > Access is where it changes."
+  end
+
+  defp password_hint(false, _password) do
+    "The blog is open right now, so nobody is asked for this word. " <>
+      "Settings > Access turns the gate on."
+  end
+
+  defp share_text(%{status: status}, _password) when status != "published", do: nil
+
+  defp share_text(article, password) do
+    case Articles.public_path(article) do
+      nil ->
+        nil
+
+      path ->
+        head =
+          "New on #{Texttile.Settings.site_title()}: " <>
+            Articles.display_title(article) <> "\n" <> TexttileWeb.Endpoint.url() <> path
+
+        case password do
+          word when is_binary(word) and word != "" -> head <> "\nThe blog password is: " <> word
+          _ -> head
+        end
+    end
   end
 
   defp chevron_icon(assigns) do

@@ -90,7 +90,7 @@ defmodule TexttileWeb.FeedControllerTest do
 
   describe "the way to the feed" do
     test "stands in the head and in the foot while the blog is open", %{conn: conn} do
-      html = conn |> get(~p"/") |> html_response(200)
+      html = conn |> get(~p"/blog") |> html_response(200)
 
       assert html =~ ~s(rel="alternate")
       assert html =~ ~s(type="application/rss+xml")
@@ -104,7 +104,7 @@ defmodule TexttileWeb.FeedControllerTest do
       html =
         conn
         |> init_test_session(site_unlocked: true)
-        |> get(~p"/")
+        |> get(~p"/blog")
         |> html_response(200)
 
       refute html =~ "application/rss+xml"
