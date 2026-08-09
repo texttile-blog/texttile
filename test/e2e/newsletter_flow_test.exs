@@ -5,7 +5,6 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
 
   test "a reader joins by mail, the admin adds one by hand, a publish mails both, one leaves",
        %{conn: conn} do
-
     # Mails from the server processes land in this test process.
 
     # The reader subscribes in the Subscribe section and confirms by mail.

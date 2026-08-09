@@ -645,7 +645,6 @@ defmodule TexttileWeb.SiteController do
     }
   end
 
-
   # The line under the form. Signed in, the account answers for the
   # address, so there is no link to follow and nothing to confirm.
   defp comment_rule(nil, true) do

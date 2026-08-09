@@ -205,7 +205,6 @@ defmodule Texttile.CommentsTest do
   end
 
   describe "the mail to the people who run the blog" do
-
     test "with confirmation off, the comment travels the moment it arrives" do
       {:ok, _} = Settings.put(:comments_require_confirmation, false)
       kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
@@ -497,7 +496,6 @@ defmodule Texttile.CommentsTest do
   end
 
   describe "release_comment/1" do
-
     test "one comment stands under the text while its address stays unconfirmed" do
       article = published_post()
       comment = post!(article)

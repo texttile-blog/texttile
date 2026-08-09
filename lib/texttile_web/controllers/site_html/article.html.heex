@@ -55,7 +55,11 @@
           data-video={tile.film && "/uploads/#{tile.film}"}
           data-caption={tile.filename}
         >
-          <img src={"/renditions/#{Images.card_edge()}/#{tile.still}"} alt={tile.filename} loading="lazy" />
+          <img
+            src={"/renditions/#{Images.card_edge()}/#{tile.still}"}
+            alt={tile.filename}
+            loading="lazy"
+          />
           <span :if={tile.film} class="play-badge" aria-hidden="true"></span>
         </a>
       </div>

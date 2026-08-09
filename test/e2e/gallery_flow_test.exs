@@ -165,5 +165,4 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       assert Enum.map(Gallery.list(article.id), & &1.filename) == ["pier.jpg", "gull.jpg"]
     end
   end
-
 end

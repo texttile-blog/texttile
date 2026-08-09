@@ -362,5 +362,4 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       end)
     end
   end
-
 end

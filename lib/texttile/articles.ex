@@ -574,7 +574,8 @@ defmodule Texttile.Articles do
         end
 
       true ->
-        status = if Date.compare(date, today) == :gt, do: "scheduled", else: Visibility.live_status()
+        status =
+          if Date.compare(date, today) == :gt, do: "scheduled", else: Visibility.live_status()
 
         # A scheduled text whose date is dragged to today goes live this
         # moment - that is a go-live like any other. A date edit on an
@@ -611,6 +612,7 @@ defmodule Texttile.Articles do
         article
         |> Article.state_changeset(%{status: Visibility.live_status()})
         |> Repo.update()
+
       push_log(article, nil, "the entry went live as scheduled")
       article = Texttile.Newsletter.notify_published(article)
       broadcast({:article_changed, article})

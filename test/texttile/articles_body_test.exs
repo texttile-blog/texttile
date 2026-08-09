@@ -30,7 +30,8 @@ defmodule Texttile.Articles.BodyTest do
   end
 
   test "every reference in the text is handed over, and nothing else is" do
-    html = walk("![One](/uploads/a.jpg)\n\n![Two](/uploads/b.jpg)\n\n![Away](https://other/c.jpg)")
+    html =
+      walk("![One](/uploads/a.jpg)\n\n![Two](/uploads/b.jpg)\n\n![Away](https://other/c.jpg)")
 
     assert html =~ "[picture a.jpg One]"
     assert html =~ "[picture b.jpg Two]"
@@ -94,7 +95,8 @@ defmodule Texttile.Articles.BodyTest do
 
   describe "picture/2" do
     test "keeps the tag the writer wrote and points it somewhere else" do
-      drawn = Body.to_html("![A pier](/uploads/images/pier.jpg)", &Media.picture(&1, "/small.jpg"))
+      drawn =
+        Body.to_html("![A pier](/uploads/images/pier.jpg)", &Media.picture(&1, "/small.jpg"))
 
       assert drawn =~ ~s(src="/small.jpg")
       assert drawn =~ ~s(alt="A pier")

@@ -156,7 +156,6 @@ defmodule Texttile.NewsletterTest do
 
   describe "the publish email" do
     setup do
-
       {:ok, _} = Newsletter.add("one@example.org")
       {:ok, _} = Newsletter.add("two@example.org")
       :ok

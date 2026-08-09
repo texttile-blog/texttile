@@ -19,7 +19,10 @@ defmodule Texttile.Comments.Address do
 
   @doc "A fresh row for an email nobody has commented with yet."
   def build(email) do
-    %__MODULE__{email: Texttile.Confirmation.normalize(email), token: Texttile.Confirmation.token()}
+    %__MODULE__{
+      email: Texttile.Confirmation.normalize(email),
+      token: Texttile.Confirmation.token()
+    }
   end
 
   @doc "Whether the owner of the address followed the mailed link."

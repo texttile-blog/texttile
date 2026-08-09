@@ -19,7 +19,10 @@ defmodule Texttile.Newsletter.Subscriber do
 
   @doc "A fresh row for an address that is not on the list yet."
   def build(email) do
-    %__MODULE__{email: Texttile.Confirmation.normalize(email), token: Texttile.Confirmation.token()}
+    %__MODULE__{
+      email: Texttile.Confirmation.normalize(email),
+      token: Texttile.Confirmation.token()
+    }
   end
 
   @doc "Whether the owner of the address followed the mailed link."

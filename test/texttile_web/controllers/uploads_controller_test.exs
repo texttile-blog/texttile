@@ -4,7 +4,6 @@ defmodule TexttileWeb.UploadsControllerTest do
   alias Texttile.Uploads
 
   setup do
-
     path = Uploads.absolute("site/logo-abcd.svg")
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, "<svg xmlns='http://www.w3.org/2000/svg'/>")
