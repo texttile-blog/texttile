@@ -17,6 +17,7 @@ defmodule Texttile.Newsletter do
 
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Confirmation
   alias Texttile.Newsletter.Notifier
   alias Texttile.Newsletter.Subscriber
   alias Texttile.Repo
@@ -68,21 +69,9 @@ defmodule Texttile.Newsletter do
   """
   def add(email) do
     with {:ok, subscriber} <- ensure(email) do
-      subscriber = confirm_now(subscriber)
+      subscriber = Confirmation.confirm(subscriber, DateTime.utc_now(:second))
       broadcast()
       {:ok, subscriber}
-    end
-  end
-
-  # The one place an address becomes a confirmed one, whichever way it
-  # got there: an admin vouches for it, or its owner followed the link.
-  defp confirm_now(%Subscriber{} = subscriber) do
-    if Subscriber.confirmed?(subscriber) do
-      subscriber
-    else
-      subscriber
-      |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
-      |> Repo.update!()
     end
   end
 
@@ -101,24 +90,12 @@ defmodule Texttile.Newsletter do
     end
   end
 
-  @mail_interval_seconds 3600
-
   defp mail_confirmation(subscriber, confirm_url, now) do
-    if mailed_recently?(subscriber, now) do
-      subscriber
-    else
-      Notifier.deliver_confirmation(subscriber, confirm_url.(subscriber.token))
-
-      subscriber
-      |> Ecto.Changeset.change(confirmation_mailed_at: now)
-      |> Repo.update!()
-    end
-  end
-
-  defp mailed_recently?(%Subscriber{confirmation_mailed_at: nil}, _now), do: false
-
-  defp mailed_recently?(%Subscriber{confirmation_mailed_at: at}, now) do
-    DateTime.diff(now, at) < @mail_interval_seconds
+    Confirmation.ask(
+      subscriber,
+      fn token -> Notifier.deliver_confirmation(subscriber, confirm_url.(token)) end,
+      now
+    )
   end
 
   ## Confirming and leaving
@@ -134,7 +111,7 @@ defmodule Texttile.Newsletter do
         :error
 
       %Subscriber{} = subscriber ->
-        subscriber = confirm_now(subscriber)
+        subscriber = Confirmation.confirm(subscriber, DateTime.utc_now(:second))
         broadcast()
         {:ok, subscriber}
     end

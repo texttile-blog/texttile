@@ -19,12 +19,9 @@ defmodule Texttile.Comments.Address do
 
   @doc "A fresh row for an email nobody has commented with yet."
   def build(email) do
-    %__MODULE__{
-      email: email,
-      token: :crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false)
-    }
+    %__MODULE__{email: Texttile.Confirmation.normalize(email), token: Texttile.Confirmation.token()}
   end
 
   @doc "Whether the owner of the address followed the mailed link."
-  def confirmed?(%__MODULE__{confirmed_at: confirmed_at}), do: not is_nil(confirmed_at)
+  defdelegate confirmed?(address), to: Texttile.Confirmation
 end

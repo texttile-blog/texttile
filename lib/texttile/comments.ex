@@ -25,6 +25,7 @@ defmodule Texttile.Comments do
   alias Texttile.Articles.Article
   alias Texttile.Articles.Visibility
   alias Texttile.Comments.Address
+  alias Texttile.Confirmation
   alias Texttile.Comments.Comment
   alias Texttile.Comments.Notifier
   alias Texttile.Repo
@@ -74,7 +75,7 @@ defmodule Texttile.Comments do
     with :ok <- open_for_comments(article),
          {:ok, attrs} <- validate(attrs) do
       address = ensure_address(attrs)
-      address = if user, do: confirm_address(address, now), else: address
+      address = if user, do: Confirmation.confirm(address, now), else: address
 
       comment =
         %Comment{article_id: article.id, address_id: address.id, user_id: user && user.id}
@@ -118,43 +119,15 @@ defmodule Texttile.Comments do
     :ok
   end
 
-  # Nobody proves they own the address before the mail goes out, so the
-  # address itself carries the limit: one link an hour. Without it the
-  # form is a way to mail a stranger over and over, from the site's own
-  # sending domain. The comment stands either way; the link is the same
-  # one, and the next comment carries it again.
-  @mail_interval_seconds 3600
-
+  # The comment stands either way; the link is the same one, and the
+  # next comment carries it again. See Texttile.Confirmation for why
+  # one link an hour.
   defp mail_confirmation(comment, address, confirm_url, now) do
-    if mailed_recently?(address, now) do
-      address
-    else
-      Notifier.deliver_confirmation(comment, confirm_url.(address.token))
-
-      address
-      |> Ecto.Changeset.change(confirmation_mailed_at: now)
-      |> Repo.update!()
-    end
-  end
-
-  # An account signing in proved this address once. Marking it here
-  # means the same as following the mailed link: everything the address
-  # already wrote stands under its text from now on, and so does
-  # everything it writes later, signed in or not.
-  defp confirm_address(%Address{} = address, now) do
-    if Address.confirmed?(address) do
-      address
-    else
-      address
-      |> Ecto.Changeset.change(confirmed_at: now)
-      |> Repo.update!()
-    end
-  end
-
-  defp mailed_recently?(%Address{confirmation_mailed_at: nil}, _now), do: false
-
-  defp mailed_recently?(%Address{confirmation_mailed_at: at}, now) do
-    DateTime.diff(now, at) < @mail_interval_seconds
+    Confirmation.ask(
+      address,
+      fn token -> Notifier.deliver_confirmation(comment, confirm_url.(token)) end,
+      now
+    )
   end
 
   defp open_for_comments(%Article{} = article) do
@@ -172,7 +145,7 @@ defmodule Texttile.Comments do
   end
 
   defp ensure_address(attrs) do
-    email = Comment.normalize_email(Map.get(attrs, "email"))
+    email = Confirmation.normalize(Map.get(attrs, "email"))
 
     Repo.insert!(Address.build(email),
       on_conflict: [set: [email: email]],
@@ -228,10 +201,7 @@ defmodule Texttile.Comments do
 
       %Address{} = address ->
         unless Address.confirmed?(address) do
-          address =
-            address
-            |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
-            |> Repo.update!()
+          address = Confirmation.confirm(address, DateTime.utc_now(:second))
 
           # Everything this address wrote stands under its text from
           # this moment, so this is when the blog hears about it. Not
