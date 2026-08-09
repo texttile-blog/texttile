@@ -1,67 +1,51 @@
 # AGENTS.md
 
-Only deviations from default behavior. Phoenix/LiveView/Ecto guidance lives in `PHOENIX.md`; read it before writing Phoenix code.
+Permanent project-specific rules only. Read `PHOENIX.md` before writing Phoenix code.
 
-## Product decisions
+## Agent lifecycle
 
-The README states the principles. These are the rules behind them. They hold until the user changes them; do not improve on them.
+- At the start of every turn, start a dedicated `caffeinate -dimsu` process and retain its PID. Stop that exact process after the last tool or API call, immediately before the final response. Never stop a `caffeinate` process started elsewhere.
 
-- Nothing external at runtime: no CDN, no third-party script, no tracker, no captcha service. Spam protection is honeypot, time trap, and rate limit, always on and without configuration.
-- Markdown is the document. A byte-identical round trip is a hard requirement: never normalize, reflow, or clean up what the user typed, because the version diff must show real edits only. No editor that serializes markdown from a document tree (ProseMirror, TipTap, Milkdown).
-- The body editor stays one isolated hook with a narrow interface (in: text, remote updates, read-only flag; out: changes, cursor, activity ping). Nothing else reads or writes its internals, so real concurrent editing stays a component swap instead of a rewrite.
-- The body text is the only thing that is locked. Tiles, tags, settings, and publish controls stay open to everybody at the same time; last write wins per field.
-- Versions hold title and body, nothing else. That keeps restore one clear promise, and it lets a removed image be deleted at once: no soft delete, no orphans.
-- Gallery order lives in `gallery_date` alone. Drag and drop and the date field write that one value; the original file and its EXIF data stay untouched.
-- A step that cannot be taken back stays separate and confirmed. A newsletter mail is never a side effect of publishing.
-- `/data` is the whole installation: database and uploads. Never copy the live database file; take a copy with `VACUUM INTO` or `.backup` (see `make db-pull`).
-- The signed-in area behind `/admin` is the admin area, in prose and in code (`TexttileWeb.Admin`). Never "the desk": that word is a leftover of a prototype variant name. "Admin" alone stays the person, so the place keeps its noun.
-- One thing a blog holds is an **entry**, in every word a person reads: the admin menu, the headings, the counts, the reader pages, the mails, and the docs. "Text" is what an entry is made of, so it stays where it means the words themselves ("the body text", "stored in plain text"). The code keeps the older noun (`/admin/texts`, `TexttileWeb.TextsLive`, `Texttile.Articles`); renaming the routes would break every bookmark for nothing.
+## Product
+
+- Load nothing external at runtime: no CDN, third-party script, tracker, or captcha. Honeypot, time trap, and rate limiting are always on and have no configuration.
+- Preserve user Markdown byte for byte. Never normalize, reflow, or clean it. Do not use editors that serialize Markdown from a document tree, including ProseMirror, TipTap, and Milkdown.
+- Keep the body editor in one isolated hook. Inputs are text, remote updates, and read-only state. Outputs are changes, cursor, and activity pings. Nothing else may access its internals.
+- Lock only the body text. Tiles, tags, settings, and publish controls remain concurrent, with last write winning per field.
+- Versions contain only title and body. Delete removed images immediately. No soft deletes or orphaned files.
+- Store gallery order only in `gallery_date`. Reordering and the date field update it without changing the original file or EXIF data.
+- Keep irreversible actions separate and confirmed. Publishing never sends a newsletter.
+- Call the signed-in area behind `/admin` the admin area in prose and code (`TexttileWeb.Admin`), never "the desk." `Admin` alone names the person. Keep existing code names such as `/admin/texts`, `TexttileWeb.TextsLive`, and `Texttile.Articles`.
+- Call a blog item an **entry** in all user-facing prose, mail, and documentation. Use "text" only for its written content.
 
 ## Git and GitHub
 
-- Branches, commits, and PR texts in English. No co-author trailers, no "Generated with" lines.
-- No draft PRs. Never merge; merging is the user's decision.
-- Never work on `main`. Every new branch off `main` starts as a worktree: `git worktree add ../texttile-<slug> -b <branch> main`. Substantial features (new user-facing capability, more than one module, or more than a couple of commits) use `feature/<slug>`; small fixes use a short branch name, but still get a worktree.
-- After `git worktree add`, switch the session into the worktree with the EnterWorktree tool (`path`), so the session's working directory (and any terminal split) is the worktree.
-- Every open PR gets a `/review-pr` pass. Findings are fixed as commits on the PR branch, not left as comments.
+- Write branch names, commits, and PR text in English. Add no co-author or generation trailers.
+- Never work on `main`. Create every branch from `main` in a sibling worktree named `../texttile-<slug>`.
+- Keep at most ten registered worktrees, including the main worktree. Before creating one, reduce the existing set to at most nine: run `wt step prune --dry-run --min-age=0s`, inspect it, then run `wt step prune --min-age=0s`. Never force removal or remove a dirty or unintegrated worktree. If safe pruning is insufficient, ask the user what to remove.
+- After creating a worktree, enter it with EnterWorktree so the session and terminals follow it.
+- Use `feature/<slug>` for a user-facing capability, a change spanning multiple modules, or work likely to need more than two commits. Use a short branch name for smaller changes.
+- Never open draft PRs or merge PRs. Every open PR gets `/review-pr`; fix findings with commits on its branch.
 
-## README
+## Configuration and runtime
 
-- The README is the public setup documentation; the project will be open source. Any change to configuration (env vars, ports, Docker, deploy, make targets) updates the README in the same PR.
+- Update the public README in the same PR as any change to environment variables, ports, Docker, deployment, or Make targets.
+- Keep both Fly configurations aligned. This checkout deploys `texttile-staging` to `staging.texttile.blog`; `texttile-blog/demo` deploys `texttile-demo` to `demo.texttile.blog` from the published image. Only the app name, `PHX_HOST`, and demo `[build]` section may differ. Mirror and push changes to Fly settings, ports, volume paths, and image names in the demo repository.
+- Treat `/data` as the complete installation: database and uploads. Copy a live database only with `VACUUM INTO`, `.backup`, or `make db-pull`.
+- Port 4000 belongs to the user. Never bind it or kill its process. Use 4440 for tests through `TEST_PORT`, and 4441 through 4449 for agent servers.
+- All worktrees share the main checkout's development database and uploads. Treat them as user data. Remove only records created by the current QA or script, through application flows or exact identifiers. Never delete shared development data wholesale.
 
-## Deploy config
+## Tests and QA
 
-- `fly.toml` exists twice, and each file runs its own Fly app:
-  - here: app `texttile-staging` on `staging.texttile.blog`, built from this checkout.
-  - in the repo `texttile-blog/demo` (usually checked out at `../demo`): app `texttile-demo` on `demo.texttile.blog`, running the published image through a `[build]` section.
-- The app name, `PHX_HOST`, and the `[build]` section are the only intended differences. When you change `fly.toml`, env vars, ports, volume paths, or the image name, apply the same change in the demo repo and push it.
-
-## Ports
-
-- 4000 belongs to the user (`make start`): never bind it, never kill what runs there.
-- Agents use 4440-4449: tests on 4440 (`TEST_PORT`), ad-hoc servers on `PORT=4441` and up.
-
-## Dev data
-
-- All worktrees share the main checkout's dev database and uploads (`texttile_dev.db`, see config/dev.exs). That database holds the user's living test data. QA and scripts remove only the records they created themselves, through the app's own delete flows or by exact id or username. Never delete wholesale from the shared dev DB.
-
-## Tests
-
-- Failing test first. Business logic gets unit tests; higher-level requirements get e2e tests through the real UI in a headless browser.
-- `test/contract/` is user-defined: never modify, weaken, or delete without an explicit user request. If one fails, fix the code; if the test seems wrong, stop and ask.
-- State that lives beside the database is not rolled back: document locks, presence, registries, the application environment, uploaded files. The article ids do roll back, so the next test writes id 1 again and inherits whatever the last test left under that id. A test that creates such state clears it, and the shared setup in `test/support/data_case.ex` clears it for everybody.
-- Green once is not green. Before a PR, run the suite the way the runner does: `mix test --max-cases 4`. It is slower and orders the tests differently, which is where a leak between two tests shows.
-- A test that fails on CI and passes locally is an ordering or timing race until proven otherwise, never "CI being flaky". Find the pair: run the suspect file straight after the file that could have contaminated it (`mix test test/e2e/<file> test/<suspect> --seed 0`). That usually turns it into a failure you can watch. A race that needs a slow machine shows under load: `mix test test/e2e/` while a few busy loops hold the cores.
-- A browser test never acts on a dead render. It reaches its screen through `TexttileWeb.E2E` (`sign_in/1`, `open/2`, `open_editor/2`), which waits for the page to be live, and for the gallery to say `data-ready`, before the first click. Playwright acts as soon as an element exists, and a click that lands before the script says nothing at all.
-
-## Mail
-
-- Never send mail to real personal addresses. For live delivery tests use Resend's test addresses (`delivered@resend.dev`, `bounced@resend.dev`) or the local preview mailbox. If a test ever needs a real recipient, ask the user for the address first.
-
-## UI
-
-- A UI change is done only after `/visual-qa`: use it in a headless browser, look at the screenshots, judge desktop and mobile together.
+- Write the failing test first. Test business logic with unit tests and user-facing requirements through the real UI with headless browser tests.
+- Never modify, weaken, or delete `test/contract/` without explicit user approval. Fix the code when a contract test fails; ask if the contract appears wrong.
+- Tests that create non-transactional state, including locks, presence, registries, application environment, or uploads, must clear it. Keep shared cleanup in `test/support/data_case.ex`.
+- Before a PR, run `mix test --max-cases 4`. One green run under a different command is insufficient.
+- Treat a CI-only failure as an ordering or timing race until disproved. Reproduce suspected contamination by ordering the files with `--seed 0`; reproduce timing races under CPU load.
+- Browser tests must enter screens through `TexttileWeb.E2E` helpers and wait for the live page, plus gallery `data-ready` where applicable, before acting.
+- Complete every UI change with `/visual-qa` in a headless browser, judging desktop and mobile screenshots together.
+- Never send test mail to personal addresses. Use the local preview mailbox or Resend addresses `delivered@resend.dev` and `bounced@resend.dev`. Ask before using any real recipient.
 
 ## Prose
 
-- English prose (PR texts, docs, error messages, UI copy) follows `/ste-writing`: strict mode for procedures and errors, flavored elsewhere. No em dashes.
+- Apply `/ste-writing` to English PR text, documentation, errors, and UI copy. Use strict mode for procedures and errors, flavored mode elsewhere. Never use em dashes.
