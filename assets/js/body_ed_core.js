@@ -644,6 +644,10 @@ const impl = {
     document.addEventListener("click", this.onPanelClick)
   },
 
+  /* The three shapes an upload writes into the words. They are the
+     whole contract with the server: Texttile.Articles.Body.refs/1
+     reads exactly these, and its test pins the strings. Change one
+     end and you change the other. */
   upToken(name) { return "![Uploading " + name + "…]()" },
   failToken(name) { return "![Upload failed: " + name + "]()" },
   doneRef(name, url) { return "![" + name.replace(/\.\w+$/, "") + "](" + url + ")" },

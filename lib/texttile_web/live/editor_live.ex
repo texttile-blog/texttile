@@ -15,6 +15,7 @@ defmodule TexttileWeb.EditorLive do
 
   alias Texttile.Accounts
   alias Texttile.Articles
+  alias Texttile.Articles.Body
   alias Texttile.Articles.Lock
   alias Texttile.Articles.Visibility
   alias Texttile.Comments
@@ -985,15 +986,7 @@ defmodule TexttileWeb.EditorLive do
   # What every video of this text shows and how far it is, in one
   # query: the tiles of the gallery and the references in the words.
   defp media(%{article: article, gallery: gallery}) do
-    inline =
-      article.body
-      |> Articles.inline_refs()
-      |> Enum.flat_map(fn
-        %{kind: :done, url: "/uploads/" <> relative} -> [relative]
-        _ -> []
-      end)
-
-    (Enum.map(gallery, & &1.path) ++ inline)
+    (Enum.map(gallery, & &1.path) ++ Body.upload_paths(article.body))
     |> Enum.uniq()
     |> Videos.stills()
   end
@@ -1797,12 +1790,12 @@ defmodule TexttileWeb.EditorLive do
                   <span class="note">{gettext("Paste one into the text, or drop one on it.")}</span>
                 </div>
                 <div id="inlineImgs">
-                  <p :if={Articles.inline_refs(@article.body) == []} class="note pt-[10px]">
+                  <p :if={Body.refs(@article.body) == []} class="note pt-[10px]">
                     {gettext(
                       "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
                     )}
                   </p>
-                  <%= for ref <- Articles.inline_refs(@article.body) do %>
+                  <%= for ref <- Body.refs(@article.body) do %>
                     <% media = ref_media(@media, ref.url) %>
                     <%!-- a picture, or a video ffmpeg is through with:
                          the still stands for it. A video that is not
@@ -2837,7 +2830,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   defp inline_count(body) do
-    refs = Articles.inline_refs(body)
+    refs = Body.refs(body)
     done = Enum.count(refs, &(&1.kind == :done))
     running = Enum.count(refs, &(&1.kind == :running))
     failed = Enum.count(refs, &(&1.kind == :failed))

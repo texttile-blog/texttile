@@ -278,7 +278,7 @@ defmodule TexttileWeb.SiteHTML do
   """
   def pictures?(article, gallery) do
     gallery != [] or
-      Enum.any?(Articles.inline_refs(article.body), fn ref ->
+      Enum.any?(Body.refs(article.body), fn ref ->
         ref.kind == :done and String.starts_with?(to_string(ref.url), "/uploads/") and
           not Texttile.Videos.video?(ref.url)
       end)

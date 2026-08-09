@@ -37,6 +37,61 @@ defmodule Texttile.Articles.BodyTest do
     assert html =~ ~s(src="https://other/c.jpg")
   end
 
+  # The exact strings assets/js/body_ed_core.js writes into the words,
+  # copied here by hand. This is the whole contract between the editor
+  # hook and the server: the hook writes them, the parser below reads
+  # them, and nothing else states the shape.
+  @uploading "![Uploading gull.jpg…]()"
+  @failed "![Upload failed: fog.png]()"
+  @done "![pier](/uploads/images/pier-abcd.jpg)"
+
+  describe "refs/1" do
+    test "reads finished uploads, running ones and failed ones from the words" do
+      body = """
+      Some prose.
+
+      #{@done}
+
+      #{@uploading}
+
+      #{@failed}
+
+      ![decorative]()
+      """
+
+      assert [
+               %{kind: :done, file: "pier-abcd.jpg", url: "/uploads/images/pier-abcd.jpg"},
+               %{kind: :running, file: "gull.jpg"},
+               %{kind: :failed, file: "fog.png"}
+             ] = Body.refs(body)
+    end
+
+    test "an empty body has no references" do
+      assert Body.refs("") == []
+      assert Body.refs(nil) == []
+    end
+  end
+
+  describe "upload_paths/1" do
+    test "answers the finished uploads, once each, without the /uploads/ in front" do
+      body = "#{@done}\n\n#{@done}\n\n#{@uploading}\n\n![away](https://other/c.jpg)"
+
+      assert Body.upload_paths(body) == ["images/pier-abcd.jpg"]
+    end
+
+    test "a body that uploaded nothing owns no file" do
+      assert Body.upload_paths("Just words.") == []
+    end
+  end
+
+  describe "rewrite/2" do
+    test "hands every reference over and puts back what comes out" do
+      rewritten = Body.rewrite(@done, fn _whole, alt, url -> "[#{alt}|#{url}]" end)
+
+      assert rewritten == "[pier|/uploads/images/pier-abcd.jpg]"
+    end
+  end
+
   describe "picture/2" do
     test "keeps the tag the writer wrote and points it somewhere else" do
       drawn = Body.to_html("![A pier](/uploads/images/pier.jpg)", &Media.picture(&1, "/small.jpg"))

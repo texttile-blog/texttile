@@ -148,14 +148,7 @@ defmodule Texttile.Gallery do
     end
   end
 
-  defp inline_paths(body) do
-    body
-    |> Texttile.Articles.inline_refs()
-    |> Enum.flat_map(fn
-      %{kind: :done, url: "/uploads/" <> relative} -> [relative]
-      _ -> []
-    end)
-  end
+  defp inline_paths(body), do: Texttile.Articles.Body.upload_paths(body)
 
   ## Adding
 

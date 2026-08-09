@@ -216,16 +216,7 @@ defmodule Texttile.Import.Bundle do
   end
 
   defp read_body_refs(bundle) do
-    refs =
-      bundle.body
-      |> Articles.inline_refs()
-      |> Enum.flat_map(fn
-        %{kind: :done, url: url} -> [url]
-        _ -> []
-      end)
-      |> Enum.uniq()
-
-    %{bundle | body_refs: refs}
+    %{bundle | body_refs: Texttile.Articles.Body.upload_urls(bundle.body)}
   end
 
   defp check_sources(bundle) do

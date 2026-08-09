@@ -13,6 +13,7 @@ defmodule Texttile.Articles do
   import Ecto.Query
 
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Body
   alias Texttile.Articles.LogEntry
   alias Texttile.Articles.Redirect
   alias Texttile.Articles.Version
@@ -635,11 +636,7 @@ defmodule Texttile.Articles do
 
     with {:ok, article} <- Repo.delete(article) do
       bodies
-      |> Enum.flat_map(&inline_refs/1)
-      |> Enum.flat_map(fn
-        %{kind: :done, url: "/uploads/" <> relative} -> [relative]
-        _ -> []
-      end)
+      |> Enum.flat_map(&Body.upload_paths/1)
       |> Enum.uniq()
       |> Enum.concat(gallery_paths)
       |> Enum.each(&Texttile.Uploads.remove_upload/1)
@@ -744,37 +741,6 @@ defmodule Texttile.Articles do
 
     broadcast({:log_changed, article.id})
     entry
-  end
-
-  ## Images in the text
-
-  @doc """
-  The one reading of the body that the image panel uses. A Markdown
-  image reference in the body IS the image; an upload still running
-  holds its place with a token (`![Uploading name…]()`), a failed one
-  with a marker (`![Upload failed: name]()`). Returns them in reading
-  order as `%{kind: :running | :failed | :done, file: name, raw: text}`.
-  """
-  def inline_refs(body) do
-    ~r/!\[([^\]]*)\]\(([^)]*)\)/
-    |> Regex.scan(to_string(body))
-    |> Enum.flat_map(fn [raw, alt, url] ->
-      url = String.trim(url)
-
-      cond do
-        url != "" ->
-          [%{kind: :done, file: url |> String.split("/") |> List.last(), raw: raw, url: url}]
-
-        match = Regex.run(~r/^Uploading (.+)…$/, alt) ->
-          [%{kind: :running, file: Enum.at(match, 1), raw: raw, url: nil}]
-
-        match = Regex.run(~r/^Upload failed: (.+)$/, alt) ->
-          [%{kind: :failed, file: Enum.at(match, 1), raw: raw, url: nil}]
-
-        true ->
-          []
-      end
-    end)
   end
 
   ## Slugs
