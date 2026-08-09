@@ -29,6 +29,15 @@ defmodule Texttile.Images do
   # reader sizes are dropped.
   @fixed_edges [320, 640, 1320]
 
+  @doc "The edge a picture inside a text is shown at."
+  def reading_edge, do: 1320
+
+  @doc "The edge the reader's cards and the gallery tiles are shown at."
+  def card_edge, do: 640
+
+  @doc "The edge an admin thumbnail is shown at."
+  def thumb_edge, do: 320
+
   @doc """
   The path to show for an original, at the current (or given) max edge:
   the cached rendition, made on the fly when it is missing, or the

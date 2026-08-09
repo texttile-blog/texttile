@@ -8,7 +8,10 @@ defmodule TexttileWeb.SiteHTML do
   use TexttileWeb, :html
 
   alias Texttile.Articles
+  alias Texttile.Articles.Body
+  alias Texttile.Articles.Body.Media
   alias Texttile.Articles.Visibility
+  alias Texttile.Images
 
   embed_templates "site_html/*"
 
@@ -234,40 +237,29 @@ defmodule TexttileWeb.SiteHTML do
   """
   def body_html(article) do
     article.body
-    |> Texttile.Markdown.to_html()
-    |> draw_media()
+    |> Body.to_html(&draw_media/1)
     |> Phoenix.HTML.raw()
   end
 
-  # The markdown renderer writes <img src="/uploads/..."> for both, the
-  # picture and the video, and nothing else around it, so this is one
-  # pass over those tags.
-  defp draw_media(html) do
-    Regex.replace(~r{<img([^>]*?)src="/uploads/([^"]+)"([^>]*?)/?>}, html, fn whole,
-                                                                              before,
-                                                                              path,
-                                                                              rest ->
-      if Texttile.Videos.video?(path) do
-        video_tag(path, Texttile.Markdown.alt_of(whole))
-      else
-        ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
-          ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
-          ~s(</a>)
-      end
-    end)
+  # A picture stands in a link to the original, and the script turns
+  # that link into the lightbox.
+  defp draw_media(%Media{video?: false} = media) do
+    ~s(<a class="bodypic" href="/uploads/#{media.path}" data-full="/renditions/max/#{media.path}">) <>
+      Media.picture(media, "/renditions/#{Images.reading_edge()}/#{media.path}") <>
+      ~s(</a>)
   end
 
-  defp video_tag(path, label) do
-    case Texttile.Videos.playback(path) do
-      nil ->
-        ~s(<a class="videofile" href="/uploads/#{path}">#{label}</a>)
+  # While ffmpeg is still converting, the file stands there as a plain
+  # link, so the text loses nothing in the meantime.
+  defp draw_media(%Media{playback: nil} = media) do
+    ~s(<a class="videofile" href="/uploads/#{media.path}">#{media.label}</a>)
+  end
 
-      play ->
-        ~s(<video class="bodyvid" controls playsinline preload="none") <>
-          ~s( poster="/renditions/1320/#{play.poster}") <>
-          size_attributes(play) <>
-          ~s( src="/uploads/#{play.mp4}"></video>)
-    end
+  defp draw_media(%Media{playback: play}) do
+    ~s(<video class="bodyvid" controls playsinline preload="none") <>
+      ~s( poster="/renditions/#{Images.reading_edge()}/#{play.poster}") <>
+      size_attributes(play) <>
+      ~s( src="/uploads/#{play.mp4}"></video>)
   end
 
   # The size the browser keeps free before the poster arrives, so the
