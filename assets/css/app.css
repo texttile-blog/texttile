@@ -441,7 +441,7 @@
   .split {
     display: inline-flex; align-items: center; flex: none; height: 30px;
     border-radius: var(--tt-radius);
-    transition: box-shadow .15s ease, background-color .15s ease;
+    transition: outline-color .15s ease, background-color .15s ease;
   }
   .split .main {
     display: inline-flex; align-items: center; gap: 5px; height: 30px;
@@ -465,11 +465,23 @@
      instead of jumping to another colour */
   .split.solid .main:hover, .split.solid .chev:hover,
   .split.solid .chev[aria-expanded="true"] { background-image: linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / .16)); }
-  .split.calm { color: var(--tt-ink); box-shadow: inset 0 0 0 1px var(--tt-rule); }
-  .split.calm:hover { box-shadow: inset 0 0 0 1px var(--tt-inksoft); }
+  /* An outline and not an inset shadow: the two halves paint their own
+     ground, and a shadow on the parent is painted underneath them, so
+     touching either half rubbed out the line around it and left the
+     control looking like two boxes that had come apart. An outline is
+     painted after the children, so it survives whatever they fill. */
+  .split.calm { color: var(--tt-ink); outline: 1px solid var(--tt-rule); outline-offset: -1px; }
+  .split.calm:hover { outline-color: var(--tt-inksoft); }
   .split.calm .div { background: var(--tt-rule); }
-  .split.calm .main:hover, .split.calm .chev:hover,
-  .split.calm .main[aria-expanded="true"], .split.calm .chev[aria-expanded="true"] { background-color: var(--tt-field); }
+  .split.calm .main:hover, .split.calm .chev:hover { background-color: var(--tt-field); }
+  /* An open menu belongs to the whole control, not to the half that
+     was clicked. Tinting only the chevron cut the control in two: one
+     white box and one grey one, meeting at the divider. */
+  .split.calm:has([aria-expanded="true"]) {
+    background-color: var(--tt-field); outline-color: var(--tt-inksoft);
+  }
+  .split.calm:has([aria-expanded="true"]) .main:hover,
+  .split.calm:has([aria-expanded="true"]) .chev:hover { background-color: transparent; }
 
   /* THE EDITOR'S SECOND COLUMN
      The article settings stand still while the words scroll. One screen
@@ -914,26 +926,31 @@
   /* presence, dots, popovers */
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex: none; background: currentColor; }
 
-  /* The lock banner over the words, in two colours that cannot be
-     mistaken for one another. `.mine` is the accent the admin area
-     uses for what belongs to you; `.theirs` is the live ink of
-     somebody else's keystrokes, the same ink as the dot in the bar.
-     The dot takes the colour of the words, so each banner is one
-     thing and not a live mark on a foreign ground. */
+  /* The lock banner: a band across the screen under the bar, not a
+     box inside the column of words. It is news about the screen, so
+     it wears the screen's full width and starts where the bar starts.
+
+     Two colours that cannot be mistaken for one another. `.mine` is
+     the accent the admin area uses for what belongs to you;
+     `.theirs` is julia's rust, the ink of another person, the same
+     ink as the presence line in the bar. The dot takes the colour of
+     the words, so each band is one thing and not a live mark on a
+     foreign ground. */
   .jbar {
-    margin-bottom: 20px; padding: 8px 13px;
-    border-radius: 5px; font-size: 13px; line-height: 1.55;
+    padding: 9px 10px; font-size: 13px; line-height: 1.55;
+    border-bottom: 1px solid transparent;
   }
+  @media (min-width: 768px) { .jbar { padding-left: 16px; padding-right: 16px; } }
   .jbar .dot { margin-right: 5px; vertical-align: 1px; }
   .jbar b { font-weight: 600; }
   .jbar .w { opacity: .85; }
   .jbar.mine {
     background-color: var(--tt-accentwash); color: var(--tt-accent);
-    box-shadow: inset 0 0 0 1px var(--tt-accentline);
+    border-bottom-color: var(--tt-accentline);
   }
   .jbar.theirs {
     background-color: var(--tt-juliatint); color: var(--tt-julia);
-    box-shadow: inset 0 0 0 1px var(--tt-julialine);
+    border-bottom-color: var(--tt-julialine);
   }
   /* the presence hint on the wordmark: one small dot in julia's
      colour, no motion, no count. It says "open the menu", nothing more. */
@@ -1034,10 +1051,10 @@
      lies over the page and hides whatever ends under it. The padding
      carries `.wrap` too: `.wrap` writes the padding shorthand, and it
      stands later in this layer, so a single class would lose. */
-  .f-foot { font-size: 13px; color: var(--tt-dim); }
+  .f-foot { font-size: 13px; color: var(--tt-inksoft); }
   .wrap.f-foot { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   @media (max-width: 700px) { .wrap.f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
-  .f-foot a { color: var(--tt-dim); text-decoration: none; }
+  .f-foot a { color: var(--tt-inksoft); text-decoration: none; }
   .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
 
   /* one wrapper, two widths, both the admin area's */
@@ -1062,16 +1079,15 @@
   /* the way into the admin area, in the line under the title. Only an admin
      who is signed in is ever served it, so it stays small and quiet
      and lets the date keep the line. */
+  /* A word in the line, not a button on it. A pill beside the date
+     read as the one thing to press on a page whose whole point is the
+     words under it. */
   .edit-link {
-    display: inline-block; margin-left: 5px; padding: 1px 9px;
-    font-size: 12px; color: var(--tt-dim); text-decoration: none;
-    border-radius: var(--tt-radius-pill); box-shadow: inset 0 0 0 1px var(--tt-rule);
-    transition: color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    margin-left: 8px; color: var(--tt-accent); text-decoration: underline;
+    text-underline-offset: 2px; text-decoration-thickness: 1px;
+    transition: color .15s ease;
   }
-  .edit-link:hover {
-    color: var(--tt-ink); background: var(--tt-field);
-    box-shadow: inset 0 0 0 1px var(--tt-inksoft);
-  }
+  .edit-link:hover { color: var(--tt-ink); }
 
   /* the comment form: a row that wraps, and a box that grows with the
      words (public.js grows it by hand where field-sizing is missing) */
@@ -1274,7 +1290,11 @@
   /* the band and the footer are one block from "About" down to the
      bottom edge of the window, and a hairline is all that stands
      between them */
-  footer.foot-band { border-top-color: var(--tt-hair); }
+  /* The two bands are one block, but the line between them was a
+     hairline meant for a white page and all but vanished on the
+     band's own ground. It carries the same weight as the line that
+     opens the block. */
+  footer.foot-band { border-top-color: var(--b-rule); }
   section.foot-band .cols {
     display: grid; gap: 34px;
     padding-top: calc(var(--tt-sec) * .62);
@@ -1286,8 +1306,11 @@
   .f-eyebrow {
     font-size: 13px; font-weight: 600; color: var(--tt-ink); margin-bottom: 9px;
   }
+  /* Reading ink, not note ink: the band's ground is a tint and not the
+     page, so dim sat too close to it. These are paragraphs somebody is
+     meant to read, not a caption under a field. */
   section.foot-band p, section.foot-band .about-md {
-    font-size: 13.5px; line-height: 1.6; color: var(--tt-dim); max-width: 58ch;
+    font-size: 13.5px; line-height: 1.6; color: var(--tt-inksoft); max-width: 58ch;
   }
   section.foot-band b, section.foot-band strong { color: var(--tt-ink); }
   section.foot-band input { border-bottom-color: var(--b-rule); }

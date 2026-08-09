@@ -104,7 +104,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> fill_in("Publish date", with: future)
       |> click_button("#stateBtn .main", "Publish")
       |> assert_has("#stateWord", text: "Scheduled")
-      |> assert_has("#edDateHint", text: "The subscriber email goes out on #{future}")
+      |> assert_has("#edDateHint", text: "It goes live on #{future}")
+      # the mail has one owner on this pane, and it is not the date
+      |> assert_has("#notifyOpt", text: "Goes out to the confirmed subscribers")
 
       assert [%{status: "scheduled"}] = Articles.list_articles()
     end

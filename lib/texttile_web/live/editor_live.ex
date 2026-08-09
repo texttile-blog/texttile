@@ -1456,7 +1456,11 @@ defmodule TexttileWeb.EditorLive do
              body already asks for the takeover. --%>
         <span :if={@holder} class="pres" id="barPres">
           <i aria-hidden="true"></i>
-          <span class="w">{holder_name(@holder)} {gettext("is writing")}</span>
+          <span class="w">
+            {if own_tab?(@holder, @current_scope),
+              do: gettext("another tab of yours is writing"),
+              else: gettext("%{name} is writing", name: holder_name(@holder))}
+          </span>
         </span>
 
         <%!-- The save state, and no longer a link with a bare arrow on
@@ -1597,6 +1601,53 @@ defmodule TexttileWeb.EditorLive do
         {@saved_note}
       </p>
 
+      <%!-- The lock banner: the only place that tells the lock story.
+           There is no button on it, because clicking into the title or
+           the body already asks.
+
+           It stands under the bar and across the whole screen, not in
+           a box inside the column of words: it is news about the
+           screen, not about the paragraph it would otherwise sit on
+           top of.
+
+           Two banners and not one with a switch inside it. They used
+           to open the same way, with the same live dot and the same
+           name in the same ink, and the only difference was the
+           sentence after it, so writing and being watched looked alike
+           at a glance. The one that is yours wears the accent the
+           admin area uses for what is yours and leads with You, and it
+           only appears while somebody is actually reading along: alone
+           in a text you need no telling that you are writing it. --%>
+      <div :if={@holds_lock && reading_along(@others, @article) != []} class="jbar mine" id="jbar">
+        <span class="dot" aria-hidden="true"></span>
+        <b>{gettext("You are writing.")}</b>
+        <span class="w">
+          {ngettext(
+            "%{names} reads along and sees it as you type. The title and the body are read-only for them until you stop.",
+            "%{names} read along and see it as you type. The title and the body are read-only for them until you stop.",
+            length(reading_along(@others, @article)),
+            names: Enum.join(reading_along(@others, @article), ", ")
+          )}
+        </span>
+      </div>
+
+      <%!-- one running line, not a name column and a text column: a
+           second line of it starts at the left edge like the first,
+           and nothing is indented under the name --%>
+      <div :if={!@holds_lock && @holder} class="jbar theirs" id="jbar">
+        <span class="dot" aria-hidden="true"></span>
+        <b>
+          {if own_tab?(@holder, @current_scope),
+            do: gettext("You are writing in another tab."),
+            else: gettext("%{name} is writing.", name: holder_name(@holder))}
+        </b>
+        <span class="w">
+          {gettext(
+            "The title and the body are read-only for you until they stop. Click into either one to take the entry over."
+          )}
+        </span>
+      </div>
+
       <%!-- Two columns, one scrollbar each and no third one. The words
            are the page: they scroll with the browser's own bar, however
            long the entry gets. The article settings stand still beside
@@ -1606,47 +1657,6 @@ defmodule TexttileWeb.EditorLive do
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px]">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
-            <%!-- The lock banner: the only place that tells the lock
-                 story. There is no button on it, because clicking into
-                 the title or the body already asks.
-
-                 Two banners and not one with a switch inside it. They
-                 used to open the same way, with the same live dot and
-                 the same name in the same ink, and the only difference
-                 was the sentence after it: writing and being watched
-                 looked alike at a glance. Now the one that is yours
-                 wears the accent the admin area uses for what is
-                 yours, and leads with You. --%>
-            <div
-              :if={@holds_lock && reading_along(@others, @article) != []}
-              class="jbar mine"
-              id="jbar"
-            >
-              <span class="dot" aria-hidden="true"></span>
-              <b>{gettext("You are writing.")}</b>
-              <span class="w">
-                {ngettext(
-                  "%{names} reads along and sees it as you type. The title and the body are read-only for them until you stop.",
-                  "%{names} read along and see it as you type. The title and the body are read-only for them until you stop.",
-                  length(reading_along(@others, @article)),
-                  names: Enum.join(reading_along(@others, @article), ", ")
-                )}
-              </span>
-            </div>
-
-            <%!-- one running line, not a name column and a text column:
-                 a second line of it starts at the left edge like the
-                 first, and nothing is indented under the name --%>
-            <div :if={!@holds_lock && @holder} class="jbar theirs" id="jbar">
-              <span class="dot" aria-hidden="true"></span>
-              <b>{gettext("%{name} is writing.", name: holder_name(@holder))}</b>
-              <span class="w">
-                {gettext(
-                  "The title and the body are read-only for you until they stop. Click into either one to take the entry over. Everything else, the tiles and the settings and the publish controls, stays open to everybody at the same time."
-                )}
-              </span>
-            </div>
-
             <nav
               class="flex gap-0.5 border-b border-rule mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               aria-label={gettext("Entry sections")}
@@ -2486,7 +2496,7 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow gtop">
-              <span class="lab">{gettext("Community")}</span>
+              <span class="lab">{gettext("Comments")}</span>
               <span class="val">
                 <label class="opt">
                   <input type="hidden" name="allow_comments" value="false" />
@@ -2564,27 +2574,28 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:share_text, share_text(assigns.article, protected? && password))
 
     ~H"""
-    <%!-- The lines to hand somebody, and nothing around them: the box
-         says what it holds by holding it. Copy stands where Reset
-         stands, at the right end of the heading row. --%>
+    <%!-- One more group of the pane and nothing more: the same group
+         name as Comments above it, no rule of its own, and Copy where
+         every other quiet word of this column stands, at the right end
+         of the name's row. It used to wear a heading with a rule under
+         it, which read as a second screen beginning inside the pane. --%>
     <div
       :if={@show_password? or @share_text}
-      class="mt-[34px]"
+      class="drow gtop"
       id="shareBlock"
       phx-hook=".CopyShare"
     >
-      <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
-        <span class="text-[13px] font-semibold">{gettext("Share")}</span>
-        <span class="sp"></span>
+      <span class="labrow">
+        <span class="lab">{gettext("Share")}</span>
         <%!-- the button says what it did; a word beside it would push
              the button itself out of the way --%>
         <button :if={@share_text} type="button" class="link" data-copy>{gettext("Copy")}</button>
-      </div>
+      </span>
 
       <%!-- the lines read like every other value in this column: the
            same size, the same ink, no box of its own and no bar down
            its side. It grows to what it holds, so nothing scrolls. --%>
-      <div :if={@share_text} class="drow pt-0.5">
+      <div :if={@share_text}>
         <span class="val">
           <textarea
             id="shareLines"
@@ -2599,8 +2610,8 @@ defmodule TexttileWeb.EditorLive do
 
       <%!-- Before an entry is live there are no lines to pass on, and
            then this is the one place the access word stands. --%>
-      <div :if={!@share_text && @show_password?} class="drow pt-0.5" id="sharePassword">
-        <span class="lab">{gettext("Blog password")}</span>
+      <div :if={!@share_text && @show_password?} id="sharePassword">
+        <span class="lab block pt-1">{gettext("Blog password")}</span>
         <span class="val">
           <span :if={@password != ""} class="font-mono text-[13.5px]" id="sharePasswordWord">
             {@password}
@@ -2758,6 +2769,12 @@ defmodule TexttileWeb.EditorLive do
 
   # The account behind the lock may have been deleted while it held
   # the text; the banner still needs a word for the person.
+  # Opening a text never takes it off anybody now, your own other tab
+  # included, so the screen has to be able to say that instead of
+  # naming you as if you were somebody else.
+  defp own_tab?(%{user_id: user_id}, %{user: %{id: user_id}}), do: true
+  defp own_tab?(_holder, _scope), do: false
+
   defp holder_name(%{user_id: user_id}) do
     case Accounts.get_user(user_id) do
       nil -> gettext("A deleted account")
@@ -2839,12 +2856,13 @@ defmodule TexttileWeb.EditorLive do
   defp date_hint(%{status: "draft"}),
     do: gettext("Empty means whenever you publish. A future date schedules the entry.")
 
+  # The date says what the date does, and nothing about the mail: the
+  # mail has one owner on this pane, the group below, and while this
+  # line also promised it the two could contradict each other on the
+  # same screen.
   defp date_hint(%{status: "scheduled"} = article) do
     if article.publish_date,
-      do:
-        gettext("Scheduled. The subscriber email goes out on %{date}.",
-          date: article.publish_date
-        ),
+      do: gettext("Scheduled. It goes live on %{date}.", date: article.publish_date),
       else: gettext("Pick the day it goes live.")
   end
 
