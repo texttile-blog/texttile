@@ -203,11 +203,15 @@ mailed link, and every later comment from that address appears at once.
 Turn the confirmation off in Settings > Comments and no comment waits for
 anything.
 
-Comment while signed in and the form fills itself: the name and the address
-come from your account, the two fields take no typing, and the comment
-stands under the entry at once. The sign-in already proved the address, so no
-confirmation mail goes out. The comment counts show under each card, on
-`/blog` and on `/admin`.
+A reader can give the address of their own site with the comment. The name
+over the comment then leads there, with `nofollow`, and a bare
+`christel.example` is enough.
+
+Comment while signed in and the form fills itself: the name, the address and
+the website come from your account and this blog, the three fields take no
+typing, and the comment stands under the entry at once. The sign-in already
+proved the address, so no confirmation mail goes out. The comment counts
+show under each card, on `/blog` and on `/admin`.
 
 Admins see all comments at `/admin/comments` and on the Comments tab of each
 text. There they can do three things to a comment:
