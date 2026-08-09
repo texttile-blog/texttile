@@ -64,6 +64,28 @@ defmodule TexttileWeb.SiteArchiveTest do
     refute html =~ ~r/All years<span class="cnt"[^>]*>3<\/span>/
   end
 
+  test "the mark of the open one goes on a year, never on All years", %{conn: conn} do
+    # nothing chosen: All years is where the reader stands, and it says
+    # so by being no way anywhere. It is not a choice, so it wears no
+    # mark of one.
+    html = conn |> get(~p"/blog") |> html_response(200)
+    refute html =~ ~s(class="per on")
+
+    # a year chosen: the year wears the mark, All years is the way back
+    html = conn |> get(~p"/blog?y=2026") |> html_response(200)
+    assert html =~ ~r/<span class="per on"[^>]*>\s*2026/
+    assert html =~ ~s(href="/blog")
+    refute html =~ ~r/class="per on"[^>]*>\s*All/
+  end
+
+  test "the months row counts nothing on All months", %{conn: conn} do
+    html = conn |> get(~p"/blog?y=2026") |> html_response(200)
+
+    assert html =~ "All months"
+    # the number over it already says how many the year holds
+    refute html =~ ~r/All months<span class="cnt"/
+  end
+
   test "lets go of a year the search has emptied", %{conn: conn} do
     html = conn |> get(~p"/blog?y=2024&q=harbour") |> html_response(200)
 

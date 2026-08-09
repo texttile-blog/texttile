@@ -217,7 +217,10 @@ defmodule TexttileWeb.TextsLiveTest do
 
     test "All years counts what the search found, like the years beside it", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
-      assert has_element?(view, "#years .per.on", "All years")
+      # where the grid starts is not a period somebody chose, so All
+      # years is no way anywhere and wears no mark
+      assert has_element?(view, ~s(#years span.per[aria-current]), "All years")
+      refute has_element?(view, "#years .per.on")
 
       view |> element("#grid-search") |> render_change(%{q: "harbour"})
 

@@ -455,16 +455,25 @@ defmodule TexttileWeb.CoreComponents do
   sends anybody to the page they are already on. The reader's archive
   walks by address and the admin grid by click, so the way there is
   either an `href` or whatever the caller puts on the button.
+
+  "All years" and "All months" are `all`: standing on one of them is
+  where a list starts, not a period somebody chose, so it drops the
+  link and wears none of the marks of a choice.
   """
   attr :label, :any, required: true
   attr :on, :boolean, default: false
+
+  attr :all, :boolean,
+    default: false,
+    doc: "the word that lets go of a period. Standing on it is not a choice, so it wears no mark."
+
   attr :count, :any, default: nil
   attr :href, :string, default: nil
   attr :rest, :global, include: ~w(phx-click phx-value-year phx-value-month)
 
   def period(assigns) do
     ~H"""
-    <span :if={@on} class="per on" aria-current="true">
+    <span :if={@on} class={["per", !@all && "on"]} aria-current="true">
       {@label}<.period_count count={@count} />
     </span>
     <a :if={!@on && @href} class="per" href={@href}>

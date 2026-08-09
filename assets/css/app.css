@@ -1223,9 +1223,11 @@
     font-size: 13px; line-height: 1.5; color: var(--tt-ink); font-weight: 600;
     text-decoration: none; font-variant-numeric: tabular-nums; white-space: nowrap;
   }
-  .per .cnt { margin-left: 5px; font-weight: 400; }
+  /* The count keeps its own quiet ink whatever the year beside it does,
+     and inline-block keeps the rule of the open one off it: the mark
+     belongs to the year, not to how many entries it holds. */
+  .per .cnt { display: inline-block; margin-left: 5px; font-weight: 400; color: var(--tt-dim); }
   a.per:hover, button.per:hover { color: var(--tt-accent); }
-  a.per:hover .cnt, button.per:hover .cnt { color: var(--tt-accent); }
   /* the open one: weight says "year" for every word in the row, so the
      one the reader stands in says it with the accent and a rule under
      it instead */
@@ -1233,7 +1235,6 @@
     color: var(--tt-accent);
     text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px;
   }
-  .per.on .cnt { color: var(--tt-accent); }
 
   /* the pager under the list, and the way from one text to the next
      under a text: one step each way, held apart by a spacer */

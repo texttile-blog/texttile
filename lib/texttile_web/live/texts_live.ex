@@ -173,6 +173,7 @@ defmodule TexttileWeb.TextsLive do
             <.period
               label={gettext("All years")}
               on={is_nil(@year)}
+              all
               count={@across_years}
               phx-click="period"
             />
@@ -186,15 +187,16 @@ defmodule TexttileWeb.TextsLive do
             />
           </p>
           <p :if={@months != []} class="prow" id="months">
+            <%!-- no count on this row at all: the year over it already
+                 says how many the year holds, and twelve numbers in a
+                 row is a table, not a line --%>
             <.period
               label={gettext("All months")}
               on={is_nil(@month)}
-              count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
+              all
               phx-click="period"
               phx-value-year={@year}
             />
-            <%!-- no count under a month: twelve numbers in a row is a
-                 table, not a line --%>
             <.period
               :for={{month, _count} <- @months}
               label={Articles.month_name(month)}
