@@ -348,6 +348,13 @@ validation report, start the import.
 and the uploads. Its header documents the one-time setup (app, volume,
 secrets, certificate).
 
+### Which version runs
+
+Settings > Version names the version of the running build, and every release
+raises that number. The page is behind the sign-in and the number stands
+nowhere else: a public version number tells an attacker which holes to try.
+Name it when you report a problem.
+
 ### How big the machine must be
 
 The video conversion decides this, and nothing else does. A blog of words

@@ -1223,6 +1223,19 @@ defmodule TexttileWeb.SettingsLive do
             {gettext("Open the import")}
           </.link>
         </p>
+
+        <%!-- Which build runs. The number stays behind the sign-in:
+             a public version tells an attacker which holes to try. --%>
+        <.section>{gettext("Version")}</.section>
+        <div class="drow">
+          <span class="lab">{gettext("This installation")}</span>
+          <span class="val num" id="appVersion">{Texttile.version()}</span>
+          <div class="hint">
+            {gettext(
+              "Every change to Texttile raises this number: the last of the three for a repair, the middle one for something new, the first one when an old habit breaks. Name it when you report a problem, because it says which build stands here."
+            )}
+          </div>
+        </div>
       </div>
 
       <.ask
