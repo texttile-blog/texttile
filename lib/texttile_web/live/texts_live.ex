@@ -9,6 +9,7 @@ defmodule TexttileWeb.TextsLive do
   use TexttileWeb, :live_view
 
   alias Texttile.Articles
+  alias Texttile.Images
   alias Texttile.Comments
   alias Texttile.Gallery
 
@@ -105,7 +106,7 @@ defmodule TexttileWeb.TextsLive do
       <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <div class="flex items-baseline gap-[14px] flex-wrap">
           <h1 class="page-h">{gettext("Entries")}</h1>
-          <span class="note num" id="gridCount">{grid_count(@articles, @total)}</span>
+          <span class="note num" id="gridCount">{entry_count(length(@articles), @total)}</span>
           <span class="sp"></span>
           <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
@@ -145,30 +146,38 @@ defmodule TexttileWeb.TextsLive do
              the counts follow the search and the status filter. --%>
         <nav :if={@years != []} class="periods" id="periods" aria-label={gettext("Archive")}>
           <p class="prow" id="years">
-            <.period label={gettext("All years")} on={is_nil(@year)} count={@across_years} />
+            <.period
+              label={gettext("All years")}
+              on={is_nil(@year)}
+              count={@across_years}
+              phx-click="period"
+            />
             <.period
               :for={{year, count} <- @years}
               label={year}
-              year={year}
               on={@year == year}
               count={count}
+              phx-click="period"
+              phx-value-year={year}
             />
           </p>
           <p :if={@months != []} class="prow" id="months">
             <.period
               label={gettext("All months")}
-              year={@year}
               on={is_nil(@month)}
               count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
+              phx-click="period"
+              phx-value-year={@year}
             />
             <%!-- no count under a month: twelve numbers in a row is a
                  table, not a line --%>
             <.period
               :for={{month, _count} <- @months}
               label={Articles.month_name(month)}
-              year={@year}
-              month={month}
               on={@month == month}
+              phx-click="period"
+              phx-value-year={@year}
+              phx-value-month={month}
             />
           </p>
         </nav>
@@ -212,49 +221,10 @@ defmodule TexttileWeb.TextsLive do
     """
   end
 
-  @doc """
-  One word of the archive: a year, a month, or the "all" that lets go
-  of one. The open one says so and stops answering a click, so nothing
-  in the row leads to the grid that already stands there.
-  """
-  attr :label, :any, required: true
-  attr :on, :boolean, default: false
-  attr :year, :any, default: nil
-  attr :month, :any, default: nil
-  attr :count, :any, default: nil
-
-  def period(assigns) do
-    ~H"""
-    <span :if={@on} class="per on" aria-current="true">
-      {@label}<span :if={@count} class="cnt">{@count}</span>
-    </span>
-    <button
-      :if={!@on}
-      type="button"
-      class="per"
-      phx-click="period"
-      phx-value-year={@year}
-      phx-value-month={@month}
-    >
-      {@label}<span :if={@count} class="cnt">{@count}</span>
-    </button>
-    """
-  end
-
   # A preview can come from a body image, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp cover_bg(path) do
-    "background-image:url('/renditions/320/#{String.replace(path, "'", "%27")}')"
-  end
-
-  defp grid_count(articles, total) do
-    shown = length(articles)
-
-    if shown == total do
-      ngettext("1 entry", "%{count} entries", total)
-    else
-      gettext("%{shown} of %{total}", shown: shown, total: total)
-    end
+    "background-image:url('/renditions/#{Images.thumb_edge()}/#{String.replace(path, "'", "%27")}')"
   end
 
   defp card_meta(article, comment_count) do
@@ -264,7 +234,7 @@ defmodule TexttileWeb.TextsLive do
           [
             gettext("draft"),
             gettext("last edited %{date}",
-              date: Calendar.strftime(article.updated_at, "%Y-%m-%d")
+              date: Texttile.I18n.format_plain_day(article.updated_at)
             )
           ]
 

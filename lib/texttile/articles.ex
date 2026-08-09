@@ -722,7 +722,7 @@ defmodule Texttile.Articles do
     end
   end
 
-  defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+  defp stamp(datetime), do: Texttile.I18n.format_moment(datetime)
 
   ## Log
 

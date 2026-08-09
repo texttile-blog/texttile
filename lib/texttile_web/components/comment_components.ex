@@ -9,6 +9,7 @@ defmodule TexttileWeb.CommentComponents do
   use Gettext, backend: TexttileWeb.Gettext
 
   alias Texttile.Comments
+  alias Texttile.I18n
 
   @doc """
   One comment on an admin screen: the name, the waiting mark while the
@@ -31,7 +32,7 @@ defmodule TexttileWeb.CommentComponents do
         <.writer comment={@comment} />
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
         <span class="font-normal text-faint text-[12.5px]">
-          <span class="num">{Calendar.strftime(@comment.inserted_at, "%Y-%m-%d %H:%M")}</span>
+          <span class="num">{I18n.format_moment(@comment.inserted_at)}</span>
           <%= if @article do %>
             · {pgettext("before the title of an entry", "on")}
             <.link navigate={"/admin/texts/#{@article.id}?tab=comments"} class="link">
@@ -140,13 +141,13 @@ defmodule TexttileWeb.CommentComponents do
       <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
         <.writer comment={@comment} />
         <span class="font-normal text-faint text-[12.5px]">
-          <span class="num">{Calendar.strftime(@comment.inserted_at, "%Y-%m-%d %H:%M")}</span>
+          <span class="num">{I18n.format_moment(@comment.inserted_at)}</span>
           · {pgettext("before the title of an entry", "on")}
           <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="link">
             {Texttile.Articles.display_title(@comment.article)}
           </.link>
           · {gettext("goes for good on")}
-          <span class="num">{Calendar.strftime(@comment.delete_after, "%Y-%m-%d")}</span>
+          <span class="num">{I18n.format_plain_day(@comment.delete_after)}</span>
         </span>
       </div>
       <p class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim">

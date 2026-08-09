@@ -23,6 +23,8 @@ defmodule TexttileWeb.EditorLive do
   alias Texttile.Articles.Visibility
   alias Texttile.Comments
   alias Texttile.Gallery
+  alias Texttile.I18n
+  alias Texttile.Images
   alias Texttile.Stats
   alias Texttile.Videos
 
@@ -685,7 +687,7 @@ defmodule TexttileWeb.EditorLive do
       Articles.push_log(
         article,
         scope.user,
-        "set the date of #{image.filename} to #{Calendar.strftime(image.gallery_date, "%Y-%m-%d %H:%M")}"
+        "set the date of #{image.filename} to #{I18n.format_moment(image.gallery_date)}"
       )
 
       {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
@@ -935,8 +937,11 @@ defmodule TexttileWeb.EditorLive do
   end
 
   # a thumbnail loads the scaled reading, never the full original
-  defp thumb_url("/uploads/" <> relative), do: "/renditions/320/" <> relative
+  defp thumb_url("/uploads/" <> relative), do: thumb(relative)
   defp thumb_url(url), do: String.replace(url, "'", "%27")
+
+  # The one address of an admin thumbnail, at the edge Images names.
+  defp thumb(relative), do: "/renditions/#{Images.thumb_edge()}/#{relative}"
 
   # What every video of this text shows and how far it is, in one
   # query: the tiles of the gallery and the references in the words.
@@ -981,7 +986,7 @@ defmodule TexttileWeb.EditorLive do
         [
           {"/uploads/#{path}",
            %{
-             poster: "/renditions/320/#{entry.still}",
+             poster: thumb(entry.still),
              full: "/renditions/max/#{entry.still}",
              film: entry.film && "/uploads/#{entry.film}"
            }}
@@ -1019,7 +1024,7 @@ defmodule TexttileWeb.EditorLive do
   # A candidate can come from the body, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp tile_bg(path) do
-    "background-image:url('/renditions/320/#{String.replace(path, "'", "%27")}')"
+    "background-image:url('#{thumb(String.replace(path, "'", "%27"))}')"
   end
 
   ## PubSub and lock messages
@@ -1998,13 +2003,13 @@ defmodule TexttileWeb.EditorLive do
                   data-id={image.id}
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
-                  data-date={Calendar.strftime(image.gallery_date, "%Y-%m-%dT%H:%M")}
+                  data-date={I18n.format_field_moment(image.gallery_date)}
                   data-full={
                     @media[image.path].still && "/renditions/max/#{@media[image.path].still}"
                   }
                   data-video={@media[image.path].film && "/uploads/#{@media[image.path].film}"}
                   data-original={"/uploads/" <> image.path}
-                  title={"#{image.filename} · #{Calendar.strftime(image.gallery_date, "%Y-%m-%d")}"}
+                  title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"
                   tabindex="0"
@@ -2666,15 +2671,10 @@ defmodule TexttileWeb.EditorLive do
 
   ## Copy
 
-  defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+  defp stamp(datetime), do: I18n.format_moment(datetime)
 
   # The state of an entry, in words. The stored word is English and
   # stays English; only what an admin reads changes with the language.
-  defp status_word("draft"), do: gettext("Draft")
-  defp status_word("scheduled"), do: gettext("Scheduled")
-  defp status_word("published"), do: gettext("Published")
-  defp status_word(other), do: String.capitalize(other)
-
   # Whatever an admin does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.
   defp own_comment(socket, id, fun) do

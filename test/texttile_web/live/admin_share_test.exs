@@ -10,7 +10,6 @@ defmodule TexttileWeb.AdminShareTest do
   import Texttile.ArticlesFixtures
 
   alias Texttile.Articles
-  alias Texttile.Articles.Lock
   alias Texttile.Settings
 
   setup :register_and_log_in_user

@@ -157,27 +157,6 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  One word of the archive: a year, a month, or the "all" that lets go
-  of one. The one that is open says so and stops being a link, so the
-  row never sends a reader to the page they are already on.
-  """
-  attr :label, :any, required: true
-  attr :href, :string, required: true
-  attr :on, :boolean, default: false
-  attr :count, :any, default: nil
-
-  def period(assigns) do
-    ~H"""
-    <span :if={@on} class="per on" aria-current="true">
-      {@label}<span :if={@count} class="cnt">{@count}</span>
-    </span>
-    <a :if={!@on} class="per" href={@href}>
-      {@label}<span :if={@count} class="cnt">{@count}</span>
-    </a>
-    """
-  end
-
-  @doc """
   The card of the admin area's Texts grid, drawn for a reader. `comments`
   is how many comments stand under the text; the line under the title
   carries it beside the date, so a reader sees where the talking is
@@ -194,7 +173,7 @@ defmodule TexttileWeb.SiteHTML do
         <%!-- every card wears a square, so the grid keeps its rows: the
              picture when there is one, the quiet mark when there is none --%>
         <span :if={@preview} class="cimg">
-          <img src={"/renditions/640/#{@preview}"} alt="" loading="lazy" />
+          <img src={"/renditions/#{Images.card_edge()}/#{@preview}"} alt="" loading="lazy" />
         </span>
         <span :if={!@preview} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
@@ -290,15 +269,6 @@ defmodule TexttileWeb.SiteHTML do
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
   defdelegate lead(article), to: Articles
 
-  @doc """
-  What the strip over an entry that is not live calls its state. The
-  stored word is English and stays English; only what a reader sees
-  changes with the language.
-  """
-  def status_word("draft"), do: gettext("Draft")
-  def status_word("scheduled"), do: gettext("Scheduled")
-  def status_word(other), do: String.capitalize(other)
-
   @doc "The heading of the comments block: the count while there is one."
   def comment_heading(0), do: gettext("Comments")
   def comment_heading(n), do: ngettext("1 comment", "%{count} comments", n)
@@ -322,15 +292,6 @@ defmodule TexttileWeb.SiteHTML do
       Texttile.I18n.format_day_and_month(date)
     else
       format_date(date)
-    end
-  end
-
-  @doc "What the count beside the search says: all of it, or n of all."
-  def count_label(shown, total) do
-    if shown == total do
-      ngettext("1 entry", "%{count} entries", total)
-    else
-      gettext("%{shown} of %{total}", shown: shown, total: total)
     end
   end
 

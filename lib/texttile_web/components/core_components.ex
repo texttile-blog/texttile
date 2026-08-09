@@ -446,4 +446,60 @@ defmodule TexttileWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  One word of an archive row: a year, a month, or the "all" that lets
+  go of one.
+
+  The open one says so and stops being a way anywhere, so the row never
+  sends anybody to the page they are already on. The reader's archive
+  walks by address and the admin grid by click, so the way there is
+  either an `href` or whatever the caller puts on the button.
+  """
+  attr :label, :any, required: true
+  attr :on, :boolean, default: false
+  attr :count, :any, default: nil
+  attr :href, :string, default: nil
+  attr :rest, :global, include: ~w(phx-click phx-value-year phx-value-month)
+
+  def period(assigns) do
+    ~H"""
+    <span :if={@on} class="per on" aria-current="true">
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </span>
+    <a :if={!@on && @href} class="per" href={@href}>
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </a>
+    <button :if={!@on && !@href} type="button" class="per" {@rest}>
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </button>
+    """
+  end
+
+  @doc """
+  What an entry's state is called on screen.
+
+  The stored word is English and stays English; only what a person
+  reads changes with the language. The bar over the editor and the
+  strip over an entry that is not live both say it, and they say the
+  same word.
+  """
+  def status_word("draft"), do: gettext("Draft")
+  def status_word("scheduled"), do: gettext("Scheduled")
+  def status_word("published"), do: gettext("Published")
+  def status_word(other), do: String.capitalize(other)
+
+  @doc """
+  What the count beside a list says: all of it, or how much of all.
+
+  The reader's text list and the admin grid both carry one, and they
+  say the same thing.
+  """
+  def entry_count(shown, total) do
+    if shown == total do
+      ngettext("1 entry", "%{count} entries", total)
+    else
+      gettext("%{shown} of %{total}", shown: shown, total: total)
+    end
+  end
 end
