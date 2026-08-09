@@ -163,15 +163,18 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       assert html =~ "Pagination"
 
-      for size <- [10, 25, 50, 100, 150, 200] do
+      # every size divides by two, three and four, so a page of cards
+      # ends with a full row whatever the window is
+      for size <- [12, 24, 36, 48, 96, 192] do
         assert has_element?(view, ~s(#setting-posts_per_page option[value="#{size}"]))
+        assert rem(size, 12) == 0
       end
 
       view
-      |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "50"}})
+      |> form("#front-page-form", %{"settings" => %{"posts_per_page" => "48"}})
       |> render_change(%{"_target" => ["settings", "posts_per_page"]})
 
-      assert Settings.get(:posts_per_page) == 50
+      assert Settings.get(:posts_per_page) == 48
     end
 
     test "a size from somewhere else keeps its place in the row", %{conn: conn} do
@@ -179,7 +182,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 
       assert has_element?(view, ~s(#setting-posts_per_page option[value="4"][selected]))
-      assert has_element?(view, ~s(#setting-posts_per_page option[value="10"]))
+      assert has_element?(view, ~s(#setting-posts_per_page option[value="12"]))
     end
 
     test "the comments toggle rewrites its own explanation", %{conn: conn} do

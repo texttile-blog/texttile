@@ -753,21 +753,45 @@ defmodule Texttile.Articles do
   def display_title(%{title: title}), do: title
 
   @doc """
-  The lead line of a text: the first real paragraph, the markdown
-  stripped, cut at a word before 160 characters. The cards of the
-  public list carry it, and so does the subscriber mail.
+  The lead line of a text: its first sentences, the markdown stripped,
+  cut at a word before 160 characters. The cards of the public list
+  carry it, and so does the subscriber mail.
+
+  It reads over the blank lines. The first paragraph alone is often one
+  short line, and a card that carries "So, the way home." beside a card
+  that carries four full lines makes a ragged grid. So the words of the
+  text run together into one line, whatever the writer broke them into,
+  and the cut is what ends it.
+
+  Headings, rules and lines that are nothing but a picture are not
+  words a reader wants in a lead; they go before the run.
   """
   def lead(article) do
     article.body
     |> to_string()
-    |> String.split(~r/\n{2,}/)
-    |> Enum.map(&String.trim/1)
-    |> Enum.find("", fn block ->
-      block != "" and not String.starts_with?(block, "#") and
-        not Regex.match?(~r/\A!\[[^\]]*\]\([^)]*\)\z/, block)
-    end)
+    |> String.split("\n")
+    |> Enum.reject(&furniture?/1)
+    |> Enum.map(&unmark/1)
+    |> Enum.join(" ")
     |> strip_markdown()
     |> shorten(160)
+  end
+
+  # A line that carries no words of the text: a heading, a rule, a
+  # fence, or a line that is nothing but one picture.
+  defp furniture?(line) do
+    line = String.trim(line)
+
+    Regex.match?(~r/\A\#{1,6}\s/, line) or
+      Regex.match?(~r/\A(-{3,}|\*{3,}|_{3,})\z/, line) or
+      String.starts_with?(line, "```") or
+      Regex.match?(~r/\A!\[[^\]]*\]\([^)]*\)\z/, line)
+  end
+
+  # What stands in front of a line and is not a word: the bullet of a
+  # list, the number of a step, the mark of a quote.
+  defp unmark(line) do
+    String.replace(line, ~r/\A\s{0,3}(?:[-+*]\s+|\d+[.)]\s+|>\s*)/, "")
   end
 
   defp strip_markdown(text) do

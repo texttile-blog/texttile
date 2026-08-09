@@ -110,7 +110,8 @@ defmodule Texttile.FeedTest do
 
       xml = Feed.rss(@base)
 
-      assert xml =~ "<description>The lead line stands first.</description>"
+      # the lead reads over the blank lines and leaves the heading out
+      assert xml =~ "<description>The lead line stands first. And more words.</description>"
       assert xml =~ "&lt;h2&gt;A heading&lt;/h2&gt;"
       assert xml =~ "&lt;strong&gt;more&lt;/strong&gt;"
       assert xml =~ "<content:encoded>"

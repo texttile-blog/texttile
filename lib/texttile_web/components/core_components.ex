@@ -465,14 +465,28 @@ defmodule TexttileWeb.CoreComponents do
   def period(assigns) do
     ~H"""
     <span :if={@on} class="per on" aria-current="true">
-      {@label}<span :if={@count} class="cnt">{@count}</span>
+      {@label}<.period_count count={@count} />
     </span>
     <a :if={!@on && @href} class="per" href={@href}>
-      {@label}<span :if={@count} class="cnt">{@count}</span>
+      {@label}<.period_count count={@count} />
     </a>
     <button :if={!@on && !@href} type="button" class="per" {@rest}>
-      {@label}<span :if={@count} class="cnt">{@count}</span>
+      {@label}<.period_count count={@count} />
     </button>
+    """
+  end
+
+  # The number beside a year is how many entries it holds. Nothing on
+  # the row says the word, because the row has to stay one line at ten
+  # years of writing, so the number says it where a reader asks: on the
+  # pointer, and to whoever listens to the page.
+  attr :count, :any, default: nil
+
+  defp period_count(assigns) do
+    assigns = assign(assigns, :says, assigns.count && entry_count(assigns.count, assigns.count))
+
+    ~H"""
+    <span :if={@count} class="cnt" title={@says} aria-label={@says}>{@count}</span>
     """
   end
 

@@ -1090,10 +1090,14 @@
   .edit-link:hover { color: var(--tt-ink); }
 
   /* the comment form: a row that wraps, and a box that grows with the
-     words (public.js grows it by hand where field-sizing is missing) */
+     words (public.js grows it by hand where field-sizing is missing)
+
+     The box starts at five lines. Two lines made it a hair taller than
+     the one-line fields over it, which is neither a line nor a text:
+     the form asked for a sentence and looked like it wanted a word. */
   .btn-row { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
   body.site #comment-form textarea {
-    field-sizing: content; resize: none; min-height: 2lh; line-height: 1.6;
+    field-sizing: content; resize: none; min-height: 5lh; line-height: 1.6;
   }
 
   /* THE TWO SURFACES A READER WRITES ON
@@ -1127,6 +1131,9 @@
     background-color: var(--tt-fieldhover);
     border-bottom-color: var(--tt-rule);
   }
+  /* The button beside it is part of the same row, so it takes the
+     field's height instead of the 30px every other button wears. */
+  body.site #newsletter-form .btn { height: auto; }
   body.site #newsletter-form input[type=email]:hover {
     border-bottom-color: var(--tt-inksoft);
   }
@@ -1208,14 +1215,25 @@
   .periods { margin-bottom: 30px; padding-bottom: 13px; border-bottom: 1px solid var(--tt-rule); }
   .prow { display: flex; flex-wrap: wrap; gap: 4px 15px; }
   .prow + .prow { margin-top: 9px; }
+  /* A year and its count are one word and one number, and they have to
+     read as that pair: the year in the ink and the weight of the row
+     over it, the count quiet beside it. Both dim, they read as one
+     long number and the row goes to grey soup. */
   .per {
-    font-size: 13px; line-height: 1.5; color: var(--tt-dim);
+    font-size: 13px; line-height: 1.5; color: var(--tt-ink); font-weight: 600;
     text-decoration: none; font-variant-numeric: tabular-nums; white-space: nowrap;
   }
-  .per .cnt { margin-left: 4px; }
-  a.per:hover, button.per:hover { color: var(--tt-ink); }
-  .per.on { color: var(--tt-ink); font-weight: 600; }
-  .per.on .cnt { color: var(--tt-dim); font-weight: 400; }
+  .per .cnt { margin-left: 5px; font-weight: 400; }
+  a.per:hover, button.per:hover { color: var(--tt-accent); }
+  a.per:hover .cnt, button.per:hover .cnt { color: var(--tt-accent); }
+  /* the open one: weight says "year" for every word in the row, so the
+     one the reader stands in says it with the accent and a rule under
+     it instead */
+  .per.on {
+    color: var(--tt-accent);
+    text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px;
+  }
+  .per.on .cnt { color: var(--tt-accent); }
 
   /* the pager under the list, and the way from one text to the next
      under a text: one step each way, held apart by a spacer */

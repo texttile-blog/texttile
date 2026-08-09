@@ -14,31 +14,37 @@
 :root {
   color-scheme: light;
 
-  /* surfaces · paper's, untouched */
-  --tt-page:        #faf9f7;
+  /* surfaces · one step apart, so a zone says what it is before it is
+     read. The page used to be five per cent off white: the bar, the
+     white card and the page all landed on the same tone, and the whole
+     screen read as one flat sheet. Sand now, white over it. */
+  --tt-page:        #f6f3ee;
   --tt-paper:       #ffffff;
-  --tt-field:       #f2f0ec;
-  --tt-fieldhover:  #edeaf3;
+  --tt-field:       #eae6df;
+  --tt-fieldhover:  #e4dff0;
   --tt-bar:         rgba(255, 255, 255, .93);
 
-  /* ink · paper's · 15.4 / 9.9 / 6.7 / 4.9 against the page */
+  /* ink · 14.7 / 9.4 / 7.4 / 5.7 against the page. The two quiet roles
+     carry dates, leads and notes: they are read, so they went a step
+     down with the surfaces instead of following them up. */
   --tt-ink:         #23201b;
   --tt-inksoft:     #443f37;
-  --tt-dim:         #5f584e;
-  --tt-faint:      #736d63;
-  --tt-slash:       #c2bdb6;
+  --tt-dim:         #554e45;
+  --tt-faint:      #665f55;
+  --tt-slash:       #b0aaa1;
 
-  /* lines · paper's warm gray */
-  --tt-rule:        #dbd7d1;
-  --tt-hair:        #eceae5;
+  /* lines · warm gray, and a line only works when it is seen: 1.6 and
+     1.3 against the page, from 1.4 and 1.1 */
+  --tt-rule:        #c9c3ba;
+  --tt-hair:        #ddd8d0;
 
-  /* accent · violet: focus, links, active tab, checkboxes · 6.2 on the
-     page, 6.5 on white, 5.7 on a field */
+  /* accent · violet: focus, links, active tab, checkboxes · 5.9 on the
+     page, 6.5 on white, 5.5 on a field */
   --tt-accent:      #6d35de;
   --tt-accentloud:  #6d35de;
-  --tt-accentsoft:  #b6a2e4;
-  --tt-accentwash:  #f2eff9;
-  --tt-accentline:  #dcd2f0;
+  --tt-accentsoft:  #a992e0;
+  --tt-accentwash:  #ece7f7;
+  --tt-accentline:  #d0c3ea;
 
   /* solid controls: deep violet, lighter violet on hover */
   --tt-solid:       #4b2a83;
@@ -46,12 +52,12 @@
   --tt-onsolid:    #ffffff;
   --tt-solidline:   rgba(255, 255, 255, .32);
 
-  /* julia · paper's rust, and nothing else */
-  --tt-julia:       #b0532e;
-  --tt-juliatint:   #fdf2ec;
-  --tt-julialine:   #f0d7c5;
-  --tt-livetint:    #f2eff9;
-  --tt-liveline:    #dcd2f0;
+  /* julia · rust, and nothing else · 5.3 on the page */
+  --tt-julia:       #a34a26;
+  --tt-juliatint:   #fbeade;
+  --tt-julialine:   #e8c7ae;
+  --tt-livetint:    #ece7f7;
+  --tt-liveline:    #d0c3ea;
   --tt-livetext:    #6d35de;
 
   /* depth · with a lavender breath on the second wash so a focused

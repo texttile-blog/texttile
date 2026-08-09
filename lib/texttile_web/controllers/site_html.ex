@@ -127,7 +127,7 @@ defmodule TexttileWeb.SiteHTML do
             id="newsletter-form"
             action={~p"/newsletter"}
             method="post"
-            class="flex items-end gap-3 mt-4 max-w-[420px]"
+            class="flex items-stretch gap-3 mt-4 max-w-[420px]"
           >
             <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
             <input type="hidden" name="t" value={@newsletter_token} />

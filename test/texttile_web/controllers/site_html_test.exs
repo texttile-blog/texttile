@@ -7,7 +7,31 @@ defmodule TexttileWeb.SiteHTMLTest do
   describe "lead/1" do
     test "takes the first real paragraph, skipping headings and lone images" do
       body = "# A heading\n\n![alt](/uploads/images/a.jpg)\n\nThe real opening line.\n\nMore."
-      assert SiteHTML.lead(%{body: body}) == "The real opening line."
+      assert SiteHTML.lead(%{body: body}) == "The real opening line. More."
+    end
+
+    test "reads over the blank lines, so a short first paragraph fills the card" do
+      body = "So, the way home.\n\nThe plane left at seven.\n\nWe slept all the way."
+
+      assert SiteHTML.lead(%{body: body}) ==
+               "So, the way home. The plane left at seven. We slept all the way."
+    end
+
+    test "drops the markers of headings, lists, quotes and rules" do
+      body = """
+      # Day one
+
+      - the pier
+      - the boat
+
+      > It rained.
+
+      ---
+
+      1. Then the train.
+      """
+
+      assert SiteHTML.lead(%{body: body}) == "the pier the boat It rained. Then the train."
     end
 
     test "strips the markdown and keeps the words" do
@@ -18,7 +42,7 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
 
     test "cuts at a word before 160 characters and marks the cut" do
-      body = String.duplicate("seven letters ", 20)
+      body = String.duplicate("seven letters\n\n", 20)
       lead = SiteHTML.lead(%{body: body})
 
       assert String.ends_with?(lead, "…")

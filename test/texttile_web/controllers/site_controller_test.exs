@@ -51,7 +51,7 @@ defmodule TexttileWeb.SiteControllerTest do
       article =
         published_post(
           title: "With a picture",
-          body: "The first paragraph carries the lead.\n\nThe second stays home.",
+          body: "# A heading\n\nThe first paragraph carries the lead.\n\nAnd the second one too.",
           tags: "sea, fog"
         )
 
@@ -59,8 +59,9 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ "/renditions/640/"
-      assert html =~ "The first paragraph carries the lead."
-      refute html =~ "The second stays home."
+      # the lead reads over the blank line and leaves the heading out
+      assert html =~ "The first paragraph carries the lead. And the second one too."
+      refute html =~ "clead\">A heading"
       assert html =~ ~s(href="/tags/sea")
       assert html =~ ~s(href="/tags/fog")
       refute html =~ "cimg blank"
@@ -346,11 +347,12 @@ defmodule TexttileWeb.SiteControllerTest do
       refute last =~ ~s(id="next-page")
     end
 
-    test "ten texts a page by default, and no pager while one page holds all", %{conn: conn} do
+    test "twelve texts a page by default, and no pager while one page holds all", %{conn: conn} do
       published_post(title: "The only one")
 
       html = conn |> get(~p"/blog") |> html_response(200)
-      assert Settings.get(:posts_per_page) == 10
+      # twelve is two, three and four rows of cards, whole either way
+      assert Settings.get(:posts_per_page) == 12
       refute html =~ ~s(id="pager")
     end
 
