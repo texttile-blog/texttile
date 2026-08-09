@@ -347,6 +347,15 @@
   .writer { color: inherit; text-decoration: none; }
   .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
 
+  /* the same name under a text, when an imported comment carries the
+     address its author gave. A reader has no reason to hover a name,
+     so this one says quietly that it leads somewhere */
+  .writer-out {
+    color: inherit; text-decoration: underline;
+    text-decoration-color: var(--tt-hair, #ddd8d0); text-underline-offset: 3px;
+  }
+  .writer-out:hover { color: var(--tt-accent); text-decoration-color: currentColor; }
+
   /* The lines to hand on: a field like every other field of the
      column, so the block reads as part of the pane and not as a stray
      paragraph. It only gives up the two things a field does that this

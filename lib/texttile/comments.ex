@@ -37,7 +37,8 @@ defmodule Texttile.Comments do
 
   @doc """
   Subscribes the caller to `{:comment_posted, comment}`,
-  `{:comment_deleted, comment}` and `{:comments_confirmed, address_id}`.
+  `{:comment_deleted, comment}`, `{:comments_confirmed, address_id}`
+  and `{:comments_imported, article_id}`.
   """
   def subscribe do
     Phoenix.PubSub.subscribe(Texttile.PubSub, @topic)
@@ -144,14 +145,77 @@ defmodule Texttile.Comments do
     end
   end
 
-  defp ensure_address(attrs) do
-    email = Confirmation.normalize(Map.get(attrs, "email"))
+  defp ensure_address(attrs) when is_map(attrs) do
+    attrs |> Map.get("email") |> ensure_address()
+  end
+
+  defp ensure_address(email) do
+    email = Confirmation.normalize(email)
 
     Repo.insert!(Address.build(email),
       on_conflict: [set: [email: email]],
       conflict_target: :email,
       returning: true
     )
+  end
+
+  ## What an import brings
+
+  # The address of an imported comment whose author left none. Nobody
+  # reaches this row through the form: a domain without a dot is not
+  # an address here, and `.invalid` is a real address nowhere.
+  @imported_address "imported@invalid"
+
+  @doc """
+  The address an imported comment carries when its author left none.
+  Nothing can be written to it, and the admin screens leave the name
+  of such a comment unlinked because of it.
+  """
+  def placeholder_address, do: @imported_address
+
+  @doc """
+  Puts the comments of a bundle under `article`, in the order they
+  arrive. What the last import wrote goes first, so importing the same
+  bundle twice gives the same comments and not two of each. A comment
+  a reader wrote here carries no import mark and stays.
+
+  Every imported comment stands under the entry at once. It stood
+  under the entry of the old blog, and its address counts as confirmed
+  from here on, the way an admin vouching for it would: an import is
+  an admin saying these words belong here.
+
+  Runs inside the import's own transaction, and a comment that does
+  not fit raises there, so the bundle rolls back whole.
+  """
+  def replace_imported(%Article{} = article, comments) do
+    Repo.delete_all(
+      from c in Comment, where: c.article_id == ^article.id and not is_nil(c.imported_at)
+    )
+
+    now = DateTime.utc_now(:second)
+    stored = Enum.map(comments, &insert_imported(article, &1, now))
+
+    broadcast({:comments_imported, article.id})
+    stored
+  end
+
+  defp insert_imported(%Article{} = article, comment, now) do
+    address =
+      comment.email
+      |> Kernel.||(@imported_address)
+      |> ensure_address()
+      |> Confirmation.confirm(now)
+
+    Repo.insert!(%Comment{
+      article_id: article.id,
+      address_id: address.id,
+      name: comment.author,
+      body: comment.text,
+      website: comment.website,
+      imported_at: now,
+      inserted_at: comment.at,
+      updated_at: comment.at
+    })
   end
 
   ## What a reader sees

@@ -21,6 +21,7 @@ defmodule Texttile.Import do
   alias Texttile.Articles.Article
   alias Texttile.Articles.Body
   alias Texttile.Articles.Lock
+  alias Texttile.Comments
   alias Texttile.Gallery
   alias Texttile.Import.Bundle
   alias Texttile.Repo
@@ -677,6 +678,7 @@ defmodule Texttile.Import do
 
     article = set_state(article, bundle, user)
     replace_gallery(article, bundle, stored)
+    Comments.replace_imported(article, bundle.comments)
 
     Articles.push_log(article, user, "imported the text from a bundle")
     {verb, old_paths}

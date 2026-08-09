@@ -168,6 +168,9 @@ defmodule TexttileWeb.ImportLive do
                 <div class="flex items-baseline gap-2 flex-wrap">
                   <b class="text-[14.5px]">{bundle.name}</b>
                   <span :if={bundle.slug} class="note num">{bundle_address(bundle)}</span>
+                  <span :if={bundle.comments != []} class="note">
+                    {ngettext("1 comment", "%{count} comments", length(bundle.comments))}
+                  </span>
                   <span class="sp"></span>
                   <span :if={bundle.errors == []} class="note">{gettext("will import")}</span>
                   <span :if={bundle.errors != []} class="text-julia text-[13px]">

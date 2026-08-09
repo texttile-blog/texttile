@@ -567,6 +567,99 @@ defmodule Texttile.ImportTest do
     end
   end
 
+  describe "the comments of a bundle" do
+    defp write_comments(dir, name, yaml) do
+      File.write!(Path.join([dir, name, "comments.yaml"]), yaml)
+    end
+
+    test "arrive under the entry, oldest first, replies behind them", %{dir: dir, user: user} do
+      write_bundle(dir, "beach", "title: Beach days\ndate: 2019-06-02\n")
+
+      write_comments(dir, "beach", """
+      - author: Christiane
+        email: christiane@example.org
+        website: https://christiane.example
+        date: 2019-06-03 22:14
+        id: 12
+        text: |
+          Ihr Lieben, immer wieder!
+
+          Es war ein Fest.
+      - author: Jens
+        date: 2019-06-05 08:00
+        text: Schön war es.
+      - author: kb
+        date: 2019-06-04 09:02
+        reply_to: 12
+        text: Danke euch!
+      """)
+
+      summary = Import.run(Import.validate(dir), user)
+      assert summary.failed == []
+
+      article = Repo.get_by!(Article, slug: "beach-days")
+      {comments, 0} = Texttile.Comments.for_readers(article.id)
+
+      assert Enum.map(comments, & &1.name) == ["Christiane", "kb", "Jens"]
+      assert hd(comments).body == "Ihr Lieben, immer wieder!\n\nEs war ein Fest."
+      assert hd(comments).website == "https://christiane.example"
+      assert DateTime.to_date(hd(comments).inserted_at) == ~D[2019-06-03]
+
+      # readers meet them at once, whatever the confirmation setting says
+      {:ok, _} = Texttile.Settings.put(:comments_require_confirmation, true)
+      assert Enum.all?(comments, &Texttile.Comments.shown_to_readers?/1)
+      assert Texttile.Comments.waiting_count() == 0
+    end
+
+    test "a broken comments.yaml keeps the whole bundle out", %{dir: dir, user: user} do
+      write_bundle(dir, "beach", "title: Beach days\n")
+      write_comments(dir, "beach", "- author: kb\n  text: no date here\n")
+
+      report = Import.validate(dir)
+      assert [error] = hd(report.bundles).errors
+      assert error =~ "comments.yaml"
+
+      summary = Import.run(report, user)
+      assert summary.skipped == 1
+      refute Repo.get_by(Article, slug: "beach-days")
+    end
+
+    test "the same zip twice leaves one set of comments", %{dir: dir, user: user} do
+      write_bundle(dir, "beach", "title: Beach days\n")
+      write_comments(dir, "beach", "- author: kb\n  date: 2019-06-03 22:14\n  text: Schön.\n")
+
+      Import.run(Import.validate(dir), user)
+      Import.run(Import.validate(dir), user)
+
+      article = Repo.get_by!(Article, slug: "beach-days")
+      assert Texttile.Comments.count_for(article.id) == 1
+    end
+
+    test "a bundle that closes its comments says so in the report", %{dir: dir} do
+      write_bundle(dir, "beach", "title: Beach days\nallow_comments: false\n")
+      write_comments(dir, "beach", "- author: kb\n  date: 2019-06-03 22:14\n  text: Schön.\n")
+
+      assert [warning] = hd(Import.validate(dir).bundles).warnings
+      assert warning =~ "readers see none of them"
+    end
+
+    test "a bundle without the file takes the comments of the earlier import away", %{
+      dir: dir,
+      user: user
+    } do
+      write_bundle(dir, "beach", "title: Beach days\n")
+      write_comments(dir, "beach", "- author: kb\n  date: 2019-06-03 22:14\n  text: Schön.\n")
+      Import.run(Import.validate(dir), user)
+
+      File.rm!(Path.join([dir, "beach", "comments.yaml"]))
+      summary = Import.run(Import.validate(dir), user)
+      assert summary.updated == 1
+
+      article = Repo.get_by!(Article, slug: "beach-days")
+      assert Texttile.Comments.count_for(article.id) == 0
+    end
+  end
+
   describe "tmp_path/1" do
     # The zip extraction folders live in the same temp directory as the
     # picture downloads, and the name counter starts over with every

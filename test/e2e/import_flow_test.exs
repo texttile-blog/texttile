@@ -21,6 +21,7 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     |> upload("#import-upload input[type=file]", "Upload the zip", zip, exact: false)
     |> assert_has("#import-report", text: "The report")
     |> assert_has("#bundle-beach", text: "will import")
+    |> assert_has("#bundle-beach", text: "2 comments")
     |> assert_has("#bundle-beach", text: "nothing references stray.txt")
     |> assert_has("#bundle-broken", text: "will not import")
     |> click_button("#import-run", "Import 1 entry")
@@ -42,6 +43,18 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     conn
     |> open_page("/")
     |> assert_has("body", text: "Beach days")
+
+    # and its comments stand under it, the answer behind the comment it
+    # answers, the name carrying the address its author gave back then
+    conn
+    |> open_page(Texttile.Articles.public_path(article))
+    |> assert_has("#comments", text: "Ihr Lieben, immer wieder!")
+    |> assert_has("#comments", text: "Danke euch!")
+    |> assert_has("#comments a[href='https://christiane.example']", text: "Christiane")
+
+    [christiane, kb] = elem(Texttile.Comments.for_readers(article.id), 0)
+    assert christiane.name == "Christiane"
+    assert kb.name == "kb"
   end
 
   defp build_zip do
@@ -69,6 +82,23 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
       - gallery/a.jpg
     ---
     The map ![map](map.png) of the trip.
+    """)
+
+    File.write!(Path.join(source, "beach/comments.yaml"), """
+    - author: Christiane
+      email: christiane@example.org
+      website: https://christiane.example
+      date: 2019-06-03 22:14
+      id: 12
+      text: |
+        Ihr Lieben, immer wieder!
+
+        Es war ein Fest mit euren Jungs.
+    - author: kb
+      date: 2019-06-04 09:02
+      reply_to: 12
+      text: |
+        Danke euch!
     """)
 
     File.mkdir_p!(Path.join(source, "broken"))

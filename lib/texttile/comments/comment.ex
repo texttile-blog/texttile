@@ -20,6 +20,11 @@ defmodule Texttile.Comments.Comment do
     field :delete_after, :utc_datetime
     field :released_at, :utc_datetime
     field :edited_at, :utc_datetime
+    # Only an import fills these two in: the address the author gave
+    # for themselves on the old blog, and the mark that says the
+    # comment came out of a bundle. See `Texttile.Comments`.
+    field :website, :string
+    field :imported_at, :utc_datetime
 
     belongs_to :article, Texttile.Articles.Article
     belongs_to :address, Texttile.Comments.Address

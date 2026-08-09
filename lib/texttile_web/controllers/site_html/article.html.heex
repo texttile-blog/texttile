@@ -119,7 +119,19 @@
           id={"comment-#{comment.id}"}
         >
           <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
-            {comment.name}
+            <%!-- an imported comment can carry the address its author
+                 gave on the old blog; nothing here is ours, so the
+                 link says so to the search engines and opens alone --%>
+            <a
+              :if={comment.website}
+              href={comment.website}
+              class="writer-out"
+              rel="nofollow noopener noreferrer ugc"
+              target="_blank"
+            >
+              {comment.name}
+            </a>
+            <span :if={!comment.website}>{comment.name}</span>
             <span :if={kind == :own} class="wait">
               {gettext("waiting for your confirmation")}
             </span>

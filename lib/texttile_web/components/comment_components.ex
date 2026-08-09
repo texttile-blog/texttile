@@ -41,6 +41,14 @@ defmodule TexttileWeb.CommentComponents do
           <% end %>
           <span :if={Comments.released?(@comment)}>· {gettext("let through")}</span>
           <span :if={Comments.edited?(@comment)}>· {gettext("edited")}</span>
+          <%!-- only an import brings a website, and an admin reading
+               the list is the one who should see where it points --%>
+          <span :if={@comment.website}>
+            ·
+            <a href={@comment.website} class="link" rel="nofollow noopener noreferrer ugc">
+              {host_of(@comment.website)}
+            </a>
+          </span>
         </span>
       </div>
 
@@ -126,8 +134,17 @@ defmodule TexttileWeb.CommentComponents do
     """
   end
 
-  defp email_of(%{address: %{email: email}}) when is_binary(email) and email != "", do: email
+  # The address to write back to. An imported comment whose author
+  # left none carries the placeholder address instead, and a mailto to
+  # that one would be a dead letter.
+  defp email_of(%{address: %{email: email}}) when is_binary(email) and email != "" do
+    if email == Comments.placeholder_address(), do: nil, else: email
+  end
+
   defp email_of(_comment), do: nil
+
+  # The host alone: a whole URL in a row of names is a wall of text.
+  defp host_of(website), do: URI.parse(website).host || website
 
   @doc """
   One comment in the trash: what it said, where it stood, the day it
