@@ -8,6 +8,7 @@ defmodule TexttileWeb.SiteHTML do
   use TexttileWeb, :html
 
   alias Texttile.Articles
+  alias Texttile.Articles.Visibility
 
   embed_templates "site_html/*"
 

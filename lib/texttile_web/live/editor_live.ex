@@ -16,6 +16,7 @@ defmodule TexttileWeb.EditorLive do
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Lock
+  alias Texttile.Articles.Visibility
   alias Texttile.Comments
   alias Texttile.Gallery
   alias Texttile.Stats
@@ -481,7 +482,7 @@ defmodule TexttileWeb.EditorLive do
     article = socket.assigns.article
 
     live_line =
-      if article.status == "published" do
+      if Visibility.live?(article) do
         address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
 
         [
@@ -1366,7 +1367,7 @@ defmodule TexttileWeb.EditorLive do
   defp load_stats(socket, "stats") do
     article = socket.assigns.article
 
-    if article.status == "published" do
+    if Visibility.live?(article) do
       assign(socket, :stats, %{
         views: Stats.article_views(article.id),
         days: Stats.by_day(14, article_id: article.id),
@@ -1493,7 +1494,7 @@ defmodule TexttileWeb.EditorLive do
           class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
           id="stateBtn"
         >
-          <%= if @article.status == "published" do %>
+          <%= if Visibility.live?(@article) do %>
             <a
               class="main"
               id="stateMain"
@@ -1585,7 +1586,7 @@ defmodule TexttileWeb.EditorLive do
             {gettext("Unschedule")}
           </button>
         <% end %>
-        <%= if @article.status == "published" do %>
+        <%= if Visibility.live?(@article) do %>
           <button class="row" id="unpublishRow" phx-click="unpublish">
             {gettext("Unpublish")}
           </button>
@@ -2704,14 +2705,15 @@ defmodule TexttileWeb.EditorLive do
   # What the door to the reader's side promises, in the words of the
   # state it opens: a live entry is the page everybody reads, and one
   # that is not live yet is that page for the admins alone.
-  defp public_title(%{status: "published"}),
-    do: gettext("Opens the entry on the public site, in a new tab")
-
-  defp public_title(_article),
-    do:
+  defp public_title(article) do
+    if Visibility.live?(article) do
+      gettext("Opens the entry on the public site, in a new tab")
+    else
       gettext(
         "Opens the entry as it was last saved, in a new tab. Only somebody signed in can open this address."
       )
+    end
+  end
 
   defp chevron_icon(assigns) do
     ~H"""

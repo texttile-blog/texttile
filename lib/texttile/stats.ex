@@ -21,6 +21,7 @@ defmodule Texttile.Stats do
   import Ecto.Query
 
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Visibility
   alias Texttile.RateLimiter
   alias Texttile.Repo
   alias Texttile.Stats.Salt
@@ -164,7 +165,7 @@ defmodule Texttile.Stats do
   # else is counted as a plain address: a caller writes this number,
   # and a draft or an entry that never existed must not collect views.
   defp readable_article_id(id) when is_integer(id) do
-    if Repo.exists?(from a in Article, where: a.id == ^id and a.status == "published") do
+    if Repo.exists?(Visibility.live() |> where([a], a.id == ^id)) do
       id
     end
   end

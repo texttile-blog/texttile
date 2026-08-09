@@ -16,6 +16,7 @@ defmodule Texttile.Articles do
   alias Texttile.Articles.LogEntry
   alias Texttile.Articles.Redirect
   alias Texttile.Articles.Version
+  alias Texttile.Articles.Visibility
   alias Texttile.Repo
 
   @admin_topic "articles"
@@ -114,7 +115,7 @@ defmodule Texttile.Articles do
 
   @doc "One published text by id, post or page alike, or nil."
   def get_published(id) do
-    Repo.get_by(Article, id: id, status: "published")
+    Article |> Visibility.live() |> Repo.get_by(id: id)
   end
 
   @doc "The published pages for the site menu, oldest publish date first."
@@ -130,8 +131,12 @@ defmodule Texttile.Articles do
   `{nil, nil}`; the list runs by publish date, with the id breaking a
   tie between two texts of the same day.
   """
-  def neighbours(%Article{type: "post", status: "published"} = article) do
-    {neighbour(article, :older), neighbour(article, :newer)}
+  def neighbours(%Article{type: "post"} = article) do
+    if Visibility.live?(article) do
+      {neighbour(article, :older), neighbour(article, :newer)}
+    else
+      {nil, nil}
+    end
   end
 
   def neighbours(%Article{}), do: {nil, nil}
@@ -195,20 +200,16 @@ defmodule Texttile.Articles do
 
   @doc "The published post at a date and a slug, or nil."
   def get_published_post(%Date{} = date, slug) when is_binary(slug) do
-    Repo.one(
-      from a in Article,
-        where:
-          a.slug == ^slug and a.status == "published" and a.type == "post" and
-            a.publish_date == ^date
-    )
+    Visibility.live()
+    |> where([a], a.slug == ^slug and a.type == "post" and a.publish_date == ^date)
+    |> Repo.one()
   end
 
   @doc "The published page behind a short address, or nil."
   def get_published_page(slug) when is_binary(slug) do
-    Repo.one(
-      from a in Article,
-        where: a.slug == ^slug and a.status == "published" and a.type == "page"
-    )
+    Visibility.live()
+    |> where([a], a.slug == ^slug and a.type == "page")
+    |> Repo.one()
   end
 
   @doc """
@@ -338,7 +339,7 @@ defmodule Texttile.Articles do
   """
   def redirect_target(path) when is_binary(path) do
     with %Redirect{} = redirect <- Repo.get_by(Redirect, path: path),
-         %Article{status: "published"} = article <- Repo.get(Article, redirect.article_id),
+         %Article{} = article <- live_article(redirect.article_id),
          target when is_binary(target) and target != path <- public_path(article) do
       target
     else
@@ -347,6 +348,8 @@ defmodule Texttile.Articles do
   end
 
   def redirect_target(_path), do: nil
+
+  defp live_article(id), do: Article |> Visibility.live() |> Repo.get(id)
 
   @doc "Takes one old address off the entry; it answers a 404 again."
   def delete_redirect(%Article{id: id}, redirect_id) do
@@ -367,7 +370,11 @@ defmodule Texttile.Articles do
   # through here - a tag, a checkbox, a keystroke in the tag field - and
   # a write on each of those would hold SQLite's one write lock for a
   # change that means nothing.
-  defp remember_address(%Article{status: "published"} = before, %Article{} = now) do
+  defp remember_address(%Article{} = before, %Article{} = now) do
+    if Visibility.live?(before), do: keep_old_address(before, now), else: now
+  end
+
+  defp keep_old_address(before, now) do
     old = public_path(before)
     new = public_path(now)
 
@@ -388,8 +395,6 @@ defmodule Texttile.Articles do
 
     now
   end
-
-  defp remember_address(_before, now), do: now
 
   @doc """
   Every tag the admin area already knows, the most used one first, then
@@ -463,7 +468,7 @@ defmodule Texttile.Articles do
   end
 
   defp published_query(type) do
-    where(Article, [a], a.status == "published" and a.type == ^type)
+    Visibility.live() |> where([a], a.type == ^type)
   end
 
   ## Writing
@@ -506,8 +511,8 @@ defmodule Texttile.Articles do
     today = Keyword.get(opts, :today, Date.utc_today())
     day = if opts[:force], do: today, else: article.publish_date || today
     future? = Date.compare(day, today) == :gt
-    status = if future?, do: "scheduled", else: "published"
-    went_live? = status == "published" and article.status != "published"
+    status = if future?, do: "scheduled", else: Visibility.live_status()
+    went_live? = status == Visibility.live_status() and not Visibility.live?(article)
 
     attrs = %{status: status, publish_date: day, slug: article.slug || free_slug(article)}
 
@@ -567,12 +572,12 @@ defmodule Texttile.Articles do
         end
 
       true ->
-        status = if Date.compare(date, today) == :gt, do: "scheduled", else: "published"
+        status = if Date.compare(date, today) == :gt, do: "scheduled", else: Visibility.live_status()
 
         # A scheduled text whose date is dragged to today goes live this
         # moment - that is a go-live like any other. A date edit on an
         # already-live text is not.
-        went_live? = status == "published" and article.status == "scheduled"
+        went_live? = status == Visibility.live_status() and article.status == "scheduled"
 
         with {:ok, moved} <-
                article
@@ -600,7 +605,10 @@ defmodule Texttile.Articles do
     |> where([a], a.status == "scheduled" and a.publish_date <= ^today)
     |> Repo.all()
     |> Enum.map(fn article ->
-      {:ok, article} = article |> Article.state_changeset(%{status: "published"}) |> Repo.update()
+      {:ok, article} =
+        article
+        |> Article.state_changeset(%{status: Visibility.live_status()})
+        |> Repo.update()
       push_log(article, nil, "the entry went live as scheduled")
       article = Texttile.Newsletter.notify_published(article)
       broadcast({:article_changed, article})

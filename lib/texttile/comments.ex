@@ -23,6 +23,7 @@ defmodule Texttile.Comments do
   import Ecto.Query
 
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Visibility
   alias Texttile.Comments.Address
   alias Texttile.Comments.Comment
   alias Texttile.Comments.Notifier
@@ -156,8 +157,9 @@ defmodule Texttile.Comments do
     DateTime.diff(now, at) < @mail_interval_seconds
   end
 
-  defp open_for_comments(%Article{status: "published", allow_comments: true}), do: :ok
-  defp open_for_comments(%Article{}), do: {:error, :closed}
+  defp open_for_comments(%Article{} = article) do
+    if Visibility.open_for_comments?(article), do: :ok, else: {:error, :closed}
+  end
 
   defp validate(attrs) do
     changeset = Comment.post_changeset(%Comment{}, attrs)

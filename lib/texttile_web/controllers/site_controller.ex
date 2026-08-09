@@ -10,6 +10,7 @@ defmodule TexttileWeb.SiteController do
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Visibility
   alias Texttile.Comments
   alias Texttile.Newsletter
   alias Texttile.RateLimiter
@@ -245,10 +246,14 @@ defmodule TexttileWeb.SiteController do
   """
   def confirm_comment(conn, %{"token" => token}) do
     case Comments.confirm(token) do
-      {:ok, %Article{status: "published"} = article} ->
-        conn
-        |> put_flash(:comment_note, gettext("Confirmed. Your comment is under the entry now."))
-        |> redirect(to: comments_anchor(article))
+      {:ok, %Article{} = article} ->
+        if Visibility.live?(article) do
+          conn
+          |> put_flash(:comment_note, gettext("Confirmed. Your comment is under the entry now."))
+          |> redirect(to: comments_anchor(article))
+        else
+          redirect(conn, to: ~p"/")
+        end
 
       {:ok, _gone} ->
         redirect(conn, to: ~p"/")
@@ -589,23 +594,25 @@ defmodule TexttileWeb.SiteController do
 
   # The entry the beacon names, if this page counts at all and the
   # entry is one a reader can read.
-  defp countable_entry(conn, %Article{status: "published", id: id}) do
-    if conn.assigns[:count_view], do: id
+  defp countable_entry(conn, %Article{id: id} = article) do
+    if Visibility.live?(article) and conn.assigns[:count_view], do: id
   end
-
-  defp countable_entry(_conn, _article), do: nil
 
   # An entry that is not live takes no comments: the reader who could
   # write one cannot reach the page at all, and the form would post to
   # an address that answers nothing.
-  defp comment_assigns(_conn, %Article{status: status}) when status != "published" do
-    %{comments: nil}
-  end
-
   # What the comments block under a text needs, or `comments: nil` when
   # the text does not take any. Readers see every comment the rule
   # shows, and their own waiting ones on top - nobody else's.
-  defp comment_assigns(conn, %Article{allow_comments: true} = article) do
+  defp comment_assigns(conn, %Article{} = article) do
+    if Visibility.open_for_comments?(article) do
+      comments_block(conn, article)
+    else
+      %{comments: nil}
+    end
+  end
+
+  defp comments_block(conn, %Article{} = article) do
     require? = Settings.get(:comments_require_confirmation)
     own = own_comment_ids(conn)
     {comments, earlier} = Comments.for_readers(article.id)
@@ -638,7 +645,6 @@ defmodule TexttileWeb.SiteController do
     }
   end
 
-  defp comment_assigns(_conn, _article), do: %{comments: nil}
 
   # The line under the form. Signed in, the account answers for the
   # address, so there is no link to follow and nothing to confirm.
