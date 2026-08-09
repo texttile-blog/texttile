@@ -1,7 +1,7 @@
 # Port 4000 belongs to the human developer (make start).
 # Agents never use it; they run on 4440+ (see AGENTS.md).
 
-.PHONY: prepare tools test kill-port-4000 start db-delete db-pull
+.PHONY: prepare tools test check kill-port-4000 start db-delete db-pull
 
 # Development state is shared by all worktrees, see config/dev.exs.
 SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; if [ -n "$$common_dir" ]; then dirname "$$common_dir"; else pwd; fi)
@@ -23,6 +23,14 @@ prepare:
 	mix compile
 
 test: prepare
+	mix test
+
+# What CI runs, in the order CI runs it, so a red build is something
+# you saw here first. CI checks the formatting before it runs a single
+# test, and a branch whose tests are green still fails there.
+check: prepare
+	mix compile --warnings-as-errors
+	mix format --check-formatted
 	mix test
 
 kill-port-4000:
