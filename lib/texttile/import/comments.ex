@@ -20,7 +20,6 @@ defmodule Texttile.Import.Comments do
   @name "comments.yaml"
   @fields ~w(author email website date id reply_to text)
   @key_pattern ~r/\A([a-z_][a-z0-9_]*):(.*)\z/
-  @name_limit 120
 
   @doc "The name of the file a bundle carries its comments in."
   def filename, do: @name
@@ -211,9 +210,14 @@ defmodule Texttile.Import.Comments do
     name = String.trim(value)
 
     cond do
-      name == "" -> {:error, "the comment has no author"}
-      String.length(name) > @name_limit -> {:error, "the author is longer than 120 characters"}
-      true -> {:ok, name}
+      name == "" ->
+        {:error, "the comment has no author"}
+
+      String.length(name) > Comment.name_limit() ->
+        {:error, "the author is longer than #{Comment.name_limit()} characters"}
+
+      true ->
+        {:ok, name}
     end
   end
 

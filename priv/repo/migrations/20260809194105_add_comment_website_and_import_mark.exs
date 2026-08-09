@@ -14,7 +14,5 @@ defmodule Texttile.Repo.Migrations.AddCommentWebsiteAndImportMark do
       # comment a reader wrote here has nothing here and stays.
       add :imported_at, :utc_datetime
     end
-
-    create index(:comments, [:imported_at])
   end
 end

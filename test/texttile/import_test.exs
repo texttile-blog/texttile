@@ -611,6 +611,16 @@ defmodule Texttile.ImportTest do
       assert Texttile.Comments.waiting_count() == 0
     end
 
+    test "an import mails nobody about them", %{dir: dir, user: user} do
+      share_mail()
+      {:ok, _} = Texttile.Settings.put(:notify_on_comment, true)
+      write_bundle(dir, "beach", "title: Beach days\n")
+      write_comments(dir, "beach", "- author: kb\n  date: 2019-06-03 22:14\n  text: Schön.\n")
+
+      assert Import.run(Import.validate(dir), user).failed == []
+      refute_receive {:email, _}, 200
+    end
+
     test "a broken comments.yaml keeps the whole bundle out", %{dir: dir, user: user} do
       write_bundle(dir, "beach", "title: Beach days\n")
       write_comments(dir, "beach", "- author: kb\n  text: no date here\n")

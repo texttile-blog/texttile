@@ -37,9 +37,13 @@ defmodule Texttile.Comments.Comment do
   # How much one comment holds. The reader's form and the admin's field
   # both stop here, and the changesets are the ones that decide.
   @body_limit 4000
+  @name_limit 120
 
   @doc "How many characters one comment holds."
   def body_limit, do: @body_limit
+
+  @doc "How long the name over a comment may be."
+  def name_limit, do: @name_limit
 
   @doc "What the reader typed: the name and the words. The address is set apart."
   def changeset(comment, attrs) do
@@ -48,7 +52,7 @@ defmodule Texttile.Comments.Comment do
     |> update_change(:name, &String.trim/1)
     |> update_change(:body, &String.trim/1)
     |> validate_required([:name, :body])
-    |> validate_length(:name, max: 120)
+    |> validate_length(:name, max: @name_limit)
     |> validate_length(:body, max: @body_limit)
   end
 

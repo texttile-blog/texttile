@@ -45,7 +45,12 @@ defmodule TexttileWeb.CommentComponents do
                the list is the one who should see where it points --%>
           <span :if={@comment.website}>
             ·
-            <a href={@comment.website} class="link" rel="nofollow noopener noreferrer ugc">
+            <a
+              href={@comment.website}
+              class="link"
+              rel="nofollow noopener ugc"
+              target="_blank"
+            >
               {host_of(@comment.website)}
             </a>
           </span>
