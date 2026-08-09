@@ -83,19 +83,24 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       assert [_] = Gallery.list(article.id)
     end
 
-    test "a file past the 50 MB roof fails on the spot, nothing travels", %{conn: conn, kb: kb} do
+    # One roof for a picture and for a film, and Settings > Storage >
+    # Biggest upload owns the number. The test moves it down instead of
+    # making a half-gigabyte file, and that is the point of the test:
+    # the browser reads the roof off the page.
+    test "a file past the roof fails on the spot, nothing travels", %{conn: conn, kb: kb} do
       article = draft!(kb)
+      {:ok, _} = Texttile.Settings.put(:max_upload_mb, 10)
 
       huge = Path.join(System.tmp_dir!(), "huge-#{System.unique_integer([:positive])}.jpg")
       {:ok, file} = File.open(huge, [:write])
-      :ok = :file.pwrite(file, 51 * 1024 * 1024, <<0>>)
+      :ok = :file.pwrite(file, 11 * 1024 * 1024, <<0>>)
       :ok = File.close(file)
 
       conn
       |> sign_in()
       |> open_editor(article.id)
       |> upload("Add pictures and videos to the gallery", huge)
-      |> assert_has("#tileLocal .tile.failed", text: "50 MB")
+      |> assert_has("#tileLocal .tile.failed", text: "10 MB")
       |> assert_has("#tileLocal button[data-act=remove]")
       |> refute_has("#tileLocal button[data-act=retry]")
 

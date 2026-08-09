@@ -79,20 +79,24 @@ const SavedTicker = {
     const pad = n => String(n).padStart(2, "0")
     const fresh = (now - at) / 1000 < 20
     const wide = window.matchMedia("(min-width: 768px)").matches
+    const clock = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+
+    /* The seconds are not in the words. They changed once a second in
+       the corner of the eye while somebody was writing, and they said
+       nothing that could be acted on. The exact second is in the
+       tooltip, for the one time a year it settles an argument. */
+    this.el.title = t("The last save was at %{time}.",
+                      {time: `${clock}:${pad(d.getSeconds())}`})
 
     if (this.el.classList.contains("fresh")) { words.textContent = t("Saved"); return }
     // a phone bar has room for the stamp, not for the sentence
     if (!wide) {
-      words.textContent = fresh
-        ? t("saved")
-        : t("saved %{time}", {time: `${pad(d.getHours())}:${pad(d.getMinutes())}`})
+      words.textContent = fresh ? t("saved") : t("saved %{time}", {time: clock})
       return
     }
     words.textContent = fresh
       ? t("Last saved · just now")
-      : t("Last saved %{time}", {
-          time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`,
-        })
+      : t("Last saved %{time}", {time: clock})
   },
 
   // The class carries the whole loud state, and taking it off and

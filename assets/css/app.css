@@ -158,6 +158,32 @@
   @media (prefers-reduced-motion: reduce) {
     .saved.fresh { animation: none; }
   }
+  /* The one save state that needs the eye, and the only loud thing the
+     bar is allowed. LiveView writes .phx-client-error on an element
+     above the bar the moment the socket drops, so the two lines change
+     places without an event and without a timer of their own. */
+  .saved.warn { color: var(--tt-julia); font-weight: 600; }
+  .saved.warn::before { content: none; }
+  /* Both halves are written here and not with utilities: a utility
+     lives in a later layer, where it would beat the swap below however
+     specific the swap is, and both lines would stand in the bar at
+     once. The quiet half is a desk thing, because a phone bar has no
+     room for a sentence; the loud half shows at every width, because
+     it is the one save state that must be seen. */
+  .save-on { display: none; }
+  @media (min-width: 768px) { .save-on { display: inline-block; } }
+  .save-off { display: none; }
+  .phx-client-error .save-off,
+  .phx-server-error .save-off { display: inline-block; }
+  .phx-client-error .save-on,
+  .phx-server-error .save-on { display: none; }
+  /* A phone bar cannot hold the warning and the state word and still
+     leave a letter of the title, and of those three the state word is
+     the one nobody needs while the connection is gone. */
+  @media (max-width: 639px) {
+    .phx-client-error .st,
+    .phx-server-error .st { display: none; }
+  }
 
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -.015em; }
@@ -222,6 +248,24 @@
   .drow > .lab { display: block; padding-bottom: 3px; font-size: 12.5px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
   .drow .hint { margin-top: 4px; font-size: 11.5px; line-height: 1.45; }
+  /* What lies on the volume: a folder, a count and a weight. Numbers
+     are read against each other, so they sit at the right edge in the
+     tabular figures, and the sum stands off behind a rule. */
+  .tally { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tally th, .tally td { padding: 5px 0; text-align: left; vertical-align: baseline; }
+  .tally th {
+    font-size: 11.5px; font-weight: 600; color: var(--tt-dim);
+    padding-bottom: 3px; border-bottom: 1px solid var(--tt-hair);
+  }
+  .tally .n { text-align: right; padding-left: 14px; white-space: nowrap; }
+  .tally td .p { font-family: var(--tt-font-mono); font-size: 12px; }
+  .tally td .note { margin-left: 7px; }
+  .tally tbody tr + tr td { border-top: 1px solid var(--tt-hair); }
+  .tally tfoot td {
+    border-top: 1px solid var(--tt-rule); font-weight: 600; color: var(--tt-ink);
+  }
+  .tally tfoot tr + tr td { border-top: 0; color: var(--tt-dim); font-weight: 400; }
+
   /* a group name with one quiet word at the right edge of its row: the
      Reset of the publish date, the Reset of the theme */
   .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 3px; }
@@ -303,18 +347,15 @@
   .writer { color: inherit; text-decoration: none; }
   .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
 
-  /* The lines to hand on, in the voice of the column they stand in:
-     the reading size of a value, no ground, no border, no scrollbar.
-     It is a field only so the words can be selected and copied by hand;
-     it grows to what it holds and never scrolls. */
+  /* The lines to hand on: a field like every other field of the
+     column, so the block reads as part of the pane and not as a stray
+     paragraph. It only gives up the two things a field does that this
+     one must not: it never scrolls and it is not dragged bigger, it
+     grows to what it holds. */
   .sharelines {
-    display: block; width: 100%; resize: none; overflow: hidden;
-    field-sizing: content;
-    padding: 0; border: 0; background: transparent; box-shadow: none;
-    font-family: inherit; font-size: 13px; line-height: 1.5;
-    color: var(--tt-dim); overflow-wrap: anywhere;
+    display: block; resize: none; overflow: hidden;
+    field-sizing: content; overflow-wrap: anywhere;
   }
-  .sharelines:focus { outline: none; box-shadow: none; background: transparent; }
 
   /* the addresses an entry has left behind, under the address field.
      A quiet list: the address in the monospace the address field uses,
@@ -400,7 +441,7 @@
   .split {
     display: inline-flex; align-items: center; flex: none; height: 30px;
     border-radius: var(--tt-radius);
-    transition: box-shadow .15s ease, background-color .15s ease;
+    transition: outline-color .15s ease, background-color .15s ease;
   }
   .split .main {
     display: inline-flex; align-items: center; gap: 5px; height: 30px;
@@ -424,11 +465,23 @@
      instead of jumping to another colour */
   .split.solid .main:hover, .split.solid .chev:hover,
   .split.solid .chev[aria-expanded="true"] { background-image: linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / .16)); }
-  .split.calm { color: var(--tt-ink); box-shadow: inset 0 0 0 1px var(--tt-rule); }
-  .split.calm:hover { box-shadow: inset 0 0 0 1px var(--tt-inksoft); }
+  /* An outline and not an inset shadow: the two halves paint their own
+     ground, and a shadow on the parent is painted underneath them, so
+     touching either half rubbed out the line around it and left the
+     control looking like two boxes that had come apart. An outline is
+     painted after the children, so it survives whatever they fill. */
+  .split.calm { color: var(--tt-ink); outline: 1px solid var(--tt-rule); outline-offset: -1px; }
+  .split.calm:hover { outline-color: var(--tt-inksoft); }
   .split.calm .div { background: var(--tt-rule); }
-  .split.calm .main:hover, .split.calm .chev:hover,
-  .split.calm .main[aria-expanded="true"], .split.calm .chev[aria-expanded="true"] { background-color: var(--tt-field); }
+  .split.calm .main:hover, .split.calm .chev:hover { background-color: var(--tt-field); }
+  /* An open menu belongs to the whole control, not to the half that
+     was clicked. Tinting only the chevron cut the control in two: one
+     white box and one grey one, meeting at the divider. */
+  .split.calm:has([aria-expanded="true"]) {
+    background-color: var(--tt-field); outline-color: var(--tt-inksoft);
+  }
+  .split.calm:has([aria-expanded="true"]) .main:hover,
+  .split.calm:has([aria-expanded="true"]) .chev:hover { background-color: transparent; }
 
   /* THE EDITOR'S SECOND COLUMN
      The article settings stand still while the words scroll. One screen
@@ -470,20 +523,53 @@
     .sidecol::-webkit-scrollbar-thumb:hover { background-color: var(--tt-inksoft); }
   }
 
-  /* the status stamp in the bar */
-  .stamp {
-    font-size: 11.5px; padding: 3px 9px; background-color: var(--tt-field);
-    color: var(--tt-dim); flex: none; border-radius: var(--tt-radius-pill);
+  /* THE LEFT OF THE BAR · what this entry is (round-15, variant A).
+     The state is a dot and a word beside the title, said once. It is
+     not a pill and not a button, because a pill next to a Publish
+     button says "draft" twice and only one of the two can be pressed.
+     The dot carries the state as well as the word: hollow while
+     nothing is out, outlined once a date is set, filled once a reader
+     can reach it. */
+  .st {
+    display: inline-flex; align-items: baseline; gap: 6px; flex: none;
+    font-size: 12.5px; color: var(--tt-dim); white-space: nowrap;
   }
-  .stamp.published { background-color: var(--tt-solid); color: var(--tt-onsolid); }
-  .stamp.scheduled { background-color: transparent; color: var(--tt-dim); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+  .st i {
+    width: 7px; height: 7px; flex: none; align-self: center;
+    border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--tt-faint);
+  }
+  .st.sched i { box-shadow: inset 0 0 0 1.5px var(--tt-accent); }
+  .st.live i { background-color: var(--tt-accent); box-shadow: none; }
+  .st b { font-weight: 600; color: var(--tt-inksoft); }
+
+  /* somebody else holds the words. One fact, in the rust the whole
+     admin area uses for another person, so the bar and the banner
+     under it read as one thing. */
+  .pres {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    font-size: 12.5px; color: var(--tt-julia); white-space: nowrap;
+  }
+  .pres i {
+    width: 7px; height: 7px; flex: none; border-radius: 50%;
+    background-color: var(--tt-julia); animation: tt-pulse 2.2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .pres i { animation: none; } }
+  @keyframes tt-pulse { 50% { opacity: .35; } }
+  /* on a phone the dot alone says it; the name is in the wordmark menu */
+  @media (max-width: 639px) { .pres .w { display: none; } }
 
   /* a link that opens a tab of its own: the arrow leaving its box, in
-     the ink of the words it follows. The stamp and the Last-saved line
-     both wear it, so the way to the reader's side reads the same in
-     both places. */
+     the ink of the words it follows */
   .out { text-decoration: none; align-items: center; gap: 5px; }
-  .out .out-i { width: 12px; height: 12px; flex: none; opacity: .7; }
+  /* The arrow carries its own size and its own line behaviour,
+     wherever it stands. An SVG without a size grows to fill the box it
+     lands in, and the reset makes every bare svg a block, so inside a
+     .link, which is no flex container, the arrow was both huge and on
+     a line of its own. Both rules only ever held inside .out. */
+  .out-i {
+    display: inline-block; vertical-align: -2px;
+    width: 12px; height: 12px; flex: none; opacity: .7;
+  }
   /* The Last-saved line is a pill, and the arrow belongs inside it: the
      flashed state draws a ground and a border, and an arrow beside that
      would crowd the rounded edge. Inside, the pill wraps both and
@@ -494,8 +580,7 @@
   .out > .saved::before { content: "\2713" / ""; }
   .out:hover { color: var(--tt-accent); }
   .out:hover .out-i { opacity: 1; }
-  .stamp.out.published:hover { color: var(--tt-onsolid); opacity: .85; }
-  .pop .row .out-i { width: 12px; height: 12px; margin-left: 5px; opacity: .7; }
+  .pop .row .out-i { margin-left: 5px; }
 
   /* the editor's tab row */
   .tab {
@@ -550,7 +635,7 @@
   }
   .ed-body {
     display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
-    margin-top: 22px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+    margin-top: 3px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
     color: var(--tt-ink); background-color: var(--tt-field); border: 0;
     border-radius: var(--tt-radius);
     padding: 6px 6px 7px; resize: none; min-height: 100px;
@@ -568,11 +653,11 @@
   .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
   .ed-title[readonly]:hover, .ed-title[readonly]:focus,
   .ed-body[readonly]:hover, .ed-body[readonly]:focus {
-    background: var(--tt-livetint); border-bottom-color: var(--tt-liveline); box-shadow: none;
+    background: var(--tt-juliatint); border-bottom-color: var(--tt-julialine); box-shadow: none;
   }
   #bodyWrap.is-readonly .ed-cm,
   #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
-  #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-livetint); }
+  #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-juliatint); }
   /* THE SAME EDITOR, IN A BOX
      Settings gives About the entry editor with the pictures taken out.
      There the surface is one field among many, not the page, so it
@@ -840,6 +925,33 @@
 
   /* presence, dots, popovers */
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; flex: none; background: currentColor; }
+
+  /* The lock banner: a band across the screen under the bar, not a
+     box inside the column of words. It is news about the screen, so
+     it wears the screen's full width and starts where the bar starts.
+
+     Two colours that cannot be mistaken for one another. `.mine` is
+     the accent the admin area uses for what belongs to you;
+     `.theirs` is julia's rust, the ink of another person, the same
+     ink as the presence line in the bar. The dot takes the colour of
+     the words, so each band is one thing and not a live mark on a
+     foreign ground. */
+  .jbar {
+    padding: 9px 10px; font-size: 13px; line-height: 1.55;
+    border-bottom: 1px solid transparent;
+  }
+  @media (min-width: 768px) { .jbar { padding-left: 16px; padding-right: 16px; } }
+  .jbar .dot { margin-right: 5px; vertical-align: 1px; }
+  .jbar b { font-weight: 600; }
+  .jbar .w { opacity: .85; }
+  .jbar.mine {
+    background-color: var(--tt-accentwash); color: var(--tt-accent);
+    border-bottom-color: var(--tt-accentline);
+  }
+  .jbar.theirs {
+    background-color: var(--tt-juliatint); color: var(--tt-julia);
+    border-bottom-color: var(--tt-julialine);
+  }
   /* the presence hint on the wordmark: one small dot in julia's
      colour, no motion, no count. It says "open the menu", nothing more. */
   .wmdot {
@@ -865,6 +977,15 @@
   }
   .pop .row:hover { background-color: var(--tt-field); }
   .pop .row.on { color: var(--tt-accent); font-weight: 600; }
+  /* the one row that cannot be taken back: behind a hairline, at the
+     end, and in the ink of a warning as soon as the pointer is on it */
+  .pop .row.far:hover { background-color: var(--tt-juliatint); color: var(--tt-julia); }
+  /* a line in a menu that is not an action but a fact, so it reads as
+     one: no hover, no pointer, the size of a note */
+  .pop .fact {
+    padding: 5px 10px 7px; font-size: 11.5px; line-height: 1.45;
+    color: var(--tt-faint);
+  }
   .pop .k { margin-left: auto; color: var(--tt-faint); font-size: 11.5px; font-variant-numeric: tabular-nums; }
   /* the live block in the section menu: a name line per person, the
      sessions under it, each one a jump */
@@ -930,10 +1051,10 @@
      lies over the page and hides whatever ends under it. The padding
      carries `.wrap` too: `.wrap` writes the padding shorthand, and it
      stands later in this layer, so a single class would lose. */
-  .f-foot { font-size: 13px; color: var(--tt-dim); }
+  .f-foot { font-size: 13px; color: var(--tt-inksoft); }
   .wrap.f-foot { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   @media (max-width: 700px) { .wrap.f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
-  .f-foot a { color: var(--tt-dim); text-decoration: none; }
+  .f-foot a { color: var(--tt-inksoft); text-decoration: none; }
   .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
 
   /* one wrapper, two widths, both the admin area's */
@@ -958,16 +1079,15 @@
   /* the way into the admin area, in the line under the title. Only an admin
      who is signed in is ever served it, so it stays small and quiet
      and lets the date keep the line. */
+  /* A word in the line, not a button on it. A pill beside the date
+     read as the one thing to press on a page whose whole point is the
+     words under it. */
   .edit-link {
-    display: inline-block; margin-left: 5px; padding: 1px 9px;
-    font-size: 12px; color: var(--tt-dim); text-decoration: none;
-    border-radius: var(--tt-radius-pill); box-shadow: inset 0 0 0 1px var(--tt-rule);
-    transition: color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    margin-left: 8px; color: var(--tt-accent); text-decoration: underline;
+    text-underline-offset: 2px; text-decoration-thickness: 1px;
+    transition: color .15s ease;
   }
-  .edit-link:hover {
-    color: var(--tt-ink); background: var(--tt-field);
-    box-shadow: inset 0 0 0 1px var(--tt-inksoft);
-  }
+  .edit-link:hover { color: var(--tt-ink); }
 
   /* the comment form: a row that wraps, and a box that grows with the
      words (public.js grows it by hand where field-sizing is missing) */
@@ -1170,7 +1290,11 @@
   /* the band and the footer are one block from "About" down to the
      bottom edge of the window, and a hairline is all that stands
      between them */
-  footer.foot-band { border-top-color: var(--tt-hair); }
+  /* The two bands are one block, but the line between them was a
+     hairline meant for a white page and all but vanished on the
+     band's own ground. It carries the same weight as the line that
+     opens the block. */
+  footer.foot-band { border-top-color: var(--b-rule); }
   section.foot-band .cols {
     display: grid; gap: 34px;
     padding-top: calc(var(--tt-sec) * .62);
@@ -1182,8 +1306,11 @@
   .f-eyebrow {
     font-size: 13px; font-weight: 600; color: var(--tt-ink); margin-bottom: 9px;
   }
+  /* Reading ink, not note ink: the band's ground is a tint and not the
+     page, so dim sat too close to it. These are paragraphs somebody is
+     meant to read, not a caption under a field. */
   section.foot-band p, section.foot-band .about-md {
-    font-size: 13.5px; line-height: 1.6; color: var(--tt-dim); max-width: 58ch;
+    font-size: 13.5px; line-height: 1.6; color: var(--tt-inksoft); max-width: 58ch;
   }
   section.foot-band b, section.foot-band strong { color: var(--tt-ink); }
   section.foot-band input { border-bottom-color: var(--b-rule); }
@@ -1302,11 +1429,14 @@
    with the .ed-cm prefix reliably outweigh them.
    ================================================================== */
 
-/* the bar: quiet glyphs on the page, sticky under the topbar */
+/* the bar: quiet glyphs on the page, sticky under the topbar. The
+   space above it is the wide one and the space under it is nearly
+   none, so the glyphs belong to the words they format and not to the
+   title above them. `.ed-body` carries the small half. */
 .mdbar {
   position: sticky; top: 52px; z-index: 30;
   display: flex; align-items: center; gap: 2px;
-  margin: 18px -6px 0; padding: 5px 6px 4px;
+  margin: 24px -6px 0; padding: 5px 6px 4px;
   background: var(--tt-page);
 }
 @media (min-width: 1024px) { .mdbar { top: 0; } }
@@ -1324,7 +1454,7 @@
 /* while the other admin holds the text the bar stays, faded; a click
    on any button asks for the takeover instead of formatting */
 .mdbar.is-readonly .mdb { color: var(--tt-slash); }
-.mdbar.is-readonly .mdb:hover { background: var(--tt-livetint); color: var(--tt-livetext); }
+.mdbar.is-readonly .mdb:hover { background: var(--tt-juliatint); color: var(--tt-julia); }
 
 /* the editor: the same flush surface the textarea was */
 .ed-cm { cursor: text; }

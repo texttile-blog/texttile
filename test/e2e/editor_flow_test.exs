@@ -81,15 +81,15 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stamp", text: "published")
+        |> assert_has("#stateWord", text: "Published")
         |> assert_has("#slugHint", text: "is live")
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
 
       conn
-      |> click_button("#stateChev", "Published")
+      |> click("#stateChev")
       |> click_button("Unpublish")
-      |> assert_has("#stamp", text: "draft")
+      |> assert_has("#stateWord", text: "Draft")
 
       assert [%{status: "draft"}] = Articles.list_articles()
     end
@@ -103,8 +103,10 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> fill_in("Title", with: "Later")
       |> fill_in("Publish date", with: future)
       |> click_button("#stateBtn .main", "Publish")
-      |> assert_has("#stamp", text: "scheduled")
-      |> assert_has("#edDateHint", text: "The subscriber email goes out on #{future}")
+      |> assert_has("#stateWord", text: "Scheduled")
+      |> assert_has("#edDateHint", text: "It goes live on #{future}")
+      # the mail has one owner on this pane, and it is not the date
+      |> assert_has("#notifyOpt", text: "Goes out to the confirmed subscribers")
 
       assert [%{status: "scheduled"}] = Articles.list_articles()
     end
@@ -117,18 +119,21 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> sign_in()
         |> click_button("New entry")
         # a draft with no slug has no address of its own yet, and the
-        # door is still there: it opens the same page by id
-        |> assert_has("a#stamp[href^='/preview/']", text: "draft")
+        # door is still there: it opens the same page by id, from the
+        # one menu the bar carries
+        |> click("#stateChev")
+        |> assert_has("a#viewRow[href^='/preview/']", text: "Open the entry")
+        |> click("#stateChev")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stamp", text: "published")
+        |> assert_has("#stateWord", text: "Published")
 
       address =
         "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
           "#{String.pad_leading("#{today.day}", 2, "0")}/going-live"
 
       conn
-      |> assert_has("a#stamp[href='#{address}']")
+      |> assert_has("#stateBtn a#stateMain[href='#{address}']", text: "View")
       |> visit(address)
       |> assert_has("h1", text: "Going live")
 
@@ -258,14 +263,16 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> fill_in("Title", with: "Versioned")
         |> type(".ed-cm .cm-content", "First words.")
         |> assert_has("#state", text: "Last saved · just now")
-        |> click_button("Save version")
-        |> assert_has("#btnSave", text: "Saved")
+        |> click("#stateChev")
+        |> click_button("#saveVersionRow", "Save version")
+        |> assert_has("#stateLine", text: "Version saved")
 
       conn =
         conn
         |> press(".ed-cm .cm-content", "ControlOrMeta+a")
         |> type(".ed-cm .cm-content", "Second words.")
-        |> click_button("Save version")
+        |> click("#stateChev")
+        |> click_button("#saveVersionRow", "Save version")
         |> click_button(".tab", "Versions")
         |> assert_has("#versionsList .dif-add", text: "Second")
         |> assert_has("#versionsList .dif-del", text: "First")
@@ -292,6 +299,87 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> click_button(".tab", "Log")
       |> assert_has("#logList", text: "published the entry")
       |> assert_has("#logList", text: "started the entry")
+    end
+  end
+
+  describe "the writing surface" do
+    # The glyphs format the words under them, so they belong to the
+    # words. They stood 18px under the title and 26px over the body,
+    # which read as a bar attached to the title.
+    @bar_gaps """
+    () => {
+      const bar = document.querySelector(".mdbar").getBoundingClientRect()
+      const title = document.querySelector("#edTitle").getBoundingClientRect()
+      const body = document.querySelector("#edBodyHost").getBoundingClientRect()
+      return [bar.top - title.bottom, body.top - bar.bottom]
+    }
+    """
+
+    test "the formatting bar belongs to the body, not to the title", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> assert_has(".mdbar")
+      |> evaluate(@bar_gaps, [is_function: true], fn [over, under] ->
+        assert under < over
+      end)
+    end
+
+    # The surface takes Tab as a character, so without a key that lets
+    # go the body is a room with only a mouse for a door.
+    test "Escape leaves the body", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> type(".ed-cm .cm-content", "Words.")
+      |> assert_has(".cm-editor.cm-focused")
+      |> press(".ed-cm .cm-content", "Escape")
+      |> refute_has(".cm-editor.cm-focused")
+    end
+
+    # The body had no roof of its own: an oversize paste put a token in
+    # the words, uploaded for as long as it took, and ended at the
+    # parser. Now it is turned away before anything is written.
+    test "a file over the roof never reaches the words", %{conn: conn} do
+      {:ok, _} = Texttile.Settings.put(:max_upload_mb, 10)
+
+      huge = Path.join(System.tmp_dir!(), "huge-#{System.unique_integer([:positive])}.jpg")
+      {:ok, file} = File.open(huge, [:write])
+      :ok = :file.pwrite(file, 11 * 1024 * 1024, <<0>>)
+      :ok = File.close(file)
+
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> assert_has(".mdbar")
+      |> upload("Put pictures and videos in the text", huge)
+      |> assert_has("#state", text: "over the 10 MB roof")
+      |> refute_has(".cm-content", text: "Uploading")
+    end
+
+    # The lines to hand on are a field of the pane, in the same clothes
+    # as every other field beside them. They were a bare paragraph.
+    @share_ground """
+    () => {
+      const one = getComputedStyle(document.querySelector("#shareLines"))
+      const other = getComputedStyle(document.querySelector("#edSlug"))
+      return [one.backgroundColor, other.backgroundColor,
+              one.fontSize, other.fontSize, one.padding, other.padding]
+    }
+    """
+
+    test "the share lines wear the clothes of the pane", %{conn: conn} do
+      article = Texttile.ArticlesFixtures.published_post(title: "Handed on")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> assert_has("#shareLines")
+      |> evaluate(@share_ground, [is_function: true], fn [bg, other_bg, fs, other_fs, p, other_p] ->
+        assert bg == other_bg
+        assert fs == other_fs
+        assert p == other_p
+      end)
     end
   end
 

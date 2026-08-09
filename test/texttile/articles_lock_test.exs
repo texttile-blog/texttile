@@ -42,10 +42,26 @@ defmodule Texttile.Articles.LockTest do
       assert {:held, %{user_id: 1}} = Lock.acquire(id, 2, other)
     end
 
-    test "the same user in a new tab takes the lock along", %{id: id} do
+    # Whoever was in the text first goes on writing. Opening it a
+    # second time takes it off nobody, and that holds for your own
+    # other tab too: a second window used to steal the lock from the
+    # first one silently, mid-sentence.
+    test "the same user in a second tab does not take the lock along", %{id: id} do
       old_tab = spawn_holder()
       assert :ok = Lock.acquire(id, 1, old_tab)
-      assert :ok = Lock.acquire(id, 1, self())
+
+      assert {:held, %{user_id: 1, pid: ^old_tab}} = Lock.acquire(id, 1, self())
+      assert %{pid: ^old_tab} = Lock.state(id)
+    end
+
+    test "the same user's second tab can still take it over by hand", %{id: id} do
+      old_tab = spawn_holder()
+      assert :ok = Lock.acquire(id, 1, old_tab)
+
+      # the old tab never answers the flush, so the timeout carries it
+      assert :pending = Lock.takeover(id, 1, self())
+      assert_receive {:lock_granted, ^id}, 500
+
       assert %{pid: pid} = Lock.state(id)
       assert pid == self()
     end

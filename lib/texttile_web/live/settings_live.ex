@@ -24,7 +24,7 @@ defmodule TexttileWeb.SettingsLive do
   @editable ~w(site_title site_description language front_page
                posts_per_page theme_css site_visibility site_password
                comments_require_confirmation notify_on_comment
-               image_max_edge video_max_edge)
+               image_max_edge video_max_edge max_upload_mb)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -75,7 +75,10 @@ defmodule TexttileWeb.SettingsLive do
           socket
           |> assign(:errors, Map.delete(socket.assigns.errors, key_atom))
           |> refresh_settings()
-          |> refresh_storage()
+          # The storage report is not refreshed here: the broadcast
+          # this save sends comes back to this tab as well, and
+          # handle_info decides there whether the report has to be
+          # read again.
           |> mark_saved(saved_note(key_atom, value))
 
         # A saved theme is worn at once: the browser refetches the sheet.
@@ -255,8 +258,15 @@ defmodule TexttileWeb.SettingsLive do
 
   ## Somebody else changed something
 
-  def handle_info({:setting_changed, _key, _value}, socket) do
-    {:noreply, socket |> refresh_settings() |> refresh_storage()}
+  # This arrives for a change anybody made, this tab included:
+  # Settings.put broadcasts to every subscriber and does not leave the
+  # sender out. The storage report walks the whole uploads tree and
+  # forks df, so it is read again only for the one setting that moves
+  # files. Without that test it ran on every keystroke pause of every
+  # field on the screen.
+  def handle_info({:setting_changed, key, _value}, socket) do
+    socket = refresh_settings(socket)
+    {:noreply, if(key == :image_max_edge, do: refresh_storage(socket), else: socket)}
   end
 
   # A text changed or went away somewhere in the admin area, so the row
@@ -396,17 +406,37 @@ defmodule TexttileWeb.SettingsLive do
         {:error, _} -> 0
       end
 
+    usage = Uploads.usage()
+    free = Uploads.free_bytes()
+
     socket
     |> assign(:uploads_root, Uploads.root())
     |> assign(:db_path, db_path)
     |> assign(:db_size, human_size(db_bytes))
-    |> assign(:cache_size, human_size(Images.cache_bytes()))
+    |> assign(:usage, usage)
+    |> assign(:usage_files, Enum.sum_by(usage, & &1.files) + 1)
+    |> assign(:usage_size, human_size(Enum.sum_by(usage, & &1.bytes) + db_bytes))
+    |> assign(:free_size, free && human_size(free))
   end
 
-  defp human_size(bytes) when bytes < 1024 * 1024,
-    do: gettext("%{size} KB", size: div(bytes, 1024))
+  # What each folder of the uploads root is for. The layout itself is
+  # documented on Texttile.Uploads; this is the one line beside a count.
+  defp dir_note("images"), do: gettext("every picture as it came")
+  defp dir_note("videos"), do: gettext("every video, and the MP4 ffmpeg made of it")
+  defp dir_note("site"), do: gettext("the logo and the favicon")
+  defp dir_note("cache"), do: gettext("display sizes, disposable")
+  defp dir_note(_dir), do: ""
 
-  defp human_size(bytes), do: gettext("%{size} MB", size: Float.round(bytes / (1024 * 1024), 1))
+  @kb 1024
+  @mb 1024 * 1024
+  @gb 1024 * 1024 * 1024
+
+  defp human_size(bytes) when bytes < @mb, do: gettext("%{size} KB", size: div(bytes, @kb))
+
+  defp human_size(bytes) when bytes < @gb,
+    do: gettext("%{size} MB", size: Float.round(bytes / @mb, 1))
+
+  defp human_size(bytes), do: gettext("%{size} GB", size: Float.round(bytes / @gb, 1))
 
   defp saved_note(:comments_require_confirmation, true),
     do: gettext("Readers confirm their email · new comments wait for the link")
@@ -840,14 +870,22 @@ defmodule TexttileWeb.SettingsLive do
         </script>
 
         <.section>{gettext("Access")}</.section>
+        <%!-- Two choices and the field that belongs to the second one.
+             No rules between them: they are one question, not three
+             rows of a list, and a line under the last choice cut the
+             password field away from the word it serves. The field is
+             indented to the text column of the choices instead, so it
+             reads as what "Password-protected" needs. The radios carry
+             a size of their own, so that indent is one number and not
+             a browser's idea of a radio. --%>
         <.form for={@settings_form} id="access-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
               value="public"
               checked={@settings.site_visibility == "public"}
-              class="w-auto flex-none mt-[3px]"
+              class="w-[13px] h-[13px] flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
@@ -856,13 +894,13 @@ defmodule TexttileWeb.SettingsLive do
               <span class="text-[11.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
           </label>
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
               value="protected"
               checked={@settings.site_visibility == "protected"}
-              class="w-auto flex-none mt-[3px]"
+              class="w-[13px] h-[13px] flex-none mt-[3px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
@@ -877,7 +915,7 @@ defmodule TexttileWeb.SettingsLive do
           </label>
           <%!-- the field is short, the sentence under it is not: the
                hint keeps the width of the column --%>
-          <div class="py-3" id="pwRow">
+          <div class="pl-[23px] pb-3" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">
               {gettext("Blog password")}
             </label>
@@ -1074,26 +1112,92 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Storage")}</.section>
+        <.form for={@settings_form} id="upload-form" phx-change="save_setting">
+          <div class="drow">
+            <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
+            <span class="val">
+              <span class="flex items-baseline gap-[7px]">
+                <input
+                  type="number"
+                  id="setting-max_upload_mb"
+                  name="settings[max_upload_mb]"
+                  value={@settings.max_upload_mb}
+                  min="10"
+                  max="2048"
+                  step="1"
+                  phx-debounce="500"
+                  class="max-w-[110px]"
+                />
+                <span class="note">{gettext("MB")}</span>
+              </span>
+              <p :if={@errors[:max_upload_mb]} class="text-julia text-[13px] mt-[6px]">
+                {gettext("The value must be %{rule}.", rule: @errors[:max_upload_mb])}
+              </p>
+            </span>
+            <div class="hint">
+              {gettext(
+                "One roof for a picture and for a video. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB."
+              )}
+            </div>
+          </div>
+        </.form>
+
+        <%!-- What is on the volume, folder by folder, and what is left
+             of it. The counts are walked on every render of this
+             screen, which one person opens now and then. --%>
         <div class="drow">
-          <span class="lab">{gettext("Images")}</span>
+          <span class="lab">{gettext("What lies on the volume")}</span>
           <span class="val">
-            {gettext("%{root} · originals plus cached variants · %{size} cache",
+            <table class="tally" id="storageTally">
+              <thead>
+                <tr>
+                  <th>{gettext("Folder")}</th>
+                  <th class="n">{gettext("Files")}</th>
+                  <th class="n">{gettext("Size")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={row <- @usage} id={"usage-#{row.dir}"}>
+                  <td>
+                    <span class="p">{row.dir}/</span>
+                    <span class="note">{dir_note(row.dir)}</span>
+                  </td>
+                  <td class="n num">{row.files}</td>
+                  <td class="n num">{human_size(row.bytes)}</td>
+                </tr>
+                <tr id="usage-db">
+                  <td>
+                    <span class="p">{Path.basename(@db_path)}</span>
+                    <span class="note">{gettext("the database, one SQLite file")}</span>
+                  </td>
+                  <td class="n num">1</td>
+                  <td class="n num">{@db_size}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr id="usage-total">
+                  <td>{gettext("Together")}</td>
+                  <td class="n num">{@usage_files}</td>
+                  <td class="n num">{@usage_size}</td>
+                </tr>
+                <tr :if={@free_size} id="usage-free">
+                  <td>{gettext("Free on this volume")}</td>
+                  <td></td>
+                  <td class="n num">{@free_size}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </span>
+          <div class="hint">
+            {gettext("The uploads stand below %{root} and the database is %{db}.",
               root: @uploads_root,
-              size: @cache_size
+              db: @db_path
             )}
-          </span>
+            {gettext(
+              "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
+            )}
+          </div>
         </div>
-        <div class="drow">
-          <span class="lab">{gettext("Database")}</span>
-          <span class="val">
-            {gettext("%{path} · %{size} SQLite", path: @db_path, size: @db_size)}
-          </span>
-        </div>
-        <p class="note mt-3">
-          {gettext(
-            "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
-          )}
-        </p>
         <p class="mt-3">
           <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>

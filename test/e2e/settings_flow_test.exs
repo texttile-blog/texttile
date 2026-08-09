@@ -127,4 +127,52 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> refute_has("#usersList", text: kb.email)
     end
   end
+
+  describe "the look of the settings screen" do
+    # The arrow that marks a link to another tab took its size from
+    # `.out`, and the IMPORT.md link is a `.link`. An SVG with no size
+    # of its own fills the box it lands in, so the arrow stood as tall
+    # as the paragraph.
+    @arrow_box """
+    () => {
+      const r = document.querySelector("#import-doc svg").getBoundingClientRect()
+      return Math.max(r.width, r.height)
+    }
+    """
+
+    test "the arrow after IMPORT.md is the size of the words it follows", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> assert_has("#import-doc")
+      |> evaluate(@arrow_box, [is_function: true], &assert(&1 <= 16))
+    end
+
+    # Access is one question with two answers, and the password belongs
+    # to the second answer. The rules between the rows made it three
+    # unrelated things, and the field began at the left edge, under the
+    # radio instead of under the word.
+    @access_shape """
+    () => {
+      const form = document.querySelector("#access-form")
+      const ruled = [...form.querySelectorAll("label")]
+        .filter(l => getComputedStyle(l).borderBottomWidth !== "0px").length
+      const word = form.querySelector("label:nth-of-type(2) span span")
+      const field = document.querySelector("#setting-site_password")
+      return [ruled, field.getBoundingClientRect().left -
+                     word.getBoundingClientRect().left]
+    }
+    """
+
+    test "the blog password stands under the choice it belongs to", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> assert_has("#pwRow")
+      |> evaluate(@access_shape, [is_function: true], fn [ruled, off] ->
+        assert ruled == 0
+        assert abs(off) < 1.5
+      end)
+    end
+  end
 end

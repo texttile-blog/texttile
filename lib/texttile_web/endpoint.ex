@@ -56,33 +56,48 @@ defmodule TexttileWeb.Endpoint do
 
   # Multipart carries the pictures and the videos; both are far past
   # Plug's 8 MB default. Two roofs, because they guard different
-  # things: 52 MB for everybody, which holds a 50 MB photograph and the
-  # form around it, and 520 MB on the two upload addresses of the admin
-  # area, which hold a 500 MB video (MAX_VIDEO_MB in gallery_core.js).
+  # things.
   #
-  # The big roof needs a signed-in session, not merely the right
+  # The small one is for everybody and never moves: 52 MB, which holds
+  # a large photograph and the form around it. It is a guard, not a
+  # setting, so nothing an admin types can raise it.
+  #
+  # The big one is Settings > Storage > Biggest upload, plus the form
+  # around the file. It needs a signed-in session, not merely the right
   # address: the parser runs before the router, so without that check a
   # stranger could push half a gigabyte at the server and only be
   # turned away once it had all arrived. The cookie is signed, so the
   # token cannot be invented; whether it still names a live session is
   # the router's question, one roof later.
+  #
+  # The setting is read per upload, not at compile time, so a new limit
+  # holds from the moment it is saved. Only the two upload addresses
+  # ever ask, so no other request pays for the read.
   @picture_roof Plug.Parsers.init(
                   parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
                   pass: ["*/*"],
                   json_decoder: Phoenix.json_library()
                 )
 
-  @video_roof Plug.Parsers.init(
-                parsers: [:urlencoded, {:multipart, length: 520_000_000}, :json],
-                pass: ["*/*"],
-                json_decoder: Phoenix.json_library()
-              )
+  @form_around_the_file 2_000_000
 
   plug :parse_body
 
   defp parse_body(conn, _opts) do
     conn = fetch_session(conn)
-    Plug.Parsers.call(conn, if(big_upload?(conn), do: @video_roof, else: @picture_roof))
+    Plug.Parsers.call(conn, if(big_upload?(conn), do: admin_roof(), else: @picture_roof))
+  end
+
+  defp admin_roof do
+    Plug.Parsers.init(
+      parsers: [
+        :urlencoded,
+        {:multipart, length: Texttile.Settings.max_upload_bytes() + @form_around_the_file},
+        :json
+      ],
+      pass: ["*/*"],
+      json_decoder: Phoenix.json_library()
+    )
   end
 
   defp big_upload?(conn) do

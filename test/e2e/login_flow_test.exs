@@ -60,6 +60,25 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("p", text: "at least 12 characters")
       |> assert_has("p", text: "does not match")
     end
+
+    # Show reveals the first field but stands after the second, so Tab
+    # reached it three stops too late, between the repeat and the email
+    # address. It is a button for the pointer; the keyboard runs the
+    # fields.
+    test "Tab runs the fields and does not stop at Show", %{conn: conn} do
+      configure_admins(["kb"])
+
+      conn
+      |> visit("/login")
+      |> fill_in("Username", with: "kb")
+      |> click_button("Sign in")
+      |> assert_has("h2", text: "Choose a password")
+      |> click("#claim-password")
+      |> press("#claim-password", "Tab")
+      |> assert_has("#claim-password-confirmation:focus")
+      |> press("#claim-password-confirmation", "Tab")
+      |> assert_has("#claim-email:focus")
+    end
   end
 
   describe "a forgotten password" do

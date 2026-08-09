@@ -20,10 +20,13 @@
 import {t, esc} from "./i18n"
 
 const MAX_PARALLEL = 2
-const MAX_FILE_MB = 50
-/* a film off a phone weighs what a photograph never does; the roof for
-   a video stands where the parser's does (see endpoint.ex) */
-const MAX_VIDEO_MB = 500
+/* one roof for a photograph and for a film, and the server owns the
+   number: Settings > Storage > Biggest upload, on the host as
+   data-max-upload-mb. The same number guards the parser (endpoint.ex),
+   so a file that passes here is not refused after it has travelled.
+   The fallback is the default of that setting, for the moment before
+   the attribute is read. */
+const DEFAULT_MAX_MB = 512
 const TOUCH_DRAG_DELAY_MS = 200
 const DRAG_THRESHOLD_PX = 9
 const TAP_MS = 500
@@ -173,7 +176,9 @@ class Gallery {
     const images = [...fileList].filter(f => /^(image|video)\//.test(f.type))
     for (const file of images) {
       // an oversize file fails right here instead of after minutes of upload
-      const roof = /^video\//.test(file.type) ? MAX_VIDEO_MB : MAX_FILE_MB
+      // read now, not kept from the mount: the screen listens for
+      // setting changes, so the host carries the current roof
+      const roof = parseInt(this.el.dataset.maxUploadMb, 10) || DEFAULT_MAX_MB
       const oversize = file.size > roof * 1024 * 1024
 
       this.records.push({

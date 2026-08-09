@@ -491,6 +491,11 @@ const impl = {
         {key: "Mod-b", run: cmds.bold},
         {key: "Mod-i", run: cmds.italic},
         {key: "Mod-k", run: cmds.link},
+        /* Escape is the way out of the words. The writing surface takes
+           Tab as a character, so without this the body is a room with
+           only a mouse for a door. Leaving flushes what is unsaved,
+           through the focus listener below. */
+        {key: "Escape", run: v => { v.contentDOM.blur(); return true }},
         {key: "Enter", run: insertNewlineContinueMarkup},
         {key: "Backspace", run: deleteMarkupBackward},
         ...historyKeymap,
@@ -645,6 +650,27 @@ const impl = {
 
   uploadFiles(files) {
     if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
+
+    /* A file over the roof is turned away here, before a token stands
+       in the text: sending it would end at the parser after the whole
+       upload, and the words would carry a failed picture until
+       somebody removed it by hand.
+
+       The number is read now and not kept from the mount. The editor
+       listens for setting changes, so the host carries the current
+       roof; a value kept from the mount would let an editor that has
+       been open all morning send a file the server has stopped
+       taking. */
+    const maxMb = parseInt(this.el.dataset.maxUploadMb, 10) || 512
+    const roof = maxMb * 1024 * 1024
+    const tooBig = files.filter(f => f.size > roof)
+    if (tooBig.length) {
+      this.pushEvent("upload_too_big", {files: tooBig.map(f => f.name || t("the pasted picture")),
+                                        roof: maxMb})
+      files = files.filter(f => f.size <= roof)
+      if (!files.length) return
+    }
+
     const doc = this.view.state.doc.toString()
     const used = new Set([...this.uploads.keys()])
     for (const m of doc.matchAll(/!\[(?:Uploading (.+?)…|Upload failed: (.+?))\]\(\)/g))

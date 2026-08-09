@@ -171,17 +171,4 @@ defmodule Texttile.Images do
     File.rm_rf!(Uploads.absolute(@cache_dir))
     :ok
   end
-
-  @doc "The size of the rendition cache on disk, in bytes."
-  def cache_bytes do
-    case File.ls(Uploads.absolute(@cache_dir)) do
-      {:ok, names} ->
-        names
-        |> Enum.map(&File.stat!(Uploads.absolute("#{@cache_dir}/#{&1}")).size)
-        |> Enum.sum()
-
-      {:error, _} ->
-        0
-    end
-  end
 end

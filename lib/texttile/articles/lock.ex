@@ -71,8 +71,13 @@ defmodule Texttile.Articles.Lock do
 
   @doc """
   Opening the text: a free lock is yours, a held one answers with the
-  holder. The same user arriving in a new tab (or back from a reload)
-  takes the lock along silently.
+  holder, and that holds for your own second tab as well. Whoever was
+  in the text first goes on writing; everybody who arrives after them
+  takes it over by hand or not at all.
+
+  The one exception is the same user coming back to a tab that is
+  gone: a reload or a short drop inside the grace hands the lock
+  straight back, which is what the grace is for.
   """
   def acquire(article_id, user_id, pid) do
     GenServer.call(ensure(article_id), {:acquire, user_id, pid})
@@ -130,7 +135,9 @@ defmodule Texttile.Articles.Lock do
       state.holder == nil ->
         {:reply, :ok, give(state, user_id, pid)}
 
-      state.holder.user_id == user_id ->
+      # the same person coming back to a tab that is not there any
+      # more: a reload, a short drop, a window closed inside the grace
+      state.holder.user_id == user_id and gone?(state.holder, state) ->
         {:reply, :ok, give(drop_holder(state), user_id, pid)}
 
       true ->
@@ -155,7 +162,10 @@ defmodule Texttile.Articles.Lock do
       state.holder == nil ->
         {:reply, :ok, give(state, user_id, pid)}
 
-      state.holder.user_id == user_id ->
+      # A tab that is gone has nothing left to flush. A tab that is
+      # still there does, and whose tab it is makes no difference to
+      # the words that are still in flight in it.
+      state.holder.user_id == user_id and gone?(state.holder, state) ->
         {:reply, :ok, give(drop_holder(state), user_id, pid)}
 
       state.pending != nil ->
@@ -201,6 +211,11 @@ defmodule Texttile.Articles.Lock do
   end
 
   ## The moves
+
+  # Opening a text never takes it off anybody, not even off yourself:
+  # whoever was there first goes on writing, and everybody after them
+  # asks. Only a holder whose tab is gone leaves the lock behind.
+  defp gone?(holder, state), do: state.grace_timer != nil or not Process.alive?(holder.pid)
 
   defp give(state, user_id, pid) do
     now = DateTime.utc_now()

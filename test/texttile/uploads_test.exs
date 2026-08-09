@@ -116,4 +116,59 @@ defmodule Texttile.UploadsTest do
       assert {:error, _} = Uploads.put_body_image(path, "fake.png")
     end
   end
+
+  describe "what lies on the volume" do
+    defp row(usage, dir), do: Enum.find(usage, &(&1.dir == dir))
+
+    test "names every folder of the layout, even before one exists" do
+      assert Enum.map(Uploads.usage(), & &1.dir) == ~w(images videos site cache)
+      assert Enum.all?(Uploads.usage(), &(&1.files == 0 and &1.bytes == 0))
+    end
+
+    test "counts the files and weighs them, folder by folder" do
+      {:ok, _} = Uploads.put_body_image(raster_file(".jpg", 300, 200), "pier.jpg")
+      {:ok, _} = Uploads.put_body_image(raster_file(".jpg", 120, 90), "lantern.jpg")
+
+      usage = Uploads.usage()
+
+      assert row(usage, "images").files == 2
+      assert row(usage, "images").bytes > 0
+      assert row(usage, "videos").files == 0
+    end
+
+    test "counts what lies in a folder below a folder" do
+      nested = Path.join([Uploads.root(), "cache", "deep", "deeper"])
+      File.mkdir_p!(nested)
+      File.write!(Path.join(nested, "rendition.bin"), String.duplicate("x", 1234))
+
+      assert row(Uploads.usage(), "cache") == %{dir: "cache", files: 1, bytes: 1234}
+    end
+
+    test "says how much room the volume has left" do
+      File.mkdir_p!(Uploads.root())
+      free = Uploads.free_bytes()
+
+      # nil is the honest answer where df cannot be asked, and this
+      # machine is not that place
+      assert is_integer(free) and free > 0
+    end
+
+    # The settings screen promises the row is absent instead of wrong
+    # where the question cannot be asked, so the nil has to be real and
+    # not an exception on its way out.
+    test "answers nil instead of raising when df cannot say" do
+      root = Application.fetch_env!(:texttile, :uploads_path)
+      on_exit(fn -> Application.put_env(:texttile, :uploads_path, root) end)
+
+      Application.put_env(
+        :texttile,
+        :uploads_path,
+        "/no/such/volume-#{System.unique_integer([:positive])}"
+      )
+
+      assert Uploads.free_bytes() == nil
+      # and the folder rows still answer, with zeros
+      assert Enum.all?(Uploads.usage(), &(&1.files == 0 and &1.bytes == 0))
+    end
+  end
 end
