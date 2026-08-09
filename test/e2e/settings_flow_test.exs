@@ -155,5 +155,14 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
         assert abs(off) < 1.5
       end)
     end
+
+    # The one thing on this screen that says which build runs. It is
+    # here and nowhere a reader can reach it.
+    test "the last section names the version that runs", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> assert_has("#appVersion", text: Texttile.version())
+    end
   end
 end

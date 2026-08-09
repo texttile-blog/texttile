@@ -26,6 +26,7 @@ Permanent project-specific rules only. Read `PHOENIX.md` before writing Phoenix 
 - After creating a worktree, enter it with EnterWorktree so the session and terminals follow it.
 - Use `feature/<slug>` for a user-facing capability, a change spanning multiple modules, or work likely to need more than two commits. Use a short branch name for smaller changes.
 - Never open draft PRs or merge PRs. Every open PR gets `/review-pr`; fix findings with commits on its branch.
+- Raise the version in `mix.exs` in the same PR as the change, before you open the PR. Read the version on `main`, not on the branch, and raise it by one step: the patch number for a repair or a small change, the minor number for a new capability, the major number when behavior, stored data, or configuration breaks. Never lower it and never skip a step. Settings shows this number, and it is the only mark of which build runs.
 
 ## Configuration and runtime
 
