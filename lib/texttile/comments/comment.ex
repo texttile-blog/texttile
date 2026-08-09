@@ -82,7 +82,7 @@ defmodule Texttile.Comments.Comment do
       String.trim(email) == "" ->
         add_error(changeset, :email, "can't be blank")
 
-      not Regex.match?(~r/\A[^\s@]+@[^\s@]+\.[^\s@]+\z/, String.trim(email)) ->
+      not Texttile.Confirmation.address?(String.trim(email)) ->
         add_error(changeset, :email, "does not look like an address")
 
       true ->
@@ -91,5 +91,5 @@ defmodule Texttile.Comments.Comment do
   end
 
   @doc "The address the way it is stored: folded to one spelling."
-  def normalize_email(email), do: email |> to_string() |> String.trim() |> String.downcase()
+  defdelegate normalize_email(email), to: Texttile.Confirmation, as: :normalize
 end

@@ -4,8 +4,6 @@ defmodule TexttileWeb.UploadsControllerTest do
   alias Texttile.Uploads
 
   setup do
-    File.rm_rf!(Uploads.root())
-
     path = Uploads.absolute("site/logo-abcd.svg")
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, "<svg xmlns='http://www.w3.org/2000/svg'/>")
@@ -89,6 +87,13 @@ defmodule TexttileWeb.UploadsControllerTest do
 
   test "a missing file is a plain 404", %{conn: conn} do
     assert conn |> get(~p"/uploads/site/never-was.png") |> response(404)
+  end
+
+  # The wildcard matches with nothing behind it, so a crawler that
+  # walks up to the bare folder gets a 404 and not a crash.
+  test "the bare address of the folder is a 404 too", %{conn: conn} do
+    assert conn |> get("/uploads") |> response(404)
+    assert conn |> get("/renditions/640") |> response(404)
   end
 
   test "a path cannot climb out of the uploads root", %{conn: conn} do

@@ -1,22 +1,11 @@
 defmodule TexttileWeb.E2E.LoginFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  setup do
-    # The browser talks to the same node, so the configured usernames are
-    # the ones this test sets. They go back after it.
-    Texttile.DataCase.restore_admin_users_afterwards()
-    :ok
-  end
+  use TexttileWeb.E2E
 
   describe "the first sign-in" do
+    # A blog nobody has signed in to yet: these tests make their own
+    # first admin, so the shared one would be in the way.
+    @describetag :nobody_signed_up
+
     test "a configured name walks through the password screen into the admin area", %{conn: conn} do
       configure_admins(["kb"])
 
@@ -82,13 +71,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
   end
 
   describe "a forgotten password" do
-    test "the link from the mail sets a new one and signs in", %{conn: conn} do
-      user = user_fixture(%{username: "kb"})
-
-      # Mails from the server processes land in this test process.
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
-
+    test "the link from the mail sets a new one and signs in", %{conn: conn, kb: user} do
       conn
       |> visit("/login")
       |> click_link("Forgot your password?")
@@ -109,12 +92,8 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       assert {:ok, _} = Texttile.Accounts.authenticate_user("kb", "a brand new password")
     end
 
-    test "a name the configuration dropped gets no mail", %{conn: conn} do
-      user = user_fixture(%{username: "kb"})
+    test "a name the configuration dropped gets no mail", %{conn: conn, kb: user} do
       configure_admins([])
-
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
 
       conn
       |> visit("/forgot")
@@ -128,8 +107,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
   describe "sign-in" do
     test "wrong credentials leave a quiet line, right ones open the admin area", %{conn: conn} do
-      user_fixture(%{username: "kb"})
-
       conn
       |> visit("/admin")
       |> assert_has("p", text: "Admin sign-in")
@@ -145,8 +122,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
   describe "the admin area" do
     test "the wordmark menu opens with sections and presence", %{conn: conn} do
-      user_fixture(%{username: "kb"})
-
       conn
       |> sign_in()
       |> click_button("#wmBtn", "Texttile")
@@ -159,8 +134,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
   describe "profile" do
     test "edits save instantly and follow into the menu", %{conn: conn} do
-      user_fixture(%{username: "kb"})
-
       conn
       |> sign_in()
       |> click_button("#wmBtn", "Texttile")
@@ -178,8 +151,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     end
 
     test "the password changes only with the current one", %{conn: conn} do
-      user_fixture(%{username: "kb"})
-
       conn
       |> sign_in()
       |> open("/admin/profile")
@@ -194,8 +165,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     end
 
     test "sign out returns to the sign-in screen", %{conn: conn} do
-      user_fixture(%{username: "kb"})
-
       conn
       |> sign_in()
       |> open("/admin/profile")

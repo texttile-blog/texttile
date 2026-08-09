@@ -5,11 +5,6 @@ defmodule Texttile.ImagesTest do
   alias Texttile.Settings
   alias Texttile.Uploads
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   # Writes a real image of the given size below the uploads root.
   defp original(rel, width, height) do
     abs = Path.join(Uploads.root(), rel)

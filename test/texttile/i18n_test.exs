@@ -96,6 +96,49 @@ defmodule Texttile.I18nTest do
     end
   end
 
+  describe "the plain shapes of a moment" do
+    @moment ~U[2026-08-09 14:30:45Z]
+
+    test "the admin area reads a moment as numbers, in every language" do
+      assert I18n.format_moment(@moment) == "2026-08-09 14:30"
+      I18n.put_locale("de")
+      assert I18n.format_moment(@moment) == "2026-08-09 14:30"
+    end
+
+    test "the day of a moment is as plain" do
+      assert I18n.format_plain_day(@moment) == "2026-08-09"
+      assert I18n.format_plain_day(~D[2026-08-09]) == "2026-08-09"
+    end
+
+    # The gallery's date field writes this shape and Gallery.set_date/3
+    # parses it back. The two ends have to agree, so this pins them.
+    test "a datetime-local field writes what the gallery reads" do
+      written = I18n.format_field_moment(@moment)
+      assert written == "2026-08-09T14:30"
+
+      user = Texttile.AccountsFixtures.user_fixture()
+      {:ok, article} = Texttile.Articles.create_draft(user)
+      image = gallery_image(article)
+
+      {:ok, dated} = Texttile.Gallery.set_date(article.id, image.id, written)
+      assert I18n.format_field_moment(dated.gallery_date) == written
+    end
+
+    test "no moment at all is no words" do
+      assert I18n.format_moment(nil) == ""
+      assert I18n.format_plain_day(nil) == ""
+      assert I18n.format_field_moment(nil) == ""
+    end
+
+    defp gallery_image(article) do
+      path = Path.join(System.tmp_dir!(), "i18n-#{System.unique_integer([:positive])}.jpg")
+      {:ok, black} = Vix.Vips.Operation.black(20, 10)
+      :ok = Vix.Vips.Image.write_to_file(black, path)
+      {:ok, image} = Texttile.Gallery.add_file(article, path, "a.jpg")
+      image
+    end
+  end
+
   describe "the settings only take a language the site speaks" do
     test "English and German go in" do
       assert {:ok, "de"} = Settings.put(:language, "de")

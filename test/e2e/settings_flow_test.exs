@@ -1,26 +1,7 @@
 defmodule TexttileWeb.E2E.SettingsFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
+  use TexttileWeb.E2E
 
   alias Texttile.Settings
-  alias Texttile.Uploads
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  setup do
-    File.rm_rf!(Uploads.root())
-
-    # The browser talks to the same node, so the configured usernames are
-    # the ones these tests set. They go back afterwards.
-    Texttile.DataCase.restore_admin_users_afterwards()
-
-    %{kb: user_fixture(%{username: "kb"})}
-  end
 
   describe "the settings screen" do
     test "opens from the menu and saves a title the moment it changes", %{conn: conn} do

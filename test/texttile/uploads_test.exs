@@ -4,9 +4,57 @@ defmodule Texttile.UploadsTest do
   alias Texttile.Settings
   alias Texttile.Uploads
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
+  describe "under_root/1" do
+    test "names the file below the root, from a relative path or from its pieces" do
+      assert Uploads.under_root("images/pier.jpg") == "images/pier.jpg"
+      assert Uploads.under_root(["images", "pier.jpg"]) == "images/pier.jpg"
+    end
+
+    test "a path that climbs out of the root names nothing" do
+      assert Uploads.under_root("../secrets.txt") == nil
+      assert Uploads.under_root("images/../../secrets.txt") == nil
+      assert Uploads.under_root(["images", "..", "..", "secrets.txt"]) == nil
+    end
+
+    # The wildcard routes match with nothing behind them, so /uploads
+    # and /renditions/640 arrive here empty and have to answer like any
+    # other name that is not a file.
+    test "nothing at all names nothing" do
+      assert Uploads.under_root([]) == nil
+      assert Uploads.under_root("") == nil
+    end
+
+    test "a name that starts at the root of the machine stays below ours" do
+      assert Uploads.under_root(["/etc", "passwd"]) == "etc/passwd"
+      assert Uploads.under_root("/etc/passwd") == "etc/passwd"
+    end
+
+    # The name is read before it is used, so a detour through a folder
+    # that is not there still lands where it really points.
+    test "a detour is followed to where it really points" do
+      assert Uploads.under_root("images/../videos/harbour.mp4") == "videos/harbour.mp4"
+    end
+  end
+
+  describe "remove/1" do
+    test "takes one file below the root" do
+      relative = "images/gone-#{System.unique_integer([:positive])}.txt"
+      File.mkdir_p!(Path.dirname(Uploads.absolute(relative)))
+      File.write!(Uploads.absolute(relative), "words")
+
+      assert :ok = Uploads.remove(relative)
+      refute File.exists?(Uploads.absolute(relative))
+    end
+
+    test "leaves a path that climbs out of the root alone" do
+      outside = Path.join(System.tmp_dir!(), "keep-#{System.unique_integer([:positive])}.txt")
+      File.write!(outside, "words")
+
+      assert :ok = Uploads.remove(Path.relative_to(outside, Uploads.root()))
+      assert File.exists?(outside)
+
+      File.rm(outside)
+    end
   end
 
   defp svg_file do

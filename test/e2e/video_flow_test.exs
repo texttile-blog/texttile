@@ -4,12 +4,9 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
   converts it in the background, the tile wears its poster, and the
   published text plays it.
   """
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
+  use TexttileWeb.E2E
 
   import Ecto.Query, only: [from: 2]
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
   import Texttile.VideoFixtures
 
   alias Texttile.Articles
@@ -17,31 +14,11 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
   alias Texttile.Uploads
   alias Texttile.Videos
 
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
   setup do
-    Texttile.DataCase.restore_admin_users_afterwards()
-    File.rm_rf!(Uploads.root())
-
-    Texttile.Articles.Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Texttile.Articles.Lock.supervisor(), pid)
-    end)
-
     # The queue stays out of the test environment; this test wants the
     # real one, under its own sandbox owner.
     start_supervised!(Texttile.Videos.Queue)
-
-    %{kb: user_fixture(%{username: "kb"})}
-  end
-
-  defp draft!(user) do
-    {:ok, article} = Articles.create_draft(user)
-    {:ok, article} = Articles.update_text(article, %{title: "Harbour", body: "Water and light."})
-    article
+    :ok
   end
 
   defp picture_file do
@@ -51,22 +28,10 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     path
   end
 
-  defp wait_until(fun, timeout \\ 20_000) do
-    deadline = System.monotonic_time(:millisecond) + timeout
-    do_wait(fun, deadline)
-  end
+  # ffmpeg is slower than a broadcast: this waits for a real conversion.
+  @conversion_ms 20_000
 
-  defp do_wait(fun, deadline) do
-    case fun.() do
-      value when value not in [nil, false] ->
-        value
-
-      _ ->
-        if System.monotonic_time(:millisecond) > deadline, do: raise("condition never met")
-        Process.sleep(100)
-        do_wait(fun, deadline)
-    end
-  end
+  defp wait_until(fun), do: eventually(fun, @conversion_ms)
 
   test "a picked video becomes a tile, converts, and plays for the reader", %{
     conn: conn,
@@ -99,7 +64,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     {:ok, article} = Articles.publish(Articles.get_article!(article.id), kb)
 
     conn
-    |> visit(Articles.public_path(article))
+    |> open_page(Articles.public_path(article))
     |> assert_has("#gal a[data-video='/uploads/#{video.mp4_path}']")
   end
 
@@ -153,7 +118,7 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     {:ok, article} = Articles.publish(article, kb)
 
     conn
-    |> visit(Articles.public_path(article))
+    |> open_page(Articles.public_path(article))
     |> assert_has("video.bodyvid[src='/uploads/#{video.mp4_path}']")
   end
 

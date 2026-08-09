@@ -19,7 +19,7 @@
       <a :if={@q != "" || @year} class="btn sm" id="clear" href={@list_path}>
         {gettext("Clear")}
       </a>
-      <span class="cnt" id="count">{count_label(@found, @total)}</span>
+      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
     </div>
 
     <%!-- the archive: one line of years, and the months of the year

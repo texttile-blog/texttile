@@ -12,12 +12,19 @@ defmodule TexttileWeb.EditorLive do
 
   import TexttileWeb.CommentComponents
   import TexttileWeb.StatsComponents
+  import Texttile.Articles.Editing, only: [holding: 1]
 
   alias Texttile.Accounts
   alias Texttile.Articles
+  alias Texttile.Articles.Body
+  alias Texttile.Articles.Editing
   alias Texttile.Articles.Lock
+  alias Texttile.Articles.Publishing
+  alias Texttile.Articles.Visibility
   alias Texttile.Comments
   alias Texttile.Gallery
+  alias Texttile.I18n
+  alias Texttile.Images
   alias Texttile.Stats
   alias Texttile.Videos
 
@@ -36,10 +43,8 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
-      |> assign(:holds_lock, true)
-      |> assign(:holder, nil)
+      |> assign(:editing, %Editing{state: :writing})
       |> assign(:upload_pcts, %{})
-      |> assign(:flush_pending, false)
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
       |> assign(:redirects, Articles.redirects(article))
@@ -66,11 +71,7 @@ defmodule TexttileWeb.EditorLive do
         Texttile.Settings.subscribe()
         Videos.subscribe()
 
-        socket =
-          case Lock.acquire(article.id, user.id, self()) do
-            :ok -> assign(socket, :holds_lock, true)
-            {:held, holder} -> socket |> assign(:holds_lock, false) |> assign(:holder, holder)
-          end
+        socket = assign(socket, :editing, Editing.start(article.id, user.id, self()))
 
         announce_activity(socket)
       else
@@ -92,7 +93,8 @@ defmodule TexttileWeb.EditorLive do
   # The wordmark menu and the other editor's banner read this: which
   # text this tab is in, and whether it writes or reads along.
   defp announce_activity(socket) do
-    %{article: article, current_scope: scope, holds_lock: holds} = socket.assigns
+    %{article: article, current_scope: scope, editing: editing} = socket.assigns
+    holds = Editing.holds?(editing)
 
     if connected?(socket) do
       TexttileWeb.Admin.update_activity(scope, %{
@@ -132,7 +134,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("body_changed", %{"text" => text}, socket) do
-    if socket.assigns.holds_lock do
+    if Editing.holds?(socket.assigns.editing) do
       {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
       Lock.ping(article.id, self())
 
@@ -147,7 +149,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("editor_activity", _params, socket) do
-    if socket.assigns.holds_lock, do: Lock.ping(socket.assigns.article.id, self())
+    if Editing.holds?(socket.assigns.editing), do: Lock.ping(socket.assigns.article.id, self())
     {:noreply, socket}
   end
 
@@ -155,7 +157,7 @@ defmodule TexttileWeb.EditorLive do
   # in its debounce when the takeover started.
   def handle_event("body_flushed", %{"text" => text}, socket) do
     socket =
-      if socket.assigns.holds_lock and text != socket.assigns.article.body do
+      if Editing.holds?(socket.assigns.editing) and text != socket.assigns.article.body do
         {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
         assign(socket, :article, article)
       else
@@ -192,7 +194,7 @@ defmodule TexttileWeb.EditorLive do
     %{article: article, current_scope: scope, versions: versions} = socket.assigns
 
     cond do
-      not socket.assigns.holds_lock ->
+      not Editing.holds?(socket.assigns.editing) ->
         {:noreply, mark_saved(socket, gettext("Take the entry over first; restoring needs it"))}
 
       version = Enum.find(versions, &(to_string(&1.id) == id)) ->
@@ -216,14 +218,11 @@ defmodule TexttileWeb.EditorLive do
   def handle_event("ask_takeover", _params, socket) do
     article = socket.assigns.article
 
-    case Lock.state(article.id) do
-      :free ->
+    case Editing.who_holds(article.id, self()) do
+      free_or_mine when free_or_mine in [:free, :mine] ->
         {:noreply, refresh_lock(socket)}
 
-      %{pid: pid} when pid == self() ->
-        {:noreply, refresh_lock(socket)}
-
-      holder ->
+      {:held, holder} ->
         name = holder_name(holder)
 
         {:noreply,
@@ -264,8 +263,7 @@ defmodule TexttileWeb.EditorLive do
   # takes it as it stands instead of arming it again behind the
   # admin's back.
   def handle_event("publish", _params, socket) do
-    mode = if socket.assigns.article.status == "scheduled", do: :as_set, else: :mail
-    {:noreply, ask_publish(socket, mode)}
+    {:noreply, ask_publish(socket, Publishing.choice(socket.assigns.article))}
   end
 
   # The same step with the mail left out. Nothing here is irreversible,
@@ -481,7 +479,7 @@ defmodule TexttileWeb.EditorLive do
     article = socket.assigns.article
 
     live_line =
-      if article.status == "published" do
+      if Visibility.live?(article) do
         address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
 
         [
@@ -539,9 +537,9 @@ defmodule TexttileWeb.EditorLive do
   def handle_event(
         "images_inserted",
         %{"files" => names},
-        %{assigns: %{holds_lock: true}} = socket
+        %{assigns: %{editing: editing}} = socket
       )
-      when is_list(names) do
+      when is_list(names) and holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
 
     Articles.push_log(
@@ -564,7 +562,8 @@ defmodule TexttileWeb.EditorLive do
      assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, clean_file(file), pct))}
   end
 
-  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
+  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
+      when holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
     Articles.push_log(article, scope.user, "#{file} is in the text")
@@ -576,9 +575,9 @@ defmodule TexttileWeb.EditorLive do
   def handle_event(
         "image_failed",
         %{"file" => file, "pct" => pct},
-        %{assigns: %{holds_lock: true}} = socket
+        %{assigns: %{editing: editing}} = socket
       )
-      when is_number(pct) do
+      when is_number(pct) and holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
     Articles.push_log(article, scope.user, "#{file} failed to upload into the text")
@@ -613,7 +612,8 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("upload_too_big", _params, socket), do: {:noreply, socket}
 
-  def handle_event("image_retry", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
+  def handle_event("image_retry", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
+      when holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
     Articles.push_log(article, scope.user, "retried the upload of #{file}")
@@ -636,8 +636,9 @@ defmodule TexttileWeb.EditorLive do
   def handle_event(
         "image_removed",
         %{"file" => file, "how" => how},
-        %{assigns: %{holds_lock: true}} = socket
-      ) do
+        %{assigns: %{editing: editing}} = socket
+      )
+      when holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
 
@@ -686,7 +687,7 @@ defmodule TexttileWeb.EditorLive do
       Articles.push_log(
         article,
         scope.user,
-        "set the date of #{image.filename} to #{Calendar.strftime(image.gallery_date, "%Y-%m-%d %H:%M")}"
+        "set the date of #{image.filename} to #{I18n.format_moment(image.gallery_date)}"
       )
 
       {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
@@ -803,22 +804,24 @@ defmodule TexttileWeb.EditorLive do
   # both at once: somebody else is writing in it this second, and the
   # mail is about to go to people who cannot be unsent. Neither of them
   # true is the common case, and then the click is the whole step.
-  defp ask_publish(socket, mail) do
-    %{article: article, holds_lock: mine} = socket.assigns
-    holder = Lock.state(article.id)
-    busy = if mine or holder == :free, do: nil, else: holder_name(holder)
-    readers = mail_count(article, mail)
+  defp ask_publish(socket, choice) do
+    %{article: article, editing: editing} = socket.assigns
+    plan = Publishing.plan(article, choice)
 
-    case {busy, readers} do
-      {nil, 0} ->
-        publish_with(socket, mail)
+    busy =
+      case Editing.who_holds(article.id, self()) do
+        {:held, holder} -> unless Editing.holds?(editing), do: holder_name(holder)
+        _free_or_mine -> nil
+      end
 
-      _ ->
-        assign(socket, :dialog, publish_dialog(busy, readers, mail))
+    if is_nil(busy) and plan.recipients == 0 do
+      publish_with(socket, plan)
+    else
+      assign(socket, :dialog, publish_dialog(busy, plan))
     end
   end
 
-  defp publish_dialog(busy, readers, mail) do
+  defp publish_dialog(busy, %Publishing.Plan{recipients: readers, choice: choice}) do
     %{
       id: "publish-anyway",
       title:
@@ -846,71 +849,27 @@ defmodule TexttileWeb.EditorLive do
         ),
       ok: if(readers > 0, do: gettext("Publish and send"), else: gettext("Publish anyway")),
       event: "do_publish",
-      value: to_string(mail)
+      value: to_string(choice)
     }
   end
 
-  # What the click means for the mail, and it is the one place that
-  # decides. A page never mails anybody, so a click records that
-  # instead of leaving a flag armed for the day somebody turns the page
-  # into a post.
-  defp wanted_mail(%{type: type}, _mode) when type != "post", do: false
-  defp wanted_mail(_article, :mail), do: true
-  defp wanted_mail(_article, :quiet), do: false
-  defp wanted_mail(article, :as_set), do: article.notify_on_publish
-
-  # How many people this click would mail, which is what the question
-  # before it is allowed to name. Nobody, unless the entry both goes
-  # live this second and carries the mail: a click that only moves a
-  # future date is a scheduling, and a mail that has already gone never
-  # goes twice.
-  defp mail_count(article, mode) do
-    if wanted_mail(article, mode) and is_nil(article.notified_on) and
-         goes_live_now?(article, publish_opts(article)) do
-      length(Texttile.Newsletter.confirmed())
-    else
-      0
-    end
-  end
-
-  # "Publish now" on a scheduled entry means today, whatever date the
-  # entry carries. Everything else keeps the date it has.
-  defp publish_opts(%{status: "scheduled"}), do: [force: true]
-  defp publish_opts(_article), do: []
-
-  # The same reading Articles.publish/3 does of the date, so the words
-  # before the click and what the click does cannot drift apart.
-  defp goes_live_now?(article, opts) do
-    today = Date.utc_today()
-    day = if opts[:force], do: today, else: article.publish_date || today
-    Date.compare(day, today) != :gt
-  end
-
-  defp publish_with(socket, mail) do
+  defp publish_with(socket, %Publishing.Plan{} = plan) do
     %{article: article, current_scope: scope} = socket.assigns
-    wanted = wanted_mail(article, mail)
 
-    # The verb carries the decision, so the record follows it: what the
-    # article remembers is what the click asked for, and the scheduler
-    # reads the same field when a scheduled entry goes live on its own.
-    article =
-      if article.notify_on_publish == wanted do
-        article
-      else
-        {:ok, moved} = Articles.update_settings(article, %{"notify_on_publish" => wanted})
-        moved
-      end
-
-    socket = assign(socket, :article, article)
-    opts = publish_opts(article)
-
-    case Articles.publish(article, scope.user, opts) do
+    case Publishing.run(article, scope.user, plan) do
       {:ok, article} ->
         publish_done(socket, article)
 
       {:error, _changeset} ->
         mark_saved(socket, gettext("That address is taken by another entry"))
     end
+  end
+
+  # The dialog carried the choice back, so the plan is worked out again
+  # from the entry as it stands this second: the click acts on what is
+  # there now, not on what was there when the question was drawn.
+  defp publish_with(socket, choice) when is_atom(choice) do
+    publish_with(socket, Publishing.plan(socket.assigns.article, choice))
   end
 
   # One word for what happened, and the mail is part of it now: the
@@ -961,7 +920,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp save_title(socket, title) do
     cond do
-      not socket.assigns.holds_lock ->
+      not Editing.holds?(socket.assigns.editing) ->
         {:noreply, socket}
 
       true ->
@@ -978,21 +937,16 @@ defmodule TexttileWeb.EditorLive do
   end
 
   # a thumbnail loads the scaled reading, never the full original
-  defp thumb_url("/uploads/" <> relative), do: "/renditions/320/" <> relative
+  defp thumb_url("/uploads/" <> relative), do: thumb(relative)
   defp thumb_url(url), do: String.replace(url, "'", "%27")
+
+  # The one address of an admin thumbnail, at the edge Images names.
+  defp thumb(relative), do: "/renditions/#{Images.thumb_edge()}/#{relative}"
 
   # What every video of this text shows and how far it is, in one
   # query: the tiles of the gallery and the references in the words.
   defp media(%{article: article, gallery: gallery}) do
-    inline =
-      article.body
-      |> Articles.inline_refs()
-      |> Enum.flat_map(fn
-        %{kind: :done, url: "/uploads/" <> relative} -> [relative]
-        _ -> []
-      end)
-
-    (Enum.map(gallery, & &1.path) ++ inline)
+    (Enum.map(gallery, & &1.path) ++ Body.upload_paths(article.body))
     |> Enum.uniq()
     |> Videos.stills()
   end
@@ -1032,7 +986,7 @@ defmodule TexttileWeb.EditorLive do
         [
           {"/uploads/#{path}",
            %{
-             poster: "/renditions/320/#{entry.still}",
+             poster: thumb(entry.still),
              full: "/renditions/max/#{entry.still}",
              film: entry.film && "/uploads/#{entry.film}"
            }}
@@ -1070,14 +1024,14 @@ defmodule TexttileWeb.EditorLive do
   # A candidate can come from the body, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp tile_bg(path) do
-    "background-image:url('/renditions/320/#{String.replace(path, "'", "%27")}')"
+    "background-image:url('#{thumb(String.replace(path, "'", "%27"))}')"
   end
 
   ## PubSub and lock messages
 
   def handle_info({:text_changed, %{id: id} = article}, socket) do
     cond do
-      id != socket.assigns.article.id or socket.assigns.holds_lock ->
+      id != socket.assigns.article.id or Editing.holds?(socket.assigns.editing) ->
         {:noreply, socket}
 
       true ->
@@ -1093,7 +1047,7 @@ defmodule TexttileWeb.EditorLive do
       current = socket.assigns.article
 
       article =
-        if socket.assigns.holds_lock,
+        if Editing.holds?(socket.assigns.editing),
           do: %{incoming | title: current.title, body: current.body},
           else: incoming
 
@@ -1168,7 +1122,7 @@ defmodule TexttileWeb.EditorLive do
   def handle_info({:lock_flush, id}, socket) do
     if id == socket.assigns.article.id do
       Process.send_after(self(), :flush_fallback, 700)
-      {:noreply, socket |> assign(:flush_pending, true) |> push_event("flush_body", %{})}
+      {:noreply, socket |> update(:editing, &Editing.flushing/1) |> push_event("flush_body", %{})}
     else
       Lock.flushed(id)
       {:noreply, socket}
@@ -1176,7 +1130,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_info(:flush_fallback, socket) do
-    if socket.assigns[:flush_pending] do
+    if Editing.flushing?(socket.assigns.editing) do
       {:noreply, finish_flush(socket)}
     else
       {:noreply, socket}
@@ -1199,9 +1153,9 @@ defmodule TexttileWeb.EditorLive do
       # flush, snapshot what the database holds. Byte-identical to the
       # flush's own snapshot means nothing extra is kept.
       displaced =
-        case socket.assigns.holder do
+        case Editing.holder(socket.assigns.editing) do
           %{user_id: user_id} -> Accounts.get_user(user_id)
-          _ -> nil
+          _nobody -> nil
         end
 
       if displaced, do: Articles.snapshot(article, displaced)
@@ -1272,9 +1226,9 @@ defmodule TexttileWeb.EditorLive do
   end
 
   defp taken_note(socket) do
-    case Lock.state(socket.assigns.article.id) do
-      %{user_id: _} = holder -> "#{holder_name(holder)} is editing now. Your changes are saved."
-      :free -> gettext("Your changes are saved.")
+    case Editing.who_holds(socket.assigns.article.id, self()) do
+      {:held, holder} -> "#{holder_name(holder)} is editing now. Your changes are saved."
+      _free_or_mine -> gettext("Your changes are saved.")
     end
   end
 
@@ -1282,42 +1236,21 @@ defmodule TexttileWeb.EditorLive do
   defp finish_flush(socket) do
     %{article: article, current_scope: scope} = socket.assigns
 
-    if socket.assigns[:flush_pending] do
+    if Editing.flushing?(socket.assigns.editing) do
       Articles.snapshot(article, scope.user)
       Lock.flushed(article.id)
     end
 
-    assign(socket, :flush_pending, false)
+    update(socket, :editing, &Editing.flushed/1)
   end
 
   defp refresh_lock(socket) do
-    article = socket.assigns.article
-
-    {holds, holder} =
-      case Lock.state(article.id) do
-        :free ->
-          # A free lock goes to whoever has the text open - except to
-          # the tab that was just released for being idle: taking it
-          # straight back would undo the release, forever. That tab
-          # turns read-only and gets the lock again the moment its
-          # person actually touches the text.
-          if socket.assigns.holds_lock do
-            {false, nil}
-          else
-            case Lock.acquire(article.id, socket.assigns.current_scope.user.id, self()) do
-              :ok -> {true, nil}
-              {:held, holder} -> {false, holder}
-            end
-          end
-
-        %{pid: pid} = holder ->
-          {pid == self(), holder}
-      end
+    %{article: article, current_scope: scope, editing: was} = socket.assigns
+    editing = Editing.refresh(was, article.id, scope.user.id, self())
 
     socket
-    |> assign(:holds_lock, holds)
-    |> assign(:holder, unless(holds, do: holder))
-    |> push_event("set_readonly", %{readOnly: !holds})
+    |> assign(:editing, editing)
+    |> push_event("set_readonly", %{readOnly: Editing.read_only?(editing)})
     |> announce_activity()
   end
 
@@ -1366,7 +1299,7 @@ defmodule TexttileWeb.EditorLive do
   defp load_stats(socket, "stats") do
     article = socket.assigns.article
 
-    if article.status == "published" do
+    if Visibility.live?(article) do
       assign(socket, :stats, %{
         views: Stats.article_views(article.id),
         days: Stats.by_day(14, article_id: article.id),
@@ -1430,6 +1363,10 @@ defmodule TexttileWeb.EditorLive do
         Articles.reader_path(assigns.article) || ~p"/preview/#{assigns.article.id}"
       )
       |> assign(:public_title, public_title(assigns.article))
+      # One value, read two ways, so the markup below says holds_lock
+      # and holder without anybody being able to move them apart.
+      |> assign(:holds_lock, Editing.holds?(assigns.editing))
+      |> assign(:holder, Editing.holder(assigns.editing))
 
     ~H"""
     <Layouts.app
@@ -1493,7 +1430,7 @@ defmodule TexttileWeb.EditorLive do
           class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
           id="stateBtn"
         >
-          <%= if @article.status == "published" do %>
+          <%= if Visibility.live?(@article) do %>
             <a
               class="main"
               id="stateMain"
@@ -1585,7 +1522,7 @@ defmodule TexttileWeb.EditorLive do
             {gettext("Unschedule")}
           </button>
         <% end %>
-        <%= if @article.status == "published" do %>
+        <%= if Visibility.live?(@article) do %>
           <button class="row" id="unpublishRow" phx-click="unpublish">
             {gettext("Unpublish")}
           </button>
@@ -1796,12 +1733,12 @@ defmodule TexttileWeb.EditorLive do
                   <span class="note">{gettext("Paste one into the text, or drop one on it.")}</span>
                 </div>
                 <div id="inlineImgs">
-                  <p :if={Articles.inline_refs(@article.body) == []} class="note pt-[10px]">
+                  <p :if={Body.refs(@article.body) == []} class="note pt-[10px]">
                     {gettext(
                       "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
                     )}
                   </p>
-                  <%= for ref <- Articles.inline_refs(@article.body) do %>
+                  <%= for ref <- Body.refs(@article.body) do %>
                     <% media = ref_media(@media, ref.url) %>
                     <%!-- a picture, or a video ffmpeg is through with:
                          the still stands for it. A video that is not
@@ -2066,13 +2003,13 @@ defmodule TexttileWeb.EditorLive do
                   data-id={image.id}
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
-                  data-date={Calendar.strftime(image.gallery_date, "%Y-%m-%dT%H:%M")}
+                  data-date={I18n.format_field_moment(image.gallery_date)}
                   data-full={
                     @media[image.path].still && "/renditions/max/#{@media[image.path].still}"
                   }
                   data-video={@media[image.path].film && "/uploads/#{@media[image.path].film}"}
                   data-original={"/uploads/" <> image.path}
-                  title={"#{image.filename} · #{Calendar.strftime(image.gallery_date, "%Y-%m-%d")}"}
+                  title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"
                   tabindex="0"
@@ -2704,14 +2641,15 @@ defmodule TexttileWeb.EditorLive do
   # What the door to the reader's side promises, in the words of the
   # state it opens: a live entry is the page everybody reads, and one
   # that is not live yet is that page for the admins alone.
-  defp public_title(%{status: "published"}),
-    do: gettext("Opens the entry on the public site, in a new tab")
-
-  defp public_title(_article),
-    do:
+  defp public_title(article) do
+    if Visibility.live?(article) do
+      gettext("Opens the entry on the public site, in a new tab")
+    else
       gettext(
         "Opens the entry as it was last saved, in a new tab. Only somebody signed in can open this address."
       )
+    end
+  end
 
   defp chevron_icon(assigns) do
     ~H"""
@@ -2733,15 +2671,10 @@ defmodule TexttileWeb.EditorLive do
 
   ## Copy
 
-  defp stamp(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+  defp stamp(datetime), do: I18n.format_moment(datetime)
 
   # The state of an entry, in words. The stored word is English and
   # stays English; only what an admin reads changes with the language.
-  defp status_word("draft"), do: gettext("Draft")
-  defp status_word("scheduled"), do: gettext("Scheduled")
-  defp status_word("published"), do: gettext("Published")
-  defp status_word(other), do: String.capitalize(other)
-
   # Whatever an admin does on the Comments tab, it does it to a comment
   # of the open text. Anything else is left alone without a word.
   defp own_comment(socket, id, fun) do
@@ -2835,7 +2768,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   defp inline_count(body) do
-    refs = Articles.inline_refs(body)
+    refs = Body.refs(body)
     done = Enum.count(refs, &(&1.kind == :done))
     running = Enum.count(refs, &(&1.kind == :running))
     failed = Enum.count(refs, &(&1.kind == :failed))

@@ -1,34 +1,15 @@
 defmodule TexttileWeb.E2E.NewsletterFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
+  use TexttileWeb.E2E
 
   alias Texttile.Newsletter
 
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  # Every test in the run knocks from the same address, so the browser
-  # must not meet a limit another test spent.
-  setup do
-    Texttile.RateLimiter.reset()
-    :ok
-  end
-
   test "a reader joins by mail, the admin adds one by hand, a publish mails both, one leaves",
        %{conn: conn} do
-    user_fixture(%{username: "kb"})
-
     # Mails from the server processes land in this test process.
-    Application.put_env(:swoosh, :shared_test_process, self())
-    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
 
     # The reader subscribes in the Subscribe section and confirms by mail.
     conn
-    |> visit("/")
+    |> open_page("/")
     |> assert_has("#subscribe", text: "You get an email when a new entry goes out")
     |> fill_in("Email for new entries", with: "christel@example.org")
     |> click_button("Subscribe")

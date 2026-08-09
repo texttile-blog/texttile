@@ -3,7 +3,7 @@
   <%!-- An entry that is not live wears its address for the admins and
        for nobody else. The strip says so before the first line, because
        everything under it looks exactly like the published thing. --%>
-  <p :if={@article.status != "published"} class="notlive" id="not-live">
+  <p :if={not Visibility.live?(@article)} class="notlive" id="not-live">
     <b>{status_word(@article.status)}.</b>
     {gettext(
       "This is the entry as it was last saved. Only somebody signed in can open this address; a reader gets a 404."
@@ -55,7 +55,11 @@
           data-video={tile.film && "/uploads/#{tile.film}"}
           data-caption={tile.filename}
         >
-          <img src={"/renditions/640/#{tile.still}"} alt={tile.filename} loading="lazy" />
+          <img
+            src={"/renditions/#{Images.card_edge()}/#{tile.still}"}
+            alt={tile.filename}
+            loading="lazy"
+          />
           <span :if={tile.film} class="play-badge" aria-hidden="true"></span>
         </a>
       </div>

@@ -113,6 +113,30 @@ defmodule Texttile.I18n do
     gettext("%{day} %{month}", day: date.day, month: short_month_name(date.month))
   end
 
+  @doc """
+  A moment the admin area writes plainly: `2026-08-09 14:30`.
+
+  Not the reader's shape and not the language's. These stand in the
+  Log, under a comment and on a gallery tile, where they are read as
+  numbers and lined up under each other.
+  """
+  def format_moment(nil), do: ""
+  def format_moment(datetime), do: Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+
+  @doc "The day of a moment, as plainly: `2026-08-09`."
+  def format_plain_day(nil), do: ""
+  def format_plain_day(date), do: Calendar.strftime(date, "%Y-%m-%d")
+
+  @doc """
+  A moment the way a `datetime-local` field writes and reads it.
+
+  The gallery's date field sends this shape straight back, and
+  `Texttile.Gallery.set_date/3` parses exactly what this writes, so the
+  two ends have to be changed together.
+  """
+  def format_field_moment(nil), do: ""
+  def format_field_moment(datetime), do: Calendar.strftime(datetime, "%Y-%m-%dT%H:%M")
+
   # The twelve names, listed for the extractor: month_name/1 asks for
   # them by a value, so nothing else here is a literal it could read.
   @doc false

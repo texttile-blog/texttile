@@ -10,9 +10,9 @@ defmodule Texttile.NewsletterTest do
 
   @email "reader@example.org"
 
-  defp join!(email \\ @email) do
-    {:ok, subscriber} =
-      Newsletter.join(email, confirm_url: &"http://test/newsletter/confirm/#{&1}")
+  defp join!(email \\ @email, opts \\ []) do
+    opts = Keyword.put(opts, :confirm_url, &"http://test/newsletter/confirm/#{&1}")
+    {:ok, subscriber} = Newsletter.join(email, opts)
 
     subscriber
   end
@@ -51,13 +51,9 @@ defmodule Texttile.NewsletterTest do
       join!()
       refute_email_sent()
 
-      first
-      |> Ecto.Changeset.change(
-        confirmation_mailed_at: DateTime.add(DateTime.utc_now(:second), -3601)
-      )
-      |> Texttile.Repo.update!()
+      an_hour_on = DateTime.add(DateTime.utc_now(:second), 3601, :second)
 
-      join!()
+      join!(@email, now: an_hour_on)
       assert_email_sent(text_body: ~r/#{first.token}/)
     end
 
@@ -160,9 +156,6 @@ defmodule Texttile.NewsletterTest do
 
   describe "the publish email" do
     setup do
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
-
       {:ok, _} = Newsletter.add("one@example.org")
       {:ok, _} = Newsletter.add("two@example.org")
       :ok

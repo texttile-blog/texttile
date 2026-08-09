@@ -10,7 +10,6 @@ defmodule Texttile.ImportTest do
   alias Texttile.Uploads
 
   setup do
-    File.rm_rf!(Uploads.root())
     Req.Test.stub(Texttile.ImportStub, fn conn -> respond_with_jpg(conn) end)
     %{user: user_fixture(), dir: tmp_dir!()}
   end
@@ -18,8 +17,6 @@ defmodule Texttile.ImportTest do
   # The subscriber mails leave in a task of their own, so the test
   # process has to be the one Swoosh delivers to.
   defp share_mail do
-    Application.put_env(:swoosh, :shared_test_process, self())
-    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
   end
 
   defp tmp_dir! do
@@ -252,7 +249,7 @@ defmodule Texttile.ImportTest do
       assert article.preview_path == bb.path
 
       # every file is on disk
-      Enum.each([bb.path | Articles.inline_refs(article.body) |> Enum.map(& &1.url)], fn
+      Enum.each([bb.path | Texttile.Articles.Body.upload_urls(article.body)], fn
         "/uploads/" <> relative -> assert File.regular?(Uploads.absolute(relative))
         relative -> assert File.regular?(Uploads.absolute(relative))
       end)
@@ -317,7 +314,7 @@ defmodule Texttile.ImportTest do
       Import.run(Import.validate(dir), user)
       first = Repo.get_by!(Article, slug: "beach-days")
       old_tile_paths = Gallery.paths(first.id)
-      ["/uploads/" <> old_inline] = Articles.inline_refs(first.body) |> Enum.map(& &1.url)
+      ["/uploads/" <> old_inline] = Texttile.Articles.Body.upload_urls(first.body)
 
       # the second bundle version drops the gallery and changes the text
       write_bundle(dir, "beach", "title: Beach days again\nslug: beach-days\n", "New body.\n")

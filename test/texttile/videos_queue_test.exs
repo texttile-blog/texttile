@@ -7,33 +7,26 @@ defmodule Texttile.VideosQueueTest do
   alias Texttile.Videos
   alias Texttile.Videos.Queue
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   defp stored(path) do
     {:ok, relative} = Uploads.put_body_video(path, Path.basename(path))
     relative
   end
 
   # The conversion runs in a task; the test waits for its result the
-  # way a page does, by looking at the state.
-  defp until(condition, message \\ "the conversion never finished", tries \\ 200)
+  # way a page does, by looking at the state. ffmpeg is slower than a
+  # broadcast, so this waits longer than the usual few seconds.
+  @conversion_ms 10_000
 
-  defp until(condition, message, tries) do
-    cond do
-      condition.() -> :ok
-      tries == 0 -> flunk(message)
-      true -> Process.sleep(50) && until(condition, message, tries - 1)
-    end
+  defp until(condition) do
+    eventually(condition, @conversion_ms)
+    :ok
   end
 
   # The row says "done" inside the task, and the queue learns that the
   # task ended one message later. So the line is empty a moment after
   # the row is, and a test that asks the line waits for the line.
   defp until_empty(queue) do
-    until(fn -> Queue.running(queue) == nil end, "the queue never emptied")
+    until(fn -> Queue.running(queue) == nil end)
   end
 
   defp start_queue do

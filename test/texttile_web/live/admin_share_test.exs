@@ -10,19 +10,9 @@ defmodule TexttileWeb.AdminShareTest do
   import Texttile.ArticlesFixtures
 
   alias Texttile.Articles
-  alias Texttile.Articles.Lock
   alias Texttile.Settings
 
   setup :register_and_log_in_user
-
-  # Lock processes outlive the SQL sandbox, so each test starts clean.
-  setup do
-    Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(&DynamicSupervisor.terminate_child(Lock.supervisor(), elem(&1, 1)))
-
-    :ok
-  end
 
   defp protect(password) do
     {:ok, _} = Settings.put(:site_visibility, "protected")

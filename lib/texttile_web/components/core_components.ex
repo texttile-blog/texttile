@@ -1,27 +1,18 @@
 defmodule TexttileWeb.CoreComponents do
   @moduledoc """
-  Provides core UI components.
+  The components more than one screen uses.
 
-  At first glance, this module may seem daunting, but its goal is to provide
-  core building blocks for your application, such as tables, forms, and
-  inputs. The components consist mostly of markup and are well-documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
+  Each one is here because a second screen asked for it. A component that
+  only one screen draws stays in that screen, where you can read it next
+  to the markup around it.
 
-  The foundation for styling is Tailwind CSS, a utility-first CSS framework,
-  augmented with daisyUI, a Tailwind CSS plugin that provides UI components
-  and themes. Here are useful references:
+  Styling is Tailwind CSS with the tokens in `assets/css/app.css`. The
+  screens draw their own forms and buttons, so there is no generic input
+  or table here.
 
-    * [daisyUI](https://daisyui.com/docs/intro/) - a good place to get
-      started and see the available components.
+    * [Heroicons](https://heroicons.com), see `icon/1` for usage.
 
-    * [Tailwind CSS](https://tailwindcss.com) - the foundational framework
-      we build on. You will use it for layout, sizing, flexbox, grid, and
-      spacing.
-
-    * [Heroicons](https://heroicons.com) - see `icon/1` for usage.
-
-    * [Phoenix.Component](https://hexdocs.pm/phoenix_live_view/Phoenix.Component.html) -
+    * [Phoenix.Component](https://hexdocs.pm/phoenix_live_view/Phoenix.Component.html),
       the component system used by Phoenix. Some components, such as `<.link>`
       and `<.form>`, are defined there.
 
@@ -142,345 +133,6 @@ defmodule TexttileWeb.CoreComponents do
         </div>
       </div>
     </div>
-    """
-  end
-
-  @doc """
-  Renders a button with navigation support.
-
-  ## Examples
-
-      <.button>Send!</.button>
-      <.button phx-click="go" variant="primary">Send!</.button>
-      <.button navigate={~p"/"}>Home</.button>
-  """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :any
-  attr :variant, :string, values: ~w(primary)
-  slot :inner_block, required: true
-
-  def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
-
-    assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
-      end)
-
-    if rest[:href] || rest[:navigate] || rest[:patch] do
-      ~H"""
-      <.link class={@class} {@rest}>
-        {render_slot(@inner_block)}
-      </.link>
-      """
-    else
-      ~H"""
-      <button class={@class} {@rest}>
-        {render_slot(@inner_block)}
-      </button>
-      """
-    end
-  end
-
-  @doc """
-  Renders an input with label and error messages.
-
-  A `Phoenix.HTML.FormField` may be passed as argument,
-  which is used to retrieve the input name, id, and values.
-  Otherwise all attributes may be passed explicitly.
-
-  ## Types
-
-  This function accepts all HTML input types, considering that:
-
-    * You may also set `type="select"` to render a `<select>` tag
-
-    * `type="checkbox"` is used exclusively to render boolean values
-
-    * For live file uploads, see `Phoenix.Component.live_file_input/1`
-
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-  for more information. Unsupported types, such as radio, are best
-  written directly in your templates.
-
-  ## Examples
-
-  ```heex
-  <.input field={@form[:email]} type="email" />
-  <.input name="my-input" errors={["oh no!"]} />
-  ```
-
-  ## Select type
-
-  When using `type="select"`, you must pass the `options` and optionally
-  a `value` to mark which option should be preselected.
-
-  ```heex
-  <.input field={@form[:user_type]} type="select" options={["Admin": "admin", "User": "user"]} />
-  ```
-
-  For more information on what kind of data can be passed to `options` see
-  [`options_for_select`](https://hexdocs.pm/phoenix_html/Phoenix.HTML.Form.html#options_for_select/2).
-  """
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
-
-  attr :type, :string,
-    default: "text",
-    values: ~w(checkbox color date datetime-local email file month number password
-               search select tel text textarea time url week hidden)
-
-  attr :field, Phoenix.HTML.FormField,
-    doc: "a form field struct retrieved from the form, for example: @form[:email]"
-
-  attr :errors, :list, default: []
-  attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
-  attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
-  attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
-  attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
-  attr :class, :any, default: nil, doc: "the input class to use over defaults"
-  attr :error_class, :any, default: nil, doc: "the input error class to use over defaults"
-
-  attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
-                multiple pattern placeholder readonly required rows size step)
-
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
-
-    assigns
-    |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
-    |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
-    |> assign_new(:value, fn -> field.value end)
-    |> input()
-  end
-
-  def input(%{type: "hidden"} = assigns) do
-    ~H"""
-    <input type="hidden" id={@id} name={@name} value={@value} {@rest} />
-    """
-  end
-
-  def input(%{type: "checkbox"} = assigns) do
-    assigns =
-      assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
-      end)
-
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <input
-          type="hidden"
-          name={@name}
-          value="false"
-          disabled={@rest[:disabled]}
-          form={@rest[:form]}
-        />
-        <span class="label">
-          <input
-            type="checkbox"
-            id={@id}
-            name={@name}
-            value="true"
-            checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
-            {@rest}
-          />{@label}
-        </span>
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "select"} = assigns) do
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <select
-          id={@id}
-          name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
-          multiple={@multiple}
-          {@rest}
-        >
-          <option :if={@prompt} value="">{@prompt}</option>
-          {Phoenix.HTML.Form.options_for_select(@options, @value)}
-        </select>
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "textarea"} = assigns) do
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <textarea
-          id={@id}
-          name={@name}
-          class={[
-            @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
-          ]}
-          {@rest}
-        >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  # All other inputs text, datetime-local, url, password, etc. are handled here...
-  def input(assigns) do
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <input
-          type={@type}
-          name={@name}
-          id={@id}
-          value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-          class={[
-            @class || "w-full input",
-            @errors != [] && (@error_class || "input-error")
-          ]}
-          {@rest}
-        />
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  # Helper used by inputs to generate form errors
-  defp error(assigns) do
-    ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
-      <.icon name="hero-exclamation-circle" class="size-5" />
-      {render_slot(@inner_block)}
-    </p>
-    """
-  end
-
-  @doc """
-  Renders a header with title.
-  """
-  slot :inner_block, required: true
-  slot :subtitle
-  slot :actions
-
-  def header(assigns) do
-    ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", "pb-4"]}>
-      <div>
-        <h1 class="text-lg font-semibold leading-8">
-          {render_slot(@inner_block)}
-        </h1>
-        <p :if={@subtitle != []} class="text-sm text-base-content/70">
-          {render_slot(@subtitle)}
-        </p>
-      </div>
-      <div class="flex-none">{render_slot(@actions)}</div>
-    </header>
-    """
-  end
-
-  @doc """
-  Renders a table with generic styling.
-
-  ## Examples
-
-      <.table id="users" rows={@users}>
-        <:col :let={user} label="id">{user.id}</:col>
-        <:col :let={user} label="username">{user.username}</:col>
-      </.table>
-  """
-  attr :id, :string, required: true
-  attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
-
-  attr :row_item, :any,
-    default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
-
-  slot :col, required: true do
-    attr :label, :string
-  end
-
-  slot :action, doc: "the slot for showing user actions in the last table column"
-
-  def table(assigns) do
-    assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
-      end
-
-    ~H"""
-    <table class="table table-zebra">
-      <thead>
-        <tr>
-          <th :for={col <- @col}>{col[:label]}</th>
-          <th :if={@action != []}>
-            <span class="sr-only">{gettext("Actions")}</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody id={@id} phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}>
-        <tr :for={row <- @rows} id={@row_id && @row_id.(row)}>
-          <td
-            :for={col <- @col}
-            phx-click={@row_click && @row_click.(row)}
-            class={@row_click && "hover:cursor-pointer"}
-          >
-            {render_slot(col, @row_item.(row))}
-          </td>
-          <td :if={@action != []} class="w-0 font-semibold">
-            <div class="flex gap-4">
-              <%= for action <- @action do %>
-                {render_slot(action, @row_item.(row))}
-              <% end %>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    """
-  end
-
-  @doc """
-  Renders a data list.
-
-  ## Examples
-
-      <.list>
-        <:item title="Title">{@post.title}</:item>
-        <:item title="Views">{@post.views}</:item>
-      </.list>
-  """
-  slot :item, required: true do
-    attr :title, :string, required: true
-  end
-
-  def list(assigns) do
-    ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
-          <div class="font-bold">{item.title}</div>
-          <div>{render_slot(item)}</div>
-        </div>
-      </li>
-    </ul>
     """
   end
 
@@ -796,9 +448,58 @@ defmodule TexttileWeb.CoreComponents do
   end
 
   @doc """
-  The word that goes with a count: the first for one, the second for
-  everything else. The lead lines of the admin screens count things.
+  One word of an archive row: a year, a month, or the "all" that lets
+  go of one.
+
+  The open one says so and stops being a way anywhere, so the row never
+  sends anybody to the page they are already on. The reader's archive
+  walks by address and the admin grid by click, so the way there is
+  either an `href` or whatever the caller puts on the button.
   """
-  def plural(1, one, _many), do: one
-  def plural(_n, _one, many), do: many
+  attr :label, :any, required: true
+  attr :on, :boolean, default: false
+  attr :count, :any, default: nil
+  attr :href, :string, default: nil
+  attr :rest, :global, include: ~w(phx-click phx-value-year phx-value-month)
+
+  def period(assigns) do
+    ~H"""
+    <span :if={@on} class="per on" aria-current="true">
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </span>
+    <a :if={!@on && @href} class="per" href={@href}>
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </a>
+    <button :if={!@on && !@href} type="button" class="per" {@rest}>
+      {@label}<span :if={@count} class="cnt">{@count}</span>
+    </button>
+    """
+  end
+
+  @doc """
+  What an entry's state is called on screen.
+
+  The stored word is English and stays English; only what a person
+  reads changes with the language. The bar over the editor and the
+  strip over an entry that is not live both say it, and they say the
+  same word.
+  """
+  def status_word("draft"), do: gettext("Draft")
+  def status_word("scheduled"), do: gettext("Scheduled")
+  def status_word("published"), do: gettext("Published")
+  def status_word(other), do: String.capitalize(other)
+
+  @doc """
+  What the count beside a list says: all of it, or how much of all.
+
+  The reader's text list and the admin grid both carry one, and they
+  say the same thing.
+  """
+  def entry_count(shown, total) do
+    if shown == total do
+      ngettext("1 entry", "%{count} entries", total)
+    else
+      gettext("%{shown} of %{total}", shown: shown, total: total)
+    end
+  end
 end

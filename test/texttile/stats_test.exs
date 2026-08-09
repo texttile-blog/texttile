@@ -49,14 +49,11 @@ defmodule Texttile.StatsTest do
     end
 
     test "a repeat after the window counts again" do
-      assert :counted = Stats.count(view())
+      now = DateTime.utc_now(:second)
+      assert :counted = Stats.count(view(), now: now)
 
-      # An hour older than the window: the same person, a new visit.
-      Repo.update_all(Texttile.Stats.View,
-        set: [inserted_at: DateTime.add(DateTime.utc_now(), -3600, :second)]
-      )
-
-      assert :counted = Stats.count(view())
+      # An hour on, past the window: the same person, a new visit.
+      assert :counted = Stats.count(view(), now: DateTime.add(now, 3600, :second))
       assert Stats.summary(30).views == 2
     end
 

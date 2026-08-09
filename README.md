@@ -380,6 +380,7 @@ ffmpeg (for the video conversion; `make tools` installs it).
 make tools       # install the command line tools: ffmpeg and ffprobe
 make start       # dev server on port 4000, no configuration needed
 make test        # unit tests plus end-to-end browser tests
+make check       # everything CI checks: warnings, formatting, tests
 make db-pull     # pull the production snapshot next to the dev database
 make db-delete   # delete the shared development SQLite database
 ```

@@ -8,17 +8,6 @@ defmodule TexttileWeb.EditorLiveTest do
 
   setup :register_and_log_in_user
 
-  # Lock processes outlive the SQL sandbox, so each test starts clean.
-  setup do
-    Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Lock.supervisor(), pid)
-    end)
-
-    :ok
-  end
-
   defp draft(user, attrs \\ %{title: "Doors", body: "Wooden ones."}) do
     {:ok, article} = Articles.create_draft(user)
     {:ok, article} = Articles.update_text(article, attrs)
@@ -893,21 +882,6 @@ defmodule TexttileWeb.EditorLiveTest do
       {view, other}
     end
 
-    defp wait_until(fun, timeout \\ 3000) do
-      deadline = System.monotonic_time(:millisecond) + timeout
-
-      Stream.repeatedly(fn ->
-        if fun.() do
-          true
-        else
-          if System.monotonic_time(:millisecond) > deadline, do: raise("condition never met")
-          Process.sleep(50)
-          false
-        end
-      end)
-      |> Enum.find(& &1)
-    end
-
     test "the second person gets the text read-only and sees who writes",
          %{conn: conn, user: user} do
       article = draft(user)
@@ -919,7 +893,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(second, "#jbar.theirs", Texttile.Accounts.display_name(user))
 
       # and the one who writes is told they are watched, in their own ink
-      wait_until(fn ->
+      eventually(fn ->
         has_element?(first, "#jbar.mine", Texttile.Accounts.display_name(other))
       end)
     end
@@ -950,7 +924,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(mine, "#jbar.theirs", "another tab")
 
       # and the window that holds it says so in the accent
-      wait_until(fn -> has_element?(first, "#jbar.mine", "Another tab of yours") end)
+      eventually(fn -> has_element?(first, "#jbar.mine", "Another tab of yours") end)
     end
 
     test "the reader sees the text live", %{conn: conn, user: user} do
@@ -966,7 +940,7 @@ defmodule TexttileWeb.EditorLiveTest do
         "text" => "Fresh words.\n\n![pier](/uploads/images/pier-fresh.jpg)"
       })
 
-      wait_until(fn -> has_element?(second, "#inlineImgs", "pier-fresh.jpg") end)
+      eventually(fn -> has_element?(second, "#inlineImgs", "pier-fresh.jpg") end)
     end
 
     test "a transport close keeps the lock through the grace period", %{conn: conn, user: user} do
@@ -1007,7 +981,7 @@ defmodule TexttileWeb.EditorLiveTest do
       send(lock_pid, :idle_over)
 
       # the released tab hears the announcement and must not re-acquire
-      wait_until(fn -> has_element?(view, "#edTitle[readonly]") end)
+      eventually(fn -> has_element?(view, "#edTitle[readonly]") end)
       assert Lock.state(article.id) == :free
 
       # clicking back into the text takes it again, without a dialog
@@ -1029,8 +1003,8 @@ defmodule TexttileWeb.EditorLiveTest do
       second |> element("#dialog button", "Take over the entry") |> render_click()
 
       # the flush answers (or its fallback fires), then the lock moves
-      wait_until(fn -> not has_element?(second, "#edTitle[readonly]") end)
-      wait_until(fn -> has_element?(first, "#edTitle[readonly]") end)
+      eventually(fn -> not has_element?(second, "#edTitle[readonly]") end)
+      eventually(fn -> has_element?(first, "#edTitle[readonly]") end)
 
       # the handover snapshot exists, so nothing of the old text is lost
       assert Articles.versions(article) != []

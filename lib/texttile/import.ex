@@ -19,6 +19,7 @@ defmodule Texttile.Import do
 
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Body
   alias Texttile.Articles.Lock
   alias Texttile.Gallery
   alias Texttile.Import.Bundle
@@ -685,19 +686,11 @@ defmodule Texttile.Import do
   # its body speaks of. The bundle re-uploads everything it kept, so
   # after the update these files belong to nobody.
   defp old_picture_paths(article) do
-    inline =
-      article.body
-      |> Articles.inline_refs()
-      |> Enum.flat_map(fn
-        %{kind: :done, url: "/uploads/" <> relative} -> [relative]
-        _ -> []
-      end)
-
-    Enum.uniq(Gallery.paths(article.id) ++ inline)
+    Enum.uniq(Gallery.paths(article.id) ++ Body.upload_paths(article.body))
   end
 
   defp rewrite_body(body, stored) do
-    Regex.replace(~r/!\[([^\]]*)\]\(([^)]*)\)/, body, fn whole, alt, url ->
+    Body.rewrite(body, fn whole, alt, url ->
       case stored[String.trim(url)] do
         nil -> whole
         %{path: relative} -> "![#{alt}](/uploads/#{relative})"

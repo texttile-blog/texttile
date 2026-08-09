@@ -10,17 +10,14 @@ defmodule Texttile.Feed do
   """
 
   alias Texttile.Articles
-  alias Texttile.Markdown
+  alias Texttile.Articles.Body
+  alias Texttile.Articles.Body.Media
+  alias Texttile.Images
   alias Texttile.Settings
 
-  # The pictures inside a text, and every other address that starts at
-  # the root of the site.
-  @picture ~r{(<img[^>]*?\bsrc=")/uploads/([^"]+)"}
+  # Every address in a text that starts at the root of the site. The
+  # media are absolute already when this runs, so it leaves them.
   @address ~r{\b(href|src)="/(?!/)([^"]*)"}
-
-  # A whole reference to an uploaded file, which a film has to become
-  # something else than a picture.
-  @upload_tag ~r{<img[^>]*?\bsrc="/uploads/([^"]+)"[^>]*?>}
 
   @doc "The one address of the feed."
   def path, do: "/feed.xml"
@@ -90,46 +87,34 @@ defmodule Texttile.Feed do
 
   defp body_html(article, base) do
     article.body
-    |> Markdown.to_html()
-    |> films(base)
+    |> Body.to_html(&draw_media(&1, base))
     |> absolute(base)
+  end
+
+  # A picture takes the reading size the site itself shows, never the
+  # untouched original: a feed lands in mail readers and on slow lines.
+  defp draw_media(%Media{video?: false} = media, base) do
+    Media.picture(media, reading_size(media.path, base))
   end
 
   # No feed reader plays a film, and a rendition of one is nothing at
   # all. It goes as its poster with the way to the film behind it, and
   # while ffmpeg is not through, as the plain link it can always be.
-  # Both addresses are absolute already, so the pass below leaves them.
-  defp films(html, base) do
-    Regex.replace(@upload_tag, html, fn whole, path ->
-      if Texttile.Videos.video?(path) do
-        film(path, Markdown.alt_of(whole), base)
-      else
-        whole
-      end
-    end)
+  defp draw_media(%Media{playback: nil} = media, base) do
+    ~s(<a href="#{base}/uploads/#{media.path}">#{media.label}</a>)
   end
 
-  defp film(path, label, base) do
-    case Texttile.Videos.playback(path) do
-      nil ->
-        ~s(<a href="#{base}/uploads/#{path}">#{label}</a>)
-
-      play ->
-        ~s(<a href="#{base}/uploads/#{play.mp4}">) <>
-          ~s(<img src="#{base}/renditions/1320/#{play.poster}" alt="#{label}" />) <>
-          ~s(</a>)
-    end
+  defp draw_media(%Media{playback: play} = media, base) do
+    ~s(<a href="#{base}/uploads/#{play.mp4}">) <>
+      ~s(<img src="#{reading_size(play.poster, base)}" alt="#{media.label}" />) <>
+      ~s(</a>)
   end
 
-  # Every address the text carries, made absolute. Pictures take the
-  # reading size the site itself shows, never the untouched original:
-  # a feed lands in mail readers and on slow lines.
+  defp reading_size(path, base), do: "#{base}/renditions/#{Images.reading_edge()}/#{path}"
+
+  # Every address the text carries, made absolute. The media are
+  # absolute already, so this leaves them where they are.
   defp absolute(html, base) do
-    html =
-      Regex.replace(@picture, html, fn _whole, head, file ->
-        head <> base <> "/renditions/1320/" <> file <> "\""
-      end)
-
     Regex.replace(@address, html, fn _whole, attribute, rest ->
       attribute <> "=\"" <> base <> "/" <> rest <> "\""
     end)

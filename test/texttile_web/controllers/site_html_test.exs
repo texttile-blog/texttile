@@ -1,6 +1,7 @@
 defmodule TexttileWeb.SiteHTMLTest do
   use ExUnit.Case, async: true
 
+  alias TexttileWeb.CoreComponents
   alias TexttileWeb.SiteHTML
 
   describe "lead/1" do
@@ -37,12 +38,12 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
   end
 
-  describe "count_label/2" do
-    test "speaks of all texts, or of the found part" do
-      assert SiteHTML.count_label(1, 1) == "1 entry"
-      assert SiteHTML.count_label(3, 3) == "3 entries"
-      assert SiteHTML.count_label(2, 5) == "2 of 5"
-      assert SiteHTML.count_label(0, 5) == "0 of 5"
+  describe "entry_count/2" do
+    test "speaks of all entries, or of the found part" do
+      assert CoreComponents.entry_count(1, 1) == "1 entry"
+      assert CoreComponents.entry_count(3, 3) == "3 entries"
+      assert CoreComponents.entry_count(2, 5) == "2 of 5"
+      assert CoreComponents.entry_count(0, 5) == "0 of 5"
     end
   end
 

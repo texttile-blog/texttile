@@ -5,10 +5,8 @@ defmodule TexttileWeb.ImportLiveTest do
   import Texttile.AccountsFixtures
 
   alias Texttile.Import.Job
-  alias Texttile.Uploads
 
   setup %{conn: conn} do
-    File.rm_rf!(Uploads.root())
     Job.discard()
     on_exit(fn -> Job.discard() end)
     Job.subscribe()
@@ -38,8 +36,16 @@ defmodule TexttileWeb.ImportLiveTest do
     :ok = Job.validate(path, "no.zip")
     assert_receive {:import_state, %{phase: :failed}}, 2000
 
-    assert render(view) =~ "zip"
-    assert has_element?(view, "#import-failed")
+    # This test and the page are two listeners on one topic, and the
+    # message reaching this one says nothing about the other, so the
+    # page gets its own moment to catch up.
+    #
+    # What stood here was `render(view) =~ "zip"`, which is true on the
+    # empty page as well: the upload hint says zip, and so does
+    # "Reading no.zip …" while it reads. The assertion could not fail,
+    # and the phase went unchecked. This block stands in the failed
+    # phase and nowhere else, and it carries the reason with it.
+    eventually(fn -> has_element?(view, "#import-failed", "not a zip archive") end)
 
     view |> element("#import-discard") |> render_click()
     assert has_element?(view, "#import-upload")
@@ -66,7 +72,8 @@ defmodule TexttileWeb.ImportLiveTest do
     :ok = Job.validate(zip_path, "broken.zip")
     assert_receive {:import_state, %{phase: :report}}, 2000
 
-    assert has_element?(view, "#bundle-broken", "will not import")
+    # As above: the page hears the same broadcast on its own account.
+    eventually(fn -> has_element?(view, "#bundle-broken", "will not import") end)
     assert has_element?(view, "#import-run[disabled]")
 
     view |> element("#import-discard") |> render_click()

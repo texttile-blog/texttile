@@ -165,3 +165,9 @@ addEventListener("keydown", (e) => {
   ta.addEventListener("input", grow);
   grow();
 })();
+
+// The page says it: the script is up and its listeners stand. The
+// gallery block says the same thing about its own half, and the
+// browser tests wait for both before they act. Nothing on the page
+// needs it; a reader who never gets this far reads the same words.
+document.body.dataset.ready = "1";

@@ -16,7 +16,7 @@ defmodule Texttile.Images do
   alias Texttile.Uploads
   alias Vix.Vips
 
-  @cache_dir "cache"
+  @cache_dir Uploads.cache_dir()
 
   # Formats vips scales well. Anything else (svg, gif) is answered as it is.
   @scalable ~w(.jpg .jpeg .png .webp)
@@ -28,6 +28,15 @@ defmodule Texttile.Images do
   # route). Every fixed edge stays sanctioned in the cache; only stale
   # reader sizes are dropped.
   @fixed_edges [320, 640, 1320]
+
+  @doc "The edge a picture inside a text is shown at."
+  def reading_edge, do: 1320
+
+  @doc "The edge the reader's cards and the gallery tiles are shown at."
+  def card_edge, do: 640
+
+  @doc "The edge an admin thumbnail is shown at."
+  def thumb_edge, do: 320
 
   @doc """
   The path to show for an original, at the current (or given) max edge:
@@ -100,7 +109,7 @@ defmodule Texttile.Images do
         for name <- names,
             Regex.match?(mine, name),
             "#{@cache_dir}/#{name}" not in keep do
-          File.rm(Uploads.absolute("#{@cache_dir}/#{name}"))
+          Uploads.remove("#{@cache_dir}/#{name}")
         end
 
         :ok
@@ -168,7 +177,7 @@ defmodule Texttile.Images do
 
   @doc "Empties the rendition cache. Renditions regenerate on demand."
   def clear_cache do
-    File.rm_rf!(Uploads.absolute(@cache_dir))
+    Uploads.remove_dir(@cache_dir)
     :ok
   end
 end

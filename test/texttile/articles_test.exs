@@ -270,33 +270,6 @@ defmodule Texttile.ArticlesTest do
     end
   end
 
-  describe "inline_refs/1" do
-    test "reads finished images, running uploads and failed ones from the body" do
-      body = """
-      Some prose.
-
-      ![pier](/uploads/images/pier-abcd.jpg)
-
-      ![Uploading gull.jpg…]()
-
-      ![Upload failed: fog.png]()
-
-      ![decorative]()
-      """
-
-      assert [
-               %{kind: :done, file: "pier-abcd.jpg", url: "/uploads/images/pier-abcd.jpg"},
-               %{kind: :running, file: "gull.jpg"},
-               %{kind: :failed, file: "fog.png"}
-             ] = Articles.inline_refs(body)
-    end
-
-    test "an empty body has no references" do
-      assert Articles.inline_refs("") == []
-      assert Articles.inline_refs(nil) == []
-    end
-  end
-
   describe "delete_article/1" do
     test "versions and log go with the text" do
       {article, user} = draft(%{title: "Doors", body: "x"})
@@ -309,7 +282,6 @@ defmodule Texttile.ArticlesTest do
 
     test "the images in the body go with the text, old versions included" do
       alias Texttile.Uploads
-      File.rm_rf!(Uploads.root())
 
       current = "images/door-aaaa1111.png"
       versioned = "images/gone-bbbb2222.png"

@@ -3,12 +3,10 @@ defmodule TexttileWeb.GalleryControllerTest do
 
   alias Texttile.Articles
   alias Texttile.Gallery
-  alias Texttile.Uploads
 
   setup :register_and_log_in_user
 
   setup %{user: user} do
-    File.rm_rf!(Uploads.root())
     {:ok, article} = Articles.create_draft(user)
     %{article: article}
   end

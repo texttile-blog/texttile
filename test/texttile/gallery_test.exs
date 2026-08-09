@@ -7,11 +7,6 @@ defmodule Texttile.GalleryTest do
   alias Texttile.Gallery
   alias Texttile.Uploads
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   defp article! do
     user = user_fixture()
     {:ok, article} = Articles.create_draft(user)
@@ -275,13 +270,7 @@ defmodule Texttile.GalleryTest do
       image = add!(article, "a.jpg")
       {:ok, _} = Gallery.delete(article.id, image.id)
 
-      past = DateTime.add(DateTime.utc_now(), -1, :second)
-
-      Repo.update_all(Ecto.Query.from(i in Gallery.Image, where: i.id == ^image.id),
-        set: [delete_after: past]
-      )
-
-      assert {:error, :gone} = Gallery.undo(article.id, image.id)
+      assert {:error, :gone} = Gallery.undo(article.id, image.id, now: a_minute_on())
     end
 
     test "the sweep removes the due image, its file and its renditions" do
@@ -289,13 +278,7 @@ defmodule Texttile.GalleryTest do
       image = add!(article, "a.jpg")
       {:ok, _} = Gallery.delete(article.id, image.id)
 
-      past = DateTime.add(DateTime.utc_now(), -1, :second)
-
-      Repo.update_all(Ecto.Query.from(i in Gallery.Image, where: i.id == ^image.id),
-        set: [delete_after: past]
-      )
-
-      assert Gallery.sweep_due() == 1
+      assert Gallery.sweep_due(a_minute_on()) == 1
       assert Repo.get(Gallery.Image, image.id) == nil
       refute File.exists?(Uploads.absolute(image.path))
     end
@@ -308,6 +291,21 @@ defmodule Texttile.GalleryTest do
       assert Gallery.sweep_due() == 0
       assert Repo.get(Gallery.Image, image.id)
     end
+
+    test "the window is measured from the moment the caller names" do
+      {article, _user} = article!()
+      image = add!(article, "a.jpg")
+      long_ago = DateTime.add(DateTime.utc_now(:microsecond), -1, :hour)
+
+      {:ok, _} = Gallery.delete(article.id, image.id, now: long_ago)
+
+      assert Gallery.sweep_due() == 1
+      assert Repo.get(Gallery.Image, image.id) == nil
+    end
+
+    # A minute is well past the ten second window and asks for no clock
+    # of its own: the test names the moment it wants to be judged at.
+    defp a_minute_on, do: DateTime.add(DateTime.utc_now(:microsecond), 60, :second)
   end
 
   describe "previews" do

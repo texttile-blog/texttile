@@ -14,7 +14,6 @@ defmodule Texttile.VideosInTextsTest do
   alias Texttile.Videos
 
   setup do
-    File.rm_rf!(Uploads.root())
     user = user_fixture()
     {:ok, article} = Articles.create_draft(user)
     %{article: article, user: user}

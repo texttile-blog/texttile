@@ -8,6 +8,10 @@ defmodule TexttileWeb.SiteHTML do
   use TexttileWeb, :html
 
   alias Texttile.Articles
+  alias Texttile.Articles.Body
+  alias Texttile.Articles.Body.Media
+  alias Texttile.Articles.Visibility
+  alias Texttile.Images
 
   embed_templates "site_html/*"
 
@@ -153,27 +157,6 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  One word of the archive: a year, a month, or the "all" that lets go
-  of one. The one that is open says so and stops being a link, so the
-  row never sends a reader to the page they are already on.
-  """
-  attr :label, :any, required: true
-  attr :href, :string, required: true
-  attr :on, :boolean, default: false
-  attr :count, :any, default: nil
-
-  def period(assigns) do
-    ~H"""
-    <span :if={@on} class="per on" aria-current="true">
-      {@label}<span :if={@count} class="cnt">{@count}</span>
-    </span>
-    <a :if={!@on} class="per" href={@href}>
-      {@label}<span :if={@count} class="cnt">{@count}</span>
-    </a>
-    """
-  end
-
-  @doc """
   The card of the admin area's Texts grid, drawn for a reader. `comments`
   is how many comments stand under the text; the line under the title
   carries it beside the date, so a reader sees where the talking is
@@ -190,7 +173,7 @@ defmodule TexttileWeb.SiteHTML do
         <%!-- every card wears a square, so the grid keeps its rows: the
              picture when there is one, the quiet mark when there is none --%>
         <span :if={@preview} class="cimg">
-          <img src={"/renditions/640/#{@preview}"} alt="" loading="lazy" />
+          <img src={"/renditions/#{Images.card_edge()}/#{@preview}"} alt="" loading="lazy" />
         </span>
         <span :if={!@preview} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
@@ -233,40 +216,29 @@ defmodule TexttileWeb.SiteHTML do
   """
   def body_html(article) do
     article.body
-    |> Texttile.Markdown.to_html()
-    |> draw_media()
+    |> Body.to_html(&draw_media/1)
     |> Phoenix.HTML.raw()
   end
 
-  # The markdown renderer writes <img src="/uploads/..."> for both, the
-  # picture and the video, and nothing else around it, so this is one
-  # pass over those tags.
-  defp draw_media(html) do
-    Regex.replace(~r{<img([^>]*?)src="/uploads/([^"]+)"([^>]*?)/?>}, html, fn whole,
-                                                                              before,
-                                                                              path,
-                                                                              rest ->
-      if Texttile.Videos.video?(path) do
-        video_tag(path, Texttile.Markdown.alt_of(whole))
-      else
-        ~s(<a class="bodypic" href="/uploads/#{path}" data-full="/renditions/max/#{path}">) <>
-          ~s(<img#{before}src="/renditions/1320/#{path}"#{rest} />) <>
-          ~s(</a>)
-      end
-    end)
+  # A picture stands in a link to the original, and the script turns
+  # that link into the lightbox.
+  defp draw_media(%Media{video?: false} = media) do
+    ~s(<a class="bodypic" href="/uploads/#{media.path}" data-full="/renditions/max/#{media.path}">) <>
+      Media.picture(media, "/renditions/#{Images.reading_edge()}/#{media.path}") <>
+      ~s(</a>)
   end
 
-  defp video_tag(path, label) do
-    case Texttile.Videos.playback(path) do
-      nil ->
-        ~s(<a class="videofile" href="/uploads/#{path}">#{label}</a>)
+  # While ffmpeg is still converting, the file stands there as a plain
+  # link, so the text loses nothing in the meantime.
+  defp draw_media(%Media{playback: nil} = media) do
+    ~s(<a class="videofile" href="/uploads/#{media.path}">#{media.label}</a>)
+  end
 
-      play ->
-        ~s(<video class="bodyvid" controls playsinline preload="none") <>
-          ~s( poster="/renditions/1320/#{play.poster}") <>
-          size_attributes(play) <>
-          ~s( src="/uploads/#{play.mp4}"></video>)
-    end
+  defp draw_media(%Media{playback: play}) do
+    ~s(<video class="bodyvid" controls playsinline preload="none") <>
+      ~s( poster="/renditions/#{Images.reading_edge()}/#{play.poster}") <>
+      size_attributes(play) <>
+      ~s( src="/uploads/#{play.mp4}"></video>)
   end
 
   # The size the browser keeps free before the poster arrives, so the
@@ -285,7 +257,7 @@ defmodule TexttileWeb.SiteHTML do
   """
   def pictures?(article, gallery) do
     gallery != [] or
-      Enum.any?(Articles.inline_refs(article.body), fn ref ->
+      Enum.any?(Body.refs(article.body), fn ref ->
         ref.kind == :done and String.starts_with?(to_string(ref.url), "/uploads/") and
           not Texttile.Videos.video?(ref.url)
       end)
@@ -296,15 +268,6 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
   defdelegate lead(article), to: Articles
-
-  @doc """
-  What the strip over an entry that is not live calls its state. The
-  stored word is English and stays English; only what a reader sees
-  changes with the language.
-  """
-  def status_word("draft"), do: gettext("Draft")
-  def status_word("scheduled"), do: gettext("Scheduled")
-  def status_word(other), do: String.capitalize(other)
 
   @doc "The heading of the comments block: the count while there is one."
   def comment_heading(0), do: gettext("Comments")
@@ -329,15 +292,6 @@ defmodule TexttileWeb.SiteHTML do
       Texttile.I18n.format_day_and_month(date)
     else
       format_date(date)
-    end
-  end
-
-  @doc "What the count beside the search says: all of it, or n of all."
-  def count_label(shown, total) do
-    if shown == total do
-      ngettext("1 entry", "%{count} entries", total)
-    else
-      gettext("%{shown} of %{total}", shown: shown, total: total)
     end
   end
 

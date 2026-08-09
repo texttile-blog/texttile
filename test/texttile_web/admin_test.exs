@@ -73,13 +73,8 @@ defmodule TexttileWeb.AdminTest do
     end
   end
 
-  defp render_until(view, fun, tries \\ 100) do
-    html = render(view)
-
-    cond do
-      fun.(html) -> :ok
-      tries == 0 -> flunk("the view never rendered the expected state:\n#{html}")
-      true -> Process.sleep(10) && render_until(view, fun, tries - 1)
-    end
+  defp render_until(view, fun) do
+    eventually(fn -> fun.(render(view)) end)
+    :ok
   end
 end

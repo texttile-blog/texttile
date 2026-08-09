@@ -5,11 +5,6 @@ defmodule TexttileWeb.ImagesControllerTest do
 
   setup :register_and_log_in_user
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   defp png_upload(name) do
     path = Path.join(System.tmp_dir!(), "up-#{System.unique_integer([:positive])}.png")
     {:ok, black} = Vix.Vips.Operation.black(20, 10)
