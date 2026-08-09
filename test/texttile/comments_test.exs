@@ -21,6 +21,22 @@ defmodule Texttile.CommentsTest do
     comment
   end
 
+  # One comment the way a bundle hands it over.
+  defp imported(fields) do
+    Map.merge(
+      %{
+        author: "Christiane",
+        email: "christiane@example.org",
+        website: nil,
+        text: "Immer wieder!",
+        at: ~U[2019-06-02 22:14:00Z],
+        id: nil,
+        reply_to: nil
+      },
+      fields
+    )
+  end
+
   # The confirmation link travels to the reader from this process; the
   # mail to the people who run the blog leaves a task of its own. Both
   # land in the same test mailbox, so this picks out the second kind.
@@ -131,6 +147,36 @@ defmodule Texttile.CommentsTest do
                )
 
       assert %{name: _, email: _, body: _} = errors_on(changeset)
+    end
+
+    test "the website of the writer is stored, a bare one made a link" do
+      article = published_post()
+
+      comment = post!(article, Map.put(@attrs, "website", " christel.example "))
+      assert comment.website == "https://christel.example"
+
+      written = post!(article, Map.put(@attrs, "website", "http://christel.example/dog"))
+      assert written.website == "http://christel.example/dog"
+    end
+
+    test "no website is no website" do
+      article = published_post()
+
+      assert post!(article, Map.put(@attrs, "website", "")).website == nil
+      assert post!(article).website == nil
+    end
+
+    test "a website nobody can follow is refused" do
+      article = published_post()
+
+      for written <- ["javascript:alert(1)", "example", "not a website .org"] do
+        assert {:error, changeset} =
+                 Comments.post(article, Map.put(@attrs, "website", written),
+                   confirm_url: &to_string/1
+                 )
+
+        assert %{website: _} = errors_on(changeset)
+      end
     end
 
     test "a name or a comment beyond the limit is refused" do
@@ -669,6 +715,89 @@ defmodule Texttile.CommentsTest do
       # which was written minutes ago
       assert Texttile.Repo.get(Comments.Address, kept.address_id)
       assert Texttile.Repo.get(Comments.Address, swept.address_id)
+    end
+  end
+
+  describe "replace_imported/2" do
+    setup do
+      {:ok, _} = Settings.put(:comments_require_confirmation, true)
+      %{article: published_post()}
+    end
+
+    test "puts the comments under the text, in the order they arrive", %{article: article} do
+      Comments.replace_imported(article, [
+        imported(%{author: "first", text: "a", at: ~U[2019-06-01 09:00:00Z]}),
+        imported(%{author: "second", text: "b", at: ~U[2019-06-02 09:00:00Z]})
+      ])
+
+      {shown, 0} = Comments.for_readers(article.id)
+      assert Enum.map(shown, & &1.name) == ["first", "second"]
+      assert Enum.map(shown, & &1.body) == ["a", "b"]
+
+      assert Enum.map(shown, &DateTime.to_date(&1.inserted_at)) == [
+               ~D[2019-06-01],
+               ~D[2019-06-02]
+             ]
+    end
+
+    test "readers see them at once: the address counts as confirmed", %{article: article} do
+      Comments.replace_imported(article, [imported(%{})])
+
+      {[comment], 0} = Comments.for_readers(article.id)
+      assert Comments.shown_to_readers?(comment)
+      assert comment.address.email == "christiane@example.org"
+      assert Comments.waiting_count() == 0
+    end
+
+    test "a comment without an email needs no address of its own", %{article: article} do
+      Comments.replace_imported(article, [imported(%{email: nil})])
+
+      {[comment], 0} = Comments.for_readers(article.id)
+      assert Comments.shown_to_readers?(comment)
+      refute Texttile.Confirmation.address?(comment.address.email)
+    end
+
+    test "the website travels with the comment", %{article: article} do
+      Comments.replace_imported(article, [imported(%{website: "https://christiane.example"})])
+
+      {[comment], 0} = Comments.for_readers(article.id)
+      assert comment.website == "https://christiane.example"
+    end
+
+    test "importing twice gives the same comments, not two of each", %{article: article} do
+      Comments.replace_imported(article, [imported(%{text: "a"}), imported(%{text: "b"})])
+      Comments.replace_imported(article, [imported(%{text: "a"}), imported(%{text: "b"})])
+
+      {shown, 0} = Comments.for_readers(article.id)
+      assert Enum.map(shown, & &1.body) == ["a", "b"]
+    end
+
+    test "what a reader wrote here stays where it is", %{article: article} do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      own = post!(article)
+
+      Comments.replace_imported(article, [imported(%{text: "a"})])
+      Comments.replace_imported(article, [imported(%{text: "b"})])
+
+      bodies = article.id |> Comments.for_article() |> Enum.map(& &1.body)
+      assert own.body in bodies
+      assert "b" in bodies
+      refute "a" in bodies
+    end
+
+    test "an empty list takes the earlier import away", %{article: article} do
+      Comments.replace_imported(article, [imported(%{})])
+      Comments.replace_imported(article, [])
+
+      assert Comments.count_for(article.id) == 0
+    end
+
+    test "the screens hear about it", %{article: article} do
+      Comments.subscribe()
+      Comments.replace_imported(article, [imported(%{})])
+
+      assert_receive {:comments_imported, article_id}
+      assert article_id == article.id
     end
   end
 end

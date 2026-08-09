@@ -99,6 +99,7 @@ defmodule TexttileWeb.CommentsLive do
   def handle_info({:comment_deleted, _comment}, socket), do: {:noreply, load(socket)}
   def handle_info({:comment_changed, _comment}, socket), do: {:noreply, load(socket)}
   def handle_info({:comments_confirmed, _address_id}, socket), do: {:noreply, load(socket)}
+  def handle_info({:comments_imported, _article_id}, socket), do: {:noreply, load(socket)}
 
   def handle_info({:setting_changed, :comments_require_confirmation, _}, socket) do
     {:noreply, load(socket)}

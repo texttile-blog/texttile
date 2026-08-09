@@ -20,6 +20,12 @@ defmodule Texttile.Comments.Comment do
     field :delete_after, :utc_datetime
     field :released_at, :utc_datetime
     field :edited_at, :utc_datetime
+    # The address the author gave for themselves, from the form or out
+    # of a bundle; the name over the comment links to it. `imported_at`
+    # is set while the comment came out of a bundle, and only an import
+    # fills that one in. See `Texttile.Comments`.
+    field :website, :string
+    field :imported_at, :utc_datetime
 
     belongs_to :article, Texttile.Articles.Article
     belongs_to :address, Texttile.Comments.Address
@@ -32,19 +38,64 @@ defmodule Texttile.Comments.Comment do
   # How much one comment holds. The reader's form and the admin's field
   # both stop here, and the changesets are the ones that decide.
   @body_limit 4000
+  @name_limit 120
+  @website_limit 200
 
   @doc "How many characters one comment holds."
   def body_limit, do: @body_limit
 
-  @doc "What the reader typed: the name and the words. The address is set apart."
+  @doc "How long the name over a comment may be."
+  def name_limit, do: @name_limit
+
+  @doc """
+  What the reader typed: the name, the words, and the website they
+  gave for themselves. The address is set apart.
+  """
   def changeset(comment, attrs) do
     comment
-    |> cast(attrs, [:name, :body])
+    |> cast(attrs, [:name, :body, :website])
     |> update_change(:name, &String.trim/1)
     |> update_change(:body, &String.trim/1)
+    |> update_change(:website, &address/1)
     |> validate_required([:name, :body])
-    |> validate_length(:name, max: 120)
+    |> validate_length(:name, max: @name_limit)
     |> validate_length(:body, max: @body_limit)
+    |> validate_length(:website, max: @website_limit)
+    |> validate_website()
+  end
+
+  # Nobody types a scheme. A bare `example.org` is what people mean by
+  # a website, so it becomes one; whoever writes `http://` keeps it.
+  defp address(website) when is_binary(website) do
+    case String.trim(website) do
+      "" -> nil
+      "http://" <> _rest = written -> written
+      "https://" <> _rest = written -> written
+      bare -> if String.contains?(bare, "://"), do: bare, else: "https://" <> bare
+    end
+  end
+
+  defp address(_website), do: nil
+
+  # A website has to be one a browser can follow: http or https, and a
+  # host with a dot in it. Anything else is a typo or a `javascript:`
+  # line, and neither belongs under a name.
+  defp validate_website(changeset) do
+    case get_change(changeset, :website) do
+      nil ->
+        changeset
+
+      website ->
+        uri = URI.parse(website)
+        host = to_string(uri.host)
+
+        if uri.scheme in ["http", "https"] and String.contains?(host, ".") and
+             not String.contains?(website, " ") do
+          changeset
+        else
+          add_error(changeset, :website, "does not look like a website")
+        end
+    end
   end
 
   @doc """

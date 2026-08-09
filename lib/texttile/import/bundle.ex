@@ -7,6 +7,7 @@ defmodule Texttile.Import.Bundle do
   """
 
   alias Texttile.Articles
+  alias Texttile.Import.Comments
   alias Texttile.Import.Frontmatter
 
   defstruct name: nil,
@@ -22,6 +23,7 @@ defmodule Texttile.Import.Bundle do
             gallery: [],
             body_refs: [],
             body: "",
+            comments: [],
             errors: [],
             warnings: []
 
@@ -71,7 +73,25 @@ defmodule Texttile.Import.Bundle do
     |> read_body_refs()
     |> check_sources()
     |> check_preview()
+    |> read_comments()
     |> unreferenced_files(entries)
+  end
+
+  # The comments of the entry, when the bundle carries them. A file
+  # that does not read leaves the bundle without comments and with the
+  # complaint: the entry is not imported half told.
+  defp read_comments(bundle) do
+    {comments, errors} = Comments.read(bundle.dir)
+    bundle = %{bundle | comments: comments, errors: bundle.errors ++ errors}
+
+    if comments != [] and not bundle.allow_comments do
+      warn(
+        bundle,
+        "the bundle carries #{length(comments)} comments and closes the comments; readers see none of them"
+      )
+    else
+      bundle
+    end
   end
 
   defp complain(bundle, message), do: %{bundle | errors: bundle.errors ++ [message]}
@@ -270,7 +290,7 @@ defmodule Texttile.Import.Bundle do
 
     bundle.dir
     |> files_below()
-    |> Enum.reject(&(&1 in ["index.md", "comments.yaml"]))
+    |> Enum.reject(&(&1 in ["index.md", Comments.filename()]))
     |> Enum.reject(&MapSet.member?(referenced, &1))
     |> Enum.sort()
     |> Enum.reduce(bundle, fn file, bundle ->

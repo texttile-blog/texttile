@@ -179,10 +179,41 @@ defmodule Texttile.Import.BundleTest do
       assert warning =~ "stray.jpg"
     end
 
-    test "comments.yaml stays silent", %{tmp_dir: dir} do
-      File.write!(Path.join(dir, "comments.yaml"), "later")
+    test "comments.yaml is read, not warned about", %{tmp_dir: dir} do
+      File.write!(
+        Path.join(dir, "comments.yaml"),
+        "- author: kb\n  date: 2026-07-01 09:00\n  text: a\n"
+      )
+
       bundle = bundle(dir, "title: A\n")
       assert bundle.warnings == []
+      assert [%{author: "kb"}] = bundle.comments
+    end
+  end
+
+  describe "the comments" do
+    test "come with the bundle, in reading order", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "comments.yaml"), """
+      - author: second
+        date: 2026-07-02 09:00
+        text: b
+      - author: first
+        date: 2026-07-01 09:00
+        text: a
+      """)
+
+      bundle = bundle(dir, "title: A\n")
+      assert bundle.errors == []
+      assert Enum.map(bundle.comments, & &1.author) == ["first", "second"]
+    end
+
+    test "a broken file is an error of the bundle", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "comments.yaml"), "author: kb\n")
+
+      bundle = bundle(dir, "title: A\n")
+      assert [error] = bundle.errors
+      assert error =~ "comments.yaml"
+      assert bundle.comments == []
     end
   end
 

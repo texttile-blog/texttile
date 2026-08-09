@@ -277,7 +277,7 @@ defmodule TexttileWeb.SiteController do
   # name and the address come from the account while somebody is signed
   # in, so nothing a form could carry can put another name on them.
   defp comment_attrs(params, nil) do
-    params |> Map.take(["name", "email", "body"]) |> Map.new(&text_field/1)
+    params |> Map.take(["name", "email", "body", "website"]) |> Map.new(&text_field/1)
   end
 
   defp comment_attrs(params, user) do
@@ -289,7 +289,7 @@ defmodule TexttileWeb.SiteController do
   end
 
   defp spam?(article, params) do
-    text_value(params["website"]) != "" or not human_timing?(article, params["t"])
+    text_value(params["url"]) != "" or not human_timing?(article, params["t"])
   end
 
   # A form field is one line of text. A caller who sends a list or a map
@@ -412,7 +412,7 @@ defmodule TexttileWeb.SiteController do
   # The same two invisible filters as on the comment form; the stamp
   # carries no article, only the moment the footer was drawn.
   defp newsletter_spam?(params) do
-    text_value(params["website"]) != "" or not newsletter_timing?(params["t"])
+    text_value(params["url"]) != "" or not newsletter_timing?(params["t"])
   end
 
   defp newsletter_timing?(token) do
@@ -663,13 +663,26 @@ defmodule TexttileWeb.SiteController do
     )
   end
 
-  # The account writing the comment, as the form draws it: the name and
-  # the address it will carry, so the two fields can stand there filled
-  # and disabled instead of asking for what the site already knows.
+  # The account writing the comment, as the form draws it: the name,
+  # the address and the website it will carry, so the three fields can
+  # stand there filled and disabled instead of asking for what the site
+  # already knows. The website of somebody signed in is this blog: they
+  # write from the house, and nothing of it is stored on the comment,
+  # so the link follows the site wherever it moves.
   defp comment_author(conn) do
     case signed_in_user(conn) do
-      nil -> nil
-      user -> %{name: Accounts.display_name(user), email: to_string(user.email)}
+      nil ->
+        nil
+
+      user ->
+        %{
+          name: Accounts.display_name(user),
+          email: to_string(user.email),
+          # the host alone: a scheme and a slash in a field nobody
+          # types into are noise, and the link itself is built where
+          # the comment is drawn
+          website: URI.parse(url(~p"/")).host
+        }
     end
   end
 

@@ -119,7 +119,20 @@
           id={"comment-#{comment.id}"}
         >
           <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
-            {comment.name}
+            <%!-- the address the author gave for themselves, from the
+                 form or out of a bundle. The words are somebody else's,
+                 and so is where they lead: the link says as much to a
+                 search engine. It stays in the tab, like every other
+                 link a reader meets here. --%>
+            <a
+              :if={comment_website(comment)}
+              href={comment_website(comment)}
+              class="writer-out"
+              rel="nofollow ugc"
+            >
+              {comment.name}
+            </a>
+            <span :if={!comment_website(comment)}>{comment.name}</span>
             <span :if={kind == :own} class="wait">
               {gettext("waiting for your confirmation")}
             </span>
@@ -166,9 +179,22 @@
             disabled={!!@comment_author}
           />
         </div>
+        <%!-- signed in, this one is a fact too: the comment stands for
+             the blog itself, so it carries the address of the blog --%>
         <input
           type="text"
           name="website"
+          id="comment-website"
+          class="w-full mb-5"
+          value={(@comment_author && @comment_author.website) || @comment_values["website"]}
+          placeholder={gettext("Website, if you have one")}
+          aria-label={gettext("Website")}
+          maxlength="200"
+          disabled={!!@comment_author}
+        />
+        <input
+          type="text"
+          name="url"
           id="hp"
           class="sr"
           tabindex="-1"
@@ -191,7 +217,7 @@
           style="color:var(--tt-julia)"
         >
           {gettext(
-            "A comment needs a name, an email address and some words. Check the form and send it again."
+            "A comment needs a name, an email address and some words, and a website has to read like example.org. Check the form and send it again."
           )}
         </p>
         <p class="mt-[10px] btn-row">

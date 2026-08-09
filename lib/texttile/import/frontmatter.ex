@@ -121,8 +121,12 @@ defmodule Texttile.Import.Frontmatter do
     with {:error, why} <- result, do: {:error, "line #{number}: #{why}"}
   end
 
-  # One value: quoted with \" and \\ escapes, or the verbatim text.
-  defp scalar(raw) do
+  @doc """
+  One value: quoted with `\\"` and `\\\\` escapes, or the verbatim
+  text. The comments of a bundle quote their fields the same way, so
+  the rule lives here for both.
+  """
+  def scalar(raw) do
     trimmed = String.trim(raw)
 
     case trimmed do

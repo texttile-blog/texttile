@@ -209,11 +209,15 @@ Errors:
 - A URL is dead, or its content is not a supported picture.
 - A gallery entry that appears twice in the list.
 - A `preview` value that matches no picture source of the bundle.
+- A `comments.yaml` that does not parse, or a comment in it without an
+  author, without a text, or without a date. See below.
 
 Warnings:
 
 - A file in the bundle that nothing references.
 - A file in `gallery/` that an explicit `gallery` key does not list.
+- A bundle that carries comments and sets `allow_comments: false`. The
+  comments are imported, and readers see none of them.
 - A slug that already exists on the site. The import updates that entry.
 - An entry somebody has open in the editor right now. The run refuses
   that bundle while the editor stays open; run the import again later.
@@ -224,16 +228,21 @@ Warnings:
 The slug identifies the entry. When the slug already exists, the import
 updates that entry: title, body, settings, and date. The gallery is replaced
 with the gallery of the bundle. Pictures of the earlier import that the
-bundle no longer references are deleted. An import with the same zip twice
-gives the same site, not duplicates.
+bundle no longer references are deleted. The comments are replaced the same
+way: what the last import wrote goes, and the comments of the bundle stand
+in its place. A bundle without a `comments.yaml` therefore leaves the entry
+without imported comments. What a reader wrote here, on this site, is never
+touched. An import with the same zip twice gives the same site, not
+duplicates.
 
 ## Comments
 
 A bundle can carry the comments of its entry in a `comments.yaml` file.
-The format stands now so a converter can already write it; the importer
-reads the file in a later version and ignores it today, without a
-warning. Export only the comments that belong on the site; there is no
-status field.
+Export only the comments that belong on the site; there is no status
+field. Every comment of the file stands under the entry from the moment
+the import ends: it stood under the entry of the old blog, and the
+address it came from counts as confirmed here, the way an address an
+admin vouches for does.
 
 ```
 - author: Christiane
@@ -265,13 +274,31 @@ The fields:
 
 | Field      | Required | Value                                                  |
 | ---------- | -------- | ------------------------------------------------------ |
-| `author`   | yes      | The displayed name.                                    |
-| `text`     | yes      | The comment, plain text.                               |
+| `author`   | yes      | The displayed name, up to 120 characters.              |
+| `text`     | yes      | The comment, plain text, up to 4000 characters.        |
 | `date`     | yes      | `YYYY-MM-DD HH:MM` or with seconds, local wall clock.  |
 | `email`    | no       | The address the author gave.                           |
-| `website`  | no       | The URL the author gave.                               |
+| `website`  | no       | The `http:` or `https:` URL the author gave.           |
 | `id`       | no       | A number, unique in the file. Only replies need it.    |
 | `reply_to` | no       | The `id` of the comment this one answers.              |
+
+Details:
+
+- The comments stand under the entry oldest first, by their `date`.
+- The comments here are one row after another; there is no thread and
+  no indent. `reply_to` therefore decides the order alone: a reply
+  stands right behind the comment it answers, its own replies behind
+  it. A `reply_to` that names no `id` of the file is an error, and so
+  is a set of replies that answer each other in a circle.
+- `website` becomes the link under the name of the author. The link
+  carries `nofollow` and opens on its own; the site never sends a
+  reader to somebody else's address without saying so.
+- `email` is stored and shown to nobody. It makes the name of the
+  comment a way to write back inside the admin area, and it folds the
+  comments of one person into one address. A comment without an email
+  gets a placeholder address nobody can write to.
+- `date` is the moment the comment stands by, the same wall clock the
+  site shows everywhere else.
 
 There are no avatars in the format. WordPress avatars are Gravatars,
 computed from the email address; the address keeps that door open

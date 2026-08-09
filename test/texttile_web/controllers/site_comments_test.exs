@@ -140,10 +140,47 @@ defmodule TexttileWeb.SiteCommentsTest do
       assert Comments.for_article(article.id) == []
     end
 
+    test "a website travels with the comment and carries the name", %{conn: conn} do
+      article = published_post()
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+
+      send_comment(conn, article, %{"website" => "christel-und-der-hund.example"})
+
+      assert [comment] = Comments.for_article(article.id)
+      assert comment.website == "https://christel-und-der-hund.example"
+
+      html = build_conn() |> get(Articles.public_path(article)) |> html_response(200)
+      assert html =~ ~s(href="https://christel-und-der-hund.example")
+      assert html =~ ~s(rel="nofollow ugc")
+    end
+
+    test "a website nobody can follow brings the words back", %{conn: conn} do
+      article = published_post()
+
+      html =
+        conn
+        |> send_comment(article, %{"website" => "javascript:alert(1)"})
+        |> html_response(200)
+
+      assert html =~ ~s(id="comment-error")
+      assert html =~ "More of the dog, please."
+      assert Comments.for_article(article.id) == []
+    end
+
+    test "no website is no link", %{conn: conn} do
+      article = published_post()
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+
+      send_comment(conn, article, %{"website" => ""})
+
+      assert [comment] = Comments.for_article(article.id)
+      assert comment.website == nil
+    end
+
     test "a filled honeypot drops the comment and says it worked", %{conn: conn} do
       article = published_post()
 
-      conn = send_comment(conn, article, %{"website" => "https://spam.example"})
+      conn = send_comment(conn, article, %{"url" => "https://spam.example"})
 
       assert redirected_to(conn) == Articles.public_path(article) <> "#comments"
       assert Phoenix.Flash.get(conn.assigns.flash, :comment_note) =~ "Sent."
