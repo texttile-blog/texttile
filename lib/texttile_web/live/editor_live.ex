@@ -1617,16 +1617,18 @@ defmodule TexttileWeb.EditorLive do
            at a glance. The one that is yours wears the accent the
            admin area uses for what is yours and leads with You, and it
            only appears while somebody is actually reading along: alone
-           in a text you need no telling that you are writing it. --%>
-      <div :if={@holds_lock && reading_along(@others, @article) != []} class="jbar mine" id="jbar">
+           in a text you need no telling that you are writing it. A
+           second window of your own is somebody reading along too, and
+           it is what that window says about this one. --%>
+      <div :if={@holds_lock && watchers(assigns) != []} class="jbar mine" id="jbar">
         <span class="dot" aria-hidden="true"></span>
         <b>{gettext("You are writing.")}</b>
         <span class="w">
           {ngettext(
-            "%{names} reads along and sees it as you type. The title and the body are read-only for them until you stop.",
-            "%{names} read along and see it as you type. The title and the body are read-only for them until you stop.",
-            length(reading_along(@others, @article)),
-            names: Enum.join(reading_along(@others, @article), ", ")
+            "%{names} reads along and sees it as you type. The title and the body are read-only there until you stop.",
+            "%{names} read along and see it as you type. The title and the body are read-only there until you stop.",
+            length(watchers(assigns)),
+            names: named(watchers(assigns))
           )}
         </span>
       </div>
@@ -2632,6 +2634,14 @@ defmodule TexttileWeb.EditorLive do
         wire() {
           const button = this.el.querySelector("[data-copy]")
           const field = this.el.querySelector("textarea")
+          /* The lines are there to be handed on whole, never edited, so
+             touching them picks all of them: one click and one key,
+             for whoever does not reach for the Copy button. `focus`
+             and not `click`, so the keyboard gets the same. */
+          if (field && !field.dataset.wired) {
+            field.dataset.wired = "1"
+            field.addEventListener("focus", () => field.select())
+          }
           if (!button || button.dataset.wired) return
           button.dataset.wired = "1"
           button.addEventListener("click", async () => {
@@ -2795,6 +2805,33 @@ defmodule TexttileWeb.EditorLive do
         Enum.any?(person.sessions, &(&1.text_id == article.id)),
         uniq: true,
         do: person.name
+  end
+
+  defp named(watchers), do: Enum.join(watchers, ", ")
+
+  # Everybody who has this text open besides the tab asking. Other
+  # people by name, and your own other windows as what they are: the
+  # window over there says "You are writing in another tab", so this
+  # one owes the same fact from the other side.
+  #
+  # A name is written the way its owner writes it and is never touched
+  # here. The phrase for your own tabs is the one thing that needs a
+  # capital, and only where it opens the sentence on its own.
+  defp watchers(%{others: others, article: article, own_tabs: own_tabs}) do
+    names = reading_along(others, article)
+    mine = Enum.count(own_tabs, &(&1.text_id == article.id))
+
+    cond do
+      mine == 0 ->
+        names
+
+      names == [] ->
+        [ngettext("Another tab of yours", "%{count} other tabs of yours", mine, count: mine)]
+
+      true ->
+        names ++
+          [ngettext("another tab of yours", "%{count} other tabs of yours", mine, count: mine)]
+    end
   end
 
   defp inline_count(body) do

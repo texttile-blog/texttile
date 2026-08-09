@@ -36,13 +36,17 @@ defmodule TexttileWeb.Admin do
       {:ok, _} =
         Presence.track(self(), @topic, to_string(scope.user.id), %{
           view: view,
-          name: Accounts.display_name(scope.user)
+          name: Accounts.display_name(scope.user),
+          # which tab this is. Presence is keyed by person, so without
+          # it a tab cannot tell its own meta from its owner's others.
+          sid: socket.id
         })
     end
 
     socket =
       socket
       |> assign(:others, others(scope))
+      |> assign(:own_tabs, own_tabs(scope, socket.id))
       |> assign(:online_ids, online_user_ids())
       |> attach_hook(:admin_presence, :handle_info, &handle_info/2)
       |> attach_hook(:admin_actions, :handle_event, &handle_event/3)
@@ -63,6 +67,7 @@ defmodule TexttileWeb.Admin do
     {:halt,
      socket
      |> assign(:others, others(socket.assigns.current_scope))
+     |> assign(:own_tabs, own_tabs(socket.assigns.current_scope, socket.id))
      |> assign(:online_ids, online_user_ids())}
   end
 
@@ -114,6 +119,27 @@ defmodule TexttileWeb.Admin do
       }
     end)
     |> Enum.sort_by(& &1.name)
+  end
+
+  @doc """
+  Your own other tabs, one entry per tab, each with the text it stands
+  in. A second window of your own reads along exactly like another
+  person does, and the window it reads along with has to be able to say
+  so; `others/1` cannot, because presence is keyed by person and drops
+  your whole key.
+  """
+  def own_tabs(scope, sid) do
+    me = scope && to_string(scope.user.id)
+
+    case Map.get(Presence.list(@topic), me) do
+      %{metas: metas} ->
+        for meta <- metas,
+            Map.get(meta, :sid) != sid,
+            do: %{text_id: Map.get(meta, :text_id)}
+
+      _absent ->
+        []
+    end
   end
 
   @doc """

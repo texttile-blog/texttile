@@ -911,12 +911,46 @@ defmodule TexttileWeb.EditorLiveTest do
     test "the second person gets the text read-only and sees who writes",
          %{conn: conn, user: user} do
       article = draft(user)
-      {:ok, _first, _} = live(conn, ~p"/admin/texts/#{article}")
+      {:ok, first, _} = live(conn, ~p"/admin/texts/#{article}")
 
-      {second, _other} = second_session(article)
+      {second, other} = second_session(article)
 
       assert has_element?(second, "#edTitle[readonly]")
-      assert has_element?(second, "#jbar")
+      assert has_element?(second, "#jbar.theirs", Texttile.Accounts.display_name(user))
+
+      # and the one who writes is told they are watched, in their own ink
+      wait_until(fn ->
+        has_element?(first, "#jbar.mine", Texttile.Accounts.display_name(other))
+      end)
+    end
+
+    # Alone in a text nobody needs telling that they are writing it.
+    test "the writer's own band waits for somebody to read along", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, first, _} = live(conn, ~p"/admin/texts/#{article}")
+
+      assert has_element?(first, "#edTitle:not([readonly])")
+      refute has_element?(first, "#jbar")
+    end
+
+    # Presence is keyed by person, so a second window of your own used
+    # to be invisible to the window that holds the text: it said
+    # nothing at all while the other one said "You are writing in
+    # another tab".
+    test "a second window of your own counts as somebody reading along",
+         %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, first, _} = live(conn, ~p"/admin/texts/#{article}")
+
+      {:ok, mine, _} =
+        Phoenix.ConnTest.build_conn() |> log_in_user(user) |> live(~p"/admin/texts/#{article}")
+
+      # the second window does not take the text, and says whose it is
+      assert has_element?(mine, "#edTitle[readonly]")
+      assert has_element?(mine, "#jbar.theirs", "another tab")
+
+      # and the window that holds it says so in the accent
+      wait_until(fn -> has_element?(first, "#jbar.mine", "Another tab of yours") end)
     end
 
     test "the reader sees the text live", %{conn: conn, user: user} do
