@@ -118,6 +118,27 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
       assert comment.address.email == "kb@example.org"
     end
 
+    test "the name of an account leads to this blog, whatever the form sends", %{conn: conn} do
+      user = user_fixture()
+      article = published_post()
+
+      conn
+      |> log_in_user(user)
+      |> post(~p"/comments/#{article.id}", %{
+        "body" => "From the house.",
+        "website" => "https://somewhere-else.example"
+      })
+
+      # nothing of it is stored: the link is the site itself, and it
+      # follows the site wherever it moves
+      assert [comment] = Comments.for_article(article.id)
+      assert comment.website == nil
+
+      html = build_conn() |> get(Articles.public_path(article)) |> html_response(200)
+      refute html =~ "somewhere-else.example"
+      assert html =~ ~s(<a href="/" class="writer-out")
+    end
+
     test "the time trap and the honeypot let an account through", %{conn: conn} do
       user = user_fixture()
       article = published_post()
@@ -128,7 +149,7 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
       |> log_in_user(user)
       |> post(~p"/comments/#{article.id}", %{
         "body" => "Through the traps.",
-        "website" => "https://spam.example"
+        "url" => "https://spam.example"
       })
 
       assert [comment] = Comments.for_article(article.id)

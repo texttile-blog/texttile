@@ -382,22 +382,17 @@ msgid_plural "%{count} views"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/components/comment_components.ex:195
+#: lib/texttile_web/components/comment_components.ex:200
 #, elixir-autogen, elixir-format
 msgid "A comment appears under the entry the moment a reader sends it, and nobody confirms anything. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever."
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:230
+#: lib/texttile_web/components/comment_components.ex:235
 #, elixir-autogen, elixir-format
 msgid "A comment holds %{count} characters at most. Nothing was saved."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:205
-#, elixir-autogen, elixir-format
-msgid "A comment needs a name, an email address and some words. Check the form and send it again."
-msgstr ""
-
-#: lib/texttile_web/components/comment_components.ex:234
+#: lib/texttile_web/components/comment_components.ex:239
 #, elixir-autogen, elixir-format
 msgid "A comment needs some words. Nothing was saved."
 msgstr ""
@@ -657,7 +652,7 @@ msgstr ""
 msgid "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:78
+#: lib/texttile_web/components/comment_components.ex:83
 #: lib/texttile_web/components/core_components.ex:131
 #: lib/texttile_web/js_strings.ex:39
 #: lib/texttile_web/live/editor_live.ex:1812
@@ -686,7 +681,7 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:236
+#: lib/texttile_web/controllers/site_html/article.html.heex:250
 #: lib/texttile_web/js_strings.ex:42
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -698,7 +693,7 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:194
+#: lib/texttile_web/controllers/site_html/article.html.heex:208
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr ""
@@ -784,7 +779,7 @@ msgstr ""
 msgid "Default: the Texttile mark"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:105
+#: lib/texttile_web/components/comment_components.ex:110
 #: lib/texttile_web/js_strings.ex:50
 #: lib/texttile_web/live/editor_live.ex:2164
 #: lib/texttile_web/live/settings_live.ex:1008
@@ -813,12 +808,12 @@ msgstr ""
 msgid "Delete the account of %{name}?"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:216
+#: lib/texttile_web/components/comment_components.ex:221
 #, elixir-autogen, elixir-format
 msgid "Delete the comment"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:208
+#: lib/texttile_web/components/comment_components.ex:213
 #, elixir-autogen, elixir-format
 msgid "Delete the comment of %{name}?"
 msgstr ""
@@ -894,7 +889,7 @@ msgstr ""
 msgid "Drafts"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:94
+#: lib/texttile_web/components/comment_components.ex:99
 #: lib/texttile_web/controllers/site_html/article.html.heex:34
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -905,7 +900,7 @@ msgstr ""
 msgid "Editing"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:176
+#: lib/texttile_web/controllers/site_html/article.html.heex:177
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:29
 #: lib/texttile_web/live/newsletter_live.ex:101
 #: lib/texttile_web/live/newsletter_live.ex:102
@@ -925,7 +920,7 @@ msgstr ""
 msgid "Email for new entries"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:175
+#: lib/texttile_web/controllers/site_html/article.html.heex:176
 #, elixir-autogen, elixir-format
 msgid "Email, not public"
 msgstr ""
@@ -1044,7 +1039,7 @@ msgstr ""
 msgid "Front page"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:231
+#: lib/texttile_web/controllers/site_html/article.html.heex:245
 #: lib/texttile_web/js_strings.ex:41
 #, elixir-autogen, elixir-format
 msgid "Full size"
@@ -1138,7 +1133,7 @@ msgstr ""
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:210
+#: lib/texttile_web/components/comment_components.ex:215
 #, elixir-autogen, elixir-format
 msgid "It removes the comment from the entry at once, and the reader is not told."
 msgstr ""
@@ -1304,8 +1299,8 @@ msgstr ""
 msgid "More entries"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:164
 #: lib/texttile_web/controllers/site_html/article.html.heex:165
+#: lib/texttile_web/controllers/site_html/article.html.heex:166
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr ""
@@ -1358,7 +1353,7 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:243
+#: lib/texttile_web/controllers/site_html/article.html.heex:257
 #: lib/texttile_web/js_strings.ex:46
 #, elixir-autogen, elixir-format
 msgid "Next tile"
@@ -1444,7 +1439,7 @@ msgstr ""
 msgid "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:691
+#: lib/texttile_web/controllers/site_controller.ex:699
 #, elixir-autogen, elixir-format
 msgid "Not found"
 msgstr ""
@@ -1569,7 +1564,7 @@ msgstr ""
 msgid "Only a .zip file works here"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:146
+#: lib/texttile_web/controllers/site_html/article.html.heex:147
 #, elixir-autogen, elixir-format
 msgid "Only you see this. Follow the link in the mail and everybody sees it."
 msgstr ""
@@ -1679,12 +1674,12 @@ msgstr ""
 msgid "Pictures and videos in the text"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:150
+#: lib/texttile_web/controllers/site_html/article.html.heex:151
 #, elixir-autogen, elixir-format
 msgid "Post a comment"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:210
+#: lib/texttile_web/controllers/site_html/article.html.heex:224
 #, elixir-autogen, elixir-format
 msgid "Post comment"
 msgstr ""
@@ -1710,7 +1705,7 @@ msgstr ""
 msgid "Previous"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:239
+#: lib/texttile_web/controllers/site_html/article.html.heex:253
 #: lib/texttile_web/js_strings.ex:45
 #, elixir-autogen, elixir-format
 msgid "Previous tile"
@@ -1793,7 +1788,7 @@ msgstr ""
 msgid "Readers confirm their email before the comment appears"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:188
+#: lib/texttile_web/components/comment_components.ex:193
 #, elixir-autogen, elixir-format
 msgid "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever."
 msgstr ""
@@ -1823,7 +1818,7 @@ msgstr ""
 msgid "Referrers, last 14 days"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:102
+#: lib/texttile_web/components/comment_components.ex:107
 #, elixir-autogen, elixir-format
 msgid "Release"
 msgstr ""
@@ -1856,7 +1851,7 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:175
+#: lib/texttile_web/components/comment_components.ex:180
 #, elixir-autogen, elixir-format
 msgid "Restore"
 msgstr ""
@@ -1872,7 +1867,7 @@ msgstr ""
 msgid "Retry"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:77
+#: lib/texttile_web/components/comment_components.ex:82
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -1903,7 +1898,7 @@ msgid_plural "Saved · the next entry mails the new word to %{count} subscribers
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:193
+#: lib/texttile_web/controllers/site_html/article.html.heex:207
 #, elixir-autogen, elixir-format
 msgid "Say something"
 msgstr ""
@@ -2394,7 +2389,7 @@ msgstr ""
 msgid "The title and the body are read-only right now."
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:211
+#: lib/texttile_web/components/comment_components.ex:216
 #, elixir-autogen, elixir-format
 msgid "The trash on the Comments screen keeps it for %{days} days. Restore puts it back where it stood; after that it is gone for good."
 msgstr ""
@@ -2432,7 +2427,7 @@ msgstr ""
 msgid "The whole blog waits behind this one word, this entry with it. Settings > Access is where it changes."
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:71
+#: lib/texttile_web/components/comment_components.ex:76
 #, elixir-autogen, elixir-format
 msgid "The words of the comment"
 msgstr ""
@@ -2567,7 +2562,7 @@ msgstr ""
 msgid "This screen never says whether an address has an account. The link works one time, and for 24 hours. No mail arrives for an address without an account."
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:238
+#: lib/texttile_web/components/comment_components.ex:243
 #, elixir-autogen, elixir-format
 msgid "Those words were not saved."
 msgstr ""
@@ -2768,7 +2763,7 @@ msgstr ""
 msgid "Without a password nothing is protected"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:129
+#: lib/texttile_web/components/comment_components.ex:134
 #, elixir-autogen, elixir-format
 msgid "Write to %{email}"
 msgstr ""
@@ -2939,7 +2934,7 @@ msgstr ""
 msgid "go"
 msgstr ""
 
-#: lib/texttile_web/components/comment_components.ex:166
+#: lib/texttile_web/components/comment_components.ex:171
 #, elixir-autogen, elixir-format
 msgid "goes for good on"
 msgstr ""
@@ -3121,7 +3116,7 @@ msgstr ""
 msgid "views, last %{days} days"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:136
+#: lib/texttile_web/controllers/site_html/article.html.heex:137
 #, elixir-autogen, elixir-format
 msgid "waiting for your confirmation"
 msgstr ""
@@ -3163,7 +3158,7 @@ msgid "your profile"
 msgstr ""
 
 #: lib/texttile_web/components/comment_components.ex:37
-#: lib/texttile_web/components/comment_components.ex:162
+#: lib/texttile_web/components/comment_components.ex:167
 #, elixir-autogen, elixir-format
 msgctxt "before the title of an entry"
 msgid "on"
@@ -3521,4 +3516,19 @@ msgstr ""
 #: lib/texttile_web/live/settings_live.ex:1229
 #, elixir-autogen, elixir-format
 msgid "Version"
+msgstr ""
+
+#: lib/texttile_web/controllers/site_html/article.html.heex:219
+#, elixir-autogen, elixir-format
+msgid "A comment needs a name, an email address and some words, and a website has to read like example.org. Check the form and send it again."
+msgstr ""
+
+#: lib/texttile_web/controllers/site_html/article.html.heex:191
+#, elixir-autogen, elixir-format
+msgid "Website"
+msgstr ""
+
+#: lib/texttile_web/controllers/site_html/article.html.heex:190
+#, elixir-autogen, elixir-format
+msgid "Website, if you have one"
 msgstr ""

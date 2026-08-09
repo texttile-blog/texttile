@@ -3,9 +3,8 @@ defmodule Texttile.Repo.Migrations.AddCommentWebsiteAndImportMark do
 
   def change do
     alter table(:comments) do
-      # The address the author gave for themselves on the old blog. The
-      # form here never asks for one (its `website` field is the trap),
-      # so only an import fills this in. The name links to it.
+      # The address the author gave for themselves, in the comment form
+      # or in a bundle. The name over the comment links to it.
       add :website, :string
 
       # The comment came out of a bundle. Importing the same bundle

@@ -71,7 +71,7 @@ defmodule TexttileWeb.SiteNewsletterTest do
     test "a filled honeypot is dropped and told it worked", %{conn: conn} do
       html =
         conn
-        |> send_join(%{"website" => "https://spam.example"})
+        |> send_join(%{"url" => "https://spam.example"})
         |> html_response(200)
 
       refute html =~ ~s(id="newsletter-error")

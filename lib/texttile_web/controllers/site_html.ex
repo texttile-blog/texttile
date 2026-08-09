@@ -133,7 +133,7 @@ defmodule TexttileWeb.SiteHTML do
             <input type="hidden" name="t" value={@newsletter_token} />
             <input
               type="text"
-              name="website"
+              name="url"
               id="nl-hp"
               class="sr"
               tabindex="-1"
@@ -294,6 +294,16 @@ defmodule TexttileWeb.SiteHTML do
       format_date(date)
     end
   end
+
+  @doc """
+  Where the name over a comment leads, or `nil` when it leads nowhere:
+  the website its author gave, and this blog itself when one of its own
+  wrote the comment signed in. Nothing of that is stored on the
+  comment, so the link follows the site wherever it moves.
+  """
+  def comment_website(%{website: website}) when is_binary(website), do: website
+  def comment_website(%{user_id: user_id}) when not is_nil(user_id), do: ~p"/"
+  def comment_website(_comment), do: nil
 
   defdelegate site_title, to: Texttile.Settings
 end

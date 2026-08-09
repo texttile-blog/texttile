@@ -149,6 +149,36 @@ defmodule Texttile.CommentsTest do
       assert %{name: _, email: _, body: _} = errors_on(changeset)
     end
 
+    test "the website of the writer is stored, a bare one made a link" do
+      article = published_post()
+
+      comment = post!(article, Map.put(@attrs, "website", " christel.example "))
+      assert comment.website == "https://christel.example"
+
+      written = post!(article, Map.put(@attrs, "website", "http://christel.example/dog"))
+      assert written.website == "http://christel.example/dog"
+    end
+
+    test "no website is no website" do
+      article = published_post()
+
+      assert post!(article, Map.put(@attrs, "website", "")).website == nil
+      assert post!(article).website == nil
+    end
+
+    test "a website nobody can follow is refused" do
+      article = published_post()
+
+      for written <- ["javascript:alert(1)", "example", "not a website .org"] do
+        assert {:error, changeset} =
+                 Comments.post(article, Map.put(@attrs, "website", written),
+                   confirm_url: &to_string/1
+                 )
+
+        assert %{website: _} = errors_on(changeset)
+      end
+    end
+
     test "a name or a comment beyond the limit is refused" do
       article = published_post()
 

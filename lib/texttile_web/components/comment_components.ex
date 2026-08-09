@@ -41,8 +41,8 @@ defmodule TexttileWeb.CommentComponents do
           <% end %>
           <span :if={Comments.released?(@comment)}>· {gettext("let through")}</span>
           <span :if={Comments.edited?(@comment)}>· {gettext("edited")}</span>
-          <%!-- only an import brings a website, and an admin reading
-               the list is the one who should see where it points --%>
+          <%!-- the website its author gave: an admin reading the list
+               is the one who should see where a name points --%>
           <span :if={@comment.website}>
             ·
             <a
