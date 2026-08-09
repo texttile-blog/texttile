@@ -9,39 +9,13 @@ defmodule TexttileWeb.E2E.LanguageFlowTest do
   speaks German where the script does the talking.
   """
 
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
+  use TexttileWeb.E2E
 
   alias Texttile.Articles
   alias Texttile.Settings
 
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  setup do
-    Texttile.DataCase.restore_admin_users_afterwards()
-
-    Texttile.Articles.Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Texttile.Articles.Lock.supervisor(), pid)
-    end)
-
-    %{kb: user_fixture(%{username: "kb"})}
-  end
-
-  defp draft!(user) do
-    {:ok, article} = Articles.create_draft(user)
-    {:ok, article} = Articles.update_text(article, %{title: "Türen", body: "Hölzerne."})
-    article
-  end
-
   test "the gallery says its own words in the language of the site", %{conn: conn, kb: kb} do
-    article = draft!(kb)
+    article = draft!(kb, "Türen", "Hölzerne.")
 
     # Signed in first, then the language: the sign-in screen speaks it
     # too, and the helper knows the English one.

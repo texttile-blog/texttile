@@ -4,11 +4,6 @@ defmodule Texttile.UploadsTest do
   alias Texttile.Settings
   alias Texttile.Uploads
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   describe "under_root/1" do
     test "names the file below the root, from a relative path or from its pieces" do
       assert Uploads.under_root("images/pier.jpg") == "images/pier.jpg"

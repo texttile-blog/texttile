@@ -15,8 +15,6 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
 
   setup do
     {:ok, _} = Settings.put(:comments_require_confirmation, true)
-    Texttile.RateLimiter.reset()
-    on_exit(&Texttile.RateLimiter.reset/0)
     :ok
   end
 
@@ -144,8 +142,6 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
       article = published_post()
 
       # The mail leaves in a task of its own, so it has to land here.
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
 
       conn
       |> log_in_user(author)

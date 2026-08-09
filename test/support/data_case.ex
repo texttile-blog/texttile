@@ -38,12 +38,85 @@ defmodule Texttile.DataCase do
   def setup_sandbox(tags) do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Texttile.Repo, shared: not tags[:async])
     take_write_lock()
-    restore_admin_users_afterwards()
-    forget_open_editors()
+    clear_what_no_sandbox_rolls_back()
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
     # Registered last, so it runs first: the mail has to be gone before
     # the owner is.
     on_exit(&settle_mail_tasks/0)
+  end
+
+  @doc """
+  Clears everything a test can leave behind that the sandbox does not
+  roll back, and arranges for this test's own leavings to go too.
+
+  The database rolls back by itself. These do not: the application
+  environment, the edit locks, the uploaded files, the rate limiter's
+  table, the import job and where the mail lands. Every one of them
+  used to be cleared by hand in the tests that happened to need it,
+  which is how a test that needed it and did not say so became a test
+  that fails only after some other test.
+
+  The browser tests keep their own sandbox and never pass through
+  `setup_sandbox/1`, so they call this themselves.
+  """
+  def clear_what_no_sandbox_rolls_back do
+    restore_admin_users_afterwards()
+    forget_open_editors()
+    clear_uploads()
+    Texttile.RateLimiter.reset()
+    catch_mail()
+
+    on_exit(fn ->
+      Texttile.Import.Job.discard()
+      clear_uploads()
+    end)
+
+    :ok
+  end
+
+  @doc """
+  Takes the uploaded files of the test before this one. They live below
+  one root that `config/test.exs` points into `tmp/`, never at the
+  user's own uploads.
+  """
+  def clear_uploads, do: File.rm_rf!(Texttile.Uploads.root())
+
+  @doc """
+  Sends every mail of this test to this test, whichever process wrote
+  it. A comment and a text going live both hand their mail to a task,
+  and a task delivers to nobody unless somebody says where.
+  """
+  def catch_mail do
+    Application.put_env(:swoosh, :shared_test_process, self())
+    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
+    :ok
+  end
+
+  @doc """
+  Runs `fun` until it answers something other than nil or false, and
+  gives up after `timeout` ms.
+
+  For the things that settle a moment after the click: an autosave
+  behind its debounce, a broadcast on its way, a conversion in the
+  queue. Six copies of this stood in six test files.
+  """
+  def eventually(fun, timeout \\ 3_000) do
+    wait_until(fun, System.monotonic_time(:millisecond) + timeout)
+  end
+
+  defp wait_until(fun, deadline) do
+    case fun.() do
+      answer when answer not in [nil, false] ->
+        answer
+
+      _not_yet ->
+        if System.monotonic_time(:millisecond) > deadline do
+          raise "waited for something that never happened"
+        end
+
+        Process.sleep(50)
+        wait_until(fun, deadline)
+    end
   end
 
   @doc """

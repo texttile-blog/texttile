@@ -156,8 +156,6 @@ defmodule Texttile.NewsletterTest do
 
   describe "the publish email" do
     setup do
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
 
       {:ok, _} = Newsletter.add("one@example.org")
       {:ok, _} = Newsletter.add("two@example.org")

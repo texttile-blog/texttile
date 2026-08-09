@@ -1,25 +1,10 @@
 defmodule TexttileWeb.E2E.ImportFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1]
+  use TexttileWeb.E2E
 
   alias Texttile.Articles.Article
   alias Texttile.Gallery
   alias Texttile.Repo
   alias Texttile.Uploads
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  setup do
-    File.rm_rf!(Uploads.root())
-    user_fixture(%{username: "kb"})
-    on_exit(fn -> Texttile.Import.Job.discard() end)
-    :ok
-  end
 
   test "a zip of bundles becomes texts, tiles included", %{conn: conn} do
     zip = build_zip()
@@ -55,7 +40,7 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
 
     # the imported text stands in the texts grid
     conn
-    |> visit("/")
+    |> open_page("/")
     |> assert_has("body", text: "Beach days")
   end
 

@@ -10,7 +10,6 @@ defmodule TexttileWeb.SettingsLiveTest do
   alias Texttile.Uploads
 
   setup %{conn: conn} do
-    File.rm_rf!(Uploads.root())
     user = user_fixture(%{username: "kb"})
     %{conn: log_in_user(conn, user), user: user}
   end

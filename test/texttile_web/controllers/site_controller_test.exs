@@ -6,11 +6,6 @@ defmodule TexttileWeb.SiteControllerTest do
 
   alias Texttile.Settings
 
-  setup do
-    File.rm_rf!(Texttile.Uploads.root())
-    :ok
-  end
-
   describe "the front page" do
     test "lists published posts, newest first, and nothing else", %{conn: conn} do
       old = published_post(title: "Old text", publish_date: ~D[2026-01-05])

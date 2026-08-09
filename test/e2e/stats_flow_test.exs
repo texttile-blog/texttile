@@ -11,26 +11,17 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
   whether the page carries the beacon at all. The way from the request
   to the row is `TexttileWeb.StatsBeaconTest`.
   """
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
+  use TexttileWeb.E2E
 
-  import Texttile.AccountsFixtures
-  import Texttile.ArticlesFixtures
   import Texttile.StatsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open: 2]
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
 
   test "a reader's page reports itself, an admin's does not", %{conn: conn} do
-    user_fixture(%{username: "kb"})
     article = published_post(%{title: "Concrete flowers of Kaunas"})
 
     # The reader: the list and the entry both carry the beacon, and the
     # entry names itself in it.
     conn
-    |> visit("/blog")
+    |> open_page("/blog")
     |> assert_has("body[data-count]")
     |> click_link("Concrete flowers of Kaunas")
     |> assert_has("body[data-count][data-count-entry='#{article.id}']")
@@ -38,13 +29,12 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     # The same entry with an admin reading it: nothing to report.
     conn
     |> sign_in()
-    |> visit(Texttile.Articles.public_path(article))
+    |> open_page(Texttile.Articles.public_path(article))
     |> refute_has("body[data-count]")
   end
 
   test "the admin reads the numbers on Stats and follows one entry into the editor",
        %{conn: conn} do
-    user_fixture(%{username: "kb"})
     article = published_post(%{title: "Concrete flowers of Kaunas"})
 
     seed_views(7, article_id: article.id, referrer_host: "news.ycombinator.com")
@@ -70,7 +60,6 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
   end
 
   test "a draft says why its Stats tab is empty", %{conn: conn} do
-    user_fixture(%{username: "kb"})
     draft = draft_post(%{title: "Fog over the harbor"})
 
     conn

@@ -28,20 +28,13 @@ defmodule TexttileWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import TexttileWeb.ConnCase
+      # The waiting these tests do is the waiting every test does.
+      import Texttile.DataCase, only: [eventually: 1, eventually: 2]
     end
   end
 
   setup tags do
     Texttile.DataCase.setup_sandbox(tags)
-
-    # Edit-lock processes outlive the SQL sandbox and article ids repeat
-    # across tests, so every test starts with no lock held anywhere.
-    Texttile.Articles.Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Texttile.Articles.Lock.supervisor(), pid)
-    end)
-
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 

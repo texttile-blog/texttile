@@ -10,7 +10,6 @@ defmodule Texttile.ImportTest do
   alias Texttile.Uploads
 
   setup do
-    File.rm_rf!(Uploads.root())
     Req.Test.stub(Texttile.ImportStub, fn conn -> respond_with_jpg(conn) end)
     %{user: user_fixture(), dir: tmp_dir!()}
   end
@@ -18,8 +17,6 @@ defmodule Texttile.ImportTest do
   # The subscriber mails leave in a task of their own, so the test
   # process has to be the one Swoosh delivers to.
   defp share_mail do
-    Application.put_env(:swoosh, :shared_test_process, self())
-    on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
   end
 
   defp tmp_dir! do

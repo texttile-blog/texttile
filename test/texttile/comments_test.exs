@@ -205,11 +205,6 @@ defmodule Texttile.CommentsTest do
   end
 
   describe "the mail to the people who run the blog" do
-    setup do
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
-      :ok
-    end
 
     test "with confirmation off, the comment travels the moment it arrives" do
       {:ok, _} = Settings.put(:comments_require_confirmation, false)
@@ -502,11 +497,6 @@ defmodule Texttile.CommentsTest do
   end
 
   describe "release_comment/1" do
-    setup do
-      Application.put_env(:swoosh, :shared_test_process, self())
-      on_exit(fn -> Application.delete_env(:swoosh, :shared_test_process) end)
-      :ok
-    end
 
     test "one comment stands under the text while its address stays unconfirmed" do
       article = published_post()

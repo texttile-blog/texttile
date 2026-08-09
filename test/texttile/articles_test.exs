@@ -282,7 +282,6 @@ defmodule Texttile.ArticlesTest do
 
     test "the images in the body go with the text, old versions included" do
       alias Texttile.Uploads
-      File.rm_rf!(Uploads.root())
 
       current = "images/door-aaaa1111.png"
       versioned = "images/gone-bbbb2222.png"

@@ -1,27 +1,7 @@
 defmodule TexttileWeb.E2E.EditorFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
+  use TexttileWeb.E2E
 
   alias Texttile.Articles
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  setup do
-    Texttile.DataCase.restore_admin_users_afterwards()
-
-    Texttile.Articles.Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Texttile.Articles.Lock.supervisor(), pid)
-    end)
-
-    %{kb: user_fixture(%{username: "kb"})}
-  end
 
   describe "writing" do
     test "a new text: title and body autosave, the live preview renders", %{conn: conn} do
@@ -37,7 +17,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> assert_has(".cm-mdh2", text: "The doors")
 
       article =
-        wait_until(fn ->
+        eventually(fn ->
           case Articles.list_articles() do
             [%{body: body} = article] when body != "" -> article
             _ -> nil
@@ -67,7 +47,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> press(".ed-cm .cm-content", "ControlOrMeta+a")
       |> click("[data-cmd=bold]")
 
-      wait_until(fn ->
+      eventually(fn ->
         match?([%{body: "**strong words**"}], Articles.list_articles())
       end)
     end
@@ -383,20 +363,4 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     end
   end
 
-  # The editor debounces its autosave; database asserts wait for it.
-  defp wait_until(fun, timeout \\ 3000) do
-    do_wait(fun, System.monotonic_time(:millisecond) + timeout)
-  end
-
-  defp do_wait(fun, deadline) do
-    case fun.() do
-      value when value not in [nil, false] ->
-        value
-
-      _ ->
-        if System.monotonic_time(:millisecond) > deadline, do: raise("condition never met")
-        Process.sleep(50)
-        do_wait(fun, deadline)
-    end
-  end
 end

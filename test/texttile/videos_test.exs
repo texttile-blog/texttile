@@ -7,11 +7,6 @@ defmodule Texttile.VideosTest do
   alias Texttile.Uploads
   alias Texttile.Videos
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   defp stored(path) do
     {:ok, relative} = Uploads.put_body_video(path, Path.basename(path))
     relative

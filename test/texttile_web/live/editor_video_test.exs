@@ -12,12 +12,6 @@ defmodule TexttileWeb.EditorVideoTest do
 
   setup :register_and_log_in_user
 
-  setup do
-    # The locks are cleared for every test in TexttileWeb.ConnCase.
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   defp draft(user, attrs \\ %{title: "Doors", body: "Wooden ones."}) do
     {:ok, article} = Articles.create_draft(user)
     {:ok, article} = Articles.update_text(article, attrs)

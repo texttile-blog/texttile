@@ -1,15 +1,8 @@
 defmodule TexttileWeb.E2E.PublicSiteFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
-
-  import Texttile.ArticlesFixtures
+  use TexttileWeb.E2E
 
   alias Texttile.Articles
   alias Texttile.Settings
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
 
   describe "reading" do
     test "the front page lists the texts and opens one", %{conn: conn} do
@@ -17,7 +10,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       published_post(title: "Desert nights", body: "Stars and sand.")
 
       conn
-      |> visit("/")
+      |> open_page("/")
       |> assert_has("a", text: "Harbor mornings")
       |> click_link("Harbor mornings")
       |> assert_has("h1", text: "Harbor mornings")
@@ -29,7 +22,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       published_post(title: "Desert nights", body: "Stars and sand.")
 
       conn
-      |> visit("/")
+      |> open_page("/")
       |> press("body", "/")
       |> type("input:focus", "harbor")
       |> press("#q", "Enter")
@@ -45,12 +38,12 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       {:ok, _} = Settings.put(:site_password, "sesame")
 
       conn
-      |> visit(Articles.public_path(article))
+      |> open_page(Articles.public_path(article))
       |> assert_has("#unlock")
       |> fill_in("Password", with: "sesame")
       |> click_button("Read on")
       |> assert_has("h1", text: "Behind the wall")
-      |> visit("/")
+      |> open_page("/")
       |> assert_has("a", text: "Behind the wall")
     end
 
@@ -101,7 +94,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       {:ok, _} = Settings.put(:site_password, "sesame")
 
       conn
-      |> visit("/")
+      |> open_page("/")
       |> assert_has("#unlock")
       |> refute_has("body", text: "One password opens the whole blog")
       |> evaluate(@gate_axis, [is_function: true], &assert(&1 < 1.5))
@@ -115,7 +108,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       {:ok, _second} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
 
       conn
-      |> visit(Articles.public_path(article))
+      |> open_page(Articles.public_path(article))
       |> click("#tile-#{first.id}")
       |> assert_has("#lbCount", text: "1 / 2")
       |> assert_has("#lbCap", text: "pier.jpg")
@@ -135,7 +128,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
         )
 
       conn
-      |> visit(Articles.public_path(article))
+      |> open_page(Articles.public_path(article))
       |> click("#body a.bodypic")
       |> assert_has("#lbCount", text: "1 / 1")
       |> assert_has("#lbCap", text: "the pier")
@@ -149,7 +142,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       published_post(title: "Harbor mornings", body: "Fog over the pier.")
 
       conn
-      |> visit("/")
+      |> open_page("/")
       |> assert_has("#foot-feed", text: "RSS")
       |> click_link("#foot-feed", "RSS")
       |> assert_has("body", text: "Harbor mornings")
@@ -161,7 +154,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       {:ok, _} = Settings.put(:site_password, "sesame")
 
       conn
-      |> visit("/")
+      |> open_page("/")
       |> fill_in("Password", with: "sesame")
       |> click_button("Read on")
       |> assert_has("a", text: "Behind the wall")
@@ -182,7 +175,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       end
 
       conn
-      |> visit("/")
+      |> open_page("/")
       |> assert_has("a", text: "Text 3")
       |> refute_has("a", text: "Text 1")
       |> click_link("#next-page", "Older")
@@ -209,7 +202,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
     test "keeps space under the last line", %{conn: conn} do
       conn
-      |> visit("/")
+      |> open_page("/")
       |> assert_has("#foot-signin")
       |> evaluate(@foot_pad, [is_function: true], &assert(&1 >= 24))
     end

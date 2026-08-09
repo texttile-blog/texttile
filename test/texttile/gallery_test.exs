@@ -7,11 +7,6 @@ defmodule Texttile.GalleryTest do
   alias Texttile.Gallery
   alias Texttile.Uploads
 
-  setup do
-    File.rm_rf!(Uploads.root())
-    :ok
-  end
-
   defp article! do
     user = user_fixture()
     {:ok, article} = Articles.create_draft(user)

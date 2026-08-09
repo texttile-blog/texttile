@@ -1,34 +1,7 @@
 defmodule TexttileWeb.E2E.GalleryFlowTest do
-  # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-  use PhoenixTest.Playwright.Case, async: false
+  use TexttileWeb.E2E
 
-  import Texttile.AccountsFixtures
-  import TexttileWeb.E2E, only: [sign_in: 1, open_editor: 2]
-
-  alias Texttile.Articles
   alias Texttile.Gallery
-
-  @moduletag :e2e
-
-  setup {TexttileWeb.E2E, :close_browser_context_afterwards}
-
-  setup do
-    Texttile.DataCase.restore_admin_users_afterwards()
-
-    Texttile.Articles.Lock.supervisor()
-    |> DynamicSupervisor.which_children()
-    |> Enum.each(fn {_, pid, _, _} ->
-      DynamicSupervisor.terminate_child(Texttile.Articles.Lock.supervisor(), pid)
-    end)
-
-    %{kb: user_fixture(%{username: "kb"})}
-  end
-
-  defp draft!(user) do
-    {:ok, article} = Articles.create_draft(user)
-    {:ok, article} = Articles.update_text(article, %{title: "Doors", body: "Wooden ones."})
-    article
-  end
 
   # A real JPEG on disk, with a capture date the gallery can read.
   defp jpg!(taken) do
@@ -121,7 +94,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> assert_has("#tileCount", text: "3 tiles")
       |> drag("#tile-#{c.id}", to: "#tile-#{a.id}")
 
-      wait_until(fn ->
+      eventually(fn ->
         Enum.map(Gallery.list(article.id), & &1.id) == [c.id, a.id, b.id]
       end)
 
@@ -160,7 +133,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       # the date picker resorts the gallery at once
       conn = fill_in(conn, "Date", with: "2024-05-01T15:00")
 
-      wait_until(fn ->
+      eventually(fn ->
         article.id |> Gallery.list() |> List.last() |> Map.fetch!(:id) == b.id
       end)
 
@@ -193,19 +166,4 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
     end
   end
 
-  defp wait_until(fun, timeout \\ 3000) do
-    do_wait(fun, System.monotonic_time(:millisecond) + timeout)
-  end
-
-  defp do_wait(fun, deadline) do
-    case fun.() do
-      value when value not in [nil, false] ->
-        value
-
-      _ ->
-        if System.monotonic_time(:millisecond) > deadline, do: raise("condition never met")
-        Process.sleep(50)
-        do_wait(fun, deadline)
-    end
-  end
 end

@@ -5,10 +5,8 @@ defmodule TexttileWeb.ImportLiveTest do
   import Texttile.AccountsFixtures
 
   alias Texttile.Import.Job
-  alias Texttile.Uploads
 
   setup %{conn: conn} do
-    File.rm_rf!(Uploads.root())
     Job.discard()
     on_exit(fn -> Job.discard() end)
     Job.subscribe()

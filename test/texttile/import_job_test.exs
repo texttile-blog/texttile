@@ -5,10 +5,8 @@ defmodule Texttile.Import.JobTest do
 
   alias Texttile.Articles.Article
   alias Texttile.Import.Job
-  alias Texttile.Uploads
 
   setup do
-    File.rm_rf!(Uploads.root())
     Job.subscribe()
     job = start_supervised!({Job, name: :import_job_under_test})
     %{job: job, user: user_fixture()}
