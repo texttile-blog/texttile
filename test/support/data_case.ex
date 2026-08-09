@@ -78,8 +78,45 @@ defmodule Texttile.DataCase do
   Takes the uploaded files of the test before this one. They live below
   one root that `config/test.exs` points into `tmp/`, never at the
   user's own uploads.
+
+  The walk can lose a folder it has just emptied. `File.rm_rf/1` lists a
+  folder, removes what it listed, and then asks for the folder itself; a
+  rendition request that the browser gave up on writes a moment longer
+  than the test that started it, so a file lands in between. The system
+  call answers ENOTEMPTY, which Erlang reports as `:eexist`, and the
+  bang form raises in a teardown callback. That is not a broken cleanup
+  but a writer that has not finished, so the walk starts again. It gives
+  up after two seconds, because a root that stays busy that long means
+  something bigger is wrong than one late file.
   """
-  def clear_uploads, do: File.rm_rf!(Texttile.Uploads.root())
+  @busy_timeout 2_000
+
+  def clear_uploads, do: clear_uploads(System.monotonic_time(:millisecond) + @busy_timeout)
+
+  defp clear_uploads(deadline) do
+    case File.rm_rf(Texttile.Uploads.root()) do
+      {:ok, _removed} ->
+        :ok
+
+      {:error, reason, path} when reason in [:eexist, :enotempty] ->
+        if System.monotonic_time(:millisecond) < deadline do
+          Process.sleep(5)
+          clear_uploads(deadline)
+        else
+          raise_cleanup_error(reason, path)
+        end
+
+      {:error, reason, path} ->
+        raise_cleanup_error(reason, path)
+    end
+  end
+
+  defp raise_cleanup_error(reason, path) do
+    raise File.Error,
+      reason: reason,
+      path: path,
+      action: "remove files and directories recursively from"
+  end
 
   @doc """
   Sends every mail of this test to this test, whichever process wrote
