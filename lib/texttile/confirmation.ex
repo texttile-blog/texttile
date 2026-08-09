@@ -33,9 +33,6 @@ defmodule Texttile.Confirmation do
   # address itself carries the limit: one link an hour.
   @interval_seconds 3600
 
-  @doc "How long an address waits before a second link may go out."
-  def interval_seconds, do: @interval_seconds
-
   @doc "The address the way it is stored: folded to one spelling."
   def normalize(email), do: email |> to_string() |> String.trim() |> String.downcase()
 

@@ -19,27 +19,6 @@ defmodule Texttile.Articles.VisibilityTest do
     end
   end
 
-  describe "visible?/2" do
-    test "a reader sees what is live and nothing else" do
-      assert Visibility.visible?(entry(%{status: "published"}), nil)
-      refute Visibility.visible?(entry(%{status: "draft"}), nil)
-      refute Visibility.visible?(entry(%{status: "scheduled"}), nil)
-    end
-
-    test "somebody signed in sees the entry whatever state it is in" do
-      admin = %Texttile.Accounts.User{id: 1}
-
-      assert Visibility.visible?(entry(%{status: "published"}), admin)
-      assert Visibility.visible?(entry(%{status: "draft"}), admin)
-      assert Visibility.visible?(entry(%{status: "scheduled"}), admin)
-    end
-
-    test "nothing is visible when there is no entry" do
-      refute Visibility.visible?(nil, nil)
-      refute Visibility.visible?(nil, %Texttile.Accounts.User{id: 1})
-    end
-  end
-
   describe "open_for_comments?/1" do
     test "a live entry that allows comments takes one" do
       assert Visibility.open_for_comments?(entry(%{status: "published", allow_comments: true}))

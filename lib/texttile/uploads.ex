@@ -32,12 +32,23 @@ defmodule Texttile.Uploads do
 
   Takes a relative path or the pieces of one, so the routes and the
   domain read it the same way. This is the one reading.
+
+  The root itself names no file, and neither does nothing at all: the
+  wildcard routes match with no piece behind them, so `/uploads` and
+  `/renditions/640` arrive here empty and have to answer a 404 like any
+  other name that is not a file.
   """
   def under_root(pieces) do
-    root = Path.expand(root())
-    path = root |> Path.join(Path.join(List.wrap(pieces))) |> Path.expand()
+    case List.wrap(pieces) do
+      [] ->
+        nil
 
-    if String.starts_with?(path, root <> "/"), do: Path.relative_to(path, root)
+      pieces ->
+        root = Path.expand(root())
+        path = root |> Path.join(Path.join(pieces)) |> Path.expand()
+
+        if String.starts_with?(path, root <> "/"), do: Path.relative_to(path, root)
+    end
   end
 
   @doc """

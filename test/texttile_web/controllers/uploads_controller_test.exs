@@ -90,6 +90,13 @@ defmodule TexttileWeb.UploadsControllerTest do
     assert conn |> get(~p"/uploads/site/never-was.png") |> response(404)
   end
 
+  # The wildcard matches with nothing behind it, so a crawler that
+  # walks up to the bare folder gets a 404 and not a crash.
+  test "the bare address of the folder is a 404 too", %{conn: conn} do
+    assert conn |> get("/uploads") |> response(404)
+    assert conn |> get("/renditions/640") |> response(404)
+  end
+
   test "a path cannot climb out of the uploads root", %{conn: conn} do
     outside = Path.expand(Path.join(Uploads.root(), "../secret.txt"))
     File.write!(outside, "secret")

@@ -9,19 +9,18 @@ defmodule Texttile.Articles.Visibility do
   up, so a new entry state had to be found in nine modules before it
   was right. It is answered here now.
 
-  Two words to keep apart:
+  Everything here is about the entry alone: is it live, does it take a
+  comment, which entries are live. Two questions stay outside on
+  purpose.
 
-    * **live** is about the entry: it is on the site, and its address
-      answers for everybody.
-    * **visible** is about a reader and an entry together: a reader
-      sees what is live, and somebody signed in sees an entry whatever
-      state it is in, because an entry wears its address from the
-      moment it has a slug and the editor's way out leads into the
-      real site.
+  Whether somebody signed in may read an entry that is not live is not
+  one question but two queries, because the reader's address and the
+  admin's are looked up differently. `TexttileWeb.SiteController` asks
+  both, side by side, where the session is.
 
-  The site password is a third question and not this module's: it
-  guards the blog or nothing, no entry carries a switch of its own, and
-  it is answered on the way in by `TexttileWeb.SiteGate`.
+  The site password is not about an entry at all: it guards the blog or
+  nothing, no entry carries a switch of its own, and it is answered on
+  the way in by `TexttileWeb.SiteGate`.
   """
 
   import Ecto.Query, warn: false
@@ -40,15 +39,6 @@ defmodule Texttile.Articles.Visibility do
   def live?(%Article{status: @live}), do: true
   def live?(%Article{}), do: false
   def live?(nil), do: false
-
-  @doc """
-  May this reader see the entry? `reader` is the signed-in account, or
-  nil for everybody else.
-  """
-  def visible?(article, reader)
-  def visible?(nil, _reader), do: false
-  def visible?(%Article{} = article, nil), do: live?(article)
-  def visible?(%Article{}, _reader), do: true
 
   @doc """
   Does the entry take a comment? An entry that is not live takes none,

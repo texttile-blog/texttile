@@ -15,6 +15,25 @@ defmodule Texttile.UploadsTest do
       assert Uploads.under_root("images/../../secrets.txt") == nil
       assert Uploads.under_root(["images", "..", "..", "secrets.txt"]) == nil
     end
+
+    # The wildcard routes match with nothing behind them, so /uploads
+    # and /renditions/640 arrive here empty and have to answer like any
+    # other name that is not a file.
+    test "nothing at all names nothing" do
+      assert Uploads.under_root([]) == nil
+      assert Uploads.under_root("") == nil
+    end
+
+    test "a name that starts at the root of the machine stays below ours" do
+      assert Uploads.under_root(["/etc", "passwd"]) == "etc/passwd"
+      assert Uploads.under_root("/etc/passwd") == "etc/passwd"
+    end
+
+    # The name is read before it is used, so a detour through a folder
+    # that is not there still lands where it really points.
+    test "a detour is followed to where it really points" do
+      assert Uploads.under_root("images/../videos/harbour.mp4") == "videos/harbour.mp4"
+    end
   end
 
   describe "remove/1" do

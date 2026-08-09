@@ -15,18 +15,24 @@ defmodule Texttile.Articles.Editing do
   because taking it straight back would undo the release forever. That
   rule is `refresh/4` here, with a test of its own.
 
-  Three states, and no fourth:
+  Two states, and no third:
 
     * `:writing` - this tab holds the entry and may write it
-    * `:flushing` - this tab still holds it and is handing over what is
-      still in flight, so a takeover can go ahead
     * `:watching` - somebody else holds it, or this tab let it go; the
       title and the body are read-only, and `holder/1` says who has it
+
+  A handover is not a third state. The lock asks the holder to hand
+  over what is still in its debounce before a takeover goes ahead, and
+  that question stands until the tab answers it, whatever the lock says
+  about who holds the entry in the meantime. So `flushing?` rides
+  beside the state and `refresh/4` carries it through: an idle release
+  landing inside the flush window used to drop it, and the takeover
+  then waited out the lock's own flush timeout instead.
   """
 
   alias Texttile.Articles.Lock
 
-  defstruct state: :watching, holder: nil
+  defstruct state: :watching, holder: nil, flushing?: false
 
   @doc """
   Opens the entry in this tab: it writes when the entry is free, and
@@ -58,53 +64,47 @@ defmodule Texttile.Articles.Editing do
   that let the entry go from a tab that never had it.
   """
   def refresh(%__MODULE__{} = was, article_id, user_id, pid) do
-    case who_holds(article_id, pid) do
-      :mine ->
-        %__MODULE__{state: :writing}
+    now =
+      case who_holds(article_id, pid) do
+        :mine ->
+          %__MODULE__{state: :writing}
 
-      {:held, holder} ->
-        %__MODULE__{state: :watching, holder: holder}
+        {:held, holder} ->
+          %__MODULE__{state: :watching, holder: holder}
 
-      :free ->
-        # A free entry goes to whoever has it open, except to the tab
-        # that was just released for being idle: taking it straight
-        # back would undo the release, forever. That tab turns
-        # read-only and gets the entry again the moment its person
-        # actually touches the text.
-        if holds?(was) do
-          %__MODULE__{state: :watching}
-        else
-          start(article_id, user_id, pid)
-        end
-    end
+        :free ->
+          # A free entry goes to whoever has it open, except to the tab
+          # that was just released for being idle: taking it straight
+          # back would undo the release, forever. That tab turns
+          # read-only and gets the entry again the moment its person
+          # actually touches the text.
+          if holds?(was) do
+            %__MODULE__{state: :watching}
+          else
+            start(article_id, user_id, pid)
+          end
+      end
+
+    %{now | flushing?: was.flushing?}
   end
 
-  @doc """
-  The lock asked this tab to hand over what is still in flight. A tab
-  that does not hold the entry has nothing to hand over.
-  """
-  def flushing(%__MODULE__{} = editing) do
-    if holds?(editing), do: %{editing | state: :flushing}, else: editing
-  end
+  @doc "The lock asked this tab to hand over what is still in flight."
+  def flushing(%__MODULE__{} = editing), do: %{editing | flushing?: true}
 
-  @doc "The handover is through; this tab writes again."
-  def flushed(%__MODULE__{state: :flushing} = editing), do: %{editing | state: :writing}
-  def flushed(%__MODULE__{} = editing), do: editing
+  @doc "The handover is through."
+  def flushed(%__MODULE__{} = editing), do: %{editing | flushing?: false}
 
   @doc "Whether this tab may write the title and the body."
-  def holds?(%__MODULE__{state: state}), do: state in [:writing, :flushing]
+  def holds?(%__MODULE__{state: state}), do: state == :writing
 
   @doc """
   `holds?/1` for a function head, so a handler that needs the entry can
   say so where it says what it answers.
   """
-  defguard holding(editing) when editing.state in [:writing, :flushing]
+  defguard holding(editing) when editing.state == :writing
 
-  @doc "Whether this tab is writing, with nothing in flight."
-  def writing?(%__MODULE__{state: state}), do: state == :writing
-
-  @doc "Whether this tab is handing over what is still in flight."
-  def flushing?(%__MODULE__{state: state}), do: state == :flushing
+  @doc "Whether this tab still owes the lock what is in its debounce."
+  def flushing?(%__MODULE__{flushing?: flushing?}), do: flushing?
 
   @doc "Whether the title and the body are read-only in this tab."
   def read_only?(%__MODULE__{} = editing), do: not holds?(editing)

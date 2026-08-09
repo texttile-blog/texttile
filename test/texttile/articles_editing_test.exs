@@ -30,9 +30,9 @@ defmodule Texttile.Articles.EditingTest do
     test "a free entry is opened for writing", %{id: id} do
       editing = Editing.start(id, 1, self())
 
-      assert Editing.writing?(editing)
       assert Editing.holds?(editing)
       refute Editing.read_only?(editing)
+      refute Editing.flushing?(editing)
       assert Editing.holder(editing) == nil
     end
 
@@ -62,21 +62,35 @@ defmodule Texttile.Articles.EditingTest do
   end
 
   describe "flushing" do
-    test "a flushing tab still holds the entry, and writes again after", %{id: id} do
+    test "a flushing tab still holds the entry, and is through after", %{id: id} do
       editing = Editing.start(id, 1, self()) |> Editing.flushing()
 
       assert Editing.flushing?(editing)
       assert Editing.holds?(editing)
       refute Editing.read_only?(editing)
 
-      assert Editing.flushed(editing) |> Editing.writing?()
+      refute editing |> Editing.flushed() |> Editing.flushing?()
     end
 
-    test "a watching tab is not asked to flush", %{id: id} do
-      Lock.acquire(id, 1, other_tab())
-      editing = Editing.start(id, 2, self())
+    # The lock asked for what is in the debounce, and the tab owes that
+    # answer whatever the lock says about the entry in the meantime.
+    # Losing it here left the takeover waiting out the flush timeout.
+    test "a handover in flight survives whatever the lock says next", %{id: id} do
+      editing = Editing.start(id, 1, self()) |> Editing.flushing()
 
-      refute editing |> Editing.flushing() |> Editing.flushing?()
+      # the idle timer lets the entry go in the middle of the handover
+      Lock.release(id, self())
+      refreshed = Editing.refresh(editing, id, 1, self())
+
+      refute Editing.holds?(refreshed)
+      assert Editing.flushing?(refreshed)
+
+      # and somebody else taking it does not clear the debt either
+      Lock.acquire(id, 2, other_tab())
+      taken = Editing.refresh(refreshed, id, 1, self())
+
+      assert %{user_id: 2} = Editing.holder(taken)
+      assert Editing.flushing?(taken)
     end
   end
 
@@ -89,13 +103,13 @@ defmodule Texttile.Articles.EditingTest do
 
       Lock.release(id, other)
 
-      assert Editing.refresh(editing, id, 2, self()) |> Editing.writing?()
+      assert Editing.refresh(editing, id, 2, self()) |> Editing.holds?()
     end
 
     # Taking it straight back would undo the release, forever.
     test "a tab that was just released for idling does not take it back", %{id: id} do
       editing = Editing.start(id, 1, self())
-      assert Editing.writing?(editing)
+      assert Editing.holds?(editing)
 
       Lock.release(id, self())
 
