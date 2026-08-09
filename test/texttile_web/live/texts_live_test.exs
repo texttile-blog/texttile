@@ -139,6 +139,50 @@ defmodule TexttileWeb.TextsLiveTest do
     end
   end
 
+  describe "the pager" do
+    setup %{user: user} do
+      for day <- 1..5 do
+        published_post(
+          title: "Text #{day}",
+          publish_date: Date.new!(2026, 3, day),
+          user: user
+        )
+      end
+
+      {:ok, _} = Texttile.Settings.put(:posts_per_page, 2)
+      :ok
+    end
+
+    test "cuts the grid into pages of the size Settings names", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+
+      # newest first, two to a page, and the count still speaks of all
+      assert has_element?(view, "#cards .card", "Text 5")
+      assert has_element?(view, "#cards .card", "Text 4")
+      refute has_element?(view, "#cards .card", "Text 3")
+      assert has_element?(view, "#gridCount", "5 entries")
+      assert has_element?(view, "#pager", "Page 1 of 3")
+
+      view |> element("#next-page") |> render_click()
+      assert has_element?(view, "#cards .card", "Text 3")
+      refute has_element?(view, "#cards .card", "Text 5")
+
+      view |> element("#prev-page") |> render_click()
+      assert has_element?(view, "#cards .card", "Text 5")
+    end
+
+    test "goes back to the first page when the search narrows the grid", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts")
+
+      view |> element("#next-page") |> render_click()
+      assert has_element?(view, "#pager", "Page 2 of 3")
+
+      view |> element("#grid-search") |> render_change(%{q: "Text 1"})
+      assert has_element?(view, "#cards .card", "Text 1")
+      refute has_element?(view, "#pager")
+    end
+  end
+
   describe "the archive" do
     setup %{user: user} do
       %{
@@ -173,7 +217,10 @@ defmodule TexttileWeb.TextsLiveTest do
 
     test "All years counts what the search found, like the years beside it", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
-      assert has_element?(view, "#years .per.on", "All years")
+      # where the grid starts is not a period somebody chose, so All
+      # years is no way anywhere and wears no mark
+      assert has_element?(view, ~s(#years span.per[aria-current]), "All years")
+      refute has_element?(view, "#years .per.on")
 
       view |> element("#grid-search") |> render_change(%{q: "harbour"})
 

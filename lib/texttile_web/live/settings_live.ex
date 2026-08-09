@@ -378,11 +378,16 @@ defmodule TexttileWeb.SettingsLive do
   # presence diff, so the "here now" marks stay current on their own.
   defp refresh_users(socket), do: assign(socket, :users, Accounts.list_users())
 
-  # The sizes the select offers. A value that came from somewhere else -
-  # an older version of this screen, or a hand-written row - stands in
-  # the row too, in its place, so opening Settings never silently
-  # changes what the blog does.
-  @page_sizes [10, 25, 50, 100, 150, 200]
+  # The sizes the select offers. Both grids are rows of cards, and the
+  # window decides whether a row holds two, three or four of them, so
+  # every size here divides by all three: a page ends with a full row
+  # at any width, instead of leaving one card alone at the bottom.
+  #
+  # A value that came from somewhere else - an older version of this
+  # screen, or a hand-written row - stands in the row too, in its
+  # place, so opening Settings never silently changes what the blog
+  # does.
+  @page_sizes [12, 24, 36, 48, 96, 192]
 
   defp page_sizes(current) do
     if current in @page_sizes, do: @page_sizes, else: Enum.sort([current | @page_sizes])
@@ -821,7 +826,9 @@ defmodule TexttileWeb.SettingsLive do
                 </option>
               </select>
               <div class="hint">
-                {gettext("How many entries /blog shows before the pager. The default is 10.")}
+                {gettext(
+                  "How many entries a page holds, on /blog and in Entries. Every size fills whole rows. The default is 12."
+                )}
               </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
                 {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}

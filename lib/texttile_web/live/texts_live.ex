@@ -12,6 +12,7 @@ defmodule TexttileWeb.TextsLive do
   alias Texttile.Images
   alias Texttile.Comments
   alias Texttile.Gallery
+  alias Texttile.Settings
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -26,6 +27,7 @@ defmodule TexttileWeb.TextsLive do
      |> assign(:q, "")
      |> assign(:year, nil)
      |> assign(:month, nil)
+     |> assign(:page, 1)
      |> load()}
   end
 
@@ -37,7 +39,16 @@ defmodule TexttileWeb.TextsLive do
     # Then the year lets go, rather than leaving an empty grid behind.
     {year, month} = Articles.settle_period(found, socket.assigns.year, socket.assigns.month)
     {years, months} = Articles.periods(found, year)
-    articles = Enum.filter(found, &Articles.in_period?(&1, year, month))
+    in_period = Enum.filter(found, &Articles.in_period?(&1, year, month))
+
+    # One page size for the whole installation, so the grid an admin
+    # works in is cut the same way as the list a reader walks. A text
+    # deleted somewhere else can take the last page with it, so the
+    # page the screen stands on is held inside what is left.
+    per_page = Settings.get(:posts_per_page)
+    pages = max(1, ceil(length(in_period) / per_page))
+    page = socket.assigns.page |> max(1) |> min(pages)
+    articles = Enum.slice(in_period, (page - 1) * per_page, per_page)
 
     socket
     |> assign(:year, year)
@@ -47,6 +58,11 @@ defmodule TexttileWeb.TextsLive do
     # what the search and the status filter found across every year: the
     # number "All years" carries, so it counts the way the years do
     |> assign(:across_years, length(found))
+    |> assign(:page, page)
+    |> assign(:pages, pages)
+    # the count over the grid speaks of everything the search found, not
+    # of the page it happens to show
+    |> assign(:shown, length(in_period))
     |> assign(:articles, articles)
     |> assign(:covers, Gallery.previews(articles))
     |> assign(:comment_counts, Comments.count_map())
@@ -54,11 +70,18 @@ defmodule TexttileWeb.TextsLive do
   end
 
   def handle_event("filter", %{"filter" => filter}, socket) do
-    {:noreply, socket |> assign(:filter, filter) |> load()}
+    {:noreply, socket |> assign(:filter, filter) |> assign(:page, 1) |> load()}
   end
 
   def handle_event("search", %{"q" => q}, socket) do
-    {:noreply, socket |> assign(:q, q) |> load()}
+    {:noreply, socket |> assign(:q, q) |> assign(:page, 1) |> load()}
+  end
+
+  # A step of the pager. Every other way of narrowing the grid starts
+  # over on the first page, because the page a reader stood on says
+  # nothing about the set they are looking at now.
+  def handle_event("page", %{"page" => page}, socket) do
+    {:noreply, socket |> assign(:page, number(page) || 1) |> load()}
   end
 
   # The archive narrows the grid to one year, and then to one month of
@@ -68,7 +91,8 @@ defmodule TexttileWeb.TextsLive do
     year = number(params["year"])
     month = year && number(params["month"])
 
-    {:noreply, socket |> assign(:year, year) |> assign(:month, month) |> load()}
+    {:noreply,
+     socket |> assign(:year, year) |> assign(:month, month) |> assign(:page, 1) |> load()}
   end
 
   defp number(nil), do: nil
@@ -106,7 +130,7 @@ defmodule TexttileWeb.TextsLive do
       <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <div class="flex items-baseline gap-[14px] flex-wrap">
           <h1 class="page-h">{gettext("Entries")}</h1>
-          <span class="note num" id="gridCount">{entry_count(length(@articles), @total)}</span>
+          <span class="note num" id="gridCount">{entry_count(@shown, @total)}</span>
           <span class="sp"></span>
           <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
@@ -149,6 +173,7 @@ defmodule TexttileWeb.TextsLive do
             <.period
               label={gettext("All years")}
               on={is_nil(@year)}
+              all
               count={@across_years}
               phx-click="period"
             />
@@ -162,15 +187,16 @@ defmodule TexttileWeb.TextsLive do
             />
           </p>
           <p :if={@months != []} class="prow" id="months">
+            <%!-- no count on this row at all: the year over it already
+                 says how many the year holds, and twelve numbers in a
+                 row is a table, not a line --%>
             <.period
               label={gettext("All months")}
               on={is_nil(@month)}
-              count={Enum.sum(Enum.map(@months, &elem(&1, 1)))}
+              all
               phx-click="period"
               phx-value-year={@year}
             />
-            <%!-- no count under a month: twelve numbers in a row is a
-                 table, not a line --%>
             <.period
               :for={{month, _count} <- @months}
               label={Articles.month_name(month)}
@@ -200,6 +226,41 @@ defmodule TexttileWeb.TextsLive do
             </span>
           </.link>
         </div>
+        <%!-- the pager under the grid: the reader's three cells, with
+             buttons instead of addresses, because this grid is filtered
+             by click and not by address --%>
+        <nav
+          :if={@pages > 1}
+          class="f-pager mt-9 pt-4 border-t border-rule"
+          id="pager"
+          aria-label={gettext("Pages")}
+        >
+          <span>
+            <button
+              :if={@page > 1}
+              class="btn sm"
+              id="prev-page"
+              phx-click="page"
+              phx-value-page={@page - 1}
+            >
+              {gettext("Newer")}
+            </button>
+          </span>
+          <span class="note num">
+            {gettext("Page %{page} of %{pages}", page: @page, pages: @pages)}
+          </span>
+          <span>
+            <button
+              :if={@page < @pages}
+              class="btn sm"
+              id="next-page"
+              phx-click="page"
+              phx-value-page={@page + 1}
+            >
+              {gettext("Older")}
+            </button>
+          </span>
+        </nav>
         <p :if={@articles == []} class="note">
           {if @total == 0,
             do: gettext("No entries yet. New entry starts the first one."),

@@ -191,6 +191,44 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
+  describe "what a reader writes on" do
+    # The subscribe row is a field and a button side by side. A button
+    # of a fixed height beside a field that takes its height from its
+    # padding is two boxes that nearly line up, which reads as sloppy
+    # work. They are one row, so they are one height.
+    @subscribe_row """
+    () => {
+      const box = el => document.querySelector(el).getBoundingClientRect()
+      const field = box("#newsletter-form input[type=email]")
+      const button = box("#newsletter-form button")
+      return Math.max(Math.abs(field.height - button.height),
+                      Math.abs(field.top - button.top),
+                      Math.abs(field.bottom - button.bottom))
+    }
+    """
+
+    # The comment box asked for words in a box barely taller than the
+    # one-line fields over it. Between "a line" and "a text" it was
+    # neither, so it is a text: room for several lines before a word is
+    # typed, and it still grows with what is written.
+    @comment_box """
+    () => {
+      const box = el => document.querySelector(el).getBoundingClientRect()
+      return box("#comment-form textarea").height / box("#comment-name").height
+    }
+    """
+
+    test "the subscribe row lines up and the comment box asks for words", %{conn: conn} do
+      article = published_post(title: "Harbor mornings", body: "Fog over the pier.")
+
+      conn
+      |> open_page(Articles.public_path(article))
+      |> assert_has("#comments", text: "Post a comment")
+      |> evaluate(@subscribe_row, [is_function: true], &assert(&1 <= 1))
+      |> evaluate(@comment_box, [is_function: true], &assert(&1 >= 2.5))
+    end
+  end
+
   describe "the foot" do
     # The foot wears .wrap and .f-foot together. `.wrap` writes the
     # padding shorthand, so the space under the last line only holds
