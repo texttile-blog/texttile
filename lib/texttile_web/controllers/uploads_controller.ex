@@ -23,7 +23,7 @@ defmodule TexttileWeb.UploadsController do
   }
 
   def show(conn, %{"path" => parts}) do
-    serve(conn, safe_relative(parts))
+    serve(conn, Uploads.under_root(parts))
   end
 
   # The display sizes the site asks for. A fixed list, so nobody can
@@ -47,7 +47,7 @@ defmodule TexttileWeb.UploadsController do
     # "max" follows the Images setting, so it may only be cached briefly.
     cache = if edge == "max", do: "public, max-age=3600", else: @immutable
 
-    with relative when is_binary(relative) <- safe_relative(parts),
+    with relative when is_binary(relative) <- Uploads.under_root(parts),
          {:ok, scaled} <- Texttile.Images.rendition(relative, max_edge) do
       serve(conn, scaled, cache)
     else
@@ -56,18 +56,6 @@ defmodule TexttileWeb.UploadsController do
   end
 
   def rendition(conn, _params), do: send_resp(conn, 404, "not found")
-
-  # A wildcard path stays below the uploads root or answers nothing.
-  defp safe_relative(parts) do
-    root = Path.expand(Uploads.root())
-    path = Path.expand(Path.join([root | parts]))
-
-    if String.starts_with?(path, root <> "/") do
-      Path.relative_to(path, root)
-    else
-      nil
-    end
-  end
 
   defp serve(conn, relative, cache \\ @immutable)
 

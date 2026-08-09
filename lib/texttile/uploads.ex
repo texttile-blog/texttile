@@ -21,9 +21,63 @@ defmodule Texttile.Uploads do
   @doc "The absolute path behind a stored relative one."
   def absolute(relative), do: Path.join(root(), relative)
 
+  @doc """
+  The relative path below the root that these pieces name, or nil when
+  they climb out of it.
+
+  The names that arrive here are not all the server's own: a wildcard
+  route hands over what a caller asked for, and deleting a text hands
+  over every reference its body ever held, written by hand. A name that
+  climbs out with `..` is no upload of ours, whatever it starts with.
+
+  Takes a relative path or the pieces of one, so the routes and the
+  domain read it the same way. This is the one reading.
+  """
+  def under_root(pieces) do
+    root = Path.expand(root())
+    path = root |> Path.join(Path.join(List.wrap(pieces))) |> Path.expand()
+
+    if String.starts_with?(path, root <> "/"), do: Path.relative_to(path, root)
+  end
+
+  @doc """
+  Takes one file below the root. A path that climbs out of it is left
+  alone, and a file that is gone already is no error: this is the one
+  place a stored file leaves the disk.
+  """
+  def remove(relative) do
+    if path = under_root(relative), do: File.rm(absolute(path))
+    :ok
+  end
+
+  @doc "Takes a whole folder below the root, with everything in it."
+  def remove_dir(relative) do
+    if path = under_root(relative), do: File.rm_rf!(absolute(path))
+    :ok
+  end
+
+  ## The folders of the layout
+
+  @images_dir "images"
+  @videos_dir "videos"
+  @site_dir "site"
+  @cache_dir "cache"
+
+  @doc "Where the originals of the pictures live."
+  def images_dir, do: @images_dir
+
+  @doc "Where the originals of the videos live, and what ffmpeg made of them."
+  def videos_dir, do: @videos_dir
+
+  @doc "Where the logo and the favicon live."
+  def site_dir, do: @site_dir
+
+  @doc "Where the renditions live. Everything in it is disposable."
+  def cache_dir, do: @cache_dir
+
   # The folders of the layout above, in the order the settings screen
   # names them: what came in first, then what the server made of it.
-  @report_dirs ~w(images videos site cache)
+  @report_dirs [@images_dir, @videos_dir, @site_dir, @cache_dir]
 
   @doc """
   What lies below the root, one row per folder: how many files and how
@@ -127,7 +181,7 @@ defmodule Texttile.Uploads do
 
       true ->
         tag = random_tag()
-        relative = "site/#{mark}-#{tag}#{extension}"
+        relative = "#{site_dir()}/#{mark}-#{tag}#{extension}"
         destination = absolute(relative)
         File.mkdir_p!(Path.dirname(destination))
 
@@ -147,7 +201,7 @@ defmodule Texttile.Uploads do
             {:ok, relative}
 
           {:error, _reason} ->
-            File.rm(destination)
+            remove(relative)
             {:error, "The file could not be read as an image"}
         end
     end
@@ -164,7 +218,7 @@ defmodule Texttile.Uploads do
   """
   def put_body_image(source_path, original_name) do
     store(source_path, original_name,
-      directory: "images",
+      directory: images_dir(),
       extensions: @body_image_extensions,
       fallback: "image",
       refusal: "PNG, JPG, WebP or GIF, please",
@@ -185,7 +239,7 @@ defmodule Texttile.Uploads do
   """
   def put_body_video(source_path, original_name) do
     store(source_path, original_name,
-      directory: "videos",
+      directory: videos_dir(),
       extensions: Texttile.Videos.extensions(),
       fallback: "video",
       refusal: "MP4, MOV, M4V, WebM, AVI or MKV, please"
@@ -239,36 +293,32 @@ defmodule Texttile.Uploads do
   `..` is no upload of ours, whatever it starts with.
   """
   def remove_upload(relative) when is_binary(relative) do
-    if inside_root?(relative) do
-      remove_stored_upload(relative)
-    else
-      :ok
+    case under_root(relative) do
+      nil -> :ok
+      path -> remove_stored_upload(path)
     end
   end
 
   def remove_upload(_other), do: :ok
 
-  defp remove_stored_upload("images/" <> _ = relative) do
-    File.rm(absolute(relative))
-    Texttile.Images.drop_renditions(relative)
+  defp remove_stored_upload(relative) do
+    cond do
+      in_dir?(relative, images_dir()) ->
+        remove(relative)
+        Texttile.Images.drop_renditions(relative)
+
+      in_dir?(relative, videos_dir()) ->
+        Texttile.Videos.forget(relative)
+        remove(relative)
+
+      true ->
+        :ok
+    end
+
     :ok
   end
 
-  defp remove_stored_upload("videos/" <> _ = relative) do
-    Texttile.Videos.forget(relative)
-    File.rm(absolute(relative))
-    :ok
-  end
-
-  defp remove_stored_upload(_other), do: :ok
-
-  # The same reading the upload routes do: expand the name and see
-  # whether it still stands below the root.
-  defp inside_root?(relative) do
-    root = Path.expand(root())
-
-    root |> Path.join(relative) |> Path.expand() |> String.starts_with?(root <> "/")
-  end
+  defp in_dir?(relative, dir), do: match?([^dir | _rest], Path.split(relative))
 
   @doc "Back to the default mark: the file goes, the settings clear."
   def reset_site_mark(mark) when mark in @marks do
@@ -281,7 +331,7 @@ defmodule Texttile.Uploads do
   defp remove_stored_file(mark) do
     case Settings.get(mark) do
       nil -> :ok
-      relative -> File.rm(absolute(relative))
+      relative -> remove(relative)
     end
   end
 end

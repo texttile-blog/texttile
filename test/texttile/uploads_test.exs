@@ -9,6 +9,40 @@ defmodule Texttile.UploadsTest do
     :ok
   end
 
+  describe "under_root/1" do
+    test "names the file below the root, from a relative path or from its pieces" do
+      assert Uploads.under_root("images/pier.jpg") == "images/pier.jpg"
+      assert Uploads.under_root(["images", "pier.jpg"]) == "images/pier.jpg"
+    end
+
+    test "a path that climbs out of the root names nothing" do
+      assert Uploads.under_root("../secrets.txt") == nil
+      assert Uploads.under_root("images/../../secrets.txt") == nil
+      assert Uploads.under_root(["images", "..", "..", "secrets.txt"]) == nil
+    end
+  end
+
+  describe "remove/1" do
+    test "takes one file below the root" do
+      relative = "images/gone-#{System.unique_integer([:positive])}.txt"
+      File.mkdir_p!(Path.dirname(Uploads.absolute(relative)))
+      File.write!(Uploads.absolute(relative), "words")
+
+      assert :ok = Uploads.remove(relative)
+      refute File.exists?(Uploads.absolute(relative))
+    end
+
+    test "leaves a path that climbs out of the root alone" do
+      outside = Path.join(System.tmp_dir!(), "keep-#{System.unique_integer([:positive])}.txt")
+      File.write!(outside, "words")
+
+      assert :ok = Uploads.remove(Path.relative_to(outside, Uploads.root()))
+      assert File.exists?(outside)
+
+      File.rm(outside)
+    end
+  end
+
   defp svg_file do
     path = Path.join(System.tmp_dir!(), "mark-#{System.unique_integer([:positive])}.svg")
     File.write!(path, "<svg xmlns='http://www.w3.org/2000/svg'/>")

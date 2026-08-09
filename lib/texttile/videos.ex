@@ -29,7 +29,7 @@ defmodule Texttile.Videos do
 
   # Everything a video owns lives here: the original and what ffmpeg
   # made of it.
-  @directory "videos"
+  @directory Uploads.videos_dir()
 
   # What a camera, a phone and a screen recorder hand over.
   @extensions ~w(.mp4 .mov .m4v .webm .avi .mkv)
@@ -191,7 +191,7 @@ defmodule Texttile.Videos do
   # files afterwards, and they are named the same either way.
   defp drop_derived(relative) do
     for path <- [derived(relative, ".web.mp4"), derived(relative, ".poster.jpg")] do
-      File.rm(Uploads.absolute(path))
+      Uploads.remove(path)
       Texttile.Images.drop_renditions(path)
     end
 
@@ -213,8 +213,8 @@ defmodule Texttile.Videos do
         cutoff = System.os_time(:second) - @partial_grace_seconds
 
         for name <- names, String.starts_with?(name, ".tmp-") do
-          path = Uploads.absolute("#{@directory}/#{name}")
-          if untouched_since?(path, cutoff), do: File.rm(path)
+          relative = "#{@directory}/#{name}"
+          if untouched_since?(Uploads.absolute(relative), cutoff), do: Uploads.remove(relative)
         end
 
         :ok
@@ -346,8 +346,8 @@ defmodule Texttile.Videos do
   end
 
   defp discard(partial_mp4, partial_poster) do
-    File.rm(Uploads.absolute(partial_mp4))
-    File.rm(Uploads.absolute(partial_poster))
+    Uploads.remove(partial_mp4)
+    Uploads.remove(partial_poster)
     :ok
   end
 
