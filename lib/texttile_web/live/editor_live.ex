@@ -12,10 +12,12 @@ defmodule TexttileWeb.EditorLive do
 
   import TexttileWeb.CommentComponents
   import TexttileWeb.StatsComponents
+  import Texttile.Articles.Editing, only: [holding: 1]
 
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Body
+  alias Texttile.Articles.Editing
   alias Texttile.Articles.Lock
   alias Texttile.Articles.Visibility
   alias Texttile.Comments
@@ -38,10 +40,8 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
-      |> assign(:holds_lock, true)
-      |> assign(:holder, nil)
+      |> assign(:editing, %Editing{state: :writing})
       |> assign(:upload_pcts, %{})
-      |> assign(:flush_pending, false)
       |> assign(:versions, Articles.versions(article))
       |> assign(:log, Articles.log(article))
       |> assign(:redirects, Articles.redirects(article))
@@ -68,11 +68,7 @@ defmodule TexttileWeb.EditorLive do
         Texttile.Settings.subscribe()
         Videos.subscribe()
 
-        socket =
-          case Lock.acquire(article.id, user.id, self()) do
-            :ok -> assign(socket, :holds_lock, true)
-            {:held, holder} -> socket |> assign(:holds_lock, false) |> assign(:holder, holder)
-          end
+        socket = assign(socket, :editing, Editing.start(article.id, user.id, self()))
 
         announce_activity(socket)
       else
@@ -94,7 +90,8 @@ defmodule TexttileWeb.EditorLive do
   # The wordmark menu and the other editor's banner read this: which
   # text this tab is in, and whether it writes or reads along.
   defp announce_activity(socket) do
-    %{article: article, current_scope: scope, holds_lock: holds} = socket.assigns
+    %{article: article, current_scope: scope, editing: editing} = socket.assigns
+    holds = Editing.holds?(editing)
 
     if connected?(socket) do
       TexttileWeb.Admin.update_activity(scope, %{
@@ -134,7 +131,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("body_changed", %{"text" => text}, socket) do
-    if socket.assigns.holds_lock do
+    if Editing.holds?(socket.assigns.editing) do
       {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
       Lock.ping(article.id, self())
 
@@ -149,7 +146,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("editor_activity", _params, socket) do
-    if socket.assigns.holds_lock, do: Lock.ping(socket.assigns.article.id, self())
+    if Editing.holds?(socket.assigns.editing), do: Lock.ping(socket.assigns.article.id, self())
     {:noreply, socket}
   end
 
@@ -157,7 +154,7 @@ defmodule TexttileWeb.EditorLive do
   # in its debounce when the takeover started.
   def handle_event("body_flushed", %{"text" => text}, socket) do
     socket =
-      if socket.assigns.holds_lock and text != socket.assigns.article.body do
+      if Editing.holds?(socket.assigns.editing) and text != socket.assigns.article.body do
         {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
         assign(socket, :article, article)
       else
@@ -194,7 +191,7 @@ defmodule TexttileWeb.EditorLive do
     %{article: article, current_scope: scope, versions: versions} = socket.assigns
 
     cond do
-      not socket.assigns.holds_lock ->
+      not Editing.holds?(socket.assigns.editing) ->
         {:noreply, mark_saved(socket, gettext("Take the entry over first; restoring needs it"))}
 
       version = Enum.find(versions, &(to_string(&1.id) == id)) ->
@@ -218,14 +215,11 @@ defmodule TexttileWeb.EditorLive do
   def handle_event("ask_takeover", _params, socket) do
     article = socket.assigns.article
 
-    case Lock.state(article.id) do
-      :free ->
+    case Editing.who_holds(article.id, self()) do
+      free_or_mine when free_or_mine in [:free, :mine] ->
         {:noreply, refresh_lock(socket)}
 
-      %{pid: pid} when pid == self() ->
-        {:noreply, refresh_lock(socket)}
-
-      holder ->
+      {:held, holder} ->
         name = holder_name(holder)
 
         {:noreply,
@@ -541,9 +535,9 @@ defmodule TexttileWeb.EditorLive do
   def handle_event(
         "images_inserted",
         %{"files" => names},
-        %{assigns: %{holds_lock: true}} = socket
+        %{assigns: %{editing: editing}} = socket
       )
-      when is_list(names) do
+      when is_list(names) and holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
 
     Articles.push_log(
@@ -566,7 +560,8 @@ defmodule TexttileWeb.EditorLive do
      assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, clean_file(file), pct))}
   end
 
-  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
+  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
+      when holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
     Articles.push_log(article, scope.user, "#{file} is in the text")
@@ -578,9 +573,9 @@ defmodule TexttileWeb.EditorLive do
   def handle_event(
         "image_failed",
         %{"file" => file, "pct" => pct},
-        %{assigns: %{holds_lock: true}} = socket
+        %{assigns: %{editing: editing}} = socket
       )
-      when is_number(pct) do
+      when is_number(pct) and holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
     Articles.push_log(article, scope.user, "#{file} failed to upload into the text")
@@ -615,7 +610,8 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("upload_too_big", _params, socket), do: {:noreply, socket}
 
-  def handle_event("image_retry", %{"file" => file}, %{assigns: %{holds_lock: true}} = socket) do
+  def handle_event("image_retry", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
+      when holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
     Articles.push_log(article, scope.user, "retried the upload of #{file}")
@@ -638,8 +634,9 @@ defmodule TexttileWeb.EditorLive do
   def handle_event(
         "image_removed",
         %{"file" => file, "how" => how},
-        %{assigns: %{holds_lock: true}} = socket
-      ) do
+        %{assigns: %{editing: editing}} = socket
+      )
+      when holding(editing) do
     %{article: article, current_scope: scope} = socket.assigns
     file = clean_file(file)
 
@@ -806,9 +803,13 @@ defmodule TexttileWeb.EditorLive do
   # mail is about to go to people who cannot be unsent. Neither of them
   # true is the common case, and then the click is the whole step.
   defp ask_publish(socket, mail) do
-    %{article: article, holds_lock: mine} = socket.assigns
-    holder = Lock.state(article.id)
-    busy = if mine or holder == :free, do: nil, else: holder_name(holder)
+    %{article: article, editing: editing} = socket.assigns
+
+    busy =
+      case Editing.who_holds(article.id, self()) do
+        {:held, holder} -> unless Editing.holds?(editing), do: holder_name(holder)
+        _free_or_mine -> nil
+      end
     readers = mail_count(article, mail)
 
     case {busy, readers} do
@@ -963,7 +964,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp save_title(socket, title) do
     cond do
-      not socket.assigns.holds_lock ->
+      not Editing.holds?(socket.assigns.editing) ->
         {:noreply, socket}
 
       true ->
@@ -1071,7 +1072,7 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_info({:text_changed, %{id: id} = article}, socket) do
     cond do
-      id != socket.assigns.article.id or socket.assigns.holds_lock ->
+      id != socket.assigns.article.id or Editing.holds?(socket.assigns.editing) ->
         {:noreply, socket}
 
       true ->
@@ -1087,7 +1088,7 @@ defmodule TexttileWeb.EditorLive do
       current = socket.assigns.article
 
       article =
-        if socket.assigns.holds_lock,
+        if Editing.holds?(socket.assigns.editing),
           do: %{incoming | title: current.title, body: current.body},
           else: incoming
 
@@ -1162,7 +1163,7 @@ defmodule TexttileWeb.EditorLive do
   def handle_info({:lock_flush, id}, socket) do
     if id == socket.assigns.article.id do
       Process.send_after(self(), :flush_fallback, 700)
-      {:noreply, socket |> assign(:flush_pending, true) |> push_event("flush_body", %{})}
+      {:noreply, socket |> update(:editing, &Editing.flushing/1) |> push_event("flush_body", %{})}
     else
       Lock.flushed(id)
       {:noreply, socket}
@@ -1170,7 +1171,7 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_info(:flush_fallback, socket) do
-    if socket.assigns[:flush_pending] do
+    if Editing.flushing?(socket.assigns.editing) do
       {:noreply, finish_flush(socket)}
     else
       {:noreply, socket}
@@ -1193,9 +1194,9 @@ defmodule TexttileWeb.EditorLive do
       # flush, snapshot what the database holds. Byte-identical to the
       # flush's own snapshot means nothing extra is kept.
       displaced =
-        case socket.assigns.holder do
+        case Editing.holder(socket.assigns.editing) do
           %{user_id: user_id} -> Accounts.get_user(user_id)
-          _ -> nil
+          _nobody -> nil
         end
 
       if displaced, do: Articles.snapshot(article, displaced)
@@ -1266,9 +1267,9 @@ defmodule TexttileWeb.EditorLive do
   end
 
   defp taken_note(socket) do
-    case Lock.state(socket.assigns.article.id) do
-      %{user_id: _} = holder -> "#{holder_name(holder)} is editing now. Your changes are saved."
-      :free -> gettext("Your changes are saved.")
+    case Editing.who_holds(socket.assigns.article.id, self()) do
+      {:held, holder} -> "#{holder_name(holder)} is editing now. Your changes are saved."
+      _free_or_mine -> gettext("Your changes are saved.")
     end
   end
 
@@ -1276,42 +1277,21 @@ defmodule TexttileWeb.EditorLive do
   defp finish_flush(socket) do
     %{article: article, current_scope: scope} = socket.assigns
 
-    if socket.assigns[:flush_pending] do
+    if Editing.flushing?(socket.assigns.editing) do
       Articles.snapshot(article, scope.user)
       Lock.flushed(article.id)
     end
 
-    assign(socket, :flush_pending, false)
+    update(socket, :editing, &Editing.flushed/1)
   end
 
   defp refresh_lock(socket) do
-    article = socket.assigns.article
-
-    {holds, holder} =
-      case Lock.state(article.id) do
-        :free ->
-          # A free lock goes to whoever has the text open - except to
-          # the tab that was just released for being idle: taking it
-          # straight back would undo the release, forever. That tab
-          # turns read-only and gets the lock again the moment its
-          # person actually touches the text.
-          if socket.assigns.holds_lock do
-            {false, nil}
-          else
-            case Lock.acquire(article.id, socket.assigns.current_scope.user.id, self()) do
-              :ok -> {true, nil}
-              {:held, holder} -> {false, holder}
-            end
-          end
-
-        %{pid: pid} = holder ->
-          {pid == self(), holder}
-      end
+    %{article: article, current_scope: scope, editing: was} = socket.assigns
+    editing = Editing.refresh(was, article.id, scope.user.id, self())
 
     socket
-    |> assign(:holds_lock, holds)
-    |> assign(:holder, unless(holds, do: holder))
-    |> push_event("set_readonly", %{readOnly: !holds})
+    |> assign(:editing, editing)
+    |> push_event("set_readonly", %{readOnly: Editing.read_only?(editing)})
     |> announce_activity()
   end
 
@@ -1424,6 +1404,10 @@ defmodule TexttileWeb.EditorLive do
         Articles.reader_path(assigns.article) || ~p"/preview/#{assigns.article.id}"
       )
       |> assign(:public_title, public_title(assigns.article))
+      # One value, read two ways, so the markup below says holds_lock
+      # and holder without anybody being able to move them apart.
+      |> assign(:holds_lock, Editing.holds?(assigns.editing))
+      |> assign(:holder, Editing.holder(assigns.editing))
 
     ~H"""
     <Layouts.app
