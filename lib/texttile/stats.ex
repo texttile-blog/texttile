@@ -75,17 +75,23 @@ defmodule Texttile.Stats do
 
   The limit is spent on storable views only, so a reader who reloads
   never loses a slot to the reload.
+
+  `now:` names the moment the view is counted at, which decides both
+  the day it belongs to and whether it repeats an earlier one. It
+  defaults to this moment.
   """
-  def count(attrs) do
+  def count(attrs, opts \\ []) do
+    now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:second) end)
+
     with :ok <- from_a_person(attrs),
          {:ok, path} <- reader_path(attrs[:path]) do
-      store(attrs, path, visitor(attrs[:ip], attrs[:user_agent]))
+      store(attrs, path, visitor(attrs[:ip], attrs[:user_agent]), now)
     end
   end
 
-  defp store(attrs, path, visitor) do
+  defp store(attrs, path, visitor, now) do
     cond do
-      repeat?(visitor, path) ->
+      repeat?(visitor, path, now) ->
         {:dropped, :repeat}
 
       not RateLimiter.allow?(to_string(attrs[:ip]), @limiter) ->
@@ -93,12 +99,12 @@ defmodule Texttile.Stats do
 
       true ->
         Repo.insert!(%View{
-          day: Date.utc_today(),
+          day: DateTime.to_date(now),
           path: path,
           article_id: readable_article_id(attrs[:article_id]),
           visitor: visitor,
           referrer_host: referrer_host(attrs[:referrer]),
-          inserted_at: DateTime.utc_now(:second)
+          inserted_at: now
         })
 
         :counted
@@ -184,8 +190,8 @@ defmodule Texttile.Stats do
     TexttileWeb.Endpoint.url() |> URI.parse() |> Map.get(:host) |> to_string()
   end
 
-  defp repeat?(visitor, path) do
-    since = DateTime.add(DateTime.utc_now(), -@repeat_window_s, :second)
+  defp repeat?(visitor, path, now) do
+    since = DateTime.add(now, -@repeat_window_s, :second)
 
     Repo.exists?(
       from v in View,

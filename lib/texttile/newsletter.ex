@@ -44,14 +44,16 @@ defmodule Texttile.Newsletter do
   gets the same link again, so a lost mail is never a dead end - one
   link an hour, so the form is no way to mail a stranger over and
   over. A confirmed address is left in peace. `confirm_url:` builds
-  the link from the token.
+  the link from the token, and `now:` names the moment the one link an
+  hour is measured from. It defaults to this one.
   """
   def join(email, opts) do
     confirm_url = Keyword.fetch!(opts, :confirm_url)
+    now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:second) end)
 
     with {:ok, subscriber} <- ensure(email) do
       unless Subscriber.confirmed?(subscriber) do
-        mail_confirmation(subscriber, confirm_url)
+        mail_confirmation(subscriber, confirm_url, now)
       end
 
       broadcast()
@@ -101,9 +103,7 @@ defmodule Texttile.Newsletter do
 
   @mail_interval_seconds 3600
 
-  defp mail_confirmation(subscriber, confirm_url) do
-    now = DateTime.utc_now(:second)
-
+  defp mail_confirmation(subscriber, confirm_url, now) do
     if mailed_recently?(subscriber, now) do
       subscriber
     else

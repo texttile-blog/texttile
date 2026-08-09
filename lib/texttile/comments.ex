@@ -61,15 +61,19 @@ defmodule Texttile.Comments do
   confirmation mail goes out and the comment stands under the text at
   once: the address is confirmed here, the way the mailed link would
   have confirmed it.
+
+  `now:` names the moment the one link an hour is measured from. It
+  defaults to this one.
   """
   def post(%Article{} = article, attrs, opts) do
     confirm_url = Keyword.fetch!(opts, :confirm_url)
     user = Keyword.get(opts, :user)
+    now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:second) end)
 
     with :ok <- open_for_comments(article),
          {:ok, attrs} <- validate(attrs) do
       address = ensure_address(attrs)
-      address = if user, do: confirm_address(address), else: address
+      address = if user, do: confirm_address(address, now), else: address
 
       comment =
         %Comment{article_id: article.id, address_id: address.id, user_id: user && user.id}
@@ -80,7 +84,7 @@ defmodule Texttile.Comments do
 
       comment =
         if Settings.get(:comments_require_confirmation) and not Address.confirmed?(address) do
-          Map.put(comment, :address, mail_confirmation(comment, address, confirm_url))
+          Map.put(comment, :address, mail_confirmation(comment, address, confirm_url, now))
         else
           comment
         end
@@ -120,9 +124,7 @@ defmodule Texttile.Comments do
   # one, and the next comment carries it again.
   @mail_interval_seconds 3600
 
-  defp mail_confirmation(comment, address, confirm_url) do
-    now = DateTime.utc_now(:second)
-
+  defp mail_confirmation(comment, address, confirm_url, now) do
     if mailed_recently?(address, now) do
       address
     else
@@ -138,12 +140,12 @@ defmodule Texttile.Comments do
   # means the same as following the mailed link: everything the address
   # already wrote stands under its text from now on, and so does
   # everything it writes later, signed in or not.
-  defp confirm_address(%Address{} = address) do
+  defp confirm_address(%Address{} = address, now) do
     if Address.confirmed?(address) do
       address
     else
       address
-      |> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
+      |> Ecto.Changeset.change(confirmed_at: now)
       |> Repo.update!()
     end
   end
@@ -486,11 +488,17 @@ defmodule Texttile.Comments do
   for the reader - and announced on the topic. Takes the comment or its
   id. A comment another admin deleted first answers `{:error, :gone}`;
   two admins working the same list must not raise at each other.
-  """
-  def delete_comment(%Comment{} = comment), do: delete_comment(comment.id)
 
-  def delete_comment(id) do
-    delete_after = DateTime.add(DateTime.utc_now(:second), @trash_days, :day)
+  `now:` names the moment the #{@trash_days} days run from. It defaults
+  to this one.
+  """
+  def delete_comment(comment_or_id, opts \\ [])
+
+  def delete_comment(%Comment{} = comment, opts), do: delete_comment(comment.id, opts)
+
+  def delete_comment(id, opts) do
+    now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:second) end)
+    delete_after = DateTime.add(now, @trash_days, :day)
 
     case get_comment(id) do
       nil -> {:error, :gone}
@@ -544,17 +552,16 @@ defmodule Texttile.Comments do
   def trashed_count, do: Repo.aggregate(in_trash(), :count)
 
   @doc """
-  Makes the deletions final whose #{@trash_days} days have run out, and
-  answers how many comments went. Runs on boot and on a clock of its
-  own, see `Texttile.Comments.Sweeper`.
+  Makes the deletions final whose #{@trash_days} days have run out at
+  `now`, which defaults to this moment, and answers how many comments
+  went. Runs on boot and on a clock of its own, see
+  `Texttile.Comments.Sweeper`.
 
   For good means for good: an address whose last comment goes here has
   nothing left on this site, so its row goes too, and the reader's
   email leaves the database with the words it was attached to.
   """
-  def sweep_due do
-    now = DateTime.utc_now(:second)
-
+  def sweep_due(now \\ DateTime.utc_now(:second)) do
     {count, _} = Repo.delete_all(from c in in_trash(), where: c.delete_after <= ^now)
 
     if count > 0, do: sweep_addresses(now)

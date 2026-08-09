@@ -14,9 +14,9 @@ defmodule Texttile.CommentsTest do
     "body" => "More of the dog, please."
   }
 
-  defp post!(article, attrs \\ @attrs) do
-    {:ok, comment} =
-      Comments.post(article, attrs, confirm_url: &"http://test/comments/confirm/#{&1}")
+  defp post!(article, attrs \\ @attrs, opts \\ []) do
+    opts = Keyword.put(opts, :confirm_url, &"http://test/comments/confirm/#{&1}")
+    {:ok, comment} = Comments.post(article, attrs, opts)
 
     comment
   end
@@ -197,13 +197,9 @@ defmodule Texttile.CommentsTest do
       refute_email_sent()
 
       # an hour later the link travels again, so a lost mail is no dead end
-      first.address
-      |> Ecto.Changeset.change(
-        confirmation_mailed_at: DateTime.add(DateTime.utc_now(:second), -3601)
-      )
-      |> Texttile.Repo.update!()
+      an_hour_on = DateTime.add(DateTime.utc_now(:second), 3601, :second)
 
-      post!(article, %{@attrs | "body" => "Much later"})
+      post!(article, %{@attrs | "body" => "Much later"}, now: an_hour_on)
       assert_email_sent(text_body: ~r/#{first.address.token}/)
     end
   end
@@ -431,17 +427,16 @@ defmodule Texttile.CommentsTest do
       assert {:error, :gone} = Comments.restore_comment(comment.id + 1000)
     end
 
-    test "sweep_due/0 takes what the window has run out on, and leaves the rest" do
+    test "sweep_due/1 takes what the window has run out on, and leaves the rest" do
       article = published_post()
       due = post!(article)
       waiting = post!(article, %{@attrs | "email" => "jens@example.org", "body" => "Later"})
 
-      {:ok, _} = Comments.delete_comment(due)
-      {:ok, _} = Comments.delete_comment(waiting)
+      # deleted a month and a day ago, so its thirty days have run out
+      a_month_ago = DateTime.add(DateTime.utc_now(:second), -31, :day)
 
-      due
-      |> Ecto.Changeset.change(delete_after: DateTime.add(DateTime.utc_now(:second), -1))
-      |> Texttile.Repo.update!()
+      {:ok, _} = Comments.delete_comment(due, now: a_month_ago)
+      {:ok, _} = Comments.delete_comment(waiting)
 
       assert Comments.sweep_due() == 1
       assert Texttile.Repo.get(Comments.Comment, due.id) == nil

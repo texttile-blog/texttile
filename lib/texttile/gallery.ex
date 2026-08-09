@@ -420,9 +420,13 @@ defmodule Texttile.Gallery do
   @doc """
   Takes an image out of the gallery at once and opens the ten second
   undo window. The file stays until the window has closed.
+
+  `now:` names the moment the window starts from. It defaults to this
+  one, so callers say nothing and tests name the moment they mean.
   """
   def delete(article_id, image_id, opts \\ []) do
-    delete_after = DateTime.add(DateTime.utc_now(:microsecond), @undo_seconds, :second)
+    now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:microsecond) end)
+    delete_after = DateTime.add(now, @undo_seconds, :second)
 
     case fetch(article_id, image_id) do
       nil ->
@@ -436,9 +440,12 @@ defmodule Texttile.Gallery do
     end
   end
 
-  @doc "Puts a deleted image back, as long as its window is still open."
+  @doc """
+  Puts a deleted image back, as long as its window is still open at
+  `now:`, which defaults to this moment.
+  """
   def undo(article_id, image_id, opts \\ []) do
-    now = DateTime.utc_now(:microsecond)
+    now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:microsecond) end)
 
     query =
       from i in Image,
@@ -458,12 +465,11 @@ defmodule Texttile.Gallery do
   end
 
   @doc """
-  Makes every overdue deletion final: the row goes, then the file and
-  its renditions. Answers how many images went.
+  Makes every deletion final that is overdue at `now`, which defaults
+  to this moment: the row goes, then the file and its renditions.
+  Answers how many images went.
   """
-  def sweep_due do
-    now = DateTime.utc_now(:microsecond)
-
+  def sweep_due(now \\ DateTime.utc_now(:microsecond)) do
     due =
       Repo.all(from i in Image, where: not is_nil(i.delete_after) and i.delete_after <= ^now)
 
