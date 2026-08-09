@@ -157,12 +157,14 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
     end
 
     # The one thing on this screen that says which build runs. It is
-    # here and nowhere a reader can reach it.
+    # here and nowhere a reader can reach it. The number comes from
+    # mix.exs, not from Texttile.version/0: a broken reader would give
+    # both sides of the assertion the same empty string.
     test "the last section names the version that runs", %{conn: conn} do
       conn
       |> sign_in()
       |> open("/admin/settings")
-      |> assert_has("#appVersion", text: Texttile.version())
+      |> assert_has("#appVersion", text: Mix.Project.config()[:version], exact: true)
     end
   end
 end
