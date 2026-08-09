@@ -15,6 +15,7 @@ defmodule Texttile.Articles do
   alias Texttile.Articles.Article
   alias Texttile.Articles.Body
   alias Texttile.Articles.LogEntry
+  alias Texttile.Articles.Publishing
   alias Texttile.Articles.Redirect
   alias Texttile.Articles.Version
   alias Texttile.Articles.Visibility
@@ -509,10 +510,7 @@ defmodule Texttile.Articles do
   version snapshot, so "this is how it went live" is always restorable.
   """
   def publish(%Article{} = article, user, opts \\ []) do
-    today = Keyword.get(opts, :today, Date.utc_today())
-    day = if opts[:force], do: today, else: article.publish_date || today
-    future? = Date.compare(day, today) == :gt
-    status = if future?, do: "scheduled", else: Visibility.live_status()
+    {day, status} = Publishing.landing(article, opts)
     went_live? = status == Visibility.live_status() and not Visibility.live?(article)
 
     attrs = %{status: status, publish_date: day, slug: article.slug || free_slug(article)}
@@ -523,7 +521,10 @@ defmodule Texttile.Articles do
       push_log(
         article,
         user,
-        if(future?, do: "scheduled the entry for #{day}", else: "published the entry")
+        if(status == "scheduled",
+          do: "scheduled the entry for #{day}",
+          else: "published the entry"
+        )
       )
 
       article = if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
