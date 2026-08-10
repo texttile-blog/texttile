@@ -641,17 +641,6 @@ defmodule TexttileWeb.SiteControllerTest do
     end
   end
 
-  describe "the comment form" do
-    test "asks for a website with everything in front of it", %{conn: conn} do
-      published_post(title: "Talk", slug: "talk", publish_date: ~D[2026-03-01])
-
-      html = conn |> get(~p"/2026/03/01/talk") |> html_response(200)
-
-      assert [placeholder] = attribute(html, "#comment-website", "placeholder")
-      assert placeholder =~ "https://"
-    end
-  end
-
   # The class list of one element, as the browser reads it.
   defp classes(html, selector) do
     html |> attribute(selector, "class") |> List.first("") |> String.split()

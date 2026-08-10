@@ -66,6 +66,7 @@ defmodule TexttileWeb.JsStrings do
     # copy_out.js: the button that hands a value over
     gettext_noop("Copy"),
     gettext_noop("Copied"),
+    gettext_noop("Now press the copy key"),
     # app.js: the saved mark in the topbar
     gettext_noop("Saved"),
     gettext_noop("saved"),

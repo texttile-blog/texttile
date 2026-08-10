@@ -91,6 +91,46 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> assert_has("#copyBackupToken", text: "Copied")
     end
 
+    # A page with no clipboard object at all, which is what a browser
+    # gives a blog served over plain http: the address of a machine in
+    # the house is not a secure origin, and there `navigator.clipboard`
+    # is not a permission that can be refused, it is simply absent.
+    # Copy has to reach the clipboard by the old way then, and it may
+    # only say it copied if it did.
+    @no_clipboard """
+    Object.defineProperty(navigator, "clipboard", {value: undefined})
+    """
+
+    # Asking the page whether it copied proves nothing: the button said
+    # "Copied" while nothing had been copied at all. So the test pastes
+    # into a field of the same screen and reads what arrives.
+    @pasted "() => document.querySelector('#setting-backup_allowed_ips').value"
+
+    test "copies over plain http, where the page has no clipboard object", %{conn: conn} do
+      {:ok, _} =
+        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+          source: @no_clipboard,
+          timeout: 5_000
+        )
+
+      session =
+        conn
+        |> sign_in()
+        |> open("/admin/settings")
+        |> check("Serve a backup client", exact: false)
+        |> click_button("#makeBackupToken", "Create a token")
+        |> assert_has("#backupToken")
+
+      token = token_on_screen(session)
+
+      session
+      |> click_button("#copyBackupToken", "Copy")
+      |> assert_has("#copyBackupToken", text: "Copied")
+      |> click("#setting-backup_allowed_ips")
+      |> press("#setting-backup_allowed_ips", "ControlOrMeta+v")
+      |> evaluate(@pasted, [is_function: true], &assert(&1 == token))
+    end
+
     # A clipboard that counts what it is handed. The page has none on
     # plain http, so this is also the only way to see the writing at
     # all.

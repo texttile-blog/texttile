@@ -33,17 +33,33 @@ export default {
     const field = this.el.querySelector("textarea")
     if (!field) return
 
-    try {
-      await navigator.clipboard.writeText(field.value)
-    } catch (_error) {
-      // No clipboard permission, and no browser offers one on plain
-      // http. The words are selected instead, so one key still copies
-      // them.
-      field.select()
-    }
-    // the button answers for itself, the way Save version does
-    button.textContent = t("Copied")
+    // the button answers for itself, the way Save version does, and it
+    // only says it copied when the browser says so
+    button.textContent = (await this.hand(field)) ? t("Copied") : t("Now press the copy key")
     clearTimeout(this.timer)
     this.timer = setTimeout(() => { button.textContent = t("Copy") }, 2200)
+  },
+
+  // The clipboard, by the two ways a browser offers it.
+  //
+  // `navigator.clipboard` exists on a secure page only. A blog served
+  // over plain http, which is every blog reached by the address of a
+  // machine in the house, has none at all, so the first way is not a
+  // permission that can be refused: the object is not there. The old
+  // way is, and it copies what is selected. Whichever ran, the words
+  // end up selected, so a keyboard finishes the job either way.
+  async hand(field) {
+    field.select()
+
+    try {
+      await navigator.clipboard.writeText(field.value)
+      return true
+    } catch (_error) {
+      try {
+        return document.execCommand("copy")
+      } catch (_also) {
+        return false
+      }
+    }
   },
 }

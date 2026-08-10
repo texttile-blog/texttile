@@ -186,19 +186,14 @@
           />
         </div>
         <%!-- signed in, this one is a fact too: the comment stands for
-             the blog itself, so it carries the address of the blog.
-
-             The placeholder shows the whole address, scheme and all,
-             because that is what the field keeps. It stands at the
-             front of the line: on a phone the end of a placeholder is
-             cut off, and the shape is the half worth reading. --%>
+             the blog itself, so it carries the address of the blog --%>
         <input
           type="text"
           name="website"
           id="comment-website"
           class="w-full mb-5"
           value={(@comment_author && @comment_author.website) || @comment_values["website"]}
-          placeholder={gettext("https://example.org, if you have one")}
+          placeholder={gettext("Website, if you have one")}
           aria-label={gettext("Website")}
           maxlength="200"
           disabled={!!@comment_author}
