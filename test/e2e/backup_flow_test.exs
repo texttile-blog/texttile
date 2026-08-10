@@ -68,6 +68,107 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> assert_has("#backupTokenState", text: "A token is in service")
     end
 
+    # The word is shown once and has to reach a configuration file
+    # somewhere else, so it is handed over the way the share lines are:
+    # touching it picks all of it, and Copy says what it did.
+    @token_selected """
+    () => {
+      const field = document.querySelector("#backupToken")
+      field.focus()
+      return field.selectionEnd - field.selectionStart === field.value.length
+    }
+    """
+
+    test "the token is picked whole by a touch, and Copy says it copied", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> check("Serve a backup client", exact: false)
+      |> click_button("#makeBackupToken", "Create a token")
+      |> assert_has("#backupToken")
+      |> evaluate(@token_selected, [is_function: true], &assert(&1 == true))
+      |> click_button("#copyBackupToken", "Copy")
+      |> assert_has("#copyBackupToken", text: "Copied")
+    end
+
+    # A page with no clipboard object at all, which is what a browser
+    # gives a blog served over plain http: the address of a machine in
+    # the house is not a secure origin, and there `navigator.clipboard`
+    # is not a permission that can be refused, it is simply absent.
+    # Copy has to reach the clipboard by the old way then, and it may
+    # only say it copied if it did.
+    @no_clipboard """
+    Object.defineProperty(navigator, "clipboard", {value: undefined})
+    """
+
+    # Asking the page whether it copied proves nothing: the button said
+    # "Copied" while nothing had been copied at all. So the test pastes
+    # into a field of the same screen and reads what arrives.
+    @pasted "() => document.querySelector('#setting-backup_allowed_ips').value"
+
+    test "copies over plain http, where the page has no clipboard object", %{conn: conn} do
+      {:ok, _} =
+        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+          source: @no_clipboard,
+          timeout: 5_000
+        )
+
+      session =
+        conn
+        |> sign_in()
+        |> open("/admin/settings")
+        |> check("Serve a backup client", exact: false)
+        |> click_button("#makeBackupToken", "Create a token")
+        |> assert_has("#backupToken")
+
+      token = token_on_screen(session)
+
+      session
+      |> click_button("#copyBackupToken", "Copy")
+      |> assert_has("#copyBackupToken", text: "Copied")
+      |> click("#setting-backup_allowed_ips")
+      |> press("#setting-backup_allowed_ips", "ControlOrMeta+v")
+      |> evaluate(@pasted, [is_function: true], &assert(&1 == token))
+    end
+
+    # A clipboard that counts what it is handed. The page has none on
+    # plain http, so this is also the only way to see the writing at
+    # all.
+    @counting_clipboard """
+    window.__writes = 0
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: () => { window.__writes++; return Promise.resolve() } },
+    })
+    """
+
+    @writes "() => window.__writes"
+
+    # The screen redraws around the button all the time: a setting
+    # saved here or in another tab redraws it. A hook that wired the
+    # button again on every redraw would hand the word over once per
+    # redraw, and nothing on the screen would say so.
+    test "copies once, however often the screen has been redrawn", %{conn: conn} do
+      {:ok, _} =
+        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+          source: @counting_clipboard,
+          timeout: 5_000
+        )
+
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> check("Serve a backup client", exact: false)
+      |> click_button("#makeBackupToken", "Create a token")
+      |> assert_has("#backupToken")
+      |> uncheck("Serve a backup client", exact: false)
+      |> assert_has("#setBackupNote", text: "answers nothing")
+      |> check("Serve a backup client", exact: false)
+      |> assert_has("#setBackupNote", text: "may fetch")
+      |> click_button("#copyBackupToken", "Copy")
+      |> assert_has("#copyBackupToken", text: "Copied")
+      |> evaluate(@writes, [is_function: true], &assert(&1 == 1))
+    end
+
     test "a new token takes the old one out of service, once it is confirmed", %{conn: conn} do
       session =
         conn

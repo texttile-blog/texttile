@@ -102,7 +102,9 @@ defmodule TexttileWeb.SiteVideoTest do
       conn = get(build_conn(), Articles.public_path(article))
       page = html_response(conn, 200)
 
-      assert page =~ "/renditions/640/#{video.poster_path}"
+      # the one tile fills the reading column, so its poster comes at
+      # the size a picture in the text comes at
+      assert page =~ "/renditions/1320/#{video.poster_path}"
       assert page =~ ~s(data-video="/uploads/#{video.mp4_path}")
     end
 

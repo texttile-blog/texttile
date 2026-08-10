@@ -65,10 +65,16 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  The foot of every page: the site name, and the door to the admin
-  area. It is not the text either, so it keeps the ground of the band
-  over it and the two read as one block; a hairline is all that stands
-  between them.
+  The foot of every page: the site name, the way to pass the page on,
+  and the door to the admin area. It is not the text either, so it
+  keeps the ground of the band over it and the two read as one block; a
+  hairline is all that stands between them.
+
+  Share hands the page to the sheet the browser itself opens, on a
+  phone and on a Mac. Nothing is loaded for it and no other site hears
+  of it. A browser without a sheet has nothing to offer, so there the
+  word never appears: it arrives hidden, and `public.js` uncovers it
+  where `navigator.share` exists.
   """
   attr :current_scope, :any, default: nil
 
@@ -79,6 +85,7 @@ defmodule TexttileWeb.SiteHTML do
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
+        <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
         <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Sign in")}</a>
         <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
       </div>
@@ -262,6 +269,25 @@ defmodule TexttileWeb.SiteHTML do
           not Texttile.Videos.video?(ref.url)
       end)
   end
+
+  @doc """
+  How wide the pictures under a text stand.
+
+  Three or fewer are not a gallery. They belong to the text, so they
+  keep the reading column: one fills it, two halve it, three third it.
+  The wide grid, which leaves the column on both sides, begins at four
+  - that is where a block of tiles reads as a set of its own.
+  """
+  def gallery_wrap(gallery) when length(gallery) < 4, do: "wrap narrow"
+  def gallery_wrap(_gallery), do: "wrap"
+
+  @doc "The shape of the tile grid, see `gallery_wrap/1`."
+  def gallery_shape(gallery) when length(gallery) < 4, do: "gal-#{length(gallery)}"
+  def gallery_shape(_gallery), do: nil
+
+  @doc "Which rendition a tile fetches, see `gallery_wrap/1`."
+  def gallery_edge([_one]), do: Images.reading_edge()
+  def gallery_edge(_gallery), do: Images.card_edge()
 
   @doc "A date the way the example blog writes one: 2 July 2026."
   defdelegate format_date(date), to: Texttile.I18n

@@ -38,15 +38,18 @@
       <div class="prose" id="body">{body_html(@article)}</div>
     </div>
 
-    <%!-- the gallery: one per text, at the end of it, full width.
+    <%!-- the gallery: one per text, at the end of it. Four pictures or
+         more make the wide grid; fewer keep the width of the text, see
+         `gallery_wrap/1`.
+
          Every tile links the original file, so a crawler finds it;
          the script turns the click into the lightbox, which shows the
          reader size from data-full. Without the script the link stands
          and answers the picture, or the film, itself. A video tile is
          its poster with a play mark; the lightbox plays the film from
          data-video. --%>
-    <figure :if={@gallery != []} class="wrap mt-[38px]" id="gallery">
-      <div class="gal" id="gal">
+    <figure :if={@gallery != []} class={[gallery_wrap(@gallery), "mt-[38px]"]} id="gallery">
+      <div class={["gal", gallery_shape(@gallery)]} id="gal">
         <a
           :for={tile <- @gallery}
           id={"tile-#{tile.id}"}
@@ -55,8 +58,11 @@
           data-video={tile.film && "/uploads/#{tile.film}"}
           data-caption={tile.filename}
         >
+          <%!-- one picture fills the reading column, so it gets the
+               size a picture in the text gets; a tile of a grid needs
+               the card size and no more --%>
           <img
-            src={"/renditions/#{Images.card_edge()}/#{tile.still}"}
+            src={"/renditions/#{gallery_edge(@gallery)}/#{tile.still}"}
             alt={tile.filename}
             loading="lazy"
           />

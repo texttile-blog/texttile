@@ -709,12 +709,46 @@
   /* the second group start inside a settings block */
   .drow.gtop { margin-top: 14px; padding-top: 9px; }
 
-  /* a picture's radius, for markup written by the image panel */
-  .r-img { border-radius: var(--tt-radius-img); }
-
   /* the thin progress bar of a running upload */
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
   .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
+
+  /* THE FILES IN THE TEXT · one row per reference in the words: the
+     thumbnail, the name, and the markdown that stands for it.
+
+     It is a table, so the eye reads down a column. As a row of boxes
+     each beginning where the one before it ended, no two rows lined up
+     and a long name pushed the markdown of that row alone to the
+     right. Every state (done, failed, running) wears the same three
+     columns, so a running upload sits under a finished one and not
+     beside it. */
+  .inrow {
+    display: grid; grid-template-columns: 36px minmax(0, 1fr) minmax(0, 42%);
+    align-items: center; gap: 4px 11px;
+    padding: 9px 0; border-bottom: 1px solid var(--tt-hair); font-size: 13px;
+  }
+  .inrow .th { width: 36px; height: 36px; background: var(--tt-field); border-radius: var(--tt-radius-img); background-size: cover; background-position: center; }
+  .inrow .nm { min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+  /* what a file is waiting for belongs to the file, so it stands under
+     its name and takes no column of its own */
+  .inrow .nm .note { display: block; font-weight: 400; }
+  .inrow .raw { min-width: 0; color: var(--tt-faint); font-size: 12px; overflow-wrap: anywhere; }
+  /* the sentence about a stopped or a running upload, and the bar of
+     it: both run from the name's column to the end */
+  .inrow .say, .inrow .track { grid-column: 2 / -1; }
+  .inrow .act { display: flex; gap: 6px; justify-content: flex-end; }
+  /* in a narrow pane the markdown goes under the name instead of
+     halving a column that is already too narrow to read. Everything
+     that is not the thumbnail or the name then runs from the name's
+     column to the end: without that, the grid drops the buttons into
+     the 36px column of the thumbnail, where Retry, Remove and Cancel
+     stand off the left edge of a phone and cannot be pressed. They
+     are the only way out of a stopped upload. */
+  @media (max-width: 900px) {
+    .inrow { grid-template-columns: 36px minmax(0, 1fr); }
+    .inrow .raw, .inrow .act { grid-column: 2 / -1; }
+    .inrow .act { justify-content: flex-start; }
+  }
 
   /* While a full-screen overlay is open, the topbar's backdrop-filter
      goes: with it on, Chrome composites the bar's backdrop over the
@@ -1063,8 +1097,13 @@
   .f-foot { font-size: 13px; color: var(--tt-inksoft); }
   .wrap.f-foot { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   @media (max-width: 700px) { .wrap.f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
-  .f-foot a { color: var(--tt-inksoft); text-decoration: none; }
-  .f-foot a:hover { color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px; }
+  /* Share is a button, because it opens the browser's own sheet and
+     leads nowhere. It stands in the row of the links all the same, so
+     it wears what they wear. */
+  .f-foot a, .f-foot button { color: var(--tt-inksoft); text-decoration: none; font: inherit; }
+  .f-foot a:hover, .f-foot button:hover {
+    color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px;
+  }
 
   /* one wrapper, two widths, both the admin area's */
   .wrap { width: 100%; max-width: 1060px; margin: 0 auto; padding: 0 var(--tt-gut); }
@@ -1389,6 +1428,16 @@
   /* the reader gallery: the tile grid, and the lightbox behind it */
   .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   @media (min-width: 900px) { .gal { grid-template-columns: repeat(4, 1fr); } }
+  /* Three or fewer stand in the reading column and share it out, one
+     to a column, at every width. Two classes beat the grid above, so
+     the count decides and the window does not. */
+  .gal.gal-1 { grid-template-columns: 1fr; }
+  .gal.gal-2 { grid-template-columns: repeat(2, 1fr); }
+  .gal.gal-3 { grid-template-columns: repeat(3, 1fr); }
+  /* the one picture is a picture, not a tile: it keeps its own shape,
+     the way a picture in the text does */
+  .gal.gal-1 a { aspect-ratio: auto; }
+  .gal.gal-1 a img { height: auto; max-height: 78vh; object-fit: contain; }
   .gal a {
     display: block; width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden;
     border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);

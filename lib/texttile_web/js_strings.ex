@@ -63,6 +63,10 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Open. Tick it off."),
     gettext_noop("Body, Markdown"),
     gettext_noop("the pasted picture"),
+    # copy_out.js: the button that hands a value over
+    gettext_noop("Copy"),
+    gettext_noop("Copied"),
+    gettext_noop("Now press the copy key"),
     # app.js: the saved mark in the topbar
     gettext_noop("Saved"),
     gettext_noop("saved"),

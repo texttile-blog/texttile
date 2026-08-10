@@ -348,6 +348,105 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     }
     """
 
+    # The word for the state used to blink, because the rule that makes
+    # a presence dot pulse was written for the bare class the state word
+    # also wears. A word that reads "Published" and then fades out reads
+    # as a warning, and it is a fact. The dot still pulses: the probe
+    # says so, so a rule that got deleted instead of narrowed is seen.
+    @state_motion """
+    () => {
+      const word = getComputedStyle(document.querySelector("#stateWord")).animationName
+      const probe = document.createElement("span")
+      probe.className = "dot live"
+      document.body.appendChild(probe)
+      const dot = getComputedStyle(probe).animationName
+      probe.remove()
+      return [word, dot]
+    }
+    """
+
+    test "the word for a live entry stands still, the presence dot pulses", %{conn: conn} do
+      article = Texttile.ArticlesFixtures.published_post(title: "Out there")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> assert_has("#stateWord", text: "Published")
+      |> evaluate(@state_motion, [is_function: true], fn [word, dot] ->
+        assert word == "none"
+        assert dot == "pulse"
+      end)
+    end
+
+    # The files in the text are a table, so the eye reads down a column
+    # instead of hunting along a row. They were a flex row whose cells
+    # each began where the cell before it ended, so no two rows lined
+    # up and a long name pushed everything after it.
+    @inline_columns """
+    () => {
+      const left = (selector) =>
+        [...document.querySelectorAll(selector)].map(el => Math.round(el.getBoundingClientRect().left))
+      return [left("#inlineImgs .nm"), left("#inlineImgs .raw")]
+    }
+    """
+
+    test "the files in the text line up in columns", %{conn: conn} do
+      %{id: id} =
+        Texttile.ArticlesFixtures.published_post(
+          title: "Two files",
+          body: """
+          One ![a](/uploads/images/pier.jpg) here.
+
+          Two ![b](/uploads/images/a-much-longer-name-than-the-other-one.jpg) there.
+          """
+        )
+
+      conn
+      |> sign_in()
+      |> open_editor(id)
+      |> assert_has("#inlineCount", text: "2")
+      |> evaluate(@inline_columns, [is_function: true], fn [names, raws] ->
+        assert length(names) == 2
+        assert length(raws) == 2
+        assert Enum.uniq(names) == [hd(names)]
+        assert Enum.uniq(raws) == [hd(raws)]
+      end)
+    end
+
+    # An upload that stopped is a dead end without Retry and Remove,
+    # and a running one without Cancel. On a phone the narrow grid used
+    # to drop them into the 36px column of the thumbnail, where they
+    # stood off the left edge of the screen.
+    @stopped_actions """
+    () => {
+      const row = document.querySelector("#inlineImgs .inrow .act")
+      const buttons = [...row.querySelectorAll("button")].map(b => b.getBoundingClientRect())
+      return [row.getBoundingClientRect().width,
+              Math.min(...buttons.map(b => b.left)),
+              Math.max(...buttons.map(b => b.right)),
+              window.innerWidth]
+    }
+    """
+
+    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    test "the way out of a stopped upload is on the screen of a phone", %{conn: conn} do
+      %{id: id} =
+        Texttile.ArticlesFixtures.published_post(
+          title: "Stopped",
+          body: "One ![Upload failed: pier.jpg]() here."
+        )
+
+      conn
+      |> sign_in()
+      |> open_editor(id)
+      |> assert_has("#inlineImgs", text: "pier.jpg")
+      |> evaluate(@stopped_actions, [is_function: true], fn [width, left, right, screen] ->
+        assert width > 100
+        assert left >= 0
+        assert right <= screen
+      end)
+    end
+
     test "the share lines wear the clothes of the pane", %{conn: conn} do
       article = Texttile.ArticlesFixtures.published_post(title: "Handed on")
 

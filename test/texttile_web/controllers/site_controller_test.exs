@@ -168,8 +168,52 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(href="/uploads/#{image.path}")
       # the reader gets the scaled one, in the lightbox
       assert html =~ ~s(data-full="/renditions/max/#{image.path}")
-      assert html =~ "/renditions/640/#{image.path}"
+      # alone it fills the reading column, so it gets the size a
+      # picture in the text gets
+      assert html =~ "/renditions/1320/#{image.path}"
       assert html =~ ~s(id="lb")
+    end
+
+    test "a tile of the wide grid fetches the card size", %{conn: conn} do
+      article = published_post(title: "Grid", slug: "grid", publish_date: ~D[2026-03-01])
+
+      for index <- 1..4 do
+        {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{index}.jpg")
+      end
+
+      html = conn |> get(~p"/2026/03/01/grid") |> html_response(200)
+
+      assert html =~ "/renditions/640/"
+      refute html =~ "/renditions/1320/"
+    end
+
+    # A few pictures are not a grid. One, two or three of them stand in
+    # the reading column and share its width, so the eye reads them as
+    # part of the text. The gallery proper, wider than the column,
+    # begins at four.
+    test "one, two and three pictures keep the width of the text", %{conn: conn} do
+      article = published_post(title: "Few", slug: "few", publish_date: ~D[2026-03-01])
+
+      for count <- 1..3 do
+        {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{count}.jpg")
+        html = conn |> get(~p"/2026/03/01/few") |> html_response(200)
+
+        assert "narrow" in classes(html, "#gallery")
+        assert "gal-#{count}" in classes(html, "#gal")
+      end
+    end
+
+    test "the fourth picture turns the pictures into the wide gallery", %{conn: conn} do
+      article = published_post(title: "Many", slug: "many", publish_date: ~D[2026-03-01])
+
+      for index <- 1..4 do
+        {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{index}.jpg")
+      end
+
+      html = conn |> get(~p"/2026/03/01/many") |> html_response(200)
+
+      refute "narrow" in classes(html, "#gallery")
+      assert classes(html, "#gal") == ["gal"]
     end
 
     test "a picture in the text links its original and opens in the lightbox", %{conn: conn} do
@@ -580,5 +624,29 @@ defmodule TexttileWeb.SiteControllerTest do
       assert response(conn, 200)
       assert response_content_type(conn, :jpeg) =~ "image/jpeg"
     end
+  end
+
+  describe "the foot" do
+    # The share sheet belongs to the browser, not to this app. The word
+    # is in the page all the same, hidden, and the script uncovers it
+    # where a sheet exists. Nothing is loaded for it.
+    test "carries a Share word the script uncovers", %{conn: conn} do
+      published_post(title: "Harbor mornings", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      html = conn |> get(~p"/2026/03/01/harbor") |> html_response(200)
+
+      assert html =~ ~s(id="foot-share")
+      assert html =~ ~s(hidden)
+      refute html =~ "sharethis"
+    end
+  end
+
+  # The class list of one element, as the browser reads it.
+  defp classes(html, selector) do
+    html |> attribute(selector, "class") |> List.first("") |> String.split()
+  end
+
+  defp attribute(html, selector, name) do
+    html |> LazyHTML.from_document() |> LazyHTML.query(selector) |> LazyHTML.attribute(name)
   end
 end
