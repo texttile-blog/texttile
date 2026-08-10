@@ -118,6 +118,20 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> click_button("Sign in")
       |> assert_has("#crumb", text: "Entries")
     end
+
+    test "the box on the form keeps the browser signed in for longer", %{conn: conn, kb: user} do
+      conn
+      |> visit("/login")
+      |> assert_has("label", text: "Stay signed in")
+      |> fill_in("Username", with: "kb")
+      |> fill_in("Password", with: valid_password())
+      |> check("Stay signed in", exact: false)
+      |> click_button("Sign in")
+      |> assert_has("#crumb", text: "Entries")
+
+      assert [session] = Texttile.Accounts.list_sessions(user)
+      assert DateTime.diff(session.expires_at, DateTime.utc_now(), :day) >= 13
+    end
   end
 
   describe "the admin area" do

@@ -265,19 +265,50 @@ defmodule Texttile.AccountsTest do
       assert [%{token: ^keep}] = Accounts.list_sessions(user)
     end
 
-    test "an old token no longer signs anybody in and drops out of the list" do
+    test "an expired token no longer signs anybody in and drops out of the list" do
       user = user_fixture()
       token = Accounts.create_session(user)
 
-      too_old = DateTime.add(DateTime.utc_now(), -61, :day) |> DateTime.truncate(:second)
-
-      Texttile.Repo.update_all(Texttile.Accounts.Session,
-        set: [inserted_at: too_old]
-      )
+      expired = DateTime.add(DateTime.utc_now(), -1, :minute) |> DateTime.truncate(:second)
+      Texttile.Repo.update_all(Texttile.Accounts.Session, set: [expires_at: expired])
 
       assert Accounts.get_user_by_session_token(token) == nil
       assert Accounts.list_sessions(user) == []
     end
+
+    test "a session lasts two days, and fourteen when the browser is remembered" do
+      user = user_fixture()
+      now = DateTime.utc_now()
+
+      short = Accounts.create_session(user)
+      long = Accounts.create_session(user, remember: true)
+
+      assert_in_delta days_from(now, expiry_of(short)), 2, 0.01
+      assert_in_delta days_from(now, expiry_of(long)), 14, 0.01
+    end
+
+    test "session_max_age/1 says the same in seconds" do
+      assert Accounts.session_max_age(false) == 2 * 24 * 60 * 60
+      assert Accounts.session_max_age(true) == 14 * 24 * 60 * 60
+    end
+
+    test "opening a session sweeps the sessions whose day has passed" do
+      user = user_fixture()
+      stale = Accounts.create_session(user)
+
+      expired = DateTime.add(DateTime.utc_now(), -1, :minute) |> DateTime.truncate(:second)
+      Texttile.Repo.update_all(Texttile.Accounts.Session, set: [expires_at: expired])
+
+      _fresh = Accounts.create_session(user)
+
+      refute Texttile.Repo.get_by(Texttile.Accounts.Session, token: stale)
+    end
+
+    defp expiry_of(token) do
+      Texttile.Repo.get_by!(Texttile.Accounts.Session, token: token).expires_at
+    end
+
+    defp days_from(now, expires_at), do: DateTime.diff(expires_at, now) / 86_400
   end
 
   describe "profile updates" do

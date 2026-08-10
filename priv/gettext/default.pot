@@ -397,7 +397,7 @@ msgstr ""
 msgid "A comment needs some words. Nothing was saved."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:160
+#: lib/texttile_web/controllers/session_html.ex:169
 #, elixir-autogen, elixir-format
 msgid "A confirmation mail goes to your address: which site, which username. It never contains the password, and no mail ever will. If you forget the password, the sign-in screen mails your address a link that sets a new one."
 msgstr ""
@@ -567,7 +567,7 @@ msgstr ""
 msgid "Ask for a new one and it arrives in the same inbox. The old link stays dead."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:114
+#: lib/texttile_web/controllers/session_html.ex:123
 #, elixir-autogen, elixir-format
 msgid "At least 12 characters."
 msgstr ""
@@ -665,7 +665,7 @@ msgstr ""
 msgid "Change your own displayed name, address and password on"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:73
+#: lib/texttile_web/controllers/session_html.ex:82
 #: lib/texttile_web/live/settings_live.ex:985
 #, elixir-autogen, elixir-format
 msgid "Choose a password"
@@ -745,7 +745,7 @@ msgstr ""
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party. The whole blog is on the"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:156
+#: lib/texttile_web/controllers/session_html.ex:165
 #, elixir-autogen, elixir-format
 msgid "Create the account and sign in"
 msgstr ""
@@ -855,7 +855,7 @@ msgstr ""
 msgid "Discard"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:144
+#: lib/texttile_web/controllers/session_html.ex:153
 #: lib/texttile_web/live/profile_live.ex:172
 #, elixir-autogen, elixir-format
 msgid "Displayed name"
@@ -907,7 +907,7 @@ msgid "Email"
 msgstr ""
 
 #: lib/texttile_web/controllers/link_html.ex:117
-#: lib/texttile_web/controllers/session_html.ex:130
+#: lib/texttile_web/controllers/session_html.ex:139
 #, elixir-autogen, elixir-format
 msgid "Email address"
 msgstr ""
@@ -1006,7 +1006,7 @@ msgstr ""
 msgid "Filter by status"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:71
+#: lib/texttile_web/controllers/session_html.ex:80
 #, elixir-autogen, elixir-format
 msgid "First sign-in · %{host}"
 msgstr ""
@@ -1016,7 +1016,7 @@ msgstr ""
 msgid "Follows the old address, in a new tab"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:54
+#: lib/texttile_web/controllers/session_html.ex:63
 #, elixir-autogen, elixir-format
 msgid "Forgot your password?"
 msgstr ""
@@ -1634,7 +1634,7 @@ msgid "Pagination"
 msgstr ""
 
 #: lib/texttile_web/controllers/session_html.ex:34
-#: lib/texttile_web/controllers/session_html.ex:91
+#: lib/texttile_web/controllers/session_html.ex:100
 #: lib/texttile_web/controllers/site_html/unlock.html.heex:21
 #: lib/texttile_web/live/profile_live.ex:228
 #, elixir-autogen, elixir-format
@@ -1832,7 +1832,7 @@ msgstr ""
 msgid "Remove the address"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:103
+#: lib/texttile_web/controllers/session_html.ex:112
 #, elixir-autogen, elixir-format
 msgid "Repeat the password"
 msgstr ""
@@ -1986,7 +1986,7 @@ msgid "Share"
 msgstr ""
 
 #: lib/texttile_web/controllers/link_html.ex:44
-#: lib/texttile_web/controllers/session_html.ex:126
+#: lib/texttile_web/controllers/session_html.ex:135
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr ""
@@ -1996,14 +1996,14 @@ msgstr ""
 msgid "Show all entries"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:42
+#: lib/texttile_web/controllers/session_html.ex:51
 #: lib/texttile_web/controllers/site_html.ex:89
 #: lib/texttile_web/controllers/site_html.ex:90
 #, elixir-autogen, elixir-format
 msgid "Sign in"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:166
+#: lib/texttile_web/controllers/session_html.ex:175
 #, elixir-autogen, elixir-format
 msgid "Sign in with another name"
 msgstr ""
@@ -2332,7 +2332,7 @@ msgstr ""
 msgid "The mail is on its way, if an account uses that address. Open it and follow the link."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:76
+#: lib/texttile_web/controllers/session_html.ex:85
 #, elixir-autogen, elixir-format
 msgid "The name"
 msgstr ""
@@ -2402,7 +2402,7 @@ msgstr ""
 msgid "The upload stopped at %{pct}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:48
+#: lib/texttile_web/controllers/session_html.ex:57
 #, elixir-autogen, elixir-format
 msgid "The username and the password do not match."
 msgstr ""
@@ -2485,7 +2485,7 @@ msgstr ""
 msgid "There is no undo. While the name stands in ADMIN_USERS, its owner can sign in again and choose a fresh password."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:51
+#: lib/texttile_web/controllers/session_html.ex:60
 #, elixir-autogen, elixir-format
 msgid "This account already exists. Sign in with its password."
 msgstr ""
@@ -2550,7 +2550,7 @@ msgstr ""
 msgid "This page becomes the front door. The blog list keeps /blog either way."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:57
+#: lib/texttile_web/controllers/session_html.ex:66
 #, elixir-autogen, elixir-format
 msgid "This page is for admins. Readers never see it, and there is no public registration. The people who may sign in stand in the configuration of this server. Each of them chooses a password at the first sign-in. Your username is the name you sign in with. Your email address is what a password link needs. You give it at the first sign-in and can change it in your profile."
 msgstr ""
@@ -2606,7 +2606,7 @@ msgstr ""
 msgid "Type the email address of your account. A link to set a new password goes to that address."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:45
+#: lib/texttile_web/controllers/session_html.ex:54
 #, elixir-autogen, elixir-format
 msgid "Type your username and your password. Both fields are required."
 msgstr ""
@@ -2736,12 +2736,12 @@ msgstr ""
 msgid "What others see. Empty falls back to the username."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:153
+#: lib/texttile_web/controllers/session_html.ex:162
 #, elixir-autogen, elixir-format
 msgid "What readers see. Empty shows your username."
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:140
+#: lib/texttile_web/controllers/session_html.ex:149
 #, elixir-autogen, elixir-format
 msgid "Where a password reset goes. No account exists without one."
 msgstr ""
@@ -2942,7 +2942,7 @@ msgstr ""
 msgid "goes live %{date}"
 msgstr ""
 
-#: lib/texttile_web/controllers/session_html.ex:77
+#: lib/texttile_web/controllers/session_html.ex:86
 #, elixir-autogen, elixir-format
 msgid "has no account yet. The password you type here becomes its password, and the account is yours from then on."
 msgstr ""
@@ -3669,4 +3669,14 @@ msgstr ""
 #: lib/texttile_web/controllers/site_html/article.html.heex:196
 #, elixir-autogen, elixir-format
 msgid "Website, if you have one"
+msgstr ""
+
+#: lib/texttile_web/controllers/session_html.ex:48
+#, elixir-autogen, elixir-format
+msgid "Fourteen days instead of two."
+msgstr ""
+
+#: lib/texttile_web/controllers/session_html.ex:47
+#, elixir-autogen, elixir-format
+msgid "Stay signed in on this browser"
 msgstr ""

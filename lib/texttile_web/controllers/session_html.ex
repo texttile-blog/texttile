@@ -39,7 +39,24 @@ defmodule TexttileWeb.SessionHTML do
             autocomplete="current-password"
           />
         </div>
-        <button class="btn solid w-full h-[38px] mt-[6px]" type="submit">{gettext("Sign in")}</button>
+        <%!-- The sign-in lasts two days. This makes it fourteen, on
+             this browser only. --%>
+        <label class="opt">
+          <input
+            type="checkbox"
+            id="login-remember"
+            name="user[remember]"
+            value="true"
+            checked={@remember}
+          />
+          <span>
+            {gettext("Stay signed in on this browser")}
+            <span class="note">{gettext("Fourteen days instead of two.")}</span>
+          </span>
+        </label>
+        <button class="btn solid w-full h-[38px] mt-[13px]" type="submit">
+          {gettext("Sign in")}
+        </button>
       </.form>
       <p :if={@error == :missing} class="text-julia text-[13px] mt-[13px]" id="login-error">
         {gettext("Type your username and your password. Both fields are required.")}

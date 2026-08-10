@@ -5,7 +5,7 @@ defmodule TexttileWeb.SessionController do
   alias TexttileWeb.UserAuth
 
   def new(conn, _params) do
-    render(conn, :new, error: nil, username: "")
+    render(conn, :new, error: nil, username: "", remember: false)
   end
 
   @doc """
@@ -13,24 +13,31 @@ defmodule TexttileWeb.SessionController do
   the password screen instead of the password check: nobody has a
   password for it yet, and that screen is where its owner chooses one.
   """
-  def create(conn, %{"user" => %{"username" => username, "password" => password}}) do
+  def create(conn, %{"user" => %{"username" => username, "password" => password} = params}) do
     cond do
       String.trim(username) == "" ->
-        render(conn, :new, error: :missing, username: username)
+        render(conn, :new, error: :missing, username: username, remember: remember?(params))
 
       Accounts.sign_in_state(username) == :claimable ->
         render(conn, :claim, username: String.trim(username), changeset: nil)
 
       password == "" ->
-        render(conn, :new, error: :missing, username: username)
+        render(conn, :new, error: :missing, username: username, remember: remember?(params))
 
       true ->
         case Accounts.authenticate_user(username, password) do
-          {:ok, user} -> UserAuth.log_in_user(conn, user)
-          :error -> render(conn, :new, error: :bad, username: username)
+          {:ok, user} ->
+            UserAuth.log_in_user(conn, user, remember?(params))
+
+          :error ->
+            render(conn, :new, error: :bad, username: username, remember: remember?(params))
         end
     end
   end
+
+  # The box on the form. A browser that does not send it means no.
+  defp remember?(%{"remember" => value}), do: value in ["true", "on", "1"]
+  defp remember?(_params), do: false
 
   @doc """
   The password screen creates the account and signs it in. A name that
@@ -43,10 +50,10 @@ defmodule TexttileWeb.SessionController do
         UserAuth.log_in_user(conn, user)
 
       {:error, :not_allowed} ->
-        render(conn, :new, error: :bad, username: username)
+        render(conn, :new, error: :bad, username: username, remember: false)
 
       {:error, :taken} ->
-        render(conn, :new, error: :claimed, username: username)
+        render(conn, :new, error: :claimed, username: username, remember: false)
 
       {:error, changeset} ->
         render(conn, :claim, username: String.trim(username), changeset: changeset)

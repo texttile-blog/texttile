@@ -111,16 +111,31 @@ defmodule Texttile.Accounts do
 
   ## Sessions
 
-  # A token this old no longer signs anybody in.
-  @session_validity_in_days 60
+  # How long a signed-in browser stays signed in. The short span is
+  # what a sign-in gets by default; the long one is the box on the form.
+  # The span is set once and never moved, so nobody stays in forever by
+  # opening the same page every day.
+  @session_days 2
+  @remember_days 14
 
-  @doc "Opens a session for the user and returns its token."
-  def create_session(user) do
-    Repo.delete_all(
-      from s in Session, where: s.inserted_at < ago(@session_validity_in_days, "day")
-    )
+  @doc """
+  How many seconds a session lasts, and with it the cookie that carries
+  it: two days, or fourteen for a browser that is remembered.
+  """
+  def session_max_age(remember?)
+  def session_max_age(true), do: @remember_days * 24 * 60 * 60
+  def session_max_age(_other), do: @session_days * 24 * 60 * 60
 
-    token = Repo.insert!(Session.build(user)).token
+  @doc """
+  Opens a session for the user and returns its token. `remember: true`
+  is the box on the sign-in form.
+  """
+  def create_session(user, opts \\ []) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    Repo.delete_all(from s in Session, where: s.expires_at <= ^now)
+
+    expires_at = DateTime.add(now, session_max_age(opts[:remember] == true), :second)
+    token = Repo.insert!(Session.build(user, expires_at)).token
     broadcast_sessions_changed(user.id)
     token
   end
@@ -136,7 +151,7 @@ defmodule Texttile.Accounts do
         from s in Session,
           join: u in assoc(s, :user),
           where: s.token == ^token,
-          where: s.inserted_at > ago(@session_validity_in_days, "day"),
+          where: s.expires_at > ^DateTime.utc_now(),
           select: u
       )
 
@@ -148,7 +163,7 @@ defmodule Texttile.Accounts do
     Repo.all(
       from s in Session,
         where: s.user_id == ^user.id,
-        where: s.inserted_at > ago(@session_validity_in_days, "day"),
+        where: s.expires_at > ^DateTime.utc_now(),
         order_by: [desc: s.id]
     )
   end

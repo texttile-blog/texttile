@@ -244,6 +244,79 @@ defmodule TexttileWeb.SessionControllerTest do
     end
   end
 
+  # The session cookie of a browser is gone when the browser closes. The
+  # auth cookie is what carries the sign-in over that: two days, and
+  # fourteen when the box is ticked.
+  describe "the auth cookie" do
+    setup do
+      user = user_fixture()
+      %{user: user}
+    end
+
+    defp sign_in(conn, user, params \\ %{}) do
+      post(
+        conn,
+        ~p"/login",
+        %{
+          "user" =>
+            Map.merge(%{"username" => user.username, "password" => valid_password()}, params)
+        }
+      )
+    end
+
+    test "lasts two days without the box", %{conn: conn, user: user} do
+      conn = sign_in(conn, user)
+
+      assert redirected_to(conn) == ~p"/admin"
+      assert %{max_age: 172_800} = conn.resp_cookies["_texttile_auth"]
+    end
+
+    test "lasts fourteen days with the box", %{conn: conn, user: user} do
+      conn = sign_in(conn, user, %{"remember" => "true"})
+
+      assert redirected_to(conn) == ~p"/admin"
+      assert %{max_age: 1_209_600} = conn.resp_cookies["_texttile_auth"]
+    end
+
+    test "signs the browser in again after the session cookie is gone", %{conn: conn, user: user} do
+      conn = sign_in(conn, user)
+      auth = conn.resp_cookies["_texttile_auth"].value
+
+      restarted =
+        build_conn()
+        |> Plug.Test.put_req_cookie("_texttile_auth", auth)
+        |> get(~p"/admin")
+
+      assert redirected_to(restarted) == ~p"/admin/texts"
+    end
+
+    test "a token the server has ended signs nobody in", %{conn: conn, user: user} do
+      conn = sign_in(conn, user)
+      auth = conn.resp_cookies["_texttile_auth"].value
+      Accounts.delete_all_sessions(user)
+
+      restarted =
+        build_conn()
+        |> Plug.Test.put_req_cookie("_texttile_auth", auth)
+        |> get(~p"/admin")
+
+      assert redirected_to(restarted) == ~p"/login"
+    end
+
+    test "signing out takes it away", %{conn: conn, user: user} do
+      conn = sign_in(conn, user)
+      auth = conn.resp_cookies["_texttile_auth"].value
+
+      out =
+        build_conn()
+        |> Plug.Test.put_req_cookie("_texttile_auth", auth)
+        |> delete(~p"/logout")
+
+      assert redirected_to(out) == ~p"/login"
+      assert %{max_age: 0} = out.resp_cookies["_texttile_auth"]
+    end
+  end
+
   describe "DELETE /logout/all" do
     test "ends every session, in every browser", %{conn: conn} do
       user = user_fixture()
