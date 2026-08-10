@@ -16,7 +16,5 @@ defmodule Texttile.Backup.Fingerprint do
     field :size, :integer
     field :mtime, :integer
     field :sha256, :string
-
-    timestamps(type: :utc_datetime)
   end
 end

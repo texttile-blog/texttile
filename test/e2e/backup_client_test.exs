@@ -8,6 +8,8 @@ defmodule TexttileWeb.E2E.BackupClientTest do
   """
   use TexttileWeb.ConnCase, async: false
 
+  import Ecto.Query
+
   alias Texttile.Backup
   alias Texttile.Settings
   alias Texttile.Uploads
@@ -41,16 +43,17 @@ defmodule TexttileWeb.E2E.BackupClientTest do
     relative
   end
 
-  defp run(%{dir: dir, token: token}) do
-    System.cmd(@script, [],
-      env: [
-        {"TEXTTILE_URL", TexttileWeb.Endpoint.url()},
-        {"TEXTTILE_TOKEN", token},
-        {"BACKUP_DIR", dir},
-        {"TEXTTILE_BACKUP_CONFIG", "/dev/null"}
-      ],
-      stderr_to_stdout: true
-    )
+  defp env(%{dir: dir, token: token}) do
+    [
+      {"TEXTTILE_URL", TexttileWeb.Endpoint.url()},
+      {"TEXTTILE_TOKEN", token},
+      {"BACKUP_DIR", dir},
+      {"TEXTTILE_BACKUP_CONFIG", "/dev/null"}
+    ]
+  end
+
+  defp run(context) do
+    System.cmd(@script, [], env: env(context), stderr_to_stdout: true)
   end
 
   test "fetches the files and the database, and says what it did", context do
@@ -111,6 +114,66 @@ defmodule TexttileWeb.E2E.BackupClientTest do
 
     assert File.read!(Path.join([context.dir, "files", "images", "pier-abcd.jpg"])) ==
              "a picture of a pier"
+  end
+
+  test "bytes that do not match the hash never reach the backup", context do
+    write!("images/pier-abcd.jpg", "a picture of a pier")
+
+    # The manifest is made to promise a hash the file does not have,
+    # which is what a truncated or tampered transfer looks like from
+    # the client's side.
+    [%{id: id}] = Backup.files()
+
+    Texttile.Repo.update_all(
+      from(f in "backup_fingerprints", where: f.id == ^id),
+      set: [sha256: String.duplicate("0", 64)]
+    )
+
+    {out, status} = run(context)
+
+    refute status == 0
+    assert out =~ "FAILED the checksum"
+
+    # Nothing was moved into place, and no half file was left behind.
+    refute File.exists?(Path.join([context.dir, "files", "images", "pier-abcd.jpg"]))
+    refute File.exists?(Path.join([context.dir, "files", "images", "pier-abcd.jpg.part"]))
+  end
+
+  test "the dated database copies are rotated, oldest first", context do
+    db = Path.join(context.dir, "db")
+    File.mkdir_p!(db)
+
+    # Three runs of earlier days, as the client would have left them.
+    older = [
+      "texttile-20260101T030000Z.db",
+      "texttile-20260102T030000Z.db",
+      "texttile-20260103T030000Z.db"
+    ]
+
+    Enum.each(older, fn name ->
+      File.write!(Path.join(db, name), "SQLite format 3\0older copy")
+    end)
+
+    # Their write times decide which is the oldest.
+    Enum.with_index(older, fn name, index ->
+      stamp = ~N[2026-01-01 03:00:00] |> NaiveDateTime.add(index * 86_400, :second)
+      seconds = NaiveDateTime.diff(stamp, ~N[1970-01-01 00:00:00])
+      File.touch!(Path.join(db, name), seconds)
+    end)
+
+    {out, status} =
+      System.cmd(@script, [], env: env(context) ++ [{"DB_KEEP", "2"}], stderr_to_stdout: true)
+
+    assert status == 0, out
+    assert out =~ "rotating out texttile-20260101T030000Z.db"
+
+    kept = db |> File.ls!() |> Enum.filter(&String.starts_with?(&1, "texttile-")) |> Enum.sort()
+
+    # Two kept: the run that just happened, and the newest of the old.
+    assert length(kept) == 2
+    assert "texttile-20260103T030000Z.db" in kept
+    refute "texttile-20260101T030000Z.db" in kept
+    refute "texttile-20260102T030000Z.db" in kept
   end
 
   test "a wrong token gets nothing, and the run reports a failure", context do

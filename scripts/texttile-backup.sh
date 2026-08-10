@@ -25,12 +25,21 @@
 # Cron, every day at 03:17, with mail on failure:
 #   17 3 * * * /home/pi/texttile-backup.sh >> /var/log/texttile-backup.log 2>&1
 #
+# The copies are readable by their owner alone (umask 077). Keep them
+# that way: the database in them opens this blog.
+#
 # To restore:
 #   1. copy files/ into the uploads directory of the installation
 #   2. copy the newest db/texttile-*.db to the database path
 #   3. start the container; the image renditions are made again on demand
 
 set -euo pipefail
+
+# What lands here is the whole installation: the database carries the
+# blog password, the sign-in of every account and the address of every
+# reader who ever wrote a comment. Nobody but the owner of this backup
+# gets to read it, whatever the umask of the cron that started us.
+umask 077
 
 # ---------------------------------------------------------------- configuration
 
@@ -76,6 +85,9 @@ fi
 FILES_DIR="$BACKUP_DIR/files"
 DB_DIR="$BACKUP_DIR/db"
 mkdir -p "$FILES_DIR" "$DB_DIR"
+
+# Also for a directory tree that an earlier, wider umask made.
+chmod -R go-rwx "$BACKUP_DIR" 2>/dev/null || true
 
 # One run at a time: a long first sync must not meet the daily cron.
 exec 9>"$BACKUP_DIR/.lock"

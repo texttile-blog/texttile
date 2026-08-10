@@ -12,8 +12,6 @@ defmodule Texttile.Repo.Migrations.CreateBackupFingerprints do
       add :size, :integer, null: false
       add :mtime, :integer, null: false
       add :sha256, :string, null: false
-
-      timestamps(type: :utc_datetime)
     end
 
     create unique_index(:backup_fingerprints, [:path])

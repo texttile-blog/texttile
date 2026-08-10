@@ -4,12 +4,15 @@ defmodule TexttileWeb.BackupGate do
 
   Three questions in order, and each has its own answer:
 
+    * Has this caller knocked too often this minute? Then 429, and
+      nothing further is asked. This stands first so that a scanner
+      running at a switched-off installation is throttled like
+      anybody else, instead of writing a log line per knock forever.
     * Is this installation serving backups at all, and to this
       address? If not, the endpoints are not there. A scanner gets
       the same 404 as for any address nobody wrote a route for, and
       learns nothing about what this server can do. A forbidden says
       "there is something here"; a not-found says nothing.
-    * Has this caller knocked too often this minute? Then 429.
     * Does the word they carry open it? If not, 401.
 
   The word travels in the `Authorization` header and nowhere else. A
@@ -35,14 +38,14 @@ defmodule TexttileWeb.BackupGate do
     ip = ClientIP.of(conn)
 
     cond do
+      not RateLimiter.allow?(ip, Backup.limiter()) ->
+        refuse(conn, ip, 429, "too many requests", "too many requests this minute")
+
       not Backup.enabled?() ->
         refuse(conn, ip, 404, "not found", "the backup API is switched off")
 
       not Backup.allowed_ip?(ip) ->
         refuse(conn, ip, 404, "not found", "the address is not on the allowlist")
-
-      not RateLimiter.allow?(ip, Backup.limiter()) ->
-        refuse(conn, ip, 429, "too many requests", "too many requests this minute")
 
       not Backup.valid_token?(presented(conn)) ->
         conn

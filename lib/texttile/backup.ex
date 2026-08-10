@@ -100,11 +100,37 @@ defmodule Texttile.Backup do
     |> Enum.reject(&(&1 == ""))
   end
 
-  @doc "Whether this address may fetch."
+  @doc """
+  Whether this address may fetch.
+
+  Both sides are read as addresses first, because one address has many
+  spellings and the settings screen takes every one of them. A router
+  writes `2001:0DB8:0000::0001` where the socket says `2001:db8::1`,
+  and an operator who pastes the first would otherwise lock their own
+  backup machine out with no word said anywhere.
+  """
   def allowed_ip?(ip) do
     case allowed_ips() do
       [] -> true
-      allowed -> ip in allowed
+      allowed -> address(ip) in Enum.map(allowed, &address/1)
+    end
+  end
+
+  # The address behind a spelling of it, or the text as it stands when
+  # it is no address at all. An IPv4 address that arrives wrapped in
+  # IPv6, as it does on a socket that listens for both, is the IPv4
+  # address it wraps.
+  defp address(text) do
+    case text |> String.to_charlist() |> :inet.parse_address() do
+      {:ok, {0, 0, 0, 0, 0, 0xFFFF, high, low}} ->
+        {Bitwise.bsr(high, 8), Bitwise.band(high, 0xFF), Bitwise.bsr(low, 8),
+         Bitwise.band(low, 0xFF)}
+
+      {:ok, parsed} ->
+        parsed
+
+      {:error, _no_address} ->
+        text
     end
   end
 
@@ -153,7 +179,7 @@ defmodule Texttile.Backup do
     hashed =
       on_disk
       |> Enum.reject(&current?(Map.get(stored, &1.path), &1))
-      |> Enum.map(&Map.put(&1, :sha256, digest(Uploads.absolute(&1.path))))
+      |> Enum.flat_map(&with_digest/1)
 
     vanished = Map.keys(stored) -- Enum.map(on_disk, & &1.path)
 
@@ -193,23 +219,12 @@ defmodule Texttile.Backup do
   @batch 200
 
   defp remember(files) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
     files
-    |> Enum.map(
-      &%{
-        path: &1.path,
-        size: &1.size,
-        mtime: &1.mtime,
-        sha256: &1.sha256,
-        inserted_at: now,
-        updated_at: now
-      }
-    )
+    |> Enum.map(&%{path: &1.path, size: &1.size, mtime: &1.mtime, sha256: &1.sha256})
     |> Enum.chunk_every(@batch)
     |> Enum.each(
       &Repo.insert_all(Fingerprint, &1,
-        on_conflict: {:replace, [:size, :mtime, :sha256, :updated_at]},
+        on_conflict: {:replace, [:size, :mtime, :sha256]},
         conflict_target: :path
       )
     )
@@ -223,6 +238,19 @@ defmodule Texttile.Backup do
     |> Enum.each(&Repo.delete_all(from f in Fingerprint, where: f.path in ^&1))
   end
 
+  # The whole tree is stated first and hashed after, so a file may go
+  # between the two: deleting an entry takes its pictures at once, and
+  # the hashing pass of a first backup runs for minutes. A file that
+  # cannot be read when its turn comes is left out of this run instead
+  # of ending it. The same answer serves a file this server may not
+  # read, which is no more the backup's business.
+  defp with_digest(file) do
+    case digest(Uploads.absolute(file.path)) do
+      nil -> []
+      sha256 -> [Map.put(file, :sha256, sha256)]
+    end
+  end
+
   # Read in pieces, so a film never has to fit in memory beside itself.
   @chunk 262_144
 
@@ -232,6 +260,8 @@ defmodule Texttile.Backup do
     |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
     |> :crypto.hash_final()
     |> Base.encode16(case: :lower)
+  rescue
+    File.Error -> nil
   end
 
   ## The walk

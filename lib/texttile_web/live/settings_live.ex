@@ -1265,7 +1265,7 @@ defmodule TexttileWeb.SettingsLive do
         <div id="backupSection">
           <p class="note mb-2 leading-[1.6]">
             {gettext(
-              "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository."
+              "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository, and where it puts the copies is as worth guarding as this blog."
             )}
           </p>
 
@@ -1332,7 +1332,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <div class="hint">
               {gettext(
-                "It opens the backup endpoints and nothing else: it reads, it never writes, and it is no way into the admin area."
+                "It opens the backup endpoints and nothing else, and it only ever reads. Keep it like a password all the same: what it fetches is the database, and the database carries the blog password, the sign-in of every account and the address of every reader who wrote to you."
               )}
             </div>
           </div>
@@ -1358,7 +1358,7 @@ defmodule TexttileWeb.SettingsLive do
               </span>
               <div class="hint">
                 {gettext(
-                  "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides."
+                  "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides. Behind a proxy this is only as good as the header the proxy writes, so read it as a second lock and never as the first."
                 )}
               </div>
             </div>

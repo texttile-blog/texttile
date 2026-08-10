@@ -72,6 +72,19 @@ defmodule Texttile.BackupTest do
       refute second == first
     end
 
+    test "leaves out a file it cannot read, and keeps the rest" do
+      write!("images/one-abcd.jpg", "a picture")
+      unreadable = write!("images/locked-abcd.jpg", "a picture nobody may read")
+      File.chmod!(unreadable, 0o000)
+      on_exit(fn -> File.chmod(unreadable, 0o644) end)
+
+      # A file may also go between the walk and its turn at being
+      # hashed: deleting an entry takes its pictures at once, and the
+      # hashing pass of a first backup runs for minutes. Both arrive
+      # here as a file that will not open.
+      assert ["images/one-abcd.jpg"] = Enum.map(Backup.files(), & &1.path)
+    end
+
     test "forgets a file that has left the disk" do
       write!("images/one-abcd.jpg", "a picture")
       write!("images/two-abcd.jpg", "another")
@@ -166,6 +179,26 @@ defmodule Texttile.BackupTest do
       assert Backup.allowed_ip?("1.2.3.4")
       assert Backup.allowed_ip?("10.0.0.7")
       refute Backup.allowed_ip?("1.2.3.5")
+    end
+
+    test "one address is one address, however it is spelled" do
+      # A router shows an IPv6 address in full and in capitals; the
+      # socket says the short form. Both name the same machine.
+      {:ok, _} = Settings.put(:backup_allowed_ips, "2001:0DB8:0000:0000:0000:0000:0000:0001")
+      assert Backup.allowed_ip?("2001:db8::1")
+
+      {:ok, _} = Settings.put(:backup_allowed_ips, "0:0:0:0:0:0:0:1")
+      assert Backup.allowed_ip?("::1")
+
+      {:ok, _} = Settings.put(:backup_allowed_ips, "10.0.0.07")
+      assert Backup.allowed_ip?("10.0.0.7")
+
+      # A socket that listens for both families hands over an IPv4
+      # address wrapped in IPv6.
+      {:ok, _} = Settings.put(:backup_allowed_ips, "10.0.0.7")
+      assert Backup.allowed_ip?("::ffff:10.0.0.7")
+
+      refute Backup.allowed_ip?("10.0.0.8")
     end
 
     test "a list of nothing but spaces lets every address in" do

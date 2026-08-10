@@ -39,11 +39,17 @@ defmodule TexttileWeb.BackupController do
   before a byte of it leaves.
   """
   def manifest(conn, _params) do
+    # The list is made before the 200 goes out. Reading the tree can
+    # fail, and a failure after the status line is a truncated body
+    # under a 200: the client would then blame the shape of the JSON
+    # for something that went wrong on this side.
+    files = Backup.files()
+
     conn
     |> put_resp_content_type("application/json")
     |> send_chunked(200)
     |> write(head())
-    |> write_files(Backup.files())
+    |> write_files(files)
     |> write("]}")
   end
 
@@ -69,11 +75,14 @@ defmodule TexttileWeb.BackupController do
   defp json(term), do: Jason.encode!(term)
 
   # A client that hangs up mid-manifest is nothing to raise about: the
-  # rest of the pieces go nowhere, and the connection is done.
+  # rest of the pieces go nowhere, and the connection is done. Every
+  # reason is the same reason here, and a socket has many names for
+  # it: closed, epipe, econnreset, a timeout, a word from the server
+  # under it.
   defp write(conn, piece) do
     case chunk(conn, piece) do
       {:ok, conn} -> conn
-      {:error, :closed} -> halt(conn)
+      {:error, _the_client_is_gone} -> halt(conn)
     end
   end
 

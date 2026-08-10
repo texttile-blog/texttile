@@ -3633,22 +3633,22 @@ msgstr "· ein Client mit dem Token darf holen"
 msgid "A backup that stopped running says nothing until the day you need it. This line is where it shows."
 msgstr "Eine Sicherung, die nicht mehr läuft, sagt nichts, bis du sie brauchst. Hier steht es."
 
-#: lib/texttile_web/live/settings_live.ex:1267
-#, elixir-autogen, elixir-format
-msgid "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository."
-msgstr "Ein Rechner, der dir gehört, holt die Datenbank und jede hochgeladene Datei von hier, nach seiner eigenen Uhr. Er hält den Token und dieser Server hält nichts davon, also findet niemand, der hier einbricht, einen Weg zu deinen Kopien. Der Client ist scripts/texttile-backup.sh im Repository."
-
-#: lib/texttile_web/live/settings_live.ex:1334
-#, elixir-autogen, elixir-format
-msgid "It opens the backup endpoints and nothing else: it reads, it never writes, and it is no way into the admin area."
-msgstr "Er öffnet die Sicherungs-Endpunkte und sonst nichts: Er liest, er schreibt nie, und er ist kein Weg in den Adminbereich."
-
-#: lib/texttile_web/live/settings_live.ex:1360
-#, elixir-autogen, elixir-format
-msgid "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides."
-msgstr "Die Adressen, von denen dein Sicherungsrechner anruft, durch Kommas getrennt. Leer ist der Normalfall: Dann entscheidet der Token allein."
-
 #: lib/texttile_web/live/settings_live.ex:1303
 #, elixir-autogen, elixir-format
 msgid "Write it into the configuration of your backup machine now. It is never shown again."
 msgstr "Schreib ihn jetzt in die Konfiguration deines Sicherungsrechners. Er wird nie wieder gezeigt."
+
+#: lib/texttile_web/live/settings_live.ex:1267
+#, elixir-autogen, elixir-format
+msgid "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository, and where it puts the copies is as worth guarding as this blog."
+msgstr "Ein Rechner, der dir gehört, holt die Datenbank und jede hochgeladene Datei von hier, nach seiner eigenen Uhr. Er hält den Token und dieser Server hält nichts davon, also findet niemand, der hier einbricht, einen Weg zu deinen Kopien. Der Client ist scripts/texttile-backup.sh im Repository, und wo er die Kopien ablegt, ist so schützenswert wie dieses Blog."
+
+#: lib/texttile_web/live/settings_live.ex:1334
+#, elixir-autogen, elixir-format
+msgid "It opens the backup endpoints and nothing else, and it only ever reads. Keep it like a password all the same: what it fetches is the database, and the database carries the blog password, the sign-in of every account and the address of every reader who wrote to you."
+msgstr "Er öffnet die Sicherungs-Endpunkte und sonst nichts, und er liest immer nur. Behandle ihn trotzdem wie ein Passwort: Was er holt, ist die Datenbank, und die trägt das Blog-Passwort, die Anmeldung jedes Kontos und die Adresse jedes Lesers, der dir geschrieben hat."
+
+#: lib/texttile_web/live/settings_live.ex:1360
+#, elixir-autogen, elixir-format
+msgid "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides. Behind a proxy this is only as good as the header the proxy writes, so read it as a second lock and never as the first."
+msgstr "Die Adressen, von denen dein Sicherungsrechner anruft, durch Kommas getrennt. Leer ist der Normalfall: Dann entscheidet der Token allein. Hinter einem Proxy ist das nur so gut wie der Header, den der Proxy schreibt, also lies es als zweites Schloss und nie als erstes."

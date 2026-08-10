@@ -362,6 +362,18 @@ Switch it on in Settings, section Backup:
 3. Optionally name the addresses the backup machine calls from. Empty is the
    usual case: the token alone decides.
 
+The token opens the backup endpoints only, and it only ever reads. Keep it
+like a password all the same. What it fetches is the database, and the
+database carries the blog password in clear, the password hash and the live
+sessions of every account, and the address of every reader who commented or
+joined the newsletter. Whoever holds the token holds a copy of the site.
+
+The address list is a second lock, never the first. Behind a proxy it is only
+as good as `CLIENT_IP_HEADER`: a proxy that passes a caller's
+`X-Forwarded-For` through instead of appending to it lets the caller write
+their own address. Set `CLIENT_IP_HEADER` only where the proxy writes the
+header itself.
+
 **Last fetched** on the same screen dates the last run, with the address it
 came from. A backup that stopped running says nothing until the day you need
 it, so that line is where you see it.
@@ -401,6 +413,10 @@ Then run it from cron, every day at 03:17, with mail on failure:
 
 It exits non-zero on any failure, so cron reports it.
 
+It sets `umask 077` and tightens `BACKUP_DIR` on every run, so the copies are
+readable by their owner alone. Keep them that way, above all on a NAS that
+exports the volume: the database in there opens the blog.
+
 What it does, and why:
 
 - **It archives, it does not mirror.** A file that disappears from the site
@@ -438,7 +454,9 @@ scanner learns nothing about what this server can do. An address that is not
 on the allowlist gets the same answer. Every call is logged, served or
 refused, and one caller may fetch 600 times a minute.
 
-The first manifest of an existing blog reads every uploaded file once, to
+A caller who knocks too often is turned away before anything else is asked,
+so a scanner at a switched-off installation costs one line in the log and no
+work. The first manifest of an existing blog reads every uploaded file once, to
 hash it. After that a hash is stored beside the file's size and write time,
 and a manifest is a query: ten gigabytes of pictures cost that one first run
 and nothing after it.

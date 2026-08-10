@@ -93,6 +93,27 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       assert {:ok, %{status: 200}} = fetch("/backup/manifest", second)
     end
 
+    test "cancelling the question leaves the token in service", %{conn: conn} do
+      session =
+        conn
+        |> sign_in()
+        |> open("/admin/settings")
+        |> check("Serve a backup client", exact: false)
+        |> click_button("#makeBackupToken", "Create a token")
+        |> assert_has("#backupToken")
+
+      token = token_on_screen(session)
+
+      session
+      |> click_button("#replaceBackupToken", "Replace the token")
+      |> assert_has("#dlgH", text: "Replace the backup token?")
+      |> click_button("#dialog-cancel", "Cancel")
+      |> refute_has("#dlgH")
+      |> assert_has("#backupTokenState", text: "A token is in service")
+
+      assert {:ok, %{status: 200}} = fetch("/backup/manifest", token)
+    end
+
     test "the allowlist is written on the screen and refuses a typo", %{conn: conn} do
       conn
       |> sign_in()

@@ -35,6 +35,40 @@ defmodule Texttile.SettingsTest do
     end
   end
 
+  describe "the addresses a backup client may call from" do
+    test "empty is the usual case and is allowed" do
+      assert Settings.get(:backup_allowed_ips) == ""
+      assert {:ok, ""} = Settings.put(:backup_allowed_ips, "")
+    end
+
+    test "one address, several addresses, and spaces around them" do
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, "10.0.0.7")
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, "10.0.0.7, 192.168.1.4")
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, "  10.0.0.7 ,  ::1  ")
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, " , ")
+    end
+
+    test "IPv6 in every spelling" do
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, "::1")
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, "2001:0DB8::1")
+      assert {:ok, _} = Settings.put(:backup_allowed_ips, "::ffff:10.0.0.7")
+    end
+
+    test "a typo is refused and names itself, so nobody is locked out in silence" do
+      assert {:error, message} = Settings.put(:backup_allowed_ips, "not an address")
+      assert message =~ "no IP address"
+
+      assert {:error, _} = Settings.put(:backup_allowed_ips, "10.0.0.256")
+      assert {:error, _} = Settings.put(:backup_allowed_ips, "10.0.0.7/24")
+      assert {:error, _} = Settings.put(:backup_allowed_ips, "backup.example.com")
+
+      # One bad entry refuses the whole list: half a list would be a
+      # lock the operator did not write.
+      assert {:error, _} = Settings.put(:backup_allowed_ips, "10.0.0.7, nonsense")
+      assert Settings.get(:backup_allowed_ips) == ""
+    end
+  end
+
   describe "site access" do
     test "public by default, with an empty password" do
       assert Settings.get(:site_visibility) == "public"
