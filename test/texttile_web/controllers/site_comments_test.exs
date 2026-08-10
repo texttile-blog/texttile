@@ -323,7 +323,7 @@ defmodule TexttileWeb.SiteCommentsTest do
         build_conn()
         |> send_comment(article, %{"remember" => "true", "website" => "https://christel.example"})
 
-      assert %{max_age: 31_536_000} = sent.resp_cookies[@writer]
+      assert %{max_age: 15_552_000} = sent.resp_cookies[@writer]
 
       html =
         build_conn()
@@ -358,6 +358,36 @@ defmodule TexttileWeb.SiteCommentsTest do
         |> send_comment(article, %{"email" => "second@example.org"})
 
       assert %{max_age: 0} = again.resp_cookies[@writer]
+    end
+
+    # A comment that comes back with a mistake keeps the box as it was
+    # sent. Without that, correcting one field would send the next
+    # comment with the box empty.
+    test "a form that comes back with a mistake keeps the box ticked", %{conn: conn} do
+      article = published_post()
+
+      html =
+        build_conn()
+        |> send_comment(article, %{"remember" => "true", "website" => "not a website"})
+        |> html_response(200)
+
+      assert html =~ "Check the form and send it again"
+      assert html =~ ~r/name="remember"[^>]*checked/
+    end
+
+    test "correcting a mistake does not drop what was already kept", %{conn: conn} do
+      article = published_post()
+      sent = build_conn() |> send_comment(article, %{"remember" => "true"})
+      kept = sent.resp_cookies[@writer].value
+
+      # the same browser, one field mistyped, and the box still ticked
+      # because the form came back with it ticked
+      again =
+        build_conn()
+        |> Plug.Test.put_req_cookie(@writer, kept)
+        |> send_comment(article, %{"remember" => "true", "email" => "second@example.org"})
+
+      refute match?(%{max_age: 0}, again.resp_cookies[@writer])
     end
 
     # An account answers for the name and the address, so there is

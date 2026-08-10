@@ -45,7 +45,7 @@
      `url` was missing from it, so the website field of a comment came
      out at the browser's default width. 16px on small screens, so iOS
      never zooms on focus. */
-  input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=range]):not([type=color]):not(.sr),
+  input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)),
   textarea, select {
     width: 100%; font: inherit; font-family: var(--tt-font-sans); font-size: 16px;
     color: var(--tt-ink);
@@ -56,7 +56,7 @@
     transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
   }
   @media (min-width: 900px) {
-    input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=range]):not([type=color]):not(.sr),
+    input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)),
     textarea, select { font-size: 14px; }
   }
   /* a date field is something you open, so it says so: the whole
@@ -71,11 +71,11 @@
   input[type=date]:hover::-webkit-calendar-picker-indicator,
   input[type=datetime-local]:hover::-webkit-calendar-picker-indicator,
   input[type=time]:hover::-webkit-calendar-picker-indicator { opacity: 1; }
-  input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]):not(.sr):hover,
+  input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)):hover,
   textarea:hover, select:hover {
     background-color: var(--fld-bg-h); border-bottom: var(--fld-bb-h);
   }
-  input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]):not(.sr):focus,
+  input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)):focus,
   textarea:focus, select:focus {
     outline: none;
     background-color: var(--fld-bg-f);

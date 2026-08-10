@@ -614,7 +614,7 @@ defmodule TexttileWeb.SettingsLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">{gettext("Settings")}</h1>
         <p class="lead">
           {gettext("Nothing here has a Save button: every change applies the moment you make it.")}
@@ -623,7 +623,7 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Site")}</.section>
         <%!-- three fields somebody fills in on their first visit here,
              so all three look like fields and not like values --%>
-        <.form for={@settings_form} id="site-form" class="boxed-in" phx-change="save_setting">
+        <.form for={@settings_form} id="site-form" phx-change="save_setting">
           <div class="drow">
             <label class="lab" for="setting-site_title">{gettext("Site title")}</label>
             <span class="val">
@@ -912,7 +912,7 @@ defmodule TexttileWeb.SettingsLive do
             name="settings[theme_css]"
             rows="12"
             spellcheck="false"
-            class="boxed font-mono text-[12.5px] leading-[1.65]"
+            class="font-mono text-[12.5px] leading-[1.65]"
             phx-debounce="300"
           >{@settings_form[:theme_css].value}</textarea>
         </.form>

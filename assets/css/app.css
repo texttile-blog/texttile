@@ -244,10 +244,18 @@
     border: var(--fld-bd-f); border-bottom: var(--fld-bb-f);
     box-shadow: var(--fld-sh-f);
   }
-  .addr .pre { flex: none; white-space: nowrap; color: var(--tt-faint); font-size: 13px; }
+  /* The part that cannot change gives way first. A blog on a long host
+     name would otherwise push the slug out of a 320px column
+     altogether, and the slug is the only control an entry's address
+     has. It keeps one line and ends in an ellipsis instead. */
+  .addr .pre {
+    flex: 0 1 auto; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--tt-faint); font-size: 13px;
+  }
   /* the inner input carries no field of its own */
   .addr > input {
-    flex: 1 1 40px; min-width: 0;
+    flex: 1 1 40px; min-width: 5ch;
     padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
     font-size: 13px;
   }
@@ -1106,10 +1114,6 @@
   body.site > main { flex: 1 0 auto; display: flex; flex-direction: column; }
   body.site > main > section.foot-band { margin-top: auto; }
   body.site > footer { margin-top: auto; }
-
-  /* the fields are .quiet-fields, worn on the body (site_root.html.heex):
-     the same underline the side column of the admin area writes, not a
-     second copy */
 
   /* the header: the reader header of round-13, with the site menu the
      app builds out of its pages */
