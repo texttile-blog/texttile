@@ -346,6 +346,121 @@ script or an AI agent can convert any export (WordPress, for example) into
 bundles. The import itself lives in Settings: upload the zip, read the
 validation report, start the import.
 
+## Backup
+
+Texttile is backed up by pulling, not by pushing. A machine you keep, a
+Raspberry Pi at home or a NAS, fetches the whole installation on a clock of
+its own. The backup machine holds the token; this server holds nothing that
+reaches your copies. Whoever breaks into the server therefore cannot delete
+them, which is the one property a push to an object store does not have.
+
+Switch it on in Settings, section Backup:
+
+1. Tick **Serve a backup client at /backup**. Off on a fresh install.
+2. Press **Create a token**. It is shown once, and stored here as a hash.
+   Write it into the configuration of the backup machine now.
+3. Optionally name the addresses the backup machine calls from. Empty is the
+   usual case: the token alone decides.
+
+The token opens the backup endpoints only, and it only ever reads. Keep it
+like a password all the same. What it fetches is the database, and the
+database carries the blog password in clear, the password hash and the live
+sessions of every account, and the address of every reader who commented or
+joined the newsletter. Whoever holds the token holds a copy of the site.
+
+The address list is a second lock, never the first. Behind a proxy it is only
+as good as `CLIENT_IP_HEADER`: a proxy that passes a caller's
+`X-Forwarded-For` through instead of appending to it lets the caller write
+their own address. Set `CLIENT_IP_HEADER` only where the proxy writes the
+header itself.
+
+**Last fetched** on the same screen dates the last run, with the address it
+came from. A backup that stopped running says nothing until the day you need
+it, so that line is where you see it.
+
+### What the client copies
+
+| Data                        | Copied           | Why                                  |
+| --------------------------- | ---------------- | ------------------------------------ |
+| the SQLite database         | in full, per run | a few MB, and it changes constantly  |
+| image and video originals   | what is new      | large, but written once and kept     |
+| what ffmpeg made of a video | what is new      | a conversion no page can wait for    |
+| the logo and the favicon    | what is new      | small, and not made again by itself  |
+| the rendition cache         | never            | made again the moment a page asks    |
+
+Leaving the cache out often halves what travels. After a restore, the
+renditions are made again as readers arrive.
+
+### The client
+
+`scripts/texttile-backup.sh` in this repository is the client. It needs
+`curl`, `jq`, `flock`, and `sha256sum` (Debian, Raspberry Pi OS:
+`apt install curl jq`). Copy it to the backup machine and write its
+configuration to `~/.texttile-backup.conf`:
+
+```sh
+TEXTTILE_URL=https://blog.example.com
+TEXTTILE_TOKEN=<the token Settings showed once>
+BACKUP_DIR=/mnt/backup/texttile
+DB_KEEP=30          # dated database copies to keep
+```
+
+Then run it from cron, every day at 03:17, with mail on failure:
+
+```
+17 3 * * * /home/pi/texttile-backup.sh >> /var/log/texttile-backup.log 2>&1
+```
+
+It exits non-zero on any failure, so cron reports it.
+
+It sets `umask 077` and tightens `BACKUP_DIR` on every run, so the copies are
+readable by their owner alone. Keep them that way, above all on a NAS that
+exports the volume: the database in there opens the blog.
+
+What it does, and why:
+
+- **It archives, it does not mirror.** A file that disappears from the site
+  stays in the backup. A copy that faithfully repeats a deletion is no backup.
+- **The layout matches the server.** Restoring is a copy, not a script.
+- **The database comes last**, after every file, so the copied database never
+  names a picture that is missing from the copy.
+- **Database copies are dated and rotated** (30 by default). A few MB a day
+  buys a month of points to go back to. The originals are never rotated.
+- **Every file is its own request**, downloaded to `.part` and moved into
+  place only after its SHA-256 matches. An interrupted run costs one file.
+
+### To restore
+
+1. Copy `files/` into the uploads directory (`UPLOADS_PATH`, `/data/uploads`
+   in the image).
+2. Copy the newest `db/texttile-*.db` to the database path (`DATABASE_PATH`,
+   `/data/texttile.db` in the image).
+3. Start the container. The renditions are made again on demand.
+
+### The endpoints
+
+Three, all read-only, all wanting `Authorization: Bearer <token>`. Never a
+token in the address line: an address goes into the access log of this
+server, of every proxy on the way, and into your shell history.
+
+| Endpoint               | Answers                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `GET /backup/manifest` | JSON: the database, and every file with size and hash  |
+| `GET /backup/db`       | a consistent copy of the database, made with `VACUUM INTO` |
+| `GET /backup/file/:id` | one original, by the id the manifest gave it           |
+
+While the feature is switched off, all three answer 404 rather than 403: a
+scanner learns nothing about what this server can do. An address that is not
+on the allowlist gets the same answer. Every call is logged, served or
+refused, and one caller may fetch 600 times a minute.
+
+A caller who knocks too often is turned away before anything else is asked,
+so a scanner at a switched-off installation costs one line in the log and no
+work. The first manifest of an existing blog reads every uploaded file once, to
+hash it. After that a hash is stored beside the file's size and write time,
+and a manifest is a query: ten gigabytes of pictures cost that one first run
+and nothing after it.
+
 ## Deploy on Fly.io
 
 `fly.toml` in this repo deploys from source with one volume for the database

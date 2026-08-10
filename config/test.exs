@@ -40,6 +40,10 @@ config :phoenix_test,
     timeout: 10_000
   ]
 
+# The backup limit is 600 a minute in life, which no test would reach
+# without spending a minute reaching it.
+config :texttile, :backup_per_minute, 12
+
 # A browser test types faster than a person, so the comment form's time
 # trap stands down. The tests about the trap set the age themselves.
 config :texttile, :comment_min_age, 0

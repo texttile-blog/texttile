@@ -91,6 +91,14 @@ defmodule Texttile.Uploads do
   @report_dirs [@images_dir, @videos_dir, @site_dir, @cache_dir]
 
   @doc """
+  The folders a backup carries: everything that came in, and what
+  ffmpeg made of a film, which no page can make again while a reader
+  waits. The cache is left out; a rendition is made again the moment
+  a page asks for one.
+  """
+  def kept_dirs, do: @report_dirs -- [@cache_dir]
+
+  @doc """
   What lies below the root, one row per folder: how many files and how
   many bytes. A folder that does not exist yet answers with zeros
   instead of an error, because an empty blog has none of them.

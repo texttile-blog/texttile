@@ -2,10 +2,6 @@
 
 Permanent project-specific rules only. Read `PHOENIX.md` before writing Phoenix code.
 
-## Agent lifecycle
-
-- At the start of every turn, start a dedicated `caffeinate -dimsu` process and retain its PID. Stop that exact process after the last tool or API call, immediately before the final response. Never stop a `caffeinate` process started elsewhere.
-
 ## Product
 
 - Load nothing external at runtime: no CDN, third-party script, tracker, or captcha. Honeypot, time trap, and rate limiting are always on and have no configuration.

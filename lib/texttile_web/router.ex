@@ -27,6 +27,24 @@ defmodule TexttileWeb.Router do
     get "/feed.xml", FeedController, :show
   end
 
+  # The backup API: a machine the owner keeps at home pulls the whole
+  # installation from here. Outside every browser pipeline, and
+  # outside the gate a protected blog puts in front of its readers:
+  # this answers a backup client with a token, not a person with a
+  # session, and a blog behind a password must still be backed up.
+  # TexttileWeb.BackupGate decides who gets an answer at all.
+  pipeline :backup do
+    plug TexttileWeb.BackupGate
+  end
+
+  scope "/backup", TexttileWeb do
+    pipe_through :backup
+
+    get "/manifest", BackupController, :manifest
+    get "/db", BackupController, :database
+    get "/file/:id", BackupController, :file
+  end
+
   # The view counter. It stands outside every browser pipeline on
   # purpose: no session is fetched, no cookie is read or written, and
   # no token is asked for. Counting a page must touch nothing that
