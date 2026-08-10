@@ -47,10 +47,30 @@ defmodule Texttile.Articles do
 
   ## Reading
 
-  def get_article!(id), do: Repo.get!(Article, id)
+  # The author and the published version travel with every entry the
+  # admin area opens: one names it, the other is the text the readers
+  # have, and both are asked for on every screen that shows an entry.
+  @with_people [:user, :live_version]
+
+  def get_article!(id), do: Article |> Repo.get!(id) |> Repo.preload(@with_people)
 
   @doc "One entry by id whatever state it is in, or nil."
-  def get_article(id), do: Repo.get(Article, id)
+  def get_article(id), do: Article |> Repo.get(id) |> preload_people()
+
+  defp preload_people(nil), do: nil
+  defp preload_people(article), do: Repo.preload(article, @with_people)
+
+  @doc """
+  The displayed name of whoever started the entry, or nil where the
+  account has gone. The name is read now and not stored, so a rename
+  reaches every entry that person ever wrote.
+  """
+  def author_name(%Article{user: %Ecto.Association.NotLoaded{}} = article) do
+    article |> Repo.preload(:user) |> author_name()
+  end
+
+  def author_name(%Article{user: nil}), do: nil
+  def author_name(%Article{user: user}), do: Texttile.Accounts.display_name(user)
 
   @doc """
   The texts for the grid, by date, newest first: the day a text is
@@ -84,6 +104,7 @@ defmodule Texttile.Articles do
       end
     end)
     |> order_by([a], desc: fragment("coalesce(?, date('now'))", a.publish_date), desc: a.id)
+    |> preload(:user)
     |> Repo.all()
   end
 
@@ -110,14 +131,82 @@ defmodule Texttile.Articles do
     words = search |> String.downcase() |> String.split()
 
     Enum.filter(articles, fn article ->
-      hay = String.downcase(article.title <> " " <> article.tags <> " " <> article.body)
+      # The published text, not the working copy: the field must find
+      # what the list shows, and it shows what the reader has.
+      read = as_read(article)
+      hay = String.downcase(read.title <> " " <> read.tags <> " " <> read.body)
       Enum.all?(words, &String.contains?(hay, &1))
     end)
   end
 
+  @doc """
+  The entry as a reader gets it: the title and the body of the version
+  that is live, and everything else as it stands.
+
+  A live entry has two texts. The columns on the entry are the working
+  copy, which is what the editor writes into and what an admin sees on
+  the site; `live_version` is what was published, and that is this.
+  Everything the version does not hold - the tags, the address, the
+  tiles, the switches - has one state only and needs no choosing.
+
+  An entry that has never been live has no second text and is returned
+  as it is, so a draft an admin previews reads exactly as it is
+  written.
+  """
+  def as_read(articles) when is_list(articles), do: Enum.map(articles, &as_read/1)
+
+  def as_read(%Article{live_version: %Ecto.Association.NotLoaded{}} = article) do
+    article |> Repo.preload(:live_version) |> as_read()
+  end
+
+  def as_read(%Article{live_version: %Version{} = version} = article) do
+    if Visibility.live?(article) do
+      %{article | title: version.title, body: version.body}
+    else
+      article
+    end
+  end
+
+  def as_read(%Article{} = article), do: article
+
+  @doc """
+  Does the working copy of a live entry say something the readers have
+  not been given yet?
+  """
+  def unpublished_changes?(%Article{live_version: %Ecto.Association.NotLoaded{}} = article) do
+    article |> Repo.preload(:live_version) |> unpublished_changes?()
+  end
+
+  def unpublished_changes?(%Article{live_version: %Version{} = version} = article) do
+    Visibility.live?(article) and
+      (article.title != version.title or article.body != version.body)
+  end
+
+  def unpublished_changes?(%Article{}), do: false
+
+  @doc """
+  The ids of the live entries whose working copy has run ahead of what
+  the readers have. One query for the whole overview, because the
+  bodies of every entry are too much to carry there twice.
+  """
+  def entries_with_unpublished_changes do
+    from(a in Article,
+      join: v in Version,
+      on: v.id == a.live_version_id,
+      where: a.status == ^Visibility.live_status(),
+      where: a.title != v.title or a.body != v.body,
+      select: a.id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
   @doc "One published text by id, post or page alike, or nil."
   def get_published(id) do
-    Article |> Visibility.live() |> Repo.get_by(id: id)
+    Article
+    |> Visibility.live()
+    |> preload([:user, :live_version])
+    |> Repo.get_by(id: id)
   end
 
   @doc "The published pages for the site menu, oldest publish date first."
@@ -202,16 +291,14 @@ defmodule Texttile.Articles do
 
   @doc "The published post at a date and a slug, or nil."
   def get_published_post(%Date{} = date, slug) when is_binary(slug) do
-    Visibility.live()
-    |> where([a], a.slug == ^slug and a.type == "post" and a.publish_date == ^date)
+    published_query("post")
+    |> where([a], a.slug == ^slug and a.publish_date == ^date)
     |> Repo.one()
   end
 
   @doc "The published page behind a short address, or nil."
   def get_published_page(slug) when is_binary(slug) do
-    Visibility.live()
-    |> where([a], a.slug == ^slug and a.type == "page")
-    |> Repo.one()
+    published_query("page") |> where([a], a.slug == ^slug) |> Repo.one()
   end
 
   @doc """
@@ -223,7 +310,9 @@ defmodule Texttile.Articles do
   """
   def get_post(%Date{} = date, slug) when is_binary(slug) do
     Repo.one(
-      from a in Article, where: a.slug == ^slug and a.type == "post" and a.publish_date == ^date
+      from a in Article,
+        where: a.slug == ^slug and a.type == "post" and a.publish_date == ^date,
+        preload: [:user, :live_version]
     ) || dateless_post(date, slug)
   end
 
@@ -234,7 +323,8 @@ defmodule Texttile.Articles do
     if Date.compare(date, Date.utc_today()) == :eq do
       Repo.one(
         from a in Article,
-          where: a.slug == ^slug and a.type == "post" and is_nil(a.publish_date)
+          where: a.slug == ^slug and a.type == "post" and is_nil(a.publish_date),
+          preload: [:user, :live_version]
       )
     end
   end
@@ -252,7 +342,11 @@ defmodule Texttile.Articles do
 
   @doc "The page behind a short address whatever state it is in, or nil."
   def get_page(slug) when is_binary(slug) do
-    Repo.one(from a in Article, where: a.slug == ^slug and a.type == "page")
+    Repo.one(
+      from a in Article,
+        where: a.slug == ^slug and a.type == "page",
+        preload: [:user, :live_version]
+    )
   end
 
   ## The archive: one line of years, the months of the open year
@@ -469,15 +563,19 @@ defmodule Texttile.Articles do
     |> Enum.uniq()
   end
 
+  # Every reader query carries the author, who stands beside the day,
+  # and the published version, which is the text itself. Loading them
+  # here means no reader page can forget either.
   defp published_query(type) do
-    Visibility.live() |> where([a], a.type == ^type)
+    Visibility.live() |> where([a], a.type == ^type) |> preload([:user, :live_version])
   end
 
   ## Writing
 
   @doc "A new, empty draft, and the first line of its Log."
   def create_draft(user) do
-    {:ok, article} = Repo.insert(%Article{})
+    {:ok, article} = Repo.insert(%Article{user_id: user && user.id})
+    article = Repo.preload(article, :user)
     push_log(article, user, "started the entry")
     broadcast({:article_changed, article})
     {:ok, article}
@@ -486,6 +584,10 @@ defmodule Texttile.Articles do
   @doc """
   The autosave: writes the title and the body into the working state.
   No log line and no version; typing is not an event.
+
+  On a live entry this is where the two texts come apart: the readers
+  keep the version that was published until somebody publishes this
+  one.
   """
   def update_text(%Article{} = article, attrs) do
     with {:ok, article} <- article |> Article.text_changeset(attrs) |> Repo.update() do
@@ -506,8 +608,13 @@ defmodule Texttile.Articles do
   @doc """
   The one publish click. An empty or past date goes live today, a
   future date schedules; `force: true` (the "Publish now" of a
-  scheduled text) goes live today regardless. Publishing writes a
-  version snapshot, so "this is how it went live" is always restorable.
+  scheduled text) goes live today regardless.
+
+  Publishing writes a version snapshot and hands the readers that
+  version. From then on the entry has two texts, and a keystroke only
+  moves the working copy: what stands here is what the site says until
+  somebody publishes again. A scheduling stamps nothing, because
+  nothing is live yet; the go-live does it.
   """
   def publish(%Article{} = article, user, opts \\ []) do
     {day, status} = Publishing.landing(article, opts)
@@ -516,7 +623,13 @@ defmodule Texttile.Articles do
     attrs = %{status: status, publish_date: day, slug: article.slug || free_slug(article)}
 
     with {:ok, article} <- article |> Article.state_changeset(attrs) |> Repo.update() do
-      snapshot(article, user)
+      article =
+        if status == Visibility.live_status() do
+          hand_to_readers(article, user)
+        else
+          snapshot(article, user)
+          article
+        end
 
       push_log(
         article,
@@ -532,6 +645,64 @@ defmodule Texttile.Articles do
       broadcast({:article_changed, article})
       {:ok, article}
     end
+  end
+
+  @doc """
+  Publish the changes: the working copy of a live entry becomes the
+  text the readers have. Nothing else moves - the same day, the same
+  address, the same state, and no mail. The mail belongs to the entry
+  going out, not to a correction in it.
+  """
+  def publish_changes(%Article{} = article, user) do
+    if unpublished_changes?(article) do
+      article = hand_to_readers(article, user)
+      push_log(article, user, "published the changes")
+      broadcast({:article_changed, article})
+      {:ok, article}
+    else
+      :unchanged
+    end
+  end
+
+  @doc """
+  Throw the unpublished changes away: the working copy goes back to the
+  text the readers have. The state before is snapshotted first, exactly
+  as a restore is, so nothing written is ever lost by this.
+  """
+  def discard_changes(%Article{} = article, user) do
+    article = Repo.preload(article, :live_version)
+
+    if unpublished_changes?(article) do
+      restore_version(article, article.live_version, user)
+    else
+      :unchanged
+    end
+  end
+
+  # The text as it stands becomes the version the readers get. The
+  # snapshot deduplicates, so publishing an entry twice without a
+  # change in between writes one version and points at it twice.
+  defp hand_to_readers(%Article{} = article, user) do
+    version =
+      case snapshot(article, user) do
+        {:ok, version} -> version
+        :unchanged -> newest_version(article)
+      end
+
+    {:ok, article} =
+      article
+      |> Ecto.Changeset.change(live_version_id: version && version.id)
+      |> Repo.update()
+
+    %{article | live_version: version}
+  end
+
+  defp newest_version(%Article{id: id}) do
+    Version
+    |> where([v], v.article_id == ^id)
+    |> order_by([v], desc: v.id)
+    |> limit(1)
+    |> Repo.one()
   end
 
   @doc "The undo of both states: back to a draft, the date cleared."
@@ -591,6 +762,12 @@ defmodule Texttile.Articles do
           # standing as a redirect.
           moved = remember_address(article, moved)
 
+          # A date dragged back onto today is a go-live, so the words
+          # as they stand become the words the readers get. Without
+          # this the entry would be live with no published version
+          # behind it, and every later keystroke would be on the site.
+          moved = if went_live?, do: hand_to_readers(moved, user), else: moved
+
           moved = if went_live?, do: Texttile.Newsletter.notify_published(moved), else: moved
 
           broadcast({:article_changed, moved})
@@ -612,6 +789,11 @@ defmodule Texttile.Articles do
         article
         |> Article.state_changeset(%{status: Visibility.live_status()})
         |> Repo.update()
+
+      # The words as they stand on the morning it goes out are the
+      # words the readers get; everything written after that waits for
+      # a publish like any other change.
+      article = hand_to_readers(article, nil)
 
       push_log(article, nil, "the entry went live as scheduled")
       article = Texttile.Newsletter.notify_published(article)
@@ -734,12 +916,7 @@ defmodule Texttile.Articles do
   on handover) use this. Deduplicates against the newest version.
   """
   def snapshot(%Article{} = article, user) do
-    newest =
-      Version
-      |> where([v], v.article_id == ^article.id)
-      |> order_by([v], desc: v.id)
-      |> limit(1)
-      |> Repo.one()
+    newest = newest_version(article)
 
     if newest && newest.title == article.title && newest.body == article.body do
       :unchanged

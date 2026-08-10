@@ -151,6 +151,21 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> evaluate(@stacking, [is_function: true], &assert(&1 == "menu"))
     end
 
+    # The chevron used to be a toggle, and a click on an open menu is
+    # also a click away from it. The menu answered both, closed on the
+    # one and opened again on the other, so it never went down.
+    test "a second click on the chevron closes the menu again", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> click("#stateChev")
+      |> assert_has("#stateMenu", text: "Save version")
+      |> click("#stateChev")
+      |> refute_has("#stateMenu")
+      |> click("#stateChev")
+      |> assert_has("#stateMenu", text: "Save version")
+    end
+
     test "the site opens beside the admin area, in its own tab", %{conn: conn} do
       conn
       |> sign_in()
@@ -216,6 +231,49 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       session
       |> click("#edTitle")
       |> assert_has("#tagchip-pier.on")
+    end
+
+    # A comma used to be the only way to close a word, which is a thing
+    # somebody has to tell you. Enter is the key a field is finished
+    # with everywhere else.
+    test "Enter finishes the word the same way a comma does", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> fill_in("Title", with: "Tagged with Enter")
+      |> type("#edTags", "harbor")
+      |> press("#edTags", "Enter")
+      |> assert_has("#tagchip-harbor.on")
+      # and the field is ready for the next word
+      |> evaluate(
+        "() => document.getElementById('edTags').value",
+        [is_function: true],
+        fn value ->
+          assert value == "harbor, "
+        end
+      )
+    end
+
+    # A word the blog does not carry yet had no row of its own, so the
+    # menu answered every word but the one being written.
+    test "a word the blog does not know stands in the menu as the only row",
+         %{conn: conn} do
+      {:ok, other} = Articles.create_draft(user_fixture(%{username: "julia"}))
+      {:ok, _} = Articles.update_settings(other, %{tags: "harbor"})
+
+      session =
+        conn
+        |> sign_in()
+        |> click_button("New entry")
+        |> fill_in("Title", with: "A tag of its own")
+        |> type("#edTags", "estuary")
+        |> assert_has(~s(#tagMenu li.fresh[data-tag="estuary"]))
+        |> assert_has("#tagMenu li", count: 1)
+
+      # and the marked row is the one Enter takes
+      session
+      |> press("#edTags", "Enter")
+      |> assert_has("#tagchip-estuary.on")
     end
 
     test "a tag nobody else carries leaves the row when it leaves the field",

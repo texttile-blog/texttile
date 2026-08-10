@@ -29,6 +29,36 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> assert_has("a", text: "Harbor mornings")
       |> refute_has("a", text: "Desert nights")
     end
+
+    # An empty field used to leave the list exactly as the deleted word
+    # had left it. Nothing submits a form here: the browser's clear
+    # cross does not, Escape does not, and a held backspace does not.
+    test "emptying the field shows the whole list again", %{conn: conn} do
+      published_post(title: "Harbor mornings", body: "Fog over the pier.")
+      published_post(title: "Desert nights", body: "Stars and sand.")
+
+      conn
+      |> open_page("/blog?q=harbor")
+      |> refute_has("a", text: "Desert nights")
+      |> fill_in("Search the entries", with: "")
+      |> assert_has("a", text: "Desert nights", timeout: 5_000)
+      |> assert_has("a", text: "Harbor mornings")
+    end
+
+    # The year narrows what the field found, so with no term there is
+    # nothing left for it to narrow.
+    test "Escape in the field drops the term and the year with it", %{conn: conn} do
+      published_post(title: "Harbor mornings", body: "Fog over the pier.")
+      published_post(title: "Desert nights", body: "Stars and sand.")
+
+      conn
+      |> open_page("/blog?q=harbor&y=2023")
+      |> refute_has("a", text: "Desert nights")
+      |> click("#q")
+      |> press("#q", "Escape")
+      |> assert_has("a", text: "Desert nights", timeout: 5_000)
+      |> assert_has("#q[value='']")
+    end
   end
 
   describe "the password gate" do

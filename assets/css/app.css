@@ -174,15 +174,18 @@
   @media (min-width: 768px) { .save-on { display: inline-block; } }
   .save-off { display: none; }
   .phx-client-error .save-off,
-  .phx-server-error .save-off { display: inline-block; }
+  .phx-server-error .save-off,
+  .phx-late .save-off { display: inline-block; }
   .phx-client-error .save-on,
-  .phx-server-error .save-on { display: none; }
+  .phx-server-error .save-on,
+  .phx-late .save-on { display: none; }
   /* A phone bar cannot hold the warning and the state word and still
      leave a letter of the title, and of those three the state word is
      the one nobody needs while the connection is gone. */
   @media (max-width: 639px) {
     .phx-client-error .st,
-    .phx-server-error .st { display: none; }
+    .phx-server-error .st,
+    .phx-late .st { display: none; }
   }
 
   /* type roles */
@@ -382,6 +385,13 @@
   }
   .tagmenu li:hover { background: var(--tt-field); }
   .tagmenu li.on { background: var(--tt-accentwash); color: var(--tt-accent); }
+  /* the row for a word the blog does not carry yet: the same row, with
+     one quiet word saying it would be a new tag */
+  .tagmenu li.fresh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .tagmenu li.fresh i {
+    font-style: normal; font-size: 11.5px; letter-spacing: .02em;
+    color: var(--tt-dim); flex: none;
+  }
 
   /* the tags the blog already carries, under the tag field: a chip per
      tag, the ones on this text marked */
@@ -447,30 +457,30 @@
     transition: background-color .15s ease, color .15s ease;
     border-radius: 0 var(--tt-radius) var(--tt-radius) 0;
   }
-  .split .main:active, .split .chev:active { transform: translateY(1px); }
+  /* The press belongs to the whole control. Moving the touched half
+     alone slid one box out from under the other. */
+  .split:has(.main:active), .split:has(.chev:active) { transform: translateY(1px); }
   .split.solid { background-color: var(--tt-solid); color: var(--tt-onsolid); }
   .split.solid .div { background: var(--tt-solidline); }
-  /* hover lifts only the touched segment by a shade of the same hue
-     instead of jumping to another colour */
-  .split.solid .main:hover, .split.solid .chev:hover,
-  .split.solid .chev[aria-expanded="true"] { background-image: linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / .16)); }
+  /* Nothing happens under the pointer. The hover used to light the
+     half you were on, which drew the divider in hard and made one
+     control read as two boxes that had come apart. The button already
+     says what it is; the cursor says it can be clicked. */
   /* An outline and not an inset shadow: the two halves paint their own
      ground, and a shadow on the parent is painted underneath them, so
-     touching either half rubbed out the line around it and left the
-     control looking like two boxes that had come apart. An outline is
-     painted after the children, so it survives whatever they fill. */
+     a filled half rubbed out the line around it. An outline is painted
+     after the children, so it survives whatever they fill. */
   .split.calm { color: var(--tt-ink); outline: 1px solid var(--tt-rule); outline-offset: -1px; }
-  .split.calm:hover { outline-color: var(--tt-inksoft); }
   .split.calm .div { background: var(--tt-rule); }
-  .split.calm .main:hover, .split.calm .chev:hover { background-color: var(--tt-field); }
   /* An open menu belongs to the whole control, not to the half that
      was clicked. Tinting only the chevron cut the control in two: one
      white box and one grey one, meeting at the divider. */
+  .split.solid:has([aria-expanded="true"]) {
+    background-image: linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / .16));
+  }
   .split.calm:has([aria-expanded="true"]) {
     background-color: var(--tt-field); outline-color: var(--tt-inksoft);
   }
-  .split.calm:has([aria-expanded="true"]) .main:hover,
-  .split.calm:has([aria-expanded="true"]) .chev:hover { background-color: transparent; }
 
   /* THE EDITOR'S SECOND COLUMN
      The article settings stand still while the words scroll. One screen
@@ -529,7 +539,22 @@
   }
   .st.sched i { box-shadow: inset 0 0 0 1.5px var(--tt-accent); }
   .st.live i { background-color: var(--tt-accent); box-shadow: none; }
+  /* live, and being rewritten: the entry is out there and the words on
+     this screen are not the words a reader has. A filled dot with a
+     ring around it, so it reads as the live state with something on
+     top of it rather than as a fourth state of its own. */
+  .st.pending i {
+    background-color: var(--tt-accent);
+    box-shadow: 0 0 0 2px var(--tt-paper), 0 0 0 3.5px var(--tt-accentsoft);
+  }
   .st b { font-weight: 600; color: var(--tt-inksoft); }
+
+  /* the version the readers have, in the Versions list */
+  .note.is-live {
+    color: var(--tt-accent); font-weight: 600;
+    background: var(--tt-accentwash); border-radius: var(--tt-radius-pill, 999px);
+    padding: 2px 8px;
+  }
 
   /* somebody else holds the words. One fact, in the rust the whole
      admin area uses for another person, so the bar and the banner

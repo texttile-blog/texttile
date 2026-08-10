@@ -216,7 +216,11 @@ defmodule Texttile.Newsletter do
 
   def notify_published(%Article{} = article), do: article
 
+  # The mail carries what the readers have, never the working copy: it
+  # is the one reader whose copy cannot be taken back once it is out.
   defp send_new_text(article) do
+    article = Articles.as_read(article)
+
     case confirmed() do
       [] ->
         :ok

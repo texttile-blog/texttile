@@ -188,8 +188,12 @@ defmodule TexttileWeb.SiteHTML do
         <span class="ct">{Articles.display_title(@article)}</span>
       </a>
       <p class="cm num">
-        {format_date(@article.publish_date)}<span :if={comment_count(@comments)}>
-          · <a
+        {format_date(@article.publish_date)}<span :if={Articles.author_name(@article)} class="by">
+          · {Articles.author_name(@article)}
+        </span>
+        <span :if={comment_count(@comments)}>
+          ·
+          <a
             href={Articles.public_path(@article) <> "#comments"}
             class="clink"
           >

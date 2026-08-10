@@ -36,7 +36,13 @@ defmodule Texttile.Feed do
     # A text without a slug, or a post without a day, has no address a
     # reader could follow. The site draws it as a card without a link;
     # the feed, which is nothing but addresses, leaves it out.
-    posts = Enum.filter(Articles.list_published(), &Articles.public_path/1)
+    #
+    # `as_read` and not the working copy: the feed is a reader, and it
+    # is the one reader whose copy cannot be taken back once it is out.
+    posts =
+      Articles.list_published()
+      |> Articles.as_read()
+      |> Enum.filter(&Articles.public_path/1)
 
     channel = """
     <?xml version="1.0" encoding="UTF-8"?>

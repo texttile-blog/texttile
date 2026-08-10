@@ -66,6 +66,10 @@ defmodule TexttileWeb.TextsLive do
     |> assign(:articles, articles)
     |> assign(:covers, Gallery.previews(articles))
     |> assign(:comment_counts, Comments.count_map())
+    # which live entries are being rewritten right now. One query for
+    # the whole grid: the bodies of every entry are far too much to
+    # carry here a second time just to compare them.
+    |> assign(:pending, Articles.entries_with_unpublished_changes())
     |> assign(:total, length(Articles.list_articles()))
   end
 
@@ -223,7 +227,8 @@ defmodule TexttileWeb.TextsLive do
             <span class="cm">
               <span class={["st", article.status]}></span>{card_meta(
                 article,
-                @comment_counts[article.id]
+                @comment_counts[article.id],
+                article.id in @pending
               )}
             </span>
           </.link>
@@ -290,7 +295,7 @@ defmodule TexttileWeb.TextsLive do
     "background-image:url('/renditions/#{Images.thumb_edge()}/#{String.replace(path, "'", "%27")}')"
   end
 
-  defp card_meta(article, comment_count) do
+  defp card_meta(article, comment_count, pending?) do
     bits =
       case article.status do
         "draft" ->
@@ -310,7 +315,12 @@ defmodule TexttileWeb.TextsLive do
           ]
 
         "published" ->
-          [to_string(article.publish_date)]
+          # A live entry that is being rewritten says so here, because
+          # this grid is the one place that shows every entry at once
+          # and is where somebody looks for what is still open.
+          if pending?,
+            do: [to_string(article.publish_date), gettext("edited since publishing")],
+            else: [to_string(article.publish_date)]
       end
 
     # The count stands on every card that has one, whatever state the
@@ -325,6 +335,14 @@ defmodule TexttileWeb.TextsLive do
         end
 
     bits = if article.type == "page", do: [gettext("page") | bits], else: bits
+
+    # Who started it, beside the day. Nil where the account has gone.
+    bits =
+      case Articles.author_name(article) do
+        nil -> bits
+        name -> bits ++ [name]
+      end
+
     Enum.join(bits, " · ")
   end
 end
