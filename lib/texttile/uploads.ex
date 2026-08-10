@@ -240,15 +240,18 @@ defmodule Texttile.Uploads do
   be cached hard.
 
   What the file is made of is remembered with it, so an entry can take
-  each picture once (`duplicate/2`).
+  each picture once (`duplicate/2`). `article_id:` names the entry it
+  came in through, which is what a picture still on its way is
+  recognised by.
   """
-  def put_body_image(source_path, original_name) do
+  def put_body_image(source_path, original_name, opts \\ []) do
     store(source_path, original_name,
       directory: images_dir(),
       extensions: @body_image_extensions,
       fallback: "image",
       refusal: "PNG, JPG, WebP or GIF, please",
       remember: true,
+      article_id: opts[:article_id],
       readable: fn path ->
         if readable_image?(path),
           do: :ok,
@@ -293,7 +296,7 @@ defmodule Texttile.Uploads do
       destination = absolute(relative)
       File.mkdir_p!(Path.dirname(destination))
       File.cp!(source_path, destination)
-      if opts[:remember], do: remember(relative, digest(destination))
+      if opts[:remember], do: remember(relative, digest(destination), opts[:article_id])
       {:ok, relative}
     end
   end
@@ -339,13 +342,22 @@ defmodule Texttile.Uploads do
   """
   def duplicate(digest, paths) when is_binary(digest) do
     paths
-    |> known(digest)
+    |> known()
     |> Enum.find_value(fn {path, stored} -> if stored == digest, do: path end)
   end
 
   def duplicate(_digest, _paths), do: nil
 
-  defp known(paths, _digest) do
+  @doc """
+  The pictures that came in through this entry, whatever its text says
+  about them yet. A picture pasted into a body is on disk before the
+  body mentions it, and this is how the paste that follows it sees it.
+  """
+  def paths_of_article(article_id) do
+    Repo.all(from d in Digest, where: d.article_id == ^article_id, select: d.path)
+  end
+
+  defp known(paths) do
     paths = Enum.uniq(paths)
     stored = Repo.all(from d in Digest, where: d.path in ^paths, select: {d.path, d.digest})
     missing = paths -- Enum.map(stored, &elem(&1, 0))
@@ -355,21 +367,28 @@ defmodule Texttile.Uploads do
 
   # A picture nobody has read yet. Only pictures: a film is stored as
   # it came and never opened here.
+  #
+  # The paths that arrive here are not all the server's own: a body is
+  # written by hand, and a reference in it can climb out of the uploads
+  # root with `..`. Only a name that is already the plain name of a
+  # file below images/ is opened, so nothing outside the root is ever
+  # read. The same guard `remove_upload/1` puts in front of a delete.
   defp catch_up(relative) do
-    with true <- in_dir?(relative, images_dir()),
+    with ^relative <- under_root(relative),
+         true <- in_dir?(relative, images_dir()),
          digest when is_binary(digest) <- digest(absolute(relative)) do
-      remember(relative, digest)
+      remember(relative, digest, nil)
       [{relative, digest}]
     else
       _ -> []
     end
   end
 
-  defp remember(_relative, nil), do: :ok
+  defp remember(_relative, nil, _article_id), do: :ok
 
-  defp remember(relative, digest) do
-    Repo.insert!(%Digest{path: relative, digest: digest},
-      on_conflict: [set: [digest: digest]],
+  defp remember(relative, digest, article_id) do
+    Repo.insert!(%Digest{path: relative, digest: digest, article_id: article_id},
+      on_conflict: [set: [digest: digest, article_id: article_id]],
       conflict_target: :path
     )
 

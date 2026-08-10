@@ -17,24 +17,32 @@ defmodule TexttileWeb.ImagesController do
   alias Texttile.Articles
   alias Texttile.Uploads
   alias Texttile.Videos
+  alias TexttileWeb.UploadAnswer
 
   def create(conn, %{"id" => id, "file" => %Plug.Upload{} = upload}) do
     article = Articles.get_article!(id)
 
-    cond do
-      Videos.video?(upload.filename) ->
-        answer(conn, store_video(upload))
-
-      name = Articles.duplicate_picture(article, upload.path) ->
-        refuse(conn, name)
-
-      true ->
-        answer(conn, Uploads.put_body_image(upload.path, upload.filename))
+    if Videos.video?(upload.filename) do
+      answer(conn, store_video(upload))
+    else
+      # Asking and storing stand together, so two pastes of one
+      # photograph cannot both find nothing.
+      case Articles.with_pictures_held(article, fn -> store_picture(article, upload) end) do
+        {:duplicate, name} -> UploadAnswer.duplicate(conn, name)
+        stored -> answer(conn, stored)
+      end
     end
   end
 
   def create(conn, _params) do
     conn |> put_status(400) |> json(%{error: "No file arrived"})
+  end
+
+  defp store_picture(article, upload) do
+    case Articles.duplicate_picture(article, upload.path) do
+      nil -> Uploads.put_body_image(upload.path, upload.filename, article_id: article.id)
+      name -> {:duplicate, name}
+    end
   end
 
   defp store_video(upload) do
@@ -48,13 +56,4 @@ defmodule TexttileWeb.ImagesController do
 
   defp answer(conn, {:error, reason}),
     do: conn |> put_status(422) |> json(%{error: reason})
-
-  defp refuse(conn, name) do
-    conn
-    |> put_status(409)
-    |> json(%{
-      error: gettext("This picture is already in this entry, as %{name}.", name: name),
-      of: name
-    })
-  end
 end

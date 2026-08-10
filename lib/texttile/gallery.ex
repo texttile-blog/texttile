@@ -65,6 +65,15 @@ defmodule Texttile.Gallery do
   end
 
   @doc """
+  Every image row of a text, the pending deletes included. A picture
+  that can still come back is still the text's, and it keeps the name
+  it arrived under.
+  """
+  def rows(article_id) do
+    Repo.all(from i in Image, where: i.article_id == ^article_id)
+  end
+
+  @doc """
   The preview image of each given article, as `%{article_id => path}`.
   The texts grid shows it on the card; articles without one are absent.
   """
@@ -163,25 +172,25 @@ defmodule Texttile.Gallery do
   `{:error, {:duplicate, name}}`, and nothing is stored.
   """
   def add_file(%Article{} = article, source_path, original_name, opts \\ []) do
-    cond do
-      Texttile.Videos.video?(original_name) ->
-        add_stored(
-          article,
-          Uploads.put_body_video(source_path, original_name),
-          original_name,
-          opts
-        )
+    if Texttile.Videos.video?(original_name) do
+      add_stored(article, Uploads.put_body_video(source_path, original_name), original_name, opts)
+    else
+      # Asking and storing stand together, so two uploads of one
+      # photograph cannot both find nothing.
+      Texttile.Articles.with_pictures_held(article, fn ->
+        case Texttile.Articles.duplicate_picture(article, source_path) do
+          nil ->
+            add_stored(
+              article,
+              Uploads.put_body_image(source_path, original_name, article_id: article.id),
+              original_name,
+              opts
+            )
 
-      name = Texttile.Articles.duplicate_picture(article, source_path) ->
-        {:error, {:duplicate, name}}
-
-      true ->
-        add_stored(
-          article,
-          Uploads.put_body_image(source_path, original_name),
-          original_name,
-          opts
-        )
+          name ->
+            {:error, {:duplicate, name}}
+        end
+      end)
     end
   end
 

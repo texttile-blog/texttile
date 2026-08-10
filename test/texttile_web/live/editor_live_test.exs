@@ -608,6 +608,38 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#logList", "gull.jpg is in the text")
       assert has_element?(view, "#logList", "put gull.jpg into the text")
     end
+
+    # The entry holds this picture already. Nothing failed, so the bar
+    # says which picture it is instead of offering a retry that would
+    # answer the same.
+    test "a refused picture names the picture it is", %{conn: conn, user: user} do
+      article = draft(user, %{title: "Doors"})
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      render_hook(view, "image_refused", %{"file" => "gull.jpg", "of" => "pier-lantern.jpg"})
+
+      assert has_element?(view, "#stateLine", "already in this entry, as pier-lantern.jpg")
+
+      view |> element(".tab", "Log") |> render_click()
+
+      assert has_element?(
+               view,
+               "#logList",
+               "gull.jpg is already in this entry, as pier-lantern.jpg"
+             )
+    end
+
+    # Taking the token out of the text is a change, and the save that
+    # follows it must not silence the line that said why.
+    test "the save that follows a refusal keeps the words", %{conn: conn, user: user} do
+      article = draft(user, %{title: "Doors"})
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      render_hook(view, "image_refused", %{"file" => "gull.jpg", "of" => "pier-lantern.jpg"})
+      render_hook(view, "body_changed", %{"text" => "The token left."})
+
+      assert has_element?(view, "#stateLine", "already in this entry, as pier-lantern.jpg")
+    end
   end
 
   describe "the gallery" do

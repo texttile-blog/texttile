@@ -21,12 +21,7 @@ defmodule TexttileWeb.GalleryController do
         json(conn, %{id: image.id})
 
       {:error, {:duplicate, name}} ->
-        conn
-        |> put_status(409)
-        |> json(%{
-          error: gettext("This picture is already in this entry, as %{name}.", name: name),
-          of: name
-        })
+        TexttileWeb.UploadAnswer.duplicate(conn, name)
 
       {:error, reason} ->
         conn |> put_status(422) |> json(%{error: reason})

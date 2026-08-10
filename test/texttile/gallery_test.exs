@@ -156,13 +156,40 @@ defmodule Texttile.GalleryTest do
       assert {:ok, _} = Gallery.add_file(theirs, source, "pier.jpg")
     end
 
-    test "a tile in its undo window is out of the way at once" do
+    # A deleted tile can come back for ten seconds, and a picture that
+    # can come back is still this entry's. Letting the same one in
+    # meanwhile would make undo produce the pair.
+    test "a tile in its undo window still holds its picture, and lets go with the sweep" do
       {article, _user} = article!()
       source = source_jpg()
       {:ok, image} = Gallery.add_file(article, source, "pier.jpg")
       {:ok, _} = Gallery.delete(article.id, image.id)
 
+      assert {:error, {:duplicate, "pier.jpg"}} = Gallery.add_file(article, source, "again.jpg")
+
+      Gallery.sweep_due(DateTime.add(DateTime.utc_now(), 1, :minute))
+
       assert {:ok, _} = Gallery.add_file(article, source, "pier.jpg")
+    end
+
+    # Both clients send two files at a time, so a folder holding one
+    # photograph twice puts both in the air together.
+    test "two that arrive together do not both get in" do
+      {article, _user} = article!()
+      source = source_jpg()
+
+      results =
+        [source, source]
+        |> Enum.map(fn path ->
+          Task.async(fn ->
+            Texttile.Repo.checkout(fn -> Gallery.add_file(article, path, "pier.jpg") end)
+          end)
+        end)
+        |> Task.await_many(15_000)
+
+      assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+      assert Enum.count(results, &match?({:error, {:duplicate, _}}, &1)) == 1
+      assert [_only_one] = Gallery.list(article.id)
     end
 
     test "a film is taken as it comes, however often" do

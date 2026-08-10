@@ -37,6 +37,32 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       assert [%{filename: "e2e-" <> _}] = Gallery.list(article.id)
     end
 
+    # An entry takes each picture once. The tile says so in three
+    # words and offers only Remove; the row over the grid names the
+    # picture it already is.
+    test "the same picture a second time is refused, and named", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      first = jpg!("2024:05:01 12:00:00")
+      again = Path.join(System.tmp_dir!(), "again-#{System.unique_integer([:positive])}.jpg")
+      File.cp!(first, again)
+
+      session =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> upload("Add pictures and videos to the gallery", first)
+        |> assert_has("#tileServer [data-id]")
+        |> upload("Add pictures and videos to the gallery", again)
+        |> assert_has("#tileLocal .tile.failed", text: "already here")
+
+      session
+      |> assert_has("#tileNote", text: "already in this entry")
+      |> assert_has("#tileCount", text: "1 tile")
+      |> refute_has("#tileLocal button", text: "Retry")
+
+      assert [_only_one] = Gallery.list(article.id)
+    end
+
     test "a photo far past the old 8 MB parser default arrives", %{conn: conn, kb: kb} do
       article = draft!(kb)
 

@@ -652,17 +652,40 @@ defmodule Texttile.Articles do
   ## The pictures an entry holds
 
   @doc """
+  Runs `fun` with this entry's pictures held still.
+
+  Both clients upload two files at a time, so two requests carrying the
+  same photograph can be in the air together. Without this they would
+  both read the entry before either had written to it, both find
+  nothing, and both store: the two tiles this whole check exists to
+  prevent. Asking and storing happen inside one gate per entry, so the
+  second one reads what the first one wrote.
+  """
+  def with_pictures_held(%Article{} = article, fun) do
+    :global.trans({{__MODULE__, :pictures, article.id}, self()}, fun)
+  end
+
+  @doc """
   The picture this entry already holds that is the same file as the one
   at `source_path`, named the way a person would name it, or nil.
 
   An entry takes each picture once. The bytes decide, not the name, and
   the reach is this entry: the same photograph may stand in another one.
-  A tile in its undo window is out of the way already, so a picture that
-  was just deleted can come straight back.
+
+  Three things count as held: a tile of the gallery, a picture inside
+  the text, and a picture that came in through this entry and is not on
+  the volume any more only when its file has gone. So a tile in its undo
+  window still holds its picture, which is what keeps undo from
+  producing the pair, and a picture pasted into the text counts from the
+  moment it lands, not from the moment the text is saved.
   """
   def duplicate_picture(%Article{} = article, source_path) do
-    tiles = Texttile.Gallery.list(article.id)
-    paths = Enum.map(tiles, & &1.path) ++ Body.upload_paths(article.body)
+    tiles = Texttile.Gallery.rows(article.id)
+
+    paths =
+      Enum.map(tiles, & &1.path) ++
+        Body.upload_paths(article.body) ++
+        Texttile.Uploads.paths_of_article(article.id)
 
     case Texttile.Uploads.duplicate(Texttile.Uploads.digest(source_path), paths) do
       nil -> nil
