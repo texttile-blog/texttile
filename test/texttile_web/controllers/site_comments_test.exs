@@ -301,6 +301,78 @@ defmodule TexttileWeb.SiteCommentsTest do
     end
   end
 
+  # The box under the form. It is not ticked to begin with: the cookie
+  # is a convenience nobody needs to read or to write, and a box that
+  # is ticked for you is no answer.
+  describe "remember me on this device" do
+    @writer "_texttile_writer"
+
+    test "the box is not ticked on a browser that never asked", %{conn: conn} do
+      article = published_post()
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+
+      assert html =~ ~s(name="remember")
+      refute html =~ ~r/name="remember"[^>]*checked/
+    end
+
+    test "the box keeps the three fields, and the next form starts filled", %{conn: conn} do
+      article = published_post()
+
+      sent =
+        build_conn()
+        |> send_comment(article, %{"remember" => "true", "website" => "https://christel.example"})
+
+      assert %{max_age: 31_536_000} = sent.resp_cookies[@writer]
+
+      html =
+        build_conn()
+        |> Plug.Test.put_req_cookie(@writer, sent.resp_cookies[@writer].value)
+        |> get(Articles.public_path(article))
+        |> html_response(200)
+
+      assert html =~ ~s(value="Grandma Christel")
+      assert html =~ ~s(value="christel@example.org")
+      assert html =~ ~s(value="https://christel.example")
+      assert html =~ ~r/name="remember"[^>]*checked/
+    end
+
+    test "without the box nothing is kept", %{conn: conn} do
+      article = published_post()
+
+      sent = build_conn() |> send_comment(article)
+
+      refute Map.has_key?(sent.resp_cookies, @writer)
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      refute html =~ ~s(value="Grandma Christel")
+    end
+
+    test "unticking it on the next comment takes the cookie away", %{conn: conn} do
+      article = published_post()
+      sent = build_conn() |> send_comment(article, %{"remember" => "true"})
+
+      again =
+        build_conn()
+        |> Plug.Test.put_req_cookie(@writer, sent.resp_cookies[@writer].value)
+        |> send_comment(article, %{"email" => "second@example.org"})
+
+      assert %{max_age: 0} = again.resp_cookies[@writer]
+    end
+
+    # An account answers for the name and the address, so there is
+    # nothing to remember and no box to tick.
+    test "somebody signed in is offered no box", %{conn: conn} do
+      article = published_post()
+      user = user_fixture()
+
+      html =
+        conn |> log_in_user(user) |> get(Articles.public_path(article)) |> html_response(200)
+
+      refute html =~ ~s(name="remember")
+    end
+  end
+
   describe "the confirmation link" do
     test "confirms the address and lands the reader on their comment", %{conn: conn} do
       article = published_post()

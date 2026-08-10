@@ -14,7 +14,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#comments", text: "Post a comment")
     |> refute_has("#comment-count")
     |> fill_in("Name", with: "Grandma Christel")
-    |> fill_in("Email", with: "christel@example.org")
+    |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
     |> fill_in("Comment", with: "More of the dog, please.")
     |> click_button("Post comment")
     |> assert_has("#comment-note", text: "Sent. Follow the link in your mail")
@@ -151,5 +151,27 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     assert [comment] = Texttile.Comments.for_article(article.id)
     assert comment.user_id == user.id
+  end
+
+  # The box under the form. The browser keeps the three fields, and the
+  # next entry the reader opens starts filled in.
+  test "the box fills the form in on the next entry", %{conn: conn} do
+    one = published_post(title: "Harbor mornings", slug: "harbor-mornings")
+    two = published_post(title: "Fog again", slug: "fog-again")
+
+    session =
+      conn
+      |> open_page(Articles.public_path(one))
+      |> fill_in("Name", with: "Grandma Christel")
+      |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
+      |> fill_in("Comment", with: "More of the dog, please.")
+      |> check("Remember me on this device", exact: false)
+      |> click_button("Post comment")
+      |> assert_has("#comment-note", text: "Sent.")
+
+    session
+    |> open_page(Articles.public_path(two))
+    |> assert_has("#comment-name[value='Grandma Christel']")
+    |> assert_has("#comment-email[value='christel@example.org']")
   end
 end

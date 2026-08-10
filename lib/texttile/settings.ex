@@ -75,7 +75,8 @@ defmodule Texttile.Settings do
   # Every page render asks for this, so the two patterns are compiled
   # once instead of per call.
   @page_token ~r/--tt-page\s*:\s*([^;}]+)/
-  @bar_token ~r/--tt-bar\s*:\s*([^;}]+)/
+  @bar_token ~r/--tt-bar\s*:\s*(?!solid)([^;}]+)/
+  @barsolid_token ~r/--tt-barsolid\s*:\s*([^;}]+)/
 
   def theme_color do
     css = theme_css()
@@ -85,6 +86,20 @@ defmodule Texttile.Settings do
     |> color(@bar_token)
     |> Kernel.||(page)
     |> over(page)
+  end
+
+  @doc """
+  The same, for the admin area, whose bar is the solid violet of the
+  buttons. A theme stored before that colour had a name of its own
+  answers with the reader's bar, which is what the admin area wore then.
+  """
+  def admin_theme_color do
+    css = theme_css()
+
+    case color(css, @barsolid_token) do
+      nil -> theme_color()
+      solid -> over(solid, color(css, @page_token) || {250, 249, 247, 1.0})
+    end
   end
 
   # The last declaration wins, the way the browser reads it.

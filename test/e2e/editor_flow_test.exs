@@ -339,12 +339,18 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
     # The lines to hand on are a field of the pane, in the same clothes
     # as every other field beside them. They were a bare paragraph.
+    # The address is one field now (round 19): `.addr` carries the
+    # ground, the rule and the room inside, and the slug inside it is a
+    # bare input. So the lines to pass on are held against the field for
+    # the ground and the room, and against the slug for the size of the
+    # words, which is what both of them are: an address you read.
     @share_ground """
     () => {
       const one = getComputedStyle(document.querySelector("#shareLines"))
-      const other = getComputedStyle(document.querySelector("#edSlug"))
-      return [one.backgroundColor, other.backgroundColor,
-              one.fontSize, other.fontSize, one.padding, other.padding]
+      const field = getComputedStyle(document.querySelector(".addr"))
+      const slug = getComputedStyle(document.querySelector("#edSlug"))
+      return [one.backgroundColor, field.backgroundColor,
+              one.fontSize, slug.fontSize, one.padding, field.padding]
     }
     """
 
