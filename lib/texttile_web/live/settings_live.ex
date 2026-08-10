@@ -24,7 +24,8 @@ defmodule TexttileWeb.SettingsLive do
   @editable ~w(site_title site_description language front_page
                posts_per_page theme_css site_visibility site_password
                comments_require_confirmation notify_on_comment
-               image_max_edge video_max_edge max_upload_mb)
+               image_max_edge video_max_edge max_upload_mb
+               backup_enabled backup_allowed_ips)
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -39,6 +40,10 @@ defmodule TexttileWeb.SettingsLive do
       |> assign(:errors, %{})
       |> assign(:confirm_delete, nil)
       |> assign(:confirm_tag, nil)
+      |> assign(:confirm_token, false)
+      # The one moment the backup token exists in the clear: from the
+      # click that made it to the next thing this screen does.
+      |> assign(:backup_token, nil)
       |> allow_upload(:logo,
         accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
@@ -178,9 +183,13 @@ defmodule TexttileWeb.SettingsLive do
     end
   end
 
-  # One way out of both questions this screen can ask.
+  # One way out of every question this screen can ask.
   def handle_event("cancel_delete", _params, socket) do
-    {:noreply, socket |> assign(:confirm_delete, nil) |> assign(:confirm_tag, nil)}
+    {:noreply,
+     socket
+     |> assign(:confirm_delete, nil)
+     |> assign(:confirm_tag, nil)
+     |> assign(:confirm_token, false)}
   end
 
   def handle_event("delete_user", _params, socket) do
@@ -254,6 +263,35 @@ defmodule TexttileWeb.SettingsLive do
      socket
      |> refresh_storage()
      |> mark_saved(gettext("Image cache cleared · variants regenerate on demand"))}
+  end
+
+  ## Backup
+
+  # The first token of an installation opens nothing that was open
+  # before, so it needs no question. Every later one takes the token a
+  # backup machine is using out of service, which is why that one asks.
+  def handle_event("make_backup_token", _params, socket) do
+    {:noreply, shown_token(socket)}
+  end
+
+  # The word on the screen goes with the question: from the moment you
+  # ask to replace it, the one standing there is the one you are about
+  # to take out of service.
+  def handle_event("ask_replace_token", _params, socket) do
+    {:noreply, socket |> assign(:confirm_token, true) |> assign(:backup_token, nil)}
+  end
+
+  def handle_event("replace_backup_token", _params, socket) do
+    {:noreply, socket |> assign(:confirm_token, false) |> shown_token()}
+  end
+
+  defp shown_token(socket) do
+    {:ok, token} = Texttile.Backup.generate_token()
+
+    socket
+    |> assign(:backup_token, token)
+    |> refresh_settings()
+    |> mark_saved(gettext("A backup token is in service · copy it now, it is shown once"))
   end
 
   ## Somebody else changed something
@@ -349,6 +387,19 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:settings_form, form)
     |> assign(:about_html, Markdown.to_html(settings.about_markdown))
     |> assign(:pages, Articles.list_pages())
+    |> assign(:backup_access, Texttile.Backup.last_access())
+  end
+
+  defp backup_note(true), do: gettext("· a client with the token may fetch")
+  defp backup_note(false), do: gettext("· /backup answers nothing, as if it were not there")
+
+  defp token_state(""), do: gettext("No token yet, so nothing is served")
+  defp token_state(_hash), do: gettext("A token is in service, kept as a hash")
+
+  defp last_access_line(nil), do: gettext("Nothing has been fetched yet")
+
+  defp last_access_line(%{at: at, ip: ip}) do
+    gettext("%{when} from %{ip}", when: Texttile.I18n.format_moment(at), ip: ip)
   end
 
   # The stored choice, only while it still names a published page. A
@@ -1201,7 +1252,7 @@ defmodule TexttileWeb.SettingsLive do
               db: @db_path
             )}
             {gettext(
-              "Both paths come from the install config and cannot change while the site runs. The backup is the volume; there is no export and no site deletion."
+              "Both paths come from the install config and cannot change while the site runs. The volume is the whole installation; a copy of it is a copy of the site."
             )}
           </div>
         </div>
@@ -1209,6 +1260,120 @@ defmodule TexttileWeb.SettingsLive do
           <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>
         </p>
+
+        <.section>{gettext("Backup")}</.section>
+        <div id="backupSection">
+          <p class="note mb-2 leading-[1.6]">
+            {gettext(
+              "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository."
+            )}
+          </p>
+
+          <.form for={@settings_form} id="backup-form" phx-change="save_setting">
+            <label class="opt">
+              <input type="hidden" name="settings[backup_enabled]" value="false" />
+              <input
+                type="checkbox"
+                id="setting-backup_enabled"
+                name="settings[backup_enabled]"
+                value="true"
+                checked={@settings.backup_enabled}
+              />
+              <span>
+                {gettext("Serve a backup client at /backup")}
+                <span class="note" id="setBackupNote">
+                  {backup_note(@settings.backup_enabled)}
+                </span>
+              </span>
+            </label>
+          </.form>
+
+          <div class="drow">
+            <span class="lab">{gettext("Token")}</span>
+            <span class="val">
+              <%= if @backup_token do %>
+                <code
+                  id="backupToken"
+                  class="block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
+                  style="border-radius: var(--tt-radius); border: 1px solid var(--tt-rule)"
+                >
+                  {@backup_token}
+                </code>
+                <p class="note mt-[6px]">
+                  {gettext(
+                    "Write it into the configuration of your backup machine now. It is never shown again."
+                  )}
+                </p>
+              <% else %>
+                <span class="note" id="backupTokenState">
+                  {token_state(@settings.backup_token_hash)}
+                </span>
+              <% end %>
+              <p class="mt-2">
+                <button
+                  :if={@settings.backup_token_hash == ""}
+                  type="button"
+                  class="btn sm"
+                  id="makeBackupToken"
+                  phx-click="make_backup_token"
+                >
+                  {gettext("Create a token")}
+                </button>
+                <button
+                  :if={@settings.backup_token_hash != ""}
+                  type="button"
+                  class="btn sm"
+                  id="replaceBackupToken"
+                  phx-click="ask_replace_token"
+                >
+                  {gettext("Replace the token")}
+                </button>
+              </p>
+            </span>
+            <div class="hint">
+              {gettext(
+                "It opens the backup endpoints and nothing else: it reads, it never writes, and it is no way into the admin area."
+              )}
+            </div>
+          </div>
+
+          <.form for={@settings_form} id="backup-ips-form" phx-change="save_setting">
+            <div class="drow">
+              <label class="lab" for="setting-backup_allowed_ips">
+                {gettext("Only these addresses")}
+              </label>
+              <span class="val">
+                <input
+                  type="text"
+                  id="setting-backup_allowed_ips"
+                  name="settings[backup_allowed_ips]"
+                  value={@settings.backup_allowed_ips}
+                  placeholder={gettext("Any address")}
+                  phx-debounce="500"
+                  class="max-w-[280px]"
+                />
+                <p :if={@errors[:backup_allowed_ips]} class="text-julia text-[13px] mt-[6px]">
+                  {@errors[:backup_allowed_ips]}
+                </p>
+              </span>
+              <div class="hint">
+                {gettext(
+                  "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides."
+                )}
+              </div>
+            </div>
+          </.form>
+
+          <div class="drow">
+            <span class="lab">{gettext("Last fetched")}</span>
+            <span class="val" id="backupLastAccess">{last_access_line(@backup_access)}</span>
+            <div class="hint">
+              {gettext(
+                "A backup that stopped running says nothing until the day you need it. This line is where it shows."
+              )}
+            </div>
+          </div>
+        </div>
 
         <.section>{gettext("Import")}</.section>
         <p class="note mb-2 leading-[1.6]">
@@ -1257,6 +1422,25 @@ defmodule TexttileWeb.SettingsLive do
           <br />
           {gettext(
             "There is no undo. While the name stands in ADMIN_USERS, its owner can sign in again and choose a fresh password."
+          )}
+        </p>
+      </.ask>
+
+      <.ask
+        :if={@confirm_token}
+        heading={gettext("Replace the backup token?")}
+        ok={gettext("Replace it")}
+        on_ok="replace_backup_token"
+        on_cancel="cancel_delete"
+      >
+        <p>
+          {gettext(
+            "The token in service stops opening anything the moment you confirm, and your backup machine gets nothing until you write the new one into its configuration."
+          )}
+          <br />
+          <br />
+          {gettext(
+            "Do this when a token may have got out, and after that whenever you like: the copies you already keep are untouched by it."
           )}
         </p>
       </.ask>
