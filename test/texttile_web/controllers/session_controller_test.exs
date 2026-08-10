@@ -290,7 +290,7 @@ defmodule TexttileWeb.SessionControllerTest do
       assert redirected_to(restarted) == ~p"/admin/texts"
     end
 
-    test "a token the server has ended signs nobody in", %{conn: conn, user: user} do
+    test "a token the server has ended signs nobody in, and goes", %{conn: conn, user: user} do
       conn = sign_in(conn, user)
       auth = conn.resp_cookies["_texttile_auth"].value
       Accounts.delete_all_sessions(user)
@@ -301,6 +301,10 @@ defmodule TexttileWeb.SessionControllerTest do
         |> get(~p"/admin")
 
       assert redirected_to(restarted) == ~p"/login"
+      # the dead token is dropped where it was found: it never reaches
+      # the session, and the cookie that carried it is taken away
+      refute get_session(restarted, :user_token)
+      assert %{max_age: 0} = restarted.resp_cookies["_texttile_auth"]
     end
 
     test "signing out takes it away", %{conn: conn, user: user} do

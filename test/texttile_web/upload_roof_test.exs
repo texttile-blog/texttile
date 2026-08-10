@@ -63,4 +63,35 @@ defmodule TexttileWeb.UploadRoofTest do
 
     assert_error_sent 413, fn -> send_body(build_conn()) end
   end
+
+  # A browser that was closed and opened again brings only the auth
+  # cookie, and its first request may well be the upload a restored tab
+  # was still holding. The roof stands before the router, so it reads
+  # that cookie itself.
+  test "a browser that carries only the auth cookie gets the big roof" do
+    user = Texttile.AccountsFixtures.user_fixture()
+
+    auth =
+      build_conn()
+      |> post(~p"/login", %{
+        "user" => %{
+          "username" => user.username,
+          "password" => Texttile.AccountsFixtures.valid_password()
+        }
+      })
+      |> Map.fetch!(:resp_cookies)
+      |> Map.fetch!(TexttileWeb.UserAuth.auth_cookie())
+      |> Map.fetch!(:value)
+
+    # the session behind it ends, so the body is read and the router
+    # turns the caller away, exactly as with a session cookie
+    :ok = Texttile.Accounts.delete_all_sessions(user)
+
+    conn =
+      build_conn()
+      |> Plug.Test.put_req_cookie(TexttileWeb.UserAuth.auth_cookie(), auth)
+      |> send_body()
+
+    assert redirected_to(conn) == ~p"/login"
+  end
 end

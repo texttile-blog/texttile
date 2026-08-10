@@ -14,7 +14,12 @@ defmodule Texttile.Repo.Migrations.AddExpiryToSessions do
       add :expires_at, :utc_datetime
     end
 
-    execute "UPDATE sessions SET expires_at = datetime(inserted_at, '+14 days')"
+    # The shape the app reads and writes: SQLite keeps a moment as text,
+    # and the adapter's text is ISO 8601. SQLite's own datetime() writes
+    # a space where that has a T, and every comparison here is a
+    # comparison of strings, so a row in the other shape would read as
+    # expired up to a day early.
+    execute "UPDATE sessions SET expires_at = strftime('%Y-%m-%dT%H:%M:%SZ', inserted_at, '+14 days')"
 
     create index(:sessions, [:expires_at])
   end

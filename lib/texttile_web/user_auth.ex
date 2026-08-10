@@ -91,33 +91,55 @@ defmodule TexttileWeb.UserAuth do
   Plug: resolves the session token into `conn.assigns.current_scope`.
 
   A browser that was closed and opened again brings only the auth
-  cookie. The token moves back into the session there, so everything
-  behind this plug, the LiveView socket included, reads it the one way.
+  cookie. A token from there is asked about first and written into the
+  session only once it names a live session, so nothing behind this
+  plug, the upload roof included, ever sees a token the server has
+  ended. A token that names nothing is dropped where it was found.
   """
   def fetch_current_scope_for_user(conn, _opts) do
-    {conn, token} = session_token(conn)
+    case get_session(conn, :user_token) do
+      token when is_binary(token) -> from_session(conn, token)
+      _ -> from_auth_cookie(conn)
+    end
+  end
 
-    with token when is_binary(token) <- token,
-         user when not is_nil(user) <- Accounts.get_user_by_session_token(token) do
-      assign(conn, :current_scope, Scope.for_user(user, token))
-    else
+  defp from_session(conn, token) do
+    case Accounts.get_user_by_session_token(token) do
+      nil -> conn |> forget_token() |> assign(:current_scope, nil)
+      user -> assign(conn, :current_scope, Scope.for_user(user, token))
+    end
+  end
+
+  defp from_auth_cookie(conn) do
+    conn = fetch_cookies(conn, signed: [@auth_cookie])
+
+    case conn.cookies[@auth_cookie] do
+      token when is_binary(token) -> promote(conn, token)
       _ -> assign(conn, :current_scope, nil)
     end
   end
 
-  defp session_token(conn) do
-    case get_session(conn, :user_token) do
-      token when is_binary(token) ->
-        {conn, token}
+  defp promote(conn, token) do
+    case Accounts.get_user_by_session_token(token) do
+      nil ->
+        conn |> forget_token() |> assign(:current_scope, nil)
 
-      _ ->
-        conn = fetch_cookies(conn, signed: [@auth_cookie])
-
-        case conn.cookies[@auth_cookie] do
-          token when is_binary(token) -> {put_token_in_session(conn, token), token}
-          _ -> {conn, nil}
-        end
+      user ->
+        conn
+        |> put_token_in_session(token)
+        |> assign(:current_scope, Scope.for_user(user, token))
     end
+  end
+
+  # A token that signs nobody in has no business staying in a browser.
+  # Both places it can hide are emptied, so the next request carries
+  # nothing and the endpoint's upload roof stops reading it as a
+  # sign-in.
+  defp forget_token(conn) do
+    conn
+    |> delete_session(:user_token)
+    |> delete_session(:live_socket_id)
+    |> delete_resp_cookie(@auth_cookie, same_site: "Lax", http_only: true)
   end
 
   @doc """

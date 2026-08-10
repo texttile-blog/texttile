@@ -101,7 +101,20 @@ defmodule TexttileWeb.Endpoint do
   end
 
   defp big_upload?(conn) do
-    upload_address?(conn.path_info) and is_binary(get_session(conn, :user_token))
+    upload_address?(conn.path_info) and signed_in?(conn)
+  end
+
+  # Both places a session token can arrive. A browser that was closed
+  # and opened again carries only the auth cookie, and its first
+  # request may well be the upload a restored tab was still holding:
+  # reading the session alone would hand that one the small roof.
+  defp signed_in?(conn) do
+    is_binary(get_session(conn, :user_token)) or is_binary(auth_cookie_token(conn))
+  end
+
+  defp auth_cookie_token(conn) do
+    name = TexttileWeb.UserAuth.auth_cookie()
+    conn |> fetch_cookies(signed: [name]) |> Map.fetch!(:cookies) |> Map.get(name)
   end
 
   defp upload_address?(["admin", "images"]), do: true

@@ -304,6 +304,23 @@ defmodule Texttile.AccountsTest do
       refute Texttile.Repo.get_by(Texttile.Accounts.Session, token: stale)
     end
 
+    # SQLite keeps a moment as text and every comparison here is a
+    # comparison of strings, so the shape has to be the adapter's own.
+    # The migration that gave the open sessions their day writes it by
+    # hand; this is that shape, read back.
+    test "a row whose expiry was written as text is read the same way" do
+      user = user_fixture()
+      token = Accounts.create_session(user)
+
+      Texttile.Repo.query!(
+        "UPDATE sessions SET expires_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '+14 days')"
+      )
+
+      assert Accounts.get_user_by_session_token(token).id == user.id
+      assert [%{}] = Accounts.list_sessions(user)
+      assert days_from(DateTime.utc_now(), expiry_of(token)) > 13.9
+    end
+
     defp expiry_of(token) do
       Texttile.Repo.get_by!(Texttile.Accounts.Session, token: token).expires_at
     end

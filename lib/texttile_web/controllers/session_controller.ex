@@ -36,7 +36,7 @@ defmodule TexttileWeb.SessionController do
   end
 
   # The box on the form. A browser that does not send it means no.
-  defp remember?(%{"remember" => value}), do: value in ["true", "on", "1"]
+  defp remember?(%{"remember" => value}), do: value == "true"
   defp remember?(_params), do: false
 
   @doc """
