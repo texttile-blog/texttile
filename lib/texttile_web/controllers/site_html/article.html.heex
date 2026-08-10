@@ -155,49 +155,78 @@
         </div>
       </div>
       <h2 class={["f-sec-h mb-4", @comments != [] && "mt-10"]}>{gettext("Post a comment")}</h2>
-      <form id="comment-form" action={~p"/comments/#{@article.id}"} method="post">
+      <%!-- WordPress' order, which every reader of this blog has met
+           somewhere else: the line about the address, then the message,
+           then who is writing, then the offer to remember it. Every
+           field is a label over an input and none of them carries a
+           placeholder: a placeholder is gone the moment you type, and a
+           field that is a line under the text would have nothing left to
+           say what the line was for. --%>
+      <form id="comment-form" class="cform" action={~p"/comments/#{@article.id}"} method="post">
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
+
+        <p class="cf-lead f-note">{@comment_rule}</p>
+
+        <span class="cf-body cfld">
+          <label class="cf-lab" for="comment-body">{gettext("Comment")}</label>
+          <textarea name="body" id="comment-body" rows="5" maxlength="4000" required>{@comment_values["body"]}</textarea>
+        </span>
+
         <%!-- signed in, the two fields are facts and not questions: they
              carry what the account says and take no typing. A browser
              sends nothing for a disabled field, and the server takes
              both from the account anyway. --%>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-7 gap-y-4 mb-5">
+        <span class="cf-name cfld">
+          <label class="cf-lab" for="comment-name">{gettext("Name")}</label>
           <input
             type="text"
             name="name"
             id="comment-name"
             value={(@comment_author && @comment_author.name) || @comment_values["name"]}
-            placeholder={gettext("Name")}
-            aria-label={gettext("Name")}
             maxlength="120"
+            autocomplete="name"
             required={!@comment_author}
             disabled={!!@comment_author}
           />
+        </span>
+
+        <span class="cf-mail cfld">
+          <label class="cf-lab" for="comment-email">
+            {gettext("Email")} <span class="cf-opt">{gettext("never published")}</span>
+          </label>
           <input
             type="email"
             name="email"
             id="comment-email"
             value={(@comment_author && @comment_author.email) || @comment_values["email"]}
-            placeholder={gettext("Email, not public")}
-            aria-label={gettext("Email")}
+            autocomplete="email"
             required={!@comment_author}
             disabled={!!@comment_author}
           />
-        </div>
+        </span>
+
         <%!-- signed in, this one is a fact too: the comment stands for
              the blog itself, so it carries the address of the blog --%>
-        <input
-          type="text"
-          name="website"
-          id="comment-website"
-          class="w-full mb-5"
-          value={(@comment_author && @comment_author.website) || @comment_values["website"]}
-          placeholder={gettext("Website, if you have one")}
-          aria-label={gettext("Website")}
-          maxlength="200"
-          disabled={!!@comment_author}
-        />
+        <span class="cf-url cfld">
+          <label class="cf-lab" for="comment-website">
+            {gettext("Website")} <span class="cf-opt">{gettext("optional")}</span>
+          </label>
+          <input
+            type="text"
+            name="website"
+            id="comment-website"
+            value={(@comment_author && @comment_author.website) || @comment_values["website"]}
+            maxlength="200"
+            autocomplete="url"
+            disabled={!!@comment_author}
+          />
+        </span>
+
+        <%!-- the trap. It is `url`, and the field a person fills in is
+             `website`: the two names are the server's, not the
+             prototype's, and swapping them would open the door the trap
+             is there to close. --%>
         <input
           type="text"
           name="url"
@@ -207,18 +236,21 @@
           aria-hidden="true"
           autocomplete="off"
         />
-        <textarea
-          name="body"
-          rows="5"
-          placeholder={gettext("Say something")}
-          aria-label={gettext("Comment")}
-          maxlength="4000"
-          required
-        >{@comment_values["body"]}</textarea>
-        <p class="f-note mt-4">{@comment_rule}</p>
+
+        <p :if={!@comment_author} class="cf-remem">
+          <label class="opt">
+            <input type="checkbox" name="remember" value="true" checked={@comment_remember} />
+            <span>
+              {gettext(
+                "Remember me on this device, so the next comment is one line and a button."
+              )}
+            </span>
+          </label>
+        </p>
+
         <p
           :if={@comment_error}
-          class="f-note mt-2"
+          class="cf-err f-note"
           id="comment-error"
           style="color:var(--tt-julia)"
         >
@@ -226,7 +258,7 @@
             "A comment needs a name, an email address and some words, and a website has to read like example.org. Check the form and send it again."
           )}
         </p>
-        <p class="mt-[10px] btn-row">
+        <p class="btn-row cf-act">
           <button class="btn solid">{gettext("Post comment")}</button>
           <span :if={@comment_note} class="f-note" id="comment-note">{@comment_note}</span>
         </p>

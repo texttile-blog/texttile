@@ -75,7 +75,10 @@ defmodule Texttile.Settings do
   # Every page render asks for this, so the two patterns are compiled
   # once instead of per call.
   @page_token ~r/--tt-page\s*:\s*([^;}]+)/
+  # `--tt-barsolid` cannot answer this one: after `--tt-bar` the
+  # pattern wants a colon, and there stands an `s`.
   @bar_token ~r/--tt-bar\s*:\s*([^;}]+)/
+  @barsolid_token ~r/--tt-barsolid\s*:\s*([^;}]+)/
 
   def theme_color do
     css = theme_css()
@@ -85,6 +88,29 @@ defmodule Texttile.Settings do
     |> color(@bar_token)
     |> Kernel.||(page)
     |> over(page)
+  end
+
+  @doc """
+  The same, for the admin area, whose bar is the solid violet of the
+  buttons.
+
+  A theme stored before that colour had a name of its own does not
+  carry the token. The bar is painted from the build in that case, not
+  from the stored copy, so the chrome takes the same road: the iris
+  value, and not the reader's white bar, which would leave a white
+  strip over a violet one on a phone.
+  """
+  def admin_theme_color do
+    css = theme_css()
+    page = color(css, @page_token) || {250, 249, 247, 1.0}
+
+    css
+    |> color(@barsolid_token)
+    |> Kernel.||(color(default_theme_css(), @barsolid_token))
+    |> case do
+      nil -> theme_color()
+      solid -> over(solid, page)
+    end
   end
 
   # The last declaration wins, the way the browser reads it.
