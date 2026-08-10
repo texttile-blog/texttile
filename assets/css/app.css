@@ -224,12 +224,44 @@
   .opt input { width: auto; flex: none; margin-top: 3px; accent-color: var(--tt-accent); }
   .opt .note { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.45; }
 
-  /* an input with a quiet unit or prefix beside it */
-  /* the dated address of a post is long: the prefix keeps one line and
-     the field moves under it when the column gets narrow */
-  .addr { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
-  .addr .pre { color: var(--tt-faint); font-size: 13px; flex: none; white-space: nowrap; }
-  .addr input { flex: 1 1 140px; min-width: 0; }
+  /* THE ADDRESS IS ONE FIELD
+     Round 16 put the domain and the day in plain text and the slug in
+     a box beside them, on a second baseline. An address is one thing,
+     so it is one field: the part that cannot change sits inside it,
+     quiet, and only the slug takes the caret. */
+  .addr {
+    display: flex; flex-wrap: nowrap; align-items: baseline; gap: 0;
+    overflow: hidden;
+    background-color: var(--fld-bg); background-image: none;
+    border: var(--fld-bd); border-bottom: var(--fld-bb);
+    border-radius: var(--fld-r); padding: var(--fld-p);
+    box-shadow: var(--fld-sh);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .addr:hover { background-color: var(--fld-bg-h); border-bottom: var(--fld-bb-h); }
+  .addr:focus-within {
+    background-color: var(--fld-bg-f);
+    border: var(--fld-bd-f); border-bottom: var(--fld-bb-f);
+    box-shadow: var(--fld-sh-f);
+  }
+  /* The part that cannot change gives way first. A blog on a long host
+     name would otherwise push the slug out of a 320px column
+     altogether, and the slug is the only control an entry's address
+     has. It keeps one line and ends in an ellipsis instead. */
+  .addr .pre {
+    flex: 0 1 auto; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--tt-faint); font-size: 13px;
+  }
+  /* the inner input carries no field of its own */
+  .addr > input {
+    flex: 1 1 40px; min-width: 5ch;
+    padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
+    font-size: 13px;
+  }
+  .addr > input:hover, .addr > input:focus {
+    border: 0; background: none; box-shadow: none;
+  }
 
   /* rendered markdown, e.g. the About preview */
   .md-preview { line-height: 1.6; }
@@ -275,71 +307,16 @@
   }
   .labrow > .link { flex: none; font-size: 11.5px; }
 
-  /* the quiet underline field: one container class instead of the
-     same eight utilities on forty inputs. Used by the sign-in family
-     and the profile. */
-  .quiet-fields input:not([type=checkbox]):not([type=radio]):not([type=file]),
-  .quiet-fields textarea, .quiet-fields select {
-    background-color: transparent; border: 0; border-radius: 0;
-    padding: 5px 0; font-size: 16px; color: var(--tt-ink);
-    border-bottom: 1px solid var(--tt-rule);
-  }
-  @media (min-width: 1024px) {
-    .quiet-fields input:not([type=checkbox]):not([type=radio]):not([type=file]),
-    .quiet-fields textarea, .quiet-fields select { font-size: 15px; }
-  }
-  .quiet-fields input:not([type=checkbox]):not([type=radio]):not([type=file]):hover,
-  .quiet-fields textarea:hover, .quiet-fields select:hover {
-    background-color: transparent; border-bottom-color: var(--tt-inksoft);
-  }
-  .quiet-fields input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,
-  .quiet-fields textarea:focus, .quiet-fields select:focus {
-    background-color: transparent; border-bottom-color: var(--tt-accent);
-    box-shadow: 0 1px 0 0 var(--tt-accent);
-  }
+  /* `.quiet-fields`, `.boxed-in` and `textarea.boxed` are gone. Round
+     19 made every field a line, so the container that used to write
+     that line, and the two escapes that used to take it back, all say
+     what base.css says. The classes may still stand in the markup;
+     no rule stands behind them.
 
-  /* A FIELD THAT ASKS FOR WORDS LOOKS LIKE ONE
-     The quiet underline is right for a value that is mostly read: a
-     username, an address, a number. It is wrong for a field somebody is
-     meant to type into on their first visit - the site title, the
-     description, the name others see - because an underline alone does
-     not read as an invitation. Those wear the drawn box, like the text
-     areas beside them. */
-  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]),
-  .quiet-fields .boxed-in select,
-  .quiet-fields textarea.boxed {
-    background-color: var(--tt-field);
-    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
-    border-radius: var(--tt-radius); padding: 8px 10px;
-  }
-  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]):hover,
-  .quiet-fields .boxed-in select:hover {
-    background-color: var(--tt-fieldhover); border-bottom-color: var(--tt-rule);
-  }
-  .quiet-fields .boxed-in input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,
-  .quiet-fields .boxed-in select:focus {
-    background-color: var(--tt-paper); box-shadow: none;
-    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
-  }
-  /* a field is as wide as what it holds: a title or a description can
-     run, a choice out of three words cannot */
-  .quiet-fields .boxed-in select { max-width: 280px; }
-
-  /* a text area is a region, not a line. One underline under nine rows
-     leaves the writing surface invisible, so among the quiet fields a
-     textarea keeps the drawn box of base.css. */
-  .quiet-fields textarea.boxed {
-    background-color: var(--tt-field);
-    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
-    border-radius: var(--tt-radius); padding: 8px 10px;
-  }
-  .quiet-fields textarea.boxed:hover {
-    background-color: var(--tt-fieldhover); border-bottom-color: var(--tt-rule);
-  }
-  .quiet-fields textarea.boxed:focus {
-    background-color: var(--tt-paper); box-shadow: none;
-    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
-  }
+     A field is as wide as what it holds: a title or a description can
+     run, a choice out of three words cannot. */
+  select { max-width: 280px; }
+  textarea, select.wide { max-width: none; }
 
   /* the name over a comment, in the admin area: it is the way to write
      back, so it answers the pointer, but it carries no underline of its
@@ -361,9 +338,12 @@
      paragraph. It only gives up the two things a field does that this
      one must not: it never scrolls and it is not dragged bigger, it
      grows to what it holds. */
+  /* the lines to pass on: addresses you read, so they read at the size
+     the address field reads at, on the same rule */
   .sharelines {
     display: block; resize: none; overflow: hidden;
     field-sizing: content; overflow-wrap: anywhere;
+    font-size: 13px;
   }
 
   /* the addresses an entry has left behind, under the address field.
@@ -613,48 +593,48 @@
   .dif-add { color: var(--tt-accent); border-radius: 2px; background: var(--tt-accentwash); }
   .dif-del { color: var(--tt-julia); text-decoration-line: line-through; border-radius: 2px; background: var(--tt-juliatint); }
 
-  /* the writing surface: flush, no box, a whisper of a wash that hugs
-     the text on hover and firms up on focus. The field ends where the
-     text ends. */
+  /* THE WRITING SURFACE
+     No ground under either half. The title stands on its own two-pixel
+     rule; the body carries a hairline at the left, which turns violet
+     when it has the caret. The field ends where the text ends. */
   .ed-title {
     width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
     font-family: var(--tt-font-serif); font-size: 25px; font-weight: 600;
     line-height: 1.15; letter-spacing: -.02em;
-    /* The two writing surfaces carry the ground of a field, like every
-       other input: at rest they are what you type into, and a surface
-       that only appears under the pointer asks to be found first. The
-       washes are translucent tints, so hover and focus layer over the
-       ground instead of replacing it, and the two steps read exactly as
-       they did before. */
-    background-color: var(--tt-field); border: 0;
-    border-radius: var(--tt-radius) var(--tt-radius) 0 0;
+    background-color: transparent; background-image: none; border: 0;
+    border-radius: 0;
     padding: 6px 6px 9px;
-    border-bottom: 2px solid var(--tt-inksoft);
-    transition: border-color .15s ease, background-color .18s ease, box-shadow .15s ease;
+    border-bottom: var(--edt-bb);
+    box-shadow: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
   @media (min-width: 768px) { .ed-title { font-size: 30px; } }
   .ed-title:hover {
-    background-image: linear-gradient(var(--tt-wash1), var(--tt-wash1));
-    border-bottom-color: var(--tt-ink);
+    background-image: none; background-color: transparent;
+    border-bottom: 2px solid var(--tt-ink);
   }
   .ed-title:focus {
     outline: none;
-    background-image: linear-gradient(var(--tt-wash2), var(--tt-wash2));
-    border-color: transparent; border-bottom-color: var(--tt-accent); box-shadow: none;
+    background-image: none; background-color: transparent;
+    border: 0; border-bottom: 2px solid var(--tt-accent); box-shadow: none;
   }
   .ed-body {
     display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
     margin-top: 3px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
-    color: var(--tt-ink); background-color: var(--tt-field); border: 0;
-    border-radius: var(--tt-radius);
-    padding: 6px 6px 7px; resize: none; min-height: 100px;
+    color: var(--tt-ink);
+    background-color: transparent; background-image: none; border: 0;
+    border-radius: 0;
+    box-shadow: var(--edb-sh);
+    padding: 6px 6px 7px; padding-left: var(--edb-pl);
+    resize: none; min-height: 100px;
     field-sizing: content;
-    transition: background-color .18s ease;
+    transition: box-shadow .15s ease;
   }
-  .ed-body:hover { background-image: linear-gradient(var(--tt-wash1), var(--tt-wash1)); }
+  .ed-body:hover { background-image: none; background-color: transparent; }
   .ed-body:focus, .ed-cm:focus-within {
-    outline: none; border-color: transparent;
-    background-image: linear-gradient(var(--tt-wash2), var(--tt-wash2));
+    outline: none; border: 0;
+    background-image: none; background-color: transparent;
+    box-shadow: var(--edb-shf);
   }
   .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
   /* while the other admin holds the text both fields are read-only and
@@ -667,22 +647,25 @@
   #bodyWrap.is-readonly .ed-cm,
   #bodyWrap.is-readonly .ed-cm .cm-content { cursor: pointer; }
   #bodyWrap.is-readonly .ed-cm:hover { background: var(--tt-juliatint); }
-  /* THE SAME EDITOR, IN A BOX
+  /* THE SAME EDITOR, ON A SETTINGS ROW
      Settings gives About the entry editor with the pictures taken out.
      There the surface is one field among many, not the page, so it
-     wears the drawn box of the other text areas instead of the bleeding
-     writing surface, and reads at the size of a field. */
+     stands on the rule every other row stands on and reads at the size
+     of a field. It keeps the hairline at the left that says where the
+     writing starts. */
   .boxed-cm {
-    width: 100%; margin: 0; min-height: 190px;
+    width: 100%; max-width: none; margin: 0; min-height: 190px;
     font-size: 15px; line-height: 1.65;
-    background: var(--tt-field);
-    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
-    border-radius: var(--tt-radius); padding: 8px 10px;
+    background-color: var(--fld-bg); background-image: none;
+    border: var(--fld-bd); border-bottom: var(--fld-bb);
+    border-radius: var(--fld-r);
+    padding: 8px 10px; padding-left: var(--edb-pl);
+    box-shadow: var(--edb-sh);
   }
-  .boxed-cm:hover { background: var(--tt-fieldhover); }
+  .boxed-cm:hover { border-bottom: var(--fld-bb-h); }
   .boxed-cm:focus-within {
-    background: var(--tt-paper);
-    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+    border: var(--fld-bd-f); border-bottom: var(--fld-bb-f);
+    box-shadow: var(--edb-shf);
   }
 
   .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
@@ -748,6 +731,78 @@
     .inrow { grid-template-columns: 36px minmax(0, 1fr); }
     .inrow .raw, .inrow .act { grid-column: 2 / -1; }
     .inrow .act { justify-content: flex-start; }
+  }
+
+  /* THE BAR OF THE ADMIN AREA IS VIOLET
+
+     The bar and the header of the blog used to be the same white over
+     the same sand, and nothing said which side of the sign-in you were
+     on. The bar takes the solid violet the buttons are made of.
+
+     Nothing in it is restyled. The bar redeclares the theme tokens on
+     itself, and the wordmark, the crumb, the state dot, the saved
+     mark, julia and the split button all follow. Because the ground is
+     now the brand, the one loud control on it turns over: Publish is
+     white on violet, a pair that exists nowhere else in the product. */
+  #topbar {
+    --tt-ink: #fff;
+    --tt-inksoft: #ece5fa;
+    --tt-dim: #c3b3e4;
+    --tt-faint: #ad9bd6;
+    --tt-slash: #7d63b0;
+    --tt-rule: #5f3ba0;
+    --tt-hair: #5f3ba0;
+    --tt-paper: #3d2170;
+    --tt-field: rgba(255, 255, 255, .14);
+    --tt-fieldhover: rgba(255, 255, 255, .22);
+    --tt-accent: #e2d5ff;
+    --tt-accentloud: #fff;
+    --tt-accentsoft: #b9a2ea;
+    --tt-accentwash: rgba(255, 255, 255, .16);
+    --tt-accentline: rgba(255, 255, 255, .4);
+    --tt-solid: #fff;
+    --tt-solidhover: #ece5fa;
+    --tt-onsolid: #3d2170;
+    --tt-solidline: rgba(61, 33, 112, .24);
+    --tt-julia: #ffbe9b;
+    --tt-juliatint: rgba(255, 190, 155, .2);
+    --tt-julialine: rgba(255, 190, 155, .5);
+    --tt-livetint: rgba(255, 255, 255, .16);
+    --tt-liveline: rgba(255, 255, 255, .4);
+    --tt-livetext: #fff;
+
+    background: var(--tt-barsolid, #4b2a83);
+    border-bottom: 1px solid var(--tt-barsolid, #4b2a83);
+    color: var(--tt-ink);
+  }
+
+  /* A menu is a sheet over the page, not part of the band, so it takes
+     the page's tokens back. The sections menu hangs inside the bar in
+     the markup. */
+  #topbar .pop {
+    --tt-ink: #23201b;
+    --tt-inksoft: #443f37;
+    --tt-dim: #554e45;
+    --tt-faint: #665f55;
+    --tt-slash: #b0aaa1;
+    --tt-rule: #c9c3ba;
+    --tt-hair: #ddd8d0;
+    --tt-page: #f6f3ee;
+    --tt-paper: #fff;
+    --tt-field: #eae6df;
+    --tt-fieldhover: #e4dff0;
+    --tt-accent: #6d35de;
+    --tt-accentloud: #6d35de;
+    --tt-accentsoft: #a992e0;
+    --tt-accentwash: #ece7f7;
+    --tt-accentline: #d0c3ea;
+    --tt-solid: #4b2a83;
+    --tt-solidhover: #6a3fb5;
+    --tt-onsolid: #fff;
+    --tt-julia: #a34a26;
+    --tt-juliatint: #fbeade;
+    --tt-julialine: #e8c7ae;
+    color: var(--tt-ink);
   }
 
   /* While a full-screen overlay is open, the topbar's backdrop-filter
@@ -1060,10 +1115,6 @@
   body.site > main > section.foot-band { margin-top: auto; }
   body.site > footer { margin-top: auto; }
 
-  /* the fields are .quiet-fields, worn on the body (site_root.html.heex):
-     the same underline the side column of the admin area writes, not a
-     second copy */
-
   /* the header: the reader header of round-13, with the site menu the
      app builds out of its pages */
   .site-head {
@@ -1154,55 +1205,82 @@
     field-sizing: content; resize: none; min-height: 5lh; line-height: 1.6;
   }
 
-  /* THE TWO SURFACES A READER WRITES ON
+  /* THE COMMENT FORM
+     One amendment to WordPress' rows: the name and the address share a
+     row at half each and the website stands under the name, in the same
+     half. It is the only field that does not fill its row, which is the
+     point: it is the only optional one and the least important one. */
+  .cform {
+    display: grid;
+    gap: 14px 16px;
+    align-content: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "lead" "body" "name" "mail" "url" "remem" "err" "act";
+  }
+  .cform > .cf-lead { grid-area: lead; margin: 0 0 2px; }
+  .cform > .cf-body { grid-area: body; }
+  .cform > .cf-name { grid-area: name; }
+  .cform > .cf-mail { grid-area: mail; }
+  .cform > .cf-url { grid-area: url; }
+  .cform > .cf-remem { grid-area: remem; margin: 2px 0 0; }
+  .cform > .cf-err { grid-area: err; margin: 0; }
+  .cform > .cf-act { grid-area: act; margin: 0; }
 
-     Everything else on the reader's side is a quiet line: the search
-     over the list, the password of the gate. These two are not. The
-     comment form and the subscribe field ask for words, and a field
-     that asks has to look like one before it is clicked, so both wear
-     the filled field of the admin area instead of the underline of the
-     site chrome: a ground of its own, a hover that answers the pointer,
-     the accent on focus. */
-  body.site #comment-form input:not([type=hidden]):not(.sr),
-  body.site #comment-form textarea,
-  body.site #newsletter-form input[type=email] {
-    background-color: var(--tt-field);
-    border: 1px solid transparent;
-    border-bottom: 1px solid var(--tt-rule);
-    border-radius: var(--tt-radius);
-    padding: 8px 10px;
-    box-shadow: none;
+  @media (min-width: 620px) {
+    .cform {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "lead  lead"
+        "body  body"
+        "name  mail"
+        "url   ."
+        "remem remem"
+        "err   err"
+        "act   act";
+    }
   }
-  /* The subscribe field stands on the band, which has a ground of its
-     own. The field grey of the admin area is close enough to it to read
-     as a smudge, so this one field is white: on a coloured ground white
-     is the thing that says "type here". */
-  body.site #newsletter-form input[type=email] {
-    background-color: var(--tt-paper);
+
+  /* a field is a label over an input */
+  .cfld { display: block; min-width: 0; }
+  .cf-lab { display: block; padding-bottom: 4px; font-size: 12.5px; color: var(--tt-dim); }
+  /* said once, on the one field it is true of */
+  .cf-opt { margin-left: 5px; font-size: 11.5px; color: var(--tt-faint); }
+  /* the checkbox is a note about the next visit, not a field */
+  .cf-remem .opt {
+    align-items: baseline; padding: 0; font-size: 12.5px; color: var(--tt-dim);
   }
-  body.site #comment-form input:not([type=hidden]):not(.sr):hover:not(:disabled),
-  body.site #comment-form textarea:hover {
-    background-color: var(--tt-fieldhover);
-    border-bottom-color: var(--tt-rule);
+
+  /* THE EXCEPTION · THE READER'S TWO FORMS
+
+     The line is right on the admin screens, where a page is a list of
+     settings and every row already says what it is. On an entry it
+     asked too much: the message is a wide empty rectangle with a rule
+     at the bottom and a word far above it, and the two stopped reading
+     as one thing.
+
+     So these two forms, and only these two, put the field on paper:
+     white on the sand page, the lightest ground that is still a shape.
+     Nothing else changes. The rule stays under it, the corner stays
+     square, and focus is the same paper with the violet rule, so
+     nothing moves. --tt-paper is the theme's own white, so this brings
+     no new colour.
+
+     The search over the reader's list keeps the line: it is a field
+     you use once, not a form you fill in. */
+  #comment-form,
+  #newsletter-form {
+    --fld-bg:   var(--tt-paper);
+    --fld-bg-h: var(--tt-paper);
+    --fld-bg-f: var(--tt-paper);
+    /* a field with a ground needs room inside it; a line does not */
+    --fld-p:    9px 11px;
   }
   /* The button beside it is part of the same row, so it takes the
      field's height instead of the 30px every other button wears. */
   body.site #newsletter-form .btn { height: auto; }
-  body.site #newsletter-form input[type=email]:hover {
-    border-bottom-color: var(--tt-inksoft);
-  }
-  body.site #comment-form input:not([type=hidden]):not(.sr):focus,
-  body.site #comment-form textarea:focus,
-  body.site #newsletter-form input[type=email]:focus {
-    background-color: var(--tt-paper);
-    border-color: var(--tt-accentsoft);
-    border-bottom-color: var(--tt-accent);
-    box-shadow: none;
-  }
   /* Signed in, the name and the address are facts the account carries,
-     not questions. They keep the ground of a field, so the form reads as
-     one block of fields, and dimmer ink and the plain cursor are what
-     say the two take no typing. */
+     not questions. Dimmer ink and the plain cursor say the two take no
+     typing. */
   body.site #comment-form input[disabled]:not([type=hidden]):not(.sr) {
     color: var(--tt-dim);
     cursor: default;

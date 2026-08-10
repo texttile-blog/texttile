@@ -34,21 +34,30 @@
   ::placeholder { color: var(--tt-faint); opacity: 1; }
   :focus-visible { outline: 2px solid var(--tt-accentloud); outline-offset: 2px; }
 
-  /* inputs: quiet fills, no bordered boxes, 16px on small screens so
-     iOS never zooms on focus */
-  input[type=text], input[type=email], input[type=password], input[type=date],
-  input[type=datetime-local], input[type=time],
-  input[type=number], input[type=search], textarea, select {
+  /* THE FIELD IS A LINE
+     One rule under the text and nothing else. Every value is a
+     --fld-* token from theme.css, so a screen that wants another
+     field redeclares the tokens on itself and touches no selector
+     here.
+
+     The types are named by what a field is not, instead of by a list
+     of what it is: the old list had been written out type by type and
+     `url` was missing from it, so the website field of a comment came
+     out at the browser's default width. 16px on small screens, so iOS
+     never zooms on focus. */
+  input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)),
+  textarea, select {
     width: 100%; font: inherit; font-family: var(--tt-font-sans); font-size: 16px;
-    color: var(--tt-ink); background: var(--tt-field);
-    border: 1px solid transparent; border-bottom: 1px solid var(--tt-rule);
-    border-radius: var(--tt-radius); padding: 8px 10px;
-    transition: background-color .15s ease, border-color .15s ease;
+    color: var(--tt-ink);
+    background-color: var(--fld-bg); background-image: none;
+    border: var(--fld-bd); border-bottom: var(--fld-bb);
+    border-radius: var(--fld-r); padding: var(--fld-p);
+    box-shadow: var(--fld-sh);
+    transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
   }
   @media (min-width: 900px) {
-    input[type=text], input[type=email], input[type=password], input[type=date],
-    input[type=datetime-local], input[type=time],
-    input[type=number], input[type=search], textarea, select { font-size: 14px; }
+    input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)),
+    textarea, select { font-size: 14px; }
   }
   /* a date field is something you open, so it says so: the whole
      field takes the pointer, and the picker sits in the ink of the
@@ -62,10 +71,16 @@
   input[type=date]:hover::-webkit-calendar-picker-indicator,
   input[type=datetime-local]:hover::-webkit-calendar-picker-indicator,
   input[type=time]:hover::-webkit-calendar-picker-indicator { opacity: 1; }
-  input:hover, textarea:hover, select:hover { background: var(--tt-fieldhover); }
-  input:focus, textarea:focus, select:focus {
-    outline: none; background: var(--tt-paper);
-    border-color: var(--tt-accentsoft); border-bottom-color: var(--tt-accent);
+  input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)):hover,
+  textarea:hover, select:hover {
+    background-color: var(--fld-bg-h); border-bottom: var(--fld-bb-h);
+  }
+  input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)):focus,
+  textarea:focus, select:focus {
+    outline: none;
+    background-color: var(--fld-bg-f);
+    border: var(--fld-bd-f); border-bottom: var(--fld-bb-f);
+    box-shadow: var(--fld-sh-f);
   }
   input:disabled { color: var(--tt-faint); }
   textarea { line-height: 1.6; resize: vertical; }

@@ -215,6 +215,11 @@ defmodule TexttileWeb.SiteController do
         conn
         |> assign(:comment_error, true)
         |> assign(:comment_values, attrs)
+        # the box travels back too. Without it a reader who ticked it
+        # and mistyped one field would send the corrected comment with
+        # the box empty, and the address they had asked to keep would
+        # be dropped by the correction.
+        |> assign(:comment_remember, remember?(params))
         |> assign(:comment_token, to_string(params["t"]))
         |> render_text(article)
 
@@ -230,6 +235,7 @@ defmodule TexttileWeb.SiteController do
         case Comments.post(article, attrs, opts) do
           {:ok, comment} ->
             conn
+            |> remember_writer(params, attrs, author)
             |> put_session(:own_comments, Enum.take([comment.id | own_comment_ids(conn)], 20))
             |> comment_sent(comment)
             |> redirect(to: comments_anchor(article))
@@ -290,6 +296,60 @@ defmodule TexttileWeb.SiteController do
 
   defp spam?(article, params) do
     text_value(params["url"]) != "" or not human_timing?(article, params["t"])
+  end
+
+  ## The reader the browser remembers
+
+  # The box under the comment form. It is not ticked to begin with:
+  # this cookie is a convenience, nobody needs it to read or to write,
+  # and a box that is ticked for you is no answer.
+  #
+  # The cookie is encrypted, not merely signed. A signed cookie is
+  # readable by anybody who reaches the cookie jar, and what stands in
+  # this one is the address the form itself promises never to publish.
+  # Nothing in the browser ever reads it, so nothing is lost by
+  # closing it.
+  @writer_cookie "_texttile_writer"
+  @writer_months 180 * 24 * 60 * 60
+
+  defp remember?(params), do: text_value(params["remember"]) == "true"
+
+  # Somebody signed in has an account to answer for the two fields, so
+  # there is nothing to remember and no box to tick.
+  defp remember_writer(conn, _params, _attrs, user) when not is_nil(user), do: conn
+
+  defp remember_writer(conn, params, attrs, _nobody) do
+    if remember?(params) do
+      put_resp_cookie(conn, @writer_cookie, Map.take(attrs, ["name", "email", "website"]),
+        encrypt: true,
+        max_age: @writer_months,
+        same_site: "Lax",
+        http_only: true,
+        secure: conn.scheme == :https
+      )
+    else
+      # Only a browser that carries one is handed a Set-Cookie. A
+      # reader who never asked gets no header about a cookie they do
+      # not have.
+      if remembered_writer(conn) == %{} do
+        conn
+      else
+        delete_resp_cookie(conn, @writer_cookie, same_site: "Lax", http_only: true)
+      end
+    end
+  end
+
+  @doc """
+  What this browser last wrote a comment under, when the reader asked
+  for it to be kept. Only the three fields, and only strings.
+  """
+  def remembered_writer(conn) do
+    conn = fetch_cookies(conn, encrypted: [@writer_cookie])
+
+    case conn.cookies[@writer_cookie] do
+      %{} = writer -> Map.new(~w(name email website), &{&1, text_value(writer[&1])})
+      _ -> %{}
+    end
   end
 
   # A form field is one line of text. A caller who sends a list or a map
@@ -639,7 +699,15 @@ defmodule TexttileWeb.SiteController do
           ),
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
       comment_rule: comment_rule(signed_in_user(conn), require?),
-      comment_values: conn.assigns[:comment_values] || %{},
+      # A form that came back with a mistake keeps what was typed; a
+      # fresh one starts from what this browser asked to be kept.
+      comment_values: conn.assigns[:comment_values] || remembered_writer(conn),
+      comment_remember:
+        if is_nil(conn.assigns[:comment_remember]) do
+          remembered_writer(conn) != %{}
+        else
+          conn.assigns[:comment_remember]
+        end,
       comment_error: conn.assigns[:comment_error] || false,
       comment_author: comment_author(conn)
     }

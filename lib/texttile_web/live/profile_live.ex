@@ -154,7 +154,7 @@ defmodule TexttileWeb.ProfileLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="quiet-fields max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">{gettext("Your profile")}</h1>
         <p class="lead">
           {gettext("You are signed in as")}
@@ -166,7 +166,7 @@ defmodule TexttileWeb.ProfileLive do
         <h2 class="set-h">{gettext("You")}</h2>
         <%!-- fields to type into, so they look like fields; the same
              treatment the Site block of Settings wears --%>
-        <.form for={@profile_form} id="profile-form" class="boxed-in" phx-change="save_profile">
+        <.form for={@profile_form} id="profile-form" phx-change="save_profile">
           <div class="drow">
             <label class="lab" for={@profile_form[:display_name].id}>
               {gettext("Displayed name")}
@@ -226,7 +226,7 @@ defmodule TexttileWeb.ProfileLive do
         </.form>
 
         <h2 class="set-h">{gettext("Password")}</h2>
-        <.form for={@pw_form} id="password-form" class="boxed-in" phx-submit="set_password">
+        <.form for={@pw_form} id="password-form" phx-submit="set_password">
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">

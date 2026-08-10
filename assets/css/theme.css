@@ -23,6 +23,9 @@
   --tt-field:       #eae6df;
   --tt-fieldhover:  #e4dff0;
   --tt-bar:         rgba(255, 255, 255, .93);
+  /* the ground of the admin bar: the solid violet the buttons are made
+     of, so the admin area and the blog can never be confused */
+  --tt-barsolid:    #4b2a83;
 
   /* ink · 14.7 / 9.4 / 7.4 / 5.7 against the page. The two quiet roles
      carry dates, leads and notes: they are read, so they went a step
@@ -60,14 +63,13 @@
   --tt-liveline:    #d0c3ea;
   --tt-livetext:    #6d35de;
 
-  /* depth · with a lavender breath on the second wash so a focused
-     editor tints instead of graying */
+  /* depth. The two washes that used to tint the writing surface went
+     with round 19: the surface carries no ground now, so there is
+     nothing to tint. */
   --tt-shadow:      35 30 24;
   --tt-scrim:       rgba(24, 21, 17, .34);
   --tt-overlay:     25 23 32;
   --tt-lightbox:    rgba(24, 21, 17, .96);
-  --tt-wash1:       rgba(109, 53, 222, .028);
-  --tt-wash2:       rgba(109, 53, 222, .05);
 
   /* shape · paper's */
   --tt-radius:      4px;
@@ -75,4 +77,36 @@
   --tt-radius-pill: 999px;
   --tt-radius-img:  3px;
   --tt-tabw:        2px;
+
+  /* THE FIELD IS A LINE (round 19)
+     No ground, no border, no corner. One rule under the text, ink on
+     hover, violet and a second pixel on focus. The second pixel is a
+     shadow and not a thicker border, so nothing moves when a field
+     takes the caret.
+
+     Twelve values say all of it, so a later change to how a field
+     looks is a change to twelve numbers and to no selector. A screen
+     that wants another field redeclares them on itself, the way the
+     reader's two forms do. */
+  --fld-bg:     transparent;
+  --fld-bd:     1px solid transparent;
+  --fld-bb:     1px solid var(--tt-rule);
+  --fld-r:      0px;
+  --fld-p:      7px 1px;
+  --fld-sh:     none;
+
+  --fld-bg-h:   var(--fld-bg);
+  --fld-bb-h:   1px solid var(--tt-inksoft);
+
+  --fld-bg-f:   var(--fld-bg);
+  --fld-bd-f:   var(--fld-bd);
+  --fld-bb-f:   1px solid var(--tt-accent);
+  --fld-sh-f:   0 1px 0 0 var(--tt-accent);
+
+  /* the writing surface: the title on its rule, the body on a rule of
+     its own at the left */
+  --edt-bb:     2px solid var(--tt-inksoft);
+  --edb-sh:     inset 2px 0 0 0 var(--tt-hair);
+  --edb-shf:    inset 2px 0 0 0 var(--tt-accent);
+  --edb-pl:     16px;
 }
