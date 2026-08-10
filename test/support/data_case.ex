@@ -64,6 +64,7 @@ defmodule Texttile.DataCase do
     forget_open_editors()
     clear_uploads()
     Texttile.RateLimiter.reset()
+    Texttile.RateLimiter.reset(Texttile.Backup.limiter())
     catch_mail()
 
     on_exit(fn ->

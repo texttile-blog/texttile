@@ -35,7 +35,16 @@ defmodule Texttile.Settings do
     logo: {:file, nil},
     logo_name: {:file, nil},
     favicon: {:file, nil},
-    favicon_name: {:file, nil}
+    favicon_name: {:file, nil},
+    # The backup API (see Texttile.Backup). Off on a fresh install: a
+    # capability nobody asked for is a door nobody watches. The token
+    # is kept as a hash, and the last access is what the settings
+    # screen shows to say the backups still run.
+    backup_enabled: {:boolean, false},
+    backup_token_hash: {:string, ""},
+    backup_allowed_ips: {:string, ""},
+    backup_last_access_at: {:string, ""},
+    backup_last_access_ip: {:string, ""}
   }
 
   # The iris theme is the default the whole site wears, admin and public
@@ -309,7 +318,25 @@ defmodule Texttile.Settings do
   defp validate(:max_upload_mb, n) when n < 10, do: {:error, "at least 10 MB"}
   defp validate(:max_upload_mb, n) when n > 2048, do: {:error, "at most 2048 MB"}
 
+  # A typo here locks the backup machine out in silence, and the next
+  # anybody hears of it is the day they need the backup. So every
+  # address has to read as one.
+  defp validate(:backup_allowed_ips, value) do
+    value
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.find(&(not address?(&1)))
+    |> case do
+      nil -> :ok
+      wrong -> {:error, "#{wrong} is no IP address"}
+    end
+  end
+
   defp validate(_key, _value), do: :ok
+
+  defp address?(value),
+    do: match?({:ok, _}, value |> String.to_charlist() |> :inet.parse_address())
 
   defp store(key, nil) do
     Repo.delete_all(from s in Setting, where: s.key == ^to_string(key))

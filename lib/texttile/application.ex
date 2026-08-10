@@ -38,6 +38,10 @@ defmodule Texttile.Application do
       # turns pages faster than they write comments.
       {Texttile.RateLimiter,
        name: Texttile.Stats.limiter(), limit: Texttile.Stats.limiter_per_minute()},
+      # And in front of the backup endpoints, wider still: a client
+      # fetching a thousand pictures is doing its job.
+      {Texttile.RateLimiter,
+       name: Texttile.Backup.limiter(), limit: Texttile.Backup.limiter_per_minute()},
       # The secret behind every visitor number, held here and nowhere
       # else, thrown away when the day turns.
       Texttile.Stats.Salt,
