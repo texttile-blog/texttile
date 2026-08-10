@@ -944,8 +944,12 @@ defmodule TexttileWeb.EditorLive do
   defp thumb(relative), do: "/renditions/#{Images.thumb_edge()}/#{relative}"
 
   # What a row of the file list shows for a reference: the still of a
-  # converted film, the picture itself, or nothing while ffmpeg is
-  # still working - then the empty box of the row stands for it.
+  # converted film, the picture itself, or nothing - while ffmpeg is
+  # still working, and for an upload that is still running or has
+  # stopped, which has no address yet. Then the empty box of the row
+  # stands for the file.
+  defp media_thumb(_media, nil), do: nil
+
   defp media_thumb(%{still: still}, _url) when is_binary(still),
     do: thumb_url("/uploads/" <> still)
 
@@ -1756,15 +1760,9 @@ defmodule TexttileWeb.EditorLive do
                     <%!-- a picture, or a video ffmpeg is through with:
                          the still stands for it. A video that is not
                          converted yet says where it stands instead. --%>
+                    <% thumb = media_thumb(media, ref.url) %>
                     <div :if={ref.kind == :done} class="inrow">
-                      <span
-                        class="th"
-                        style={
-                          media_thumb(media, ref.url) &&
-                            "background-image:url('#{media_thumb(media, ref.url)}')"
-                        }
-                      >
-                      </span>
+                      <span class="th" style={thumb && "background-image:url('#{thumb}')"}></span>
                       <span class="nm">
                         {ref.file}
                         <span :if={media && conversion_note(media)} class="note">

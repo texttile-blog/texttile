@@ -4,39 +4,46 @@
 //
 // So the field picks all of itself when it is touched - one click, or
 // one key for whoever never reaches for the button - and the button
-// says what it did instead of leaving a word beside it. `focus` and
-// not `click`, so the keyboard gets the same.
+// says what it did instead of leaving a word beside it.
+//
+// Both listeners sit on the block itself and are hung once, in
+// `mounted`. The block outlives every render, while the field and the
+// button inside it are patched: a flag written on them would be wiped
+// by the next patch (the server never writes it), and a hook that
+// wired them again on every update would end up copying once per
+// patch. `focusin` and not `focus`, because only the first travels up
+// to the block, and it gives the keyboard the same as the mouse.
 import {t} from "./i18n"
 
 export default {
-  mounted() { this.wire() },
-  updated() { this.wire() },
+  mounted() {
+    this.el.addEventListener("focusin", (event) => {
+      if (event.target.matches("textarea")) event.target.select()
+    })
+
+    this.el.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-copy]")
+      if (button && this.el.contains(button)) this.copy(button)
+    })
+  },
+
   destroyed() { clearTimeout(this.timer) },
 
-  wire() {
+  async copy(button) {
     const field = this.el.querySelector("textarea")
-    const button = this.el.querySelector("[data-copy]")
+    if (!field) return
 
-    if (field && !field.dataset.wired) {
-      field.dataset.wired = "1"
-      field.addEventListener("focus", () => field.select())
+    try {
+      await navigator.clipboard.writeText(field.value)
+    } catch (_error) {
+      // No clipboard permission, and no browser offers one on plain
+      // http. The words are selected instead, so one key still copies
+      // them.
+      field.select()
     }
-    if (!field || !button || button.dataset.wired) return
-
-    button.dataset.wired = "1"
-    button.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(field.value)
-      } catch (_error) {
-        // No clipboard permission, and no browser offers one on plain
-        // http. The words are selected instead, so one key still
-        // copies them.
-        field.select()
-      }
-      // the button answers for itself, the way Save version does
-      button.textContent = t("Copied")
-      clearTimeout(this.timer)
-      this.timer = setTimeout(() => { button.textContent = t("Copy") }, 2200)
-    })
+    // the button answers for itself, the way Save version does
+    button.textContent = t("Copied")
+    clearTimeout(this.timer)
+    this.timer = setTimeout(() => { button.textContent = t("Copy") }, 2200)
   },
 }

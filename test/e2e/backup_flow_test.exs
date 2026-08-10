@@ -91,6 +91,44 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> assert_has("#copyBackupToken", text: "Copied")
     end
 
+    # A clipboard that counts what it is handed. The page has none on
+    # plain http, so this is also the only way to see the writing at
+    # all.
+    @counting_clipboard """
+    window.__writes = 0
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: () => { window.__writes++; return Promise.resolve() } },
+    })
+    """
+
+    @writes "() => window.__writes"
+
+    # The screen redraws around the button all the time: a setting
+    # saved here or in another tab redraws it. A hook that wired the
+    # button again on every redraw would hand the word over once per
+    # redraw, and nothing on the screen would say so.
+    test "copies once, however often the screen has been redrawn", %{conn: conn} do
+      {:ok, _} =
+        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+          source: @counting_clipboard,
+          timeout: 5_000
+        )
+
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> check("Serve a backup client", exact: false)
+      |> click_button("#makeBackupToken", "Create a token")
+      |> assert_has("#backupToken")
+      |> uncheck("Serve a backup client", exact: false)
+      |> assert_has("#setBackupNote", text: "answers nothing")
+      |> check("Serve a backup client", exact: false)
+      |> assert_has("#setBackupNote", text: "may fetch")
+      |> click_button("#copyBackupToken", "Copy")
+      |> assert_has("#copyBackupToken", text: "Copied")
+      |> evaluate(@writes, [is_function: true], &assert(&1 == 1))
+    end
+
     test "a new token takes the old one out of service, once it is confirmed", %{conn: conn} do
       session =
         conn

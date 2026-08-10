@@ -709,9 +709,6 @@
   /* the second group start inside a settings block */
   .drow.gtop { margin-top: 14px; padding-top: 9px; }
 
-  /* a picture's radius, for markup written by the image panel */
-  .r-img { border-radius: var(--tt-radius-img); }
-
   /* the thin progress bar of a running upload */
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
   .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
@@ -741,10 +738,16 @@
   .inrow .say, .inrow .track { grid-column: 2 / -1; }
   .inrow .act { display: flex; gap: 6px; justify-content: flex-end; }
   /* in a narrow pane the markdown goes under the name instead of
-     halving a column that is already too narrow to read */
+     halving a column that is already too narrow to read. Everything
+     that is not the thumbnail or the name then runs from the name's
+     column to the end: without that, the grid drops the buttons into
+     the 36px column of the thumbnail, where Retry, Remove and Cancel
+     stand off the left edge of a phone and cannot be pressed. They
+     are the only way out of a stopped upload. */
   @media (max-width: 900px) {
     .inrow { grid-template-columns: 36px minmax(0, 1fr); }
-    .inrow .raw { grid-column: 2; }
+    .inrow .raw, .inrow .act { grid-column: 2 / -1; }
+    .inrow .act { justify-content: flex-start; }
   }
 
   /* While a full-screen overlay is open, the topbar's backdrop-filter

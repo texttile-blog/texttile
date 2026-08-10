@@ -413,6 +413,40 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       end)
     end
 
+    # An upload that stopped is a dead end without Retry and Remove,
+    # and a running one without Cancel. On a phone the narrow grid used
+    # to drop them into the 36px column of the thumbnail, where they
+    # stood off the left edge of the screen.
+    @stopped_actions """
+    () => {
+      const row = document.querySelector("#inlineImgs .inrow .act")
+      const buttons = [...row.querySelectorAll("button")].map(b => b.getBoundingClientRect())
+      return [row.getBoundingClientRect().width,
+              Math.min(...buttons.map(b => b.left)),
+              Math.max(...buttons.map(b => b.right)),
+              window.innerWidth]
+    }
+    """
+
+    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    test "the way out of a stopped upload is on the screen of a phone", %{conn: conn} do
+      %{id: id} =
+        Texttile.ArticlesFixtures.published_post(
+          title: "Stopped",
+          body: "One ![Upload failed: pier.jpg]() here."
+        )
+
+      conn
+      |> sign_in()
+      |> open_editor(id)
+      |> assert_has("#inlineImgs", text: "pier.jpg")
+      |> evaluate(@stopped_actions, [is_function: true], fn [width, left, right, screen] ->
+        assert width > 100
+        assert left >= 0
+        assert right <= screen
+      end)
+    end
+
     test "the share lines wear the clothes of the pane", %{conn: conn} do
       article = Texttile.ArticlesFixtures.published_post(title: "Handed on")
 
