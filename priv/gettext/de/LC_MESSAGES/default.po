@@ -397,7 +397,7 @@ msgstr "Ein Kommentar fasst höchstens %{count} Zeichen. Es wurde nichts gespeic
 msgid "A comment needs some words. Nothing was saved."
 msgstr "Ein Kommentar braucht ein paar Worte. Es wurde nichts gespeichert."
 
-#: lib/texttile_web/controllers/session_html.ex:160
+#: lib/texttile_web/controllers/session_html.ex:169
 #, elixir-autogen, elixir-format
 msgid "A confirmation mail goes to your address: which site, which username. It never contains the password, and no mail ever will. If you forget the password, the sign-in screen mails your address a link that sets a new one."
 msgstr "Eine Bestätigung geht an deine Adresse: welche Site, welcher Benutzername. Sie enthält nie das Passwort, und keine Mail wird das je tun. Wenn du das Passwort vergisst, schickt die Anmeldeseite dir einen Link, mit dem du ein neues setzt."
@@ -567,7 +567,7 @@ msgstr "Einstellungen des Eintrags"
 msgid "Ask for a new one and it arrives in the same inbox. The old link stays dead."
 msgstr "Fordere einen neuen an, er kommt in dasselbe Postfach. Der alte Link bleibt tot."
 
-#: lib/texttile_web/controllers/session_html.ex:114
+#: lib/texttile_web/controllers/session_html.ex:123
 #, elixir-autogen, elixir-format
 msgid "At least 12 characters."
 msgstr "Mindestens 12 Zeichen."
@@ -665,7 +665,7 @@ msgstr "Hier änderst du deine Adresse, dein Passwort und deine offenen Sitzunge
 msgid "Change your own displayed name, address and password on"
 msgstr "Deinen angezeigten Namen, deine Adresse und dein Passwort änderst du in"
 
-#: lib/texttile_web/controllers/session_html.ex:73
+#: lib/texttile_web/controllers/session_html.ex:82
 #: lib/texttile_web/live/settings_live.ex:985
 #, elixir-autogen, elixir-format
 msgid "Choose a password"
@@ -745,7 +745,7 @@ msgstr "Gezählt allein von diesem Server. Kein Cookie, kein Fingerabdruck, kein
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party. The whole blog is on the"
 msgstr "Gezählt allein von diesem Server. Kein Cookie, kein Fingerabdruck, kein Dritter. Das ganze Blog steht auf der"
 
-#: lib/texttile_web/controllers/session_html.ex:156
+#: lib/texttile_web/controllers/session_html.ex:165
 #, elixir-autogen, elixir-format
 msgid "Create the account and sign in"
 msgstr "Konto anlegen und anmelden"
@@ -855,7 +855,7 @@ msgstr "Details"
 msgid "Discard"
 msgstr "Verwerfen"
 
-#: lib/texttile_web/controllers/session_html.ex:144
+#: lib/texttile_web/controllers/session_html.ex:153
 #: lib/texttile_web/live/profile_live.ex:172
 #, elixir-autogen, elixir-format
 msgid "Displayed name"
@@ -907,7 +907,7 @@ msgid "Email"
 msgstr "E-Mail"
 
 #: lib/texttile_web/controllers/link_html.ex:117
-#: lib/texttile_web/controllers/session_html.ex:130
+#: lib/texttile_web/controllers/session_html.ex:139
 #, elixir-autogen, elixir-format
 msgid "Email address"
 msgstr "E-Mail-Adresse"
@@ -1006,7 +1006,7 @@ msgstr "Februar"
 msgid "Filter by status"
 msgstr "Nach Status filtern"
 
-#: lib/texttile_web/controllers/session_html.ex:71
+#: lib/texttile_web/controllers/session_html.ex:80
 #, elixir-autogen, elixir-format
 msgid "First sign-in · %{host}"
 msgstr "Erste Anmeldung · %{host}"
@@ -1016,7 +1016,7 @@ msgstr "Erste Anmeldung · %{host}"
 msgid "Follows the old address, in a new tab"
 msgstr "Folgt der alten Adresse, in einem neuen Tab"
 
-#: lib/texttile_web/controllers/session_html.ex:54
+#: lib/texttile_web/controllers/session_html.ex:63
 #, elixir-autogen, elixir-format
 msgid "Forgot your password?"
 msgstr "Passwort vergessen?"
@@ -1634,7 +1634,7 @@ msgid "Pagination"
 msgstr "Blättern"
 
 #: lib/texttile_web/controllers/session_html.ex:34
-#: lib/texttile_web/controllers/session_html.ex:91
+#: lib/texttile_web/controllers/session_html.ex:100
 #: lib/texttile_web/controllers/site_html/unlock.html.heex:21
 #: lib/texttile_web/live/profile_live.ex:228
 #, elixir-autogen, elixir-format
@@ -1832,7 +1832,7 @@ msgstr "Entfernen"
 msgid "Remove the address"
 msgstr "Adresse entfernen"
 
-#: lib/texttile_web/controllers/session_html.ex:103
+#: lib/texttile_web/controllers/session_html.ex:112
 #, elixir-autogen, elixir-format
 msgid "Repeat the password"
 msgstr "Passwort wiederholen"
@@ -1986,7 +1986,7 @@ msgid "Share"
 msgstr "Teilen"
 
 #: lib/texttile_web/controllers/link_html.ex:44
-#: lib/texttile_web/controllers/session_html.ex:126
+#: lib/texttile_web/controllers/session_html.ex:135
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr "Zeigen"
@@ -1996,14 +1996,14 @@ msgstr "Zeigen"
 msgid "Show all entries"
 msgstr "Alle Einträge zeigen"
 
-#: lib/texttile_web/controllers/session_html.ex:42
+#: lib/texttile_web/controllers/session_html.ex:51
 #: lib/texttile_web/controllers/site_html.ex:89
 #: lib/texttile_web/controllers/site_html.ex:90
 #, elixir-autogen, elixir-format
 msgid "Sign in"
 msgstr "Anmelden"
 
-#: lib/texttile_web/controllers/session_html.ex:166
+#: lib/texttile_web/controllers/session_html.ex:175
 #, elixir-autogen, elixir-format
 msgid "Sign in with another name"
 msgstr "Mit einem anderen Namen anmelden"
@@ -2332,7 +2332,7 @@ msgstr "Die Zeilen zum Weitergeben"
 msgid "The mail is on its way, if an account uses that address. Open it and follow the link."
 msgstr "Die Mail ist unterwegs, sofern ein Konto diese Adresse benutzt. Öffne sie und folge dem Link."
 
-#: lib/texttile_web/controllers/session_html.ex:76
+#: lib/texttile_web/controllers/session_html.ex:85
 #, elixir-autogen, elixir-format
 msgid "The name"
 msgstr "Der Name"
@@ -2402,7 +2402,7 @@ msgstr "Der Upload ist fehlgeschlagen (%{reason})"
 msgid "The upload stopped at %{pct}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text."
 msgstr "Der Upload blieb bei %{pct}% stehen, die Datei hat den Server also nie erreicht. Der Text behält eine Markierung an der Stelle, an die das Bild gehört. Erneut versuchen schickt dieselbe Datei noch einmal. Entfernen nimmt die Markierung aus dem Text."
 
-#: lib/texttile_web/controllers/session_html.ex:48
+#: lib/texttile_web/controllers/session_html.ex:57
 #, elixir-autogen, elixir-format
 msgid "The username and the password do not match."
 msgstr "Benutzername und Passwort passen nicht zusammen."
@@ -2485,7 +2485,7 @@ msgstr "Das lässt sich nicht rückgängig machen. Damit es das Schlagwort wiede
 msgid "There is no undo. While the name stands in ADMIN_USERS, its owner can sign in again and choose a fresh password."
 msgstr "Das lässt sich nicht rückgängig machen. Solange der Name in ADMIN_USERS steht, kann seine Inhaberin oder sein Inhaber sich wieder anmelden und ein frisches Passwort wählen."
 
-#: lib/texttile_web/controllers/session_html.ex:51
+#: lib/texttile_web/controllers/session_html.ex:60
 #, elixir-autogen, elixir-format
 msgid "This account already exists. Sign in with its password."
 msgstr "Dieses Konto gibt es schon. Melde dich mit seinem Passwort an."
@@ -2550,7 +2550,7 @@ msgstr "Das bist du"
 msgid "This page becomes the front door. The blog list keeps /blog either way."
 msgstr "Diese Seite wird die Eingangstür. Die Blogliste bleibt so oder so unter /blog."
 
-#: lib/texttile_web/controllers/session_html.ex:57
+#: lib/texttile_web/controllers/session_html.ex:66
 #, elixir-autogen, elixir-format
 msgid "This page is for admins. Readers never see it, and there is no public registration. The people who may sign in stand in the configuration of this server. Each of them chooses a password at the first sign-in. Your username is the name you sign in with. Your email address is what a password link needs. You give it at the first sign-in and can change it in your profile."
 msgstr "Diese Seite ist für Admins. Lesende sehen sie nie, und eine öffentliche Registrierung gibt es nicht. Wer sich anmelden darf, steht in der Konfiguration dieses Servers. Jede und jeder wählt bei der ersten Anmeldung ein Passwort. Dein Benutzername ist der Name, mit dem du dich anmeldest. Deine E-Mail-Adresse braucht ein Passwort-Link. Du gibst sie bei der ersten Anmeldung an und kannst sie in deinem Profil ändern."
@@ -2606,7 +2606,7 @@ msgstr "Art"
 msgid "Type the email address of your account. A link to set a new password goes to that address."
 msgstr "Gib die E-Mail-Adresse deines Kontos ein. An diese Adresse geht ein Link, mit dem du ein neues Passwort setzt."
 
-#: lib/texttile_web/controllers/session_html.ex:45
+#: lib/texttile_web/controllers/session_html.ex:54
 #, elixir-autogen, elixir-format
 msgid "Type your username and your password. Both fields are required."
 msgstr "Gib deinen Benutzernamen und dein Passwort ein. Beide Felder sind nötig."
@@ -2736,12 +2736,12 @@ msgstr "Was sich geändert hat gegenüber der Version vom"
 msgid "What others see. Empty falls back to the username."
 msgstr "Was andere sehen. Leer fällt auf den Benutzernamen zurück."
 
-#: lib/texttile_web/controllers/session_html.ex:153
+#: lib/texttile_web/controllers/session_html.ex:162
 #, elixir-autogen, elixir-format
 msgid "What readers see. Empty shows your username."
 msgstr "Was Lesende sehen. Leer zeigt deinen Benutzernamen."
 
-#: lib/texttile_web/controllers/session_html.ex:140
+#: lib/texttile_web/controllers/session_html.ex:149
 #, elixir-autogen, elixir-format
 msgid "Where a password reset goes. No account exists without one."
 msgstr "Wohin ein neues Passwort geht. Ohne Adresse gibt es kein Konto."
@@ -2942,7 +2942,7 @@ msgstr "endgültig weg am"
 msgid "goes live %{date}"
 msgstr "geht live am %{date}"
 
-#: lib/texttile_web/controllers/session_html.ex:77
+#: lib/texttile_web/controllers/session_html.ex:86
 #, elixir-autogen, elixir-format
 msgid "has no account yet. The password you type here becomes its password, and the account is yours from then on."
 msgstr "hat noch kein Konto. Das Passwort, das du hier eingibst, wird sein Passwort, und das Konto gehört von da an dir."
@@ -3670,3 +3670,13 @@ msgstr "Jetzt die Kopiertaste drücken"
 #, elixir-autogen, elixir-format
 msgid "Website, if you have one"
 msgstr "Website, falls du eine hast"
+
+#: lib/texttile_web/controllers/session_html.ex:48
+#, elixir-autogen, elixir-format
+msgid "Fourteen days instead of two."
+msgstr "Vierzehn Tage statt zwei."
+
+#: lib/texttile_web/controllers/session_html.ex:47
+#, elixir-autogen, elixir-format
+msgid "Stay signed in on this browser"
+msgstr "Auf diesem Browser angemeldet bleiben"
