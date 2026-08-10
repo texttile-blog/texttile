@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <%!-- the browser's own chrome sits against the topbar, so it wears
-         the topbar's colour, not the page's --%>
-    <meta name="theme-color" content={Texttile.Settings.theme_color()} />
+         the topbar's colour, not the page's. In the admin area that is
+         the solid violet, so the chrome on a phone is the admin area
+         as well. --%>
+    <meta name="theme-color" content={Texttile.Settings.admin_theme_color()} />
     <.live_title default={site_title()} suffix={" · " <> site_title()} phx-no-format>{assigns[:page_title]}</.live_title>
     <.favicon_link />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />

@@ -14,7 +14,7 @@ defmodule TexttileWeb.SessionHTML do
         as={:user}
         action={~p"/login"}
         id="login-form"
-        class="quiet-fields mt-[26px]"
+        class="mt-[26px]"
       >
         <div class="mb-[15px]">
           <label class="lab block mb-0" for="login-username">{gettext("Username")}</label>
@@ -101,7 +101,7 @@ defmodule TexttileWeb.SessionHTML do
         as={:user}
         action={~p"/login/claim"}
         id="claim-form"
-        class="quiet-fields mt-[18px]"
+        class="mt-[18px]"
       >
         <input type="hidden" name="user[username]" value={@username} />
         <div class="mb-[15px]">

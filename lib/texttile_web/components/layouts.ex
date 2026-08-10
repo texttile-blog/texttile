@@ -165,7 +165,6 @@ defmodule TexttileWeb.Layouts do
     <header
       id="topbar"
       class="sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] px-[10px] md:px-4 border-b border-rule backdrop-blur-[8px] backdrop-saturate-150"
-      style="background:var(--tt-bar)"
       role="banner"
     >
       <span class="relative flex-none">

@@ -20,7 +20,7 @@ defmodule TexttileWeb.LinkHTML do
         as={:user}
         action={~p"/link/#{@token}"}
         id="set-password-form"
-        class="quiet-fields mt-[18px]"
+        class="mt-[18px]"
       >
         <div class="mb-[7px]">
           <label class="lab block mb-0" for="link-password">{gettext("New password")}</label>
@@ -111,7 +111,7 @@ defmodule TexttileWeb.LinkHTML do
           as={:user}
           action={~p"/forgot"}
           id="forgot-form"
-          class="quiet-fields mt-[18px]"
+          class="mt-[18px]"
         >
           <div class="mb-[15px]">
             <label class="lab block mb-0" for="forgot-email">{gettext("Email address")}</label>
