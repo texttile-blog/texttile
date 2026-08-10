@@ -68,6 +68,29 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> assert_has("#backupTokenState", text: "A token is in service")
     end
 
+    # The word is shown once and has to reach a configuration file
+    # somewhere else, so it is handed over the way the share lines are:
+    # touching it picks all of it, and Copy says what it did.
+    @token_selected """
+    () => {
+      const field = document.querySelector("#backupToken")
+      field.focus()
+      return field.selectionEnd - field.selectionStart === field.value.length
+    }
+    """
+
+    test "the token is picked whole by a touch, and Copy says it copied", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> check("Serve a backup client", exact: false)
+      |> click_button("#makeBackupToken", "Create a token")
+      |> assert_has("#backupToken")
+      |> evaluate(@token_selected, [is_function: true], &assert(&1 == true))
+      |> click_button("#copyBackupToken", "Copy")
+      |> assert_has("#copyBackupToken", text: "Copied")
+    end
+
     test "a new token takes the old one out of service, once it is confirmed", %{conn: conn} do
       session =
         conn

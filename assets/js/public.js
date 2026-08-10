@@ -166,6 +166,23 @@ addEventListener("keydown", (e) => {
   grow();
 })();
 
+// Share hands the page to the sheet the browser opens itself: the one
+// on a phone, the one on a Mac. Nothing is loaded for it, and no other
+// site hears of it.
+//
+// A browser without a sheet has nothing to offer, so there the word
+// stays hidden and the foot keeps the two links it always had. The
+// sheet only opens on a click, and a reader who dismisses it leaves an
+// AbortError behind, which is not a failure and says nothing.
+(function () {
+  const button = document.getElementById("foot-share");
+  if (!button || !navigator.share) return;
+  button.hidden = false;
+  button.addEventListener("click", () => {
+    navigator.share({ title: document.title, url: location.href }).catch(() => {});
+  });
+})();
+
 // The page says it: the script is up and its listeners stand. The
 // gallery block says the same thing about its own half, and the
 // browser tests wait for both before they act. Nothing on the page

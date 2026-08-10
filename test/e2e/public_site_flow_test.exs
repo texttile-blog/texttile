@@ -244,5 +244,46 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> assert_has("#foot-signin")
       |> evaluate(@foot_pad, [is_function: true], &assert(&1 >= 24))
     end
+
+    # The sheet belongs to the browser. This one has none, so the word
+    # is not offered: a button that answers nothing is worse than no
+    # button. The next test puts a sheet in and gets the word.
+    @share_hidden """
+    () => document.getElementById("foot-share").hidden
+    """
+
+    test "offers no Share where the browser has no sheet", %{conn: conn} do
+      conn
+      |> open_page("/")
+      |> evaluate(@share_hidden, [is_function: true], &assert(&1 == true))
+    end
+
+    # A browser with a sheet, put in before the page's own script runs,
+    # the way the browsers that have one do it.
+    @a_sheet """
+    navigator.share = (data) => { window.__shared = data; return Promise.resolve() }
+    """
+
+    @what_was_shared """
+    () => [window.__shared && window.__shared.url, window.__shared && window.__shared.title]
+    """
+
+    test "hands the page to the sheet the browser opens", %{conn: conn} do
+      published_post(title: "Harbor mornings", slug: "harbor", publish_date: ~D[2026-03-01])
+
+      {:ok, _} =
+        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+          source: @a_sheet,
+          timeout: 5_000
+        )
+
+      conn
+      |> open_page("/2026/03/01/harbor")
+      |> click_button("#foot-share", "Share")
+      |> evaluate(@what_was_shared, [is_function: true], fn [url, title] ->
+        assert url =~ "/2026/03/01/harbor"
+        assert title =~ "Harbor mornings"
+      end)
+    end
   end
 end

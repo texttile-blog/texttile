@@ -95,8 +95,10 @@
   .num { font-variant-numeric: tabular-nums; }
   b, strong { font-weight: 600; }
 
-    /* presence dots */
-  .live { animation: pulse 2.2s ease-in-out infinite; }
+    /* presence dots. The dot pulses, and only the dot: the word for
+       the state of an entry wears `live` too, and a word that fades in
+       and out reads as a warning where it states a fact. */
+  .dot.live { animation: pulse 2.2s ease-in-out infinite; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }

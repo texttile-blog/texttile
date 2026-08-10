@@ -1288,17 +1288,33 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </.form>
 
-          <div class="drow">
-            <span class="lab">{gettext("Token")}</span>
+          <%!-- The word is shown once and has to reach a configuration
+               file somewhere else, so it is handed over the way the
+               editor hands over the lines of an entry: touching it
+               picks all of it, and Copy says what it did. --%>
+          <div class="drow" id="backupTokenRow" phx-hook="CopyOut">
+            <span class="labrow">
+              <span class="lab">{gettext("Token")}</span>
+              <button
+                :if={@backup_token}
+                type="button"
+                class="link"
+                id="copyBackupToken"
+                data-copy
+              >
+                {gettext("Copy")}
+              </button>
+            </span>
             <span class="val">
               <%= if @backup_token do %>
-                <code
+                <textarea
                   id="backupToken"
-                  class="block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
+                  class="sharelines block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
                   style="border-radius: var(--tt-radius); border: 1px solid var(--tt-rule)"
-                >
-                  {@backup_token}
-                </code>
+                  readonly
+                  spellcheck="false"
+                  aria-label={gettext("The backup token")}
+                >{@backup_token}</textarea>
                 <p class="note mt-[6px]">
                   {gettext(
                     "Write it into the configuration of your backup machine now. It is never shown again."

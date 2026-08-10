@@ -943,6 +943,15 @@ defmodule TexttileWeb.EditorLive do
   # The one address of an admin thumbnail, at the edge Images names.
   defp thumb(relative), do: "/renditions/#{Images.thumb_edge()}/#{relative}"
 
+  # What a row of the file list shows for a reference: the still of a
+  # converted film, the picture itself, or nothing while ffmpeg is
+  # still working - then the empty box of the row stands for it.
+  defp media_thumb(%{still: still}, _url) when is_binary(still),
+    do: thumb_url("/uploads/" <> still)
+
+  defp media_thumb(nil, url), do: thumb_url(url)
+  defp media_thumb(_media, _url), do: nil
+
   # What every video of this text shows and how far it is, in one
   # query: the tiles of the gallery and the references in the words.
   defp media(%{article: article, gallery: gallery}) do
@@ -1747,75 +1756,60 @@ defmodule TexttileWeb.EditorLive do
                     <%!-- a picture, or a video ffmpeg is through with:
                          the still stands for it. A video that is not
                          converted yet says where it stands instead. --%>
-                    <div
-                      :if={ref.kind == :done}
-                      class="flex items-center gap-[11px] py-[9px] border-b border-hair text-[13px]"
-                    >
+                    <div :if={ref.kind == :done} class="inrow">
                       <span
-                        :if={media && media.still}
-                        class="w-9 h-9 r-img bg-field bg-center bg-cover flex-none"
-                        style={"background-image:url('#{thumb_url("/uploads/" <> media.still)}')"}
+                        class="th"
+                        style={
+                          media_thumb(media, ref.url) &&
+                            "background-image:url('#{media_thumb(media, ref.url)}')"
+                        }
                       >
                       </span>
-                      <span :if={media && !media.still} class="w-9 h-9 r-img bg-field flex-none">
+                      <span class="nm">
+                        {ref.file}
+                        <span :if={media && conversion_note(media)} class="note">
+                          {conversion_note(media)}
+                        </span>
                       </span>
-                      <span
-                        :if={!media}
-                        class="w-9 h-9 r-img bg-field bg-center bg-cover flex-none"
-                        style={"background-image:url('#{thumb_url(ref.url)}')"}
-                      >
-                      </span>
-                      <span class="font-semibold flex-none">{ref.file}</span>
-                      <span :if={media && conversion_note(media)} class="note">
-                        {conversion_note(media)}
-                      </span>
-                      <span class="sp"></span>
-                      <span class="text-faint text-[12px] break-words">{ref.raw}</span>
+                      <span class="raw">{ref.raw}</span>
                     </div>
-                    <div :if={ref.kind == :failed} class="py-[9px] border-b border-hair text-[13px]">
-                      <div class="flex items-center gap-[11px] flex-wrap">
-                        <span class="w-9 h-9 r-img bg-field flex-none"></span>
-                        <span class="font-semibold flex-none text-julia">{ref.file}</span>
-                        <span class="sp"></span>
-                        <%= if @holds_lock do %>
-                          <button class="btn sm" data-img-action="retry" data-img-file={ref.file}>
-                            {gettext("Retry")}
-                          </button>
-                          <button class="btn sm" data-img-action="remove" data-img-file={ref.file}>
-                            {gettext("Remove")}
-                          </button>
-                        <% end %>
-                      </div>
-                      <p class="note mt-[5px] max-w-[62ch]">
+                    <div :if={ref.kind == :failed} class="inrow">
+                      <span class="th"></span>
+                      <span class="nm text-julia">{ref.file}</span>
+                      <span :if={@holds_lock} class="act">
+                        <button class="btn sm" data-img-action="retry" data-img-file={ref.file}>
+                          {gettext("Retry")}
+                        </button>
+                        <button class="btn sm" data-img-action="remove" data-img-file={ref.file}>
+                          {gettext("Remove")}
+                        </button>
+                      </span>
+                      <p class="note say max-w-[62ch]">
                         {gettext(
                           "The upload stopped at %{pct}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text.",
                           pct: @upload_pcts[ref.file] || 0
                         )}
                       </p>
                     </div>
-                    <div :if={ref.kind == :running} class="py-[9px] border-b border-hair text-[13px]">
-                      <div class="flex items-center gap-[11px] flex-wrap">
-                        <span class="w-9 h-9 r-img bg-field flex-none"></span>
-                        <span class="font-semibold flex-none">{ref.file}</span>
+                    <div :if={ref.kind == :running} class="inrow">
+                      <span class="th"></span>
+                      <span class="nm">
+                        {ref.file}
                         <span class="note num">
                           {if (@upload_pcts[ref.file] || 0) == 0,
                             do: gettext("queued"),
                             else: gettext("uploading %{pct}%", pct: @upload_pcts[ref.file])}
                         </span>
-                        <span class="sp"></span>
-                        <button
-                          :if={@holds_lock}
-                          class="btn sm"
-                          data-img-action="cancel"
-                          data-img-file={ref.file}
-                        >
+                      </span>
+                      <span :if={@holds_lock} class="act">
+                        <button class="btn sm" data-img-action="cancel" data-img-file={ref.file}>
                           {gettext("Cancel")}
                         </button>
-                      </div>
-                      <span class="track mt-[7px]">
+                      </span>
+                      <span class="track">
                         <i style={"width:#{@upload_pcts[ref.file] || 0}%"}></i>
                       </span>
-                      <p class="note mt-[5px]">
+                      <p class="note say">
                         {gettext(
                           "The text holds the place. The marker becomes the image when the upload finishes."
                         )}
@@ -2526,13 +2520,16 @@ defmodule TexttileWeb.EditorLive do
       :if={@show_password? or @share_text}
       class="drow gtop"
       id="shareBlock"
-      phx-hook=".CopyShare"
+      phx-hook="CopyOut"
     >
       <span class="labrow">
         <span class="lab">{gettext("Share")}</span>
         <%!-- the button says what it did; a word beside it would push
-             the button itself out of the way --%>
-        <button :if={@share_text} type="button" class="link" data-copy>{gettext("Copy")}</button>
+             the button itself out of the way. `CopyOut` wires it, and
+             Settings hands over the backup token with the same hook. --%>
+        <button :if={@share_text} type="button" class="link" id="copyShare" data-copy>
+          {gettext("Copy")}
+        </button>
       </span>
 
       <%!-- the lines read like every other value in this column: the
@@ -2567,41 +2564,6 @@ defmodule TexttileWeb.EditorLive do
         </span>
       </div>
     </div>
-
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".CopyShare">
-      export default {
-        mounted() { this.wire() },
-        updated() { this.wire() },
-        wire() {
-          const button = this.el.querySelector("[data-copy]")
-          const field = this.el.querySelector("textarea")
-          /* The lines are there to be handed on whole, never edited, so
-             touching them picks all of them: one click and one key,
-             for whoever does not reach for the Copy button. `focus`
-             and not `click`, so the keyboard gets the same. */
-          if (field && !field.dataset.wired) {
-            field.dataset.wired = "1"
-            field.addEventListener("focus", () => field.select())
-          }
-          if (!button || button.dataset.wired) return
-          button.dataset.wired = "1"
-          button.addEventListener("click", async () => {
-            try {
-              await navigator.clipboard.writeText(field.value)
-            } catch (_error) {
-              // No clipboard permission, and no browser offers one on
-              // plain http. The words are selected instead, so one key
-              // still copies them.
-              field.select()
-            }
-            // the button answers for itself, the way Save version does
-            button.textContent = "Copied"
-            clearTimeout(this.timer)
-            this.timer = setTimeout(() => { button.textContent = "Copy" }, 2200)
-          })
-        }
-      }
-    </script>
     """
   end
 
