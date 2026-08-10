@@ -22,8 +22,15 @@ defmodule Texttile.GalleryTest do
 
     {:ok, black} = Vix.Vips.Operation.black(width, height)
 
+    # Two black rectangles of one size are the same file byte for byte,
+    # and an entry takes each picture once. Every source is its own
+    # picture unless a test asks two of them to share a mark.
+    mark = Keyword.get_lazy(opts, :mark, fn -> "one-#{System.unique_integer([:positive])}" end)
+
     {:ok, image} =
       Vix.Vips.Image.mutate(black, fn mut ->
+        :ok = Vix.Vips.MutableImage.set(mut, "exif-ifd0-ImageDescription", :gchararray, mark)
+
         if taken = opts[:taken] do
           :ok = Vix.Vips.MutableImage.set(mut, "exif-ifd2-DateTimeOriginal", :gchararray, taken)
         end
@@ -109,6 +116,62 @@ defmodule Texttile.GalleryTest do
 
       assert_receive {:gallery_changed, ^article_id,
                       %{action: :added, image_id: ^image_id, by: ^user_id}}
+    end
+  end
+
+  # An entry takes each picture once. The bytes decide, not the name:
+  # the same photograph under another name is the same photograph.
+  describe "the same picture twice" do
+    test "is refused, and the answer names the tile it already is" do
+      {article, _user} = article!()
+      source = source_jpg()
+      {:ok, _first} = Gallery.add_file(article, source, "Pier Lantern.jpg")
+
+      assert {:error, {:duplicate, "Pier Lantern.jpg"}} =
+               Gallery.add_file(article, source, "another name.jpg")
+
+      assert [_only_one] = Gallery.list(article.id)
+    end
+
+    test "is refused when the picture stands inside the text" do
+      {article, user} = article!()
+      {:ok, stored} = Uploads.put_body_image(source_jpg(mark: "the same one"), "pier.jpg")
+      {:ok, article} = Articles.update_text(article, %{body: "![pier](/uploads/#{stored})"})
+
+      assert {:error, {:duplicate, name}} =
+               Gallery.add_file(article, source_jpg(mark: "the same one"), "pier.jpg",
+                 by: user.id
+               )
+
+      assert name == Path.basename(stored)
+    end
+
+    test "another entry may hold the same picture" do
+      {mine, _user} = article!()
+      {theirs, _other} = article!()
+      source = source_jpg()
+
+      {:ok, _} = Gallery.add_file(mine, source, "pier.jpg")
+
+      assert {:ok, _} = Gallery.add_file(theirs, source, "pier.jpg")
+    end
+
+    test "a tile in its undo window is out of the way at once" do
+      {article, _user} = article!()
+      source = source_jpg()
+      {:ok, image} = Gallery.add_file(article, source, "pier.jpg")
+      {:ok, _} = Gallery.delete(article.id, image.id)
+
+      assert {:ok, _} = Gallery.add_file(article, source, "pier.jpg")
+    end
+
+    test "a film is taken as it comes, however often" do
+      {article, _user} = article!()
+      video = Texttile.VideoFixtures.video_file(320, 240)
+
+      {:ok, _} = Gallery.add_file(article, video, "harbour.mov")
+
+      assert {:ok, _} = Gallery.add_file(article, video, "harbour.mov")
     end
   end
 

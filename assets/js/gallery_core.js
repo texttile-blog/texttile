@@ -241,6 +241,14 @@ class Gallery {
         record.serverId = String(xhr.response.id)
         record.done = true
         this.settleDone()
+      } else if (xhr.status === 409 && xhr.response && xhr.response.error) {
+        /* the picture is in this entry already: nothing failed, and a
+           retry would answer the same. The tile has room for three
+           words, so the row above it carries the sentence. */
+        record.status = "failed"
+        record.noRetry = true
+        record.error = t("already here")
+        this.noteTile(xhr.response.error)
       } else {
         record.status = "failed"
         record.error = (xhr.response && xhr.response.error) || t("upload failed")

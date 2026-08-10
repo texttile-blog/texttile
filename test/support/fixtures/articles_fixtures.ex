@@ -72,11 +72,25 @@ defmodule Texttile.ArticlesFixtures do
     {article, user}
   end
 
-  @doc "A small real JPEG in a temp place, for gallery fixtures."
-  def jpg_fixture do
-    path = Path.join(System.tmp_dir!(), "public-#{System.unique_integer([:positive])}.jpg")
+  @doc """
+  A small real JPEG in a temp place, for gallery fixtures.
+
+  Two black rectangles of one size are the same file byte for byte, and
+  an entry takes each picture once. Every fixture is its own picture
+  unless a test asks two of them to share a `mark:`.
+  """
+  def jpg_fixture(opts \\ []) do
+    one = System.unique_integer([:positive])
+    path = Path.join(System.tmp_dir!(), "public-#{one}.jpg")
+    mark = Keyword.get(opts, :mark, "one-#{one}")
     {:ok, black} = Vix.Vips.Operation.black(20, 10)
-    :ok = Vix.Vips.Image.write_to_file(black, path)
+
+    {:ok, image} =
+      Vix.Vips.Image.mutate(black, fn mut ->
+        Vix.Vips.MutableImage.set(mut, "exif-ifd0-ImageDescription", :gchararray, mark)
+      end)
+
+    :ok = Vix.Vips.Image.write_to_file(image, path)
     path
   end
 end

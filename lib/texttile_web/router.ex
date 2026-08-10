@@ -85,7 +85,9 @@ defmodule TexttileWeb.Router do
 
     # The editor's image uploads: the body holds a token while the file
     # travels here, and the answer is the address the token becomes.
-    post "/images", ImagesController, :create
+    # The entry is in the address, because an entry takes each picture
+    # once and the server has to know whose picture this is.
+    post "/texts/:id/images", ImagesController, :create
 
     # The gallery's uploads: one file per request, the tile queue in
     # the browser feeds them one after the other.

@@ -11,7 +11,11 @@ defmodule Texttile.Uploads do
       cache/   renditions, disposable (see Texttile.Images)
   """
 
+  import Ecto.Query
+
+  alias Texttile.Repo
   alias Texttile.Settings
+  alias Texttile.Uploads.Digest
 
   @doc "The uploads root from the install config."
   def root do
@@ -234,6 +238,9 @@ defmodule Texttile.Uploads do
   (`Texttile.Images`). The stored name keeps the readable base of the
   original plus a random tag, so names never collide and the file may
   be cached hard.
+
+  What the file is made of is remembered with it, so an entry can take
+  each picture once (`duplicate/2`).
   """
   def put_body_image(source_path, original_name) do
     store(source_path, original_name,
@@ -241,6 +248,7 @@ defmodule Texttile.Uploads do
       extensions: @body_image_extensions,
       fallback: "image",
       refusal: "PNG, JPG, WebP or GIF, please",
+      remember: true,
       readable: fn path ->
         if readable_image?(path),
           do: :ok,
@@ -285,6 +293,7 @@ defmodule Texttile.Uploads do
       destination = absolute(relative)
       File.mkdir_p!(Path.dirname(destination))
       File.cp!(source_path, destination)
+      if opts[:remember], do: remember(relative, digest(destination))
       {:ok, relative}
     end
   end
@@ -299,6 +308,75 @@ defmodule Texttile.Uploads do
 
   # Stored names carry this, so they never collide and may be cached hard.
   defp random_tag, do: 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+
+  ## What a picture is made of
+
+  # Big enough that a photograph is a handful of reads, small enough
+  # that nothing sits in memory.
+  @digest_chunk 2_097_152
+
+  @doc """
+  The SHA-256 of the bytes at `path`, as hex, or nil when the file is
+  not there. Two files with the same one are the same picture, whatever
+  they are called.
+  """
+  def digest(path) do
+    path
+    |> File.stream!(@digest_chunk)
+    |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
+    |> :crypto.hash_final()
+    |> Base.encode16(case: :lower)
+  rescue
+    File.Error -> nil
+  end
+
+  @doc """
+  The path among `paths` that is the same picture as `digest`, or nil.
+
+  A path this has never seen is read once and remembered, so the
+  pictures that were on disk before this table existed join it the
+  first time their entry takes an upload. Nothing walks the volume.
+  """
+  def duplicate(digest, paths) when is_binary(digest) do
+    paths
+    |> known(digest)
+    |> Enum.find_value(fn {path, stored} -> if stored == digest, do: path end)
+  end
+
+  def duplicate(_digest, _paths), do: nil
+
+  defp known(paths, _digest) do
+    paths = Enum.uniq(paths)
+    stored = Repo.all(from d in Digest, where: d.path in ^paths, select: {d.path, d.digest})
+    missing = paths -- Enum.map(stored, &elem(&1, 0))
+
+    stored ++ Enum.flat_map(missing, &catch_up/1)
+  end
+
+  # A picture nobody has read yet. Only pictures: a film is stored as
+  # it came and never opened here.
+  defp catch_up(relative) do
+    with true <- in_dir?(relative, images_dir()),
+         digest when is_binary(digest) <- digest(absolute(relative)) do
+      remember(relative, digest)
+      [{relative, digest}]
+    else
+      _ -> []
+    end
+  end
+
+  defp remember(_relative, nil), do: :ok
+
+  defp remember(relative, digest) do
+    Repo.insert!(%Digest{path: relative, digest: digest},
+      on_conflict: [set: [digest: digest]],
+      conflict_target: :path
+    )
+
+    :ok
+  end
+
+  defp forget(relative), do: Repo.delete_all(from d in Digest, where: d.path == ^relative)
 
   @doc """
   Removes an uploaded file and everything derived from it: the cached
@@ -324,6 +402,7 @@ defmodule Texttile.Uploads do
     cond do
       in_dir?(relative, images_dir()) ->
         remove(relative)
+        forget(relative)
         Texttile.Images.drop_renditions(relative)
 
       in_dir?(relative, videos_dir()) ->

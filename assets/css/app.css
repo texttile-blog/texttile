@@ -917,8 +917,14 @@
   .tile-ov .fn {
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;
   }
+  /* The state word can be a short sentence; it wraps inside the tile
+     instead of running out over the column beside it. The colour is
+     the overlay's own white: .st above is the state dot of an entry,
+     and its ink is unreadable on a dark tile. */
   .tile-ov .st {
-    display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    color: inherit;
+    font-variant-numeric: tabular-nums; overflow: hidden; overflow-wrap: anywhere;
   }
   .tile-bar {
     display: block; height: 3px; width: 100%; border-radius: 999px;

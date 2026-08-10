@@ -117,7 +117,7 @@ defmodule TexttileWeb.Endpoint do
     conn |> fetch_cookies(signed: [name]) |> Map.fetch!(:cookies) |> Map.get(name)
   end
 
-  defp upload_address?(["admin", "images"]), do: true
+  defp upload_address?(["admin", "texts", _id, "images"]), do: true
   defp upload_address?(["admin", "texts", _id, "gallery"]), do: true
   defp upload_address?(_path), do: false
 

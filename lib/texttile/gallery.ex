@@ -158,12 +158,30 @@ defmodule Texttile.Gallery do
   EXIF capture date when the file carries one, otherwise as the upload
   moment. A video stands in line for its conversion right away; the
   tile shows its poster once ffmpeg is through (`Texttile.Videos`).
+
+  A picture this entry already holds is refused with
+  `{:error, {:duplicate, name}}`, and nothing is stored.
   """
   def add_file(%Article{} = article, source_path, original_name, opts \\ []) do
-    if Texttile.Videos.video?(original_name) do
-      add_stored(article, Uploads.put_body_video(source_path, original_name), original_name, opts)
-    else
-      add_stored(article, Uploads.put_body_image(source_path, original_name), original_name, opts)
+    cond do
+      Texttile.Videos.video?(original_name) ->
+        add_stored(
+          article,
+          Uploads.put_body_video(source_path, original_name),
+          original_name,
+          opts
+        )
+
+      name = Texttile.Articles.duplicate_picture(article, source_path) ->
+        {:error, {:duplicate, name}}
+
+      true ->
+        add_stored(
+          article,
+          Uploads.put_body_image(source_path, original_name),
+          original_name,
+          opts
+        )
     end
   end
 

@@ -649,6 +649,36 @@ defmodule Texttile.Articles do
     end
   end
 
+  ## The pictures an entry holds
+
+  @doc """
+  The picture this entry already holds that is the same file as the one
+  at `source_path`, named the way a person would name it, or nil.
+
+  An entry takes each picture once. The bytes decide, not the name, and
+  the reach is this entry: the same photograph may stand in another one.
+  A tile in its undo window is out of the way already, so a picture that
+  was just deleted can come straight back.
+  """
+  def duplicate_picture(%Article{} = article, source_path) do
+    tiles = Texttile.Gallery.list(article.id)
+    paths = Enum.map(tiles, & &1.path) ++ Body.upload_paths(article.body)
+
+    case Texttile.Uploads.duplicate(Texttile.Uploads.digest(source_path), paths) do
+      nil -> nil
+      path -> name_of(tiles, path)
+    end
+  end
+
+  # A tile answers with the name it arrived under; a picture inside the
+  # text has only the name it is stored as.
+  defp name_of(tiles, path) do
+    case Enum.find(tiles, &(&1.path == path)) do
+      nil -> Path.basename(path)
+      tile -> tile.filename
+    end
+  end
+
   ## Versions
 
   @doc "The versions of a text, newest first, with their authors."

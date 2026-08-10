@@ -3,6 +3,9 @@ defmodule TexttileWeb.GalleryController do
   Takes a picture for a text's gallery. The editor shows the file as a
   local upload tile while it travels here; the answer names the image
   row every open editor is about to see appear.
+
+  A picture this entry already holds is refused with a 409, and the
+  answer names the picture it is.
   """
   use TexttileWeb, :controller
 
@@ -16,6 +19,14 @@ defmodule TexttileWeb.GalleryController do
     case Gallery.add_file(article, upload.path, upload.filename, by: user.id) do
       {:ok, image} ->
         json(conn, %{id: image.id})
+
+      {:error, {:duplicate, name}} ->
+        conn
+        |> put_status(409)
+        |> json(%{
+          error: gettext("This picture is already in this entry, as %{name}.", name: name),
+          of: name
+        })
 
       {:error, reason} ->
         conn |> put_status(422) |> json(%{error: reason})

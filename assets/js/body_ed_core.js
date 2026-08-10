@@ -356,6 +356,9 @@ const impl = {
     this.event = this.el.dataset.event || "body_changed"
     this.barId = this.el.dataset.bar || "#mdBar"
     this.files = this.el.dataset.files !== "false"
+    /* where a pasted file goes: the entry is in the address, because
+       an entry takes each picture once */
+    this.uploadUrl = this.el.dataset.uploadUrl
     /* the poster of every converted video of this text, by the url the
        body carries; the server keeps it fresh through sync_media */
     this.posters = JSON.parse(this.el.dataset.posters || "{}")
@@ -715,7 +718,7 @@ const impl = {
     this.running++
     const xhr = new XMLHttpRequest()
     entry.xhr = xhr
-    xhr.open("POST", "/admin/images")
+    xhr.open("POST", this.uploadUrl)
     const meta = document.querySelector("meta[name='csrf-token']")
     if (meta) xhr.setRequestHeader("x-csrf-token", meta.getAttribute("content"))
     let pct = 0
@@ -732,6 +735,15 @@ const impl = {
         this.swap(this.upToken(name), this.doneRef(name, url))
         this.uploads.delete(name)
         this.pushEvent("image_uploaded", {file: name})
+      } else if (xhr.status === 409 && this.refusedName(xhr)) {
+        /* the picture is in this entry already: nothing failed and a
+           retry would answer the same, so the token leaves the text
+           and the bar says which picture it is */
+        const of = this.refusedName(xhr)
+        const raw = this.upToken(name)
+        if (!this.swap(raw + "\n\n", "")) this.swap(raw, "")
+        this.uploads.delete(name)
+        this.pushEvent("image_refused", {file: name, of})
       } else {
         this.swap(this.upToken(name), this.failToken(name))
         this.pushEvent("image_failed", {file: name, pct})
@@ -787,6 +799,11 @@ const impl = {
       changes: {from: r.from, to: r.to, insert: ins},
       selection: {anchor: r.from + ins.length},
     })
+  },
+
+  /* the picture the server says this one already is, or nothing */
+  refusedName(xhr) {
+    try { return JSON.parse(xhr.responseText).of || null } catch (_e) { return null }
   },
 
   swap(from, to) {
