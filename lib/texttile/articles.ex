@@ -154,7 +154,6 @@ defmodule Texttile.Articles do
   written.
   """
   def as_read(articles) when is_list(articles), do: Enum.map(articles, &as_read/1)
-  def as_read(nil), do: nil
 
   def as_read(%Article{live_version: %Ecto.Association.NotLoaded{}} = article) do
     article |> Repo.preload(:live_version) |> as_read()

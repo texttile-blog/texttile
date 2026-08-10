@@ -101,6 +101,25 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
     end
   end
 
+  describe "the entries overview" do
+    # The grid is the one screen that shows every entry at once, so it
+    # is where somebody looks for what is still open.
+    test "marks a live entry whose words have run ahead", %{conn: conn, kb: kb} do
+      article = published_post(user: kb, title: "Harbor mornings")
+
+      conn
+      |> sign_in()
+      |> open("/admin/texts")
+      |> refute_has(".card .cm", text: "edited since publishing")
+
+      {:ok, _} = Articles.update_text(article, %{title: "Harbor evenings"})
+
+      conn
+      |> open("/admin/texts")
+      |> assert_has(".card .cm", text: "edited since publishing")
+    end
+  end
+
   describe "the overviews name the author" do
     test "beside the day, in the admin area and on the reader's side", %{conn: conn, kb: kb} do
       {:ok, kb} = Texttile.Accounts.update_display_name(kb, "Klaus Breyer")
