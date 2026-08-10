@@ -22,8 +22,15 @@ defmodule Texttile.GalleryTest do
 
     {:ok, black} = Vix.Vips.Operation.black(width, height)
 
+    # Two black rectangles of one size are the same file byte for byte,
+    # and an entry takes each picture once. Every source is its own
+    # picture unless a test asks two of them to share a mark.
+    mark = Keyword.get_lazy(opts, :mark, fn -> "one-#{System.unique_integer([:positive])}" end)
+
     {:ok, image} =
       Vix.Vips.Image.mutate(black, fn mut ->
+        :ok = Vix.Vips.MutableImage.set(mut, "exif-ifd0-ImageDescription", :gchararray, mark)
+
         if taken = opts[:taken] do
           :ok = Vix.Vips.MutableImage.set(mut, "exif-ifd2-DateTimeOriginal", :gchararray, taken)
         end
@@ -109,6 +116,89 @@ defmodule Texttile.GalleryTest do
 
       assert_receive {:gallery_changed, ^article_id,
                       %{action: :added, image_id: ^image_id, by: ^user_id}}
+    end
+  end
+
+  # An entry takes each picture once. The bytes decide, not the name:
+  # the same photograph under another name is the same photograph.
+  describe "the same picture twice" do
+    test "is refused, and the answer names the tile it already is" do
+      {article, _user} = article!()
+      source = source_jpg()
+      {:ok, _first} = Gallery.add_file(article, source, "Pier Lantern.jpg")
+
+      assert {:error, {:duplicate, "Pier Lantern.jpg"}} =
+               Gallery.add_file(article, source, "another name.jpg")
+
+      assert [_only_one] = Gallery.list(article.id)
+    end
+
+    test "is refused when the picture stands inside the text" do
+      {article, user} = article!()
+      {:ok, stored} = Uploads.put_body_image(source_jpg(mark: "the same one"), "pier.jpg")
+      {:ok, article} = Articles.update_text(article, %{body: "![pier](/uploads/#{stored})"})
+
+      assert {:error, {:duplicate, name}} =
+               Gallery.add_file(article, source_jpg(mark: "the same one"), "pier.jpg",
+                 by: user.id
+               )
+
+      assert name == Path.basename(stored)
+    end
+
+    test "another entry may hold the same picture" do
+      {mine, _user} = article!()
+      {theirs, _other} = article!()
+      source = source_jpg()
+
+      {:ok, _} = Gallery.add_file(mine, source, "pier.jpg")
+
+      assert {:ok, _} = Gallery.add_file(theirs, source, "pier.jpg")
+    end
+
+    # A deleted tile can come back for ten seconds, and a picture that
+    # can come back is still this entry's. Letting the same one in
+    # meanwhile would make undo produce the pair.
+    test "a tile in its undo window still holds its picture, and lets go with the sweep" do
+      {article, _user} = article!()
+      source = source_jpg()
+      {:ok, image} = Gallery.add_file(article, source, "pier.jpg")
+      {:ok, _} = Gallery.delete(article.id, image.id)
+
+      assert {:error, {:duplicate, "pier.jpg"}} = Gallery.add_file(article, source, "again.jpg")
+
+      Gallery.sweep_due(DateTime.add(DateTime.utc_now(), 1, :minute))
+
+      assert {:ok, _} = Gallery.add_file(article, source, "pier.jpg")
+    end
+
+    # Both clients send two files at a time, so a folder holding one
+    # photograph twice puts both in the air together.
+    test "two that arrive together do not both get in" do
+      {article, _user} = article!()
+      source = source_jpg()
+
+      results =
+        [source, source]
+        |> Enum.map(fn path ->
+          Task.async(fn ->
+            Texttile.Repo.checkout(fn -> Gallery.add_file(article, path, "pier.jpg") end)
+          end)
+        end)
+        |> Task.await_many(15_000)
+
+      assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+      assert Enum.count(results, &match?({:error, {:duplicate, _}}, &1)) == 1
+      assert [_only_one] = Gallery.list(article.id)
+    end
+
+    test "a film is taken as it comes, however often" do
+      {article, _user} = article!()
+      video = Texttile.VideoFixtures.video_file(320, 240)
+
+      {:ok, _} = Gallery.add_file(article, video, "harbour.mov")
+
+      assert {:ok, _} = Gallery.add_file(article, video, "harbour.mov")
     end
   end
 

@@ -165,6 +165,96 @@ defmodule Texttile.UploadsTest do
     end
   end
 
+  describe "the digest of a stored picture" do
+    test "the same bytes give the same digest, other bytes another" do
+      one = raster_file(".jpg", 300, 200)
+      same = File.cp!(one, one <> ".copy") && one <> ".copy"
+      other = raster_file(".jpg", 120, 90)
+
+      assert Uploads.digest(one) == Uploads.digest(same)
+      assert Uploads.digest(one) != Uploads.digest(other)
+      assert Uploads.digest(one) =~ ~r/^[0-9a-f]{64}$/
+    end
+
+    test "a file that is not there has none" do
+      assert Uploads.digest(Path.join(System.tmp_dir!(), "nowhere.jpg")) == nil
+    end
+
+    test "storing a picture remembers it, and duplicate/2 finds it again" do
+      source = raster_file(".jpg", 300, 200)
+      digest = Uploads.digest(source)
+      {:ok, stored} = Uploads.put_body_image(source, "pier.jpg")
+
+      assert Uploads.duplicate(digest, [stored]) == stored
+    end
+
+    test "duplicate/2 looks only among the paths it is given" do
+      source = raster_file(".jpg", 300, 200)
+      digest = Uploads.digest(source)
+      {:ok, stored} = Uploads.put_body_image(source, "pier.jpg")
+
+      assert Uploads.duplicate(digest, ["images/somebody-elses.jpg"]) == nil
+      assert Uploads.duplicate(digest, []) == nil
+      assert Uploads.duplicate(digest, [stored]) == stored
+    end
+
+    test "removing the file forgets the digest with it" do
+      source = raster_file(".jpg", 300, 200)
+      digest = Uploads.digest(source)
+      {:ok, stored} = Uploads.put_body_image(source, "pier.jpg")
+
+      :ok = Uploads.remove_upload(stored)
+
+      assert Uploads.duplicate(digest, [stored]) == nil
+    end
+
+    # A path that comes out of a body is written by hand and can climb
+    # out of the uploads root with "..". Reading it would leave the
+    # volume, and a name like /dev/zero would never stop.
+    test "a path that climbs out of the root is not read" do
+      outside = Path.join(System.tmp_dir!(), "outside-#{System.unique_integer([:positive])}.jpg")
+      File.write!(outside, "not ours")
+      climber = ("images/" <> Path.relative_to(outside, "/")) |> then(&("images/../" <> &1))
+
+      assert Uploads.duplicate(Uploads.digest(outside), [climber]) == nil
+      assert Uploads.duplicate(Uploads.digest(outside), ["images/../../etc/passwd"]) == nil
+    end
+
+    # An installation that upgrades has pictures on disk and no rows for
+    # them. They join the table the first time their entry is asked.
+    test "a picture stored before the table existed is read once and remembered" do
+      source = raster_file(".jpg", 300, 200)
+      digest = Uploads.digest(source)
+      {:ok, stored} = Uploads.put_body_image(source, "pier.jpg")
+
+      Texttile.Repo.delete_all(Texttile.Uploads.Digest)
+
+      assert Uploads.duplicate(digest, [stored]) == stored
+      assert [%{path: ^stored}] = Texttile.Repo.all(Texttile.Uploads.Digest)
+    end
+
+    test "the entry a picture came in through is remembered with it" do
+      user = Texttile.AccountsFixtures.user_fixture()
+      {:ok, article} = Texttile.Articles.create_draft(user)
+      source = raster_file(".jpg", 300, 200)
+
+      {:ok, stored} = Uploads.put_body_image(source, "pier.jpg", article_id: article.id)
+
+      assert Uploads.paths_of_article(article.id) == [stored]
+      assert Uploads.paths_of_article(article.id + 1000) == []
+    end
+
+    # A film is stored as it came and never read here: hashing half a
+    # gigabyte on the way in would cost more than the double it saves.
+    test "a video carries no digest" do
+      video = Texttile.VideoFixtures.video_file(320, 240)
+      digest = Uploads.digest(video)
+      {:ok, stored} = Uploads.put_body_video(video, "harbour.mov")
+
+      assert Uploads.duplicate(digest, [stored]) == nil
+    end
+  end
+
   describe "what lies on the volume" do
     defp row(usage, dir), do: Enum.find(usage, &(&1.dir == dir))
 

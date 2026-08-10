@@ -11,11 +11,25 @@ defmodule TexttileWeb.GalleryControllerTest do
     %{article: article}
   end
 
-  defp jpg_upload(name) do
+  defp jpg_upload(name, opts \\ []) do
+    %Plug.Upload{path: jpg_file(opts), filename: name, content_type: "image/jpeg"}
+  end
+
+  # Two black rectangles of one size are the same file byte for byte,
+  # and an entry takes each picture once. Every file is its own picture
+  # unless a test asks two of them to share a mark.
+  defp jpg_file(opts) do
     path = Path.join(System.tmp_dir!(), "up-#{System.unique_integer([:positive])}.jpg")
+    mark = Keyword.get_lazy(opts, :mark, fn -> "one-#{System.unique_integer([:positive])}" end)
     {:ok, black} = Vix.Vips.Operation.black(20, 10)
-    :ok = Vix.Vips.Image.write_to_file(black, path)
-    %Plug.Upload{path: path, filename: name, content_type: "image/jpeg"}
+
+    {:ok, image} =
+      Vix.Vips.Image.mutate(black, fn mut ->
+        Vix.Vips.MutableImage.set(mut, "exif-ifd0-ImageDescription", :gchararray, mark)
+      end)
+
+    :ok = Vix.Vips.Image.write_to_file(image, path)
+    path
   end
 
   test "puts the picture into the text's gallery", %{conn: conn, article: article} do
@@ -67,5 +81,20 @@ defmodule TexttileWeb.GalleryControllerTest do
   test "signed out, the endpoint answers with a redirect to sign-in", %{article: article} do
     conn = post(build_conn(), ~p"/admin/texts/#{article.id}/gallery", %{})
     assert redirected_to(conn) == ~p"/login"
+  end
+
+  test "the same picture a second time is refused, and named", %{conn: conn, article: article} do
+    post(conn, ~p"/admin/texts/#{article.id}/gallery", %{
+      "file" => jpg_upload("Pier Lantern.jpg", mark: "the same one")
+    })
+
+    conn =
+      post(conn, ~p"/admin/texts/#{article.id}/gallery", %{
+        "file" => jpg_upload("again.jpg", mark: "the same one")
+      })
+
+    assert %{"error" => error, "of" => "Pier Lantern.jpg"} = json_response(conn, 409)
+    assert error =~ "Pier Lantern.jpg"
+    assert [_only_one] = Gallery.list(article.id)
   end
 end

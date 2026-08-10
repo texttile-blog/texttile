@@ -590,6 +590,27 @@ defmodule TexttileWeb.EditorLive do
 
   def handle_event("image_failed", _params, socket), do: {:noreply, socket}
 
+  # The entry holds this picture already. Nothing failed and nothing
+  # stands in the text: the token left with the answer, and the state
+  # line names the picture it is.
+  def handle_event(
+        "image_refused",
+        %{"file" => file, "of" => of},
+        %{assigns: %{editing: editing}} = socket
+      )
+      when holding(editing) do
+    %{article: article, current_scope: scope} = socket.assigns
+    {file, of} = {clean_file(file), clean_file(of)}
+    Articles.push_log(article, scope.user, "#{file} is already in this entry, as #{of}")
+
+    {:noreply,
+     socket
+     |> assign(:upload_pcts, Map.delete(socket.assigns.upload_pcts, file))
+     |> mark_saved(gettext("This picture is already in this entry, as %{name}.", name: of))}
+  end
+
+  def handle_event("image_refused", _params, socket), do: {:noreply, socket}
+
   # The browser turned a file away before it travelled, so nothing
   # stands in the text and nothing needs removing. The state line says
   # what happened and what the roof is.
@@ -1286,13 +1307,25 @@ defmodule TexttileWeb.EditorLive do
 
   @note_ms 4600
 
+  # A note has a lifetime of its own. A save that happens inside it
+  # says nothing new, and must not take the words away: a refused
+  # picture changes the body, and the save that follows would have
+  # silenced the line that said why.
   defp mark_saved(socket, note \\ nil) do
     now = System.system_time(:millisecond)
+    standing? = is_nil(note) and now < (socket.assigns[:saved_until] || 0)
 
     socket
     |> assign(:saved_at, now)
-    |> assign(:saved_note, note)
-    |> assign(:saved_until, if(note, do: now + @note_ms, else: 0))
+    |> then(fn socket ->
+      if standing? do
+        socket
+      else
+        socket
+        |> assign(:saved_note, note)
+        |> assign(:saved_until, if(note, do: now + @note_ms, else: 0))
+      end
+    end)
   end
 
   # The suggestions keep their order while the editor is open: a tag
@@ -1675,6 +1708,7 @@ defmodule TexttileWeb.EditorLive do
                     phx-hook="BodyEd"
                     phx-update="ignore"
                     data-readonly={to_string(!@holds_lock)}
+                    data-upload-url={~p"/admin/texts/#{@article.id}/images"}
                     data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
                     data-posters={Jason.encode!(poster_map(@media))}
                     data-label={gettext("Body, Markdown")}

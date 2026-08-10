@@ -31,7 +31,7 @@ defmodule TexttileWeb.UploadRoofTest do
   defp send_body(conn, payload \\ nil) do
     conn
     |> put_req_header("content-type", "multipart/form-data; boundary=#{@boundary}")
-    |> post(~p"/admin/images", payload || oversize_body())
+    |> post(~p"/admin/texts/1/images", payload || oversize_body())
   end
 
   defp signed_in, do: Plug.Test.init_test_session(build_conn(), user_token: "not a live session")
