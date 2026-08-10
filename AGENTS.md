@@ -9,6 +9,7 @@ Permanent project-specific rules only. Read `PHOENIX.md` before writing Phoenix 
 - Keep the body editor in one isolated hook. Inputs are text, remote updates, and read-only state. Outputs are changes, cursor, and activity pings. Nothing else may access its internals.
 - Lock only the body text. Tiles, tags, settings, and publish controls remain concurrent, with last write winning per field.
 - Versions contain only title and body. Delete removed images immediately. No soft deletes or orphaned files.
+- A live entry keeps two texts: the working copy in the editor, and the version `live_version_id` points at, which is the only one a reader, the feed or the subscriber mail ever gets. Only publishing moves the second one. Every reader path goes through `Articles.as_read/1`; a signed-in admin sees the working copy on the site instead, with a strip that says so.
 - Store gallery order only in `gallery_date`. Reordering and the date field update it without changing the original file or EXIF data.
 - Keep irreversible actions separate and confirmed. Publishing never sends a newsletter.
 - Call the signed-in area behind `/admin` the admin area in prose and code (`TexttileWeb.Admin`), never "the desk." `Admin` alone names the person. Keep existing code names such as `/admin/texts`, `TexttileWeb.TextsLive`, and `Texttile.Articles`.

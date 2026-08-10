@@ -38,6 +38,16 @@ defmodule Texttile.Articles.Article do
     # image of the text speak for it.
     field :preview_path, :string
 
+    # Who started the entry. The name beside the day on the overviews
+    # and on the reader's page; nil where the account has gone.
+    belongs_to :user, Texttile.Accounts.User
+
+    # The text the readers have. The title and the body above are the
+    # working copy, which a live entry may run ahead of; this points at
+    # the version a reader gets. Nil while the entry has never been
+    # live. See `Texttile.Articles.Publishing`.
+    belongs_to :live_version, Texttile.Articles.Version
+
     timestamps(type: :utc_datetime)
   end
 

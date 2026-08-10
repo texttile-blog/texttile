@@ -1,9 +1,37 @@
-# Deploy configuration for Fly.io. It builds this checkout from source and
-# deploys it to staging.texttile.blog, the test site of this repository. The
-# app itself knows nothing about Fly.
+# ============================================================
+#  ONE MACHINE. NEVER TWO.
+# ============================================================
+#
+#  The whole installation is one SQLite file on one volume. SQLite
+#  takes one writer, and a Fly volume mounts on one machine. A second
+#  machine gets a volume of its own, so it would answer readers out of
+#  a second, older database and write entries, comments and uploads
+#  that the first machine never sees. Nothing warns you: both sites
+#  work, and each one is missing half the blog.
+#
+#  So never run any of these:
+#
+#      fly scale count 2
+#      fly machine clone
+#      fly deploy --ha    (or a deploy that creates a standby)
+#
+#  Check before and after every deploy:
+#
+#      fly status -a texttile-staging     # exactly one machine
+#
+#  A deploy replaces the one machine in place, which means a few
+#  seconds without the site. That is the price of one database, and it
+#  is the right price for a blog.
+#
+# ============================================================
+#
+# It builds this checkout from source and deploys it to
+# staging.texttile.blog, the test site of this repository. The app
+# itself knows nothing about Fly.
 #
 # The demo, demo.texttile.blog, is a different app: it runs the published
 # image and its configuration lives in the repository texttile-blog/demo.
+# The rule above holds for it exactly as it holds here.
 #
 # One-time setup:
 #   fly apps create texttile-staging --org texttile
@@ -33,6 +61,7 @@ primary_region = "fra"
   # MAIL_ADAPTER = "resend"
   # MAIL_FROM = "blog@staging.texttile.blog"
 
+# The one volume, on the one machine. See the head of this file.
 [mounts]
   source = "data"
   destination = "/data"
@@ -42,7 +71,10 @@ primary_region = "fra"
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  # SQLite lives on one volume: exactly one machine, no scaling out.
+  # Not a scaling knob. This machine stops when nobody is reading and
+  # starts again on the next request; it is still the only one there
+  # is. Raising it to 1 keeps that single machine awake, which is
+  # worth doing on a site people write on. It must never go above 1.
   min_machines_running = 0
 
 [[vm]]

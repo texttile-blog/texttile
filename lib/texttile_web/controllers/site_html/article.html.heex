@@ -10,6 +10,14 @@
     )}
     <a href={~p"/admin/texts/#{@article.id}"}>{gettext("Back to the editor")}</a>
   </p>
+  <%!-- The entry is live and the words below it are not: what stands
+       here is the working copy, and the readers still have the text
+       that was published. Only somebody signed in ever sees this. --%>
+  <p :if={@unpublished_changes} class="notlive" id="unpublished">
+    <b>{gettext("Not published yet.")}</b>
+    {gettext("This is the working copy. Readers still get the text as it was last published.")}
+    <a href={~p"/admin/texts/#{@article.id}"}>{gettext("Back to the editor")}</a>
+  </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
@@ -20,6 +28,11 @@
       <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
         <%= if @article.type == "post" do %>
           <span class="num">{format_date(@article.publish_date)}</span>
+          <%!-- who started the entry, read from the account now, so a
+               rename reaches every entry that person ever wrote --%>
+          <span :if={Articles.author_name(@article)} id="by">
+            · {Articles.author_name(@article)}
+          </span>
           <span :if={Articles.tag_list(@article) != []}>·</span>
           <span :for={tag <- Articles.tag_list(@article)}>
             <a href={~p"/tags/#{tag}"} class="link">#{tag}</a>

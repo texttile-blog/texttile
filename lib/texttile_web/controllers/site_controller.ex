@@ -129,13 +129,20 @@ defmodule TexttileWeb.SiteController do
     if signed_in_user(conn), do: fun.()
   end
 
+  # A live entry holds two texts: the one that was published and the
+  # working copy. A reader gets the first, whoever is signed in gets
+  # the second.
+  defp for_reader(articles, conn) do
+    if signed_in_user(conn), do: articles, else: Articles.as_read(articles)
+  end
+
   @doc """
   A tag archive: every published text that carries the tag, and the
   other tags beside it, so an archive is also the way into the next one.
   """
   def tag(conn, %{"tag" => raw}) do
     tag = raw |> String.downcase() |> String.trim()
-    posts = Articles.list_published()
+    posts = Articles.list_published() |> for_reader(conn)
     articles = Enum.filter(posts, &(tag in Articles.tag_list(&1)))
 
     if articles == [] do
@@ -517,7 +524,7 @@ defmodule TexttileWeb.SiteController do
   # fixed front page. The About block from Settings comes along; it
   # stands at the foot of every text and of the list.
   defp load_chrome(conn, _opts) do
-    pages = Articles.list_pages()
+    pages = Articles.list_pages() |> for_reader(conn)
 
     home_page =
       with "page:" <> id <- Settings.get(:front_page),
@@ -536,7 +543,10 @@ defmodule TexttileWeb.SiteController do
   defp render_list(conn, params) do
     q = params |> Map.get("q", "") |> String.trim()
 
-    found = Articles.list_published(search: q)
+    # The published text for a reader, the working copy for whoever is
+    # signed in, so a title being rewritten reads the same on the list
+    # as it does in the editor. See `render_text/2`.
+    found = Articles.list_published(search: q) |> for_reader(conn)
 
     total =
       if q == "" do
@@ -628,6 +638,15 @@ defmodule TexttileWeb.SiteController do
   end
 
   defp render_text(conn, article) do
+    # A live entry holds two texts. A reader gets the one that was
+    # published; whoever is signed in gets the working copy, so the way
+    # out of the editor shows what is being written and not what the
+    # site said yesterday. The band above the text says which of the
+    # two is on the screen.
+    admin? = signed_in_user(conn) != nil
+    pending? = admin? and Articles.unpublished_changes?(article)
+    article = if admin?, do: article, else: Articles.as_read(article)
+
     home? = conn.assigns.home_page && conn.assigns.home_page.id == article.id
     gallery = Gallery.list(article.id)
 
@@ -649,7 +668,13 @@ defmodule TexttileWeb.SiteController do
     |> assign(:og_image, og_image)
     |> assign(:count_entry, countable_entry(conn, article))
     |> merge_assigns(comment_assigns(conn, article))
-    |> render(:article, article: article, gallery: gallery, older: older, newer: newer)
+    |> render(:article,
+      article: article,
+      gallery: gallery,
+      older: older,
+      newer: newer,
+      unpublished_changes: pending?
+    )
   end
 
   # The entry the beacon names, if this page counts at all and the

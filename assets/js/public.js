@@ -25,23 +25,57 @@ if (document.body.dataset.count) {
   }).catch(() => {});
 }
 
-// "/" jumps into the search of the text list; Escape empties it.
-addEventListener("keydown", (e) => {
-  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-  const el = document.activeElement;
-  const typing = el && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
+// The search field of the text list. An empty field means the whole
+// list, whichever way it was emptied.
+//
+// A form only speaks when it is submitted, and none of the three ways
+// out of a search term submits one: the browser's own clear cross
+// fires `search`, Escape fires nothing, and a held backspace fires
+// `input`. So the list stayed filtered under a field that read empty,
+// and the words the reader had deleted went on deciding what they saw.
+//
+// The whole address goes, not only the term: the field searches every
+// year, and the year beside it narrows what the field found. With no
+// term there is nothing to narrow.
+(function () {
+  const field = document.getElementById("q");
+  if (!field) return;
+  const list = field.form.getAttribute("action") || location.pathname;
+  let wait = null;
 
-  if (e.key === "/" && !typing) {
-    const q = document.getElementById("q");
-    if (q) {
-      e.preventDefault();
-      q.focus();
-      q.select();
-    }
-  } else if (e.key === "Escape" && el && el.id === "q" && el.value) {
-    el.value = "";
+  // A moment's grace, so clearing the field to type something else
+  // does not throw the reader back to the top of the list first.
+  function clearedNow() {
+    if (field.value.trim() !== "" || location.search === "") return;
+    location.href = list;
   }
-});
+
+  function cleared() {
+    clearTimeout(wait);
+    if (field.value.trim() !== "") return;
+    wait = setTimeout(clearedNow, 250);
+  }
+
+  field.addEventListener("input", cleared);
+  field.addEventListener("search", cleared);
+
+  // "/" jumps into the field from anywhere on the page; Escape empties
+  // it, which is one of the three ways above.
+  addEventListener("keydown", (e) => {
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = document.activeElement;
+    const typing = el && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
+
+    if (e.key === "/" && !typing) {
+      e.preventDefault();
+      field.focus();
+      field.select();
+    } else if (e.key === "Escape" && el === field && el.value) {
+      el.value = "";
+      cleared();
+    }
+  });
+})();
 
 // The lightbox: a count, a way out, an arrow on each side, the arrow
 // keys, and a 48px swipe. It wraps around in both directions.

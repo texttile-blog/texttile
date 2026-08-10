@@ -110,6 +110,33 @@ An entry that is not live yet answers at the address it will wear, but only
 for somebody signed in; a reader gets a 404 there. So the way out of the
 editor leads into the real reader's page, drafts included.
 
+### Writing in an entry that is already out
+
+A live entry keeps two texts. The one in the editor is the working copy; the
+one the readers get is the version you last published. Typing in a live
+entry moves the working copy alone, so a half-written sentence never reaches
+the site.
+
+The bar says which of the two is which. As soon as the working copy runs
+ahead, the state word turns to **Live · draft** and the button beside it
+turns to **Publish changes**. That button hands the text over: the same day,
+the same address, the same state, and no mail, because the subscriber mail
+belongs to the entry going out and not to a correction inside it. The menu
+next to it also offers **Discard the changes**, which puts the published
+text back and keeps what you threw away as a version.
+
+Only the title and the body split in two. Tags, the address, the tiles and
+the switches have one state and go live as you change them, which is what a
+version has always held.
+
+Signed in, the entry's public address shows the working copy with a strip
+over it that says so. Signed out, it shows what was published. So does the
+list, the tag archive, the search field, the feed and the subscriber mail.
+
+The entries overview marks a live entry whose working copy has run ahead
+with *edited since publishing*, and the Versions tab marks the version the
+readers have with **live**.
+
 Changing the slug or the publish date of a live entry moves it, because the
 address of a post carries its date. The old address stays alive as a
 permanent redirect, and the editor lists what is standing under the address
@@ -466,6 +493,21 @@ and nothing after it.
 `fly.toml` in this repo deploys from source with one volume for the database
 and the uploads. Its header documents the one-time setup (app, volume,
 secrets, certificate).
+
+### One machine, never two
+
+The whole installation is one SQLite file on one volume. SQLite takes one
+writer, and a volume mounts on one machine. A second machine gets a volume
+of its own: it would answer readers out of a second, older database and take
+entries, comments and uploads that the first machine never sees. Both sites
+work, and each one is missing half the blog.
+
+So never `fly scale count 2`, never `fly machine clone`, and never deploy
+with a standby. `fly status` must show exactly one machine. A deploy
+replaces that machine in place, which costs a few seconds of downtime.
+
+This is not a Fly rule. Any host runs Texttile the same way: one process,
+one `/data`.
 
 ### Which version runs
 

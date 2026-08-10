@@ -36,7 +36,7 @@ defmodule TexttileWeb.EditorLive do
 
     socket =
       socket
-      |> assign(:article, article)
+      |> assign_article(article)
       |> assign(:tab, "text")
       |> assign(:state_menu, false)
       |> assign(:dialog, nil)
@@ -142,7 +142,7 @@ defmodule TexttileWeb.EditorLive do
       # and may be converted already; its poster goes back with the
       # answer, because the conversion's own word came too early to
       # find the reference here.
-      {:noreply, socket |> assign(:article, article) |> sync_posters() |> mark_saved()}
+      {:noreply, socket |> assign_article(article) |> sync_posters() |> mark_saved()}
     else
       {:noreply, socket}
     end
@@ -159,7 +159,7 @@ defmodule TexttileWeb.EditorLive do
     socket =
       if Editing.holds?(socket.assigns.editing) and text != socket.assigns.article.body do
         {:ok, article} = Articles.update_text(socket.assigns.article, %{body: text})
-        assign(socket, :article, article)
+        assign_article(socket, article)
       else
         socket
       end
@@ -202,7 +202,7 @@ defmodule TexttileWeb.EditorLive do
 
         {:noreply,
          socket
-         |> assign(:article, article)
+         |> assign_article(article)
          |> push_event("sync_body", %{text: article.body})
          |> mark_saved(
            gettext("Version from %{stamp} restored", stamp: stamp(version.inserted_at))
@@ -357,7 +357,7 @@ defmodule TexttileWeb.EditorLive do
 
     case Articles.update_settings(article, Map.take(params, [field])) do
       {:ok, article} ->
-        socket = assign(socket, :article, article)
+        socket = assign_article(socket, article)
         socket = if field == "tags", do: known_tags(socket), else: socket
         {:noreply, socket |> load_redirects() |> mark_saved()}
 
@@ -410,7 +410,7 @@ defmodule TexttileWeb.EditorLive do
 
     case Articles.update_settings(article, %{tags: Enum.join(tags, ", ")}) do
       {:ok, article} ->
-        {:noreply, socket |> assign(:article, article) |> known_tags() |> mark_saved()}
+        {:noreply, socket |> assign_article(article) |> known_tags() |> mark_saved()}
 
       {:error, _changeset} ->
         {:noreply, socket}
@@ -467,12 +467,67 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  def handle_event("toggle_state_menu", _params, socket) do
-    {:noreply, assign(socket, :state_menu, !socket.assigns.state_menu)}
+  # Only ever opens. The chevron of an open menu says "close" instead,
+  # because a click on it is also a click away from the menu, and the
+  # menu answers that one too: a toggle here read the closing as a
+  # second click and put the menu straight back up.
+  def handle_event("open_state_menu", _params, socket) do
+    {:noreply, assign(socket, :state_menu, true)}
   end
 
   def handle_event("close_state_menu", _params, socket) do
     {:noreply, assign(socket, :state_menu, false)}
+  end
+
+  # The words as they stand become the words the readers have. Only
+  # the text moves: the same day, the same address, the same state,
+  # and no mail, because the mail belongs to the entry going out and
+  # not to a correction inside it.
+  def handle_event("publish_changes", _params, socket) do
+    case Articles.publish_changes(socket.assigns.article, socket.assigns.current_scope.user) do
+      {:ok, article} ->
+        {:noreply,
+         socket
+         |> assign(:state_menu, false)
+         |> put_article(article)
+         |> reload_history()
+         |> mark_saved(gettext("Published · the readers have these words now"))}
+
+      :unchanged ->
+        {:noreply, assign(socket, :state_menu, false)}
+    end
+  end
+
+  def handle_event("ask_discard", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:state_menu, false)
+     |> assign(:dialog, %{
+       id: "discard",
+       title: gettext("Throw the unpublished changes away?"),
+       body: [
+         gettext(
+           "The text goes back to the words the readers have. What is written here now is kept as a version, so you can bring it back from the Versions tab."
+         )
+       ],
+       ok: gettext("Discard the changes"),
+       event: "confirm_discard"
+     })}
+  end
+
+  def handle_event("confirm_discard", _params, socket) do
+    case Articles.discard_changes(socket.assigns.article, socket.assigns.current_scope.user) do
+      {:ok, article} ->
+        {:noreply,
+         socket
+         |> assign(:dialog, nil)
+         |> put_article(article)
+         |> reload_history()
+         |> mark_saved(gettext("The changes are gone · the published text is back"))}
+
+      _ ->
+        {:noreply, assign(socket, :dialog, nil)}
+    end
   end
 
   def handle_event("ask_delete", _params, socket) do
@@ -760,12 +815,12 @@ defmodule TexttileWeb.EditorLive do
 
       article.preview_path == path ->
         {:ok, article} = Articles.update_settings(article, %{preview_path: nil})
-        {:noreply, socket |> assign(:article, article) |> mark_saved()}
+        {:noreply, socket |> assign_article(article) |> mark_saved()}
 
       true ->
         {:ok, article} = Articles.update_settings(article, %{preview_path: path})
         Articles.push_log(article, scope.user, "chose #{Path.basename(path)} as the preview")
-        {:noreply, socket |> assign(:article, article) |> mark_saved()}
+        {:noreply, socket |> assign_article(article) |> mark_saved()}
     end
   end
 
@@ -948,7 +1003,7 @@ defmodule TexttileWeb.EditorLive do
         case Articles.update_text(socket.assigns.article, %{title: title}) do
           {:ok, article} ->
             Lock.ping(article.id, self())
-            {:noreply, socket |> assign(:article, article) |> announce_activity() |> mark_saved()}
+            {:noreply, socket |> assign_article(article) |> announce_activity() |> mark_saved()}
 
           {:error, _changeset} ->
             {:noreply,
@@ -1071,7 +1126,7 @@ defmodule TexttileWeb.EditorLive do
       true ->
         {:noreply,
          socket
-         |> assign(:article, article)
+         |> assign_article(article)
          |> push_event("sync_body", %{text: article.body})}
     end
   end
@@ -1341,7 +1396,18 @@ defmodule TexttileWeb.EditorLive do
   # happen while the Stats tab is open - from this browser or from
   # another admin's. So the numbers come along with the entry.
   defp put_article(socket, article) do
-    socket |> assign(:article, article) |> load_stats(socket.assigns.tab)
+    socket |> assign_article(article) |> load_stats(socket.assigns.tab)
+  end
+
+  # The entry, and with it the one question the whole bar hangs on:
+  # does the working copy say something the readers have not been given
+  # yet? Every path that writes the entry comes through here, so the
+  # word in the bar, the main button and the menu can never disagree
+  # with the text on the screen.
+  defp assign_article(socket, article) do
+    socket
+    |> assign(:article, article)
+    |> assign(:pending, Articles.unpublished_changes?(article))
   end
 
   # The numbers of this entry, read when the tab is opened. An entry
@@ -1431,9 +1497,17 @@ defmodule TexttileWeb.EditorLive do
            button all carrying the same word. Nothing here is a button,
            so "Draft" and "Publish" stop saying the same thing. --%>
       <:lead>
-        <span class={["st", state_tone(@article.status)]} id="stateWord">
+        <span
+          class={["st", if(@pending, do: "pending", else: state_tone(@article.status))]}
+          id="stateWord"
+        >
           <i aria-hidden="true"></i>
-          <b>{status_word(@article.status)}</b>
+          <%!-- Two words, because this pill shares a phone bar with the
+               title of the entry and the publish button. A sentence
+               here ran under the button and took the title with it. --%>
+          <b>
+            {if @pending, do: gettext("Live · draft"), else: status_word(@article.status)}
+          </b>
         </span>
       </:lead>
 
@@ -1475,12 +1549,31 @@ defmodule TexttileWeb.EditorLive do
 
         <%!-- One control, one shape at the right edge in every state.
              A live entry gets View, because looking at it is what you
-             want from a text that is already out. --%>
+             want from a text that is already out - unless it is being
+             rewritten, and then the one thing worth a click is handing
+             the new words to the readers. --%>
         <span
-          class={["split", if(@article.status == "draft", do: "solid", else: "calm")]}
+          class={[
+            "split",
+            if(@article.status == "draft" or @pending, do: "solid", else: "calm")
+          ]}
           id="stateBtn"
         >
-          <%= if Visibility.live?(@article) do %>
+          <%= if @pending do %>
+            <button
+              class="main"
+              id="stateMain"
+              phx-click="publish_changes"
+              title={
+                gettext(
+                  "Hands the text as it stands to the readers. The day, the address and the state do not move, and no mail goes out."
+                )
+              }
+            >
+              {gettext("Publish changes")}
+            </button>
+          <% end %>
+          <%= if Visibility.live?(@article) and not @pending do %>
             <a
               class="main"
               id="stateMain"
@@ -1491,7 +1584,8 @@ defmodule TexttileWeb.EditorLive do
             >
               {gettext("View")}
             </a>
-          <% else %>
+          <% end %>
+          <%= if not Visibility.live?(@article) do %>
             <button
               class="main"
               id="stateMain"
@@ -1511,7 +1605,7 @@ defmodule TexttileWeb.EditorLive do
           <button
             class="chev"
             id="stateChev"
-            phx-click="toggle_state_menu"
+            phx-click={if @state_menu, do: "close_state_menu", else: "open_state_menu"}
             aria-haspopup="true"
             aria-expanded={to_string(@state_menu)}
             aria-label={gettext("More actions for this entry")}
@@ -1542,8 +1636,10 @@ defmodule TexttileWeb.EditorLive do
         <button class="row" id="saveVersionRow" phx-click="save_version">
           {gettext("Save version")}
         </button>
+        <%!-- While the entry is being rewritten the main button belongs
+             to the readers, so the way to the page moves in here. --%>
         <a
-          :if={@public_url && @article.status != "published"}
+          :if={@public_url && (@article.status != "published" || @pending)}
           class="row"
           id="viewRow"
           href={@public_url}
@@ -1552,6 +1648,12 @@ defmodule TexttileWeb.EditorLive do
         >
           {gettext("Open the entry")} <.out_icon />
         </a>
+        <%!-- The way back out of a rewrite. It is a restore like any
+             other, so the words being thrown away are snapshotted
+             first and nothing here is ever finally lost. --%>
+        <button :if={@pending} class="row" id="discardChangesRow" phx-click="ask_discard">
+          {gettext("Discard the changes")}
+        </button>
 
         <%!-- The mail decision is a verb, not a switch on a pane. It
              used to be a checkbox in the article settings, where it
@@ -1967,6 +2069,16 @@ defmodule TexttileWeb.EditorLive do
                       {gettext("%{count} words", count: word_count(version.body))}
                     </span>
                     <span :if={index == 0} class="note">{gettext("newest")}</span>
+                    <%!-- which of them the readers have. On a live entry
+                         one version is the site, and the Versions tab is
+                         the only screen that can say which. --%>
+                    <span
+                      :if={@article.live_version_id == version.id && Visibility.live?(@article)}
+                      class="note is-live"
+                      id={"liveVersion-#{version.id}"}
+                    >
+                      {gettext("live")}
+                    </span>
                     <span class="sp"></span>
                     <button
                       class="btn quiet sm"
@@ -2263,7 +2375,7 @@ defmodule TexttileWeb.EditorLive do
                      A half-written word is no tag, so the field waits:
                      it hands the row over when it loses the focus, and
                      the hook hands it over earlier the moment a comma
-                     closes a word. --%>
+                     or the Enter key closes a word. --%>
                 <input
                   type="text"
                   id="edTags"
@@ -2273,6 +2385,7 @@ defmodule TexttileWeb.EditorLive do
                   phx-debounce="blur"
                   phx-hook=".TagType"
                   data-tags={Enum.join(@known_tags, "\n")}
+                  data-new={gettext("new")}
                   autocomplete="off"
                   spellcheck="false"
                   role="combobox"
@@ -2300,6 +2413,7 @@ defmodule TexttileWeb.EditorLive do
 
                       this.at = -1
                       this.matches = []
+                      this.fresh = null
                       this.commas = this.count()
 
                       this.onInput = () => { this.commit(); this.refresh() }
@@ -2364,8 +2478,12 @@ defmodule TexttileWeb.EditorLive do
                       }
                     },
 
+                    // the tags already closed by a comma. The word being
+                    // written is not one of them: counting it in made
+                    // the field hide the very word under the caret, so
+                    // a new tag never got a row of its own.
                     written() {
-                      return this.el.value.split(",").map(t => t.trim().toLowerCase()).filter(Boolean)
+                      return this.parts().head.split(",").map(t => t.trim().toLowerCase()).filter(Boolean)
                     },
 
                     refresh() {
@@ -2374,13 +2492,25 @@ defmodule TexttileWeb.EditorLive do
                       if (!term) return this.close()
 
                       const taken = this.written()
-                      const hits = this.known().filter(
+                      const known = this.known()
+                      const hits = known.filter(
                         tag => tag.includes(term) && !taken.includes(tag)
                       )
                       // what the word starts, before what it only touches
                       hits.sort((a, b) => a.startsWith(term) === b.startsWith(term) ? 0 : a.startsWith(term) ? -1 : 1)
 
-                      this.matches = hits.slice(0, MAX)
+                      // A word the blog does not carry yet is a tag as
+                      // much as any other, and the menu is where a tag
+                      // is confirmed. Without a row of its own the new
+                      // word was the one thing here Enter could not
+                      // finish, and a field that answers every word but
+                      // yours reads as a field that is not listening.
+                      this.fresh = known.some(tag => tag.toLowerCase() === term) || taken.includes(term)
+                        ? null
+                        : word.trim()
+
+                      this.matches = hits.slice(0, this.fresh ? MAX - 1 : MAX)
+                      if (this.fresh) this.matches.push(this.fresh)
                       if (!this.matches.length) return this.close()
 
                       this.at = 0
@@ -2389,6 +2519,7 @@ defmodule TexttileWeb.EditorLive do
                     },
 
                     paint() {
+                      const label = this.el.dataset.new || "new"
                       this.menu.replaceChildren(...this.matches.map((tag, i) => {
                         const row = document.createElement("li")
                         row.dataset.tag = tag
@@ -2396,15 +2527,39 @@ defmodule TexttileWeb.EditorLive do
                         row.setAttribute("role", "option")
                         row.setAttribute("aria-selected", i === this.at ? "true" : "false")
                         if (i === this.at) row.classList.add("on")
+                        if (this.fresh && tag === this.fresh) {
+                          row.classList.add("fresh")
+                          const mark = document.createElement("i")
+                          mark.textContent = label
+                          row.appendChild(mark)
+                        }
                         return row
                       }))
                     },
 
+                    // Under the field, or over it when the field stands
+                    // near the bottom edge. The side column scrolls, so
+                    // the field ends up down there often, and a menu
+                    // that always hung below it hung off the screen:
+                    // the word you were writing had a row nobody saw.
                     place() {
                       const r = this.el.getBoundingClientRect()
+                      const gap = 4, edge = 8, cap = 240
+                      const below = window.innerHeight - r.bottom - gap - edge
+                      const above = r.top - gap - edge
+                      const want = Math.min(this.menu.scrollHeight, cap)
+
                       this.menu.style.left = `${r.left}px`
                       this.menu.style.width = `${r.width}px`
-                      this.menu.style.top = `${r.bottom + 4}px`
+
+                      if (want > below && above > below) {
+                        const h = Math.max(80, Math.min(want, Math.round(above)))
+                        this.menu.style.maxHeight = `${h}px`
+                        this.menu.style.top = `${Math.round(r.top - gap - h)}px`
+                      } else {
+                        this.menu.style.maxHeight = `${Math.max(80, Math.min(cap, Math.round(below)))}px`
+                        this.menu.style.top = `${r.bottom + gap}px`
+                      }
                     },
 
                     open() {
@@ -2418,16 +2573,32 @@ defmodule TexttileWeb.EditorLive do
                       this.el.setAttribute("aria-expanded", "false")
                       this.at = -1
                       this.matches = []
+                      this.fresh = null
                     },
 
                     key(e) {
+                      // Enter finishes the word wherever it stands: the
+                      // row under the marker if the menu is up, and
+                      // otherwise the letters themselves. A comma used
+                      // to be the only way to close a tag, which is a
+                      // thing you have to be told.
+                      if (e.key === "Enter") {
+                        const pick = this.menu.hidden || this.at < 0
+                          ? this.parts().word.trim()
+                          : this.matches[this.at]
+                        if (!pick) return
+                        e.preventDefault()
+                        this.accept(pick)
+                        return
+                      }
+
                       if (this.menu.hidden) return
                       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
                         e.preventDefault()
                         const step = e.key === "ArrowDown" ? 1 : -1
                         this.at = (this.at + step + this.matches.length) % this.matches.length
                         this.paint()
-                      } else if (e.key === "Enter" || e.key === "Tab") {
+                      } else if (e.key === "Tab") {
                         if (this.at < 0) return
                         e.preventDefault()
                         this.accept(this.matches[this.at])
