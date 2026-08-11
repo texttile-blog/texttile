@@ -5,6 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# One publish at a time, and never a cancelled one: two runs would push
+# the moving tags in an order nobody chose.
+concurrency:
+  group: publish-image
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/texttile-blog/texttile
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,15 +22,64 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+
+      # The version in mix.exs is the version of the build. Settings
+      # shows this number, and the image tags carry it.
+      - name: Read the version
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^[[:space:]]*version: "\([^"]*\)",/\1/p' mix.exs)"
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "mix.exs holds no usable version: '$version'"
+            exit 1
+          fi
+
+          echo "exact=$version" >> "$GITHUB_OUTPUT"
+          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+          echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The exact tag never moves, so it must not exist yet. A merge
+      # that keeps the version of the last one stops here: raise the
+      # version in mix.exs, as every pull request must.
+      #
+      # Only the registry's own word for "there is no such tag" lets the
+      # build go on. Any other failure - the registry is down, the login
+      # is refused - says nothing about the tag, and going on would push
+      # a standing version over a build that owns it.
+      - name: Refuse a version that is already published
+        shell: bash
+        run: |
+          version="${{ steps.version.outputs.exact }}"
+
+          if said="$(docker buildx imagetools inspect "$IMAGE:$version" 2>&1)"; then
+            echo "Version $version is published already. Raise the version in mix.exs."
+            exit 1
+          fi
+
+          if ! grep -qiE "not found|unknown" <<< "$said"; then
+            echo "The registry did not answer whether $version exists:"
+            echo "$said"
+            exit 1
+          fi
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          # Two tags stand still, three move: the exact version and the
+          # commit name one build for good, while the minor, the major
+          # and latest follow the newest build that fits them.
           tags: |
-            ghcr.io/texttile-blog/texttile:latest
-            ghcr.io/texttile-blog/texttile:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.exact }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.minor }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.major }}
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
