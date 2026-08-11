@@ -178,6 +178,34 @@ defmodule Texttile.ExportTest do
       assert Map.has_key?(files, "beach-days/gallery/xxx_002_plan.png")
     end
 
+    test "a reference that climbs out of the uploads carries nothing with it" do
+      # A real file right beside the uploads root, and a reference an
+      # admin can type by hand to reach it.
+      name = "secret-#{System.unique_integer([:positive])}.png"
+      secret = Uploads.absolute("../#{name}")
+      File.mkdir_p!(Path.dirname(secret))
+      File.mkdir_p!(Uploads.absolute("images"))
+      File.write!(secret, "not yours")
+      on_exit(fn -> File.rm_rf!(secret) end)
+      assert File.regular?(Uploads.absolute("images/../../#{name}"))
+
+      climb = "images/../../#{name}"
+
+      article =
+        draft_post(%{
+          title: "Beach days",
+          slug: "beach-days",
+          body: "![out](/uploads/#{climb})"
+        })
+
+      files = export!(article)
+      {_entries, body} = index!(files)
+
+      assert Map.keys(files) == ["beach-days/index.md"]
+      assert body =~ "![out](/uploads/#{climb})"
+      refute body =~ "gallery/"
+    end
+
     test "a reference to somewhere else is left alone" do
       article =
         draft_post(%{

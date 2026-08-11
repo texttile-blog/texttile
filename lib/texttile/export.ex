@@ -70,6 +70,10 @@ defmodule Texttile.Export do
   # reading order. A file the gallery already carries is not written
   # twice, and a reference whose file has gone is left out; the words
   # then keep the address they had.
+  #
+  # `url` is the address as the words wrote it, which is what the
+  # rewriting looks for; `path` is what that address really names below
+  # the uploads root, which is what is read.
   defp carried(article) do
     tiles =
       article.id
@@ -77,7 +81,11 @@ defmodule Texttile.Export do
       |> Enum.filter(&there?(&1.path))
       |> Enum.with_index(1)
       |> Enum.map(fn {image, at} ->
-        %{path: image.path, name: "gallery/#{count(at)}_#{tile_name(image)}"}
+        %{
+          path: image.path,
+          url: @uploads_prefix <> image.path,
+          name: "gallery/#{count(at)}_#{tile_name(image)}"
+        }
       end)
 
     taken = MapSet.new(tiles, & &1.path)
@@ -86,13 +94,28 @@ defmodule Texttile.Export do
       article.body
       |> Body.upload_paths()
       |> Enum.reject(&(&1 in taken))
-      |> Enum.filter(&there?/1)
+      |> Enum.flat_map(&below_root/1)
       |> Enum.with_index(1)
-      |> Enum.map(fn {relative, at} ->
-        %{path: relative, name: "gallery/xxx_#{count(at)}_#{inline_name(relative)}"}
+      |> Enum.map(fn {{written, path}, at} ->
+        %{
+          path: path,
+          url: @uploads_prefix <> written,
+          name: "gallery/xxx_#{count(at)}_#{inline_name(path)}"
+        }
       end)
 
     tiles ++ inline
+  end
+
+  # The words are written by hand, so a reference in them can name
+  # anything at all. `under_root/1` is the one reading of what an
+  # address below the uploads really is; a name that climbs out of the
+  # root is no file of ours and travels nowhere.
+  defp below_root(written) do
+    case Uploads.under_root(written) do
+      nil -> []
+      path -> if there?(path), do: [{written, path}], else: []
+    end
   end
 
   defp there?(relative), do: File.regular?(Uploads.absolute(relative))
@@ -193,7 +216,7 @@ defmodule Texttile.Export do
   # Every reference the bundle carries points into the folder; one that
   # points somewhere else, or at a file that has gone, stays as it is.
   defp body(article, carried) do
-    names = Map.new(carried, fn file -> {@uploads_prefix <> file.path, file.name} end)
+    names = Map.new(carried, fn file -> {file.url, file.name} end)
 
     Body.rewrite(article.body, fn whole, alt, url ->
       case Map.fetch(names, String.trim(url)) do
