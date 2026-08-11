@@ -18,6 +18,7 @@
    to the server's truth. */
 
 import {t, esc} from "./i18n"
+import {attachSwipe, trapTab, quiet} from "./lightbox.js"
 
 const MAX_PARALLEL = 2
 /* one roof for a photograph and for a film, and the server owns the
@@ -30,15 +31,12 @@ const DEFAULT_MAX_MB = 512
 const TOUCH_DRAG_DELAY_MS = 200
 const DRAG_THRESHOLD_PX = 9
 const TAP_MS = 500
-const SWIPE_THRESHOLD_PX = 48
 const SCROLL_EDGE_PX = 64
 const SCROLL_STEP_PX = 14
 const NOTE_MS = 2600
 const JMOVE_MS = 2600
 const UNDO_S = 10
 const SAVED_MS = 4000
-
-const FOCUSABLE = "a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex='-1'])"
 
 export function mount(hook) {
   const core = new Gallery(hook)
@@ -723,21 +721,9 @@ class Gallery {
       })
     })
 
-    // swipe on the stage: fingers only, mostly horizontal
-    const stage = root.querySelector("#lbStage")
-    let swipe = null
-    stage.addEventListener("pointerdown", e => {
-      if (e.pointerType !== "mouse") swipe = {x: e.clientX, y: e.clientY}
-    })
-    stage.addEventListener("pointerup", e => {
-      if (!swipe) return
-      const dx = e.clientX - swipe.x
-      const dy = e.clientY - swipe.y
-      swipe = null
-      if (Math.abs(dx) > SWIPE_THRESHOLD_PX && Math.abs(dx) > Math.abs(dy)) {
-        this.nav(dx < 0 ? 1 : -1)
-      }
-    })
+    // the one lightbox's swipe rule and focus trap
+    attachSwipe(root.querySelector("#lbStage"), step => this.nav(step))
+    trapTab(root)
   }
 
   paint() {
@@ -774,12 +760,6 @@ class Gallery {
     }
   }
 
-  // whatever was playing here stops before the next thing is painted
-  stopFilm(stage) {
-    const film = stage.querySelector("video")
-    if (film) film.pause()
-  }
-
   // a film plays where the picture would be, with the poster behind it
   // until the first frame arrives
   loadVideo(data) {
@@ -792,7 +772,7 @@ class Gallery {
 
     state.hidden = true
     img.style.backgroundImage = ""
-    this.stopFilm(img)
+    quiet(img)
 
     const film = document.createElement("video")
     film.className = "lb-film"
@@ -814,7 +794,7 @@ class Gallery {
     const img = this.root.querySelector("#lbImg")
     const state = this.root.querySelector("#lbState")
 
-    this.stopFilm(img)
+    quiet(img)
     img.replaceChildren()
     img.style.backgroundImage = ""
     img.setAttribute("aria-label", data.filename)
@@ -937,21 +917,6 @@ class Gallery {
         this.closeLightbox()
       }
       e.preventDefault()
-      return
-    }
-
-    if (e.key === "Tab") {
-      const focusables = [...this.root.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null)
-      if (!focusables.length) return
-      const first = focusables[0]
-      const last = focusables[focusables.length - 1]
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault()
-        first.focus()
-      }
       return
     }
 

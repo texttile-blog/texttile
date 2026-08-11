@@ -26,7 +26,9 @@
     <link rel="stylesheet" href={~p"/theme.css"} />
     <%!-- a few lines for the search jump and the lightbox keys; every
          page works fully without them --%>
-    <script phx-track-static defer src={~p"/assets/js/public.js"}>
+    <%!-- a module, because the bundle is split: the shared lightbox
+         behaviour arrives as an import of its own chunk --%>
+    <script phx-track-static defer type="module" src={~p"/assets/js/public.js"}>
     </script>
   </head>
   <%!-- data-count says: report this page to the view counter. It

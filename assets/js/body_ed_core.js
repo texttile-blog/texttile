@@ -33,7 +33,7 @@ import {syntaxTree, syntaxHighlighting, HighlightStyle} from "@codemirror/langua
 import {defaultKeymap, history, historyKeymap} from "@codemirror/commands"
 import {markdown, markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward} from "@codemirror/lang-markdown"
 import {tags} from "@lezer/highlight"
-import {openMedia} from "./media_lightbox"
+import {openLightbox} from "./lightbox.js"
 import {tokensFrom, createUploads} from "./uploads.js"
 import {t} from "./i18n"
 
@@ -475,7 +475,7 @@ const impl = {
       const at = row.findIndex(item => item.original === thumb.dataset.url)
       /* held, so the editor takes it with it: the dialog lives on the
          body, outside everything LiveView tears down */
-      this.lightbox = openMedia(row, at < 0 ? 0 : at)
+      this.lightbox = openLightbox(row, at < 0 ? 0 : at)
     }
 
     this.el.addEventListener("mousedown", this.onThumbDown)
