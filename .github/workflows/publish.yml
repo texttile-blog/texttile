@@ -117,6 +117,5 @@ jobs:
 
           gh release create "$tag" \
             --target "$GITHUB_SHA" \
-            --title "$tag" \
             --notes "$notes" \
             --generate-notes
