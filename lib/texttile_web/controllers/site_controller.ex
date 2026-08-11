@@ -10,6 +10,7 @@ defmodule TexttileWeb.SiteController do
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Listing
   alias Texttile.Articles.Reading
   alias Texttile.Articles.Visibility
   alias Texttile.Comments
@@ -538,57 +539,29 @@ defmodule TexttileWeb.SiteController do
 
     # The field searches every entry of every year; the archive narrows
     # what the field found to one year, and then to one month of it.
-    {year, month} =
-      Articles.settle_period(found, number_param(params["y"]), number_param(params["m"]))
-
-    {years, months} = Articles.periods(found, year)
-    in_period = Enum.filter(found, &Articles.in_period?(&1, year, month))
-
-    per_page = Settings.get(:posts_per_page)
-    pages = max(div(length(in_period) - 1, per_page) + 1, 1)
-    page = page_number(params["page"], pages)
-    articles = Enum.slice(in_period, (page - 1) * per_page, per_page)
+    list = Listing.assemble(found, year: params["y"], month: params["m"], page: params["page"])
     list_path = ~p"/blog"
 
     conn
     |> assign(:active, :texts)
     |> render(:texts,
       q: q,
-      articles: articles,
-      previews: Gallery.previews(articles),
+      articles: list.entries,
+      previews: Gallery.previews(list.entries),
       comment_counts: Comments.reader_count_map(),
-      found: length(in_period),
+      found: list.shown,
       total: total,
-      # what the search found across every year: the number "All years"
-      # carries, so it counts the same way the years beside it do
-      across_years: length(found),
-      year: year,
-      month: month,
-      years: years,
-      months: months,
-      page: page,
-      pages: pages,
-      page_path: &list_link(list_path, q, year, month, &1),
+      across_years: list.across_years,
+      year: list.year,
+      month: list.month,
+      years: list.years,
+      months: list.months,
+      page: list.page,
+      pages: list.pages,
+      page_path: &list_link(list_path, q, list.year, list.month, &1),
       period_path: &list_link(list_path, q, &1, &2, 1),
       list_path: list_path
     )
-  end
-
-  # A page number, a year or a month as the address writes them, or nil.
-  defp number_param(raw) do
-    case Integer.parse(to_string(raw)) do
-      {number, ""} when number > 0 -> number
-      _ -> nil
-    end
-  end
-
-  # A page number outside the row is no error: a bookmark from a
-  # shorter blog, or a ?page= somebody typed, lands on the last page.
-  defp page_number(raw, pages) do
-    case Integer.parse(to_string(raw)) do
-      {n, ""} when n > 0 -> min(n, pages)
-      _ -> 1
-    end
   end
 
   # One address for the list in any state it can stand in, so a year, a
