@@ -20,6 +20,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      version: ${{ steps.version.outputs.exact }}
     steps:
       - uses: actions/checkout@v4
 
@@ -83,3 +85,37 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.version.outputs.major }}
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
+
+  # The release is the version's public record on GitHub: the tag
+  # v<version> on the commit the image was built from, and notes that
+  # name the pull requests since the release before. It is a job of its
+  # own so a failed release does not read as a failed image, and
+  # "re-run failed jobs" repeats only this part while the image check
+  # above stops a full re-run.
+  release:
+    runs-on: ubuntu-latest
+    needs: publish
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ needs.publish.outputs.version }}"
+          tag="v$version"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag exists already."
+            exit 0
+          fi
+
+          notes="$(printf '```\ndocker pull %s:%s\n```' "$IMAGE" "$version")"
+
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --notes "$notes" \
+            --generate-notes
