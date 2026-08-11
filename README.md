@@ -603,11 +603,14 @@ ffmpeg (for the video conversion; `make tools` installs it).
 ```sh
 make tools       # install the command line tools: ffmpeg and ffprobe
 make start       # dev server on port 4000, no configuration needed
-make test        # unit tests plus end-to-end browser tests
+make test        # JS unit tests, Elixir unit tests, browser tests
 make check       # everything CI checks: warnings, formatting, tests
 make db-pull     # pull the production snapshot next to the dev database
 make db-delete   # delete the shared development SQLite database
 ```
+
+`npm --prefix assets test` runs the JS unit tests on their own: plain
+`node --test` over `assets/js_test/`, no browser involved.
 
 The development server listens on all interfaces, and `make start` opens
 the address of the network instead of `localhost`: the address of the cable

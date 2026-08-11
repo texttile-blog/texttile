@@ -16,6 +16,9 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> fill_in("Name", with: "Grandma Christel")
     |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
     |> fill_in("Comment", with: "More of the dog, please.")
+    # the test types faster than a person; the time trap must not read
+    # that as a script
+    |> age_form({:comment, article.id})
     |> click_button("Post comment")
     |> assert_has("#comment-note", text: "Sent. Follow the link in your mail")
     |> assert_has("#comments", text: "waiting for your confirmation")
@@ -166,6 +169,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
       |> fill_in("Comment", with: "More of the dog, please.")
       |> check("Remember me on this device", exact: false)
+      |> age_form({:comment, one.id})
       |> click_button("Post comment")
       |> assert_has("#comment-note", text: "Sent.")
 
