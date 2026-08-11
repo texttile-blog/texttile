@@ -105,6 +105,10 @@ you move it.
 A build is published only when the version rises. A merge that keeps the
 version of the build before it publishes nothing and reports a failure.
 
+Each published build also gets a GitHub release. The release tags the
+commit the image was built from as `v<version>`, shows the pull command,
+and lists the pull requests since the release before.
+
 ## Readers and admins
 
 Readers get the list of published entries at `/blog`, each entry at its own
