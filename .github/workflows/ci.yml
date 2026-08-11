@@ -32,6 +32,7 @@ jobs:
       - run: mix format --check-formatted
       - run: mix assets.setup
       - run: npm --prefix assets ci
+      - run: npm --prefix assets test
       - run: npm --prefix assets exec -- playwright install chromium --with-deps
       # The video conversion shells out to ffmpeg, and the runner image
       # carries none. The same target a developer machine uses.
