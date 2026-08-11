@@ -629,8 +629,7 @@ defmodule TexttileWeb.SiteController do
       comments: rows,
       comment_count: Enum.count(rows, &match?({:shown, _}, &1)) + earlier,
       comment_earlier: earlier,
-      comment_token:
-        conn.assigns[:comment_token] || HumanCheck.stamp({:comment, article.id}),
+      comment_token: conn.assigns[:comment_token] || HumanCheck.stamp({:comment, article.id}),
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
       comment_rule: comment_rule(signed_in_user(conn), require?),
       # A form that came back with a mistake keeps what was typed; a

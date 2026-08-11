@@ -621,6 +621,31 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#logList", "put gull.jpg into the text")
     end
 
+    test "upload news from a tab without the lock writes nothing into the entry", %{
+      conn: conn,
+      user: user
+    } do
+      article = draft(user, %{title: "Doors", body: "![Uploading gull.jpg…]()"})
+
+      # The first view holds the lock; the second only watches.
+      {:ok, _writer, _html} = live(conn, ~p"/admin/texts/#{article}")
+      other = Texttile.AccountsFixtures.user_fixture()
+
+      {:ok, watcher, _html} =
+        build_conn() |> log_in_user(other) |> live(~p"/admin/texts/#{article}")
+
+      render_hook(watcher, "upload_state", %{
+        "files" => [%{"name" => "gull.jpg", "status" => "uploading", "pct" => 40}],
+        "news" => [%{"kind" => "done", "name" => "gull.jpg"}]
+      })
+
+      # the progress display follows whoever sends it; the Log does not
+      assert has_element?(watcher, "#inlineImgs", "uploading 40%")
+
+      watcher |> element(".tab", "Log") |> render_click()
+      refute has_element?(watcher, "#logList", "gull.jpg is in the text")
+    end
+
     # The entry holds this picture already. Nothing failed, so the bar
     # says which picture it is instead of offering a retry that would
     # answer the same.

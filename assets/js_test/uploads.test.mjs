@@ -167,6 +167,21 @@ test("removing takes the marker out; a retry without the file says so", () => {
   assert.deepEqual(lastNews(told), [{kind: "retry_missing", name: "a.jpg"}])
 })
 
+test("cancelling a running upload gives its slot back to the queue", () => {
+  const {requests, uploads} = build()
+  uploads.add([file("a.jpg"), file("b.jpg"), file("c.jpg"), file("d.jpg")])
+  assert.equal(requests.open.length, 2)
+
+  uploads.remove("a.jpg", "cancel")
+  uploads.remove("b.jpg", "cancel")
+
+  // both cancelled requests were aborted, and the two waiting files
+  // are on their way instead of standing behind slots nobody holds
+  assert.ok(requests.open[0].aborted)
+  assert.ok(requests.open[1].aborted)
+  assert.equal(requests.open.length, 4)
+})
+
 test("a read-only surface refuses instead of uploading", () => {
   const {editor, told, uploads} = build({readOnly: true})
   uploads.add([file("a.jpg")])

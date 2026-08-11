@@ -149,6 +149,28 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> refute_has("#lbCount", text: "2 / 2")
     end
 
+    test "Tab stays inside the open lightbox", %{conn: conn} do
+      article = published_post(title: "Trap", slug: "trap", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+
+      # the page behind the overlay is not there: however often Tab is
+      # pressed, focus never leaves the lightbox
+      session =
+        conn
+        |> open_page(Articles.public_path(article))
+        |> click("#tile-#{first.id}")
+        |> assert_has("#lbCount", text: "1 / 1")
+
+      for _step <- 1..6, do: press(session, "body", "Tab")
+
+      evaluate(
+        session,
+        "() => document.getElementById('lb').contains(document.activeElement)",
+        [is_function: true],
+        &assert(&1 == true)
+      )
+    end
+
     test "a picture in the text opens the lightbox too", %{conn: conn} do
       article =
         published_post(

@@ -27,7 +27,16 @@ config :esbuild,
   version: "0.25.4",
   texttile: [
     args:
-      ~w(js/app.js js/public.js --bundle --target=es2022 --format=esm --splitting --chunk-names=chunks/[name]-[hash] --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+      ~w(js/app.js --bundle --target=es2022 --format=esm --splitting --chunk-names=chunks/[name]-[hash] --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
+  ],
+  # The reader's script stays one self-contained file: a reader page
+  # costs one request, not a module graph. It shares its sources with
+  # the admin bundle at build time and nothing at load time.
+  public: [
+    args:
+      ~w(js/public.js --bundle --target=es2022 --format=iife --outdir=../priv/static/assets/js),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]

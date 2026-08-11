@@ -1396,6 +1396,7 @@ defmodule TexttileWeb.EditorLive do
               class="main"
               id="stateMain"
               phx-click="publish_changes"
+              data-flush-body
               title={
                 gettext(
                   "Hands the text as it stands to the readers. The day, the address and the state do not move, and no mail goes out."
@@ -1993,9 +1994,7 @@ defmodule TexttileWeb.EditorLive do
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
                   data-date={I18n.format_field_moment(image.gallery_date)}
-                  data-full={
-                    @media[image.path].still && Images.url(@media[image.path].still, :max)
-                  }
+                  data-full={@media[image.path].still && Images.url(@media[image.path].still, :max)}
                   data-video={
                     @media[image.path].film && Images.url(@media[image.path].film, :original)
                   }

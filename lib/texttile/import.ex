@@ -459,7 +459,9 @@ defmodule Texttile.Import do
          {:ok, stored} <- store_pictures(bundle, progress) do
       try do
         {:ok, {verb, old_paths}} =
-          Repo.transaction(fn -> apply_bundle(bundle, stored, user, today) end, timeout: :infinity)
+          Repo.transaction(fn -> apply_bundle(bundle, stored, user, today) end,
+            timeout: :infinity
+          )
 
         Enum.each(old_paths -- stored_paths(stored), &Uploads.remove_upload/1)
         {:ok, verb}

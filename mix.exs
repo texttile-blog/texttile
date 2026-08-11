@@ -89,10 +89,11 @@ defmodule Texttile.MixProject do
       # Assets are built so browser e2e tests load real CSS/JS (LiveView needs app.js).
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "assets.build", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind texttile", "esbuild texttile"],
+      "assets.build": ["compile", "tailwind texttile", "esbuild texttile", "esbuild public"],
       "assets.deploy": [
         "tailwind texttile --minify",
         "esbuild texttile --minify",
+        "esbuild public --minify",
         "phx.digest"
       ],
       precommit: [

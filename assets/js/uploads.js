@@ -113,6 +113,14 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
     }
   }
 
+  /* a finished, failed or cancelled request gives its slot back and
+     the queue moves on. Named here and not inside start(), because a
+     cancel arrives from outside the request's own listeners. */
+  function settle() {
+    running--
+    pump()
+  }
+
   function start(name) {
     const entry = entries.get(name)
     running++
@@ -127,7 +135,6 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
       entry.pct = Math.round((e.loaded / e.total) * 100)
       tell([])
     })
-    const settle = () => { running--; pump() }
     xhr.addEventListener("load", () => {
       settle()
       if (xhr.status === 200) {
@@ -186,7 +193,15 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
   function remove(name, how) {
     if (editor.readOnly()) { editor.refuse(); return }
     const entry = entries.get(name)
-    if (entry && entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
+
+    /* an aborted request fires neither load nor error, so the slot it
+       held is given back right here; a queued or failed entry holds
+       none */
+    if (entry && entry.status === "uploading") {
+      if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
+      settle()
+    }
+
     entries.delete(name)
     dropToken(how === "cancel" ? tokens.up(name) : tokens.fail(name))
     tell([{kind: "removed", name, how}])

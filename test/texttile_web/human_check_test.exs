@@ -23,7 +23,9 @@ defmodule TexttileWeb.HumanCheckTest do
     end
 
     test "a filled honeypot fails, whatever the timing says" do
-      refute HumanCheck.human?({:comment, @article}, comment_params(10, %{"url" => "x"}), now: @now)
+      refute HumanCheck.human?({:comment, @article}, comment_params(10, %{"url" => "x"}),
+               now: @now
+             )
     end
 
     test "a form sent back within a script's seconds fails" do
