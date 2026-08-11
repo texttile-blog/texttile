@@ -377,6 +377,30 @@ defmodule TexttileWeb.CoreComponents do
   end
 
   @doc """
+  The mark of a way out of the site: an arrow into a tray. It stands
+  where a control has no room for words, so whoever draws it says what
+  it is, with a title or an aria-label.
+  """
+  def down_icon(assigns) do
+    ~H"""
+    <svg
+      class="get-i"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 2.5v7" />
+      <path d="M5 7l3 3 3-3" />
+      <path d="M3 11.5v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1" />
+    </svg>
+    """
+  end
+
+  @doc """
   The mark of a link that opens a tab of its own: an arrow leaving its
   box. It stands after the words, never instead of them, so it carries
   no label for a screen reader.

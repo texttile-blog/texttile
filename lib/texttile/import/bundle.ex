@@ -9,6 +9,7 @@ defmodule Texttile.Import.Bundle do
   alias Texttile.Articles
   alias Texttile.Import.Comments
   alias Texttile.Import.Frontmatter
+  alias Texttile.Videos
 
   defstruct name: nil,
             dir: nil,
@@ -216,7 +217,7 @@ defmodule Texttile.Import.Bundle do
           bundle.dir
           |> Path.join("gallery")
           |> ls()
-          |> Enum.filter(&picture?/1)
+          |> Enum.filter(&media?/1)
           |> Enum.sort()
           |> Enum.map(&"gallery/#{&1}")
 
@@ -235,8 +236,26 @@ defmodule Texttile.Import.Bundle do
     String.downcase(Path.extname(name)) in @picture_extensions
   end
 
+  # A film is a file of the bundle and never a URL, so `media?` only
+  # ever judges a bundle path. See `check_source/2`.
+  defp media?(name), do: picture?(name) or Videos.video?(name)
+
+  # The references in the words. An address that starts at the root of
+  # some site, `/uploads/...`, names a file of that site and never a
+  # file of this bundle: an export writes one where the entry pointed at
+  # a picture that had already gone. It is no source, so it is no error
+  # either. The reference stays in the words as it stands, and the
+  # report says so. Everything else - a URL, a path in the bundle - is a
+  # source and is checked like one.
   defp read_body_refs(bundle) do
-    %{bundle | body_refs: Texttile.Articles.Body.upload_urls(bundle.body)}
+    {sources, standing} =
+      bundle.body
+      |> Texttile.Articles.Body.upload_urls()
+      |> Enum.split_with(&(url?(&1) or Path.type(&1) == :relative))
+
+    Enum.reduce(standing, %{bundle | body_refs: sources}, fn address, bundle ->
+      warn(bundle, "the words name #{address}, which is no file of the bundle; it stays as it is")
+    end)
   end
 
   defp check_sources(bundle) do
@@ -246,10 +265,21 @@ defmodule Texttile.Import.Bundle do
   defp check_source(bundle, source) do
     cond do
       url?(source) ->
-        if String.starts_with?(source, ["http://", "https://"]) do
-          bundle
-        else
-          complain(bundle, "the source #{source} is neither http(s) nor a bundle path")
+        cond do
+          not String.starts_with?(source, ["http://", "https://"]) ->
+            complain(bundle, "the source #{source} is neither http(s) nor a bundle path")
+
+          # The importer downloads pictures and nothing else. A film
+          # travels in the bundle, where its size is seen before the
+          # run starts.
+          Videos.video?(source) ->
+            complain(
+              bundle,
+              "the source #{source} is a film, and a film has to be a file in the bundle"
+            )
+
+          true ->
+            bundle
         end
 
       Path.type(source) != :relative or ".." in Path.split(source) ->
@@ -258,10 +288,11 @@ defmodule Texttile.Import.Bundle do
           "the source #{source} leaves the bundle folder (no .. and no absolute paths)"
         )
 
-      not picture?(source) ->
+      not media?(source) ->
         complain(
           bundle,
-          "the source #{source} is not a supported picture (PNG, JPEG, WebP, GIF)"
+          "the source #{source} is neither a supported picture (PNG, JPEG, WebP, GIF)" <>
+            " nor a supported film (MP4, MOV, M4V, WebM, AVI, MKV)"
         )
 
       not File.regular?(Path.join(bundle.dir, source)) ->
@@ -298,7 +329,7 @@ defmodule Texttile.Import.Bundle do
         explicit? and String.starts_with?(file, "gallery/") ->
           warn(bundle, "#{file} is in gallery/, but the gallery key does not list it")
 
-        not explicit? and String.starts_with?(file, "gallery/") and picture?(file) ->
+        not explicit? and String.starts_with?(file, "gallery/") and media?(file) ->
           # the shorthand took it as a tile
           bundle
 

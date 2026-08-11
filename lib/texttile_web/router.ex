@@ -93,6 +93,10 @@ defmodule TexttileWeb.Router do
     # the browser feeds them one after the other.
     post "/texts/:id/gallery", GalleryController, :create
 
+    # One entry as a zip: the bundle the import reads, which is a Hugo
+    # page bundle as well. Made for the request and gone after it.
+    get "/texts/:id/export", ExportController, :show
+
     # The door of the admin area. The list of entries has an address of
     # its own, so every screen here is a place you can bookmark, and
     # /admin stays the one short way in.

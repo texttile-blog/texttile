@@ -32,6 +32,11 @@ defmodule Texttile.ImportTest do
     :ok = Vix.Vips.Image.write_to_file(black, path)
   end
 
+  defp film!(path) do
+    File.mkdir_p!(Path.dirname(path))
+    File.cp!(Texttile.VideoFixtures.video_file(320, 240), path)
+  end
+
   defp jpg_bytes! do
     path = Path.join(System.tmp_dir!(), "stub-#{System.unique_integer([:positive])}.jpg")
     jpg!(path)
@@ -188,12 +193,76 @@ defmodule Texttile.ImportTest do
       assert Enum.any?(warnings, &(&1 =~ "open in an editor"))
     end
 
+    test "an address of another site in the words is a warning, not an error",
+         %{dir: dir, user: user} do
+      # This is what an export writes where the entry pointed at a
+      # picture that had already gone. One error would skip the whole
+      # bundle, and the entry would not be imported at all.
+      write_bundle(dir, "beach", "title: Beach days\n", "Gone: ![map](/uploads/images/map.png)\n")
+
+      report = Import.validate(dir)
+      bundle = hd(report.bundles)
+
+      assert bundle.errors == []
+      assert Enum.any?(bundle.warnings, &(&1 =~ "/uploads/images/map.png"))
+      assert Import.run(report, user).created == 1
+      assert Repo.get_by!(Article, slug: "beach-days").body =~ "![map](/uploads/images/map.png)"
+    end
+
     test "a gallery entry that appears twice is an error", %{dir: dir} do
       write_bundle(dir, "beach", "title: A\ngallery: [a.jpg, a.jpg]\n", "", ["a.jpg"])
 
       report = Import.validate(dir)
       assert [error] = hd(report.bundles).errors
       assert error =~ "twice"
+    end
+  end
+
+  describe "films in a bundle" do
+    test "a film beside the pictures becomes a tile and a film in the words",
+         %{dir: dir, user: user} do
+      bundle =
+        write_bundle(
+          dir,
+          "harbour",
+          "title: Harbour\ngallery:\n  - gallery/001_clip.mp4\n",
+          "The walk ![walk](walk.mp4)\n"
+        )
+
+      film!(Path.join(bundle, "gallery/001_clip.mp4"))
+      film!(Path.join(bundle, "walk.mp4"))
+
+      report = Import.validate(dir)
+      assert hd(report.bundles).errors == []
+      assert Import.run(report, user).created == 1
+
+      article = Repo.get_by!(Article, slug: "harbour")
+      assert [tile] = Gallery.list(article.id)
+      assert tile.filename == "001_clip.mp4"
+      assert tile.path =~ ~r"^videos/"
+      assert article.body =~ ~r"!\[walk\]\(/uploads/videos/[a-z0-9-]+\.mp4\)"
+    end
+
+    test "the gallery shorthand takes a film in gallery/ too", %{dir: dir, user: user} do
+      bundle = write_bundle(dir, "harbour", "title: Harbour\n")
+      film!(Path.join(bundle, "gallery/001_clip.mp4"))
+
+      report = Import.validate(dir)
+      assert hd(report.bundles).errors == []
+      assert Import.run(report, user).created == 1
+
+      assert [tile] =
+               "harbour" |> then(&Repo.get_by!(Article, slug: &1)) |> then(&Gallery.list(&1.id))
+
+      assert tile.filename == "001_clip.mp4"
+    end
+
+    test "a film behind a URL is refused, and the message says where films come from",
+         %{dir: dir} do
+      write_bundle(dir, "harbour", "title: Harbour\ngallery: [https://old.example/clip.mp4]\n")
+
+      assert [error] = hd(Import.validate(dir).bundles).errors
+      assert error =~ "film"
     end
   end
 

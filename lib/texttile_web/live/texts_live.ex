@@ -217,21 +217,38 @@ defmodule TexttileWeb.TextsLive do
           class="grid items-start gap-y-[22px] gap-x-3 md:gap-y-7 md:gap-x-5 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"
         >
-          <.link :for={article <- @articles} class="card" navigate={~p"/admin/texts/#{article}"}>
-            <%= if cover = @covers[article.id] do %>
-              <span class="cimg" style={cover_bg(cover)}></span>
-            <% else %>
-              <span class="cimg empty">{gettext("no images yet")}</span>
-            <% end %>
-            <span class="ct">{Articles.display_title(article)}</span>
-            <span class="cm">
-              <span class={["st", article.status]}></span>{card_meta(
-                article,
-                @comment_counts[article.id],
-                article.id in @pending
-              )}
-            </span>
-          </.link>
+          <%!-- The card is one link to the editor, so the way to the
+               zip cannot stand inside it: it is a link of its own,
+               laid over the corner of the picture. It shows itself on
+               hover and on focus, and stands quietly on a touch
+               screen, which has no hover to wait for. --%>
+          <div :for={article <- @articles} class="card-slot">
+            <.link class="card" navigate={~p"/admin/texts/#{article}"}>
+              <%= if cover = @covers[article.id] do %>
+                <span class="cimg" style={cover_bg(cover)}></span>
+              <% else %>
+                <span class="cimg empty">{gettext("no images yet")}</span>
+              <% end %>
+              <span class="ct">{Articles.display_title(article)}</span>
+              <span class="cm">
+                <span class={["st", article.status]}></span>{card_meta(
+                  article,
+                  @comment_counts[article.id],
+                  article.id in @pending
+                )}
+              </span>
+            </.link>
+            <a
+              class="card-get"
+              id={"export-#{article.id}"}
+              href={~p"/admin/texts/#{article}/export"}
+              download
+              title={gettext("Export as a zip")}
+              aria-label={gettext("Export %{title} as a zip", title: Articles.display_title(article))}
+            >
+              <.down_icon />
+            </a>
+          </div>
         </div>
         <%!-- the pager under the grid: the reader's three cells, with
              buttons instead of addresses, because this grid is filtered

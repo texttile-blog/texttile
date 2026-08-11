@@ -196,7 +196,10 @@ of everybody's way: one video at a time, ffmpeg on one thread, at the lowest
 scheduling priority, and with idle disk priority where the kernel offers it.
 While a video converts, the admin area shows the state on its tile and under
 the entry; the reader's page shows the video once it is ready. The upload
-takes `.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`.
+takes `.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`, and the server
+reads which container a file really holds before ffmpeg opens it. A name is
+not a promise, and a file that names other files never reaches the
+converter. ffmpeg runs with the local disk as its only source.
 
 The container brings ffmpeg. On a development machine, `make tools` installs
 it.
@@ -391,6 +394,36 @@ or a URL that the server downloads, so a migration zip stays small.
 script or an AI agent can convert any export (WordPress, for example) into
 bundles. The import itself lives in Settings: upload the zip, read the
 validation report, start the import.
+
+A film travels in the bundle as a file. A picture may come from a URL, a
+film may not: a film is large, and the import does not carry one over the
+network.
+
+## Export one entry
+
+Every entry hands out a copy of itself as a zip. It stands in the menu at the
+right of the editor bar, and on every card of the entry list.
+
+```
+beach-days.zip
+└── beach-days/
+    ├── index.md
+    └── gallery/
+        ├── 001_beach.jpg     the tiles, in gallery order
+        ├── 002_pier.jpg
+        ├── xxx_001_map.png   the files in the words, in reading order
+        └── xxx_002_walk.mp4
+```
+
+`index.md` carries the front matter of [IMPORT.md](IMPORT.md) and the text
+below it, with every reference pointing into `gallery/`. That makes the zip
+two things at once: a Hugo page bundle, and a bundle this Texttile or another
+one imports again.
+
+What travels is the entry as the readers have it, and the file as it was
+uploaded, never a rendition. An entry that was never live has only the
+working copy, so that is what it exports. The comments stay on the site; a
+copy of an entry is its text and its pictures.
 
 ## Backup
 

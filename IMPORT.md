@@ -15,6 +15,10 @@ can point to pictures that are still online. The zip then stays small.
 The report and the import both go by date, oldest entry first. A bundle
 without a `date` comes last, under its folder name.
 
+Texttile writes this format itself: the export of an entry is one bundle in
+a zip. So a bundle is also what a copy of an entry looks like, and an export
+goes back into a Texttile site through this import.
+
 ## The zip
 
 The root of the zip holds one folder per entry. Each folder holds an
@@ -131,7 +135,21 @@ can never produce a picture that stays hotlinked.
 The same source string used twice, in one bundle, becomes one upload. The
 comparison is byte-identical strings, so write each URL one way.
 
-Supported picture formats: PNG, JPEG, WebP, and GIF. The dry run checks each
+Supported picture formats: PNG, JPEG, WebP, and GIF.
+
+A film is a source like a picture: MP4, MOV, M4V, WebM, AVI, and MKV. It
+must be a file in the bundle. A film behind a URL is an error, because a
+film is large and the import does not carry one over the network. A film in
+`gallery` becomes a tile, and a film in the body plays where it stands. The
+server converts it after the import, so a film shows itself a few moments
+after the entry is there.
+
+The name says nothing about the content. Before the conversion the server
+reads which container the file really holds, and refuses anything that is
+not one of the six. A file that names other files, a playlist for example,
+never reaches the converter.
+
+The dry run checks each
 URL with a HEAD request (and a one-byte GET when the host refuses HEAD) and
 reports dead URLs and non-picture content types. The report also lists every
 host the bundle downloads from. Check that list for hosts you do not expect.
@@ -181,16 +199,29 @@ The gallery holds the tiles of an entry. There are two ways to define it:
 - The `gallery` key: a list of sources. The order of the list is the order
   of the tiles.
 - The shorthand: no `gallery` key, and a `gallery/` folder in the bundle.
-  Every picture file in that folder becomes a tile, sorted by file name.
+  Every picture and every film in that folder becomes a tile, sorted by file
+  name.
 
 When the `gallery` key exists, it alone decides. A file in `gallery/` that
 the key does not list is a warning, not a tile.
+
+An entry without tiles writes `gallery: []`. Say it that way, and do not
+leave the key out: a bundle whose `gallery/` folder holds only the pictures
+of the body would otherwise take all of them for tiles, through the
+shorthand above.
 
 ## Pictures in the body
 
 Every Markdown image reference in the body, `![alt](source)`, is imported.
 The importer rewrites the reference to the address of the new upload. Links
 that are not image references stay as they are.
+
+One shape in the body is not a source: an address that starts at the root of
+a site, `/uploads/...`. It names a file of that site, never a file of the
+bundle. An export writes one where the entry pointed at a picture that had
+already gone. The reference stays in the words exactly as it stands, and the
+report warns about it. It is not an error, because one error would skip the
+whole entry over one broken picture.
 
 ## Validation
 
@@ -205,8 +236,10 @@ Errors:
 - Two bundles resolve to the same slug.
 - A URL that redirects, points at a private address, or is larger than
   the picture cap.
-- A relative source points to a file that is not in the bundle.
-- A URL is dead, or its content is not a supported picture.
+- A relative source points to a file that is not in the bundle, or to a file
+  that is neither a supported picture nor a supported film.
+- A URL is dead, its content is not a supported picture, or it points at a
+  film.
 - A gallery entry that appears twice in the list.
 - A `preview` value that matches no picture source of the bundle.
 - A `comments.yaml` that does not parse, or a comment in it without an
