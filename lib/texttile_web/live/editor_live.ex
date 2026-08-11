@@ -1422,6 +1422,7 @@ defmodule TexttileWeb.EditorLive do
               class="main"
               id="stateMain"
               phx-click="publish"
+              data-flush-body
               title={
                 gettext(
                   "Publishes the entry now. A future publish date in the settings schedules it instead."
@@ -1465,7 +1466,11 @@ defmodule TexttileWeb.EditorLive do
           {gettext("The subscriber email went out on %{day}.", day: @article.notified_on)}
         </p>
 
-        <button class="row" id="saveVersionRow" phx-click="save_version">
+        <%!-- data-flush-body: the editor settles its debounce on the
+             mousedown, so the snapshot can never miss the last
+             keystrokes. The attribute is the contract; the event name
+             stays the server's own business. --%>
+        <button class="row" id="saveVersionRow" phx-click="save_version" data-flush-body>
           {gettext("Save version")}
         </button>
         <%!-- While the entry is being rewritten the main button belongs
@@ -1652,6 +1657,9 @@ defmodule TexttileWeb.EditorLive do
                     data-upload-url={~p"/admin/texts/#{@article.id}/images"}
                     data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
                     data-tokens={Jason.encode!(Body.token_templates())}
+                    data-picker="#mdImgFile"
+                    data-dropzone="#bodyWrap"
+                    data-drop-flag="#bodyDropFlag"
                     data-posters={Jason.encode!(poster_map(@media))}
                     data-label={gettext("Body, Markdown")}
                     data-placeholder={
@@ -1963,7 +1971,6 @@ defmodule TexttileWeb.EditorLive do
             id="tilesBlock"
             class="relative"
             phx-hook="Gallery"
-            data-article-id={@article.id}
             data-upload-url={~p"/admin/texts/#{@article.id}/gallery"}
             data-csrf={Phoenix.Controller.get_csrf_token()}
             data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}

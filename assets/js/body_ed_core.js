@@ -395,8 +395,13 @@ const impl = {
       debounce = null
       this.pushEvent(this.event, {text: this.view.state.doc.toString()})
     }
+    /* a control that carries data-flush-body settles the debounce on
+       its mousedown, before the click's round trip: a Save version or
+       a Publish can never miss the last keystrokes. The attribute is
+       the whole contract; the server events behind those buttons stay
+       the server's own business. */
     this.onDocMousedown = e => {
-      if (e.target.closest("[phx-click='save_version'], [phx-click='publish']")) flushNow()
+      if (e.target.closest("[data-flush-body]")) flushNow()
     }
     document.addEventListener("mousedown", this.onDocMousedown, true)
 
@@ -568,7 +573,7 @@ const impl = {
       })
     }
 
-    this.handleEvent("sync_body", ({text, caret}) => this.sync(text, caret))
+    this.handleEvent("sync_body", ({text}) => this.sync(text))
     /* the takeover's flush: whatever still sits in the debounce goes
        to the server right now */
     this.handleEvent("flush_body", () => {
@@ -615,8 +620,11 @@ const impl = {
       notify: state => this.pushEvent("upload_state", state),
     })
 
-    const wrap = this.el.closest("#bodyWrap")
-    const flag = document.getElementById("bodyDropFlag")
+    /* the parts of the page this editor may touch, named on the host
+       the way data-bar already is: the reach and the interface are the
+       same list of attributes */
+    const wrap = this.el.dataset.dropzone && document.querySelector(this.el.dataset.dropzone)
+    const flag = this.el.dataset.dropFlag && document.querySelector(this.el.dataset.dropFlag)
     const carriesFiles = dt => !!dt && [...(dt.types || [])].indexOf("Files") >= 0
     const show = on => {
       if (wrap) wrap.classList.toggle("body-drop", on)
@@ -644,7 +652,7 @@ const impl = {
       })
     }
 
-    const picker = document.getElementById("mdImgFile")
+    const picker = this.picker()
     if (picker) {
       picker.addEventListener("change", () => {
         const files = [...picker.files].filter(f => /^(image|video)\//.test(f.type))
@@ -708,19 +716,15 @@ const impl = {
   /* the model changed around the editor: the smallest change that gets
      there, so everything around it, the caret included, maps through
      instead of resetting */
-  sync(text, caretTo) {
+  sync(text) {
     const view = this.view
     const cur = view.state.doc.toString()
-    if (cur === text) {
-      if (caretTo != null) view.dispatch({selection: {anchor: Math.min(caretTo, text.length)}})
-      return
-    }
+    if (cur === text) return
     let a = 0, b = cur.length, b2 = text.length
     while (a < b && a < b2 && cur.charCodeAt(a) === text.charCodeAt(a)) a++
     while (b > a && b2 > a && cur.charCodeAt(b - 1) === text.charCodeAt(b2 - 1)) { b--; b2-- }
     view.dispatch({
       changes: {from: a, to: b, insert: text.slice(a, b2)},
-      selection: caretTo != null ? {anchor: Math.min(caretTo, text.length)} : undefined,
       annotations: remoteChange.of(true),
     })
   },
@@ -732,12 +736,17 @@ const impl = {
     }
     if (name === "image") {
       if (!this.files) return
-      const picker = document.getElementById("mdImgFile")
+      const picker = this.picker()
       if (picker) picker.click()
       return
     }
     const c = cmds[name]
     if (c) c(this.view)
+  },
+
+  /* the file picker this editor owns, named on the host */
+  picker() {
+    return this.el.dataset.picker ? document.querySelector(this.el.dataset.picker) : null
   },
 
   paintBar(states) {
