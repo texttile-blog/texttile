@@ -26,9 +26,8 @@ defmodule TexttileWeb.CommentsLive do
     {:ok,
      socket
      |> assign(:page_title, gettext("Comments"))
-     |> assign(:editing, nil)
-     |> assign(:edit_error, nil)
      |> assign(:dialog, nil)
+     |> TexttileWeb.CommentModeration.attach(reload: &load/1)
      |> load()}
   end
 
@@ -44,56 +43,19 @@ defmodule TexttileWeb.CommentsLive do
     |> assign(:require?, Settings.get(:comments_require_confirmation))
   end
 
-  # Delete asks first. Not because the trash could lose the comment -
-  # it keeps it for a month - but because the words leave the text the
-  # second the button is pressed, and readers are already reading them.
-  def handle_event("delete_comment", %{"id" => id}, socket) do
-    case Comments.get_comment(id) do
-      nil -> {:noreply, load(socket)}
-      comment -> {:noreply, assign(socket, :dialog, delete_dialog(comment))}
-    end
-  end
-
-  # A comment another admin deleted a moment ago is simply gone; the
-  # list reloads either way. The same for the restore and the release.
-  def handle_event("confirm_delete_comment", %{"id" => id}, socket) do
-    Comments.delete_comment(id)
-    {:noreply, socket |> assign(:dialog, nil) |> close_edit() |> load()}
-  end
-
+  # The six moderation events are answered by CommentModeration; only
+  # what is of this screen alone stays here. The trash lives on this
+  # screen, so the restore does too.
   def handle_event("cancel_dialog", _params, socket) do
     {:noreply, assign(socket, :dialog, nil)}
   end
 
+  # A comment another admin restored a moment ago is simply back; the
+  # list reloads either way.
   def handle_event("restore_comment", %{"id" => id}, socket) do
     Comments.restore_comment(id)
     {:noreply, load(socket)}
   end
-
-  def handle_event("release_comment", %{"id" => id}, socket) do
-    Comments.release_comment(id)
-    {:noreply, load(socket)}
-  end
-
-  # One comment stands open at a time; opening another closes the first
-  # and drops what it said about the last save.
-  def handle_event("start_edit", %{"id" => id}, socket) do
-    {:noreply, socket |> assign(:editing, to_string(id)) |> assign(:edit_error, nil)}
-  end
-
-  def handle_event("cancel_edit", _params, socket) do
-    {:noreply, close_edit(socket)}
-  end
-
-  def handle_event("save_comment", %{"comment_id" => id, "body" => body}, socket) do
-    case Comments.edit_comment(id, body) do
-      {:ok, _comment} -> {:noreply, socket |> close_edit() |> load()}
-      {:error, :gone} -> {:noreply, socket |> close_edit() |> load()}
-      {:error, changeset} -> {:noreply, assign(socket, :edit_error, edit_error(changeset))}
-    end
-  end
-
-  defp close_edit(socket), do: socket |> assign(:editing, nil) |> assign(:edit_error, nil)
 
   def handle_info({:comment_posted, _comment}, socket), do: {:noreply, load(socket)}
   def handle_info({:comment_deleted, _comment}, socket), do: {:noreply, load(socket)}
@@ -161,8 +123,8 @@ defmodule TexttileWeb.CommentsLive do
             comment={comment}
             waiting={Comments.waiting?(comment, @require?)}
             article={comment.article}
-            editing={@editing == to_string(comment.id)}
-            error={@edit_error}
+            editing={@editing_comment == to_string(comment.id)}
+            error={@comment_error}
           />
           <div
             :if={@total > length(@recent)}

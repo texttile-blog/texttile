@@ -53,8 +53,10 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:media_rev, 0)
       |> assign(:comments, Comments.for_article(article.id))
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
-      |> assign(:editing_comment, nil)
-      |> assign(:comment_error, nil)
+      |> TexttileWeb.CommentModeration.attach(
+        scope: {:article, & &1.assigns.article.id},
+        reload: &reload_comments/1
+      )
       # The numbers are read when the Stats tab is opened, not on the
       # way into the editor: most visits here are to write.
       |> assign(:stats, nil)
@@ -424,48 +426,10 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, socket |> assign(:tab, tab) |> load_stats(tab)}
   end
 
-  # Only the open text's own comments, and a comment that is already
-  # gone is no error: the list reloads either way. The trash itself
-  # lives on the Comments screen; a text only ever deletes into it.
-  def handle_event("delete_comment", %{"id" => id}, socket) do
-    case own_comment(socket, id, & &1) do
-      {:error, :gone} -> {:noreply, reload_comments(socket)}
-      comment -> {:noreply, assign(socket, :dialog, delete_dialog(comment))}
-    end
-  end
-
-  def handle_event("confirm_delete_comment", %{"id" => id}, socket) do
-    own_comment(socket, id, &Comments.delete_comment(&1.id))
-
-    {:noreply,
-     socket
-     |> assign(:dialog, nil)
-     |> close_comment_edit()
-     |> reload_comments()}
-  end
-
-  def handle_event("release_comment", %{"id" => id}, socket) do
-    own_comment(socket, id, &Comments.release_comment(&1.id))
-    {:noreply, reload_comments(socket)}
-  end
-
-  def handle_event("start_edit", %{"id" => id}, socket) do
-    {:noreply, socket |> assign(:editing_comment, to_string(id)) |> assign(:comment_error, nil)}
-  end
-
-  def handle_event("cancel_edit", _params, socket) do
-    {:noreply, close_comment_edit(socket)}
-  end
-
-  def handle_event("save_comment", %{"comment_id" => id, "body" => body}, socket) do
-    case own_comment(socket, id, &Comments.edit_comment(&1.id, body)) do
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :comment_error, edit_error(changeset))}
-
-      _ ->
-        {:noreply, socket |> close_comment_edit() |> reload_comments()}
-    end
-  end
+  # The six comment moderation events are answered by
+  # CommentModeration, scoped to the open text's own comments. The
+  # trash itself lives on the Comments screen; a text only ever
+  # deletes into it.
 
   # Only ever opens. The chevron of an open menu says "close" instead,
   # because a click on it is also a click away from the menu, and the
@@ -2848,23 +2812,6 @@ defmodule TexttileWeb.EditorLive do
   ## Copy
 
   defp stamp(datetime), do: I18n.format_moment(datetime)
-
-  # The state of an entry, in words. The stored word is English and
-  # stays English; only what an admin reads changes with the language.
-  # Whatever an admin does on the Comments tab, it does it to a comment
-  # of the open text. Anything else is left alone without a word.
-  defp own_comment(socket, id, fun) do
-    article_id = socket.assigns.article.id
-
-    case Comments.get_comment(id) do
-      %{article_id: ^article_id} = comment -> fun.(comment)
-      _ -> {:error, :gone}
-    end
-  end
-
-  defp close_comment_edit(socket) do
-    socket |> assign(:editing_comment, nil) |> assign(:comment_error, nil)
-  end
 
   defp reload_comments(socket) do
     assign(socket, :comments, Comments.for_article(socket.assigns.article.id))
