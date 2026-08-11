@@ -26,6 +26,7 @@ defmodule Texttile.Import do
   alias Texttile.Import.Bundle
   alias Texttile.Repo
   alias Texttile.Uploads
+  alias Texttile.Videos
 
   defmodule Report do
     @moduledoc "What the dry run found: the bundles, judged, and the whole-zip notes."
@@ -508,13 +509,26 @@ defmodule Texttile.Import do
   # one bundle, never the whole run: store_pictures hears {:error} and
   # rolls the bundle's files back.
   defp store_picture(bundle, source, progress) do
-    if Bundle.url?(source) do
-      download(source, progress)
-    else
-      with {:ok, relative} <-
-             Uploads.put_body_image(Path.join(bundle.dir, source), Path.basename(source)) do
-        {:ok, %{path: relative, name: Path.basename(source)}}
-      end
+    cond do
+      Bundle.url?(source) ->
+        download(source, progress)
+
+      # A film is stored as it came and stands in line for ffmpeg, the
+      # way a film dropped into the editor does. The queue takes a path
+      # once, so a film that is a tile and a reference in the words is
+      # converted once.
+      Videos.video?(source) ->
+        with {:ok, relative} <-
+               Uploads.put_body_video(Path.join(bundle.dir, source), Path.basename(source)) do
+          Videos.queue(relative)
+          {:ok, %{path: relative, name: Path.basename(source)}}
+        end
+
+      true ->
+        with {:ok, relative} <-
+               Uploads.put_body_image(Path.join(bundle.dir, source), Path.basename(source)) do
+          {:ok, %{path: relative, name: Path.basename(source)}}
+        end
     end
   rescue
     error -> {:error, "#{source}: #{Exception.message(error)}"}

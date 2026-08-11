@@ -433,6 +433,31 @@
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
   .card .cm .st.scheduled { background: var(--tt-accentsoft); }
 
+  /* the way to the zip, laid over the corner of the picture. The card
+     under it is one link, so this one cannot stand inside it. It waits
+     for the hover on a pointer, and stands quietly where there is no
+     hover to wait for. */
+  .card-slot { position: relative; }
+  /* The mark is small and the reach is not: the circle is 28px, the
+     thumb gets 40. */
+  .card-get {
+    position: absolute; top: 2px; right: 2px; display: grid; place-items: center;
+    width: 40px; height: 40px; color: var(--tt-paper);
+    opacity: 0; transition: opacity .15s ease;
+  }
+  .card-get::before {
+    content: ""; position: absolute; width: 28px; height: 28px; border-radius: 9999px;
+    background: rgb(var(--tt-shadow) / .55); backdrop-filter: blur(3px);
+    transition: background-color .15s ease;
+  }
+  .card-get .get-i { position: relative; width: 15px; height: 15px; }
+  .card-get:hover::before { background: rgb(var(--tt-shadow) / .78); }
+  .card-slot:hover .card-get, .card-get:focus-visible { opacity: 1; }
+  /* No hover to wait for, so it has to stand there; a grid of cards
+     each wearing a loud badge is a grid of badges, so it stands as
+     quietly as it can and still be seen. */
+  @media (hover: none) { .card-get { opacity: .5; } }
+
   /* the split button: the primary action and the state actions in one
      shell, one radius, one hairline between them. Solid while the text
      is a draft, calm once the text has a state of its own. The hover

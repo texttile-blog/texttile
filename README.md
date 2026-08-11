@@ -373,6 +373,36 @@ script or an AI agent can convert any export (WordPress, for example) into
 bundles. The import itself lives in Settings: upload the zip, read the
 validation report, start the import.
 
+A film travels in the bundle as a file. A picture may come from a URL, a
+film may not: a film is large, and the import does not carry one over the
+network.
+
+## Export one entry
+
+Every entry hands out a copy of itself as a zip. It stands in the menu at the
+right of the editor bar, and on every card of the entry list.
+
+```
+beach-days.zip
+└── beach-days/
+    ├── index.md
+    └── gallery/
+        ├── 001_beach.jpg     the tiles, in gallery order
+        ├── 002_pier.jpg
+        ├── xxx_001_map.png   the files in the words, in reading order
+        └── xxx_002_walk.mp4
+```
+
+`index.md` carries the front matter of [IMPORT.md](IMPORT.md) and the text
+below it, with every reference pointing into `gallery/`. That makes the zip
+two things at once: a Hugo page bundle, and a bundle this Texttile or another
+one imports again.
+
+What travels is the entry as the readers have it, and the file as it was
+uploaded, never a rendition. An entry that was never live has only the
+working copy, so that is what it exports. The comments stay on the site; a
+copy of an entry is its text and its pictures.
+
 ## Backup
 
 Texttile is backed up by pulling, not by pushing. A machine you keep, a
