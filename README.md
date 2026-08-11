@@ -177,7 +177,10 @@ of everybody's way: one video at a time, ffmpeg on one thread, at the lowest
 scheduling priority, and with idle disk priority where the kernel offers it.
 While a video converts, the admin area shows the state on its tile and under
 the entry; the reader's page shows the video once it is ready. The upload
-takes `.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`.
+takes `.mp4`, `.mov`, `.m4v`, `.webm`, `.avi` and `.mkv`, and the server
+reads which container a file really holds before ffmpeg opens it. A name is
+not a promise, and a file that names other files never reaches the
+converter. ffmpeg runs with the local disk as its only source.
 
 The container brings ffmpeg. On a development machine, `make tools` installs
 it.

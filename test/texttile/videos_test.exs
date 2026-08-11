@@ -166,6 +166,48 @@ defmodule Texttile.VideosTest do
       assert Videos.playback(relative) == nil
     end
 
+    test "a playlist under the name of a film is refused before ffmpeg opens it" do
+      # An ffconcat script names other files, and ffmpeg would read
+      # them and put their picture into a file this site serves. It is
+      # named .mp4, so nothing before this looks at what it holds. The
+      # import takes films from an archive somebody else built, which
+      # is how such a file can arrive here at all.
+      secret = Path.join(System.tmp_dir!(), "elsewhere-#{System.unique_integer([:positive])}.mp4")
+      File.cp!(video_file(320, 240), secret)
+      on_exit(fn -> File.rm_rf!(secret) end)
+
+      playlist = Path.join(System.tmp_dir!(), "list-#{System.unique_integer([:positive])}.mp4")
+      File.write!(playlist, "ffconcat version 1.0\nfile '#{secret}'\n")
+      on_exit(fn -> File.rm_rf!(playlist) end)
+
+      relative = stored(playlist)
+
+      assert {:error, video} = Videos.convert(Videos.ensure(relative))
+      assert video.state == "failed"
+      assert video.error != nil
+      assert Videos.playback(relative) == nil
+      # nothing of the file it named was made into something a reader
+      # could ask for
+      assert Uploads.absolute("videos") |> File.ls!() |> Enum.filter(&(&1 =~ ".web.mp4")) == []
+    end
+
+    test "a picture under the name of a film is refused by its container" do
+      picture =
+        Path.join(System.tmp_dir!(), "not-a-film-#{System.unique_integer([:positive])}.mp4")
+
+      {:ok, black} = Vix.Vips.Operation.black(20, 10)
+      :ok = Vix.Vips.Image.write_to_file(black, picture <> ".jpg")
+      File.rename!(picture <> ".jpg", picture)
+      on_exit(fn -> File.rm_rf!(picture) end)
+
+      relative = stored(picture)
+
+      assert {:error, video} = Videos.convert(Videos.ensure(relative))
+      assert video.state == "failed"
+      assert video.error =~ "no film this server takes"
+      assert Videos.playback(relative) == nil
+    end
+
     test "a half written conversion leaves nothing behind" do
       relative = stored(broken_video_file())
 

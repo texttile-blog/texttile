@@ -34,6 +34,11 @@ defmodule Texttile.Videos do
   # What a camera, a phone and a screen recorder hand over.
   @extensions ~w(.mp4 .mov .m4v .webm .avi .mkv)
 
+  # The containers behind those names, as ffprobe names them. A file is
+  # opened for the conversion only when it really holds one of these,
+  # whatever it is called: see `ensure_a_film/1`.
+  @formats ~w(mov mp4 m4a 3gp 3g2 mj2 matroska webm avi)
+
   # How much processor time one conversion may have. The queue holds a
   # single worker, so a video that would run for days would hold up
   # every other one; it fails after half an hour of its own time.
@@ -285,6 +290,7 @@ defmodule Texttile.Videos do
     File.mkdir_p!(Path.dirname(Uploads.absolute(mp4)))
 
     with :ok <- ensure_readable(original),
+         :ok <- ensure_a_film(original),
          :ok <- run(encode_command(original, Uploads.absolute(partial_mp4), max_edge)),
          :ok <- grab_poster(Uploads.absolute(partial_mp4), Uploads.absolute(partial_poster)),
          {:ok, probed} <- probe(Uploads.absolute(partial_mp4)) do
@@ -355,6 +361,54 @@ defmodule Texttile.Videos do
     if File.regular?(original), do: :ok, else: {:error, "the file is gone"}
   end
 
+  # What ffmpeg opens has to be one of the containers this server
+  # takes, and nothing else. The extension says nothing: a file named
+  # .mp4 can hold a playlist, and ffmpeg would then follow what the
+  # playlist names and pull those bytes into a file this site serves.
+  # A film used to reach here only when an admin picked it by hand;
+  # since the import takes films, one can arrive inside an archive
+  # somebody else built.
+  #
+  # Both calls run with `file` as the only protocol, so nothing here
+  # ever reaches the network, whatever a file asks for.
+  defp ensure_a_film(original) do
+    case format_of(original) do
+      {:ok, format} ->
+        if Enum.any?(@formats, &(&1 in String.split(format, ","))) do
+          :ok
+        else
+          {:error, "this file is no film this server takes (#{format})"}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # The container ffprobe reads out of the file, as it names it:
+  # "mov,mp4,m4a,3gp,3g2,mj2" for an MP4, "matroska,webm" for both of
+  # those, "avi" for an AVI.
+  defp format_of(path) do
+    args = [
+      "-v",
+      "error",
+      "-protocol_whitelist",
+      "file",
+      "-show_entries",
+      "format=format_name",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      path
+    ]
+
+    case System.cmd("ffprobe", args, stderr_to_stdout: true) do
+      {output, 0} -> {:ok, output |> String.trim() |> String.downcase()}
+      {output, _code} -> {:error, reason_from(output)}
+    end
+  rescue
+    ErlangError -> {:error, "ffprobe is not installed"}
+  end
+
   @doc """
   The ffmpeg call that makes the playable file: one MP4, H.264 and
   AAC, the longer edge within `max_edge` and never scaled up, the
@@ -376,6 +430,10 @@ defmodule Texttile.Videos do
       "error",
       "-timelimit",
       to_string(@cpu_seconds),
+      # A file on this disk is the only thing ffmpeg may open. Whatever
+      # a container asks for, nothing here reaches the network.
+      "-protocol_whitelist",
+      "file",
       "-y",
       "-i",
       input,
@@ -414,6 +472,8 @@ defmodule Texttile.Videos do
       "error",
       "-timelimit",
       to_string(@cpu_seconds),
+      "-protocol_whitelist",
+      "file",
       "-y",
       "-ss",
       seconds,
