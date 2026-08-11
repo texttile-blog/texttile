@@ -1601,7 +1601,7 @@ defmodule TexttileWeb.EditorLive do
         <%!-- While the entry is being rewritten the main button belongs
              to the readers, so the way to the page moves in here. --%>
         <a
-          :if={@public_url && (@article.status != "published" || @pending)}
+          :if={@public_url && (not Visibility.live?(@article) || @pending)}
           class="row"
           id="viewRow"
           href={@public_url}
@@ -2756,9 +2756,11 @@ defmodule TexttileWeb.EditorLive do
     )
   end
 
-  defp share_text(%{status: status}, _password) when status != "published", do: nil
-
   defp share_text(article, password) do
+    if Visibility.live?(article), do: live_share_text(article, password)
+  end
+
+  defp live_share_text(article, password) do
     case Articles.public_path(article) do
       nil ->
         nil

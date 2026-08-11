@@ -330,11 +330,10 @@ defmodule Texttile.ImportTest do
       share_mail()
       {:ok, _} = Texttile.Newsletter.add("reader@example.org")
 
-      future = Date.utc_today() |> Date.add(30) |> Date.to_iso8601()
       write_bundle(dir, "beach", "title: Beach days\ndate: 2019-06-02\n")
-      write_bundle(dir, "soon", "title: Soon\ndate: #{future}\n")
+      write_bundle(dir, "soon", "title: Soon\ndate: 2030-07-01\n")
 
-      Import.run(Import.validate(dir), user)
+      Import.run(Import.validate(dir), user, fn _event -> :ok end, today: ~D[2030-06-01])
 
       refute_receive {:email, _}, 200
 
@@ -363,16 +362,29 @@ defmodule Texttile.ImportTest do
     end
 
     test "a future date schedules, a draft stays a draft", %{dir: dir, user: user} do
-      future = Date.utc_today() |> Date.add(30) |> Date.to_iso8601()
-      write_bundle(dir, "soon", "title: Soon\ndate: #{future}\n")
+      write_bundle(dir, "soon", "title: Soon\ndate: 2030-07-01\n")
       write_bundle(dir, "quiet", "title: Quiet\nstatus: draft\ndate: 2020-01-01\n")
 
-      Import.run(Import.validate(dir), user)
+      Import.run(Import.validate(dir), user, fn _event -> :ok end, today: ~D[2030-06-01])
 
       assert Repo.get_by!(Article, slug: "soon").status == "scheduled"
       quiet = Repo.get_by!(Article, slug: "quiet")
       assert quiet.status == "draft"
       assert quiet.publish_date == ~D[2020-01-01]
+    end
+
+    test "the date is judged at the named day, not at the suite's", %{dir: dir, user: user} do
+      write_bundle(dir, "gone", "title: Gone\ndate: 2030-05-20\n")
+      write_bundle(dir, "soon", "title: Soon\ndate: 2030-06-02\n")
+
+      Import.run(Import.validate(dir), user, fn _event -> :ok end, today: ~D[2030-06-01])
+
+      gone = Repo.get_by!(Article, slug: "gone")
+      assert gone.status == "published"
+      # already out in the world on its day: the import never mails
+      assert gone.notified_on == ~D[2030-05-20]
+
+      assert Repo.get_by!(Article, slug: "soon").status == "scheduled"
     end
 
     test "the same zip twice updates instead of duplicating", %{dir: dir, user: user} do

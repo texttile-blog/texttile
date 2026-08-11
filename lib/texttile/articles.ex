@@ -506,6 +506,7 @@ defmodule Texttile.Articles do
   nothing is live yet; the go-live does it.
   """
   def publish(%Article{} = article, user, opts \\ []) do
+    today = Keyword.get(opts, :today, Date.utc_today())
     {day, status} = Publishing.landing(article, opts)
     went_live? = status == Visibility.live_status() and not Visibility.live?(article)
 
@@ -529,7 +530,10 @@ defmodule Texttile.Articles do
         )
       )
 
-      article = if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
+      article =
+        if went_live?,
+          do: Texttile.Newsletter.notify_published(article, today: today),
+          else: article
 
       broadcast({:article_changed, article})
       {:ok, article}
@@ -657,7 +661,10 @@ defmodule Texttile.Articles do
           # behind it, and every later keystroke would be on the site.
           moved = if went_live?, do: hand_to_readers(moved, user), else: moved
 
-          moved = if went_live?, do: Texttile.Newsletter.notify_published(moved), else: moved
+          moved =
+            if went_live?,
+              do: Texttile.Newsletter.notify_published(moved, today: today),
+              else: moved
 
           broadcast({:article_changed, moved})
           {:ok, moved}
@@ -685,7 +692,7 @@ defmodule Texttile.Articles do
       article = hand_to_readers(article, nil)
 
       push_log(article, nil, "the entry went live as scheduled")
-      article = Texttile.Newsletter.notify_published(article)
+      article = Texttile.Newsletter.notify_published(article, today: today)
       broadcast({:article_changed, article})
       article
     end)
