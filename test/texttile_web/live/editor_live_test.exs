@@ -595,15 +595,27 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#inlineImgs button[data-img-action=retry]")
     end
 
-    test "upload events reach the log and the progress display", %{conn: conn, user: user} do
+    test "the upload state reaches the log and the progress display", %{conn: conn, user: user} do
       article = draft(user, %{title: "Doors", body: "![Uploading gull.jpg…]()"})
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      render_hook(view, "images_inserted", %{"files" => ["gull.jpg"]})
-      render_hook(view, "upload_progress", %{"file" => "gull.jpg", "pct" => 40})
+      render_hook(view, "upload_state", %{
+        "files" => [%{"name" => "gull.jpg", "status" => "uploading", "pct" => 0}],
+        "news" => [%{"kind" => "inserted", "names" => ["gull.jpg"]}]
+      })
+
+      render_hook(view, "upload_state", %{
+        "files" => [%{"name" => "gull.jpg", "status" => "uploading", "pct" => 40}],
+        "news" => []
+      })
+
       assert has_element?(view, "#inlineImgs", "uploading 40%")
 
-      render_hook(view, "image_uploaded", %{"file" => "gull.jpg"})
+      render_hook(view, "upload_state", %{
+        "files" => [],
+        "news" => [%{"kind" => "done", "name" => "gull.jpg"}]
+      })
+
       view |> element(".tab", "Log") |> render_click()
       assert has_element?(view, "#logList", "gull.jpg is in the text")
       assert has_element?(view, "#logList", "put gull.jpg into the text")
@@ -616,7 +628,10 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user, %{title: "Doors"})
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      render_hook(view, "image_refused", %{"file" => "gull.jpg", "of" => "pier-lantern.jpg"})
+      render_hook(view, "upload_state", %{
+        "files" => [],
+        "news" => [%{"kind" => "refused", "name" => "gull.jpg", "of" => "pier-lantern.jpg"}]
+      })
 
       assert has_element?(view, "#stateLine", "already in this entry, as pier-lantern.jpg")
 
@@ -635,7 +650,11 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user, %{title: "Doors"})
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      render_hook(view, "image_refused", %{"file" => "gull.jpg", "of" => "pier-lantern.jpg"})
+      render_hook(view, "upload_state", %{
+        "files" => [],
+        "news" => [%{"kind" => "refused", "name" => "gull.jpg", "of" => "pier-lantern.jpg"}]
+      })
+
       render_hook(view, "body_changed", %{"text" => "The token left."})
 
       assert has_element?(view, "#stateLine", "already in this entry, as pier-lantern.jpg")

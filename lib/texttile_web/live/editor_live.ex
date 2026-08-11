@@ -27,6 +27,7 @@ defmodule TexttileWeb.EditorLive do
   alias Texttile.Images
   alias Texttile.Stats
   alias Texttile.Videos
+  alias TexttileWeb.UploadNews
 
   ## Mount
 
@@ -548,153 +549,23 @@ defmodule TexttileWeb.EditorLive do
   end
 
   ## Events · images in the text. The files and the running requests
-  ## live in the holder's browser; these events keep the Log and the
-  ## panel's progress display current. Inserting into the body needs
-  ## the lock, so every one of these does too, and a file name is
-  ## client text: it gets a short leash before it reaches the Log.
+  ## live in the holder's browser; the hook crosses the seam once per
+  ## change with the standing state and the news (see uploads.js and
+  ## UploadNews). The state becomes the progress display whoever sends
+  ## it; a piece of news that writes into the entry or its Log only
+  ## counts from the holder of the lock.
 
-  def handle_event(
-        "images_inserted",
-        %{"files" => names},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when is_list(names) and holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
+  def handle_event("upload_state", params, socket) do
+    socket = assign(socket, :upload_pcts, UploadNews.pcts(params["files"]))
 
-    Articles.push_log(
-      article,
-      scope.user,
-      case names do
-        [one] -> "put #{clean_file(one)} into the text"
-        many -> "put #{length(many)} images into the text"
-      end
-    )
+    socket =
+      params
+      |> Map.get("news")
+      |> List.wrap()
+      |> Enum.reduce(socket, &apply_upload_news/2)
 
     {:noreply, socket}
   end
-
-  def handle_event("images_inserted", _params, socket), do: {:noreply, socket}
-
-  def handle_event("upload_progress", %{"file" => file, "pct" => pct}, socket)
-      when is_number(pct) do
-    {:noreply,
-     assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, clean_file(file), pct))}
-  end
-
-  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-    Articles.push_log(article, scope.user, "#{file} is in the text")
-    {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
-  end
-
-  def handle_event("image_uploaded", _params, socket), do: {:noreply, socket}
-
-  def handle_event(
-        "image_failed",
-        %{"file" => file, "pct" => pct},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when is_number(pct) and holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-    Articles.push_log(article, scope.user, "#{file} failed to upload into the text")
-
-    {:noreply,
-     socket
-     |> assign(:upload_pcts, Map.put(socket.assigns.upload_pcts, file, pct))
-     |> mark_saved("#{file} failed at #{round(pct)}% · retry or remove it under the text")}
-  end
-
-  def handle_event("image_failed", _params, socket), do: {:noreply, socket}
-
-  # The entry holds this picture already. Nothing failed and nothing
-  # stands in the text: the token left with the answer, and the state
-  # line names the picture it is.
-  def handle_event(
-        "image_refused",
-        %{"file" => file, "of" => of},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    {file, of} = {clean_file(file), clean_file(of)}
-    Articles.push_log(article, scope.user, "#{file} is already in this entry, as #{of}")
-
-    {:noreply,
-     socket
-     |> assign(:upload_pcts, Map.delete(socket.assigns.upload_pcts, file))
-     |> mark_saved(gettext("This picture is already in this entry, as %{name}.", name: of))}
-  end
-
-  def handle_event("image_refused", _params, socket), do: {:noreply, socket}
-
-  # The browser turned a file away before it travelled, so nothing
-  # stands in the text and nothing needs removing. The state line says
-  # what happened and what the roof is.
-  def handle_event("upload_too_big", %{"files" => files, "roof" => roof}, socket)
-      when is_list(files) and is_number(roof) do
-    names = files |> Enum.map(&clean_file/1) |> Enum.join(", ")
-
-    {:noreply,
-     mark_saved(
-       socket,
-       ngettext(
-         "%{names} is over the %{roof} MB roof and was not uploaded",
-         "%{names} are over the %{roof} MB roof and were not uploaded",
-         length(files),
-         names: names,
-         roof: roof
-       )
-     )}
-  end
-
-  def handle_event("upload_too_big", _params, socket), do: {:noreply, socket}
-
-  def handle_event("image_retry", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-    Articles.push_log(article, scope.user, "retried the upload of #{file}")
-    {:noreply, assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, file, 0))}
-  end
-
-  def handle_event("image_retry", _params, socket), do: {:noreply, socket}
-
-  def handle_event("image_retry_missing", %{"file" => file}, socket) do
-    {:noreply,
-     mark_saved(
-       socket,
-       gettext(
-         "The file for %{file} is not in this browser any more · remove the marker and paste the image again",
-         file: clean_file(file)
-       )
-     )}
-  end
-
-  def handle_event(
-        "image_removed",
-        %{"file" => file, "how" => how},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-
-    Articles.push_log(
-      article,
-      scope.user,
-      if(how == "cancel",
-        do: "cancelled the upload of #{file}",
-        else: "took the marker for #{file} out of the text"
-      )
-    )
-
-    {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
-  end
-
-  def handle_event("image_removed", _params, socket), do: {:noreply, socket}
 
   ## Events · the gallery
   #
@@ -956,7 +827,6 @@ defmodule TexttileWeb.EditorLive do
   defp minutes_in_words(seconds), do: "#{div(seconds, 60)} minutes"
 
   # a file name is client text before it reaches the Log
-  defp clean_file(file), do: file |> to_string() |> String.slice(0, 120)
 
   defp save_title(socket, title) do
     cond do
@@ -1781,6 +1651,7 @@ defmodule TexttileWeb.EditorLive do
                     data-readonly={to_string(!@holds_lock)}
                     data-upload-url={~p"/admin/texts/#{@article.id}/images"}
                     data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
+                    data-tokens={Jason.encode!(Body.token_templates())}
                     data-posters={Jason.encode!(poster_map(@media))}
                     data-label={gettext("Body, Markdown")}
                     data-placeholder={
@@ -2814,6 +2685,22 @@ defmodule TexttileWeb.EditorLive do
   ## Copy
 
   defp stamp(datetime), do: I18n.format_moment(datetime)
+
+  defp apply_upload_news(item, socket) do
+    %{article: article, current_scope: scope, editing: editing} = socket.assigns
+
+    case UploadNews.read(item) do
+      nil ->
+        socket
+
+      %{needs_lock: true} when not holding(editing) ->
+        socket
+
+      told ->
+        if told.log, do: Articles.push_log(article, scope.user, told.log)
+        if told.note, do: mark_saved(socket, told.note), else: socket
+    end
+  end
 
   defp reload_comments(socket) do
     assign(socket, :comments, Comments.for_article(socket.assigns.article.id))
