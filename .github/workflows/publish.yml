@@ -11,6 +11,9 @@ concurrency:
   group: publish-image
   cancel-in-progress: false
 
+env:
+  IMAGE: ghcr.io/texttile-blog/texttile
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -46,14 +49,24 @@ jobs:
       # The exact tag never moves, so it must not exist yet. A merge
       # that keeps the version of the last one stops here: raise the
       # version in mix.exs, as every pull request must.
+      #
+      # Only the registry's own word for "there is no such tag" lets the
+      # build go on. Any other failure - the registry is down, the login
+      # is refused - says nothing about the tag, and going on would push
+      # a standing version over a build that owns it.
       - name: Refuse a version that is already published
         shell: bash
         run: |
-          image="ghcr.io/texttile-blog/texttile"
           version="${{ steps.version.outputs.exact }}"
 
-          if docker buildx imagetools inspect "$image:$version" > /dev/null 2>&1; then
+          if said="$(docker buildx imagetools inspect "$IMAGE:$version" 2>&1)"; then
             echo "Version $version is published already. Raise the version in mix.exs."
+            exit 1
+          fi
+
+          if ! grep -qiE "not found|unknown" <<< "$said"; then
+            echo "The registry did not answer whether $version exists:"
+            echo "$said"
             exit 1
           fi
 
@@ -65,8 +78,8 @@ jobs:
           # commit name one build for good, while the minor, the major
           # and latest follow the newest build that fits them.
           tags: |
-            ghcr.io/texttile-blog/texttile:${{ steps.version.outputs.exact }}
-            ghcr.io/texttile-blog/texttile:${{ steps.version.outputs.minor }}
-            ghcr.io/texttile-blog/texttile:${{ steps.version.outputs.major }}
-            ghcr.io/texttile-blog/texttile:latest
-            ghcr.io/texttile-blog/texttile:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.exact }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.minor }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.major }}
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
