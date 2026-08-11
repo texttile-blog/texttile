@@ -29,14 +29,29 @@ defmodule Texttile.Images do
   # reader sizes are dropped.
   @fixed_edges [320, 640, 1320]
 
-  @doc "The edge a picture inside a text is shown at."
-  def reading_edge, do: 1320
+  # Each use a page has for a stored picture, and the edge it is shown
+  # at. The names are the interface; the numbers stay in here.
+  @edges %{thumb: 320, card: 640, reading: 1320}
 
-  @doc "The edge the reader's cards and the gallery tiles are shown at."
-  def card_edge, do: 640
+  @doc """
+  The address a browser fetches a stored file at, for a named use:
+  `:thumb` for an admin thumbnail, `:card` for the reader's cards and
+  gallery tiles, `:reading` for a picture inside a text, `:max` for the
+  lightbox, and `:original` for the file itself. `path` is relative to
+  the uploads root, the way everything stores it.
 
-  @doc "The edge an admin thumbnail is shown at."
-  def thumb_edge, do: 320
+  Every address for a stored file is built here and nowhere else, so
+  the routes and the escaping have one place to change.
+  """
+  def url(path, use) when is_map_key(@edges, use),
+    do: "/renditions/#{@edges[use]}/#{escape(path)}"
+
+  def url(path, :max), do: "/renditions/max/#{escape(path)}"
+  def url(path, :original), do: "/uploads/#{escape(path)}"
+
+  # A quote is the one character a stored name can carry that breaks
+  # out of a CSS url('...'); everywhere else the escape is harmless.
+  defp escape(path), do: String.replace(path, "'", "%27")
 
   @doc """
   The path to show for an original, at the current (or given) max edge:

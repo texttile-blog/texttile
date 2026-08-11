@@ -106,7 +106,7 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
   end
 
-  describe "gallery_wrap/1, gallery_shape/1 and gallery_edge/1" do
+  describe "gallery_wrap/1, gallery_shape/1 and gallery_size/1" do
     # a tile carries more than this, but the width only counts them
     defp tiles(count), do: for(index <- 1..count//1, do: %{id: index})
 
@@ -125,9 +125,9 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
 
     test "a picture alone fills the column, so it comes at the reading size" do
-      assert SiteHTML.gallery_edge(tiles(1)) == 1320
-      assert SiteHTML.gallery_edge(tiles(2)) == 640
-      assert SiteHTML.gallery_edge(tiles(9)) == 640
+      assert SiteHTML.gallery_size(tiles(1)) == :reading
+      assert SiteHTML.gallery_size(tiles(2)) == :card
+      assert SiteHTML.gallery_size(tiles(9)) == :card
     end
   end
 end

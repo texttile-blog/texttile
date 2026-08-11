@@ -66,16 +66,16 @@
         <a
           :for={tile <- @gallery}
           id={"tile-#{tile.id}"}
-          href={"/uploads/#{tile.film || tile.original}"}
-          data-full={"/renditions/max/#{tile.still}"}
-          data-video={tile.film && "/uploads/#{tile.film}"}
+          href={Images.url(tile.film || tile.original, :original)}
+          data-full={Images.url(tile.still, :max)}
+          data-video={tile.film && Images.url(tile.film, :original)}
           data-caption={tile.filename}
         >
           <%!-- one picture fills the reading column, so it gets the
                size a picture in the text gets; a tile of a grid needs
                the card size and no more --%>
           <img
-            src={"/renditions/#{gallery_edge(@gallery)}/#{tile.still}"}
+            src={Images.url(tile.still, gallery_size(@gallery))}
             alt={tile.filename}
             loading="lazy"
           />

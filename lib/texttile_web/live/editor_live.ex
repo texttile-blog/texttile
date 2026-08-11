@@ -1012,12 +1012,10 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  # a thumbnail loads the scaled reading, never the full original
-  defp thumb_url("/uploads/" <> relative), do: thumb(relative)
+  # a thumbnail loads the scaled reading, never the full original; an
+  # outside address in the words has no rendition and is shown as it is
+  defp thumb_url("/uploads/" <> relative), do: Images.url(relative, :thumb)
   defp thumb_url(url), do: String.replace(url, "'", "%27")
-
-  # The one address of an admin thumbnail, at the edge Images names.
-  defp thumb(relative), do: "/renditions/#{Images.thumb_edge()}/#{relative}"
 
   # What a row of the file list shows for a reference: the still of a
   # converted film, the picture itself, or nothing - while ffmpeg is
@@ -1073,11 +1071,13 @@ defmodule TexttileWeb.EditorLive do
     |> Enum.flat_map(fn {path, entry} ->
       if Videos.video?(path) and is_binary(entry.still) do
         [
+          # the key is the body's own url for the film, byte for byte;
+          # the values are addresses and come from Images
           {"/uploads/#{path}",
            %{
-             poster: thumb(entry.still),
-             full: "/renditions/max/#{entry.still}",
-             film: entry.film && "/uploads/#{entry.film}"
+             poster: Images.url(entry.still, :thumb),
+             full: Images.url(entry.still, :max),
+             film: entry.film && Images.url(entry.film, :original)
            }}
         ]
       else
@@ -1110,10 +1110,8 @@ defmodule TexttileWeb.EditorLive do
     Gallery.effective_preview(article, Enum.map(gallery, & &1.path))
   end
 
-  # A candidate can come from the body, so the path is markdown text;
-  # a quote must not break out of the url('...') it lands in.
   defp tile_bg(path) do
-    "background-image:url('#{thumb(String.replace(path, "'", "%27"))}')"
+    "background-image:url('#{Images.url(path, :thumb)}')"
   end
 
   ## PubSub and lock messages
@@ -2154,10 +2152,12 @@ defmodule TexttileWeb.EditorLive do
                   data-filename={image.filename}
                   data-date={I18n.format_field_moment(image.gallery_date)}
                   data-full={
-                    @media[image.path].still && "/renditions/max/#{@media[image.path].still}"
+                    @media[image.path].still && Images.url(@media[image.path].still, :max)
                   }
-                  data-video={@media[image.path].film && "/uploads/#{@media[image.path].film}"}
-                  data-original={"/uploads/" <> image.path}
+                  data-video={
+                    @media[image.path].film && Images.url(@media[image.path].film, :original)
+                  }
+                  data-original={Images.url(image.path, :original)}
                   title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"

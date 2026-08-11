@@ -91,7 +91,7 @@ defmodule TexttileWeb.Layouts do
             {~p"/images/texttile-mark.svg", "image/svg+xml"}
 
           stored ->
-            {"/uploads/" <> stored,
+            {Texttile.Images.url(stored, :original),
              if(String.ends_with?(stored, ".png"), do: "image/png", else: "image/svg+xml")}
         end
       )
@@ -180,7 +180,7 @@ defmodule TexttileWeb.Layouts do
           <span class="relative flex-none">
             <img
               :if={@brand.logo}
-              src={"/uploads/#{@brand.logo}"}
+              src={Texttile.Images.url(@brand.logo, :original)}
               alt=""
               class="h-[21px] w-auto max-w-[84px] object-contain"
             />

@@ -291,7 +291,7 @@ defmodule TexttileWeb.TextsLive do
   # A preview can come from a body image, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp cover_bg(path) do
-    "background-image:url('/renditions/#{Images.thumb_edge()}/#{String.replace(path, "'", "%27")}')"
+    "background-image:url('#{Images.url(path, :thumb)}')"
   end
 
   defp card_meta(article, comment_count, pending?) do

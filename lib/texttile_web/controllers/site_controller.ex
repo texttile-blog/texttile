@@ -604,7 +604,7 @@ defmodule TexttileWeb.SiteController do
     og_image =
       case Gallery.preview_still(article, Enum.map(gallery, & &1.path)) do
         nil -> nil
-        path -> TexttileWeb.Endpoint.url() <> "/renditions/max/" <> path
+        path -> TexttileWeb.Endpoint.url() <> Texttile.Images.url(path, :max)
       end
 
     # A video tile has nothing to show before ffmpeg is through, so the

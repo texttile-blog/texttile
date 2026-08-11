@@ -19,6 +19,24 @@ defmodule Texttile.ImagesTest do
     {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
   end
 
+  describe "url/2" do
+    test "names the address for each use of a stored picture" do
+      assert Images.url("2026/08/pic.jpg", :thumb) == "/renditions/320/2026/08/pic.jpg"
+      assert Images.url("2026/08/pic.jpg", :card) == "/renditions/640/2026/08/pic.jpg"
+      assert Images.url("2026/08/pic.jpg", :reading) == "/renditions/1320/2026/08/pic.jpg"
+    end
+
+    test "the lightbox asks for the reader size, the original for the file itself" do
+      assert Images.url("2026/pic.jpg", :max) == "/renditions/max/2026/pic.jpg"
+      assert Images.url("2026/film.mp4", :original) == "/uploads/2026/film.mp4"
+    end
+
+    test "a quote in a stored name cannot break out of a CSS url()" do
+      assert Images.url("o'brien.jpg", :thumb) == "/renditions/320/o%27brien.jpg"
+      assert Images.url("o'brien.jpg", :original) == "/uploads/o%27brien.jpg"
+    end
+  end
+
   describe "rendition/2" do
     test "scales the longer edge down to the limit, keeping the ratio" do
       rel = original("images/wide.jpg", 4000, 2000)
