@@ -17,6 +17,7 @@ defmodule Texttile.Newsletter do
 
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Reading
   alias Texttile.Confirmation
   alias Texttile.Newsletter.Notifier
   alias Texttile.Newsletter.Subscriber
@@ -219,7 +220,7 @@ defmodule Texttile.Newsletter do
   # The mail carries what the readers have, never the working copy: it
   # is the one reader whose copy cannot be taken back once it is out.
   defp send_new_text(article) do
-    article = Articles.as_read(article)
+    article = Reading.text(article, :reader)
 
     case confirmed() do
       [] ->

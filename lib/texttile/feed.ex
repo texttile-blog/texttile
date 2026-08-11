@@ -12,6 +12,7 @@ defmodule Texttile.Feed do
   alias Texttile.Articles
   alias Texttile.Articles.Body
   alias Texttile.Articles.Body.Media
+  alias Texttile.Articles.Reading
   alias Texttile.Images
   alias Texttile.Settings
 
@@ -37,11 +38,11 @@ defmodule Texttile.Feed do
     # reader could follow. The site draws it as a card without a link;
     # the feed, which is nothing but addresses, leaves it out.
     #
-    # `as_read` and not the working copy: the feed is a reader, and it
-    # is the one reader whose copy cannot be taken back once it is out.
+    # The feed is a reader, and it is the one reader whose copy cannot
+    # be taken back once it is out.
     posts =
       Articles.list_published()
-      |> Articles.as_read()
+      |> Reading.text(:reader)
       |> Enum.filter(&Articles.public_path/1)
 
     channel = """

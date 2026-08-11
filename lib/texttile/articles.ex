@@ -289,46 +289,6 @@ defmodule Texttile.Articles do
 
   defp pad2(number), do: number |> Integer.to_string() |> String.pad_leading(2, "0")
 
-  @doc "The published post at a date and a slug, or nil."
-  def get_published_post(%Date{} = date, slug) when is_binary(slug) do
-    published_query("post")
-    |> where([a], a.slug == ^slug and a.publish_date == ^date)
-    |> Repo.one()
-  end
-
-  @doc "The published page behind a short address, or nil."
-  def get_published_page(slug) when is_binary(slug) do
-    published_query("page") |> where([a], a.slug == ^slug) |> Repo.one()
-  end
-
-  @doc """
-  The post at a date and a slug whatever state it is in, or nil.
-
-  An entry wears its address from the moment it has a slug, and an
-  admin who is signed in reads it there before anybody else can: the
-  reader's side of a draft is the reader's side, not a second design.
-  """
-  def get_post(%Date{} = date, slug) when is_binary(slug) do
-    Repo.one(
-      from a in Article,
-        where: a.slug == ^slug and a.type == "post" and a.publish_date == ^date,
-        preload: [:user, :live_version]
-    ) || dateless_post(date, slug)
-  end
-
-  # A post with no day yet borrows today, exactly as `public_prefix/1`
-  # does, so the address the editor prints is the address that answers.
-  # Tomorrow it borrows tomorrow, and so would publishing it.
-  defp dateless_post(date, slug) do
-    if Date.compare(date, Date.utc_today()) == :eq do
-      Repo.one(
-        from a in Article,
-          where: a.slug == ^slug and a.type == "post" and is_nil(a.publish_date),
-          preload: [:user, :live_version]
-      )
-    end
-  end
-
   @doc """
   The address an entry can be read at right now, live or not: its
   public address, and while a post has no day yet, the address it
@@ -339,15 +299,6 @@ defmodule Texttile.Articles do
 
   def reader_path(%Article{slug: slug} = article),
     do: public_path(article) || public_prefix(article) <> slug
-
-  @doc "The page behind a short address whatever state it is in, or nil."
-  def get_page(slug) when is_binary(slug) do
-    Repo.one(
-      from a in Article,
-        where: a.slug == ^slug and a.type == "page",
-        preload: [:user, :live_version]
-    )
-  end
 
   ## The archive: one line of years, the months of the open year
 

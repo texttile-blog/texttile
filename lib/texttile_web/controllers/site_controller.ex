@@ -10,6 +10,7 @@ defmodule TexttileWeb.SiteController do
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Reading
   alias Texttile.Articles.Visibility
   alias Texttile.Comments
   alias Texttile.Newsletter
@@ -78,7 +79,7 @@ defmodule TexttileWeb.SiteController do
   """
   def article(conn, %{"year" => year, "month" => month, "day" => day, "slug" => slug}) do
     with {:ok, date} <- Date.from_iso8601("#{year}-#{month}-#{day}"),
-         article when not is_nil(article) <- visible_post(conn, date, slug) do
+         article when not is_nil(article) <- Reading.post(date, slug, audience(conn)) do
       render_text(conn, article)
     else
       _ -> not_found(conn)
@@ -87,7 +88,7 @@ defmodule TexttileWeb.SiteController do
 
   @doc "One published page, at its short address."
   def page(conn, %{"slug" => slug}) do
-    case visible_page(conn, slug) do
+    case Reading.page(slug, audience(conn)) do
       nil -> not_found(conn)
       article -> render_text(conn, article)
     end
@@ -112,29 +113,9 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  # An entry that is not live yet still answers at the address it will
-  # wear, but only to somebody who is signed in. That way the editor's
-  # way out leads into the real site instead of into a second design of
-  # it, and a reader who guesses the address gets the 404 they should.
-  defp visible_post(conn, date, slug) do
-    Articles.get_published_post(date, slug) ||
-      for_admin(conn, fn -> Articles.get_post(date, slug) end)
-  end
-
-  defp visible_page(conn, slug) do
-    Articles.get_published_page(slug) || for_admin(conn, fn -> Articles.get_page(slug) end)
-  end
-
-  defp for_admin(conn, fun) do
-    if signed_in_user(conn), do: fun.()
-  end
-
-  # A live entry holds two texts: the one that was published and the
-  # working copy. A reader gets the first, whoever is signed in gets
-  # the second.
-  defp for_reader(articles, conn) do
-    if signed_in_user(conn), do: articles, else: Articles.as_read(articles)
-  end
+  # Who this request reads as. `Reading` owns the whole answer to what
+  # that audience gets; the controller only names it.
+  defp audience(conn), do: Reading.audience(signed_in_user(conn))
 
   @doc """
   A tag archive: every published text that carries the tag, and the
@@ -142,7 +123,7 @@ defmodule TexttileWeb.SiteController do
   """
   def tag(conn, %{"tag" => raw}) do
     tag = raw |> String.downcase() |> String.trim()
-    posts = Articles.list_published() |> for_reader(conn)
+    posts = Articles.list_published() |> Reading.text(audience(conn))
     articles = Enum.filter(posts, &(tag in Articles.tag_list(&1)))
 
     if articles == [] do
@@ -524,7 +505,7 @@ defmodule TexttileWeb.SiteController do
   # fixed front page. The About block from Settings comes along; it
   # stands at the foot of every text and of the list.
   defp load_chrome(conn, _opts) do
-    pages = Articles.list_pages() |> for_reader(conn)
+    pages = Articles.list_pages() |> Reading.text(audience(conn))
 
     home_page =
       with "page:" <> id <- Settings.get(:front_page),
@@ -546,7 +527,7 @@ defmodule TexttileWeb.SiteController do
     # The published text for a reader, the working copy for whoever is
     # signed in, so a title being rewritten reads the same on the list
     # as it does in the editor. See `render_text/2`.
-    found = Articles.list_published(search: q) |> for_reader(conn)
+    found = Articles.list_published(search: q) |> Reading.text(audience(conn))
 
     total =
       if q == "" do
@@ -638,14 +619,11 @@ defmodule TexttileWeb.SiteController do
   end
 
   defp render_text(conn, article) do
-    # A live entry holds two texts. A reader gets the one that was
-    # published; whoever is signed in gets the working copy, so the way
-    # out of the editor shows what is being written and not what the
-    # site said yesterday. The band above the text says which of the
-    # two is on the screen.
-    admin? = signed_in_user(conn) != nil
-    pending? = admin? and Articles.unpublished_changes?(article)
-    article = if admin?, do: article, else: Articles.as_read(article)
+    # The band above the text says which of the two texts is on the
+    # screen; `Reading` chooses the text and owes the band.
+    audience = audience(conn)
+    pending? = Reading.pending?(article, audience)
+    article = Reading.text(article, audience)
 
     home? = conn.assigns.home_page && conn.assigns.home_page.id == article.id
     gallery = Gallery.list(article.id)

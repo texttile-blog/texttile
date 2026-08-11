@@ -51,7 +51,7 @@ defmodule Texttile.ArticlesAuthorTest do
     [listed] = Articles.list_published()
     assert Articles.author_name(listed) == "kb"
 
-    read = Articles.get_published_post(article.publish_date, article.slug)
+    read = Texttile.Articles.Reading.post(article.publish_date, article.slug, :reader)
     assert Articles.author_name(read) == "kb"
   end
 end
