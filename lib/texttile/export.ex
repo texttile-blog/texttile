@@ -46,11 +46,12 @@ defmodule Texttile.Export do
     stage = Path.join(dir, folder)
     File.mkdir_p!(stage)
 
-    Enum.each(carried, fn file ->
-      target = Path.join(stage, file.name)
-      File.mkdir_p!(Path.dirname(target))
-      File.cp!(Uploads.absolute(file.path), target)
-    end)
+    # A file can go between the reading of the gallery and the copy: an
+    # undo window closes, another admin deletes a tile. That is not an
+    # error here, it is one file less, the way a reference whose file
+    # has gone is one file less. The bundle is written from what
+    # actually arrived.
+    carried = Enum.filter(carried, &copied?(&1, stage))
 
     File.write!(Path.join(stage, "index.md"), index_md(article, carried))
 
@@ -60,6 +61,16 @@ defmodule Texttile.Export do
     case :zip.create(String.to_charlist(path), names, cwd: String.to_charlist(dir)) do
       {:ok, _} -> {:ok, path}
       {:error, reason} -> {:error, "the zip could not be written: #{inspect(reason)}"}
+    end
+  end
+
+  defp copied?(file, stage) do
+    target = Path.join(stage, file.name)
+    File.mkdir_p!(Path.dirname(target))
+
+    case File.cp(Uploads.absolute(file.path), target) do
+      :ok -> true
+      {:error, _gone} -> false
     end
   end
 
@@ -126,7 +137,7 @@ defmodule Texttile.Export do
   # from the stored file, which is the one that says what it really is.
   defp tile_name(image) do
     extension = Path.extname(image.path)
-    readable(Path.rootname(image.filename)) <> extension
+    (image.filename |> Path.rootname() |> unnumbered() |> readable()) <> extension
   end
 
   # A file in the words has no name but the stored one, which carries
@@ -138,8 +149,18 @@ defmodule Texttile.Export do
     relative
     |> Path.basename(extension)
     |> String.replace(~r/-[0-9a-f]{8}\z/, "")
+    |> unnumbered()
     |> readable()
     |> Kernel.<>(extension)
+  end
+
+  # An entry that came in through an import carries the numbers of the
+  # bundle it came from: the importer keeps the bundle name, and the
+  # stored name is made from it. Numbering a number would grow a prefix
+  # on every trip between two sites, so the old one comes off first.
+  # Written with a dash as well, because a stored name is slugified.
+  defp unnumbered(name) do
+    String.replace(name, ~r/\A(xxx[_-])?\d{3}[_-]/, "")
   end
 
   # A name a zip, a file system and a Hugo site all take without
@@ -177,9 +198,14 @@ defmodule Texttile.Export do
       |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
       |> Enum.map(fn {key, value} -> "#{key}: #{value}\n" end)
 
+    # The key stands even when the gallery is empty, and that empty list
+    # is the point: without the key the import falls back to its
+    # shorthand and takes every file in gallery/ for a tile, which would
+    # give an entry whose pictures all stood in the words a gallery it
+    # never had.
     gallery =
       case tiles do
-        [] -> ""
+        [] -> "gallery: []\n"
         tiles -> "gallery:\n" <> Enum.map_join(tiles, fn tile -> "  - #{tile.name}\n" end)
       end
 

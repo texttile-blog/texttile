@@ -193,6 +193,22 @@ defmodule Texttile.ImportTest do
       assert Enum.any?(warnings, &(&1 =~ "open in an editor"))
     end
 
+    test "an address of another site in the words is a warning, not an error",
+         %{dir: dir, user: user} do
+      # This is what an export writes where the entry pointed at a
+      # picture that had already gone. One error would skip the whole
+      # bundle, and the entry would not be imported at all.
+      write_bundle(dir, "beach", "title: Beach days\n", "Gone: ![map](/uploads/images/map.png)\n")
+
+      report = Import.validate(dir)
+      bundle = hd(report.bundles)
+
+      assert bundle.errors == []
+      assert Enum.any?(bundle.warnings, &(&1 =~ "/uploads/images/map.png"))
+      assert Import.run(report, user).created == 1
+      assert Repo.get_by!(Article, slug: "beach-days").body =~ "![map](/uploads/images/map.png)"
+    end
+
     test "a gallery entry that appears twice is an error", %{dir: dir} do
       write_bundle(dir, "beach", "title: A\ngallery: [a.jpg, a.jpg]\n", "", ["a.jpg"])
 

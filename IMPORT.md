@@ -144,6 +144,11 @@ film is large and the import does not carry one over the network. A film in
 server converts it after the import, so a film shows itself a few moments
 after the entry is there.
 
+The name says nothing about the content. Before the conversion the server
+reads which container the file really holds, and refuses anything that is
+not one of the six. A file that names other files, a playlist for example,
+never reaches the converter.
+
 The dry run checks each
 URL with a HEAD request (and a one-byte GET when the host refuses HEAD) and
 reports dead URLs and non-picture content types. The report also lists every
@@ -200,11 +205,23 @@ The gallery holds the tiles of an entry. There are two ways to define it:
 When the `gallery` key exists, it alone decides. A file in `gallery/` that
 the key does not list is a warning, not a tile.
 
+An entry without tiles writes `gallery: []`. Say it that way, and do not
+leave the key out: a bundle whose `gallery/` folder holds only the pictures
+of the body would otherwise take all of them for tiles, through the
+shorthand above.
+
 ## Pictures in the body
 
 Every Markdown image reference in the body, `![alt](source)`, is imported.
 The importer rewrites the reference to the address of the new upload. Links
 that are not image references stay as they are.
+
+One shape in the body is not a source: an address that starts at the root of
+a site, `/uploads/...`. It names a file of that site, never a file of the
+bundle. An export writes one where the entry pointed at a picture that had
+already gone. The reference stays in the words exactly as it stands, and the
+report warns about it. It is not an error, because one error would skip the
+whole entry over one broken picture.
 
 ## Validation
 

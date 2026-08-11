@@ -240,8 +240,22 @@ defmodule Texttile.Import.Bundle do
   # ever judges a bundle path. See `check_source/2`.
   defp media?(name), do: picture?(name) or Videos.video?(name)
 
+  # The references in the words. An address that starts at the root of
+  # some site, `/uploads/...`, names a file of that site and never a
+  # file of this bundle: an export writes one where the entry pointed at
+  # a picture that had already gone. It is no source, so it is no error
+  # either. The reference stays in the words as it stands, and the
+  # report says so. Everything else - a URL, a path in the bundle - is a
+  # source and is checked like one.
   defp read_body_refs(bundle) do
-    %{bundle | body_refs: Texttile.Articles.Body.upload_urls(bundle.body)}
+    {sources, standing} =
+      bundle.body
+      |> Texttile.Articles.Body.upload_urls()
+      |> Enum.split_with(&(url?(&1) or Path.type(&1) == :relative))
+
+    Enum.reduce(standing, %{bundle | body_refs: sources}, fn address, bundle ->
+      warn(bundle, "the words name #{address}, which is no file of the bundle; it stays as it is")
+    end)
   end
 
   defp check_sources(bundle) do

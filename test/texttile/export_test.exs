@@ -6,6 +6,7 @@ defmodule Texttile.ExportTest do
   import Texttile.VideoFixtures
 
   alias Texttile.Articles
+  alias Texttile.Articles.Article
   alias Texttile.Export
   alias Texttile.Gallery
   alias Texttile.Import
@@ -40,6 +41,26 @@ defmodule Texttile.ExportTest do
   defp in_body!(article, name) do
     {:ok, relative} = Uploads.put_body_image(jpg_fixture(), name, article_id: article.id)
     relative
+  end
+
+  # The whole way out and back: export the entry, step its address
+  # aside so the import has to build a new one instead of updating this
+  # one, and answer the entry the import built.
+  defp round_trip!(article, user, aside) do
+    dir = Path.join(System.tmp_dir!(), "roundtrip-#{System.unique_integer([:positive])}")
+    File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf!(dir) end)
+
+    {:ok, zip} = Export.write_zip(article, dir)
+    {:ok, _stepped_aside} = Articles.update_settings(article, %{slug: aside})
+
+    unpacked = Path.join(dir, "unpacked")
+    {:ok, _name} = Import.unpack(zip, unpacked)
+    report = Import.validate(unpacked)
+    assert [%{errors: []}] = report.bundles
+    assert %{failed: []} = Import.run(report, user)
+
+    Repo.get_by!(Article, slug: article.slug)
   end
 
   describe "the shape of the bundle" do
@@ -132,6 +153,37 @@ defmodule Texttile.ExportTest do
                File.read!(Uploads.absolute(image.path))
     end
 
+    test "a picture that is a tile and stands in the words travels once" do
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      tile = tile!(article, "beach.jpg")
+
+      {:ok, article} =
+        Articles.update_text(article, %{body: "Again: ![the beach](/uploads/#{tile.path})"})
+
+      files = export!(article)
+      {entries, body} = index!(files)
+
+      assert Enum.sort(Map.keys(files)) == [
+               "beach-days/gallery/001_beach.jpg",
+               "beach-days/index.md"
+             ]
+
+      assert entries["gallery"] == ["gallery/001_beach.jpg"]
+      assert body =~ "![the beach](gallery/001_beach.jpg)"
+    end
+
+    test "an entry whose pictures all stand in the words says its gallery is empty" do
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      map = in_body!(article, "map.png")
+      {:ok, article} = Articles.update_text(article, %{body: "![The map](/uploads/#{map})"})
+
+      {entries, _body} = index!(export!(article))
+
+      # Without the key the import takes every file in gallery/ for a
+      # tile, and the entry comes back with a gallery it never had.
+      assert entries["gallery"] == []
+    end
+
     test "the chosen preview is named by its exported path" do
       article = published_post(%{title: "Beach days", slug: "beach-days"})
       tile!(article, "beach.jpg")
@@ -206,6 +258,42 @@ defmodule Texttile.ExportTest do
       refute body =~ "gallery/"
     end
 
+    test "a reference whose file has gone keeps its address and carries nothing" do
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      map = in_body!(article, "map.png")
+      {:ok, article} = Articles.update_text(article, %{body: "![The map](/uploads/#{map})"})
+
+      # The picture goes the way a swept gallery picture goes: the file
+      # is taken, the words still name it.
+      File.rm!(Uploads.absolute(map))
+
+      files = export!(article)
+      {_entries, body} = index!(files)
+
+      assert Map.keys(files) == ["beach-days/index.md"]
+      assert body =~ "![The map](/uploads/#{map})"
+    end
+
+    test "an odd name comes out as a name a zip and a file system take" do
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      tile!(article, "Sommer am Meer (2019) *final*.jpg")
+
+      files = export!(article)
+      {entries, _body} = index!(files)
+
+      assert entries["gallery"] == ["gallery/001_Sommer-am-Meer-2019-final.jpg"]
+      assert Map.has_key?(files, "beach-days/gallery/001_Sommer-am-Meer-2019-final.jpg")
+    end
+
+    test "a name of nothing but signs still names a file" do
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      tile!(article, "***.jpg")
+
+      {entries, _body} = index!(export!(article))
+
+      assert entries["gallery"] == ["gallery/001_file.jpg"]
+    end
+
     test "a reference to somewhere else is left alone" do
       article =
         draft_post(%{
@@ -247,22 +335,8 @@ defmodule Texttile.ExportTest do
       {:ok, article} =
         Articles.update_text(article, %{body: "The map:\n\n![The map](/uploads/#{map})"})
 
-      dir = Path.join(System.tmp_dir!(), "roundtrip-#{System.unique_integer([:positive])}")
-      File.mkdir_p!(dir)
-      on_exit(fn -> File.rm_rf!(dir) end)
-      {:ok, zip} = Export.write_zip(article, dir)
+      built = round_trip!(article, user, "the-old-one")
 
-      # The entry steps aside, so the import has to build a new one
-      # instead of finding the entry the bundle came from.
-      {:ok, _} = Articles.update_settings(article, %{slug: "the-old-one"})
-
-      unpacked = Path.join(dir, "unpacked")
-      {:ok, _name} = Import.unpack(zip, unpacked)
-      report = Import.validate(unpacked)
-      assert [%{errors: []}] = report.bundles
-      assert %{created: 1, failed: []} = Import.run(report, user)
-
-      built = Repo.get_by(Texttile.Articles.Article, slug: "beach-days")
       assert built.title == "Beach days"
       assert built.status == "draft"
       assert Articles.tag_list(built) == ["travel", "sea"]
@@ -271,6 +345,53 @@ defmodule Texttile.ExportTest do
       assert built.body =~ ~r"!\[The map\]\(/uploads/images/[a-z0-9-]+\.png\)"
       assert [tile] = Gallery.list(built.id)
       assert tile.filename == "001_beach.jpg"
+    end
+  end
+
+  describe "the way back, twice" do
+    test "a second trip does not grow a number in front of the names" do
+      user = user_fixture()
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      tile!(article, "beach.jpg")
+      map = in_body!(article, "map.png")
+      {:ok, article} = Articles.update_text(article, %{body: "![The map](/uploads/#{map})"})
+
+      built = round_trip!(article, user, "the-first-one")
+      files = export!(built)
+
+      assert Map.has_key?(files, "beach-days/gallery/001_beach.jpg")
+      assert Map.has_key?(files, "beach-days/gallery/xxx_001_map.png")
+    end
+
+    test "an entry with no tiles keeps its empty gallery through the import" do
+      user = user_fixture()
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      map = in_body!(article, "map.png")
+      {:ok, article} = Articles.update_text(article, %{body: "![The map](/uploads/#{map})"})
+
+      built = round_trip!(article, user, "the-first-one")
+
+      assert Gallery.list(built.id) == []
+    end
+
+    test "a reference whose file has gone does not stop the import" do
+      user = user_fixture()
+      article = draft_post(%{title: "Beach days", slug: "beach-days"})
+      tile!(article, "beach.jpg")
+      map = in_body!(article, "map.png")
+
+      {:ok, article} =
+        Articles.update_text(article, %{body: "Gone: ![The map](/uploads/#{map})"})
+
+      File.rm!(Uploads.absolute(map))
+
+      built = round_trip!(article, user, "the-first-one")
+
+      assert built.title == "Beach days"
+      assert [tile] = Gallery.list(built.id)
+      assert tile.filename == "001_beach.jpg"
+      # the words keep the address of the picture that is gone
+      assert built.body =~ "![The map](/uploads/#{map})"
     end
   end
 
