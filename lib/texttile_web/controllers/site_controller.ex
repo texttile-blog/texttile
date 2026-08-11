@@ -18,6 +18,7 @@ defmodule TexttileWeb.SiteController do
   alias Texttile.RateLimiter
   alias Texttile.Gallery
   alias Texttile.Settings
+  alias TexttileWeb.HumanCheck
   alias TexttileWeb.SiteGate
 
   # confirm_subscriber is here for its 404 branch only; the newsletter
@@ -176,7 +177,7 @@ defmodule TexttileWeb.SiteController do
       is_nil(article) ->
         not_found(conn)
 
-      is_nil(author) and spam?(article, params) ->
+      is_nil(author) and not HumanCheck.human?({:comment, article}, params) ->
         conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
 
       true ->
@@ -283,10 +284,6 @@ defmodule TexttileWeb.SiteController do
     }
   end
 
-  defp spam?(article, params) do
-    text_value(params["url"]) != "" or not human_timing?(article, params["t"])
-  end
-
   ## The reader the browser remembers
 
   # The box under the comment form. It is not ticked to begin with:
@@ -348,23 +345,6 @@ defmodule TexttileWeb.SiteController do
   defp text_value(value) when is_binary(value), do: value
   defp text_value(_value), do: ""
 
-  # The form carries a signed stamp of the moment it was drawn. Sent
-  # back in under a few seconds means a script, not a person typing;
-  # no stamp or a foreign stamp means the form was never drawn at all.
-  defp human_timing?(article, token) do
-    min_age = Application.get_env(:texttile, :comment_min_age, 3)
-
-    case Phoenix.Token.verify(TexttileWeb.Endpoint, "comment form", text_value(token),
-           max_age: 7 * 86_400
-         ) do
-      {:ok, {article_id, signed_at}} ->
-        article_id == article.id and System.system_time(:second) - signed_at >= min_age
-
-      _ ->
-        false
-    end
-  end
-
   defp client_ip(conn), do: TexttileWeb.ClientIP.of(conn)
 
   defp comment_sent(conn, comment) do
@@ -402,7 +382,7 @@ defmodule TexttileWeb.SiteController do
     email = text_value(params["email"])
 
     cond do
-      newsletter_spam?(params) ->
+      not HumanCheck.human?(:newsletter, params) ->
         newsletter_page(conn, :sent, email)
 
       not Newsletter.Subscriber.address?(Newsletter.Subscriber.normalize(email)) ->
@@ -456,23 +436,6 @@ defmodule TexttileWeb.SiteController do
       t: Keyword.get(extra, :t),
       token: Keyword.get(extra, :token)
     )
-  end
-
-  # The same two invisible filters as on the comment form; the stamp
-  # carries no article, only the moment the footer was drawn.
-  defp newsletter_spam?(params) do
-    text_value(params["url"]) != "" or not newsletter_timing?(params["t"])
-  end
-
-  defp newsletter_timing?(token) do
-    min_age = Application.get_env(:texttile, :comment_min_age, 3)
-
-    case Phoenix.Token.verify(TexttileWeb.Endpoint, "newsletter form", text_value(token),
-           max_age: 7 * 86_400
-         ) do
-      {:ok, signed_at} -> System.system_time(:second) - signed_at >= min_age
-      _ -> false
-    end
   end
 
   ## The gate
@@ -667,12 +630,7 @@ defmodule TexttileWeb.SiteController do
       comment_count: Enum.count(rows, &match?({:shown, _}, &1)) + earlier,
       comment_earlier: earlier,
       comment_token:
-        conn.assigns[:comment_token] ||
-          Phoenix.Token.sign(
-            TexttileWeb.Endpoint,
-            "comment form",
-            {article.id, System.system_time(:second)}
-          ),
+        conn.assigns[:comment_token] || HumanCheck.stamp({:comment, article.id}),
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
       comment_rule: comment_rule(signed_in_user(conn), require?),
       # A form that came back with a mistake keeps what was typed; a

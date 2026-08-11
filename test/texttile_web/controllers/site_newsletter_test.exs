@@ -80,9 +80,6 @@ defmodule TexttileWeb.SiteNewsletterTest do
     end
 
     test "a form sent faster than a person types is dropped", %{conn: conn} do
-      Application.put_env(:texttile, :comment_min_age, 3)
-      on_exit(fn -> Application.put_env(:texttile, :comment_min_age, 0) end)
-
       html = conn |> send_join(%{"t" => form_token(0)}) |> html_response(200)
 
       refute html =~ ~s(id="newsletter-error")

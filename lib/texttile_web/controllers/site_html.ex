@@ -113,7 +113,7 @@ defmodule TexttileWeb.SiteHTML do
       assign(
         assigns,
         :newsletter_token,
-        Phoenix.Token.sign(TexttileWeb.Endpoint, "newsletter form", System.system_time(:second))
+        TexttileWeb.HumanCheck.stamp(:newsletter)
       )
 
     ~H"""
