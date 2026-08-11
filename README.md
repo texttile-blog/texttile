@@ -4,7 +4,8 @@ A minimal blog CMS with multiplayer editing. Phoenix, LiveView, and SQLite in
 one Docker image. One volume holds all state. No external services are
 required.
 
-Status: early development. Do not use it for a real site yet.
+Status: ready for a real site. Run a version tag, not `latest`, and keep a
+copy of `/data`.
 
 ## Principles
 
@@ -66,7 +67,7 @@ docker run -d --name texttile \
   -e SECRET_KEY_BASE="$(openssl rand -base64 48)" \
   -e PHX_HOST=blog.example.com \
   -e ADMIN_USERS=klaus,julia \
-  ghcr.io/texttile-blog/texttile:latest
+  ghcr.io/texttile-blog/texttile:2
 ```
 
 The container prepares the data directories, runs migrations, drops root, and
@@ -77,14 +78,32 @@ The image is `linux/amd64`. An update is: pull the new image, start the
 container again.
 
 ```sh
-docker pull ghcr.io/texttile-blog/texttile:latest
+docker pull ghcr.io/texttile-blog/texttile:2
 docker rm -f texttile
 # then the docker run above again
 ```
 
-`latest` is the last commit on `main`. Every build also gets its commit as a
-tag (`ghcr.io/texttile-blog/texttile:<sha>`), so an installation can stay on
-one build.
+### Which tag to run
+
+Every build carries the version from `mix.exs`, and each build gets five
+tags. For version 2.0.1 they are:
+
+| Tag       | Points at                                |
+| --------- | ---------------------------------------- |
+| `2.0.1`   | that one build, and never moves again    |
+| `2.0`     | the newest repair of 2.0                 |
+| `2`       | the newest build of 2                    |
+| `latest`  | the newest build there is                |
+| `<sha>`   | the commit the build came from           |
+
+`2` and `2.0` are not version ranges. The registry resolves no version logic:
+a later build with a fitting number takes the tag over, which is what these
+two tags are for. Run `2` to get repairs and new capabilities without a
+break, `2.0` to get repairs only, and `2.0.1` where nothing may move until
+you move it.
+
+A build is published only when the version rises. A merge that keeps the
+version of the build before it publishes nothing and reports a failure.
 
 ## Readers and admins
 
