@@ -33,9 +33,10 @@ defmodule Texttile.AccountsLinksTest do
       user = user_fixture()
       {:ok, token} = Accounts.send_password_link(user, site: "s", link_url: &link_url/1)
 
-      Repo.update_all("login_links", set: [inserted_at: ~U[2020-01-01 00:00:00Z]])
+      next_day = DateTime.add(DateTime.utc_now(), 25 * 3600, :second)
 
-      assert :error = Accounts.verify_login_link(token)
+      assert :error = Accounts.verify_login_link(token, now: next_day)
+      assert :error = Accounts.accept_login_link(token, "a long enough password", now: next_day)
     end
 
     test "a fresh link replaces the earlier one" do
@@ -78,8 +79,8 @@ defmodule Texttile.AccountsLinksTest do
       {:ok, _} = Accounts.send_password_link(user, site: "s", link_url: &link_url/1)
       assert Accounts.link_recently_sent?(user)
 
-      Repo.update_all("login_links", set: [inserted_at: ~U[2020-01-01 00:00:00Z]])
-      refute Accounts.link_recently_sent?(user)
+      two_minutes_on = DateTime.add(DateTime.utc_now(), 120, :second)
+      refute Accounts.link_recently_sent?(user, now: two_minutes_on)
     end
   end
 

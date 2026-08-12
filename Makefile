@@ -23,6 +23,7 @@ prepare:
 	mix compile
 
 test: prepare
+	npm --prefix assets test
 	mix test
 
 # What CI runs, in the order CI runs it, so a red build is something
@@ -31,6 +32,7 @@ test: prepare
 check: prepare
 	mix compile --warnings-as-errors
 	mix format --check-formatted
+	npm --prefix assets test
 	mix test
 
 kill-port-4000:

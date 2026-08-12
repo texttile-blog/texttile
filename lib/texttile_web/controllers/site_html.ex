@@ -36,7 +36,7 @@ defmodule TexttileWeb.SiteHTML do
       <a class="site-mark" href={~p"/"}>
         <img
           :if={@brand.logo}
-          src={"/uploads/#{@brand.logo}"}
+          src={Texttile.Images.url(@brand.logo, :original)}
           alt=""
           class="h-[21px] w-auto max-w-[84px] object-contain"
         />
@@ -113,7 +113,7 @@ defmodule TexttileWeb.SiteHTML do
       assign(
         assigns,
         :newsletter_token,
-        Phoenix.Token.sign(TexttileWeb.Endpoint, "newsletter form", System.system_time(:second))
+        TexttileWeb.HumanCheck.stamp(:newsletter)
       )
 
     ~H"""
@@ -180,7 +180,7 @@ defmodule TexttileWeb.SiteHTML do
         <%!-- every card wears a square, so the grid keeps its rows: the
              picture when there is one, the quiet mark when there is none --%>
         <span :if={@preview} class="cimg">
-          <img src={"/renditions/#{Images.card_edge()}/#{@preview}"} alt="" loading="lazy" />
+          <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
         <span :if={!@preview} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
@@ -234,22 +234,22 @@ defmodule TexttileWeb.SiteHTML do
   # A picture stands in a link to the original, and the script turns
   # that link into the lightbox.
   defp draw_media(%Media{video?: false} = media) do
-    ~s(<a class="bodypic" href="/uploads/#{media.path}" data-full="/renditions/max/#{media.path}">) <>
-      Media.picture(media, "/renditions/#{Images.reading_edge()}/#{media.path}") <>
+    ~s(<a class="bodypic" href="#{Images.url(media.path, :original)}" data-full="#{Images.url(media.path, :max)}">) <>
+      Media.picture(media, Images.url(media.path, :reading)) <>
       ~s(</a>)
   end
 
   # While ffmpeg is still converting, the file stands there as a plain
   # link, so the text loses nothing in the meantime.
   defp draw_media(%Media{playback: nil} = media) do
-    ~s(<a class="videofile" href="/uploads/#{media.path}">#{media.label}</a>)
+    ~s(<a class="videofile" href="#{Images.url(media.path, :original)}">#{media.label}</a>)
   end
 
   defp draw_media(%Media{playback: play}) do
     ~s(<video class="bodyvid" controls playsinline preload="none") <>
-      ~s( poster="/renditions/#{Images.reading_edge()}/#{play.poster}") <>
+      ~s( poster="#{Images.url(play.poster, :reading)}") <>
       size_attributes(play) <>
-      ~s( src="/uploads/#{play.mp4}"></video>)
+      ~s( src="#{Images.url(play.mp4, :original)}"></video>)
   end
 
   # The size the browser keeps free before the poster arrives, so the
@@ -289,9 +289,9 @@ defmodule TexttileWeb.SiteHTML do
   def gallery_shape(gallery) when length(gallery) < 4, do: "gal-#{length(gallery)}"
   def gallery_shape(_gallery), do: nil
 
-  @doc "Which rendition a tile fetches, see `gallery_wrap/1`."
-  def gallery_edge([_one]), do: Images.reading_edge()
-  def gallery_edge(_gallery), do: Images.card_edge()
+  @doc "Which use a tile fetches its picture at, see `gallery_wrap/1`."
+  def gallery_size([_one]), do: :reading
+  def gallery_size(_gallery), do: :card
 
   @doc "A date the way the example blog writes one: 2 July 2026."
   defdelegate format_date(date), to: Texttile.I18n

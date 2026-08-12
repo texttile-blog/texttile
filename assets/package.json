@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "test": "node --test \"js_test/*.test.mjs\""
+  },
   "devDependencies": {
     "playwright": "^1.62.1"
   },

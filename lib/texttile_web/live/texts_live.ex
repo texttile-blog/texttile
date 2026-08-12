@@ -9,10 +9,10 @@ defmodule TexttileWeb.TextsLive do
   use TexttileWeb, :live_view
 
   alias Texttile.Articles
+  alias Texttile.Articles.Listing
   alias Texttile.Images
   alias Texttile.Comments
   alias Texttile.Gallery
-  alias Texttile.Settings
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -35,36 +35,27 @@ defmodule TexttileWeb.TextsLive do
     %{filter: filter, q: q} = socket.assigns
     found = Articles.list_articles(filter: filter, search: q)
 
-    # The search and the status filter can empty the year that is open.
-    # Then the year lets go, rather than leaving an empty grid behind.
-    {year, month} = Articles.settle_period(found, socket.assigns.year, socket.assigns.month)
-    {years, months} = Articles.periods(found, year)
-    in_period = Enum.filter(found, &Articles.in_period?(&1, year, month))
-
-    # One page size for the whole installation, so the grid an admin
-    # works in is cut the same way as the list a reader walks. A text
-    # deleted somewhere else can take the last page with it, so the
-    # page the screen stands on is held inside what is left.
-    per_page = Settings.get(:posts_per_page)
-    pages = max(1, ceil(length(in_period) / per_page))
-    page = socket.assigns.page |> max(1) |> min(pages)
-    articles = Enum.slice(in_period, (page - 1) * per_page, per_page)
+    # A text deleted somewhere else can take the last page with it, and
+    # the search can empty the year that is open; `Listing` holds the
+    # page inside what is left and lets the year go.
+    list =
+      Listing.assemble(found,
+        year: socket.assigns.year,
+        month: socket.assigns.month,
+        page: socket.assigns.page
+      )
 
     socket
-    |> assign(:year, year)
-    |> assign(:month, month)
-    |> assign(:years, years)
-    |> assign(:months, months)
-    # what the search and the status filter found across every year: the
-    # number "All years" carries, so it counts the way the years do
-    |> assign(:across_years, length(found))
-    |> assign(:page, page)
-    |> assign(:pages, pages)
-    # the count over the grid speaks of everything the search found, not
-    # of the page it happens to show
-    |> assign(:shown, length(in_period))
-    |> assign(:articles, articles)
-    |> assign(:covers, Gallery.previews(articles))
+    |> assign(:year, list.year)
+    |> assign(:month, list.month)
+    |> assign(:years, list.years)
+    |> assign(:months, list.months)
+    |> assign(:across_years, list.across_years)
+    |> assign(:page, list.page)
+    |> assign(:pages, list.pages)
+    |> assign(:shown, list.shown)
+    |> assign(:articles, list.entries)
+    |> assign(:covers, Gallery.previews(list.entries))
     |> assign(:comment_counts, Comments.count_map())
     # which live entries are being rewritten right now. One query for
     # the whole grid: the bodies of every entry are far too much to
@@ -85,28 +76,19 @@ defmodule TexttileWeb.TextsLive do
   # over on the first page, because the page a reader stood on says
   # nothing about the set they are looking at now.
   def handle_event("page", %{"page" => page}, socket) do
-    {:noreply, socket |> assign(:page, number(page) || 1) |> load()}
+    {:noreply, socket |> assign(:page, page) |> load()}
   end
 
   # The archive narrows the grid to one year, and then to one month of
-  # it. Choosing another year drops the month with it: a month only
-  # ever belongs to the year over it.
+  # it. `Listing` reads the raw values and drops a month whose year is
+  # gone: a month only ever belongs to the year over it.
   def handle_event("period", params, socket) do
-    year = number(params["year"])
-    month = year && number(params["month"])
-
     {:noreply,
-     socket |> assign(:year, year) |> assign(:month, month) |> assign(:page, 1) |> load()}
-  end
-
-  defp number(nil), do: nil
-  defp number(""), do: nil
-
-  defp number(raw) do
-    case Integer.parse(to_string(raw)) do
-      {number, ""} when number > 0 -> number
-      _ -> nil
-    end
+     socket
+     |> assign(:year, params["year"])
+     |> assign(:month, params["month"])
+     |> assign(:page, 1)
+     |> load()}
   end
 
   def handle_info({:article_changed, _article}, socket), do: {:noreply, load(socket)}
@@ -309,7 +291,7 @@ defmodule TexttileWeb.TextsLive do
   # A preview can come from a body image, so the path is markdown text;
   # a quote must not break out of the url('...') it lands in.
   defp cover_bg(path) do
-    "background-image:url('/renditions/#{Images.thumb_edge()}/#{String.replace(path, "'", "%27")}')"
+    "background-image:url('#{Images.url(path, :thumb)}')"
   end
 
   defp card_meta(article, comment_count, pending?) do

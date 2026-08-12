@@ -17,6 +17,8 @@ defmodule Texttile.Newsletter do
 
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Reading
+  alias Texttile.Articles.Visibility
   alias Texttile.Confirmation
   alias Texttile.Newsletter.Notifier
   alias Texttile.Newsletter.Subscriber
@@ -191,35 +193,41 @@ defmodule Texttile.Newsletter do
   texts and already-stamped texts pass through untouched. Answers the
   text as it now stands.
   """
+  def notify_published(article, opts \\ [])
+
   def notify_published(
-        %Article{status: "published", type: "post", notify_on_publish: true, notified_on: nil} =
-          article
+        %Article{type: "post", notify_on_publish: true, notified_on: nil} = article,
+        opts
       ) do
-    today = Date.utc_today()
+    if Visibility.live?(article) do
+      today = Keyword.get(opts, :today, Date.utc_today())
 
-    claimed =
-      from(a in Article, where: a.id == ^article.id and is_nil(a.notified_on))
-      |> Repo.update_all(set: [notified_on: today])
+      claimed =
+        from(a in Article, where: a.id == ^article.id and is_nil(a.notified_on))
+        |> Repo.update_all(set: [notified_on: today])
 
-    case claimed do
-      {1, _} ->
-        article = %{article | notified_on: today}
-        send_new_text(article)
-        article
+      case claimed do
+        {1, _} ->
+          article = %{article | notified_on: today}
+          send_new_text(article)
+          article
 
-      {0, _} ->
-        # somebody else went live with this text a moment ago and is
-        # mailing it right now
-        Repo.get(Article, article.id) || article
+        {0, _} ->
+          # somebody else went live with this text a moment ago and is
+          # mailing it right now
+          Repo.get(Article, article.id) || article
+      end
+    else
+      article
     end
   end
 
-  def notify_published(%Article{} = article), do: article
+  def notify_published(%Article{} = article, _opts), do: article
 
   # The mail carries what the readers have, never the working copy: it
   # is the one reader whose copy cannot be taken back once it is out.
   defp send_new_text(article) do
-    article = Articles.as_read(article)
+    article = Reading.text(article, :reader)
 
     case confirmed() do
       [] ->

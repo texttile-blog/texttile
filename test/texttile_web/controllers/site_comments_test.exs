@@ -188,9 +188,6 @@ defmodule TexttileWeb.SiteCommentsTest do
     end
 
     test "a form sent faster than a person types is dropped", %{conn: conn} do
-      Application.put_env(:texttile, :comment_min_age, 3)
-      on_exit(fn -> Application.put_env(:texttile, :comment_min_age, 0) end)
-
       article = published_post()
       conn = send_comment(conn, article, %{"t" => form_token(article, 0)})
 
@@ -250,9 +247,6 @@ defmodule TexttileWeb.SiteCommentsTest do
     end
 
     test "the stamp survives a form mistake, so the correction is not a bot", %{conn: conn} do
-      Application.put_env(:texttile, :comment_min_age, 3)
-      on_exit(fn -> Application.put_env(:texttile, :comment_min_age, 0) end)
-
       article = published_post()
       token = form_token(article, 10)
 

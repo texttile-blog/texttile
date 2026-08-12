@@ -426,7 +426,10 @@ defmodule Texttile.Import do
   `{:retrying, url, what}` when a host has to be asked again.
   Answers the summary: created, updated, skipped, and the failures.
   """
-  def run(%Report{} = report, user, progress \\ fn _event -> :ok end) do
+  def run(%Report{} = report, user, progress \\ fn _event -> :ok end, opts \\ []) do
+    # `today:` names the day a bundle's date is judged against: a later
+    # date schedules, its own day or an earlier one goes live.
+    today = Keyword.get(opts, :today, Date.utc_today())
     importable = Enum.filter(report.bundles, &(&1.errors == []))
     total = length(importable)
 
@@ -437,7 +440,7 @@ defmodule Texttile.Import do
       fn {bundle, index}, summary ->
         progress.({:bundle, bundle.name, index, total})
 
-        case import_bundle(bundle, user, progress) do
+        case import_bundle(bundle, user, progress, today) do
           {:ok, :created} -> %{summary | created: summary.created + 1}
           {:ok, :updated} -> %{summary | updated: summary.updated + 1}
           {:error, message} -> %{summary | failed: summary.failed ++ [{bundle.name, message}]}
@@ -451,12 +454,14 @@ defmodule Texttile.Import do
   # whole and leaves only files to sweep, and those are swept here too.
   # The old files fall last, once the transaction holds - a rollback
   # must find them still in place.
-  defp import_bundle(bundle, user, progress) do
+  defp import_bundle(bundle, user, progress, today) do
     with :ok <- refuse_locked(bundle),
          {:ok, stored} <- store_pictures(bundle, progress) do
       try do
         {:ok, {verb, old_paths}} =
-          Repo.transaction(fn -> apply_bundle(bundle, stored, user) end, timeout: :infinity)
+          Repo.transaction(fn -> apply_bundle(bundle, stored, user, today) end,
+            timeout: :infinity
+          )
 
         Enum.each(old_paths -- stored_paths(stored), &Uploads.remove_upload/1)
         {:ok, verb}
@@ -656,7 +661,7 @@ defmodule Texttile.Import do
   # rolls the whole bundle back. Answers {verb, old_paths}: the files
   # the text owned before, for the caller to remove once the commit
   # holds.
-  defp apply_bundle(bundle, stored, user) do
+  defp apply_bundle(bundle, stored, user, today) do
     existing = Repo.get_by(Article, slug: bundle.slug)
 
     {verb, article} =
@@ -690,8 +695,8 @@ defmodule Texttile.Import do
         preview_path: bundle.preview && stored[bundle.preview].path
       })
 
-    article = set_state(article, bundle, user)
-    replace_gallery(article, bundle, stored)
+    article = set_state(article, bundle, user, today)
+    replace_gallery(article, bundle, stored, today)
     Comments.replace_imported(article, bundle.comments)
 
     Articles.push_log(article, user, "imported the text from a bundle")
@@ -714,7 +719,7 @@ defmodule Texttile.Import do
     end)
   end
 
-  defp set_state(article, %Bundle{status: "draft"} = bundle, user) do
+  defp set_state(article, %Bundle{status: "draft"} = bundle, user, today) do
     article =
       if article.status == "draft" do
         article
@@ -728,33 +733,33 @@ defmodule Texttile.Import do
         article
 
       date ->
-        {:ok, article} = Articles.set_publish_date(article, user, date)
+        {:ok, article} = Articles.set_publish_date(article, user, date, today: today)
         article
     end
   end
 
-  defp set_state(article, %Bundle{status: "published"} = bundle, user) do
-    date = bundle.date || Date.utc_today()
+  defp set_state(article, %Bundle{status: "published"} = bundle, user, today) do
+    date = bundle.date || today
 
     # The stamp goes on before the text goes live, because going live
     # is what sends the mail: an already published import never mails
     # the subscribers after the fact. A future date is a scheduled
     # text and keeps no stamp; it goes live on its day like any other,
     # notification included. IMPORT.md says so.
-    article = mark_notified(article, date)
+    article = mark_notified(article, date, today)
 
-    {:ok, article} = Articles.set_publish_date(article, user, date)
+    {:ok, article} = Articles.set_publish_date(article, user, date, today: today)
 
     if article.status == "draft" do
-      {:ok, article} = Articles.publish(article, user)
+      {:ok, article} = Articles.publish(article, user, today: today)
       article
     else
       article
     end
   end
 
-  defp mark_notified(article, date) do
-    if Date.compare(date, Date.utc_today()) == :gt do
+  defp mark_notified(article, date, today) do
+    if Date.compare(date, today) == :gt do
       article
     else
       article
@@ -763,8 +768,8 @@ defmodule Texttile.Import do
     end
   end
 
-  defp replace_gallery(article, bundle, stored) do
-    base = DateTime.new!(article.publish_date || Date.utc_today(), ~T[12:00:00.000000], "Etc/UTC")
+  defp replace_gallery(article, bundle, stored, today) do
+    base = DateTime.new!(article.publish_date || today, ~T[12:00:00.000000], "Etc/UTC")
 
     tiles =
       bundle.gallery

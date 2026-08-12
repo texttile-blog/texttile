@@ -27,6 +27,7 @@ defmodule TexttileWeb.EditorLive do
   alias Texttile.Images
   alias Texttile.Stats
   alias Texttile.Videos
+  alias TexttileWeb.UploadNews
 
   ## Mount
 
@@ -53,8 +54,10 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:media_rev, 0)
       |> assign(:comments, Comments.for_article(article.id))
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
-      |> assign(:editing_comment, nil)
-      |> assign(:comment_error, nil)
+      |> TexttileWeb.CommentModeration.attach(
+        scope: {:article, & &1.assigns.article.id},
+        reload: &reload_comments/1
+      )
       # The numbers are read when the Stats tab is opened, not on the
       # way into the editor: most visits here are to write.
       |> assign(:stats, nil)
@@ -424,48 +427,10 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, socket |> assign(:tab, tab) |> load_stats(tab)}
   end
 
-  # Only the open text's own comments, and a comment that is already
-  # gone is no error: the list reloads either way. The trash itself
-  # lives on the Comments screen; a text only ever deletes into it.
-  def handle_event("delete_comment", %{"id" => id}, socket) do
-    case own_comment(socket, id, & &1) do
-      {:error, :gone} -> {:noreply, reload_comments(socket)}
-      comment -> {:noreply, assign(socket, :dialog, delete_dialog(comment))}
-    end
-  end
-
-  def handle_event("confirm_delete_comment", %{"id" => id}, socket) do
-    own_comment(socket, id, &Comments.delete_comment(&1.id))
-
-    {:noreply,
-     socket
-     |> assign(:dialog, nil)
-     |> close_comment_edit()
-     |> reload_comments()}
-  end
-
-  def handle_event("release_comment", %{"id" => id}, socket) do
-    own_comment(socket, id, &Comments.release_comment(&1.id))
-    {:noreply, reload_comments(socket)}
-  end
-
-  def handle_event("start_edit", %{"id" => id}, socket) do
-    {:noreply, socket |> assign(:editing_comment, to_string(id)) |> assign(:comment_error, nil)}
-  end
-
-  def handle_event("cancel_edit", _params, socket) do
-    {:noreply, close_comment_edit(socket)}
-  end
-
-  def handle_event("save_comment", %{"comment_id" => id, "body" => body}, socket) do
-    case own_comment(socket, id, &Comments.edit_comment(&1.id, body)) do
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :comment_error, edit_error(changeset))}
-
-      _ ->
-        {:noreply, socket |> close_comment_edit() |> reload_comments()}
-    end
-  end
+  # The six comment moderation events are answered by
+  # CommentModeration, scoped to the open text's own comments. The
+  # trash itself lives on the Comments screen; a text only ever
+  # deletes into it.
 
   # Only ever opens. The chevron of an open menu says "close" instead,
   # because a click on it is also a click away from the menu, and the
@@ -584,153 +549,23 @@ defmodule TexttileWeb.EditorLive do
   end
 
   ## Events · images in the text. The files and the running requests
-  ## live in the holder's browser; these events keep the Log and the
-  ## panel's progress display current. Inserting into the body needs
-  ## the lock, so every one of these does too, and a file name is
-  ## client text: it gets a short leash before it reaches the Log.
+  ## live in the holder's browser; the hook crosses the seam once per
+  ## change with the standing state and the news (see uploads.js and
+  ## UploadNews). The state becomes the progress display whoever sends
+  ## it; a piece of news that writes into the entry or its Log only
+  ## counts from the holder of the lock.
 
-  def handle_event(
-        "images_inserted",
-        %{"files" => names},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when is_list(names) and holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
+  def handle_event("upload_state", params, socket) do
+    socket = assign(socket, :upload_pcts, UploadNews.pcts(params["files"]))
 
-    Articles.push_log(
-      article,
-      scope.user,
-      case names do
-        [one] -> "put #{clean_file(one)} into the text"
-        many -> "put #{length(many)} images into the text"
-      end
-    )
+    socket =
+      params
+      |> Map.get("news")
+      |> List.wrap()
+      |> Enum.reduce(socket, &apply_upload_news/2)
 
     {:noreply, socket}
   end
-
-  def handle_event("images_inserted", _params, socket), do: {:noreply, socket}
-
-  def handle_event("upload_progress", %{"file" => file, "pct" => pct}, socket)
-      when is_number(pct) do
-    {:noreply,
-     assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, clean_file(file), pct))}
-  end
-
-  def handle_event("image_uploaded", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-    Articles.push_log(article, scope.user, "#{file} is in the text")
-    {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
-  end
-
-  def handle_event("image_uploaded", _params, socket), do: {:noreply, socket}
-
-  def handle_event(
-        "image_failed",
-        %{"file" => file, "pct" => pct},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when is_number(pct) and holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-    Articles.push_log(article, scope.user, "#{file} failed to upload into the text")
-
-    {:noreply,
-     socket
-     |> assign(:upload_pcts, Map.put(socket.assigns.upload_pcts, file, pct))
-     |> mark_saved("#{file} failed at #{round(pct)}% · retry or remove it under the text")}
-  end
-
-  def handle_event("image_failed", _params, socket), do: {:noreply, socket}
-
-  # The entry holds this picture already. Nothing failed and nothing
-  # stands in the text: the token left with the answer, and the state
-  # line names the picture it is.
-  def handle_event(
-        "image_refused",
-        %{"file" => file, "of" => of},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    {file, of} = {clean_file(file), clean_file(of)}
-    Articles.push_log(article, scope.user, "#{file} is already in this entry, as #{of}")
-
-    {:noreply,
-     socket
-     |> assign(:upload_pcts, Map.delete(socket.assigns.upload_pcts, file))
-     |> mark_saved(gettext("This picture is already in this entry, as %{name}.", name: of))}
-  end
-
-  def handle_event("image_refused", _params, socket), do: {:noreply, socket}
-
-  # The browser turned a file away before it travelled, so nothing
-  # stands in the text and nothing needs removing. The state line says
-  # what happened and what the roof is.
-  def handle_event("upload_too_big", %{"files" => files, "roof" => roof}, socket)
-      when is_list(files) and is_number(roof) do
-    names = files |> Enum.map(&clean_file/1) |> Enum.join(", ")
-
-    {:noreply,
-     mark_saved(
-       socket,
-       ngettext(
-         "%{names} is over the %{roof} MB roof and was not uploaded",
-         "%{names} are over the %{roof} MB roof and were not uploaded",
-         length(files),
-         names: names,
-         roof: roof
-       )
-     )}
-  end
-
-  def handle_event("upload_too_big", _params, socket), do: {:noreply, socket}
-
-  def handle_event("image_retry", %{"file" => file}, %{assigns: %{editing: editing}} = socket)
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-    Articles.push_log(article, scope.user, "retried the upload of #{file}")
-    {:noreply, assign(socket, :upload_pcts, Map.put(socket.assigns.upload_pcts, file, 0))}
-  end
-
-  def handle_event("image_retry", _params, socket), do: {:noreply, socket}
-
-  def handle_event("image_retry_missing", %{"file" => file}, socket) do
-    {:noreply,
-     mark_saved(
-       socket,
-       gettext(
-         "The file for %{file} is not in this browser any more · remove the marker and paste the image again",
-         file: clean_file(file)
-       )
-     )}
-  end
-
-  def handle_event(
-        "image_removed",
-        %{"file" => file, "how" => how},
-        %{assigns: %{editing: editing}} = socket
-      )
-      when holding(editing) do
-    %{article: article, current_scope: scope} = socket.assigns
-    file = clean_file(file)
-
-    Articles.push_log(
-      article,
-      scope.user,
-      if(how == "cancel",
-        do: "cancelled the upload of #{file}",
-        else: "took the marker for #{file} out of the text"
-      )
-    )
-
-    {:noreply, assign(socket, :upload_pcts, Map.delete(socket.assigns.upload_pcts, file))}
-  end
-
-  def handle_event("image_removed", _params, socket), do: {:noreply, socket}
 
   ## Events · the gallery
   #
@@ -992,7 +827,6 @@ defmodule TexttileWeb.EditorLive do
   defp minutes_in_words(seconds), do: "#{div(seconds, 60)} minutes"
 
   # a file name is client text before it reaches the Log
-  defp clean_file(file), do: file |> to_string() |> String.slice(0, 120)
 
   defp save_title(socket, title) do
     cond do
@@ -1012,12 +846,10 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  # a thumbnail loads the scaled reading, never the full original
-  defp thumb_url("/uploads/" <> relative), do: thumb(relative)
+  # a thumbnail loads the scaled reading, never the full original; an
+  # outside address in the words has no rendition and is shown as it is
+  defp thumb_url("/uploads/" <> relative), do: Images.url(relative, :thumb)
   defp thumb_url(url), do: String.replace(url, "'", "%27")
-
-  # The one address of an admin thumbnail, at the edge Images names.
-  defp thumb(relative), do: "/renditions/#{Images.thumb_edge()}/#{relative}"
 
   # What a row of the file list shows for a reference: the still of a
   # converted film, the picture itself, or nothing - while ffmpeg is
@@ -1073,11 +905,13 @@ defmodule TexttileWeb.EditorLive do
     |> Enum.flat_map(fn {path, entry} ->
       if Videos.video?(path) and is_binary(entry.still) do
         [
+          # the key is the body's own url for the film, byte for byte;
+          # the values are addresses and come from Images
           {"/uploads/#{path}",
            %{
-             poster: thumb(entry.still),
-             full: "/renditions/max/#{entry.still}",
-             film: entry.film && "/uploads/#{entry.film}"
+             poster: Images.url(entry.still, :thumb),
+             full: Images.url(entry.still, :max),
+             film: entry.film && Images.url(entry.film, :original)
            }}
         ]
       else
@@ -1110,10 +944,8 @@ defmodule TexttileWeb.EditorLive do
     Gallery.effective_preview(article, Enum.map(gallery, & &1.path))
   end
 
-  # A candidate can come from the body, so the path is markdown text;
-  # a quote must not break out of the url('...') it lands in.
   defp tile_bg(path) do
-    "background-image:url('#{thumb(String.replace(path, "'", "%27"))}')"
+    "background-image:url('#{Images.url(path, :thumb)}')"
   end
 
   ## PubSub and lock messages
@@ -1564,6 +1396,7 @@ defmodule TexttileWeb.EditorLive do
               class="main"
               id="stateMain"
               phx-click="publish_changes"
+              data-flush-body
               title={
                 gettext(
                   "Hands the text as it stands to the readers. The day, the address and the state do not move, and no mail goes out."
@@ -1590,6 +1423,7 @@ defmodule TexttileWeb.EditorLive do
               class="main"
               id="stateMain"
               phx-click="publish"
+              data-flush-body
               title={
                 gettext(
                   "Publishes the entry now. A future publish date in the settings schedules it instead."
@@ -1633,13 +1467,17 @@ defmodule TexttileWeb.EditorLive do
           {gettext("The subscriber email went out on %{day}.", day: @article.notified_on)}
         </p>
 
-        <button class="row" id="saveVersionRow" phx-click="save_version">
+        <%!-- data-flush-body: the editor settles its debounce on the
+             mousedown, so the snapshot can never miss the last
+             keystrokes. The attribute is the contract; the event name
+             stays the server's own business. --%>
+        <button class="row" id="saveVersionRow" phx-click="save_version" data-flush-body>
           {gettext("Save version")}
         </button>
         <%!-- While the entry is being rewritten the main button belongs
              to the readers, so the way to the page moves in here. --%>
         <a
-          :if={@public_url && (@article.status != "published" || @pending)}
+          :if={@public_url && (not Visibility.live?(@article) || @pending)}
           class="row"
           id="viewRow"
           href={@public_url}
@@ -1819,6 +1657,10 @@ defmodule TexttileWeb.EditorLive do
                     data-readonly={to_string(!@holds_lock)}
                     data-upload-url={~p"/admin/texts/#{@article.id}/images"}
                     data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
+                    data-tokens={Jason.encode!(Body.token_templates())}
+                    data-picker="#mdImgFile"
+                    data-dropzone="#bodyWrap"
+                    data-drop-flag="#bodyDropFlag"
                     data-posters={Jason.encode!(poster_map(@media))}
                     data-label={gettext("Body, Markdown")}
                     data-placeholder={
@@ -2130,7 +1972,6 @@ defmodule TexttileWeb.EditorLive do
             id="tilesBlock"
             class="relative"
             phx-hook="Gallery"
-            data-article-id={@article.id}
             data-upload-url={~p"/admin/texts/#{@article.id}/gallery"}
             data-csrf={Phoenix.Controller.get_csrf_token()}
             data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
@@ -2153,11 +1994,11 @@ defmodule TexttileWeb.EditorLive do
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
                   data-date={I18n.format_field_moment(image.gallery_date)}
-                  data-full={
-                    @media[image.path].still && "/renditions/max/#{@media[image.path].still}"
+                  data-full={@media[image.path].still && Images.url(@media[image.path].still, :max)}
+                  data-video={
+                    @media[image.path].film && Images.url(@media[image.path].film, :original)
                   }
-                  data-video={@media[image.path].film && "/uploads/#{@media[image.path].film}"}
-                  data-original={"/uploads/" <> image.path}
+                  data-original={Images.url(image.path, :original)}
                   title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"
@@ -2792,9 +2633,11 @@ defmodule TexttileWeb.EditorLive do
     )
   end
 
-  defp share_text(%{status: status}, _password) when status != "published", do: nil
-
   defp share_text(article, password) do
+    if Visibility.live?(article), do: live_share_text(article, password)
+  end
+
+  defp live_share_text(article, password) do
     case Articles.public_path(article) do
       nil ->
         nil
@@ -2849,21 +2692,20 @@ defmodule TexttileWeb.EditorLive do
 
   defp stamp(datetime), do: I18n.format_moment(datetime)
 
-  # The state of an entry, in words. The stored word is English and
-  # stays English; only what an admin reads changes with the language.
-  # Whatever an admin does on the Comments tab, it does it to a comment
-  # of the open text. Anything else is left alone without a word.
-  defp own_comment(socket, id, fun) do
-    article_id = socket.assigns.article.id
+  defp apply_upload_news(item, socket) do
+    %{article: article, current_scope: scope, editing: editing} = socket.assigns
 
-    case Comments.get_comment(id) do
-      %{article_id: ^article_id} = comment -> fun.(comment)
-      _ -> {:error, :gone}
+    case UploadNews.read(item) do
+      nil ->
+        socket
+
+      %{needs_lock: true} when not holding(editing) ->
+        socket
+
+      told ->
+        if told.log, do: Articles.push_log(article, scope.user, told.log)
+        if told.note, do: mark_saved(socket, told.note), else: socket
     end
-  end
-
-  defp close_comment_edit(socket) do
-    socket |> assign(:editing_comment, nil) |> assign(:comment_error, nil)
   end
 
   defp reload_comments(socket) do

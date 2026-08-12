@@ -57,7 +57,7 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("%{date} · %{index} of %{count}"),
     gettext_noop("%{name} deleted"),
     gettext_noop("Undo"),
-    # media_lightbox.js: a film the reader opens from the body
+    # lightbox.js: a film the reader opens from the body
     gettext_noop("This film is still being converted. It plays here once that is done."),
     # body_ed_core.js: the body editor
     gettext_noop("Done. Untick it."),
@@ -68,7 +68,7 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Copy"),
     gettext_noop("Copied"),
     gettext_noop("Now press the copy key"),
-    # app.js: the saved mark in the topbar
+    # saved_ticker.js: the saved mark in the topbar
     gettext_noop("Saved"),
     gettext_noop("saved"),
     gettext_noop("saved %{time}"),

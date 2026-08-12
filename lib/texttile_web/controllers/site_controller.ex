@@ -10,12 +10,15 @@ defmodule TexttileWeb.SiteController do
   alias Texttile.Accounts
   alias Texttile.Articles
   alias Texttile.Articles.Article
+  alias Texttile.Articles.Listing
+  alias Texttile.Articles.Reading
   alias Texttile.Articles.Visibility
   alias Texttile.Comments
   alias Texttile.Newsletter
   alias Texttile.RateLimiter
   alias Texttile.Gallery
   alias Texttile.Settings
+  alias TexttileWeb.HumanCheck
   alias TexttileWeb.SiteGate
 
   # confirm_subscriber is here for its 404 branch only; the newsletter
@@ -78,7 +81,7 @@ defmodule TexttileWeb.SiteController do
   """
   def article(conn, %{"year" => year, "month" => month, "day" => day, "slug" => slug}) do
     with {:ok, date} <- Date.from_iso8601("#{year}-#{month}-#{day}"),
-         article when not is_nil(article) <- visible_post(conn, date, slug) do
+         article when not is_nil(article) <- Reading.post(date, slug, audience(conn)) do
       render_text(conn, article)
     else
       _ -> not_found(conn)
@@ -87,7 +90,7 @@ defmodule TexttileWeb.SiteController do
 
   @doc "One published page, at its short address."
   def page(conn, %{"slug" => slug}) do
-    case visible_page(conn, slug) do
+    case Reading.page(slug, audience(conn)) do
       nil -> not_found(conn)
       article -> render_text(conn, article)
     end
@@ -112,29 +115,9 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  # An entry that is not live yet still answers at the address it will
-  # wear, but only to somebody who is signed in. That way the editor's
-  # way out leads into the real site instead of into a second design of
-  # it, and a reader who guesses the address gets the 404 they should.
-  defp visible_post(conn, date, slug) do
-    Articles.get_published_post(date, slug) ||
-      for_admin(conn, fn -> Articles.get_post(date, slug) end)
-  end
-
-  defp visible_page(conn, slug) do
-    Articles.get_published_page(slug) || for_admin(conn, fn -> Articles.get_page(slug) end)
-  end
-
-  defp for_admin(conn, fun) do
-    if signed_in_user(conn), do: fun.()
-  end
-
-  # A live entry holds two texts: the one that was published and the
-  # working copy. A reader gets the first, whoever is signed in gets
-  # the second.
-  defp for_reader(articles, conn) do
-    if signed_in_user(conn), do: articles, else: Articles.as_read(articles)
-  end
+  # Who this request reads as. `Reading` owns the whole answer to what
+  # that audience gets; the controller only names it.
+  defp audience(conn), do: Reading.audience(signed_in_user(conn))
 
   @doc """
   A tag archive: every published text that carries the tag, and the
@@ -142,7 +125,7 @@ defmodule TexttileWeb.SiteController do
   """
   def tag(conn, %{"tag" => raw}) do
     tag = raw |> String.downcase() |> String.trim()
-    posts = Articles.list_published() |> for_reader(conn)
+    posts = Articles.list_published() |> Reading.text(audience(conn))
     articles = Enum.filter(posts, &(tag in Articles.tag_list(&1)))
 
     if articles == [] do
@@ -194,7 +177,7 @@ defmodule TexttileWeb.SiteController do
       is_nil(article) ->
         not_found(conn)
 
-      is_nil(author) and spam?(article, params) ->
+      is_nil(author) and not HumanCheck.human?({:comment, article}, params) ->
         conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
 
       true ->
@@ -301,10 +284,6 @@ defmodule TexttileWeb.SiteController do
     }
   end
 
-  defp spam?(article, params) do
-    text_value(params["url"]) != "" or not human_timing?(article, params["t"])
-  end
-
   ## The reader the browser remembers
 
   # The box under the comment form. It is not ticked to begin with:
@@ -366,23 +345,6 @@ defmodule TexttileWeb.SiteController do
   defp text_value(value) when is_binary(value), do: value
   defp text_value(_value), do: ""
 
-  # The form carries a signed stamp of the moment it was drawn. Sent
-  # back in under a few seconds means a script, not a person typing;
-  # no stamp or a foreign stamp means the form was never drawn at all.
-  defp human_timing?(article, token) do
-    min_age = Application.get_env(:texttile, :comment_min_age, 3)
-
-    case Phoenix.Token.verify(TexttileWeb.Endpoint, "comment form", text_value(token),
-           max_age: 7 * 86_400
-         ) do
-      {:ok, {article_id, signed_at}} ->
-        article_id == article.id and System.system_time(:second) - signed_at >= min_age
-
-      _ ->
-        false
-    end
-  end
-
   defp client_ip(conn), do: TexttileWeb.ClientIP.of(conn)
 
   defp comment_sent(conn, comment) do
@@ -420,7 +382,7 @@ defmodule TexttileWeb.SiteController do
     email = text_value(params["email"])
 
     cond do
-      newsletter_spam?(params) ->
+      not HumanCheck.human?(:newsletter, params) ->
         newsletter_page(conn, :sent, email)
 
       not Newsletter.Subscriber.address?(Newsletter.Subscriber.normalize(email)) ->
@@ -476,23 +438,6 @@ defmodule TexttileWeb.SiteController do
     )
   end
 
-  # The same two invisible filters as on the comment form; the stamp
-  # carries no article, only the moment the footer was drawn.
-  defp newsletter_spam?(params) do
-    text_value(params["url"]) != "" or not newsletter_timing?(params["t"])
-  end
-
-  defp newsletter_timing?(token) do
-    min_age = Application.get_env(:texttile, :comment_min_age, 3)
-
-    case Phoenix.Token.verify(TexttileWeb.Endpoint, "newsletter form", text_value(token),
-           max_age: 7 * 86_400
-         ) do
-      {:ok, signed_at} -> System.system_time(:second) - signed_at >= min_age
-      _ -> false
-    end
-  end
-
   ## The gate
 
   @doc "The password screen. Chrome-less: a locked reader learns nothing."
@@ -524,7 +469,7 @@ defmodule TexttileWeb.SiteController do
   # fixed front page. The About block from Settings comes along; it
   # stands at the foot of every text and of the list.
   defp load_chrome(conn, _opts) do
-    pages = Articles.list_pages() |> for_reader(conn)
+    pages = Articles.list_pages() |> Reading.text(audience(conn))
 
     home_page =
       with "page:" <> id <- Settings.get(:front_page),
@@ -546,7 +491,7 @@ defmodule TexttileWeb.SiteController do
     # The published text for a reader, the working copy for whoever is
     # signed in, so a title being rewritten reads the same on the list
     # as it does in the editor. See `render_text/2`.
-    found = Articles.list_published(search: q) |> for_reader(conn)
+    found = Articles.list_published(search: q) |> Reading.text(audience(conn))
 
     total =
       if q == "" do
@@ -557,57 +502,29 @@ defmodule TexttileWeb.SiteController do
 
     # The field searches every entry of every year; the archive narrows
     # what the field found to one year, and then to one month of it.
-    {year, month} =
-      Articles.settle_period(found, number_param(params["y"]), number_param(params["m"]))
-
-    {years, months} = Articles.periods(found, year)
-    in_period = Enum.filter(found, &Articles.in_period?(&1, year, month))
-
-    per_page = Settings.get(:posts_per_page)
-    pages = max(div(length(in_period) - 1, per_page) + 1, 1)
-    page = page_number(params["page"], pages)
-    articles = Enum.slice(in_period, (page - 1) * per_page, per_page)
+    list = Listing.assemble(found, year: params["y"], month: params["m"], page: params["page"])
     list_path = ~p"/blog"
 
     conn
     |> assign(:active, :texts)
     |> render(:texts,
       q: q,
-      articles: articles,
-      previews: Gallery.previews(articles),
+      articles: list.entries,
+      previews: Gallery.previews(list.entries),
       comment_counts: Comments.reader_count_map(),
-      found: length(in_period),
+      found: list.shown,
       total: total,
-      # what the search found across every year: the number "All years"
-      # carries, so it counts the same way the years beside it do
-      across_years: length(found),
-      year: year,
-      month: month,
-      years: years,
-      months: months,
-      page: page,
-      pages: pages,
-      page_path: &list_link(list_path, q, year, month, &1),
+      across_years: list.across_years,
+      year: list.year,
+      month: list.month,
+      years: list.years,
+      months: list.months,
+      page: list.page,
+      pages: list.pages,
+      page_path: &list_link(list_path, q, list.year, list.month, &1),
       period_path: &list_link(list_path, q, &1, &2, 1),
       list_path: list_path
     )
-  end
-
-  # A page number, a year or a month as the address writes them, or nil.
-  defp number_param(raw) do
-    case Integer.parse(to_string(raw)) do
-      {number, ""} when number > 0 -> number
-      _ -> nil
-    end
-  end
-
-  # A page number outside the row is no error: a bookmark from a
-  # shorter blog, or a ?page= somebody typed, lands on the last page.
-  defp page_number(raw, pages) do
-    case Integer.parse(to_string(raw)) do
-      {n, ""} when n > 0 -> min(n, pages)
-      _ -> 1
-    end
   end
 
   # One address for the list in any state it can stand in, so a year, a
@@ -638,14 +555,11 @@ defmodule TexttileWeb.SiteController do
   end
 
   defp render_text(conn, article) do
-    # A live entry holds two texts. A reader gets the one that was
-    # published; whoever is signed in gets the working copy, so the way
-    # out of the editor shows what is being written and not what the
-    # site said yesterday. The band above the text says which of the
-    # two is on the screen.
-    admin? = signed_in_user(conn) != nil
-    pending? = admin? and Articles.unpublished_changes?(article)
-    article = if admin?, do: article, else: Articles.as_read(article)
+    # The band above the text says which of the two texts is on the
+    # screen; `Reading` chooses the text and owes the band.
+    audience = audience(conn)
+    pending? = Reading.pending?(article, audience)
+    article = Reading.text(article, audience)
 
     home? = conn.assigns.home_page && conn.assigns.home_page.id == article.id
     gallery = Gallery.list(article.id)
@@ -653,7 +567,7 @@ defmodule TexttileWeb.SiteController do
     og_image =
       case Gallery.preview_still(article, Enum.map(gallery, & &1.path)) do
         nil -> nil
-        path -> TexttileWeb.Endpoint.url() <> "/renditions/max/" <> path
+        path -> TexttileWeb.Endpoint.url() <> Texttile.Images.url(path, :max)
       end
 
     # A video tile has nothing to show before ffmpeg is through, so the
@@ -715,13 +629,7 @@ defmodule TexttileWeb.SiteController do
       comments: rows,
       comment_count: Enum.count(rows, &match?({:shown, _}, &1)) + earlier,
       comment_earlier: earlier,
-      comment_token:
-        conn.assigns[:comment_token] ||
-          Phoenix.Token.sign(
-            TexttileWeb.Endpoint,
-            "comment form",
-            {article.id, System.system_time(:second)}
-          ),
+      comment_token: conn.assigns[:comment_token] || HumanCheck.stamp({:comment, article.id}),
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
       comment_rule: comment_rule(signed_in_user(conn), require?),
       # A form that came back with a mistake keeps what was typed; a

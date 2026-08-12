@@ -12,6 +12,7 @@ defmodule Texttile.Feed do
   alias Texttile.Articles
   alias Texttile.Articles.Body
   alias Texttile.Articles.Body.Media
+  alias Texttile.Articles.Reading
   alias Texttile.Images
   alias Texttile.Settings
 
@@ -37,11 +38,11 @@ defmodule Texttile.Feed do
     # reader could follow. The site draws it as a card without a link;
     # the feed, which is nothing but addresses, leaves it out.
     #
-    # `as_read` and not the working copy: the feed is a reader, and it
-    # is the one reader whose copy cannot be taken back once it is out.
+    # The feed is a reader, and it is the one reader whose copy cannot
+    # be taken back once it is out.
     posts =
       Articles.list_published()
-      |> Articles.as_read()
+      |> Reading.text(:reader)
       |> Enum.filter(&Articles.public_path/1)
 
     channel = """
@@ -107,16 +108,16 @@ defmodule Texttile.Feed do
   # all. It goes as its poster with the way to the film behind it, and
   # while ffmpeg is not through, as the plain link it can always be.
   defp draw_media(%Media{playback: nil} = media, base) do
-    ~s(<a href="#{base}/uploads/#{media.path}">#{media.label}</a>)
+    ~s(<a href="#{base}#{Images.url(media.path, :original)}">#{media.label}</a>)
   end
 
   defp draw_media(%Media{playback: play} = media, base) do
-    ~s(<a href="#{base}/uploads/#{play.mp4}">) <>
+    ~s(<a href="#{base}#{Images.url(play.mp4, :original)}">) <>
       ~s(<img src="#{reading_size(play.poster, base)}" alt="#{media.label}" />) <>
       ~s(</a>)
   end
 
-  defp reading_size(path, base), do: "#{base}/renditions/#{Images.reading_edge()}/#{path}"
+  defp reading_size(path, base), do: base <> Images.url(path, :reading)
 
   # Every address the text carries, made absolute. The media are
   # absolute already, so this leaves them where they are.

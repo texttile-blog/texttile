@@ -154,6 +154,26 @@ defmodule TexttileWeb.E2E do
   end
 
   @doc """
+  Ages a public form's invisible stamp, so the test can submit faster
+  than a person types without reading as a script.
+
+  The time trap is always on and has no configuration; a test stands on
+  its far side by handing the page a stamp that was drawn ten seconds
+  ago, minted by the same module that judges it. `form` is
+  `{:comment, article.id}` or `:newsletter`.
+  """
+  def age_form(session, form) do
+    stamp = TexttileWeb.HumanCheck.stamp(form, now: System.system_time(:second) - 10)
+
+    PhoenixTest.Playwright.evaluate(
+      session,
+      "t => document.querySelectorAll(\"input[name='t']\").forEach(el => el.value = t)",
+      is_function: true,
+      arg: stamp
+    )
+  end
+
+  @doc """
   A draft with a title and some words, for a test whose subject is
   something else: the gallery, a film, the language of the screen.
   """

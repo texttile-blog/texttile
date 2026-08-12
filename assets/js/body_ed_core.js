@@ -13,10 +13,12 @@
 
    The interface, and nothing else crosses it:
    in:  the initial text (the server-rendered textarea), the posters of
-        its videos (data-posters), sync_body {text, caret?},
-        sync_media {posters}, set_readonly {readOnly}
-   out: body_changed {text} (debounced), editor_activity (throttled),
-        ask_takeover on a read-only pointer, files into uploadFiles
+        its videos (data-posters), sync_body {text}, sync_media
+        {posters}, flush_body {}, set_readonly {readOnly}
+   out: body_changed {text} (debounced), body_flushed {text},
+        editor_activity (throttled), ask_takeover on a read-only
+        pointer, and upload_state {files, news} - the one message the
+        uploads speak through (see uploads.js)
 
    Three attributes on the host say which surface this is, and nothing
    more than that. The About field of Settings is the same editor with
@@ -31,7 +33,8 @@ import {syntaxTree, syntaxHighlighting, HighlightStyle} from "@codemirror/langua
 import {defaultKeymap, history, historyKeymap} from "@codemirror/commands"
 import {markdown, markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward} from "@codemirror/lang-markdown"
 import {tags} from "@lezer/highlight"
-import {openMedia} from "./media_lightbox"
+import {openLightbox} from "./lightbox.js"
+import {tokensFrom, createUploads} from "./uploads.js"
 import {t} from "./i18n"
 
 /* character styling reads the theme tokens; order matters, because the
@@ -359,6 +362,8 @@ const impl = {
     /* where a pasted file goes: the entry is in the address, because
        an entry takes each picture once */
     this.uploadUrl = this.el.dataset.uploadUrl
+    /* the marker shapes the server reads back out of the words */
+    this.tokens = tokensFrom(JSON.parse(this.el.dataset.tokens || "null"))
     /* the poster of every converted video of this text, by the url the
        body carries; the server keeps it fresh through sync_media */
     this.posters = JSON.parse(this.el.dataset.posters || "{}")
@@ -390,8 +395,13 @@ const impl = {
       debounce = null
       this.pushEvent(this.event, {text: this.view.state.doc.toString()})
     }
+    /* a control that carries data-flush-body settles the debounce on
+       its mousedown, before the click's round trip: a Save version or
+       a Publish can never miss the last keystrokes. The attribute is
+       the whole contract; the server events behind those buttons stay
+       the server's own business. */
     this.onDocMousedown = e => {
-      if (e.target.closest("[phx-click='save_version'], [phx-click='publish']")) flushNow()
+      if (e.target.closest("[data-flush-body]")) flushNow()
     }
     document.addEventListener("mousedown", this.onDocMousedown, true)
 
@@ -465,7 +475,7 @@ const impl = {
       const at = row.findIndex(item => item.original === thumb.dataset.url)
       /* held, so the editor takes it with it: the dialog lives on the
          body, outside everything LiveView tears down */
-      this.lightbox = openMedia(row, at < 0 ? 0 : at)
+      this.lightbox = openLightbox(row, at < 0 ? 0 : at)
     }
 
     this.el.addEventListener("mousedown", this.onThumbDown)
@@ -563,7 +573,7 @@ const impl = {
       })
     }
 
-    this.handleEvent("sync_body", ({text, caret}) => this.sync(text, caret))
+    this.handleEvent("sync_body", ({text}) => this.sync(text))
     /* the takeover's flush: whatever still sits in the debounce goes
        to the server right now */
     this.handleEvent("flush_body", () => {
@@ -585,19 +595,36 @@ const impl = {
     if (this.files) this.mountUploads()
   },
 
-  /* ---- images into the body, the GitHub way ------------------------
-     A token holds the caret's place while the file travels; the token
-     becomes the reference on success and a failure marker on error.
-     The panel under the text is server-rendered from the body; its
-     Retry / Remove / Cancel buttons land here, because the file and
-     the running request live only in this browser. */
+  /* ---- images into the body ----------------------------------------
+     The queue, the requests and the token rewriting live in uploads.js;
+     what stands here is only the wiring to this page. The panel under
+     the text is server-rendered from the body; its Retry / Remove /
+     Cancel buttons land here, because the file and the running request
+     live only in this browser. */
   mountUploads() {
-    this.uploads = new Map()   /* name → {file, xhr} */
-    this.queue = []
-    this.running = 0
+    this.uploader = createUploads({
+      tokens: this.tokens,
+      uploadUrl: this.uploadUrl,
+      csrf: () => {
+        const meta = document.querySelector("meta[name='csrf-token']")
+        return meta && meta.getAttribute("content")
+      },
+      maxMb: () => parseInt(this.el.dataset.maxUploadMb, 10) || 512,
+      editor: {
+        readOnly: () => this.view.state.readOnly,
+        refuse: () => this.pushEvent("ask_takeover", {}),
+        doc: () => this.view.state.doc.toString(),
+        insert: text => this.insertText(text),
+        swap: (from, to) => this.swap(from, to),
+      },
+      notify: state => this.pushEvent("upload_state", state),
+    })
 
-    const wrap = this.el.closest("#bodyWrap")
-    const flag = document.getElementById("bodyDropFlag")
+    /* the parts of the page this editor may touch, named on the host
+       the way data-bar already is: the reach and the interface are the
+       same list of attributes */
+    const wrap = this.el.dataset.dropzone && document.querySelector(this.el.dataset.dropzone)
+    const flag = this.el.dataset.dropFlag && document.querySelector(this.el.dataset.dropFlag)
     const carriesFiles = dt => !!dt && [...(dt.types || [])].indexOf("Files") >= 0
     const show = on => {
       if (wrap) wrap.classList.toggle("body-drop", on)
@@ -625,7 +652,7 @@ const impl = {
       })
     }
 
-    const picker = document.getElementById("mdImgFile")
+    const picker = this.picker()
     if (picker) {
       picker.addEventListener("change", () => {
         const files = [...picker.files].filter(f => /^(image|video)\//.test(f.type))
@@ -641,147 +668,14 @@ const impl = {
       if (!b) return
       const name = b.dataset.imgFile
       const action = b.dataset.imgAction
-      if (action === "retry") this.retryUpload(name)
-      else this.removeUpload(name, action)
+      if (action === "retry") this.uploader.retry(name)
+      else this.uploader.remove(name, action)
     }
     document.addEventListener("click", this.onPanelClick)
   },
 
-  /* The three shapes an upload writes into the words. They are the
-     whole contract with the server: Texttile.Articles.Body.refs/1
-     reads exactly these, and its test pins the strings. Change one
-     end and you change the other. */
-  upToken(name) { return "![Uploading " + name + "…]()" },
-  failToken(name) { return "![Upload failed: " + name + "]()" },
-  doneRef(name, url) { return "![" + name.replace(/\.\w+$/, "") + "](" + url + ")" },
-
   uploadFiles(files) {
-    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
-
-    /* A file over the roof is turned away here, before a token stands
-       in the text: sending it would end at the parser after the whole
-       upload, and the words would carry a failed picture until
-       somebody removed it by hand.
-
-       The number is read now and not kept from the mount. The editor
-       listens for setting changes, so the host carries the current
-       roof; a value kept from the mount would let an editor that has
-       been open all morning send a file the server has stopped
-       taking. */
-    const maxMb = parseInt(this.el.dataset.maxUploadMb, 10) || 512
-    const roof = maxMb * 1024 * 1024
-    const tooBig = files.filter(f => f.size > roof)
-    if (tooBig.length) {
-      this.pushEvent("upload_too_big", {files: tooBig.map(f => f.name || t("the pasted picture")),
-                                        roof: maxMb})
-      files = files.filter(f => f.size <= roof)
-      if (!files.length) return
-    }
-
-    const doc = this.view.state.doc.toString()
-    const used = new Set([...this.uploads.keys()])
-    for (const m of doc.matchAll(/!\[(?:Uploading (.+?)…|Upload failed: (.+?))\]\(\)/g))
-      used.add(m[1] || m[2])
-    for (const m of doc.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g))
-      used.add(m[1].trim().split("/").pop())
-
-    const names = files.map(f => {
-      let name = (f.name || "pasted-image.png").replace(/[\[\]()]/g, "")
-      if (used.has(name)) {
-        const dot = name.lastIndexOf(".")
-        const base = dot > 0 ? name.slice(0, dot) : name
-        const ext = dot > 0 ? name.slice(dot) : ""
-        let i = 2
-        while (used.has(base + "-" + i + ext)) i++
-        name = base + "-" + i + ext
-      }
-      used.add(name)
-      this.uploads.set(name, {file: f, xhr: null})
-      return name
-    })
-
-    this.insertText(names.map(n => this.upToken(n)).join("\n\n"))
-    this.pushEvent("images_inserted", {files: names})
-    names.forEach(n => this.queue.push(n))
-    this.pump()
-  },
-
-  pump() {
-    while (this.running < 2 && this.queue.length) {
-      const name = this.queue.shift()
-      if (this.uploads.has(name)) this.startUpload(name)
-    }
-  },
-
-  startUpload(name) {
-    const entry = this.uploads.get(name)
-    this.running++
-    const xhr = new XMLHttpRequest()
-    entry.xhr = xhr
-    xhr.open("POST", this.uploadUrl)
-    const meta = document.querySelector("meta[name='csrf-token']")
-    if (meta) xhr.setRequestHeader("x-csrf-token", meta.getAttribute("content"))
-    let pct = 0
-    xhr.upload.addEventListener("progress", e => {
-      if (!e.lengthComputable) return
-      pct = Math.round((e.loaded / e.total) * 100)
-      this.pushEvent("upload_progress", {file: name, pct})
-    })
-    const settle = () => { this.running--; this.pump() }
-    xhr.addEventListener("load", () => {
-      settle()
-      if (xhr.status === 200) {
-        const {url} = JSON.parse(xhr.responseText)
-        this.swap(this.upToken(name), this.doneRef(name, url))
-        this.uploads.delete(name)
-        this.pushEvent("image_uploaded", {file: name})
-      } else if (xhr.status === 409 && this.refusedName(xhr)) {
-        /* the picture is in this entry already: nothing failed and a
-           retry would answer the same, so the token leaves the text
-           and the bar says which picture it is */
-        const of = this.refusedName(xhr)
-        const raw = this.upToken(name)
-        if (!this.swap(raw + "\n\n", "")) this.swap(raw, "")
-        this.uploads.delete(name)
-        this.pushEvent("image_refused", {file: name, of})
-      } else {
-        this.swap(this.upToken(name), this.failToken(name))
-        this.pushEvent("image_failed", {file: name, pct})
-      }
-    })
-    xhr.addEventListener("error", () => {
-      settle()
-      this.swap(this.upToken(name), this.failToken(name))
-      this.pushEvent("image_failed", {file: name, pct})
-    })
-    const form = new FormData()
-    form.append("file", entry.file, name)
-    xhr.send(form)
-  },
-
-  retryUpload(name) {
-    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
-    const entry = this.uploads.get(name)
-    if (!entry || !entry.file) {
-      /* the browser that held the file is gone (a reload, the other
-         side): nothing to send again */
-      this.pushEvent("image_retry_missing", {file: name})
-      return
-    }
-    this.swap(this.failToken(name), this.upToken(name))
-    this.pushEvent("image_retry", {file: name})
-    this.queue.push(name)
-    this.pump()
-  },
-
-  removeUpload(name, how) {
-    if (this.view.state.readOnly) { this.pushEvent("ask_takeover", {}); return }
-    const entry = this.uploads.get(name)
-    if (entry && entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
-    this.uploads.delete(name)
-    const raw = how === "cancel" ? this.upToken(name) : this.failToken(name)
-    if (!this.swap(raw + "\n\n", "")) this.swap(raw, "")
-    this.pushEvent("image_removed", {file: name, how})
+    this.uploader.add(files)
   },
 
   /* writing into the body without losing the caret: the token lands at
@@ -801,11 +695,6 @@ const impl = {
     })
   },
 
-  /* the picture the server says this one already is, or nothing */
-  refusedName(xhr) {
-    try { return JSON.parse(xhr.responseText).of || null } catch (_e) { return null }
-  },
-
   swap(from, to) {
     const doc = this.view.state.doc.toString()
     const at = doc.indexOf(from)
@@ -821,29 +710,21 @@ const impl = {
     if (this.onThumbDown) this.el.removeEventListener("mousedown", this.onThumbDown)
     if (this.onThumbClick) this.el.removeEventListener("click", this.onThumbClick)
     if (this.lightbox) this.lightbox.close()
-    if (this.uploads) {
-      for (const entry of this.uploads.values()) {
-        if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
-      }
-    }
+    if (this.uploader) this.uploader.abortAll()
   },
 
   /* the model changed around the editor: the smallest change that gets
      there, so everything around it, the caret included, maps through
      instead of resetting */
-  sync(text, caretTo) {
+  sync(text) {
     const view = this.view
     const cur = view.state.doc.toString()
-    if (cur === text) {
-      if (caretTo != null) view.dispatch({selection: {anchor: Math.min(caretTo, text.length)}})
-      return
-    }
+    if (cur === text) return
     let a = 0, b = cur.length, b2 = text.length
     while (a < b && a < b2 && cur.charCodeAt(a) === text.charCodeAt(a)) a++
     while (b > a && b2 > a && cur.charCodeAt(b - 1) === text.charCodeAt(b2 - 1)) { b--; b2-- }
     view.dispatch({
       changes: {from: a, to: b, insert: text.slice(a, b2)},
-      selection: caretTo != null ? {anchor: Math.min(caretTo, text.length)} : undefined,
       annotations: remoteChange.of(true),
     })
   },
@@ -855,12 +736,17 @@ const impl = {
     }
     if (name === "image") {
       if (!this.files) return
-      const picker = document.getElementById("mdImgFile")
+      const picker = this.picker()
       if (picker) picker.click()
       return
     }
     const c = cmds[name]
     if (c) c(this.view)
+  },
+
+  /* the file picker this editor owns, named on the host */
+  picker() {
+    return this.el.dataset.picker ? document.querySelector(this.el.dataset.picker) : null
   },
 
   paintBar(states) {

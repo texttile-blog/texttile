@@ -12,6 +12,9 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     |> open_page("/")
     |> assert_has("#subscribe", text: "You get an email when a new entry goes out")
     |> fill_in("Email for new entries", with: "christel@example.org")
+    # the test types faster than a person; the time trap must not read
+    # that as a script
+    |> age_form(:newsletter)
     |> click_button("Subscribe")
     |> assert_has("main", text: "Now check your mail.")
 

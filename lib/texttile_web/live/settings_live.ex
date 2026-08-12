@@ -680,7 +680,7 @@ defmodule TexttileWeb.SettingsLive do
           >
             <img
               :if={@settings.logo}
-              src={"/uploads/#{@settings.logo}"}
+              src={Images.url(@settings.logo, :original)}
               alt=""
               class="max-w-[30px] max-h-[30px]"
             />
@@ -726,7 +726,7 @@ defmodule TexttileWeb.SettingsLive do
           >
             <img
               :if={@settings.favicon}
-              src={"/uploads/#{@settings.favicon}"}
+              src={Images.url(@settings.favicon, :original)}
               alt=""
               class="max-w-[30px] max-h-[30px]"
             />

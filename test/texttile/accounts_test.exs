@@ -269,11 +269,10 @@ defmodule Texttile.AccountsTest do
       user = user_fixture()
       token = Accounts.create_session(user)
 
-      expired = DateTime.add(DateTime.utc_now(), -1, :minute) |> DateTime.truncate(:second)
-      Texttile.Repo.update_all(Texttile.Accounts.Session, set: [expires_at: expired])
+      three_days_on = DateTime.add(DateTime.utc_now(), 3 * 86_400, :second)
 
-      assert Accounts.get_user_by_session_token(token) == nil
-      assert Accounts.list_sessions(user) == []
+      assert Accounts.get_user_by_session_token(token, now: three_days_on) == nil
+      assert Accounts.list_sessions(user, now: three_days_on) == []
     end
 
     test "a session lasts two days, and fourteen when the browser is remembered" do
@@ -296,10 +295,8 @@ defmodule Texttile.AccountsTest do
       user = user_fixture()
       stale = Accounts.create_session(user)
 
-      expired = DateTime.add(DateTime.utc_now(), -1, :minute) |> DateTime.truncate(:second)
-      Texttile.Repo.update_all(Texttile.Accounts.Session, set: [expires_at: expired])
-
-      _fresh = Accounts.create_session(user)
+      past_every_expiry = DateTime.add(DateTime.utc_now(), 15 * 86_400, :second)
+      _fresh = Accounts.create_session(user, now: past_every_expiry)
 
       refute Texttile.Repo.get_by(Texttile.Accounts.Session, token: stale)
     end

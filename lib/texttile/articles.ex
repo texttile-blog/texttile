@@ -289,46 +289,6 @@ defmodule Texttile.Articles do
 
   defp pad2(number), do: number |> Integer.to_string() |> String.pad_leading(2, "0")
 
-  @doc "The published post at a date and a slug, or nil."
-  def get_published_post(%Date{} = date, slug) when is_binary(slug) do
-    published_query("post")
-    |> where([a], a.slug == ^slug and a.publish_date == ^date)
-    |> Repo.one()
-  end
-
-  @doc "The published page behind a short address, or nil."
-  def get_published_page(slug) when is_binary(slug) do
-    published_query("page") |> where([a], a.slug == ^slug) |> Repo.one()
-  end
-
-  @doc """
-  The post at a date and a slug whatever state it is in, or nil.
-
-  An entry wears its address from the moment it has a slug, and an
-  admin who is signed in reads it there before anybody else can: the
-  reader's side of a draft is the reader's side, not a second design.
-  """
-  def get_post(%Date{} = date, slug) when is_binary(slug) do
-    Repo.one(
-      from a in Article,
-        where: a.slug == ^slug and a.type == "post" and a.publish_date == ^date,
-        preload: [:user, :live_version]
-    ) || dateless_post(date, slug)
-  end
-
-  # A post with no day yet borrows today, exactly as `public_prefix/1`
-  # does, so the address the editor prints is the address that answers.
-  # Tomorrow it borrows tomorrow, and so would publishing it.
-  defp dateless_post(date, slug) do
-    if Date.compare(date, Date.utc_today()) == :eq do
-      Repo.one(
-        from a in Article,
-          where: a.slug == ^slug and a.type == "post" and is_nil(a.publish_date),
-          preload: [:user, :live_version]
-      )
-    end
-  end
-
   @doc """
   The address an entry can be read at right now, live or not: its
   public address, and while a post has no day yet, the address it
@@ -340,79 +300,8 @@ defmodule Texttile.Articles do
   def reader_path(%Article{slug: slug} = article),
     do: public_path(article) || public_prefix(article) <> slug
 
-  @doc "The page behind a short address whatever state it is in, or nil."
-  def get_page(slug) when is_binary(slug) do
-    Repo.one(
-      from a in Article,
-        where: a.slug == ^slug and a.type == "page",
-        preload: [:user, :live_version]
-    )
-  end
-
-  ## The archive: one line of years, the months of the open year
-
   @doc "The short name of a month, 1 to 12, in the language of the site."
   defdelegate month_name(number), to: Texttile.I18n, as: :short_month_name
-
-  @doc """
-  Whether an entry falls in a period. `nil` for the year means every
-  year, `nil` for the month means the whole year. An entry without a
-  publish date falls in no year at all: it is not in the archive until
-  it has a day.
-  """
-  def in_period?(_article, nil, _month), do: true
-  def in_period?(%{publish_date: nil}, _year, _month), do: false
-  def in_period?(%{publish_date: date}, year, nil), do: date.year == year
-
-  def in_period?(%{publish_date: date}, year, month),
-    do: date.year == year and date.month == month
-
-  @doc """
-  The archive over a list of entries: `{years, months}`.
-
-  `years` is every year the list touches, newest first, each with how
-  many entries it holds. `months` is empty until a year is open, and
-  then it holds only the months of that year that carry something: a
-  month nobody wrote in is not a choice, and a row of twelve where half
-  of them do nothing reads as a calendar.
-
-  The counts come from the list as it stands, so they follow whatever
-  the search has narrowed it to and a year that holds nothing for the
-  term goes quiet instead of lying about it.
-  """
-  def periods(articles, year) do
-    years =
-      articles
-      |> Enum.flat_map(fn
-        %{publish_date: nil} -> []
-        %{publish_date: date} -> [date.year]
-      end)
-      |> Enum.frequencies()
-      |> Enum.sort_by(fn {y, _count} -> -y end)
-
-    months =
-      if year do
-        for month <- 1..12,
-            count = Enum.count(articles, &in_period?(&1, year, month)),
-            count > 0,
-            do: {month, count}
-      else
-        []
-      end
-
-    {years, months}
-  end
-
-  @doc """
-  The year and the month a list can actually show, out of what was
-  asked for. A search can empty the year that is open; then the year
-  lets go, rather than showing a page with nothing on it.
-  """
-  def settle_period(articles, year, month) do
-    year = if year && Enum.any?(articles, &in_period?(&1, year, nil)), do: year
-    month = if year && month && Enum.any?(articles, &in_period?(&1, year, month)), do: month
-    {year, month}
-  end
 
   ## The addresses an entry has left behind
 
@@ -617,6 +506,7 @@ defmodule Texttile.Articles do
   nothing is live yet; the go-live does it.
   """
   def publish(%Article{} = article, user, opts \\ []) do
+    today = Keyword.get(opts, :today, Date.utc_today())
     {day, status} = Publishing.landing(article, opts)
     went_live? = status == Visibility.live_status() and not Visibility.live?(article)
 
@@ -640,7 +530,10 @@ defmodule Texttile.Articles do
         )
       )
 
-      article = if went_live?, do: Texttile.Newsletter.notify_published(article), else: article
+      article =
+        if went_live?,
+          do: Texttile.Newsletter.notify_published(article, today: today),
+          else: article
 
       broadcast({:article_changed, article})
       {:ok, article}
@@ -768,7 +661,10 @@ defmodule Texttile.Articles do
           # behind it, and every later keystroke would be on the site.
           moved = if went_live?, do: hand_to_readers(moved, user), else: moved
 
-          moved = if went_live?, do: Texttile.Newsletter.notify_published(moved), else: moved
+          moved =
+            if went_live?,
+              do: Texttile.Newsletter.notify_published(moved, today: today),
+              else: moved
 
           broadcast({:article_changed, moved})
           {:ok, moved}
@@ -796,7 +692,7 @@ defmodule Texttile.Articles do
       article = hand_to_readers(article, nil)
 
       push_log(article, nil, "the entry went live as scheduled")
-      article = Texttile.Newsletter.notify_published(article)
+      article = Texttile.Newsletter.notify_published(article, today: today)
       broadcast({:article_changed, article})
       article
     end)

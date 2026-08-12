@@ -46,7 +46,6 @@ config :texttile, :backup_per_minute, 12
 
 # A browser test types faster than a person, so the comment form's time
 # trap stands down. The tests about the trap set the age themselves.
-config :texttile, :comment_min_age, 0
 
 # The subscriber mails go to a test mailbox that no provider counts, so
 # they leave without the pause that paces a real send.

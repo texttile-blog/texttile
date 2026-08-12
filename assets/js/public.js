@@ -2,6 +2,11 @@
 // and the lightbox of the reader gallery. Every page works without it;
 // the tiles are plain links to the full pictures until this runs.
 
+// The lightbox shell is server-rendered (article.html.heex), so the
+// page stands whole without a script; the behaviour on it is the one
+// lightbox every surface shares.
+import {wrapIndex, attachSwipe, mediaNode, trapTab, quiet} from "./lightbox.js";
+
 // The view counter. One line to this server and nowhere else, once per
 // page, and the page never waits for the answer. It carries the
 // address, the entry it shows and where the reader came from: nothing
@@ -96,30 +101,16 @@ if (document.body.dataset.count) {
   // `playing` is true only for the tile the reader opened: paging past
   // a film with the arrow keys must not start it, and must not fetch it
   function show(i, playing) {
-    at = (i + tiles.length) % tiles.length;
+    at = wrapIndex(i, 0, tiles.length);
     const tile = tiles[at];
     const inner = tile.querySelector("img");
     const caption = tile.dataset.caption || (inner && inner.alt) || "";
-    const art = document.getElementById("lbArt");
 
-    // a gallery tile can be a film: the poster stands behind it until
-    // the first frame arrives, and nothing is fetched before that
-    if (tile.dataset.video) {
-      const film = document.createElement("video");
-      film.controls = true;
-      film.playsInline = true;
-      film.preload = playing ? "metadata" : "none";
-      film.poster = tile.dataset.full || "";
-      film.src = tile.dataset.video;
-      film.setAttribute("aria-label", caption);
-      art.replaceChildren(film);
-      if (playing) film.play().catch(() => {});
-    } else {
-      const img = document.createElement("img");
-      img.src = tile.dataset.full || tile.href;
-      img.alt = caption;
-      art.replaceChildren(img);
-    }
+    document.getElementById("lbArt").replaceChildren(
+      tile.dataset.video
+        ? mediaNode({film: tile.dataset.video, poster: tile.dataset.full, caption}, playing)
+        : mediaNode({src: tile.dataset.full || tile.href, caption}, false)
+    );
     document.getElementById("lbCount").textContent = at + 1 + " / " + tiles.length;
     document.getElementById("lbCap").textContent = caption;
   }
@@ -136,10 +127,7 @@ if (document.body.dataset.count) {
   }
 
   function close() {
-    // a film that goes on playing behind a closed lightbox would be
-    // heard and never seen
-    const film = document.querySelector("#lbArt video");
-    if (film) film.pause();
+    quiet(document.getElementById("lbArt"));
     lb.hidden = true;
     document.documentElement.classList.remove("lb-open");
     if (at >= 0) tiles[at].focus();
@@ -169,22 +157,8 @@ if (document.body.dataset.count) {
     else if (e.key === "ArrowRight") { e.preventDefault(); nav(1); }
   });
 
-  // swipe: pointer events, so one path covers touch and pen, and the
-  // mouse keeps the arrows to itself
-  const stage = document.getElementById("lbStage");
-  let sx = null, sy = null;
-  stage.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse") return;
-    sx = e.clientX;
-    sy = e.clientY;
-  });
-  stage.addEventListener("pointerup", (e) => {
-    if (sx === null) return;
-    const dx = e.clientX - sx, dy = e.clientY - sy;
-    sx = null;
-    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) nav(dx < 0 ? 1 : -1);
-  });
-  stage.addEventListener("pointercancel", () => { sx = null; });
+  attachSwipe(document.getElementById("lbStage"), nav);
+  trapTab(lb);
 })();
 
 // Browsers without field-sizing grow the comment box by hand.

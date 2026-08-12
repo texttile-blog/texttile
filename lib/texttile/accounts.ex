@@ -131,7 +131,7 @@ defmodule Texttile.Accounts do
   is the box on the sign-in form.
   """
   def create_session(user, opts \\ []) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = moment(opts)
     Repo.delete_all(from s in Session, where: s.expires_at <= ^now)
 
     expires_at = DateTime.add(now, session_max_age(opts[:remember] == true), :second)
@@ -145,13 +145,13 @@ defmodule Texttile.Accounts do
   configuration is nobody here, so the browser it left open is out on
   its next request.
   """
-  def get_user_by_session_token(token) do
+  def get_user_by_session_token(token, opts \\ []) do
     user =
       Repo.one(
         from s in Session,
           join: u in assoc(s, :user),
           where: s.token == ^token,
-          where: s.expires_at > ^DateTime.utc_now(),
+          where: s.expires_at > ^moment(opts),
           select: u
       )
 
@@ -159,11 +159,11 @@ defmodule Texttile.Accounts do
   end
 
   @doc "All live sessions of the user, newest first."
-  def list_sessions(user) do
+  def list_sessions(user, opts \\ []) do
     Repo.all(
       from s in Session,
         where: s.user_id == ^user.id,
-        where: s.expires_at > ^DateTime.utc_now(),
+        where: s.expires_at > ^moment(opts),
         order_by: [desc: s.id]
     )
   end
@@ -268,11 +268,13 @@ defmodule Texttile.Accounts do
   hammers into it, one mail per account per minute leaves, and the
   pending link is not churned.
   """
-  def link_recently_sent?(user) do
+  def link_recently_sent?(user, opts \\ []) do
+    minute_ago = DateTime.add(moment(opts), -60, :second)
+
     Repo.exists?(
       from l in LoginLink,
         where: l.user_id == ^user.id,
-        where: l.inserted_at > ago(1, "minute")
+        where: l.inserted_at > ^minute_ago
     )
   end
 
@@ -284,15 +286,18 @@ defmodule Texttile.Accounts do
   `:error`. A name that left the configuration owns nothing here any
   more, so its links open nothing either.
   """
-  def verify_login_link(token) when is_binary(token) do
+  def verify_login_link(token, opts \\ [])
+
+  def verify_login_link(token, opts) when is_binary(token) do
     hash = LoginLink.hash(token)
+    oldest = DateTime.add(moment(opts), -@link_validity_in_hours * 3600, :second)
 
     user =
       Repo.one(
         from l in LoginLink,
           join: u in assoc(l, :user),
           where: l.token_hash == ^hash,
-          where: l.inserted_at > ago(@link_validity_in_hours, "hour"),
+          where: l.inserted_at > ^oldest,
           select: u
       )
 
@@ -304,8 +309,8 @@ defmodule Texttile.Accounts do
   every open session of the account ends: whoever holds the new password
   signs in fresh. A refused password leaves the link usable.
   """
-  def accept_login_link(token, password) do
-    with {:ok, user} <- verify_login_link(token) do
+  def accept_login_link(token, password, opts \\ []) do
+    with {:ok, user} <- verify_login_link(token, opts) do
       result =
         Repo.transaction(fn ->
           case Repo.update(User.password_changeset(user, %{password: password})) do
@@ -456,5 +461,14 @@ defmodule Texttile.Accounts do
       "" -> user.username
       name -> name
     end
+  end
+
+  # `now:` names the moment a deadline is judged at, so a test can
+  # stand on the far side of a session or a link without back-dating
+  # rows. Defaults to this moment.
+  defp moment(opts) do
+    opts
+    |> Keyword.get_lazy(:now, fn -> DateTime.utc_now() end)
+    |> DateTime.truncate(:second)
   end
 end

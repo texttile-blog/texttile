@@ -28,8 +28,29 @@ defmodule Texttile.Articles.Body do
   # the two alt texts an upload writes while it has no address yet.
   # The editor hook writes all three, see `refs/1`.
   @source_reference ~r/!\[([^\]]*)\]\(([^)]*)\)/
-  @uploading ~r/^Uploading (.+)…$/
-  @failed ~r/^Upload failed: (.+)$/
+
+  # The two marker shapes, stated once as templates. The editor host
+  # hands them to the hook as data (data-tokens), and the regexes that
+  # read them back are derived from the same strings, so the two ends
+  # cannot drift apart.
+  @token_templates %{uploading: "Uploading %{name}…", failed: "Upload failed: %{name}"}
+
+  template_regex = fn template ->
+    Regex.compile!(
+      "^" <>
+        (template |> Regex.escape() |> String.replace(Regex.escape("%{name}"), "(.+)")) <> "$"
+    )
+  end
+
+  @uploading template_regex.(@token_templates.uploading)
+  @failed template_regex.(@token_templates.failed)
+
+  @doc """
+  The marker shapes an upload writes into the words while it has no
+  address yet, as `%{name}` templates. The editor host serializes them
+  onto the hook (data-tokens), and `refs/1` reads them back.
+  """
+  def token_templates, do: @token_templates
 
   @uploads_prefix "/uploads/"
 

@@ -68,6 +68,7 @@ config :texttile, TexttileWeb.Endpoint,
   secret_key_base: "xnA6S8sQuhWpUgn1CDlEc8k8V4yN3V49kvRJD2q0L6D6ts3HKOj3C7Sny9XzGUzl",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:texttile, ~w(--sourcemap=inline --watch)]},
+    esbuild_public: {Esbuild, :install_and_run, [:public, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:texttile, ~w(--watch)]}
   ]
 

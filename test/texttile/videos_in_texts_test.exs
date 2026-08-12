@@ -87,12 +87,9 @@ defmodule Texttile.VideosInTextsTest do
       {:ok, image} = Gallery.add_file(article, video_file(320, 240), "clip.mp4")
       {:ok, video} = Videos.convert(Videos.ensure(image.path))
 
-      {:ok, _} = Gallery.delete(article.id, image.id)
-      # the undo window has to close before the file goes
-      Texttile.Repo.update_all(
-        Ecto.Query.from(i in Texttile.Gallery.Image, where: i.id == ^image.id),
-        set: [delete_after: DateTime.add(DateTime.utc_now(:microsecond), -1, :second)]
-      )
+      # deleted long enough ago that the undo window has closed
+      an_hour_back = DateTime.add(DateTime.utc_now(:microsecond), -3600, :second)
+      {:ok, _} = Gallery.delete(article.id, image.id, now: an_hour_back)
 
       assert Gallery.sweep_due() == 1
       refute File.exists?(Uploads.absolute(image.path))

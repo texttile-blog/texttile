@@ -235,7 +235,9 @@ defmodule Texttile.NewsletterTest do
 
       [gone_live] = Articles.go_live_due(article.publish_date)
       assert gone_live.id == article.id
-      assert gone_live.notified_on == Date.utc_today()
+      # stamped with the day it went live as, which is the day the
+      # clock named - not with whatever day the suite happens to run on
+      assert gone_live.notified_on == article.publish_date
 
       assert_receive {:email, _}, 1000
       assert_receive {:email, _}, 1000

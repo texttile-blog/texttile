@@ -208,13 +208,13 @@ defmodule Texttile.Stats do
   A person is counted once a day, because that is as far as a visitor
   hash reaches. Somebody who reads on ten days is ten people here.
   """
-  def summary(days) do
+  def summary(days, opts \\ []) do
     # One row per day out of the database, never one row per view: the
     # table grows with the readers, and this screen must not grow with
     # it. Three numbers per day is all three figures need.
     rows =
       View
-      |> where([v], v.day >= ^first_day(days))
+      |> where([v], v.day >= ^first_day(days, opts))
       |> group_by([v], v.day)
       |> select([v], {v.day, count(v.id), count(v.visitor, :distinct)})
       |> Repo.all()
@@ -236,7 +236,7 @@ defmodule Texttile.Stats do
   `article_id:` narrows it to one entry.
   """
   def by_day(days, opts \\ []) do
-    first = first_day(days)
+    first = first_day(days, opts)
 
     counted =
       View
@@ -280,9 +280,9 @@ defmodule Texttile.Stats do
   the number of different ones is theirs to choose, and a screen that
   draws a row per address is a screen they can make unusable.
   """
-  def other_pages(days) do
+  def other_pages(days, opts \\ []) do
     View
-    |> where([v], v.day >= ^first_day(days) and is_nil(v.article_id))
+    |> where([v], v.day >= ^first_day(days, opts) and is_nil(v.article_id))
     |> group_by([v], v.path)
     |> select([v], %{path: v.path, views: count(v.id)})
     |> order_by([v], desc: count(v.id), asc: v.path)
@@ -302,7 +302,7 @@ defmodule Texttile.Stats do
   def referrers(days, opts \\ []) do
     window =
       View
-      |> where([v], v.day >= ^first_day(days))
+      |> where([v], v.day >= ^first_day(days, opts))
       |> for_article(opts[:article_id])
 
     case Repo.aggregate(window, :count) do
@@ -328,5 +328,10 @@ defmodule Texttile.Stats do
   defp for_article(query, nil), do: query
   defp for_article(query, id), do: where(query, [v], v.article_id == ^id)
 
-  defp first_day(days), do: Date.add(Date.utc_today(), -(days - 1))
+  # `today:` names the last day of the window, the way `count/2` takes
+  # `now:`; the window reaches back from it.
+  defp first_day(days, opts) do
+    today = Keyword.get(opts, :today, Date.utc_today())
+    Date.add(today, -(days - 1))
+  end
 end

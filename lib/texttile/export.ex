@@ -21,6 +21,7 @@ defmodule Texttile.Export do
   alias Texttile.Articles
   alias Texttile.Articles.Article
   alias Texttile.Articles.Body
+  alias Texttile.Articles.Reading
   alias Texttile.Gallery
   alias Texttile.Uploads
 
@@ -39,7 +40,9 @@ defmodule Texttile.Export do
   one that takes it away again.
   """
   def write_zip(%Article{} = article, dir) do
-    article = Articles.as_read(article)
+    # The bundle is a reader's copy: it hands on what the site says,
+    # never the working copy.
+    article = Reading.text(article, :reader)
     folder = folder(article)
     carried = carried(article)
 
