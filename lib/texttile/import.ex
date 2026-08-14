@@ -67,11 +67,11 @@ defmodule Texttile.Import do
   file the moment the upload is consumed, so the zip has to leave it.
 
   Renaming is one line in a folder, whatever the file weighs; copying
-  is not. A 1.6 GB zip held the import page for 84 seconds here, long
-  enough for the upload channel to die under it, and asked `/tmp` for
-  the archive twice over. Both files lie in the workroom, so the
-  rename is a rename. A source somewhere else cannot be renamed, and
-  that case still copies.
+  is not. A 1.6 GB zip held the import page for 84 seconds here, and
+  the upload channel was gone by the end of it. The copy also asked
+  `/tmp` for the archive twice over. Both files lie in the workroom,
+  so the rename is a rename. A source somewhere else cannot be
+  renamed, and that case still copies.
   """
   def keep_upload(source_path) do
     kept =
