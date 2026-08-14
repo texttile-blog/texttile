@@ -549,4 +549,22 @@ defmodule TexttileWeb.CoreComponents do
       gettext("%{shown} of %{total}", shown: shown, total: total)
     end
   end
+
+  @kb 1024
+  @mb 1024 * 1024
+  @gb 1024 * 1024 * 1024
+
+  @doc """
+  A byte count in the unit a person would say it in.
+
+  The storage table on the settings screen and the import page both
+  name sizes, and a number that reads one way in one place and another
+  way in the other is two numbers to the eye.
+  """
+  def human_size(bytes) when bytes < @mb, do: gettext("%{size} KB", size: div(bytes, @kb))
+
+  def human_size(bytes) when bytes < @gb,
+    do: gettext("%{size} MB", size: Float.round(bytes / @mb, 1))
+
+  def human_size(bytes), do: gettext("%{size} GB", size: Float.round(bytes / @gb, 1))
 end

@@ -79,4 +79,44 @@ defmodule TexttileWeb.ImportLiveTest do
     view |> element("#import-discard") |> render_click()
     assert has_element?(view, "#import-upload")
   end
+
+  test "the page names the upload roof from the settings and the room left", %{conn: conn} do
+    {:ok, _value} = Texttile.Settings.put(:max_upload_mb, 700)
+
+    {:ok, view, html} = live(conn, ~p"/admin/settings/import")
+
+    assert html =~ "700 MB"
+    assert has_element?(view, "#import-room")
+  end
+
+  test "a zip past the roof says so instead of standing at 0%", %{conn: conn} do
+    {:ok, _value} = Texttile.Settings.put(:max_upload_mb, 10)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/settings/import")
+
+    upload =
+      file_input(view, "#import-upload", :zip, [
+        %{
+          name: "big.zip",
+          content: :binary.copy("z", 10_500_000),
+          type: "application/zip"
+        }
+      ])
+
+    assert {:error, [[_ref, :too_large]]} = render_upload(upload, "big.zip")
+    assert render(view) =~ "10 MB"
+    assert has_element?(view, "#import-upload", "larger")
+  end
+
+  test "a file that is no zip says so", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/settings/import")
+
+    upload =
+      file_input(view, "#import-upload", :zip, [
+        %{name: "notes.txt", content: "plain text", type: "text/plain"}
+      ])
+
+    assert {:error, [[_ref, :not_accepted]]} = render_upload(upload, "notes.txt")
+    assert has_element?(view, "#import-upload", "Only a .zip file works here")
+  end
 end

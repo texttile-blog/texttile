@@ -483,17 +483,6 @@ defmodule TexttileWeb.SettingsLive do
   defp dir_note("cache"), do: gettext("display sizes, disposable")
   defp dir_note(_dir), do: ""
 
-  @kb 1024
-  @mb 1024 * 1024
-  @gb 1024 * 1024 * 1024
-
-  defp human_size(bytes) when bytes < @mb, do: gettext("%{size} KB", size: div(bytes, @kb))
-
-  defp human_size(bytes) when bytes < @gb,
-    do: gettext("%{size} MB", size: Float.round(bytes / @mb, 1))
-
-  defp human_size(bytes), do: gettext("%{size} GB", size: Float.round(bytes / @gb, 1))
-
   defp saved_note(:comments_require_confirmation, true),
     do: gettext("Readers confirm their email · new comments wait for the link")
 
@@ -1194,7 +1183,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <div class="hint">
               {gettext(
-                "One roof for a picture and for a video. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB."
+                "One roof for a picture, for a video and for an import zip. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB, and a zip that carries its pictures weighs more."
               )}
             </div>
           </div>

@@ -216,11 +216,12 @@ defmodule Texttile.Settings do
   @doc """
   The biggest file the admin area takes, in bytes.
 
-  One roof for pictures and for videos, so there is one number to say
-  and one number to change. Three places read it and they must agree,
-  or a file is refused after it has travelled: the browser, which turns
-  a file away before the upload starts; the endpoint, which stops
-  reading a body past it; and the words on the settings screen.
+  One roof for pictures, for videos and for the import zip, so there is
+  one number to say and one number to change. Four places read it and
+  they must agree, or a file is refused after it has travelled: the
+  browser, which turns a file away before the upload starts; the
+  endpoint, which stops reading a body past it; the import page, which
+  names it beside the button; and the words on the settings screen.
   """
   def max_upload_bytes, do: get(:max_upload_mb) * 1024 * 1024
 
