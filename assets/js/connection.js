@@ -132,6 +132,30 @@ export function watchLiveness(liveSocket) {
     return !held || !held.channel || held.channel.state === "joined"
   }
 
+  // The views of the line before. A server keeps a view with the
+  // connection it arrived on, so a channel that says it is joined on a
+  // line that was only just built is remembering a line that is gone,
+  // and every click on it comes back as "unmatched topic": answered,
+  // and answered with nothing. Nothing on the screen changes, because
+  // as far as the socket is concerned everything is in order.
+  //
+  // Phoenix builds a view again the moment it knows the channel is
+  // broken, and here it never learns: a page put into the browser's
+  // back-forward cache loses its socket after Phoenix has already
+  // written that close off as deliberate, so the close reaches no
+  // channel. This is what tells them.
+  // Only the channels that claim to be joined, and never the one that
+  // is joining on this very line: `phx_error` is the word Phoenix uses
+  // itself for a channel whose connection is gone.
+  function dropTheViewsOfTheOldLine() {
+    const line = socket()
+    if (!line) return
+
+    line.channels
+      .filter(channel => channel.state === "joined")
+      .forEach(channel => channel.trigger("phx_error"))
+  }
+
   // One question at a time. An unanswered one keeps its listener on the
   // socket, so asking again over a dead line would pile them up.
   function ask() {
@@ -232,8 +256,12 @@ export function watchLiveness(liveSocket) {
   // Every line that opens is a fresh start, whoever built it: this
   // watch, Phoenix's own reconnect, or a browser coming back to life.
   // A tick can miss the moment the old one went, so this is the one
-  // that must not be missed.
-  if (socket()) socket().onOpen(forgetTheAsk)
+  // that must not be missed. Nothing that stood on the line before
+  // stands on this one, the questions and the views alike.
+  if (socket()) {
+    socket().onOpen(forgetTheAsk)
+    socket().onOpen(dropTheViewsOfTheOldLine)
+  }
 
   setInterval(watchTheLine, 1000)
   addEventListener("visibilitychange", backInFront)
