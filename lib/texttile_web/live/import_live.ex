@@ -19,7 +19,7 @@ defmodule TexttileWeb.ImportLive do
       |> assign(:page_title, gettext("Import"))
       |> assign(:job, Job.state())
       |> assign(:limit_mb, Settings.get(:max_upload_mb))
-      |> assign(:free, Uploads.free_bytes())
+      |> assign(:free_bytes, Uploads.free_bytes())
       # The roof over the zip is the one roof the admin area has:
       # Settings > Storage > Biggest upload. A second number here would
       # be a second thing to find and to raise, and the zip is by far
@@ -142,7 +142,7 @@ defmodule TexttileWeb.ImportLive do
                 {entry.client_name}
                 <span :if={upload_errors(@uploads.zip, entry) == []}>· {entry.progress}%</span>
               </span>
-              <p class="note mt-2" id="import-room">{room_note(@limit_mb, @free)}</p>
+              <p class="note mt-2" id="import-room">{room_note(@limit_mb, @free_bytes)}</p>
               <%!-- Both lists. A zip that is too large or is no zip at
                    all is refused entry by entry, and that error hangs
                    on the entry: reading the upload alone left the
