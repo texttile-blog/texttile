@@ -2221,9 +2221,6 @@ defmodule TexttileWeb.EditorLive do
                     {Accounts.display_name(account)}
                   </option>
                 </select>
-                <div class="hint">
-                  {gettext("Named beside the date, on the entry and in the lists.")}
-                </div>
               </span>
             </div>
 
