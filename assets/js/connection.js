@@ -191,7 +191,9 @@ export function watchLiveness(liveSocket) {
     }
 
     const read = readTheLine({
-      transport: line.transport.name,
+      // Phoenix's own naming: minification renames the long polling
+      // class, and `transport.name` would write that short name down.
+      transport: line.transportName(line.transport),
       connected: line.isConnected(),
       clean: line.closeWasClean,
       joined: joined(),

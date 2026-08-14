@@ -14,6 +14,8 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
 
   use TexttileWeb.E2E
 
+  alias Texttile.Articles
+
   describe "the transport" do
     test "a slow start keeps the WebSocket instead of dropping to long polling", %{conn: conn} do
       # Nine editors starting together on one small machine take longer
@@ -112,6 +114,35 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # to the server and comes back in the crumb.
       |> fill_in("Title", with: "The line came back")
       |> assert_has("#crumb", text: "The line came back")
+    end
+
+    test "words written into a quiet line are still there afterwards", %{conn: conn, kb: kb} do
+      article = draft!(kb, "A text written on a quiet line", "")
+
+      conn =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> type(".ed-cm .cm-content", "Before the line went")
+
+      eventually(fn -> Articles.get_article!(article.id).body =~ "Before" end)
+
+      # Everything written from here reaches nobody. Without the watch,
+      # LiveView answers that half a minute later with a hard refresh,
+      # and a refresh throws these words away.
+      conn
+      |> evaluate(@cut, [is_function: true], &assert(&1 == true))
+      |> type(".ed-cm .cm-content", " and after it went")
+      |> assert_has("#stateOffline", timeout: 15_000)
+      |> assert_has("#state", text: "Last saved", timeout: 20_000)
+      |> assert_has(".ed-cm", text: "Before the line went and after it went")
+      # one more keystroke on the line that stands, and the words that
+      # were written into the quiet are on the server too
+      |> type(".ed-cm .cm-content", ".")
+
+      eventually(fn ->
+        Articles.get_article!(article.id).body =~ "Before the line went and after it went."
+      end)
     end
   end
 end
