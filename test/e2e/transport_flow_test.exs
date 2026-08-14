@@ -5,11 +5,19 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
 
   Ten open editors used to go quiet one after another. A slow moment
   pushed one tab onto long polling, the note Phoenix leaves about that
-  travelled into every tab opened out of it, and a browser gives one
-  site about six connections for all its tabs together. From the
-  seventh tab on the pages then waited for each other while looking
-  finished: the fields took letters, the buttons took clicks, and
-  nothing arrived.
+  travelled into every tab opened out of it, and over HTTP/1.1 a
+  browser gives one site about six connections for all its tabs
+  together. From the seventh tab on the pages then waited for each
+  other while looking finished: the fields took letters, the buttons
+  took clicks, and nothing arrived. That last part belongs to HTTP/1.1,
+  which is the development server; a site on HTTPS shares one HTTP/2
+  connection between all its polls, and ten such tabs were measured
+  against the real machine without one going quiet.
+
+  A tab can go quiet on a WebSocket too, and that is what the last
+  group here is about: a line that was cut without a goodbye stays open
+  in the browser, and nothing on the screen changes until somebody
+  asks.
   """
 
   use TexttileWeb.E2E

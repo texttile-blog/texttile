@@ -1,12 +1,20 @@
 /* THE TRANSPORT
 
    Long polling is the way in for a reader behind a proxy that refuses
-   a WebSocket. It is a poor way in for anybody else: the browser gives
-   one site about six connections, every open tab holds one of them
-   open for its poll, and from the seventh tab on the pages wait for
-   each other. A waiting page is worse than a broken one, because it
-   looks exactly like a working one - the fields take letters, the
-   buttons take clicks, and nothing arrives.
+   a WebSocket. It is the poorer way in for everybody else, and over
+   HTTP/1.1 it is a trap: the browser gives one site about six
+   connections there, every open tab holds one of them open for its
+   poll, and from the seventh tab on the pages wait for each other. A
+   waiting page is worse than a broken one, because it looks exactly
+   like a working one - the fields take letters, the buttons take
+   clicks, and nothing arrives.
+
+   That trap belongs to HTTP/1.1, which is the development server here.
+   A site on HTTPS speaks HTTP/2, where every poll of every tab shares
+   one connection: ten tabs on long polling were measured against the
+   real machine and all ten stayed alive. So the road is worth leaving
+   for its latency, not because it strands a site that has a
+   certificate.
 
    Two things sent whole tabs down that road for no reason:
 
