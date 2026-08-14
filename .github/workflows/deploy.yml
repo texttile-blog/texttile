@@ -1,8 +1,11 @@
 name: Deploy
 
+# The deploy waits for CI. A commit that fails the test suite must not
+# reach staging, so the trigger is the finished CI run, not the push.
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 concurrency:
   group: deploy
@@ -10,9 +13,19 @@ concurrency:
 
 jobs:
   deploy:
+    # A finished CI run also reports pull requests and failures. Only a
+    # green push on main gets past this line.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The default checkout takes the head of the branch, which is
+          # not always the commit CI passed on. Deploy what was tested.
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
         env:
