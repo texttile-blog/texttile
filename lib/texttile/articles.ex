@@ -61,9 +61,9 @@ defmodule Texttile.Articles do
   defp preload_people(article), do: Repo.preload(article, @with_people)
 
   @doc """
-  The displayed name of whoever started the entry, or nil where the
+  The displayed name of the account the entry is by, or nil where the
   account has gone. The name is read now and not stored, so a rename
-  reaches every entry that person ever wrote.
+  reaches every entry that person carries.
   """
   def author_name(%Article{user: %Ecto.Association.NotLoaded{}} = article) do
     article |> Repo.preload(:user) |> author_name()
@@ -493,6 +493,41 @@ defmodule Texttile.Articles do
       {:ok, moved}
     end
   end
+
+  @doc """
+  Names an account as the author of an entry, in place of the one who
+  started it. Every entry is somebody's: the account has to exist, and
+  nobody is not an answer. `by:` is the admin who says so, for the Log.
+
+  The name itself is never stored, so the entry shows whatever that
+  account is called now, here and on every reader page.
+  """
+  def set_author(%Article{} = article, user_id, opts \\ []) do
+    with {:ok, author} <- fetch_author(user_id),
+         {:ok, named} <-
+           article |> Article.author_changeset(%{user_id: author.id}) |> Repo.update() do
+      named = Repo.preload(named, @with_people, force: true)
+      push_log(named, opts[:by], "named #{Texttile.Accounts.display_name(author)} as the author")
+      broadcast({:article_changed, named})
+      {:ok, named}
+    end
+  end
+
+  defp fetch_author(user_id) when is_binary(user_id) do
+    case Integer.parse(user_id) do
+      {id, ""} -> fetch_author(id)
+      _ -> {:error, :no_such_account}
+    end
+  end
+
+  defp fetch_author(user_id) when is_integer(user_id) do
+    case Texttile.Accounts.get_user(user_id) do
+      nil -> {:error, :no_such_account}
+      user -> {:ok, user}
+    end
+  end
+
+  defp fetch_author(_user_id), do: {:error, :no_such_account}
 
   @doc """
   The one publish click. An empty or past date goes live today, a

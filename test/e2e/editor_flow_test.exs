@@ -327,6 +327,42 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     end
   end
 
+  describe "the author" do
+    # A closed select shows its options to nobody, Playwright included,
+    # so the name the field stands on is read from the field itself.
+    @author_field """
+    () => document.querySelector("#edAuthor").selectedOptions[0].textContent.trim()
+    """
+
+    test "the field hands the entry to another admin, and the page says so",
+         %{conn: conn, kb: kb} do
+      anna = user_fixture(%{username: "anna", display_name: "Anna Berger"})
+      article = published_post(user: kb, title: "Harbor mornings")
+
+      conn =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> evaluate(@author_field, [is_function: true], &assert(&1 == "kb"))
+        |> select("Author", option: "Anna Berger")
+        |> assert_has("#state", text: "Last saved")
+
+      moved =
+        eventually(fn ->
+          match?(%{user_id: id} when id == anna.id, Articles.get_article!(article.id))
+        end)
+
+      assert moved
+
+      # the move is the entry's own story, and the reader gets the name
+      conn
+      |> click_button(".tab", "Log")
+      |> assert_has("#logList", text: "named Anna Berger as the author")
+      |> open_page(Articles.public_path(article))
+      |> assert_has("#by", text: "Anna Berger")
+    end
+  end
+
   describe "the log" do
     test "the Log tab tells the story of the text", %{conn: conn} do
       conn

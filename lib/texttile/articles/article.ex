@@ -38,8 +38,10 @@ defmodule Texttile.Articles.Article do
     # image of the text speak for it.
     field :preview_path, :string
 
-    # Who started the entry. The name beside the day on the overviews
-    # and on the reader's page; nil where the account has gone.
+    # Who the entry is by: whoever started it, until the Author field
+    # in the editor names another account. The name beside the day on
+    # the overviews and on the reader's page; nil where the account has
+    # gone.
     belongs_to :user, Texttile.Accounts.User
 
     # The text the readers have. The title and the body above are the
@@ -74,6 +76,18 @@ defmodule Texttile.Articles.Article do
     |> validate_inclusion(:type, @types)
     |> validate_exclusion(:slug, @reserved_slugs, message: "is an address the site itself uses")
     |> unique_constraint(:slug)
+  end
+
+  @doc """
+  Who the entry is by. An entry is always somebody's, so the account
+  has to be there; the field in the editor offers the accounts and
+  nothing else.
+  """
+  def author_changeset(article, attrs) do
+    article
+    |> cast(attrs, [:user_id])
+    |> validate_required(:user_id)
+    |> assoc_constraint(:user)
   end
 
   @doc "A state move: publish, schedule, unpublish, go live."
