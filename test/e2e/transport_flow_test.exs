@@ -165,4 +165,44 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       end)
     end
   end
+
+  describe "a tab that comes back from the cache" do
+    # A page put into the browser's back-forward cache loses its socket
+    # there, and Phoenix is told to expect that, so it silences the
+    # close: no error reaches the channels, and they go on believing
+    # they are joined. The socket is built again when the page comes
+    # back, so everything reads healthy - the transport is a WebSocket,
+    # the ping answers in milliseconds, the bar says the last save.
+    #
+    # The server keeps a view with the connection it arrived on, and
+    # threw this one away with the connection that went. Every click
+    # since then is answered with "unmatched topic": answered, and
+    # answered with nothing.
+    @stale """
+    () => {
+      const socket = window.liveSocket.socket
+      socket.conn.onclose = () => {}
+      socket.conn.close()
+      socket.conn = null
+      socket.connect()
+      return window.liveSocket.main.channel.state
+    }
+    """
+
+    test "a view the server threw away is joined again", %{conn: conn, kb: kb} do
+      article = draft!(kb, "A text in a tab that was put aside")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      # the channel still says joined, which is the whole trap
+      |> evaluate(@stale, [is_function: true], &assert(&1 == "joined"))
+      # nobody reloads: the page notices that its view cannot be the one
+      # on this line, and joins again. The title proves it, because a
+      # crumb only changes when the server answered.
+      |> fill_in("Title", with: "A tab that came back")
+      |> assert_has("#crumb", text: "A tab that came back", timeout: 20_000)
+      |> assert_has("#state", text: "Last saved", timeout: 20_000)
+    end
+  end
 end
