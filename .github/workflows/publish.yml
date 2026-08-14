@@ -1,8 +1,11 @@
 name: Publish image
 
+# The publish waits for CI. An image tag stands for good, so a commit
+# that fails the test suite must never carry a version number.
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
   workflow_dispatch:
 
 # One publish at a time, and never a cancelled one: two runs would push
@@ -13,9 +16,20 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/texttile-blog/texttile
+  # The commit CI passed on. A workflow_run event points the workspace at
+  # the head of the branch, which is not always that commit.
+  COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   publish:
+    # A finished CI run also reports pull requests and failures. Only a
+    # green push on main gets past this line. A hand-started run says the
+    # person starting it stands for the build.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,6 +38,8 @@ jobs:
       version: ${{ steps.version.outputs.exact }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT }}
 
       # The version in mix.exs is the version of the build. Settings
       # shows this number, and the image tags carry it.
@@ -84,7 +100,7 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.version.outputs.minor }}
             ${{ env.IMAGE }}:${{ steps.version.outputs.major }}
             ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ env.COMMIT }}
 
   # The release is the version's public record on GitHub: the tag
   # v<version> on the commit the image was built from, and notes that
@@ -99,6 +115,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT }}
 
       - name: Create the release
         shell: bash
@@ -116,6 +134,6 @@ jobs:
           notes="$(printf '```\ndocker pull %s:%s\n```' "$IMAGE" "$version")"
 
           gh release create "$tag" \
-            --target "$GITHUB_SHA" \
+            --target "$COMMIT" \
             --notes "$notes" \
             --generate-notes

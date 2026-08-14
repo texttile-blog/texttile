@@ -105,6 +105,11 @@ you move it.
 A build is published only when the version rises. A merge that keeps the
 version of the build before it publishes nothing and reports a failure.
 
+A build is published only after CI passes. The publish starts when the CI
+run of the same commit reports success, and a red run publishes nothing. An
+exact tag never moves, so a version that carried a broken build stays
+broken: raise the version in `mix.exs` and merge the repair.
+
 Each published build also gets a GitHub release. The release tags the
 commit the image was built from as `v<version>`, shows the pull command,
 and lists the pull requests since the release before.
@@ -549,6 +554,10 @@ and nothing after it.
 `fly.toml` in this repo deploys from source with one volume for the database
 and the uploads. Its header documents the one-time setup (app, volume,
 secrets, certificate).
+
+A push to `main` deploys itself, but only after CI passes. The deploy starts
+when the CI run of the same commit reports success, and it deploys that
+commit, not the head of the branch.
 
 ### One machine, never two
 
