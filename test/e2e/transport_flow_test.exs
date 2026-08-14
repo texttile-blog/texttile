@@ -87,8 +87,17 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
     # a goodbye, so everything on the screen says the page is live: the
     # transport is a WebSocket, the view wears phx-connected, and every
     # click goes into a line whose other end is gone.
+    #
+    # Anything pushed into that line is answered by LiveView half a
+    # minute later with a rejected promise, which the browser reports as
+    # an error on the page. That is the line's own doing and not a
+    # defect under test, and the test driver crashes on the shape of it
+    # (`String.Chars not implemented for Map`), taking every later
+    # browser test with it. So the page keeps that one complaint to
+    # itself.
     @cut """
     () => {
+      window.addEventListener("unhandledrejection", e => e.preventDefault())
       window.liveSocket.socket.conn.send = () => {}
       return window.liveSocket.socket.isConnected()
     }
@@ -118,6 +127,9 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # down and builds it again, and says so when it stands.
       |> assert_has("#state", text: "Last saved", timeout: 20_000)
       |> refute_has("html.phx-late")
+      # the record names an answer, not a hopeful class: the new line
+      # was asked and it replied.
+      |> assert_has("html[data-line*='answered']")
       # and it is a working line, not a hopeful class: the title goes
       # to the server and comes back in the crumb.
       |> fill_in("Title", with: "The line came back")

@@ -149,15 +149,27 @@ export function watchLiveness(liveSocket) {
   // Down and up again through Phoenix's own machinery, so a build that
   // fails leaves its reconnect running. `disconnect` marks the close as
   // clean, which would stop that, and this close was anything but.
+  //
+  // The question that was out goes down with the line it was asked on,
+  // and the new line starts with a clean slate. Without that it would
+  // start owing an answer that can never come, and a page that is
+  // waiting for one never asks again.
   function revive() {
     const line = socket()
     if (Date.now() - revivedAt < REVIVE_MS) return
     revivedAt = Date.now()
+    forgetTheAsk()
 
     liveSocket.disconnect(() => {
       line.closeWasClean = false
       liveSocket.connect()
     })
+  }
+
+  function forgetTheAsk() {
+    heard = Date.now()
+    asked = 0
+    waiting = false
   }
 
   function say(mark, note) {
@@ -189,14 +201,9 @@ export function watchLiveness(liveSocket) {
     }
 
     // A line that is down is not a quiet line: LiveView says that one
-    // itself and is already building it again. The question that was
-    // still out goes with it; the new line gets a new one.
-    if (!line.isConnected() || line.closeWasClean) {
-      heard = Date.now()
-      waiting = false
-    } else {
-      ask()
-    }
+    // itself and is already building it again.
+    if (!line.isConnected() || line.closeWasClean) forgetTheAsk()
+    else ask()
 
     const read = readTheLine({
       // Phoenix's own naming: minification renames the long polling
@@ -218,14 +225,15 @@ export function watchLiveness(liveSocket) {
   // sat there, so the silence it brings says nothing about the line.
   // The question goes out now, and the answer decides.
   function backInFront() {
-    if (inFront()) {
-      heard = Date.now()
-      asked = 0
-      waiting = false
-    }
-
+    if (inFront()) forgetTheAsk()
     watchTheLine()
   }
+
+  // Every line that opens is a fresh start, whoever built it: this
+  // watch, Phoenix's own reconnect, or a browser coming back to life.
+  // A tick can miss the moment the old one went, so this is the one
+  // that must not be missed.
+  if (socket()) socket().onOpen(forgetTheAsk)
 
   setInterval(watchTheLine, 1000)
   addEventListener("visibilitychange", backInFront)
