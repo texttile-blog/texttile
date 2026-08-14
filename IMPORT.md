@@ -39,7 +39,10 @@ export.zip
 
 Files at the zip root and empty folders are warnings. All text is UTF-8.
 The archive may hold up to 20,000 entries and up to 4 GB unpacked; a
-larger one is refused whole.
+larger one is refused whole. The zip file itself may be as large as
+Settings > Storage > Biggest upload, which the import page names beside
+the button together with the room left on the server. Pictures given as
+URLs keep the zip small, because the server fetches those itself.
 
 ## index.md
 

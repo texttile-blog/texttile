@@ -8,6 +8,8 @@ defmodule TexttileWeb.ImportLive do
   use TexttileWeb, :live_view
 
   alias Texttile.Import.Job
+  alias Texttile.Settings
+  alias Texttile.Uploads
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: Job.subscribe()
@@ -16,10 +18,17 @@ defmodule TexttileWeb.ImportLive do
       socket
       |> assign(:page_title, gettext("Import"))
       |> assign(:job, Job.state())
+      |> assign(:limit_mb, Settings.get(:max_upload_mb))
+      |> assign(:free, Uploads.free_bytes())
+      # The roof over the zip is the one roof the admin area has:
+      # Settings > Storage > Biggest upload. A second number here would
+      # be a second thing to find and to raise, and the zip is by far
+      # the largest thing this area ever takes. It is read when the
+      # page opens, so a new limit holds from the next opening.
       |> allow_upload(:zip,
         accept: ~w(.zip),
         max_entries: 1,
-        max_file_size: 1_073_741_824,
+        max_file_size: Settings.max_upload_bytes(),
         auto_upload: true,
         progress: &handle_zip/3
       )
@@ -126,14 +135,33 @@ defmodule TexttileWeb.ImportLive do
                   aria-label={gettext("Upload the zip")}
                 />
               </label>
+              <%!-- The percentage belongs to a zip that is travelling.
+                   A refused one never travels, and 0% beside its name
+                   reads as work in progress. --%>
               <span :for={entry <- @uploads.zip.entries} class="note ml-2 num">
-                {entry.client_name} · {entry.progress}%
+                {entry.client_name}
+                <span :if={upload_errors(@uploads.zip, entry) == []}>· {entry.progress}%</span>
               </span>
+              <p class="note mt-2" id="import-room">{room_note(@limit_mb, @free)}</p>
+              <%!-- Both lists. A zip that is too large or is no zip at
+                   all is refused entry by entry, and that error hangs
+                   on the entry: reading the upload alone left the
+                   refusal unsaid, and the page stood at 0% as though
+                   it were still working. --%>
               <p
                 :for={error <- upload_errors(@uploads.zip)}
                 class="text-julia text-[13px] mt-2"
               >
-                {upload_error_note(error)}
+                {upload_error_note(error, @limit_mb)}
+              </p>
+              <p
+                :for={entry <- @uploads.zip.entries}
+                :if={upload_errors(@uploads.zip, entry) != []}
+                class="text-julia text-[13px] mt-2"
+              >
+                <span :for={error <- upload_errors(@uploads.zip, entry)}>
+                  {upload_error_note(error, @limit_mb)}
+                </span>
               </p>
               <p class="note mt-3">
                 {gettext(
@@ -259,7 +287,33 @@ defmodule TexttileWeb.ImportLive do
     """
   end
 
-  defp upload_error_note(:too_large), do: gettext("The zip is larger than 1 GB")
-  defp upload_error_note(:not_accepted), do: gettext("Only a .zip file works here")
-  defp upload_error_note(other), do: gettext("The upload failed (%{reason})", reason: other)
+  # What the page says beside the button: the roof, and the room the
+  # volume has left. A zip is the largest thing this area takes, and
+  # the server needs the room twice over while it unpacks, so the
+  # second number belongs next to the first. `df` says nothing on a
+  # system without it, and then the line carries the roof alone.
+  defp room_note(limit_mb, nil), do: gettext("Up to %{limit}", limit: mb(limit_mb))
+
+  defp room_note(limit_mb, free) do
+    gettext("Up to %{limit} · %{size} free on the server",
+      limit: mb(limit_mb),
+      size: human_size(free)
+    )
+  end
+
+  defp mb(limit_mb), do: gettext("%{mb} MB", mb: limit_mb)
+
+  # The roof is named in the message, because the number is a setting
+  # now and the person reading this is the person who can raise it.
+  defp upload_error_note(:too_large, limit_mb) do
+    gettext(
+      "The zip is larger than %{limit}. Raise the roof in Settings > Storage > Biggest upload.",
+      limit: mb(limit_mb)
+    )
+  end
+
+  defp upload_error_note(:not_accepted, _limit_mb), do: gettext("Only a .zip file works here")
+
+  defp upload_error_note(other, _limit_mb),
+    do: gettext("The upload failed (%{reason})", reason: other)
 end
