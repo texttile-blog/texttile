@@ -144,9 +144,16 @@ export function watchLiveness(liveSocket) {
   // back-forward cache loses its socket after Phoenix has already
   // written that close off as deliberate, so the close reaches no
   // channel. This is what tells them.
+  // Only the channels that claim to be joined, and never the one that
+  // is joining on this very line: `phx_error` is the word Phoenix uses
+  // itself for a channel whose connection is gone.
   function dropTheViewsOfTheOldLine() {
     const line = socket()
-    if (line && line.channels.some(channel => channel.state === "joined")) line.triggerChanError()
+    if (!line) return
+
+    line.channels
+      .filter(channel => channel.state === "joined")
+      .forEach(channel => channel.trigger("phx_error"))
   }
 
   // One question at a time. An unanswered one keeps its listener on the
