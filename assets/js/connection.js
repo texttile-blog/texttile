@@ -47,23 +47,178 @@ export function forgetLongpollFallback() {
    moment and a warning there would be a lie. */
 const LATE_MS = 5000
 
-export function watchLiveness() {
+/* THE LINE THAT LOOKS FINE
+
+   The worse case wears no mark at all. A WebSocket that is cut without
+   a goodbye - a machine that went to sleep, a network that dropped the
+   connection, a proxy that let it go - stays open in the browser.
+   Nothing on the screen changes: the transport is still a WebSocket,
+   the view still wears phx-connected, and every click goes into a line
+   whose other end is gone. The page looks exactly like a working one,
+   which is the worst thing a page can look like.
+
+   Only asking finds this. Phoenix asks every 30 seconds, and a browser
+   slows a background tab's clock to about once a minute, so its
+   question can be minutes away - and until it comes back, whatever is
+   typed is thrown away in silence.
+
+   So the page asks for itself while it is in front, and counts how
+   long the server has been quiet. Silence is the one symptom that
+   every cause shares, so it is the one thing worth watching. A quiet
+   line is said in the bar, and it is taken down and built again: the
+   words in the editor survive that, because the writing surface is
+   `phx-update="ignore"` and keeps what it holds across a rejoin.
+
+   A line that was put down on purpose is left alone. Phoenix marks
+   that close as clean, and a page that was disconnected deliberately
+   has nothing to repair. */
+const ASK_MS = 4000
+const QUIET_MS = 8000
+const REVIVE_MS = 10_000
+
+/**
+ * What the page knows about its line, and what follows from it. On its
+ * own, so the rule can be read and tested without a browser around it.
+ *
+ * `connected` and `clean` come from the socket, `joined` from the view
+ * that answers the clicks, `live` from the class LiveView writes on the
+ * page, `silent` is how long the server has said nothing.
+ *
+ * The mark comes at once for a line that has gone quiet, because the
+ * silence was already counted. For everything else it waits: no page is
+ * live in its first moment, and a warning there would be a lie.
+ */
+export function readTheLine({transport, connected, clean, joined, live, inFront, silent}) {
+  const quiet = connected && !clean && inFront && silent > QUIET_MS
+  const standing = connected && live && joined
+
+  return {
+    mark: quiet ? "now" : standing ? "never" : "soon",
+    revive: quiet,
+    note: [
+      transport || "no socket",
+      joined ? "joined" : "not joined",
+      quiet ? `quiet for ${Math.round(silent / 1000)}s` : `answered ${Math.round(silent / 1000)}s ago`,
+    ].join(" · "),
+  }
+}
+
+export function watchLiveness(liveSocket) {
   let lateTimer = null
+  let heard = Date.now()
+  let asked = 0
+  let waiting = false
+  let revivedAt = 0
+  let written = ""
 
-  function watchTheLine() {
-    const main = document.querySelector("[data-phx-main]")
-    const live = !main || main.classList.contains("phx-connected")
+  const root = document.documentElement
+  const socket = () => liveSocket && liveSocket.socket
+  const main = () => document.querySelector("[data-phx-main]")
+  const view = () => liveSocket && liveSocket.main
+  const inFront = () => document.visibilityState === "visible"
 
-    if (live) {
+  // The channel carries the events; the socket only carries the
+  // channel. A joined view is the only one that can answer a click.
+  function joined() {
+    const held = view()
+    return !held || !held.channel || held.channel.state === "joined"
+  }
+
+  // One question at a time. An unanswered one keeps its listener on the
+  // socket, so asking again over a dead line would pile them up.
+  function ask() {
+    const line = socket()
+    if (!inFront() || waiting || Date.now() - asked < ASK_MS) return
+    asked = Date.now()
+    waiting = true
+
+    line.ping(() => {
+      waiting = false
+      heard = Date.now()
+    })
+  }
+
+  // Down and up again through Phoenix's own machinery, so a build that
+  // fails leaves its reconnect running. `disconnect` marks the close as
+  // clean, which would stop that, and this close was anything but.
+  function revive() {
+    const line = socket()
+    if (Date.now() - revivedAt < REVIVE_MS) return
+    revivedAt = Date.now()
+
+    liveSocket.disconnect(() => {
+      line.closeWasClean = false
+      liveSocket.connect()
+    })
+  }
+
+  function say(mark, note) {
+    if (mark === "now") {
       clearTimeout(lateTimer)
       lateTimer = null
-      document.documentElement.classList.remove("phx-late")
+      root.classList.add("phx-late")
+    } else if (mark === "never") {
+      clearTimeout(lateTimer)
+      lateTimer = null
+      root.classList.remove("phx-late")
     } else if (lateTimer === null) {
-      lateTimer = setTimeout(() => document.documentElement.classList.add("phx-late"), LATE_MS)
+      lateTimer = setTimeout(() => root.classList.add("phx-late"), LATE_MS)
+    }
+
+    if (note !== written) {
+      written = note
+      root.setAttribute("data-line", note)
     }
   }
 
+  function watchTheLine() {
+    const line = socket()
+    const held = main()
+
+    if (!line || !held) {
+      say("never", "no page")
+      return
+    }
+
+    // A line that is down is not a quiet line: LiveView says that one
+    // itself and is already building it again. The question that was
+    // still out goes with it; the new line gets a new one.
+    if (!line.isConnected() || line.closeWasClean) {
+      heard = Date.now()
+      waiting = false
+    } else {
+      ask()
+    }
+
+    const read = readTheLine({
+      transport: line.transport.name,
+      connected: line.isConnected(),
+      clean: line.closeWasClean,
+      joined: joined(),
+      live: held.classList.contains("phx-connected"),
+      inFront: inFront(),
+      silent: Date.now() - heard,
+    })
+
+    say(read.mark, read.note)
+    if (read.revive) revive()
+  }
+
+  // Coming back to a tab that was away: its clock was slowed while it
+  // sat there, so the silence it brings says nothing about the line.
+  // The question goes out now, and the answer decides.
+  function backInFront() {
+    if (inFront()) {
+      heard = Date.now()
+      asked = 0
+      waiting = false
+    }
+
+    watchTheLine()
+  }
+
   setInterval(watchTheLine, 1000)
-  addEventListener("visibilitychange", watchTheLine)
+  addEventListener("visibilitychange", backInFront)
+  addEventListener("focus", backInFront)
   watchTheLine()
 }

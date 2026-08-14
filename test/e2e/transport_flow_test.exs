@@ -71,4 +71,47 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> refute_has("#state")
     end
   end
+
+  describe "a line that looks fine" do
+    # The socket in the browser stays open when the line is cut without
+    # a goodbye, so everything on the screen says the page is live: the
+    # transport is a WebSocket, the view wears phx-connected, and every
+    # click goes into a line whose other end is gone.
+    @cut """
+    () => {
+      window.liveSocket.socket.conn.send = () => {}
+      return window.liveSocket.socket.isConnected()
+    }
+    """
+
+    test "a page nobody answers any more says so", %{conn: conn, kb: kb} do
+      article = draft!(kb, "A text on a line that goes quiet")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> refute_has("#stateOffline")
+      |> evaluate(@cut, [is_function: true], &assert(&1 == true))
+      |> assert_has("#stateOffline", text: "Not saved", timeout: 15_000)
+      |> assert_has("html[data-line*='quiet']", timeout: 15_000)
+    end
+
+    test "and builds the line again, without anybody reloading", %{conn: conn, kb: kb} do
+      article = draft!(kb, "A text that gets its line back")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(@cut, [is_function: true], &assert(&1 == true))
+      |> assert_has("#stateOffline", timeout: 15_000)
+      # nobody reloads and nobody clicks: the page takes the dead line
+      # down and builds it again, and says so when it stands.
+      |> assert_has("#state", text: "Last saved", timeout: 20_000)
+      |> refute_has("html.phx-late")
+      # and it is a working line, not a hopeful class: the title goes
+      # to the server and comes back in the crumb.
+      |> fill_in("Title", with: "The line came back")
+      |> assert_has("#crumb", text: "The line came back")
+    end
+  end
 end
