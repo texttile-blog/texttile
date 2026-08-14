@@ -34,7 +34,7 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
-watchLiveness()
+watchLiveness(liveSocket)
 initNavMenu()
 
 // expose liveSocket on window for web console debug logs and latency simulation:
