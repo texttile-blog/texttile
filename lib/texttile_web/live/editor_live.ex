@@ -54,6 +54,9 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:media_rev, 0)
       |> assign(:comments, Comments.for_article(article.id))
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
+      # The accounts the Author field offers. All admins are equal, so
+      # every one of them can carry an entry.
+      |> assign(:accounts, Accounts.list_users())
       |> TexttileWeb.CommentModeration.attach(
         scope: {:article, & &1.assigns.article.id},
         reload: &reload_comments/1
@@ -352,6 +355,23 @@ defmodule TexttileWeb.EditorLive do
      |> reload_history()
      |> load_redirects()
      |> mark_saved(note)}
+  end
+
+  # The Author field: the entry goes to another account. Open to every
+  # admin, like the rest of the settings.
+  def handle_event("settings_changed", %{"_target" => ["user_id" | _]} = params, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    case Articles.set_author(article, params["user_id"], by: scope.user) do
+      {:ok, article} ->
+        {:noreply, socket |> put_article(article) |> mark_saved()}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(:accounts, Accounts.list_users())
+         |> mark_saved(gettext("That account is gone · the author stands"))}
+    end
   end
 
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
@@ -2178,6 +2198,32 @@ defmodule TexttileWeb.EditorLive do
               <span class="val">
                 <input type="date" id="edDate" name="publish_date" value={@article.publish_date} />
                 <div class="hint" id="edDateHint">{date_hint(@article)}</div>
+              </span>
+            </div>
+
+            <%!-- who the entry is by. The name is read from the account
+                 every time, so it follows a rename. The entry moves to
+                 another admin here; it never moves to nobody. --%>
+            <div class="drow gtop">
+              <label class="lab" for="edAuthor">{gettext("Author")}</label>
+              <span class="val">
+                <select id="edAuthor" name="user_id">
+                  <%!-- an entry whose account has gone stands without a
+                       name until somebody names an admin here. --%>
+                  <option :if={is_nil(@article.user_id)} value="" selected disabled>
+                    {gettext("The account has gone")}
+                  </option>
+                  <option
+                    :for={account <- @accounts}
+                    value={account.id}
+                    selected={@article.user_id == account.id}
+                  >
+                    {Accounts.display_name(account)}
+                  </option>
+                </select>
+                <div class="hint">
+                  {gettext("Named beside the date, on the entry and in the lists.")}
+                </div>
               </span>
             </div>
 

@@ -1,6 +1,7 @@
 defmodule Texttile.ArticlesAuthorTest do
   @moduledoc """
-  Who started an entry. The overviews and the reader's page name them
+  Who an entry is by: whoever started it, until the editor names
+  another account. The overviews and the reader's page name them
   beside the day.
   """
 
@@ -53,5 +54,64 @@ defmodule Texttile.ArticlesAuthorTest do
 
     read = Texttile.Articles.Reading.post(article.publish_date, article.slug, :reader)
     assert Articles.author_name(read) == "kb"
+  end
+
+  test "the author moves to another account, and every screen follows" do
+    kb = user_fixture(%{username: "kb"})
+    anna = user_fixture(%{username: "anna"})
+    article = published_post(user: kb, title: "Harbor mornings")
+
+    {:ok, moved} = Articles.set_author(article, anna.id, by: kb)
+
+    assert moved.user_id == anna.id
+    assert Articles.author_name(moved) == "anna"
+
+    [listed] = Articles.list_published()
+    assert Articles.author_name(listed) == "anna"
+
+    read = Texttile.Articles.Reading.post(article.publish_date, article.slug, :reader)
+    assert Articles.author_name(read) == "anna"
+  end
+
+  test "an entry whose author has gone takes a new one" do
+    kb = user_fixture(%{username: "kb"})
+    leaving = user_fixture(%{username: "leaving"})
+    article = published_post(user: leaving, title: "Harbor mornings")
+    {:ok, _} = Accounts.delete_user(leaving, by: kb)
+
+    {:ok, named} = article.id |> Articles.get_article!() |> Articles.set_author(kb.id, by: kb)
+
+    assert Articles.author_name(named) == "kb"
+  end
+
+  # Every entry is somebody's. The field offers the accounts and
+  # nothing else, and a request for nobody changes nothing.
+  test "nobody is not an author" do
+    kb = user_fixture(%{username: "kb"})
+    article = published_post(user: kb, title: "Harbor mornings")
+
+    assert {:error, _} = Articles.set_author(article, nil, by: kb)
+    assert {:error, _} = Articles.set_author(article, "", by: kb)
+
+    assert article.id |> Articles.get_article!() |> Articles.author_name() == "kb"
+  end
+
+  test "an account that does not exist cannot become the author" do
+    kb = user_fixture(%{username: "kb"})
+    article = published_post(user: kb, title: "Harbor mornings")
+
+    assert {:error, _} = Articles.set_author(article, kb.id + 1000, by: kb)
+    assert article.id |> Articles.get_article!() |> Articles.author_name() == "kb"
+  end
+
+  test "the move is a line in the Log" do
+    kb = user_fixture(%{username: "kb"})
+    anna = user_fixture(%{username: "anna"})
+    article = published_post(user: kb, title: "Harbor mornings")
+
+    {:ok, moved} = Articles.set_author(article, anna.id, by: kb)
+
+    assert [%{text: text} | _] = Articles.log(moved)
+    assert text =~ "anna"
   end
 end

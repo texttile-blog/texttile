@@ -335,7 +335,7 @@ defmodule TexttileWeb.TextsLive do
 
     bits = if article.type == "page", do: [gettext("page") | bits], else: bits
 
-    # Who started it, beside the day. Nil where the account has gone.
+    # Who it is by, beside the day. Nil where the account has gone.
     bits =
       case Articles.author_name(article) do
         nil -> bits
