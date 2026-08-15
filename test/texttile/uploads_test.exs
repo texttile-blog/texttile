@@ -308,5 +308,14 @@ defmodule Texttile.UploadsTest do
       # and the folder rows still answer, with zeros
       assert Enum.all?(Uploads.usage(), &(&1.files == 0 and &1.bytes == 0))
     end
+
+    # The import unpacks in the machine's temporary folder, which on a
+    # server is a second disk with a size of its own. Asking for the
+    # volume there answers about the wrong one.
+    test "answers about the folder it is asked for" do
+      assert is_integer(Uploads.free_bytes(System.tmp_dir!()))
+
+      assert Uploads.free_bytes("/no/such/folder-#{System.unique_integer([:positive])}") == nil
+    end
   end
 end

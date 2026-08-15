@@ -823,6 +823,25 @@ defmodule Texttile.ImportTest do
     end
   end
 
+  describe "room_for/2" do
+    test "refuses before a byte is written, and names both numbers" do
+      assert {:error, message} = Import.room_for(3_000_000, 1_000_000)
+      assert message =~ "2.9 MB"
+      assert message =~ "1.0 MB"
+      assert message =~ "smaller zip"
+    end
+
+    test "lets a zip through that fits" do
+      assert Import.room_for(1_000_000, 3_000_000) == :ok
+    end
+
+    test "a folder that will not say how much is free refuses nothing" do
+      # The unpacking then fails on the disk, with the reason the disk
+      # gives. A guess must not stop an import that would have run.
+      assert Import.room_for(3_000_000, nil) == :ok
+    end
+  end
+
   defp build_zip(source) do
     zip_path = Path.join(tmp_dir!(), "export.zip")
 

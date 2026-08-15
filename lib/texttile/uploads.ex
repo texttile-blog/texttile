@@ -142,8 +142,11 @@ defmodule Texttile.Uploads do
   end
 
   @doc """
-  How many bytes the volume that carries the uploads still has, or nil
-  when the system will not say.
+  How many bytes the filesystem behind `path` still has, or nil when
+  the system will not say. Asked without a path it is the volume that
+  carries the uploads. The import asks for its own folder instead: on
+  a server that is the machine's disk, not the volume, and the two
+  have nothing to do with each other.
 
   `df` is the one answer every place this runs agrees on: the Debian
   image, a Mac and a Linux laptop. `-P` promises one line per
@@ -151,8 +154,8 @@ defmodule Texttile.Uploads do
   so the number means the same everywhere. It spawns a process, so ask
   it when the screen is opened and not on every keystroke it saves.
   """
-  def free_bytes do
-    case System.cmd("df", ["-Pk", root()], stderr_to_stdout: true) do
+  def free_bytes(path \\ root()) do
+    case System.cmd("df", ["-Pk", path], stderr_to_stdout: true) do
       {out, 0} -> available(out)
       {_out, _code} -> nil
     end

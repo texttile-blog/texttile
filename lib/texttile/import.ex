@@ -36,15 +36,43 @@ defmodule Texttile.Import do
   ## Unpacking
 
   @doc """
+  The folder the import works in. The zip lands here and unpacks here,
+  and it is the machine's temporary folder, not the volume the uploads
+  lie on. On a server those are two disks of two sizes, and this is
+  the one that says whether a zip can be unpacked at all.
+  """
+  def workroom, do: System.tmp_dir!()
+
+  @doc """
+  Whether `bytes` fit in the `free` bytes where they would land, and
+  the two numbers in words when they do not.
+
+  A system that will not say what is free answers nil, and nil refuses
+  nothing: the unpacking then fails on the disk, with the reason the
+  disk gives. A guess must not stop an import that would have run.
+  """
+  def room_for(_bytes, nil), do: :ok
+
+  def room_for(bytes, free) when bytes > free do
+    {:error,
+     "the zip unpacks to #{mb(bytes)}, and #{mb(free)} is free where the import works; " <>
+       "use a smaller zip or make room on the server"}
+  end
+
+  def room_for(_bytes, _free), do: :ok
+
+  @doc """
   Unpacks the uploaded zip into `dest` and answers the zip-level
   warnings. The entry list is judged first: a name that would land
-  outside `dest`, too many entries, or too large an unpacked size
-  refuses the whole archive.
+  outside `dest`, too many entries, too large an unpacked size, or
+  more than the disk behind `dest` still holds refuses the whole
+  archive.
   """
   def unpack(zip_path, dest) do
     with {:ok, entries} <- list_entries(zip_path),
          :ok <- safe(entries),
-         :ok <- within_limits(entries) do
+         :ok <- within_limits(entries),
+         :ok <- room_for(unpacked_bytes(entries), Uploads.free_bytes(dest)) do
       case :zip.unzip(String.to_charlist(zip_path), cwd: String.to_charlist(dest)) do
         {:ok, _files} -> {:ok, zip_warnings(dest)}
         {:error, reason} -> {:error, "the zip did not unpack (#{inspect(reason)})"}
@@ -81,7 +109,7 @@ defmodule Texttile.Import do
     {max_entries, max_bytes} =
       Application.get_env(:texttile, :import_zip_limits, {20_000, 4_294_967_296})
 
-    bytes = entries |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+    bytes = unpacked_bytes(entries)
 
     cond do
       length(entries) > max_entries ->
@@ -94,6 +122,8 @@ defmodule Texttile.Import do
         :ok
     end
   end
+
+  defp unpacked_bytes(entries), do: entries |> Enum.map(&elem(&1, 1)) |> Enum.sum()
 
   defp mb(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"
 
@@ -556,9 +586,7 @@ defmodule Texttile.Import do
       # a prefix of its own, so a download and an extraction folder
       # never draw from the same pool of names
       tmp =
-        tmp_path(
-          Path.join(System.tmp_dir!(), "texttile-fetch-#{System.unique_integer([:positive])}")
-        )
+        tmp_path(Path.join(workroom(), "texttile-fetch-#{System.unique_integer([:positive])}"))
 
       file = File.open!(tmp, [:write, :binary])
       cap = max_picture_bytes()

@@ -74,7 +74,7 @@ defmodule Texttile.Import.Job do
   def handle_call({:validate, zip_path, name}, _from, %{phase: phase} = state)
       when phase not in [:validating, :running] do
     state = clean(state)
-    dir = Path.join(System.tmp_dir!(), "texttile-import-#{System.unique_integer([:positive])}")
+    dir = Path.join(Import.workroom(), "texttile-import-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)
 
     job = self()
