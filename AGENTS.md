@@ -18,7 +18,7 @@ Permanent project-specific rules only. Read `PHOENIX.md` before writing Phoenix 
 ## Git and GitHub
 
 - Write branch names, commits, and PR text in English. Add no co-author or generation trailers.
-- Never work on `main`. Create every branch from `main` in a sibling worktree named `../texttile-<slug>`.
+- Never work on `main`. Create every branch from `main` in a worktree at `../worktrees/texttile-<slug>`.
 - Keep at most ten registered worktrees, including the main worktree. Before creating one, reduce the existing set to at most nine: run `wt step prune --dry-run --min-age=0s`, inspect it, then run `wt step prune --min-age=0s`. Never force removal or remove a dirty or unintegrated worktree. If safe pruning is insufficient, ask the user what to remove.
 - After creating a worktree, enter it with EnterWorktree so the session and terminals follow it.
 - Use `feature/<slug>` for a user-facing capability, a change spanning multiple modules, or work likely to need more than two commits. Use a short branch name for smaller changes.
