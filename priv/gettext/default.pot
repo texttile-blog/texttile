@@ -196,7 +196,7 @@ msgstr ""
 msgid "%{count} on the way"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:269
+#: lib/texttile_web/live/import_live.ex:274
 #, elixir-autogen, elixir-format
 msgid "%{count} skipped for errors"
 msgstr ""
@@ -206,7 +206,7 @@ msgstr ""
 msgid "%{count} words"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:264
+#: lib/texttile_web/live/import_live.ex:269
 #, elixir-autogen, elixir-format
 msgid "%{created} created · %{updated} updated"
 msgstr ""
@@ -316,7 +316,7 @@ msgstr[1] ""
 
 #: lib/texttile_web/controllers/site_html.ex:304
 #: lib/texttile_web/controllers/site_html.ex:312
-#: lib/texttile_web/live/import_live.ex:200
+#: lib/texttile_web/live/import_live.ex:205
 #: lib/texttile_web/live/texts_live.ex:333
 #, elixir-autogen, elixir-format
 msgid "1 comment"
@@ -346,7 +346,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: lib/texttile_web/components/core_components.ex:547
-#: lib/texttile_web/live/import_live.ex:93
+#: lib/texttile_web/live/import_live.ex:98
 #: lib/texttile_web/live/settings_live.ex:449
 #, elixir-autogen, elixir-format
 msgid "1 entry"
@@ -439,7 +439,7 @@ msgstr ""
 msgid "A shared access word, not a login: it goes into every entry mail, so everybody on the newsletter list gets it, and you pass it on. It is stored as it is written. It is the password of the whole blog; without one nothing is protected."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:118
+#: lib/texttile_web/live/import_live.ex:123
 #, elixir-autogen, elixir-format
 msgid "A zip of bundles becomes entries: one folder per entry, with Markdown, settings and pictures. Pictures may be files in the bundle or URLs; the server downloads the URLs itself, so the zip stays small."
 msgstr ""
@@ -520,7 +520,7 @@ msgstr ""
 msgid "Allow comments"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:84
+#: lib/texttile_web/live/import_live.ex:89
 #, elixir-autogen, elixir-format
 msgid "An import is running; let it finish first"
 msgstr ""
@@ -851,7 +851,7 @@ msgstr ""
 msgid "Details"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:237
+#: lib/texttile_web/live/import_live.ex:242
 #, elixir-autogen, elixir-format
 msgid "Discard"
 msgstr ""
@@ -862,7 +862,7 @@ msgstr ""
 msgid "Displayed name"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:281
+#: lib/texttile_web/live/import_live.ex:286
 #, elixir-autogen, elixir-format
 msgid "Done"
 msgstr ""
@@ -872,7 +872,7 @@ msgstr ""
 msgid "Done. Untick it."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:222
+#: lib/texttile_web/live/import_live.ex:227
 #, elixir-autogen, elixir-format
 msgid "Downloads from: %{hosts}. Check this list for hosts you do not expect."
 msgstr ""
@@ -1103,20 +1103,20 @@ msgstr ""
 msgid "Images"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:19
-#: lib/texttile_web/live/import_live.ex:108
-#: lib/texttile_web/live/import_live.ex:116
+#: lib/texttile_web/live/import_live.ex:20
+#: lib/texttile_web/live/import_live.ex:113
+#: lib/texttile_web/live/import_live.ex:121
 #: lib/texttile_web/live/settings_live.ex:1383
 #, elixir-autogen, elixir-format
 msgid "Import"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:234
+#: lib/texttile_web/live/import_live.ex:239
 #, elixir-autogen, elixir-format
 msgid "Import %{entries}"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:262
+#: lib/texttile_web/live/import_live.ex:267
 #, elixir-autogen, elixir-format
 msgid "Imported: %{name}"
 msgstr ""
@@ -1467,7 +1467,7 @@ msgstr ""
 msgid "Nothing here yet."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:167
+#: lib/texttile_web/live/import_live.ex:172
 #, elixir-autogen, elixir-format
 msgid "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
 msgstr ""
@@ -1551,7 +1551,7 @@ msgstr ""
 msgid "One password for the whole blog. Readers enter it once and are remembered. Search engines see nothing."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:315
+#: lib/texttile_web/live/import_live.ex:320
 #, elixir-autogen, elixir-format
 msgid "Only a .zip file works here"
 msgstr ""
@@ -1795,7 +1795,7 @@ msgstr ""
 msgid "Readers see every one of them."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:174
+#: lib/texttile_web/live/import_live.ex:179
 #, elixir-autogen, elixir-format
 msgid "Reading %{name} …"
 msgstr ""
@@ -2045,7 +2045,7 @@ msgstr ""
 msgid "Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:184
+#: lib/texttile_web/live/import_live.ex:189
 #, elixir-autogen, elixir-format
 msgid "Start over"
 msgstr ""
@@ -2297,12 +2297,12 @@ msgstr ""
 msgid "The gallery changed under your hands · fresh order loaded"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:54
+#: lib/texttile_web/live/import_live.ex:59
 #, elixir-autogen, elixir-format
 msgid "The import is running"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:257
+#: lib/texttile_web/live/import_live.ex:262
 #, elixir-autogen, elixir-format
 msgid "The import runs on the server; this page may close."
 msgstr ""
@@ -2352,7 +2352,7 @@ msgstr ""
 msgid "The reader gets one confirmation link per address. The comment stays hidden from readers until the reader follows it, and it carries the mark \"not confirmed yet\" here. Turn this off and every comment appears at once. Spam is filtered by honeypot, timing and rate limit checks either way."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:190
+#: lib/texttile_web/live/import_live.ex:195
 #, elixir-autogen, elixir-format
 msgid "The report for %{name}"
 msgstr ""
@@ -2382,7 +2382,7 @@ msgstr ""
 msgid "The trash on the Comments screen keeps it for %{days} days. Restore puts it back where it stood; after that it is gone for good."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:318
+#: lib/texttile_web/live/import_live.ex:323
 #, elixir-autogen, elixir-format
 msgid "The upload failed (%{reason})"
 msgstr ""
@@ -2420,7 +2420,7 @@ msgstr ""
 msgid "The words of the comment"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:216
+#: lib/texttile_web/live/import_live.ex:221
 #, elixir-autogen, elixir-format
 msgid "The zip holds no bundle folders."
 msgstr ""
@@ -2440,7 +2440,7 @@ msgstr ""
 msgid "There is no registration: the ADMIN_USERS setting of this server names everybody who may sign in, and each of them chooses a password at the first sign-in. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:47
+#: lib/texttile_web/live/import_live.ex:52
 #, elixir-autogen, elixir-format
 msgid "There is no report to import"
 msgstr ""
@@ -2637,8 +2637,8 @@ msgstr ""
 msgid "Upload a logo"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:131
-#: lib/texttile_web/live/import_live.ex:135
+#: lib/texttile_web/live/import_live.ex:136
+#: lib/texttile_web/live/import_live.ex:140
 #, elixir-autogen, elixir-format
 msgid "Upload the zip"
 msgstr ""
@@ -2957,7 +2957,7 @@ msgstr ""
 msgid "in the repository is the format contract."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:122
+#: lib/texttile_web/live/import_live.ex:127
 #, elixir-autogen, elixir-format
 msgid "in the repository is the format, written so a script or an AI agent can build the zip from any export."
 msgstr ""
@@ -3115,12 +3115,12 @@ msgstr ""
 msgid "waits for their confirmation"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:203
+#: lib/texttile_web/live/import_live.ex:208
 #, elixir-autogen, elixir-format
 msgid "will import"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:205
+#: lib/texttile_web/live/import_live.ex:210
 #, elixir-autogen, elixir-format
 msgid "will not import"
 msgstr ""
@@ -3759,7 +3759,7 @@ msgstr ""
 msgid "Export as a zip"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:304
+#: lib/texttile_web/live/import_live.ex:309
 #, elixir-autogen, elixir-format
 msgid "%{mb} MB"
 msgstr ""
@@ -3769,19 +3769,19 @@ msgstr ""
 msgid "One roof for a picture, for a video and for an import zip. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB, and a zip that carries its pictures weighs more."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:295
+#: lib/texttile_web/live/import_live.ex:300
 #, elixir-autogen, elixir-format
 msgid "Up to %{limit}"
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:309
+#: lib/texttile_web/live/import_live.ex:314
 #, elixir-autogen, elixir-format
 msgid "The zip is larger than %{limit}. Raise the roof in Settings > Storage > Biggest upload."
 msgstr ""
 
-#: lib/texttile_web/live/import_live.ex:298
+#: lib/texttile_web/live/import_live.ex:303
 #, elixir-autogen, elixir-format
-msgid "Up to %{limit} · %{size} free on the server"
+msgid "Up to %{limit} · %{size} free for the import"
 msgstr ""
 
 #: lib/texttile_web/live/editor_live.ex:2208

@@ -89,6 +89,26 @@ defmodule TexttileWeb.ImportLiveTest do
     assert has_element?(view, "#import-room")
   end
 
+  test "the room the page names is the room the import works in", %{conn: conn} do
+    # The volume the uploads lie on cannot answer here. The page still
+    # names a size, because the zip lands in the machine's temporary
+    # folder and unpacks there, and that is the disk that decides
+    # whether the import runs at all. Without a number the note says
+    # the roof alone.
+    root = Application.fetch_env!(:texttile, :uploads_path)
+    on_exit(fn -> Application.put_env(:texttile, :uploads_path, root) end)
+
+    Application.put_env(
+      :texttile,
+      :uploads_path,
+      "/no/such/volume-#{System.unique_integer([:positive])}"
+    )
+
+    {:ok, _view, html} = live(conn, ~p"/admin/settings/import")
+
+    assert html =~ "free for the import"
+  end
+
   test "a zip past the roof says so instead of standing at 0%", %{conn: conn} do
     {:ok, _value} = Texttile.Settings.put(:max_upload_mb, 10)
 

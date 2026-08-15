@@ -7,6 +7,7 @@ defmodule TexttileWeb.ImportLive do
   """
   use TexttileWeb, :live_view
 
+  alias Texttile.Import
   alias Texttile.Import.Job
   alias Texttile.Settings
   alias Texttile.Uploads
@@ -19,7 +20,11 @@ defmodule TexttileWeb.ImportLive do
       |> assign(:page_title, gettext("Import"))
       |> assign(:job, Job.state())
       |> assign(:limit_mb, Settings.get(:max_upload_mb))
-      |> assign(:free_bytes, Uploads.free_bytes())
+      # The room that decides this: the zip lands in the import's own
+      # folder and unpacks there, and on a server that is the machine's
+      # disk. The volume the uploads lie on is a different one, and its
+      # number would say nothing about whether the zip fits.
+      |> assign(:free_bytes, Uploads.free_bytes(Import.workroom()))
       # The roof over the zip is the one roof the admin area has:
       # Settings > Storage > Biggest upload. A second number here would
       # be a second thing to find and to raise, and the zip is by far
@@ -295,7 +300,7 @@ defmodule TexttileWeb.ImportLive do
   defp room_note(limit_mb, nil), do: gettext("Up to %{limit}", limit: mb(limit_mb))
 
   defp room_note(limit_mb, free) do
-    gettext("Up to %{limit} · %{size} free on the server",
+    gettext("Up to %{limit} · %{size} free for the import",
       limit: mb(limit_mb),
       size: human_size(free)
     )
