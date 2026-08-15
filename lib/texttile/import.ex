@@ -62,6 +62,33 @@ defmodule Texttile.Import do
   def room_for(_bytes, _free), do: :ok
 
   @doc """
+  Takes the finished upload out of LiveView's temporary file, under a
+  name of our own, and answers where it now lies. LiveView removes its
+  file the moment the upload is consumed, so the zip has to leave it.
+
+  Renaming is one line in a folder, whatever the file weighs; copying
+  is not. A 1.6 GB zip held the import page for 84 seconds here, and
+  the upload channel was gone by the end of it. The copy also asked
+  `/tmp` for the archive twice over. Both files lie in the workroom,
+  so the rename is a rename. A source somewhere else cannot be
+  renamed, and that case still copies.
+  """
+  def keep_upload(source_path) do
+    kept =
+      Path.join(workroom(), "texttile-upload-#{System.unique_integer([:positive])}.zip")
+
+    case File.rename(source_path, kept) do
+      :ok ->
+        kept
+
+      {:error, _reason} ->
+        File.cp!(source_path, kept)
+        File.rm(source_path)
+        kept
+    end
+  end
+
+  @doc """
   Unpacks the uploaded zip into `dest` and answers the zip-level
   warnings. The entry list is judged first: a name that would land
   outside `dest`, too many entries, too large an unpacked size, or

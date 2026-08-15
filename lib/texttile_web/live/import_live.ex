@@ -68,14 +68,7 @@ defmodule TexttileWeb.ImportLive do
     if entry.done? do
       path =
         consume_uploaded_entry(socket, entry, fn %{path: path} ->
-          kept =
-            Path.join(
-              System.tmp_dir!(),
-              "texttile-upload-#{System.unique_integer([:positive])}.zip"
-            )
-
-          File.cp!(path, kept)
-          {:ok, kept}
+          {:ok, Import.keep_upload(path)}
         end)
 
       case Job.validate(path, entry.client_name) do
