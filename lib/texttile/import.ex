@@ -54,7 +54,9 @@ defmodule Texttile.Import do
   def room_for(_bytes, nil), do: :ok
 
   def room_for(bytes, free) when bytes > free do
-    {:error, "the zip unpacks to #{mb(bytes)}, and #{mb(free)} is free where the import works"}
+    {:error,
+     "the zip unpacks to #{mb(bytes)}, and #{mb(free)} is free where the import works; " <>
+       "use a smaller zip or make room on the server"}
   end
 
   def room_for(_bytes, _free), do: :ok
