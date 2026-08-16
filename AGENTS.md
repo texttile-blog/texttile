@@ -200,9 +200,6 @@ An empty database is a bad test. Work from real data instead of pointing at it.
 - Browser tests enter screens through the `TexttileWeb.E2E` helpers, which wait
   for the live page and for the gallery's `data-ready`. Never act on a page you
   did not wait for.
-- Never modify, weaken or delete `test/contract/` without explicit approval from
-  Klaus. When a contract test fails, fix the code. Ask if the contract itself
-  looks wrong.
 - A test that creates state outside the transaction (locks, presence,
   registries, application environment, uploads) clears it. Shared cleanup lives
   in `test/support/data_case.ex`.
