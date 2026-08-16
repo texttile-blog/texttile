@@ -255,8 +255,9 @@ file plus a directory of uploads, both under `/data`.
 The lock is one GenServer per open entry, under a Registry and a DynamicSupervisor
 of its own, so Elixir's message ordering gives mutual exclusion for free. The
 lock holder's keystrokes go out over PubSub and land in the watcher's read-only
-view. Autosave writes the working copy; a version is only made on a deliberate
-save, on publish, and on handover.
+view. Autosave writes the working copy and keeps no history. A version is made
+on a deliberate save, on a publish, on a handover and before a restore, never on
+an autosave, and never when the text is byte-identical to the newest one.
 
 The body editor is one isolated LiveView hook over CodeMirror. Its inputs are
 text, remote updates and a read-only flag. Its outputs are changes, cursor and
@@ -299,8 +300,7 @@ server.
   name, `PHX_HOST` and the demo `[build]` section may differ. Mirror changes to
   Fly settings, ports, volume paths and image names into the demo repository.
 - One machine, never two. SQLite takes one writer and a volume mounts on one
-  machine. Never scale the count, never clone a machine, never deploy with a
-  standby.
+  machine. `README.md` says what a second one costs.
 - Treat `/data` as the complete installation.
 
 ## Taste
