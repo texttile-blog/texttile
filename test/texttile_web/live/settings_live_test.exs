@@ -348,7 +348,9 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert_no_email_sent()
     end
 
-    test "an address that is none is refused", %{conn: conn} do
+    # A typo is corrected, not typed again; an invitation that went out
+    # leaves an empty field for the next one.
+    test "an address that is none is refused and stays in the field", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 
       html =
@@ -357,7 +359,15 @@ defmodule TexttileWeb.SettingsLiveTest do
         |> render_submit()
 
       assert html =~ "not an email address"
+      assert html =~ ~s(id="invite-email" name="user[email]" value="anna")
       assert length(Accounts.list_users()) == 1
+
+      html =
+        view
+        |> form("#invite-form", %{"user" => %{"email" => "anna@example.org"}})
+        |> render_submit()
+
+      assert html =~ ~s(id="invite-email" name="user[email]" value="")
     end
 
     # The account is made either way, so the screen offers the way on

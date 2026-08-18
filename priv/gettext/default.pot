@@ -407,9 +407,9 @@ msgstr ""
 msgid "A fixed page"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:11
-#: lib/texttile_web/controllers/link_html.ex:80
-#: lib/texttile_web/controllers/link_html.ex:102
+#: lib/texttile_web/controllers/link_html.ex:14
+#: lib/texttile_web/controllers/link_html.ex:84
+#: lib/texttile_web/controllers/link_html.ex:106
 #, elixir-autogen, elixir-format
 msgid "A new password · %{host}"
 msgstr ""
@@ -553,12 +553,12 @@ msgstr ""
 msgid "Article settings"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:90
+#: lib/texttile_web/controllers/link_html.ex:94
 #, elixir-autogen, elixir-format
 msgid "Ask for a new one and it arrives in the same inbox. The old link stays dead."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:43
+#: lib/texttile_web/controllers/link_html.ex:47
 #, elixir-autogen, elixir-format
 msgid "At least 12 characters. Nothing else is required."
 msgstr ""
@@ -578,9 +578,9 @@ msgstr ""
 msgid "Back to %{site}"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:72
-#: lib/texttile_web/controllers/link_html.ex:94
-#: lib/texttile_web/controllers/link_html.ex:138
+#: lib/texttile_web/controllers/link_html.ex:76
+#: lib/texttile_web/controllers/link_html.ex:98
+#: lib/texttile_web/controllers/link_html.ex:142
 #, elixir-autogen, elixir-format
 msgid "Back to sign-in"
 msgstr ""
@@ -881,7 +881,7 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:129
+#: lib/texttile_web/controllers/link_html.ex:133
 #: lib/texttile_web/controllers/session_html.ex:20
 #, elixir-autogen, elixir-format
 msgid "Email address"
@@ -1282,7 +1282,7 @@ msgstr ""
 msgid "New on %{site}: %{title}"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:32
+#: lib/texttile_web/controllers/link_html.ex:36
 #: lib/texttile_web/live/profile_live.ex:280
 #, elixir-autogen, elixir-format
 msgid "New password"
@@ -1790,7 +1790,7 @@ msgstr ""
 msgid "Remove the address"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:93
+#: lib/texttile_web/controllers/link_html.ex:97
 #, elixir-autogen, elixir-format
 msgid "Request a new link"
 msgstr ""
@@ -1878,7 +1878,7 @@ msgstr ""
 msgid "Sections"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:133
+#: lib/texttile_web/controllers/link_html.ex:137
 #: lib/texttile_web/live/settings_live.ex:1178
 #, elixir-autogen, elixir-format
 msgid "Send the link"
@@ -1914,7 +1914,7 @@ msgstr ""
 msgid "Set a new password on %{site}"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:55
+#: lib/texttile_web/controllers/link_html.ex:59
 #, elixir-autogen, elixir-format
 msgid "Set the password and sign in"
 msgstr ""
@@ -1934,7 +1934,7 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:51
+#: lib/texttile_web/controllers/link_html.ex:55
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr ""
@@ -2270,12 +2270,12 @@ msgstr ""
 msgid "The lines to pass on"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:105
+#: lib/texttile_web/controllers/link_html.ex:109
 #, elixir-autogen, elixir-format
 msgid "The mail is on its way, if an account uses that address. Open it and follow the link."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:18
+#: lib/texttile_web/controllers/link_html.ex:22
 #, elixir-autogen, elixir-format
 msgid "The old password stops working the moment you set a new one."
 msgstr ""
@@ -2438,17 +2438,17 @@ msgstr ""
 msgid "This is the entry as it was last saved. Only somebody signed in can open this address; a reader gets a 404."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:18
+#: lib/texttile_web/controllers/link_html.ex:22
 #, elixir-autogen, elixir-format
 msgid "This link belongs to the account"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:82
+#: lib/texttile_web/controllers/link_html.ex:86
 #, elixir-autogen, elixir-format
 msgid "This link does not work any more"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:67
+#: lib/texttile_web/controllers/link_html.ex:71
 #, elixir-autogen, elixir-format
 msgid "This link works one time, and for 24 hours. Nobody else sets your password, and nobody else can read it."
 msgstr ""
@@ -2463,7 +2463,7 @@ msgstr ""
 msgid "This page becomes the front door. The blog list keeps /blog either way."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:110
+#: lib/texttile_web/controllers/link_html.ex:114
 #, elixir-autogen, elixir-format
 msgid "This screen never says whether an address has an account. The link works one time, and for 24 hours. No mail arrives for an address without an account."
 msgstr ""
@@ -2509,7 +2509,7 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:116
+#: lib/texttile_web/controllers/link_html.ex:120
 #, elixir-autogen, elixir-format
 msgid "Type the email address of your account. A link to set a new password goes to that address."
 msgstr ""
@@ -3687,7 +3687,7 @@ msgstr ""
 msgid "Too many tries. Wait a minute, then try again."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:85
+#: lib/texttile_web/controllers/link_html.ex:89
 #, elixir-autogen, elixir-format
 msgid "A link to set a password works one time: a day for a password reset, a week for an invitation. Somebody used this one already, or it is older than that."
 msgstr ""
@@ -3732,7 +3732,7 @@ msgstr ""
 msgid "The address and the password do not match."
 msgstr ""
 
-#: lib/texttile_web/live/settings_live.ex:1183
+#: lib/texttile_web/live/settings_live.ex:1182
 #, elixir-autogen, elixir-format
 msgid "The address gets an account at once and a link that sets its password. The link works one time and for a week. Until it is used, the account cannot sign in, and you can delete it from the list above."
 msgstr ""
@@ -3747,7 +3747,7 @@ msgstr ""
 msgid "The mail did not leave this server. The account is there and waiting: check the mail settings, then send the link again."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:13
+#: lib/texttile_web/controllers/link_html.ex:17
 #, elixir-autogen, elixir-format
 msgid "The password you choose here becomes its password, and you sign in with it from then on."
 msgstr ""
@@ -3767,19 +3767,14 @@ msgstr ""
 msgid "This is what you sign in with, and where password links go. Readers never see it. Changing it needs your password, because whoever holds the address holds the account."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:13
+#: lib/texttile_web/controllers/link_html.ex:17
 #, elixir-autogen, elixir-format
 msgid "This link opens the admin account of"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:62
+#: lib/texttile_web/controllers/link_html.ex:66
 #, elixir-autogen, elixir-format
 msgid "This link works one time, and for a week. Nobody else sets your password, and nobody else can read it."
-msgstr ""
-
-#: lib/texttile_web/controllers/session_html.ex:81
-#, elixir-autogen, elixir-format
-msgid "This page is for admins. Readers never see it, and there is no public registration. You sign in with the address your account was invited to. An admin who is already in invites the next one from Settings, and the invitation goes to that address as a link. Readers never see the address."
 msgstr ""
 
 #: lib/texttile_web/controllers/session_html.ex:62
@@ -3797,7 +3792,7 @@ msgstr ""
 msgid "Your account is at %{email} now. You sign in with it from now on."
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:32
+#: lib/texttile_web/controllers/link_html.ex:36
 #: lib/texttile_web/live/profile_live.ex:239
 #, elixir-autogen, elixir-format
 msgid "Your password"
@@ -3816,4 +3811,14 @@ msgstr ""
 #: lib/texttile_web/live/profile_live.ex:187
 #, elixir-autogen, elixir-format
 msgid "Change here your name, your address, your password and your open sessions. Your address and your password need your password once, because whoever holds them holds the account."
+msgstr ""
+
+#: lib/texttile_web/controllers/session_html.ex:81
+#, elixir-autogen, elixir-format
+msgid "This page is for admins, and there is no public registration. You sign in with the address your account was invited to, and readers never see it. An admin who is already in invites the next one from Settings."
+msgstr ""
+
+#: lib/texttile_web/controllers/link_html.ex:13
+#, elixir-autogen, elixir-format
+msgid "Your admin account · %{host}"
 msgstr ""

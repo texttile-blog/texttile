@@ -8,7 +8,11 @@ defmodule TexttileWeb.LinkHTML do
 
   def show(assigns) do
     ~H"""
-    <Layouts.auth subtitle={gettext("A new password · %{host}", host: @conn.host)}>
+    <Layouts.auth subtitle={
+      if @invitation,
+        do: gettext("Your admin account · %{host}", host: @conn.host),
+        else: gettext("A new password · %{host}", host: @conn.host)
+    }>
       <p :if={@invitation} class="text-[13.5px] mt-[20px] leading-[1.6]" id="link-who">
         {gettext("This link opens the admin account of")} <b>{@user.email}</b>. {gettext(
           "The password you choose here becomes its password, and you sign in with it from then on."

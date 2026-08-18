@@ -47,6 +47,8 @@ defmodule TexttileWeb.SettingsLive do
       # What the invitation of the next admin did, until the screen
       # does something else.
       |> assign(:invite_note, nil)
+      |> assign(:invite_sent, false)
+      |> assign(:invite_email, "")
       |> assign(:invite_form, to_form(%{}, as: :user))
       |> allow_upload(:logo,
         accept: ~w(.svg .png .jpg .jpeg .webp),
@@ -181,7 +183,7 @@ defmodule TexttileWeb.SettingsLive do
   # inbox, so nothing is handed over by hand and there is no name to
   # guess.
   def handle_event("invite", %{"user" => %{"email" => email}}, socket) do
-    {:noreply, invited(socket, Accounts.invite(email, link_opts()))}
+    {:noreply, invited(socket, Accounts.invite(email, link_opts()), email)}
   end
 
   # The mail did not arrive, or the week ran out. The same link again,
@@ -454,7 +456,7 @@ defmodule TexttileWeb.SettingsLive do
   # What the screen says after an invitation. The account stands even
   # when the mail did not leave, so that answer offers the way on
   # instead of leaving a half-made account unexplained.
-  defp invited(socket, result) do
+  defp invited(socket, result, typed \\ "") do
     note =
       case result do
         {:ok, user} ->
@@ -472,8 +474,16 @@ defmodule TexttileWeb.SettingsLive do
           gettext("That is not an email address.")
       end
 
+    # The field is emptied by the invitation that worked and keeps what
+    # was typed by the one that did not, so a typo is corrected instead
+    # of typed again.
+    sent? = match?({:ok, _}, result)
+    kept = if sent?, do: "", else: typed
+
     socket
     |> assign(:invite_note, note)
+    |> assign(:invite_sent, sent?)
+    |> assign(:invite_email, kept)
     |> assign(:invite_form, to_form(%{}, as: :user))
     |> refresh_users()
   end
@@ -1168,6 +1178,7 @@ defmodule TexttileWeb.SettingsLive do
                     type="email"
                     id="invite-email"
                     name="user[email]"
+                    value={@invite_email}
                     autocomplete="off"
                     spellcheck="false"
                     autocapitalize="off"
@@ -1178,12 +1189,20 @@ defmodule TexttileWeb.SettingsLive do
                   {gettext("Send the link")}
                 </button>
               </span>
-              <p :if={@invite_note} class="note mt-[7px]" id="inviteState">{@invite_note}</p>
               <div class="hint">
                 {gettext(
                   "The address gets an account at once and a link that sets its password. The link works one time and for a week. Until it is used, the account cannot sign in, and you can delete it from the list above."
                 )}
               </div>
+              <%!-- What went wrong wears the colour that means "read
+                   this"; what worked stays quiet. --%>
+              <p
+                :if={@invite_note}
+                class={["mt-[7px]", if(@invite_sent, do: "note", else: "text-julia text-[13px]")]}
+                id="inviteState"
+              >
+                {@invite_note}
+              </p>
             </span>
           </div>
         </.form>
