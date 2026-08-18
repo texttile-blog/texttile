@@ -393,11 +393,22 @@ commas:
 ADMIN_USERS="klaus,julia"
 ```
 
-A name on that list has no account at first. Its owner opens the site, types the
-name on the sign-in screen, and chooses a password there, along with an email
-address and a displayed name. That creates the account, and a confirmation goes
-to the address. From then on the name signs in with that password. Nobody is
-invited: adding the name to `ADMIN_USERS` is the invitation.
+A name on that list has no account at first. Its owner types the name on the
+sign-in screen and chooses a password there, along with an email address and a
+displayed name. That creates the account, and a confirmation goes to the address.
+From then on the name signs in with that password.
+
+The first account of a new installation is made this way, by whoever gets there
+first: nobody is in yet who could open the door. So sign in right after the first
+deployment, before anybody else finds the site.
+
+Every name after that one needs an invitation, because the names are no secret:
+they stand under the entries their owners wrote. In **Settings > Users**, a
+configured name that is still waiting shows an **Invitation link** next to it.
+Hand that link to its owner the way you already talk to each other. It opens the
+password screen for that one name, and it stops working after a week or as soon
+as the account exists. Without it, the sign-in screen answers a free name exactly
+like a wrong password and says nothing about which names are still open.
 
 The list stays in charge. Take a name out and its access ends at once, in every
 open browser, whether or not the account is still there. Put it back and the
@@ -405,10 +416,6 @@ account works again.
 
 There are no roles and no permission matrix. Everybody who can sign in can do
 everything, which is what a blog of people who trust each other needs.
-
-The username is the only thing an outsider has to guess to reach the password
-screen of a name that has no account yet. Pick names that are not obvious, and
-keep `ADMIN_USERS` down to the people who need it.
 
 ### A forgotten password
 
@@ -651,7 +658,9 @@ make db-delete   # delete the shared development SQLite database
 `node --test` over `assets/js_test/`, no browser involved.
 
 In development the sign-in list holds `admin`, so the first sign-in with that
-name creates the account. `ADMIN_USERS` in `.env` replaces the list. To test a
+name creates the account on an empty database. A second name needs an invitation
+from Settings, the same way a real installation does. `ADMIN_USERS` in `.env`
+replaces the list. To test a
 real mail adapter locally, copy `.env.example` to `.env` in the main checkout;
 dev loads it on every start, from every worktree, and real environment variables
 win over `.env` values.

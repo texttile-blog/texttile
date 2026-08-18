@@ -66,26 +66,52 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
   end
 
   describe "user management" do
-    test "a configured name signs in for the first time, then deletes kb", %{
+    test "kb invites a configured name, who signs in for the first time and deletes kb", %{
       conn: conn,
       kb: kb
     } do
       # julia stands in the configuration and has no account yet, so
-      # the screen that lists accounts does not know her
+      # the screen that lists accounts does not know her. The list of
+      # names still waiting does.
       configure_admins(["kb", "julia"])
 
-      conn
-      |> sign_in()
-      |> open("/admin/settings")
-      |> refute_has("#usersList", text: "julia")
+      session =
+        conn
+        |> sign_in()
+        |> open("/admin/settings")
+        |> refute_has("#usersList", text: "julia")
+        |> assert_has("#unclaimed-julia", text: "waiting for the first sign-in")
+        |> click_button("#invite-julia", "Invitation link")
+        |> assert_has("#invite-link-julia")
 
-      # she takes the browser, types her name and chooses a password
+      # the link kb hands over is the one the screen shows, not one the
+      # test made up
+      parent = self()
+
+      PhoenixTest.Playwright.evaluate(
+        session,
+        "() => document.querySelector('#invite-link-julia').value",
+        [is_function: true],
+        &send(parent, {:invite, &1})
+      )
+
+      assert_receive {:invite, invite_url}
+      invite = URI.parse(invite_url)
+      assert invite.path == "/login/claim"
+
+      # without it, her name answers like a wrong password
       conn
       |> open("/admin/profile")
       |> click_link("#sign-out", "Sign out")
       |> assert_has("p", text: "Admin sign-in")
       |> fill_in("Username", with: "julia")
+      |> fill_in("Password", with: "not her password")
       |> click_button("Sign in")
+      |> assert_has("#login-error", text: "do not match")
+
+      # she opens the link and chooses a password
+      conn
+      |> PhoenixTest.visit("#{invite.path}?#{invite.query}")
       |> assert_has("h2", text: "Choose a password")
       |> fill_in("Password", with: "julias own password")
       |> fill_in("Repeat the password", with: "julias own password")

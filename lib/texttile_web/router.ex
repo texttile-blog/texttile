@@ -3,6 +3,32 @@ defmodule TexttileWeb.Router do
 
   import TexttileWeb.UserAuth
 
+  # Nothing is loaded from outside, so the browser may be told exactly
+  # that: every script, style, picture, film and font of this blog comes
+  # from this server, and the socket talks back to it. A page that ever
+  # tried to reach a third party would break loudly instead of quietly
+  # working, which is the point.
+  #
+  # `style-src` keeps `unsafe-inline`: the markup carries style
+  # attributes that name theme variables, and an attribute cannot carry
+  # a nonce. `img-src` and `media-src` keep `blob:` for the preview a
+  # browser makes of a picture before it is uploaded, and `data:` for
+  # the small marks that travel inside the CSS.
+  @content_security_policy """
+  default-src 'self'; \
+  script-src 'self'; \
+  style-src 'self' 'unsafe-inline'; \
+  img-src 'self' data: blob:; \
+  media-src 'self' blob:; \
+  font-src 'self'; \
+  connect-src 'self'; \
+  frame-src 'self'; \
+  form-action 'self'; \
+  base-uri 'self'; \
+  frame-ancestors 'self'; \
+  object-src 'none'\
+  """
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug TexttileWeb.Locale
@@ -10,8 +36,19 @@ defmodule TexttileWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {TexttileWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, %{"content-security-policy" => @content_security_policy}
     plug :fetch_current_scope_for_user
+  end
+
+  # The dashboard and the mailbox write their own scripts into the page.
+  # They are development tools, not the product, so they get the header
+  # taken off instead of the product getting a looser one.
+  pipeline :development_tools do
+    plug :delete_content_security_policy
+  end
+
+  defp delete_content_security_policy(conn, _opts) do
+    Plug.Conn.delete_resp_header(conn, "content-security-policy")
   end
 
   # Uploaded files and their scaled renditions. Public on purpose; the
@@ -60,6 +97,7 @@ defmodule TexttileWeb.Router do
 
     get "/login", SessionController, :new
     post "/login", SessionController, :create
+    get "/login/claim", SessionController, :invited
     post "/login/claim", SessionController, :claim
   end
 
@@ -131,7 +169,7 @@ defmodule TexttileWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through [:browser, :development_tools]
 
       live_dashboard "/dashboard", metrics: TexttileWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview

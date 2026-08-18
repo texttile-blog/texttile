@@ -103,7 +103,8 @@ defmodule TexttileWeb.FeedControllerTest do
 
       html =
         conn
-        |> init_test_session(site_unlocked: true)
+        |> init_test_session(%{})
+        |> TexttileWeb.SiteGate.unlock()
         |> get(~p"/blog")
         |> html_response(200)
 

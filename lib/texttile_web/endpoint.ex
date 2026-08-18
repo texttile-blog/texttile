@@ -4,11 +4,17 @@ defmodule TexttileWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
+  #
+  # In production every request arrives over https (see :force_ssl in
+  # config/prod.exs), so the cookie says https only. Development serves
+  # plain http on the network address, where a secure cookie would never
+  # come back, so there it stays off.
   @session_options [
     store: :cookie,
     key: "_texttile_key",
     signing_salt: "JrIhPccT",
-    same_site: "Lax"
+    same_site: "Lax",
+    secure: Application.compile_env(:texttile, :secure_cookie, false)
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
@@ -41,9 +47,13 @@ defmodule TexttileWeb.Endpoint do
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :texttile
   end
 
-  plug Phoenix.LiveDashboard.RequestLogger,
-    param_key: "request_logger",
-    cookie_key: "request_logger"
+  # The dashboard's request logger. The screen it feeds is a development
+  # route (see the router), so the plug goes where the screen goes.
+  if Application.compile_env(:texttile, :dev_routes) do
+    plug Phoenix.LiveDashboard.RequestLogger,
+      param_key: "request_logger",
+      cookie_key: "request_logger"
+  end
 
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
@@ -55,12 +65,16 @@ defmodule TexttileWeb.Endpoint do
   plug Plug.Session, @session_options
 
   # Multipart carries the pictures and the videos; both are far past
-  # Plug's 8 MB default. Two roofs, because they guard different
+  # Plug's 8 MB default. Three roofs, because they guard different
   # things.
   #
-  # The small one is for everybody and never moves: 52 MB, which holds
-  # a large photograph and the form around it. It is a guard, not a
-  # setting, so nothing an admin types can raise it.
+  # The stranger's roof is 1 MB. No screen a stranger reaches takes a
+  # file: the comment form, the password gate and the newsletter form
+  # send fields, and the editor's uploads all sit behind the sign-in.
+  #
+  # The session's roof is 52 MB, which holds a large photograph and the
+  # form around it. It is a guard, not a setting, so nothing an admin
+  # types can raise it.
   #
   # The big one is Settings > Storage > Biggest upload, plus the form
   # around the file. It needs a signed-in session, not merely the right
@@ -73,6 +87,12 @@ defmodule TexttileWeb.Endpoint do
   # The setting is read per upload, not at compile time, so a new limit
   # holds from the moment it is saved. Only the two upload addresses
   # ever ask, so no other request pays for the read.
+  @stranger_roof Plug.Parsers.init(
+                   parsers: [:urlencoded, {:multipart, length: 1_000_000}, :json],
+                   pass: ["*/*"],
+                   json_decoder: Phoenix.json_library()
+                 )
+
   @picture_roof Plug.Parsers.init(
                   parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
                   pass: ["*/*"],
@@ -85,7 +105,15 @@ defmodule TexttileWeb.Endpoint do
 
   defp parse_body(conn, _opts) do
     conn = fetch_session(conn)
-    Plug.Parsers.call(conn, if(big_upload?(conn), do: admin_roof(), else: @picture_roof))
+    Plug.Parsers.call(conn, roof(conn))
+  end
+
+  defp roof(conn) do
+    cond do
+      not signed_in?(conn) -> @stranger_roof
+      upload_address?(conn.path_info) -> admin_roof()
+      true -> @picture_roof
+    end
   end
 
   defp admin_roof do
@@ -100,14 +128,10 @@ defmodule TexttileWeb.Endpoint do
     )
   end
 
-  defp big_upload?(conn) do
-    upload_address?(conn.path_info) and signed_in?(conn)
-  end
-
   # Both places a session token can arrive. A browser that was closed
   # and opened again carries only the auth cookie, and its first
   # request may well be the upload a restored tab was still holding:
-  # reading the session alone would hand that one the small roof.
+  # reading the session alone would hand that one the stranger's roof.
   defp signed_in?(conn) do
     is_binary(get_session(conn, :user_token)) or is_binary(auth_cookie_token(conn))
   end

@@ -33,7 +33,9 @@
         class="text-[12.5px] mt-[7px]"
         style="color:var(--tt-julia)"
       >
-        {gettext("That is not the password. Check it and try again.")}
+        {if @error == :too_many,
+          do: gettext("Too many tries. Wait a minute, then try again."),
+          else: gettext("That is not the password. Check it and try again.")}
       </p>
       <button type="submit" class="btn solid w-full mt-[15px] h-[34px]">
         {gettext("Read on")}

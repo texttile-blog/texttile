@@ -47,3 +47,11 @@ erl_crash.dump
 
 # Local dev uploads must never end up in the image
 /priv/uploads/
+
+# The development state of the checkout. The build needs none of it, and
+# a build context travels: `.env` holds live credentials, and the SQLite
+# files hold real entries, readers and comments.
+.env*
+*.db
+*.db-wal
+*.db-shm

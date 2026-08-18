@@ -69,9 +69,42 @@ defmodule Texttile.AccountsTest do
       configure_admins(["kb" | Accounts.admin_usernames()])
 
       assert {:error, changeset} =
-               Accounts.claim_account("kb", %{password: "a long password", email: user.email})
+               Accounts.claim_account("kb", %{password: "a long password", email: user.email},
+                 invited: true
+               )
 
       assert %{email: ["is already in use"]} = errors_on(changeset)
+    end
+
+    # The window this closes: a name stands in the configuration and its
+    # owner has not signed in yet. Without the invitation, whoever
+    # guesses the name first becomes an admin, and the bylines of the
+    # blog publish the names.
+    test "refuses an uninvited claim once the installation has an account" do
+      user_fixture(%{username: "kb"})
+      configure_admins(["kb", "anna"])
+
+      attrs = %{password: "a long password", email: "anna@example.org"}
+      assert {:error, :not_allowed} = Accounts.claim_account("anna", attrs)
+      assert Accounts.sign_in_state("anna") == :claimable
+    end
+
+    test "an invited name claims its account" do
+      user_fixture(%{username: "kb"})
+      configure_admins(["kb", "anna"])
+
+      attrs = %{password: "a long password", email: "anna@example.org"}
+      assert {:ok, user} = Accounts.claim_account("anna", attrs, invited: true)
+      assert user.username == "anna"
+    end
+
+    # A fresh installation has nobody who could invite, so the first
+    # account is claimed without one.
+    test "the first account of an empty installation needs no invitation" do
+      configure_admins(["kb"])
+
+      attrs = %{password: "a long password", email: "kb@example.org"}
+      assert {:ok, _user} = Accounts.claim_account("kb", attrs)
     end
 
     test "mails a confirmation without the password when a site is given" do
@@ -170,6 +203,33 @@ defmodule Texttile.AccountsTest do
     end
   end
 
+  describe "open_claim?/1" do
+    test "is true for a configured name while the installation has no account" do
+      configure_admins(["kb"])
+      assert Accounts.open_claim?("kb")
+    end
+
+    test "is false once any account exists" do
+      user_fixture(%{username: "kb"})
+      configure_admins(["kb", "anna"])
+      refute Accounts.open_claim?("anna")
+    end
+
+    test "is false for a name nobody configured" do
+      configure_admins(["kb"])
+      refute Accounts.open_claim?("stranger")
+    end
+  end
+
+  describe "unclaimed_usernames/0" do
+    test "names the configured people who have no account yet" do
+      user_fixture(%{username: "kb"})
+      configure_admins(["kb", "anna", "tom"])
+
+      assert Accounts.unclaimed_usernames() == ["anna", "tom"]
+    end
+  end
+
   describe "authenticate_user/2" do
     test "returns the user for the right username and password" do
       user = user_fixture()
@@ -206,6 +266,47 @@ defmodule Texttile.AccountsTest do
       assert Accounts.get_user_by_session_token(token).id == user.id
     end
 
+    # SQLite keeps the storage class of what was written, and it never
+    # reads a text value as equal to a blob parameter. The migration
+    # that hashed the open sessions writes this row by hand, so this is
+    # that row, read back the way a request reads it. Written any other
+    # way it is a row nobody can ever find again, and every browser that
+    # was signed in at the upgrade would be signed out by it.
+    test "a session row written the way the migration writes it still signs its browser in" do
+      user = user_fixture()
+      token = :crypto.strong_rand_bytes(32)
+      hash = Accounts.session_fingerprint(token)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      expires_at = DateTime.add(now, 2 * 24 * 60 * 60, :second)
+
+      Texttile.Repo.query!(
+        "INSERT INTO sessions (token_hash, user_id, expires_at, inserted_at) VALUES (?1, ?2, ?3, ?4)",
+        [{:blob, hash}, user.id, expires_at, now]
+      )
+
+      assert Accounts.get_user_by_session_token(token).id == user.id
+      assert :ok = Accounts.delete_session(token)
+      assert Accounts.list_sessions(user) == []
+    end
+
+    # The other half of the rule above, so the reason it is written that
+    # way cannot be refactored away by accident: the same bytes stored
+    # as text are a row nobody can reach.
+    test "the same hash stored as text finds nobody" do
+      user = user_fixture()
+      token = :crypto.strong_rand_bytes(32)
+      hash = Accounts.session_fingerprint(token)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      expires_at = DateTime.add(now, 2 * 24 * 60 * 60, :second)
+
+      Texttile.Repo.query!(
+        "INSERT INTO sessions (token_hash, user_id, expires_at, inserted_at) VALUES (?1, ?2, ?3, ?4)",
+        [hash, user.id, expires_at, now]
+      )
+
+      refute Accounts.get_user_by_session_token(token)
+    end
+
     test "get_user_by_session_token/1 returns nil for an unknown token" do
       assert Accounts.get_user_by_session_token(:crypto.strong_rand_bytes(32)) == nil
     end
@@ -230,7 +331,9 @@ defmodule Texttile.AccountsTest do
 
       sessions = Accounts.list_sessions(user)
       assert length(sessions) == 2
-      assert Enum.map(sessions, & &1.token) == [t2, t1]
+
+      assert Enum.map(sessions, & &1.token_hash) ==
+               Enum.map([t2, t1], &Accounts.session_fingerprint/1)
     end
 
     test "delete_all_sessions/1 ends every session, the current one included" do
@@ -262,7 +365,8 @@ defmodule Texttile.AccountsTest do
       _t2 = Accounts.create_session(user)
 
       :ok = Accounts.delete_sessions_except(user, keep)
-      assert [%{token: ^keep}] = Accounts.list_sessions(user)
+      kept = Accounts.session_fingerprint(keep)
+      assert [%{token_hash: ^kept}] = Accounts.list_sessions(user)
     end
 
     test "an expired token no longer signs anybody in and drops out of the list" do
@@ -298,7 +402,9 @@ defmodule Texttile.AccountsTest do
       past_every_expiry = DateTime.add(DateTime.utc_now(), 15 * 86_400, :second)
       _fresh = Accounts.create_session(user, now: past_every_expiry)
 
-      refute Texttile.Repo.get_by(Texttile.Accounts.Session, token: stale)
+      refute Texttile.Repo.get_by(Texttile.Accounts.Session,
+               token_hash: Accounts.session_fingerprint(stale)
+             )
     end
 
     # SQLite keeps a moment as text and every comparison here is a
@@ -319,7 +425,9 @@ defmodule Texttile.AccountsTest do
     end
 
     defp expiry_of(token) do
-      Texttile.Repo.get_by!(Texttile.Accounts.Session, token: token).expires_at
+      Texttile.Repo.get_by!(Texttile.Accounts.Session,
+        token_hash: Accounts.session_fingerprint(token)
+      ).expires_at
     end
 
     defp days_from(now, expires_at), do: DateTime.diff(expires_at, now) / 86_400

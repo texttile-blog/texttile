@@ -10,9 +10,10 @@ defmodule Texttile.Import do
   Remote pictures travel here, not in the zip: the dry run asks every
   URL (HEAD first, a one-byte GET when the host refuses HEAD), the run
   downloads the bytes. The fetches are guarded: no private addresses,
-  no redirects, a size cap per picture, and caps on what the zip may
-  unpack to. Everything goes through `:import_req_options`, which the
-  tests point at a stub.
+  the address resolved once and the request pinned to it, no
+  redirects, a size cap per picture, and caps on the bytes the zip
+  really unpacks to. Everything goes through `:import_req_options`,
+  which the tests point at a stub.
   """
 
   import Bitwise
@@ -99,21 +100,24 @@ defmodule Texttile.Import do
     with {:ok, entries} <- list_entries(zip_path),
          :ok <- safe(entries),
          :ok <- within_limits(entries),
-         :ok <- room_for(unpacked_bytes(entries), Uploads.free_bytes(dest)) do
-      case :zip.unzip(String.to_charlist(zip_path), cwd: String.to_charlist(dest)) do
-        {:ok, _files} -> {:ok, zip_warnings(dest)}
-        {:error, reason} -> {:error, "the zip did not unpack (#{inspect(reason)})"}
-      end
+         free = Uploads.free_bytes(dest),
+         :ok <- room_for(unpacked_bytes(entries), free),
+         :ok <- extract(zip_path, dest, entries, free) do
+      {:ok, zip_warnings(dest)}
     end
   end
 
+  # Each entry with the two sizes the archive carries: the size it
+  # says it unpacks to, and the compressed size. Only the second one is
+  # a fact, because those bytes are in the file. The first one is what
+  # whoever built the archive wrote there, and a bomb writes a small
+  # number.
   defp list_entries(zip_path) do
     case :zip.list_dir(String.to_charlist(zip_path)) do
       {:ok, entries} ->
         {:ok,
-         for {:zip_file, name, info, _comment, _offset, _comp_size} <- entries do
-           size = elem(info, 1)
-           {to_string(name), if(is_integer(size), do: size, else: 0)}
+         for {:zip_file, name, info, _comment, _offset, comp_size} <- entries do
+           {to_string(name), number(elem(info, 1)), number(comp_size)}
          end}
 
       {:error, reason} ->
@@ -121,21 +125,25 @@ defmodule Texttile.Import do
     end
   end
 
+  defp number(value) when is_integer(value) and value > 0, do: value
+  defp number(_value), do: 0
+
   defp safe(entries) do
-    case Enum.find(entries, fn {name, _size} ->
+    case Enum.find(entries, fn {name, _declared, _compressed} ->
            Path.type(name) != :relative or ".." in Path.split(name)
          end) do
-      nil -> :ok
-      {bad, _size} -> {:error, "the archive entry #{bad} would land outside the archive"}
+      nil ->
+        :ok
+
+      {bad, _declared, _compressed} ->
+        {:error, "the archive entry #{bad} would land outside the archive"}
     end
   end
 
   # A zip is small; what it unpacks to need not be. These caps keep a
   # decompression bomb from filling the volume the database lives on.
   defp within_limits(entries) do
-    {max_entries, max_bytes} =
-      Application.get_env(:texttile, :import_zip_limits, {20_000, 4_294_967_296})
-
+    {max_entries, max_bytes} = zip_limits()
     bytes = unpacked_bytes(entries)
 
     cond do
@@ -150,7 +158,92 @@ defmodule Texttile.Import do
     end
   end
 
-  defp unpacked_bytes(entries), do: entries |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+  defp zip_limits do
+    Application.get_env(:texttile, :import_zip_limits, {20_000, 4_294_967_296})
+  end
+
+  # What the archive says it unpacks to, never less than the bytes it
+  # already holds: a compressed stream does not shrink on the way out,
+  # so the compressed size is a floor a declaration cannot undercut.
+  defp unpacked_bytes(entries) do
+    entries
+    |> Enum.map(fn {_name, declared, compressed} -> max(declared, compressed) end)
+    |> Enum.sum()
+  end
+
+  # The declared sizes only guess; the bytes that land are the ones
+  # that fill the disk. So the archive is opened once and unpacked
+  # entry by entry, weighing what each one wrote, and the folder is
+  # emptied the moment the total passes the cap or the free space. One
+  # entry can still overshoot on its own, and that one is what the
+  # sweep takes back.
+  defp extract(zip_path, dest, entries, free) do
+    case :zip.zip_open(String.to_charlist(zip_path), cwd: String.to_charlist(dest)) do
+      {:ok, handle} ->
+        try do
+          extract_entries(handle, dest, entries, free)
+        after
+          :zip.zip_close(handle)
+        end
+
+      {:error, reason} ->
+        {:error, "the zip did not unpack (#{inspect(reason)})"}
+    end
+  end
+
+  defp extract_entries(handle, dest, entries, free) do
+    {_max_entries, max_bytes} = zip_limits()
+
+    entries
+    |> Enum.reduce_while({:ok, 0}, fn {name, _declared, _compressed}, {:ok, written} ->
+      case :zip.zip_get(String.to_charlist(name), handle) do
+        {:ok, _extracted} ->
+          written = written + landed_bytes(dest, name)
+
+          case over_budget(written, max_bytes, free) do
+            :ok -> {:cont, {:ok, written}}
+            {:error, message} -> {:halt, {:error, sweep(dest, message)}}
+          end
+
+        {:error, reason} ->
+          {:halt, {:error, "the zip did not unpack (#{inspect(reason)})"}}
+      end
+    end)
+    |> case do
+      {:ok, _written} -> :ok
+      {:error, message} -> {:error, message}
+    end
+  end
+
+  defp over_budget(written, max_bytes, free) do
+    cond do
+      written > max_bytes ->
+        {:error,
+         "the zip holds more than it declares, and it unpacks past the #{mb(max_bytes)} cap"}
+
+      is_integer(free) and written > free ->
+        {:error,
+         "the zip holds more than it declares, and it unpacks past the #{mb(free)} " <>
+           "that is free where the import works"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp landed_bytes(dest, name) do
+    case File.stat(Path.join(dest, name)) do
+      {:ok, %File.Stat{type: :regular, size: size}} -> size
+      _other -> 0
+    end
+  end
+
+  # The import unpacks into a folder of its own, so a refused archive
+  # leaves nothing of itself behind.
+  defp sweep(dest, message) do
+    dest |> File.ls!() |> Enum.each(&File.rm_rf!(Path.join(dest, &1)))
+    message
+  end
 
   defp mb(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"
 
@@ -293,8 +386,8 @@ defmodule Texttile.Import do
   end
 
   defp head_check(url, progress) do
-    with :ok <- host_check(url) do
-      case request(method: :head, url: url, retry: noted_retry(progress, url)) do
+    with {:ok, pin} <- pin(url) do
+      case request(pin, method: :head, retry: noted_retry(progress, url)) do
         {:ok, %Req.Response{status: status} = response} when status in 200..299 ->
           picture_answer(url, response)
 
@@ -303,9 +396,8 @@ defmodule Texttile.Import do
 
         # Some hosts refuse HEAD outright; a one-byte GET asks again.
         _refused ->
-          case request(
+          case request(pin,
                  method: :get,
-                 url: url,
                  headers: [range: "bytes=0-0"],
                  decode_body: false,
                  retry: noted_retry(progress, url)
@@ -379,8 +471,19 @@ defmodule Texttile.Import do
   # Redirects stay off on purpose: the host list in the report is a
   # promise about where the import will reach, and a redirect would
   # break it. The final address belongs in the bundle.
-  defp request(options) do
-    Req.request(options ++ [redirect: false] ++ req_options())
+  #
+  # `pin` carries the address the guard checked. Its headers join the
+  # caller's instead of replacing them, so the ranged GET keeps its
+  # range.
+  defp request(pin, options) do
+    headers = Keyword.get(options, :headers, []) ++ Keyword.get(pin, :headers, [])
+
+    options
+    |> Keyword.merge(pin)
+    |> Keyword.put(:headers, headers)
+    |> Kernel.++(redirect: false)
+    |> Kernel.++(req_options())
+    |> Req.request()
   end
 
   # Req's own transient set, spelled out so the page can say what is
@@ -427,19 +530,19 @@ defmodule Texttile.Import do
   # bundles are machine-made from someone else's export. Loopback and
   # the private ranges stay out of reach, so a crafted bundle cannot
   # read the deployment's insides. Dev and the tests say yes to them.
-  defp host_check(url) do
+  #
+  # The name is asked once and the request is pinned to the address
+  # that answered. A second lookup would be a second answer: a host
+  # with a one second TTL names a public address for the check and
+  # 169.254.169.254 for the fetch. The name still travels, in the Host
+  # header and as the name the certificate is read against, so virtual
+  # hosting and TLS stay as they were.
+  defp pin(url) do
     if Application.get_env(:texttile, :import_allow_private_hosts, false) do
-      :ok
+      {:ok, [url: url]}
     else
-      host = URI.parse(url).host |> to_string() |> String.to_charlist()
-
-      addresses =
-        Enum.flat_map([:inet, :inet6], fn family ->
-          case :inet.getaddr(host, family) do
-            {:ok, address} -> [address]
-            {:error, _} -> []
-          end
-        end)
+      uri = URI.parse(url)
+      addresses = resolve(to_string(uri.host))
 
       cond do
         addresses == [] ->
@@ -449,8 +552,41 @@ defmodule Texttile.Import do
           {:error, "#{url} points into the private network"}
 
         true ->
-          :ok
+          {:ok, pinned_to(uri, hd(addresses))}
       end
+    end
+  end
+
+  defp resolve(host) do
+    getaddr = Application.get_env(:texttile, :import_resolver, &:inet.getaddr/2)
+    name = String.to_charlist(host)
+
+    Enum.flat_map([:inet, :inet6], fn family ->
+      case getaddr.(name, family) do
+        {:ok, address} -> [address]
+        {:error, _reason} -> []
+      end
+    end)
+  end
+
+  defp pinned_to(uri, address) do
+    literal = address |> :inet.ntoa() |> to_string()
+    inet6 = if tuple_size(address) == 8, do: [transport_opts: [inet6: true]], else: []
+
+    [
+      url: URI.to_string(%{uri | host: literal, authority: nil}),
+      headers: [host: authority(uri)],
+      connect_options: [hostname: uri.host] ++ inet6
+    ]
+  end
+
+  # What the Host header says: the name, and the port when it is not
+  # the scheme's own.
+  defp authority(%URI{host: host, port: port, scheme: scheme}) do
+    if is_nil(port) or (is_binary(scheme) and port == URI.default_port(scheme)) do
+      host
+    else
+      "#{host}:#{port}"
     end
   end
 
@@ -609,7 +745,7 @@ defmodule Texttile.Import do
   end
 
   defp download(url, progress) do
-    with :ok <- host_check(url) do
+    with {:ok, pin} <- pin(url) do
       # a prefix of its own, so a download and an extraction folder
       # never draw from the same pool of names
       tmp =
@@ -650,9 +786,8 @@ defmodule Texttile.Import do
       # A big picture from slow hosting takes its time; the default
       # fifteen seconds of idle patience are for API calls, not bodies.
       result =
-        request(
+        request(pin,
           method: :get,
-          url: url,
           into: into,
           receive_timeout: receive_timeout(),
           retry: noted_retry(progress, url)

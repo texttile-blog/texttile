@@ -78,7 +78,7 @@ defmodule TexttileWeb.UserAuth do
       :ok = Accounts.delete_all_sessions(scope.user)
 
       Enum.each(sessions, fn session ->
-        TexttileWeb.Endpoint.broadcast(user_session_topic(session.token), "disconnect", %{})
+        TexttileWeb.Endpoint.broadcast(user_session_topic(session.token_hash), "disconnect", %{})
       end)
     end
 
@@ -191,11 +191,16 @@ defmodule TexttileWeb.UserAuth do
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, user_session_topic(token))
+    |> put_session(:live_socket_id, user_session_topic(Accounts.session_fingerprint(token)))
   end
 
-  @doc "The LiveView socket id of a session, used to force a disconnect."
-  def user_session_topic(token), do: "users_sessions:#{Base.url_encode64(token)}"
+  @doc """
+  The LiveView socket id of a session, used to force a disconnect. It is
+  built from the stored hash of the token, which is the only name of a
+  session that both a cookie and a row can arrive at.
+  """
+  def user_session_topic(token_hash),
+    do: "users_sessions:#{Base.url_encode64(token_hash)}"
 
   # Both cookies go together: a session the server has ended must not
   # come back from the one that outlives the browser.

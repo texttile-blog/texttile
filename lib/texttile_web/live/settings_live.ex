@@ -14,6 +14,7 @@ defmodule TexttileWeb.SettingsLive do
   alias Texttile.Newsletter
   alias Texttile.Settings
   alias Texttile.Uploads
+  alias TexttileWeb.ClaimInvite
 
   @note_ms 4600
 
@@ -44,6 +45,9 @@ defmodule TexttileWeb.SettingsLive do
       # The one moment the backup token exists in the clear: from the
       # click that made it to the next thing this screen does.
       |> assign(:backup_token, nil)
+      # The invitation of the next admin, for as long as it takes to
+      # copy it.
+      |> assign(:invite, nil)
       |> allow_upload(:logo,
         accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
@@ -172,6 +176,19 @@ defmodule TexttileWeb.SettingsLive do
 
   ## Users
 
+  # A configured name belongs to nobody until somebody in here opens it.
+  # The link says the name and holds for a week; it is handed over the
+  # way the two of you already talk, not by mail: nobody here knows the
+  # address of a person who has no account yet.
+  def handle_event("invite", %{"username" => username}, socket) do
+    if username in Accounts.unclaimed_usernames() do
+      url = url(~p"/login/claim?invite=#{ClaimInvite.sign(username)}")
+      {:noreply, assign(socket, :invite, %{username: username, url: url})}
+    else
+      {:noreply, socket |> assign(:invite, nil) |> refresh_users()}
+    end
+  end
+
   def handle_event("ask_delete", %{"id" => id}, socket) do
     user = Accounts.get_user(id)
 
@@ -210,7 +227,7 @@ defmodule TexttileWeb.SettingsLive do
             Enum.each(
               sessions,
               &TexttileWeb.Endpoint.broadcast(
-                TexttileWeb.UserAuth.user_session_topic(&1.token),
+                TexttileWeb.UserAuth.user_session_topic(&1.token_hash),
                 "disconnect",
                 %{}
               )
@@ -427,7 +444,13 @@ defmodule TexttileWeb.SettingsLive do
 
   # :online_ids belongs to Admin: assigned on mount, refreshed on every
   # presence diff, so the "here now" marks stay current on their own.
-  defp refresh_users(socket), do: assign(socket, :users, Accounts.list_users())
+  defp showing_invite?(invite, name), do: invite != nil and invite.username == name
+
+  defp refresh_users(socket) do
+    socket
+    |> assign(:users, Accounts.list_users())
+    |> assign(:unclaimed, Accounts.unclaimed_usernames())
+  end
 
   # The sizes the select offers. Both grids are rows of cards, and the
   # window decides whether a row holds two, three or four of them, so
@@ -1090,6 +1113,61 @@ defmodule TexttileWeb.SettingsLive do
                 · {delete_block(user, @users, @current_scope.user)}
               </span>
             </p>
+          </div>
+        </div>
+
+        <%!-- The configured names that are still waiting for their
+             owner. A name is no secret, so it does not open itself:
+             somebody who is already in hands over the link. --%>
+        <div :if={@unclaimed != []} id="unclaimedList">
+          <%!-- The link is handed over the way the backup token is:
+               touching the field picks all of it, and the button that
+               opened the link becomes the one that copies it. --%>
+          <div
+            :for={name <- @unclaimed}
+            class="py-3 border-b border-hair"
+            id={"unclaimed-#{name}"}
+            phx-hook="CopyOut"
+          >
+            <div class="flex items-center gap-[10px] flex-wrap">
+              <b class="text-[14.5px]">{name}</b>
+              <span class="note">{gettext("waiting for the first sign-in")}</span>
+              <span class="sp"></span>
+              <button
+                :if={not showing_invite?(@invite, name)}
+                class="btn sm"
+                id={"invite-#{name}"}
+                phx-click="invite"
+                phx-value-username={name}
+              >
+                {gettext("Invitation link")}
+              </button>
+              <button
+                :if={showing_invite?(@invite, name)}
+                type="button"
+                class="btn sm"
+                id={"copyInvite-#{name}"}
+                data-copy
+              >
+                {gettext("Copy")}
+              </button>
+            </div>
+            <div :if={showing_invite?(@invite, name)} class="mt-[7px]">
+              <textarea
+                id={"invite-link-#{name}"}
+                class="sharelines block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
+                style="border-radius: var(--tt-radius); border: 1px solid var(--tt-rule)"
+                readonly
+                spellcheck="false"
+                aria-label={gettext("The invitation link")}
+              >{@invite.url}</textarea>
+              <p class="note mt-[6px]">
+                {gettext(
+                  "Hand this link to %{name}. It opens the password screen for this name only, and it stops working in a week or as soon as the account exists.",
+                  name: name
+                )}
+              </p>
+            </div>
           </div>
         </div>
 

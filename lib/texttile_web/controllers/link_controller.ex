@@ -35,7 +35,7 @@ defmodule TexttileWeb.LinkController do
         Enum.each(
           sessions,
           &TexttileWeb.Endpoint.broadcast(
-            UserAuth.user_session_topic(&1.token),
+            UserAuth.user_session_topic(&1.token_hash),
             "disconnect",
             %{}
           )

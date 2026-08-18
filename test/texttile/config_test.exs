@@ -96,15 +96,32 @@ defmodule Texttile.ConfigTest do
         "SMTP_PASSWORD" => "p"
       }
 
-      assert Config.mailer_config(env) == [
-               adapter: Swoosh.Adapters.SMTP,
-               relay: "mail.example.com",
-               port: 587,
-               username: "u",
-               password: "p",
-               auth: :always,
-               tls: :always
-             ]
+      config = Config.mailer_config(env)
+
+      assert config[:adapter] == Swoosh.Adapters.SMTP
+      assert config[:relay] == "mail.example.com"
+      assert config[:port] == 587
+      assert config[:username] == "u"
+      assert config[:password] == "p"
+      assert config[:auth] == :always
+      assert config[:tls] == :always
+    end
+
+    test "smtp verifies the relay's certificate against its name" do
+      env = %{
+        "MAIL_ADAPTER" => "smtp",
+        "SMTP_HOST" => "mail.example.com",
+        "SMTP_USERNAME" => "u",
+        "SMTP_PASSWORD" => "p"
+      }
+
+      options = Config.mailer_config(env)[:tls_options]
+
+      assert options[:verify] == :verify_peer
+      assert options[:server_name_indication] == ~c"mail.example.com"
+      assert is_list(options[:cacerts]) and options[:cacerts] != []
+      assert options[:depth] == 3
+      assert is_function(options[:customize_hostname_check][:match_fun], 2)
     end
 
     test "smtp port can be overridden" do

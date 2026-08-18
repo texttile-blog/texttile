@@ -613,6 +613,33 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ "Open after all"
     end
+
+    # The way out of a word that was passed around too far: a new
+    # password sends every reader back to the gate, including the one
+    # who kept the cookie of the old one.
+    test "a new password ends the way in of everybody who had the old one", %{conn: conn} do
+      published_post(title: "Behind the wall", slug: "behind-the-wall")
+
+      conn = post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/blog"})
+      assert redirected_to(conn) == "/blog"
+      assert conn |> recycle() |> get(~p"/blog") |> html_response(200) =~ "Behind the wall"
+
+      {:ok, _} = Settings.put(:site_password, "another word")
+
+      assert conn |> recycle() |> get(~p"/blog") |> redirected_to() =~ "/unlock"
+    end
+
+    test "the gate stops answering after a few tries", %{conn: conn} do
+      for _try <- 1..Texttile.Accounts.door_limiter_per_minute() do
+        post(conn, ~p"/unlock", %{"password" => "not it", "to" => "/blog"})
+      end
+
+      # the right word too, in the same minute
+      conn = post(conn, ~p"/unlock", %{"password" => "sesame", "to" => "/blog"})
+
+      assert html_response(conn, 200) =~ "Too many tries"
+      refute get_session(conn, :site_unlocked)
+    end
   end
 
   describe "renditions" do

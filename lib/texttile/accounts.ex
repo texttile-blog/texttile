@@ -47,13 +47,63 @@ defmodule Texttile.Accounts do
     end
   end
 
+  ## The brake on the password doors
+
+  @doc """
+  The limiter in front of every door that takes a password: the
+  sign-in, the first sign-in and the site password of the blog. They
+  share one bucket per caller, because they are one question asked
+  three ways, and a caller who is guessing at one of them has no
+  business hammering the next.
+
+  The doors are the one place where a few tries per minute is plenty
+  for a person and far too few for a machine. bcrypt already makes the
+  sign-in slow; the site password is a short shared word and has
+  nothing but this.
+  """
+  def door_limiter, do: Texttile.Accounts.DoorLimiter
+
+  @doc "How many tries a caller has per minute at the password doors."
+  def door_limiter_per_minute, do: 5
+
+  @doc "Whether this installation has any account at all."
+  def any_account?, do: Repo.exists?(User)
+
+  @doc """
+  Whether this name may choose its password right now without an
+  invitation. That is the first account of a fresh installation, and
+  only that one: a fresh installation has nobody who could invite.
+
+  Every later name needs an invitation from somebody who is already in,
+  because the names are no secret. They stand under the entries they
+  wrote, and a name whose owner has not signed in yet would otherwise
+  belong to whoever guesses it first.
+  """
+  def open_claim?(username) when is_binary(username) do
+    sign_in_state(username) == :claimable and not any_account?()
+  end
+
+  @doc """
+  The configured names that have no account yet. Settings offers an
+  invitation for each of them.
+  """
+  def unclaimed_usernames do
+    taken = Repo.all(from u in User, select: u.username)
+    Enum.reject(admin_usernames(), &(&1 in taken))
+  end
+
   @doc """
   Creates the account of a configured name: the password its owner
   chose, the email address a reset will need, the displayed name.
-  Refuses a name that is not configured (`:not_allowed`) and a name
-  that has an account already (`:taken`). With a `:site` in the opts, a
-  confirmation goes to the address; it never contains the password, and
-  a mail that cannot leave does not undo the account.
+  Refuses a name that is not configured, and a name that may not be
+  claimed right now (`:not_allowed`), and a name that has an account
+  already (`:taken`). With a `:site` in the opts, a confirmation goes to
+  the address; it never contains the password, and a mail that cannot
+  leave does not undo the account.
+
+  `invited: true` says the caller carried a valid invitation. Without
+  one, only the first account of an empty installation goes through, see
+  `open_claim?/1`.
   """
   def claim_account(username, attrs, opts \\ [])
       when is_binary(username) and is_map(attrs) do
@@ -68,9 +118,13 @@ defmodule Texttile.Accounts do
       Repo.transaction(fn ->
         case sign_in_state(username) do
           :claimable ->
-            case Repo.insert(User.claim_changeset(%User{}, attrs)) do
-              {:ok, user} -> user
-              {:error, changeset} -> Repo.rollback(changeset)
+            if Keyword.get(opts, :invited, false) or not any_account?() do
+              case Repo.insert(User.claim_changeset(%User{}, attrs)) do
+                {:ok, user} -> user
+                {:error, changeset} -> Repo.rollback(changeset)
+              end
+            else
+              Repo.rollback(:not_allowed)
             end
 
           :known ->
@@ -135,10 +189,17 @@ defmodule Texttile.Accounts do
     Repo.delete_all(from s in Session, where: s.expires_at <= ^now)
 
     expires_at = DateTime.add(now, session_max_age(opts[:remember] == true), :second)
-    token = Repo.insert!(Session.build(user, expires_at)).token
+    {token, session} = Session.build(user, expires_at)
+    Repo.insert!(session)
     broadcast_sessions_changed(user.id)
     token
   end
+
+  @doc """
+  The hash a token from a cookie is stored under. The one name every
+  screen knows a session by, because it is the only one the table has.
+  """
+  def session_fingerprint(token) when is_binary(token), do: Session.hash(token)
 
   @doc """
   The user a live session token belongs to, or nil. A name that left the
@@ -146,11 +207,13 @@ defmodule Texttile.Accounts do
   its next request.
   """
   def get_user_by_session_token(token, opts \\ []) do
+    hash = Session.hash(token)
+
     user =
       Repo.one(
         from s in Session,
           join: u in assoc(s, :user),
-          where: s.token == ^token,
+          where: s.token_hash == ^hash,
           where: s.expires_at > ^moment(opts),
           select: u
       )
@@ -170,10 +233,11 @@ defmodule Texttile.Accounts do
 
   @doc "Ends the session behind the token. Unknown tokens are fine."
   def delete_session(token) do
-    session = Repo.one(from s in Session, where: s.token == ^token)
+    hash = Session.hash(token)
+    session = Repo.one(from s in Session, where: s.token_hash == ^hash)
 
     if session do
-      Repo.delete_all(from s in Session, where: s.token == ^token)
+      Repo.delete_all(from s in Session, where: s.token_hash == ^hash)
       broadcast_sessions_changed(session.user_id)
     end
 
@@ -195,7 +259,9 @@ defmodule Texttile.Accounts do
   password change does: only the browser that changed it stays in.
   """
   def delete_sessions_except(user, token) do
-    Repo.delete_all(from s in Session, where: s.user_id == ^user.id and s.token != ^token)
+    hash = Session.hash(token)
+
+    Repo.delete_all(from s in Session, where: s.user_id == ^user.id and s.token_hash != ^hash)
     broadcast_sessions_changed(user.id)
     :ok
   end
