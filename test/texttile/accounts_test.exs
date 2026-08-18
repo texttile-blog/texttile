@@ -266,6 +266,47 @@ defmodule Texttile.AccountsTest do
       assert Accounts.get_user_by_session_token(token).id == user.id
     end
 
+    # SQLite keeps the storage class of what was written, and it never
+    # reads a text value as equal to a blob parameter. The migration
+    # that hashed the open sessions writes this row by hand, so this is
+    # that row, read back the way a request reads it. Written any other
+    # way it is a row nobody can ever find again, and every browser that
+    # was signed in at the upgrade would be signed out by it.
+    test "a session row written the way the migration writes it still signs its browser in" do
+      user = user_fixture()
+      token = :crypto.strong_rand_bytes(32)
+      hash = Accounts.session_fingerprint(token)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      expires_at = DateTime.add(now, 2 * 24 * 60 * 60, :second)
+
+      Texttile.Repo.query!(
+        "INSERT INTO sessions (token_hash, user_id, expires_at, inserted_at) VALUES (?1, ?2, ?3, ?4)",
+        [{:blob, hash}, user.id, expires_at, now]
+      )
+
+      assert Accounts.get_user_by_session_token(token).id == user.id
+      assert :ok = Accounts.delete_session(token)
+      assert Accounts.list_sessions(user) == []
+    end
+
+    # The other half of the rule above, so the reason it is written that
+    # way cannot be refactored away by accident: the same bytes stored
+    # as text are a row nobody can reach.
+    test "the same hash stored as text finds nobody" do
+      user = user_fixture()
+      token = :crypto.strong_rand_bytes(32)
+      hash = Accounts.session_fingerprint(token)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      expires_at = DateTime.add(now, 2 * 24 * 60 * 60, :second)
+
+      Texttile.Repo.query!(
+        "INSERT INTO sessions (token_hash, user_id, expires_at, inserted_at) VALUES (?1, ?2, ?3, ?4)",
+        [hash, user.id, expires_at, now]
+      )
+
+      refute Accounts.get_user_by_session_token(token)
+    end
+
     test "get_user_by_session_token/1 returns nil for an unknown token" do
       assert Accounts.get_user_by_session_token(:crypto.strong_rand_bytes(32)) == nil
     end

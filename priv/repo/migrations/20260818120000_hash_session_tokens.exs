@@ -24,8 +24,16 @@ defmodule Texttile.Repo.Migrations.HashSessionTokens do
     |> Enum.each(fn {id, token} ->
       hash = :crypto.hash(:sha256, token)
 
-      from(s in "sessions", where: s.id == ^id)
-      |> Texttile.Repo.update_all(set: [token_hash: hash])
+      # By hand, and as a blob on purpose. A query without a schema has
+      # no type for the column, so the hash would go in as text, and
+      # SQLite never reads a text value as equal to the blob the
+      # application asks with. The rows would still be there and no
+      # request would ever find them again: everybody signed out, which
+      # is the one thing this migration promises not to do.
+      Texttile.Repo.query!(
+        "UPDATE sessions SET token_hash = ?1 WHERE id = ?2",
+        [{:blob, hash}, id]
+      )
     end)
 
     create unique_index(:sessions, [:token_hash])
