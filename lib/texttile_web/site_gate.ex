@@ -36,7 +36,7 @@ defmodule TexttileWeb.SiteGate do
   @doc "May this reader read the blog?"
   def unlocked?(conn) do
     conn.assigns[:current_scope] != nil or
-      get_session(conn, :site_unlocked) == true or
+      get_session(conn, :site_unlocked) == mark() or
       Settings.get(:site_password) == ""
   end
 
@@ -47,7 +47,24 @@ defmodule TexttileWeb.SiteGate do
   def unlock(conn) do
     conn
     |> configure_session(renew: true)
-    |> put_session(:site_unlocked, true)
+    |> put_session(:site_unlocked, mark())
+  end
+
+  # The mark names the password it was given for, so a new password
+  # ends every reader's way in. A plain `true` never expired: whoever
+  # once knew the word, or once copied the cookie, stayed in for good,
+  # and changing the password moved nobody out.
+  #
+  # It is the password through a keyed hash, not the password and not a
+  # hash of it: the cookie is signed but everybody can read it, and the
+  # word is short enough to guess from a bare hash.
+  defp mark do
+    secret = TexttileWeb.Endpoint.config(:secret_key_base)
+
+    :hmac
+    |> :crypto.mac(:sha256, secret, "site password " <> Settings.get(:site_password))
+    |> binary_part(0, 16)
+    |> Base.url_encode64(padding: false)
   end
 
   # What Phoenix refuses in a local redirect; anything carrying these

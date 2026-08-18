@@ -4,6 +4,7 @@ defmodule TexttileWeb.SessionControllerTest do
   import Texttile.AccountsFixtures
 
   alias Texttile.Accounts
+  alias TexttileWeb.ClaimInvite
 
   describe "GET /login" do
     test "shows the sign-in form once an account exists", %{conn: conn} do
@@ -326,7 +327,10 @@ defmodule TexttileWeb.SessionControllerTest do
       user = user_fixture()
       conn = log_in_user(conn, user)
       other_token = Accounts.create_session(user)
-      TexttileWeb.Endpoint.subscribe(TexttileWeb.UserAuth.user_session_topic(other_token))
+
+      TexttileWeb.Endpoint.subscribe(
+        TexttileWeb.UserAuth.user_session_topic(Accounts.session_fingerprint(other_token))
+      )
 
       conn = delete(conn, ~p"/logout/all")
 
@@ -354,12 +358,126 @@ defmodule TexttileWeb.SessionControllerTest do
       refute get_session(conn, :user_token)
 
       assert [session] = Accounts.list_sessions(user)
-      assert session.token == other_token
+      assert session.token_hash == Accounts.session_fingerprint(other_token)
     end
 
     test "works when not signed in", %{conn: conn} do
       conn = delete(conn, ~p"/logout")
       assert redirected_to(conn) == ~p"/login"
     end
+  end
+
+  # Everything above this line works on a fresh installation, where the
+  # first name lets itself in. This is the installation that already has
+  # somebody in it, and there the door is shut.
+  describe "a free name once the installation has an account" do
+    setup do
+      user_fixture(%{username: "kb"})
+      configure_admins(["kb", "anna"])
+      :ok
+    end
+
+    test "answers the sign-in form like a wrong password", %{conn: conn} do
+      conn =
+        post(conn, ~p"/login", %{"user" => %{"username" => "anna", "password" => "guess it"}})
+
+      response = html_response(conn, 200)
+      assert response =~ "do not match"
+      refute response =~ "claim-form"
+    end
+
+    test "refuses a password screen that carries no invitation", %{conn: conn} do
+      conn = post(conn, ~p"/login/claim", %{"user" => claim_attrs("anna")})
+
+      assert html_response(conn, 200) =~ "do not match"
+      assert Accounts.sign_in_state("anna") == :claimable
+      refute get_session(conn, :user_token)
+    end
+
+    test "an invitation opens the password screen", %{conn: conn} do
+      conn = get(conn, ~p"/login/claim?invite=#{ClaimInvite.sign("anna")}")
+
+      response = html_response(conn, 200)
+      assert response =~ "claim-form"
+      assert response =~ "anna"
+    end
+
+    test "an invitation creates the account and signs it in", %{conn: conn} do
+      attrs = Map.put(claim_attrs("anna"), "invite", ClaimInvite.sign("anna"))
+      conn = post(conn, ~p"/login/claim", %{"user" => attrs})
+
+      assert redirected_to(conn) == ~p"/admin"
+      assert get_session(conn, :user_token)
+      assert Accounts.sign_in_state("anna") == :known
+    end
+
+    test "an invitation opens the one name it names", %{conn: conn} do
+      configure_admins(["kb", "anna", "tom"])
+      attrs = Map.put(claim_attrs("tom"), "invite", ClaimInvite.sign("anna"))
+      conn = post(conn, ~p"/login/claim", %{"user" => attrs})
+
+      assert html_response(conn, 200) =~ "do not match"
+      assert Accounts.sign_in_state("tom") == :claimable
+    end
+
+    test "an invitation opens nothing once the account exists", %{conn: conn} do
+      invite = ClaimInvite.sign("anna")
+      {:ok, _} = Accounts.claim_account("anna", claim_attrs("anna"), invited: true)
+
+      conn = get(conn, ~p"/login/claim?invite=#{invite}")
+      assert html_response(conn, 200) =~ "does not open an account"
+    end
+
+    test "a made-up invitation opens nothing", %{conn: conn} do
+      conn = get(conn, ~p"/login/claim?invite=nonsense")
+
+      response = html_response(conn, 200)
+      assert response =~ "does not open an account"
+      refute response =~ "claim-form"
+    end
+  end
+
+  describe "the brake on the password doors" do
+    test "stops the sign-in after a few tries", %{conn: conn} do
+      user = user_fixture()
+
+      for _try <- 1..Accounts.door_limiter_per_minute() do
+        post(conn, ~p"/login", %{
+          "user" => %{"username" => user.username, "password" => "wrong password!"}
+        })
+      end
+
+      # the right password too: a guesser who lands on it in the same
+      # minute is still a guesser
+      conn =
+        post(conn, ~p"/login", %{
+          "user" => %{"username" => user.username, "password" => valid_password()}
+        })
+
+      assert html_response(conn, 200) =~ "Too many tries"
+      refute get_session(conn, :user_token)
+    end
+
+    test "stops the first sign-in after a few tries", %{conn: conn} do
+      configure_admins(["kb"])
+
+      for _try <- 1..Accounts.door_limiter_per_minute() do
+        post(conn, ~p"/login/claim", %{"user" => %{"username" => "kb", "password" => "short"}})
+      end
+
+      conn = post(conn, ~p"/login/claim", %{"user" => claim_attrs("kb")})
+
+      assert html_response(conn, 200) =~ "Too many tries"
+      assert Accounts.sign_in_state("kb") == :claimable
+    end
+  end
+
+  defp claim_attrs(username) do
+    %{
+      "username" => username,
+      "password" => "a long password",
+      "password_confirmation" => "a long password",
+      "email" => "#{username}@example.org"
+    }
   end
 end

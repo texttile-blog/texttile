@@ -75,10 +75,10 @@ defmodule TexttileWeb.ProfileLive do
         # behind them are told to disconnect right away
         user
         |> Accounts.list_sessions()
-        |> Enum.reject(&(&1.token == token))
+        |> Enum.reject(&(&1.token_hash == Accounts.session_fingerprint(token)))
         |> Enum.each(
           &TexttileWeb.Endpoint.broadcast(
-            TexttileWeb.UserAuth.user_session_topic(&1.token),
+            TexttileWeb.UserAuth.user_session_topic(&1.token_hash),
             "disconnect",
             %{}
           )
@@ -317,7 +317,7 @@ defmodule TexttileWeb.ProfileLive do
   end
 
   defp session_label(session, scope) do
-    if session.token == scope.session_token,
+    if session.token_hash == Accounts.session_fingerprint(scope.session_token),
       do: gettext("This browser"),
       else: gettext("Another browser")
   end

@@ -57,7 +57,10 @@ defmodule TexttileWeb.LinkControllerTest do
          %{conn: conn} do
       user = user_fixture(%{username: "julia"})
       old_session_token = Accounts.create_session(user)
-      TexttileWeb.Endpoint.subscribe(TexttileWeb.UserAuth.user_session_topic(old_session_token))
+
+      TexttileWeb.Endpoint.subscribe(
+        TexttileWeb.UserAuth.user_session_topic(Accounts.session_fingerprint(old_session_token))
+      )
 
       token = mailed_link(user)
       post(conn, ~p"/link/#{token}", %{"user" => %{"password" => "a long enough password"}})

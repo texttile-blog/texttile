@@ -42,6 +42,10 @@ defmodule Texttile.Application do
       # fetching a thousand pictures is doing its job.
       {Texttile.RateLimiter,
        name: Texttile.Backup.limiter(), limit: Texttile.Backup.limiter_per_minute()},
+      # And in front of the password doors, narrow: a person types a
+      # password a few times a minute, a machine types thousands.
+      {Texttile.RateLimiter,
+       name: Texttile.Accounts.door_limiter(), limit: Texttile.Accounts.door_limiter_per_minute()},
       # The secret behind every visitor number, held here and nowhere
       # else, thrown away when the day turns.
       Texttile.Stats.Salt,

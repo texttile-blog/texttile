@@ -54,7 +54,7 @@ defmodule Texttile.Comments.Comment do
   def changeset(comment, attrs) do
     comment
     |> cast(attrs, [:name, :body, :website])
-    |> update_change(:name, &String.trim/1)
+    |> update_change(:name, &plain_line/1)
     |> update_change(:body, &String.trim/1)
     |> update_change(:website, &address/1)
     |> validate_required([:name, :body])
@@ -63,6 +63,16 @@ defmodule Texttile.Comments.Comment do
     |> validate_length(:website, max: @website_limit)
     |> validate_website()
   end
+
+  # The name is one line. It travels into the To of a mail, where a line
+  # break would end the header and start whatever came after it, so the
+  # break never gets that far. What holds the line today is the encoding
+  # of a library two floors down; this holds it here, where the rule is.
+  defp plain_line(name) when is_binary(name) do
+    name |> String.replace(~r/[\x00-\x1f\x7f]/, "") |> String.trim()
+  end
+
+  defp plain_line(name), do: name
 
   # Nobody types a scheme. A bare `example.org` is what people mean by
   # a website, so it becomes one; whoever writes `http://` keeps it.

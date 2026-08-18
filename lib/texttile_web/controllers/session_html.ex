@@ -67,6 +67,14 @@ defmodule TexttileWeb.SessionHTML do
       <p :if={@error == :claimed} class="text-julia text-[13px] mt-[13px]" id="login-error">
         {gettext("This account already exists. Sign in with its password.")}
       </p>
+      <p :if={@error == :too_many} class="text-julia text-[13px] mt-[13px]" id="login-error">
+        {gettext("Too many tries. Wait a minute, then try again.")}
+      </p>
+      <p :if={@error == :invite} class="text-julia text-[13px] mt-[13px]" id="login-error">
+        {gettext(
+          "This invitation does not open an account. It may have been used already, or it is older than a week. Ask for a fresh one."
+        )}
+      </p>
       <p class="mt-[13px]">
         <a class="link text-[13px]" href={~p"/forgot"}>{gettext("Forgot your password?")}</a>
       </p>
@@ -104,6 +112,7 @@ defmodule TexttileWeb.SessionHTML do
         class="mt-[18px]"
       >
         <input type="hidden" name="user[username]" value={@username} />
+        <input :if={@invite} type="hidden" name="user[invite]" value={@invite} />
         <div class="mb-[15px]">
           <label class="lab block mb-0" for="claim-password">{gettext("Password")}</label>
           <input

@@ -27,12 +27,14 @@ defmodule Texttile.AccountsFixtures do
   @doc """
   Creates an account the way the app does: the name is configured, and
   its owner claims it with a password and an address. No `:site` in the
-  call, so no confirmation mail lands in the test mailbox.
+  call, so no confirmation mail lands in the test mailbox. The claim
+  carries an invitation, which is what every account after the first one
+  needs.
   """
   def user_fixture(attrs \\ %{}) do
     attrs = valid_user_attributes(attrs)
     configure_admins([attrs.username | Accounts.admin_usernames()])
-    {:ok, user} = Accounts.claim_account(attrs.username, attrs)
+    {:ok, user} = Accounts.claim_account(attrs.username, attrs, invited: true)
     user
   end
 

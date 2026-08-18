@@ -74,6 +74,19 @@ defmodule Texttile.CommentsTest do
       end)
     end
 
+    # The name becomes the To of a mail. A line break there would end
+    # the header and let whatever follows be a header of its own.
+    test "takes the control characters out of the name" do
+      article = published_post()
+      attrs = %{@attrs | "name" => "Christel\r\nBcc: somebody@example.org"}
+
+      comment = post!(article, attrs)
+
+      assert comment.name == "ChristelBcc: somebody@example.org"
+      refute comment.name =~ "\r"
+      refute comment.name =~ "\n"
+    end
+
     test "announces the comment" do
       article = published_post()
       Comments.subscribe()

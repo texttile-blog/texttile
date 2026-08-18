@@ -449,17 +449,26 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  @doc "The one password check of the site, plain-text on purpose."
+  @doc """
+  The one password check of the site, plain-text on purpose. The word is
+  short and shared, so the brake in front of it is the only thing that
+  makes guessing it expensive.
+  """
   def enter_password(conn, params) do
     entered = to_string(params["password"])
     stored = Settings.get(:site_password)
 
-    if stored != "" and Plug.Crypto.secure_compare(entered, stored) do
-      conn
-      |> SiteGate.unlock()
-      |> redirect(to: SiteGate.safe_return(params["to"]))
-    else
-      render(conn, :unlock, to: params["to"], error: true)
+    cond do
+      not RateLimiter.allow?(client_ip(conn), Accounts.door_limiter()) ->
+        render(conn, :unlock, to: params["to"], error: :too_many)
+
+      stored != "" and Plug.Crypto.secure_compare(entered, stored) ->
+        conn
+        |> SiteGate.unlock()
+        |> redirect(to: SiteGate.safe_return(params["to"]))
+
+      true ->
+        render(conn, :unlock, to: params["to"], error: true)
     end
   end
 
