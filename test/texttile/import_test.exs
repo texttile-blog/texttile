@@ -156,6 +156,65 @@ defmodule Texttile.ImportTest do
       assert error =~ "private network"
     end
 
+    test "the fetch goes to the address the guard checked, not to a second lookup",
+         %{dir: dir, user: user} do
+      Application.put_env(:texttile, :import_allow_private_hosts, false)
+      on_exit(fn -> Application.put_env(:texttile, :import_allow_private_hosts, true) end)
+
+      # A host with a one second TTL answers the guard with a public
+      # address and the fetch with the metadata service. Only the first
+      # answer is asked for now, and the request goes to it.
+      Application.put_env(:texttile, :import_resolver, fn host, family ->
+        case {host, family} do
+          {~c"rebind.example", :inet} -> {:ok, {93, 184, 216, 34}}
+          _other -> {:error, :nxdomain}
+        end
+      end)
+
+      on_exit(fn -> Application.delete_env(:texttile, :import_resolver) end)
+
+      test_pid = self()
+
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        send(test_pid, {:asked, conn.host, Plug.Conn.get_req_header(conn, "host")})
+        respond_with_jpg(conn)
+      end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [https://rebind.example/a.jpg]\n")
+
+      report = Import.validate(dir)
+      assert hd(report.bundles).errors == []
+      assert_received {:asked, "93.184.216.34", ["rebind.example"]}
+
+      # the download of the run takes the same road
+      assert Import.run(report, user).created == 1
+      assert_received {:asked, "93.184.216.34", ["rebind.example"]}
+    end
+
+    test "an address of the sixth kind is pinned in brackets", %{dir: dir} do
+      Application.put_env(:texttile, :import_allow_private_hosts, false)
+      on_exit(fn -> Application.put_env(:texttile, :import_allow_private_hosts, true) end)
+
+      Application.put_env(:texttile, :import_resolver, fn
+        ~c"six.example", :inet6 -> {:ok, {0x2606, 0x2800, 0x220, 1, 0, 0, 0, 1}}
+        _host, _family -> {:error, :nxdomain}
+      end)
+
+      on_exit(fn -> Application.delete_env(:texttile, :import_resolver) end)
+
+      test_pid = self()
+
+      Req.Test.stub(Texttile.ImportStub, fn conn ->
+        send(test_pid, {:asked, conn.host})
+        respond_with_jpg(conn)
+      end)
+
+      write_bundle(dir, "beach", "title: A\ngallery: [https://six.example/a.jpg]\n")
+
+      assert hd(Import.validate(dir).bundles).errors == []
+      assert_received {:asked, "2606:2800:220:1::1"}
+    end
+
     test "a picture whose declared size is beyond the cap is an error", %{dir: dir} do
       Application.put_env(:texttile, :import_max_picture_bytes, 1000)
       on_exit(fn -> Application.delete_env(:texttile, :import_max_picture_bytes) end)
@@ -816,6 +875,19 @@ defmodule Texttile.ImportTest do
       assert message =~ "cap"
     end
 
+    test "refuses a zip that lies about its sizes, and sweeps what it wrote" do
+      Application.put_env(:texttile, :import_zip_limits, {100, 50_000})
+      on_exit(fn -> Application.delete_env(:texttile, :import_zip_limits) end)
+
+      source = tmp_dir!()
+      write_bundle(source, "bomb", "title: A\n", String.duplicate("a", 200_000))
+
+      dest = tmp_dir!()
+      assert {:error, message} = Import.unpack(lying_zip(source), dest)
+      assert message =~ "cap"
+      assert File.ls!(dest) == []
+    end
+
     test "refuses what is not a zip", %{dir: dir} do
       path = Path.join(dir, "not.zip")
       File.write!(path, "plain text")
@@ -854,5 +926,30 @@ defmodule Texttile.ImportTest do
 
     {:ok, _} = :zip.create(String.to_charlist(zip_path), entries, cwd: String.to_charlist(source))
     zip_path
+  end
+
+  # The same zip, with one byte declared per entry. Erlang writes
+  # honest sizes, so the uncompressed size is overwritten in the local
+  # headers and in the central directory, the way a bomb builder writes
+  # it. The deflate stream stays whole and unpacks to its real length.
+  defp lying_zip(source) do
+    path = build_zip(source)
+
+    lie = fn bytes, signature, offset ->
+      Enum.reduce(:binary.matches(bytes, signature), bytes, fn {at, _length}, acc ->
+        cut = at + offset
+        <<head::binary-size(cut), _declared::little-32, rest::binary>> = acc
+        head <> <<1::little-32>> <> rest
+      end)
+    end
+
+    raw =
+      path
+      |> File.read!()
+      |> lie.(<<0x50, 0x4B, 0x03, 0x04>>, 22)
+      |> lie.(<<0x50, 0x4B, 0x01, 0x02>>, 24)
+
+    File.write!(path, raw)
+    path
   end
 end

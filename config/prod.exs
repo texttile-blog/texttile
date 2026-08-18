@@ -19,6 +19,10 @@ config :texttile, TexttileWeb.Endpoint,
     ]
   ]
 
+# With https enforced above, the session cookie may refuse to travel
+# over plain http. This is read where the endpoint is compiled.
+config :texttile, :secure_cookie, true
+
 # Do not print debug messages in production
 config :logger, level: :info
 

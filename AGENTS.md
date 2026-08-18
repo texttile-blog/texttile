@@ -174,7 +174,9 @@ list and say which entries applied.
   over it. Mail from the development machine goes out through the adapter that
   `.env` configures, so `/dev/mailbox` can stay empty.
 - The development sign-in list holds `admin`, so the first sign-in with that
-  name creates the account. `ADMIN_USERS` in `.env` replaces the list.
+  name creates the account while the database has none. Every name after that
+  one needs an invitation link from Settings > Users. `ADMIN_USERS` in `.env`
+  replaces the list.
 - Stop what you started, by the PID you tracked. See rule 1.
 
 ## Test data

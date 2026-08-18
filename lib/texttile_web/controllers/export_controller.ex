@@ -36,5 +36,6 @@ defmodule TexttileWeb.ExportController do
     end
   end
 
-  defp quotable(name), do: String.replace(name, ~s("), "")
+  # A quote or a line break in the name would end the header early.
+  defp quotable(name), do: String.replace(name, ~r/["\x00-\x1f\x7f]/, "")
 end

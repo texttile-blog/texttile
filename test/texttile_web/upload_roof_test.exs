@@ -1,12 +1,13 @@
 defmodule TexttileWeb.UploadRoofTest do
   @moduledoc """
-  The two body roofs of the endpoint (see `TexttileWeb.Endpoint`).
+  The three body roofs of the endpoint (see `TexttileWeb.Endpoint`).
 
-  The small one is for everybody and never moves: 52 MB, before half a
-  gigabyte has arrived. The big one belongs to the admin area's upload
-  addresses and to a signed-in session, and it is Settings > Storage >
-  Biggest upload, so what the settings screen promises and what the
-  parser does are the same number.
+  A stranger sends no files, so a stranger gets 1 MB. A signed-in
+  session gets 52 MB anywhere, before half a gigabyte has arrived. The
+  big one belongs to the admin area's upload addresses and to a
+  signed-in session, and it is Settings > Storage > Biggest upload, so
+  what the settings screen promises and what the parser does are the
+  same number.
   """
   use TexttileWeb.ConnCase, async: false
 
@@ -36,8 +37,29 @@ defmodule TexttileWeb.UploadRoofTest do
 
   defp signed_in, do: Plug.Test.init_test_session(build_conn(), user_token: "not a live session")
 
-  test "a stranger is refused at the roof everybody has" do
+  test "a stranger is refused at the upload address" do
     assert_error_sent 413, fn -> send_body(build_conn()) end
+  end
+
+  # Nothing a stranger can reach takes a file, so 2 MB of multipart is
+  # already more than any of it has a use for.
+  test "a stranger is refused far below the roof a session has" do
+    assert_error_sent 413, fn ->
+      build_conn()
+      |> put_req_header("content-type", "multipart/form-data; boundary=#{@boundary}")
+      |> post(~p"/admin/texts", body(2_000_000))
+    end
+  end
+
+  test "a signed-in session keeps 52 MB away from the upload addresses" do
+    conn =
+      signed_in()
+      |> put_req_header("content-type", "multipart/form-data; boundary=#{@boundary}")
+      |> post(~p"/admin/texts", body(2_000_000))
+
+    # the body was read, so the roof was not the stranger's; no route
+    # takes a POST here, which is the router's answer, one roof later
+    assert conn.status == 404
   end
 
   test "a signed-in session gets the big roof, and the router does the rest" do

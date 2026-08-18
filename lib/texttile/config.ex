@@ -62,14 +62,17 @@ defmodule Texttile.Config do
         ]
 
       "smtp" ->
+        relay = fetch!(env, "SMTP_HOST")
+
         [
           adapter: Swoosh.Adapters.SMTP,
-          relay: fetch!(env, "SMTP_HOST"),
+          relay: relay,
           port: String.to_integer(env["SMTP_PORT"] || "587"),
           username: fetch!(env, "SMTP_USERNAME"),
           password: fetch!(env, "SMTP_PASSWORD"),
           auth: :always,
-          tls: :always
+          tls: :always,
+          tls_options: tls_options(relay)
         ]
 
       other ->
@@ -77,6 +80,23 @@ defmodule Texttile.Config do
                 "Valid values: resend, postmark, brevo, smtp, ses. " <>
                 "Unset the variable to use the local preview mailbox."
     end
+  end
+
+  # Who the SMTP relay has to prove it is. Without this, gen_smtp takes
+  # any certificate that is offered, and a machine in the middle reads
+  # SMTP_USERNAME, SMTP_PASSWORD and every mail. The certificate is
+  # checked against the system's CA store and against the relay's name,
+  # which also goes out as the SNI of the handshake.
+  defp tls_options(relay) do
+    [
+      verify: :verify_peer,
+      cacerts: :public_key.cacerts_get(),
+      server_name_indication: String.to_charlist(relay),
+      depth: 3,
+      customize_hostname_check: [
+        match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+      ]
+    ]
   end
 
   @doc """
