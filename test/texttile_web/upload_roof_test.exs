@@ -97,7 +97,7 @@ defmodule TexttileWeb.UploadRoofTest do
       build_conn()
       |> post(~p"/login", %{
         "user" => %{
-          "username" => user.username,
+          "email" => user.email,
           "password" => Texttile.AccountsFixtures.valid_password()
         }
       })

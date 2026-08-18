@@ -158,8 +158,8 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
 
     test "nobody is mailed about their own comment, everybody else is", %{conn: conn} do
       {:ok, _} = Settings.put(:notify_on_comment, true)
-      author = user_fixture(%{username: "author", email: "author@example.org"})
-      other = user_fixture(%{username: "other", email: "other@example.org"})
+      author = user_fixture(%{display_name: "author", email: "author@example.org"})
+      other = user_fixture(%{display_name: "other", email: "other@example.org"})
       article = published_post()
 
       # The mail leaves in a task of its own, so it has to land here.
@@ -176,8 +176,8 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
     end
 
     test "the comment outlives the account that wrote it", %{conn: conn} do
-      author = user_fixture(%{username: "author", display_name: "Katharina"})
-      keeper = user_fixture(%{username: "keeper"})
+      author = user_fixture(%{display_name: "Katharina"})
+      keeper = user_fixture(%{display_name: "keeper"})
       article = published_post()
 
       conn

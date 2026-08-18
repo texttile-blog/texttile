@@ -178,7 +178,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
   describe "tags" do
     test "the suggestions add a tag and take it off again", %{conn: conn} do
-      other = Articles.create_draft(user_fixture(%{username: "julia"}))
+      other = Articles.create_draft(user_fixture(%{display_name: "julia"}))
       {:ok, other} = other
       {:ok, _} = Articles.update_settings(other, %{tags: "sea, fog"})
 
@@ -258,7 +258,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     # menu answered every word but the one being written.
     test "a word the blog does not know stands in the menu as the only row",
          %{conn: conn} do
-      {:ok, other} = Articles.create_draft(user_fixture(%{username: "julia"}))
+      {:ok, other} = Articles.create_draft(user_fixture(%{display_name: "julia"}))
       {:ok, _} = Articles.update_settings(other, %{tags: "harbor"})
 
       session =
@@ -336,7 +336,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
     test "the field hands the entry to another admin, and the page says so",
          %{conn: conn, kb: kb} do
-      anna = user_fixture(%{username: "anna", display_name: "Anna Berger"})
+      anna = user_fixture(%{display_name: "Anna Berger"})
       article = published_post(user: kb, title: "Harbor mornings")
 
       conn =

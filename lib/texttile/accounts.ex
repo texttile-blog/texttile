@@ -2,50 +2,27 @@ defmodule Texttile.Accounts do
   @moduledoc """
   Admin accounts, sign-in and sessions.
 
-  There is no public registration. The configuration names everybody who
-  may have an account (ADMIN_USERS, see `Texttile.Config.admin_users/1`),
-  and a name on that list becomes an account at its first sign-in, with
-  the password its owner chooses there.
+  The accounts are the guest list: this table says who may sign in, and
+  the address is the identity. There is no public registration and
+  nothing to guess.
 
-  The list stays in charge afterwards. Every sign-in, and every request
-  of a signed-in browser, asks it again: take a name out and its access
-  ends at once, whether or not the account is still there.
+  An account comes into being in one of two ways, and both of them end
+  in a mail. An address in ADMIN_USERS that has no account gets one at
+  the start of the server (see `invite_configured/1`). An admin who is
+  already in types an address into Settings. Either way the owner of
+  that inbox opens a link and sets the password, so the proof of who you
+  are is the inbox, not a name somebody handed over.
+
+  Taking access away means deleting the account. An address out of
+  ADMIN_USERS takes nothing back: what it once made, it made.
   """
 
   import Ecto.Query
 
+  require Logger
+
   alias Texttile.Accounts.{LoginLink, Session, User, UserNotifier}
   alias Texttile.Repo
-
-  ## The configured admins
-
-  @doc "The usernames that may have an account."
-  def admin_usernames, do: Application.get_env(:texttile, :admin_users, [])
-
-  @doc "Whether this name is one of them."
-  def admin_username?(username) when is_binary(username) do
-    normalize(username) in admin_usernames()
-  end
-
-  def admin_username?(_username), do: false
-
-  @doc """
-  What the sign-in screen does with a name:
-
-    * `:known` for a configured name that has an account, so ask for the
-      password;
-    * `:claimable` for a configured name without one, so offer the
-      password screen that creates it;
-    * `:unknown` for everything else, which the screen answers the same
-      way as a wrong password.
-  """
-  def sign_in_state(username) when is_binary(username) do
-    cond do
-      not admin_username?(username) -> :unknown
-      get_user_by_username(username) -> :known
-      true -> :claimable
-    end
-  end
 
   ## The brake on the password doors
 
@@ -66,102 +43,100 @@ defmodule Texttile.Accounts do
   @doc "How many tries a caller has per minute at the password doors."
   def door_limiter_per_minute, do: 5
 
+  ## Invitations
+
+  @doc "The addresses ADMIN_USERS makes an account for."
+  def admin_emails, do: Application.get_env(:texttile, :admin_emails, [])
+
   @doc "Whether this installation has any account at all."
   def any_account?, do: Repo.exists?(User)
 
   @doc """
-  Whether this name may choose its password right now without an
-  invitation. That is the first account of a fresh installation, and
-  only that one: a fresh installation has nobody who could invite.
+  Whether nobody can sign in here yet: no account has a password.
 
-  Every later name needs an invitation from somebody who is already in,
-  because the names are no secret. They stand under the entries they
-  wrote, and a name whose owner has not signed in yet would otherwise
-  belong to whoever guesses it first.
+  A fresh installation stands here until its first admin follows the
+  mailed link. While it does, every link this module mints goes into the
+  server log as well, because an installation whose mail does not leave
+  would otherwise be a house with the key locked inside.
   """
-  def open_claim?(username) when is_binary(username) do
-    sign_in_state(username) == :claimable and not any_account?()
+  def nobody_can_sign_in? do
+    not Repo.exists?(from u in User, where: not is_nil(u.password_hash))
   end
 
-  @doc """
-  The configured names that have no account yet. Settings offers an
-  invitation for each of them.
-  """
-  def unclaimed_usernames do
-    taken = Repo.all(from u in User, select: u.username)
-    Enum.reject(admin_usernames(), &(&1 in taken))
-  end
+  @doc "Whether this account is still waiting for its first password."
+  def pending?(%User{password_hash: hash}), do: is_nil(hash)
 
   @doc """
-  Creates the account of a configured name: the password its owner
-  chose, the email address a reset will need, the displayed name.
-  Refuses a name that is not configured, and a name that may not be
-  claimed right now (`:not_allowed`), and a name that has an account
-  already (`:taken`). With a `:site` in the opts, a confirmation goes to
-  the address; it never contains the password, and a mail that cannot
-  leave does not undo the account.
+  Invites an address: the account it gets, and the mailed link that
+  gives the account a password. This is the one way in, whether the
+  address came from Settings or from ADMIN_USERS.
 
-  `invited: true` says the caller carried a valid invitation. Without
-  one, only the first account of an empty installation goes through, see
-  `open_claim?/1`.
+  An address that is waiting for its first password gets a fresh link,
+  which is what the Send-again button in Settings is. An address whose
+  account has a password already answers `:exists`: nobody sets a
+  password for a stranger by mailing themselves a link. The opts are
+  the ones of `send_password_link/2`.
+
+  A mail that cannot leave answers `{:mail, reason}` and leaves the
+  account standing, so the link can go out again without making a
+  second account.
   """
-  def claim_account(username, attrs, opts \\ [])
-      when is_binary(username) and is_map(attrs) do
-    attrs =
-      attrs
-      |> Map.new(fn {key, value} -> {to_string(key), value} end)
-      |> Map.put("username", normalize(username))
-
-    # The check and the insert share one transaction, so two overlapping
-    # claims of one name cannot both create an account.
-    result =
-      Repo.transaction(fn ->
-        case sign_in_state(username) do
-          :claimable ->
-            if Keyword.get(opts, :invited, false) or not any_account?() do
-              case Repo.insert(User.claim_changeset(%User{}, attrs)) do
-                {:ok, user} -> user
-                {:error, changeset} -> Repo.rollback(changeset)
-              end
-            else
-              Repo.rollback(:not_allowed)
-            end
-
-          :known ->
-            Repo.rollback(:taken)
-
-          :unknown ->
-            Repo.rollback(:not_allowed)
+  def invite(email, opts) when is_binary(email) do
+    case Repo.get_by(User, email: User.normalize_email(email)) do
+      nil ->
+        with {:ok, user} <- Repo.insert(User.invite_changeset(%User{}, %{email: email})) do
+          broadcast_users_changed()
+          deliver_link(user, opts)
         end
-      end)
 
-    with {:ok, user} <- result do
-      if site = Keyword.get(opts, :site) do
-        _ = UserNotifier.deliver_registration_confirmation(user, site)
-      end
-
-      broadcast_users_changed()
-      {:ok, user}
+      user ->
+        if pending?(user), do: deliver_link(user, opts), else: {:error, :exists}
     end
+  end
+
+  @doc """
+  What the start of the server does with ADMIN_USERS: an address in it
+  that has no account gets one, and a link.
+
+  While nobody can sign in, a restart mints the link of a waiting
+  account again, because that restart is the only way back into an
+  installation whose first mail never arrived. Once somebody has a
+  password, a restart mails nobody: the accounts are the guest list from
+  then on, and this variable only ever adds to them.
+  """
+  def invite_configured(opts) do
+    again? = nobody_can_sign_in?()
+
+    Enum.each(admin_emails(), fn email ->
+      case Repo.get_by(User, email: User.normalize_email(email)) do
+        nil ->
+          invite(email, opts)
+
+        user ->
+          if again? and pending?(user) and not link_recently_sent?(user, opts),
+            do: deliver_link(user, opts)
+      end
+    end)
+  end
+
+  defp deliver_link(user, opts) do
+    with {:ok, _token} <- send_password_link(user, opts), do: {:ok, user}
   end
 
   ## Sign-in
 
   @doc """
-  Finds the user for a username (any case) and verifies the password.
-  Runs the hash either way, so a missing account, and a name the
-  configuration does not carry, take as long as a wrong password.
+  Finds the account of an address (any case) and verifies the password.
+  Runs the hash either way, so an address without an account, and an
+  account that is still waiting for its first password, take as long as
+  a wrong password.
   """
-  def authenticate_user(username, password)
-      when is_binary(username) and is_binary(password) do
-    user = if admin_username?(username), do: get_user_by_username(username)
+  def authenticate_user(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = Repo.get_by(User, email: User.normalize_email(email))
 
     if User.valid_password?(user, password), do: {:ok, user}, else: :error
   end
-
-  defp get_user_by_username(username), do: Repo.get_by(User, username: normalize(username))
-
-  defp normalize(username), do: username |> String.trim() |> String.downcase()
 
   ## Sessions
 
@@ -202,23 +177,20 @@ defmodule Texttile.Accounts do
   def session_fingerprint(token) when is_binary(token), do: Session.hash(token)
 
   @doc """
-  The user a live session token belongs to, or nil. A name that left the
-  configuration is nobody here, so the browser it left open is out on
-  its next request.
+  The user a live session token belongs to, or nil. A deleted account
+  takes its sessions with it, so the browser it left open is out on its
+  next request.
   """
   def get_user_by_session_token(token, opts \\ []) do
     hash = Session.hash(token)
 
-    user =
-      Repo.one(
-        from s in Session,
-          join: u in assoc(s, :user),
-          where: s.token_hash == ^hash,
-          where: s.expires_at > ^moment(opts),
-          select: u
-      )
-
-    if user && admin_username?(user.username), do: user
+    Repo.one(
+      from s in Session,
+        join: u in assoc(s, :user),
+        where: s.token_hash == ^hash,
+        where: s.expires_at > ^moment(opts),
+        select: u
+    )
   end
 
   @doc "All live sessions of the user, newest first."
@@ -291,22 +263,22 @@ defmodule Texttile.Accounts do
 
   ## The mailed password link
 
-  @doc """
-  The user behind an email address (any case), or nil. A name the
-  configuration no longer carries is nobody, so the Forgot screen does
-  not mail it a link either.
-  """
+  @doc "The account behind an email address (any case), or nil."
   def get_user_by_email(email) when is_binary(email) do
-    user = Repo.get_by(User, email: email |> String.trim() |> String.downcase())
-
-    if user && admin_username?(user.username), do: user
+    Repo.get_by(User, email: User.normalize_email(email))
   end
 
   @doc """
-  Mails the user a link that sets a new password. The fresh link
-  replaces any earlier one. `:link_url` turns the token into the URL for
-  the mail; `:site` names the site in it. When the mail cannot leave,
-  the answer says so instead of pretending.
+  Mails the user a link that sets a password: the invitation of a new
+  admin and the password reset are the same link, and the mail says
+  which of the two it is. The fresh link replaces any earlier one.
+  `:link_url` turns the token into the URL for the mail; `:site` names
+  the site in it. When the mail cannot leave, the answer says so instead
+  of pretending.
+
+  While nobody can sign in here, the link goes into the server log too.
+  That is the way into an installation whose mail does not leave, and it
+  closes itself: the first account that sets a password ends it.
   """
   def send_password_link(user, opts) do
     site = Keyword.fetch!(opts, :site)
@@ -322,7 +294,18 @@ defmodule Texttile.Accounts do
 
     url = link_url.(token)
 
-    case UserNotifier.deliver_password_reset(user, url, site) do
+    if nobody_can_sign_in?() do
+      Logger.warning("""
+      Nobody can sign in on this installation yet, so the link for \
+      #{user.email} stands here as well:
+
+          #{url}
+
+      This line stops as soon as one account has a password.\
+      """)
+    end
+
+    case UserNotifier.deliver_password_link(user, url, site) do
       {:ok, _} -> {:ok, token}
       {:error, reason} -> {:error, {:mail, reason}}
     end
@@ -344,19 +327,28 @@ defmodule Texttile.Accounts do
     )
   end
 
-  # A link this old opens nothing.
+  # A link this old opens nothing. An invitation holds a week: it
+  # travels to somebody who is not waiting for it, and a day is short
+  # for a person who reads their mail on Monday. A reset holds a day,
+  # because the person who asked for it is at the screen.
   @link_validity_in_hours 24
+  @invitation_validity_in_hours 24 * 7
+
+  @doc "How long a link for this account holds, in hours."
+  def link_validity_in_hours(%User{} = user) do
+    if pending?(user), do: @invitation_validity_in_hours, else: @link_validity_in_hours
+  end
 
   @doc """
   The user a mailed link belongs to, while the link is fresh. Or
-  `:error`. A name that left the configuration owns nothing here any
-  more, so its links open nothing either.
+  `:error`.
   """
   def verify_login_link(token, opts \\ [])
 
   def verify_login_link(token, opts) when is_binary(token) do
     hash = LoginLink.hash(token)
-    oldest = DateTime.add(moment(opts), -@link_validity_in_hours * 3600, :second)
+    now = moment(opts)
+    oldest = DateTime.add(now, -@invitation_validity_in_hours * 3600, :second)
 
     user =
       Repo.one(
@@ -364,10 +356,15 @@ defmodule Texttile.Accounts do
           join: u in assoc(l, :user),
           where: l.token_hash == ^hash,
           where: l.inserted_at > ^oldest,
-          select: u
+          select: %{user: u, sent_at: l.inserted_at}
       )
 
-    if user && admin_username?(user.username), do: {:ok, user}, else: :error
+    with %{user: user, sent_at: sent_at} <- user,
+         true <- DateTime.diff(now, sent_at, :hour) < link_validity_in_hours(user) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
   end
 
   @doc """
@@ -422,8 +419,8 @@ defmodule Texttile.Accounts do
   Deletes an account, with its sessions and links, under the rules of
   `delete_user_block/3`. What the person wrote stays; it belongs to the
   site. An account that another admin deleted first answers `:gone`
-  instead of raising. The name keeps its place in the configuration, so
-  it can start over with a fresh password.
+  instead of raising. The address is free again afterwards, so the same
+  person can be invited back.
   """
   def delete_user(%User{} = user, by: %User{} = by) do
     case delete_user_block(user, by, Repo.aggregate(User, :count)) do
@@ -459,24 +456,6 @@ defmodule Texttile.Accounts do
   @doc "The user behind an id, or nil when another admin deleted it first."
   def get_user(id), do: Repo.get(User, id)
 
-  @doc """
-  Renames the account. The new name has to stand in the configuration
-  too, otherwise the rename would sign its owner out of their own
-  account on the next request.
-  """
-  def update_username(user, username) do
-    changeset = User.username_changeset(user, %{username: username})
-
-    if admin_username?(to_string(username)) do
-      changeset |> Repo.update() |> tap_users_changed()
-    else
-      {:error,
-       changeset
-       |> Ecto.Changeset.add_error(:username, "is not a username this server allows")
-       |> Map.put(:action, :update)}
-    end
-  end
-
   def update_display_name(user, display_name) do
     user
     |> User.display_name_changeset(%{display_name: display_name})
@@ -484,11 +463,26 @@ defmodule Texttile.Accounts do
     |> tap_users_changed()
   end
 
-  def update_email(user, email) do
-    user
-    |> User.email_changeset(%{email: email})
-    |> Repo.update()
-    |> tap_users_changed()
+  @doc """
+  Moves the account to another address, against the current password.
+
+  The address is the identity here, so this is the door to the whole
+  account: whoever changes it owns every link that follows, the one
+  that sets a new password included. A stolen session must not be
+  enough to walk through it.
+  """
+  def update_email(user, email, current_password) do
+    user = get_user!(user.id)
+    changeset = User.email_changeset(user, %{email: email})
+
+    if User.valid_password?(user, current_password) do
+      changeset |> Repo.update() |> tap_users_changed()
+    else
+      {:error,
+       changeset
+       |> Ecto.Changeset.add_error(:current_password, "is not your current password")
+       |> Map.put(:action, :update)}
+    end
   end
 
   # A profile edit is also a users-list edit: the Settings screen of
@@ -520,14 +514,20 @@ defmodule Texttile.Accounts do
     end
   end
 
-  @doc "The name others read: the displayed name, or the username while it is blank."
+  @doc """
+  The name others read: the displayed name, or the part of the address
+  in front of the @ while it is blank. The address itself never reaches
+  a reader, so the fallback stops there.
+  """
   def display_name(user) do
     case user.display_name && String.trim(user.display_name) do
-      nil -> user.username
-      "" -> user.username
+      nil -> local_part(user.email)
+      "" -> local_part(user.email)
       name -> name
     end
   end
+
+  defp local_part(email), do: email |> to_string() |> String.split("@") |> hd()
 
   # `now:` names the moment a deadline is judged at, so a test can
   # stand on the far side of a session or a link without back-dating

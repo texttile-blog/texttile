@@ -17,34 +17,49 @@ defmodule Texttile.Accounts.UserNotifier do
   alias Texttile.Settings
 
   @doc """
-  Confirms a fresh registration: which site, which username. The
-  password stays out on purpose.
+  Mails the link that sets a password. The account that never had one
+  reads its invitation, every other account reads a password reset: one
+  link, and the mail says which of the two arrived.
   """
-  def deliver_registration_confirmation(user, site) do
+  def deliver_password_link(user, url, site) do
+    if Texttile.Accounts.pending?(user),
+      do: deliver_invitation(user, url, site),
+      else: deliver_password_reset(user, url, site)
+  end
+
+  @doc """
+  The invitation of a new admin: the account is there, and this link
+  gives it a password. Nobody types a password for anybody else.
+  """
+  def deliver_invitation(user, url, site) do
     deliver(
       user,
       gettext("Your admin account on %{site}", site: site),
       gettext(
         """
-        Hello %{name},
+        Hello,
 
-        You have an admin account on %{site} now.
+        You have an admin account on %{site}. This address is what you
+        sign in with.
 
-        Your username is: %{username}
+        Open this link and choose your password:
 
-        Sign in with this username and the password you chose. This mail
-        does not contain the password, and no mail ever will.
+        %{url}
+
+        The link works once, and for a week. Nobody else sets your
+        password, and no mail from this site ever contains one. If you
+        did not expect this, you can ignore this mail: without the link
+        the account stays closed.
         """,
-        name: user.username,
         site: site,
-        username: user.username
+        url: url
       )
     )
   end
 
   @doc """
   Mails a password reset: the link where the owner sets a new password
-  themselves. Nobody types a password for anybody else.
+  themselves.
   """
   def deliver_password_reset(user, url, site) do
     deliver(
@@ -64,7 +79,7 @@ defmodule Texttile.Accounts.UserNotifier do
         you set the new one. If you did not ask for this, you can ignore
         this mail.
         """,
-        name: user.username,
+        name: Texttile.Accounts.display_name(user),
         site: site,
         url: url
       )
@@ -76,7 +91,7 @@ defmodule Texttile.Accounts.UserNotifier do
   defp deliver(user, subject, body) do
     email =
       new()
-      |> to({user.username, user.email})
+      |> to({Texttile.Accounts.display_name(user), user.email})
       |> from({Settings.site_title(), Application.fetch_env!(:texttile, :mail_from)})
       |> subject(subject)
       |> text_body(body)

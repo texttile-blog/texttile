@@ -15,12 +15,25 @@ defmodule TexttileWeb.LinkControllerTest do
 
   describe "GET /link/:token" do
     test "a fresh link opens the set-a-password screen", %{conn: conn} do
-      user = user_fixture(%{username: "julia"})
+      user = user_fixture(%{email: "julia@example.org"})
       conn = get(conn, ~p"/link/#{mailed_link(user)}")
 
       html = html_response(conn, 200)
-      assert html =~ "julia"
+      assert html =~ "julia@example.org"
       assert html =~ "New password"
+    end
+
+    # The same screen, the other face: nobody is setting a new password
+    # here, somebody is opening an account for the first time.
+    test "an invitation says what it opens and how long it holds", %{conn: conn} do
+      user = invited_user_fixture("anna@example.org")
+      conn = get(conn, ~p"/link/#{mailed_link(user)}")
+
+      html = html_response(conn, 200)
+      assert html =~ "opens the admin account of"
+      assert html =~ "anna@example.org"
+      assert html =~ "for a week"
+      refute html =~ "The old password stops working"
     end
 
     test "a dead link says so", %{conn: conn} do
@@ -31,7 +44,7 @@ defmodule TexttileWeb.LinkControllerTest do
 
   describe "POST /link/:token" do
     test "sets the password and signs the person in", %{conn: conn} do
-      user = user_fixture(%{username: "julia"})
+      user = user_fixture(%{email: "julia@example.org"})
       token = mailed_link(user)
 
       conn =
@@ -39,7 +52,7 @@ defmodule TexttileWeb.LinkControllerTest do
 
       assert redirected_to(conn) == ~p"/admin"
       assert get_session(conn, :user_token)
-      assert {:ok, _} = Accounts.authenticate_user("julia", "a long enough password")
+      assert {:ok, _} = Accounts.authenticate_user("julia@example.org", "a long enough password")
     end
 
     test "a short password stays on the form and says why", %{conn: conn} do
@@ -55,7 +68,7 @@ defmodule TexttileWeb.LinkControllerTest do
 
     test "setting the password tells the open sockets of the old sessions to disconnect",
          %{conn: conn} do
-      user = user_fixture(%{username: "julia"})
+      user = user_fixture(%{email: "julia@example.org"})
       old_session_token = Accounts.create_session(user)
 
       TexttileWeb.Endpoint.subscribe(
@@ -90,7 +103,7 @@ defmodule TexttileWeb.LinkControllerTest do
 
       conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "kb@example.org"}})
       assert html_response(conn, 200) =~ "on its way"
-      assert_email_sent(to: [{user.username, "kb@example.org"}])
+      assert_email_sent(to: [{Accounts.display_name(user), "kb@example.org"}])
     end
 
     test "an unknown address gets no mail; the answer reads the same", %{conn: conn} do

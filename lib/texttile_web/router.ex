@@ -97,8 +97,6 @@ defmodule TexttileWeb.Router do
 
     get "/login", SessionController, :new
     post "/login", SessionController, :create
-    get "/login/claim", SessionController, :invited
-    post "/login/claim", SessionController, :claim
   end
 
   scope "/", TexttileWeb do

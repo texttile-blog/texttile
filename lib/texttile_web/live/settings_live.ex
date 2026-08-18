@@ -14,7 +14,6 @@ defmodule TexttileWeb.SettingsLive do
   alias Texttile.Newsletter
   alias Texttile.Settings
   alias Texttile.Uploads
-  alias TexttileWeb.ClaimInvite
 
   @note_ms 4600
 
@@ -45,9 +44,10 @@ defmodule TexttileWeb.SettingsLive do
       # The one moment the backup token exists in the clear: from the
       # click that made it to the next thing this screen does.
       |> assign(:backup_token, nil)
-      # The invitation of the next admin, for as long as it takes to
-      # copy it.
-      |> assign(:invite, nil)
+      # What the invitation of the next admin did, until the screen
+      # does something else.
+      |> assign(:invite_note, nil)
+      |> assign(:invite_form, to_form(%{}, as: :user))
       |> allow_upload(:logo,
         accept: ~w(.svg .png .jpg .jpeg .webp),
         max_entries: 1,
@@ -176,16 +176,20 @@ defmodule TexttileWeb.SettingsLive do
 
   ## Users
 
-  # A configured name belongs to nobody until somebody in here opens it.
-  # The link says the name and holds for a week; it is handed over the
-  # way the two of you already talk, not by mail: nobody here knows the
-  # address of a person who has no account yet.
-  def handle_event("invite", %{"username" => username}, socket) do
-    if username in Accounts.unclaimed_usernames() do
-      url = url(~p"/login/claim?invite=#{ClaimInvite.sign(username)}")
-      {:noreply, assign(socket, :invite, %{username: username, url: url})}
-    else
-      {:noreply, socket |> assign(:invite, nil) |> refresh_users()}
+  # The one way a new admin comes into being here: an address, and the
+  # link that goes to it. The proof of who somebody is stays in their
+  # inbox, so nothing is handed over by hand and there is no name to
+  # guess.
+  def handle_event("invite", %{"user" => %{"email" => email}}, socket) do
+    {:noreply, invited(socket, Accounts.invite(email, link_opts()))}
+  end
+
+  # The mail did not arrive, or the week ran out. The same link again,
+  # and the earlier one stops working.
+  def handle_event("invite_again", %{"id" => id}, socket) do
+    case Accounts.get_user(id) do
+      nil -> {:noreply, refresh_users(socket)}
+      user -> {:noreply, invited(socket, Accounts.invite(user.email, link_opts()))}
     end
   end
 
@@ -442,14 +446,42 @@ defmodule TexttileWeb.SettingsLive do
   defp shown_theme_css(""), do: Settings.default_theme_css()
   defp shown_theme_css(css), do: css
 
+  # Where the mailed link points, and which site it says it is from.
+  defp link_opts do
+    [site: TexttileWeb.Endpoint.host(), link_url: &url(~p"/link/#{&1}")]
+  end
+
+  # What the screen says after an invitation. The account stands even
+  # when the mail did not leave, so that answer offers the way on
+  # instead of leaving a half-made account unexplained.
+  defp invited(socket, result) do
+    note =
+      case result do
+        {:ok, user} ->
+          gettext("The link is on its way to %{email}.", email: user.email)
+
+        {:error, :exists} ->
+          gettext("This address has an account already. It is in the list.")
+
+        {:error, {:mail, _reason}} ->
+          gettext(
+            "The mail did not leave this server. The account is there and waiting: check the mail settings, then send the link again."
+          )
+
+        {:error, _changeset} ->
+          gettext("That is not an email address.")
+      end
+
+    socket
+    |> assign(:invite_note, note)
+    |> assign(:invite_form, to_form(%{}, as: :user))
+    |> refresh_users()
+  end
+
   # :online_ids belongs to Admin: assigned on mount, refreshed on every
   # presence diff, so the "here now" marks stay current on their own.
-  defp showing_invite?(invite, name), do: invite != nil and invite.username == name
-
   defp refresh_users(socket) do
-    socket
-    |> assign(:users, Accounts.list_users())
-    |> assign(:unclaimed, Accounts.unclaimed_usernames())
+    assign(socket, :users, Accounts.list_users())
   end
 
   # The sizes the select offers. Both grids are rows of cards, and the
@@ -569,11 +601,9 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   defp user_meta(user) do
-    state =
-      unless Accounts.admin_username?(user.username),
-        do: gettext("not in ADMIN_USERS · cannot sign in")
+    state = if Accounts.pending?(user), do: gettext("invited · waiting for its first password")
 
-    [user.username, user.email, state]
+    [user.email, state]
     |> Enum.reject(&(&1 in [nil, ""]))
     |> Enum.join(" · ")
   end
@@ -1076,7 +1106,7 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Users")}</.section>
         <p class="note mb-1 leading-[1.6]">
           {gettext(
-            "There is no registration: the ADMIN_USERS setting of this server names everybody who may sign in, and each of them chooses a password at the first sign-in. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
+            "There is no registration: this list is everybody who may sign in. You invite the next one by address, and the link that gives the account its password goes to that inbox. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
           )}
         </p>
         <div id="usersList">
@@ -1094,6 +1124,15 @@ defmodule TexttileWeb.SettingsLive do
                 <span class="dot live"></span>{gettext("here now")}
               </span>
               <span class="sp"></span>
+              <button
+                :if={Accounts.pending?(user)}
+                class="btn sm"
+                id={"invite-again-#{user.id}"}
+                phx-click="invite_again"
+                phx-value-id={user.id}
+              >
+                {gettext("Send the link again")}
+              </button>
               <button
                 class="btn sm"
                 id={"delete-user-#{user.id}"}
@@ -1116,60 +1155,38 @@ defmodule TexttileWeb.SettingsLive do
           </div>
         </div>
 
-        <%!-- The configured names that are still waiting for their
-             owner. A name is no secret, so it does not open itself:
-             somebody who is already in hands over the link. --%>
-        <div :if={@unclaimed != []} id="unclaimedList">
-          <%!-- The link is handed over the way the backup token is:
-               touching the field picks all of it, and the button that
-               opened the link becomes the one that copies it. --%>
-          <div
-            :for={name <- @unclaimed}
-            class="py-3 border-b border-hair"
-            id={"unclaimed-#{name}"}
-            phx-hook="CopyOut"
-          >
-            <div class="flex items-center gap-[10px] flex-wrap">
-              <b class="text-[14.5px]">{name}</b>
-              <span class="note">{gettext("waiting for the first sign-in")}</span>
-              <span class="sp"></span>
-              <button
-                :if={not showing_invite?(@invite, name)}
-                class="btn sm"
-                id={"invite-#{name}"}
-                phx-click="invite"
-                phx-value-username={name}
-              >
-                {gettext("Invitation link")}
-              </button>
-              <button
-                :if={showing_invite?(@invite, name)}
-                type="button"
-                class="btn sm"
-                id={"copyInvite-#{name}"}
-                data-copy
-              >
-                {gettext("Copy")}
-              </button>
-            </div>
-            <div :if={showing_invite?(@invite, name)} class="mt-[7px]">
-              <textarea
-                id={"invite-link-#{name}"}
-                class="sharelines block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
-                style="border-radius: var(--tt-radius); border: 1px solid var(--tt-rule)"
-                readonly
-                spellcheck="false"
-                aria-label={gettext("The invitation link")}
-              >{@invite.url}</textarea>
-              <p class="note mt-[6px]">
+        <%!-- The next admin, by address. Nothing is handed over by
+             hand: the link goes to the inbox, and whoever opens that
+             inbox is who the account belongs to. --%>
+        <.form for={@invite_form} id="invite-form" phx-submit="invite" class="mt-3">
+          <div class="drow">
+            <label class="lab" for="invite-email">{gettext("Invite an admin")}</label>
+            <span class="val">
+              <span class="flex items-end gap-[10px] flex-wrap">
+                <span class="flex-1 min-w-[180px] max-w-[280px]">
+                  <input
+                    type="email"
+                    id="invite-email"
+                    name="user[email]"
+                    autocomplete="off"
+                    spellcheck="false"
+                    autocapitalize="off"
+                    placeholder={gettext("name@example.org")}
+                  />
+                </span>
+                <button class="btn" type="submit" id="invite-send">
+                  {gettext("Send the link")}
+                </button>
+              </span>
+              <p :if={@invite_note} class="note mt-[7px]" id="inviteState">{@invite_note}</p>
+              <div class="hint">
                 {gettext(
-                  "Hand this link to %{name}. It opens the password screen for this name only, and it stops working in a week or as soon as the account exists.",
-                  name: name
+                  "The address gets an account at once and a link that sets its password. The link works one time and for a week. Until it is used, the account cannot sign in, and you can delete it from the list above."
                 )}
-              </p>
-            </div>
+              </div>
+            </span>
           </div>
-        </div>
+        </.form>
 
         <p class="note mt-3">
           {gettext("Change your own displayed name, address and password on")}

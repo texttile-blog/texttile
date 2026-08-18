@@ -17,10 +17,12 @@ shared_root =
     _ -> Path.expand("..", __DIR__)
   end
 
-# The people who may sign in. Every name here becomes an account at its
-# first sign-in, with the password it chooses there. ADMIN_USERS in .env
-# wins over this default, and in production it is the only source.
-config :texttile, :admin_users, ["admin"]
+# The address the first account of a fresh development database belongs
+# to. The server mails it a link at the start, and writes that link into
+# its own log for as long as nobody can sign in, so a development
+# machine gets in without a mail server. ADMIN_USERS in .env wins over
+# this default, and in production it is the only source.
+config :texttile, :admin_emails, ["admin@example.com"]
 
 config :texttile, Texttile.Repo,
   database: Path.join(shared_root, "texttile_dev.db"),

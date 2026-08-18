@@ -14,13 +14,9 @@ defmodule TexttileWeb.ProfileLiveTest do
     assert html =~ "Your profile"
     assert has_element?(view, "#crumb", "Your profile")
 
-    assert has_element?(
-             view,
-             ~s(#profile-form input[name="user[username]"][value="#{user.username}"])
-           )
-
-    assert has_element?(view, ~s(#profile-form input[name="user[email]"][value="#{user.email}"]))
+    assert has_element?(view, ~s(#email-form input[name="em[email]"][value="#{user.email}"]))
     assert has_element?(view, "#savedProfile")
+    refute html =~ "user[username]"
   end
 
   test "changes the displayed name instantly, menu included", %{conn: conn, user: user} do
@@ -35,93 +31,70 @@ defmodule TexttileWeb.ProfileLiveTest do
     assert Accounts.get_user!(user.id).display_name == "Klaus"
   end
 
-  test "an empty displayed name falls back to the username", %{conn: conn, user: user} do
+  test "an empty displayed name falls back to the part before the @", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     view
     |> form("#profile-form", %{"user" => %{"display_name" => ""}})
     |> render_change(%{"_target" => ["user", "display_name"]})
 
-    assert has_element?(view, "#wmMe", user.username)
+    assert has_element?(view, "#wmMe", Accounts.display_name(user))
+    refute render(view) =~ ~r/wmMe[^>]*>[^<]*@/
   end
 
-  test "changes the username to another configured one", %{conn: conn, user: user} do
-    configure_admins([user.username, "brandnew"])
-    {:ok, view, _html} = live(conn, ~p"/admin/profile")
-
-    view
-    |> form("#profile-form", %{"user" => %{"username" => "brandnew"}})
-    |> render_change(%{"_target" => ["user", "username"]})
-
-    assert Accounts.get_user!(user.id).username == "brandnew"
-  end
-
-  test "refuses a username the server does not allow", %{conn: conn, user: user} do
+  test "changes the address against the password", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     html =
       view
-      |> form("#profile-form", %{"user" => %{"username" => "stranger"}})
-      |> render_change(%{"_target" => ["user", "username"]})
+      |> form("#email-form", %{
+        "em" => %{"email" => "new@example.org", "current_password" => valid_password()}
+      })
+      |> render_submit()
 
-    assert html =~ "is not a username this server allows"
-    assert Accounts.get_user!(user.id).username == user.username
-  end
-
-  test "refuses a taken username and says so", %{conn: conn, user: user} do
-    user_fixture(%{username: "taken"})
-    {:ok, view, _html} = live(conn, ~p"/admin/profile")
-
-    html =
-      view
-      |> form("#profile-form", %{"user" => %{"username" => "taken"}})
-      |> render_change(%{"_target" => ["user", "username"]})
-
-    assert html =~ "is already taken"
-    assert Accounts.get_user!(user.id).username == user.username
-  end
-
-  test "a later successful save never leaves a refused value looking saved", %{
-    conn: conn,
-    user: user
-  } do
-    user_fixture(%{username: "taken"})
-    {:ok, view, _html} = live(conn, ~p"/admin/profile")
-
-    view
-    |> form("#profile-form", %{"user" => %{"username" => "taken"}})
-    |> render_change(%{"_target" => ["user", "username"]})
-
-    html =
-      view
-      |> form("#profile-form", %{"user" => %{"display_name" => "Klaus"}})
-      |> render_change(%{"_target" => ["user", "display_name"]})
-
-    # the username field shows what is actually saved again, not the
-    # refused value with its error line gone
-    refute html =~ "is already taken"
-
-    assert has_element?(
-             view,
-             ~s(#profile-form input[name="user[username]"][value="#{user.username}"])
-           )
-  end
-
-  test "changes the email and refuses an invalid one", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/admin/profile")
-
-    view
-    |> form("#profile-form", %{"user" => %{"email" => "new@example.org"}})
-    |> render_change(%{"_target" => ["user", "email"]})
-
+    assert html =~ "Your account is at new@example.org now"
     assert Accounts.get_user!(user.id).email == "new@example.org"
+    assert {:ok, _} = Accounts.authenticate_user("new@example.org", valid_password())
+  end
+
+  # Whoever moves the address owns the next password link, so a stolen
+  # session must not be enough to move it.
+  test "refuses the address change without the current password", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
     html =
       view
-      |> form("#profile-form", %{"user" => %{"email" => "broken"}})
-      |> render_change(%{"_target" => ["user", "email"]})
+      |> form("#email-form", %{
+        "em" => %{"email" => "thief@example.org", "current_password" => "wrong current!"}
+      })
+      |> render_submit()
+
+    assert html =~ "is not your current password"
+    assert Accounts.get_user!(user.id).email == user.email
+  end
+
+  test "refuses an address that is none, and one somebody else has", %{conn: conn, user: user} do
+    user_fixture(%{email: "taken@example.org"})
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
+
+    html =
+      view
+      |> form("#email-form", %{
+        "em" => %{"email" => "broken", "current_password" => valid_password()}
+      })
+      |> render_submit()
 
     assert html =~ "must be an email address"
+
+    html =
+      view
+      |> form("#email-form", %{
+        "em" => %{"email" => "taken@example.org", "current_password" => valid_password()}
+      })
+      |> render_submit()
+
+    assert html =~ "is already in use"
+    assert Accounts.get_user!(user.id).email == user.email
   end
 
   test "sets a new password only with the current one", %{conn: conn, user: user} do
@@ -135,7 +108,7 @@ defmodule TexttileWeb.ProfileLiveTest do
       |> render_submit()
 
     assert html =~ "is not your current password"
-    assert :error = Accounts.authenticate_user(user.username, "a brand new password")
+    assert :error = Accounts.authenticate_user(user.email, "a brand new password")
 
     html =
       view
@@ -145,7 +118,7 @@ defmodule TexttileWeb.ProfileLiveTest do
       |> render_submit()
 
     assert html =~ "Your new password is set"
-    assert {:ok, _} = Accounts.authenticate_user(user.username, "a brand new password")
+    assert {:ok, _} = Accounts.authenticate_user(user.email, "a brand new password")
   end
 
   test "a changed password ends every other session", %{conn: conn, user: user} do

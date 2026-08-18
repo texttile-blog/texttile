@@ -12,24 +12,26 @@ defmodule Texttile.Config do
   def uploads_path(env \\ System.get_env()), do: fetch!(env, "UPLOADS_PATH")
 
   @doc """
-  The usernames that may have an account, from ADMIN_USERS.
+  The email addresses that get an account, from ADMIN_USERS.
 
-  This list is the whole guest list of the installation: a name on it
-  gets an account at its first sign-in, a name off it gets nowhere. The
-  variable holds the names separated by commas.
+  This is not the guest list of the installation any more: the accounts
+  are. The variable is one of the two ways an account comes into being.
+  At every start the server takes an address in here that has no account
+  yet, makes the account and mails it a link that sets its password. The
+  other way is the Users block of Settings, and it needs no deploy.
 
-      ADMIN_USERS="kb,julia"
+      ADMIN_USERS="kb@example.org,julia@example.org"
 
-  Names arrive as people write them, so spaces and capitals are taken
-  out. A name no account could carry is dropped, because it could only
-  ever be a typo. Without the variable the list is empty, and nobody
-  signs in.
+  Addresses arrive as people write them, so spaces and capitals are
+  taken out. Anything that is not an address is dropped, because it
+  could only ever be a typo. Without the variable the list is empty,
+  which is what an installation whose accounts exist already wants.
   """
-  def admin_users(env \\ System.get_env()) do
+  def admin_emails(env \\ System.get_env()) do
     (env["ADMIN_USERS"] || "")
     |> String.split(",")
-    |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
-    |> Enum.filter(&Texttile.Accounts.User.valid_username?/1)
+    |> Enum.map(&Texttile.Accounts.User.normalize_email/1)
+    |> Enum.filter(&Texttile.Accounts.User.valid_email?/1)
     |> Enum.uniq()
   end
 

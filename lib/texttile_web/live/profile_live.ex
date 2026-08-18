@@ -1,9 +1,10 @@
 defmodule TexttileWeb.ProfileLive do
   @moduledoc """
   Your profile: your name, your address, your password, your open
-  sessions. Nothing here has a Save button: every change applies the
-  moment you make it, and the Last-saved line in the corner keeps
-  itself current.
+  sessions. The displayed name has no Save button; it applies the
+  moment you type it, and the Last-saved line in the corner keeps
+  itself current. The address and the password are the two that ask
+  for the password first, because each of them owns the account.
   """
   use TexttileWeb, :live_view
 
@@ -25,6 +26,7 @@ defmodule TexttileWeb.ProfileLive do
       |> assign(:page_title, gettext("Your profile"))
       |> assign(:sessions, Accounts.list_sessions(scope.user))
       |> assign(:pw_note, nil)
+      |> assign(:email_note, nil)
       |> assign_forms(scope.user)
       |> mark_saved(nil)
 
@@ -42,8 +44,6 @@ defmodule TexttileWeb.ProfileLive do
     result =
       case target do
         ["user", "display_name"] -> Accounts.update_display_name(user, params["display_name"])
-        ["user", "username"] -> Accounts.update_username(user, params["username"])
-        ["user", "email"] -> Accounts.update_email(user, params["email"])
         _ -> {:ok, user}
       end
 
@@ -60,6 +60,37 @@ defmodule TexttileWeb.ProfileLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, :profile_form, to_form(changeset, action: :validate))}
+    end
+  end
+
+  # The address is the identity here, so moving it is not a field that
+  # saves itself: it asks for the password first. A stolen session must
+  # not be able to point the next password link at another inbox.
+  def handle_event("set_email", %{"em" => em_params}, socket) do
+    user = socket.assigns.current_scope.user
+
+    case Accounts.update_email(user, em_params["email"], em_params["current_password"]) do
+      {:ok, user} ->
+        scope = Scope.for_user(user, socket.assigns.current_scope.session_token)
+        Admin.announce_rename(user.id)
+
+        {:noreply,
+         socket
+         |> assign(:current_scope, scope)
+         |> assign_forms(user)
+         |> assign(
+           :email_note,
+           gettext("Your account is at %{email} now. You sign in with it from now on.",
+             email: user.email
+           )
+         )
+         |> mark_saved(gettext("Address changed · just now"))}
+
+      {:error, changeset} ->
+        {:noreply,
+         socket
+         |> assign(:email_note, nil)
+         |> assign(:email_form, to_form(changeset, as: :em, action: :validate))}
     end
   end
 
@@ -112,14 +143,9 @@ defmodule TexttileWeb.ProfileLive do
   # the database refused can never sit in a field looking saved, and a
   # normalized value (kb for KB) shows as it was stored.
   defp assign_forms(socket, user) do
-    values = %{
-      "display_name" => user.display_name,
-      "username" => user.username,
-      "email" => user.email
-    }
-
     socket
-    |> assign(:profile_form, to_form(values, as: :user))
+    |> assign(:profile_form, to_form(%{"display_name" => user.display_name}, as: :user))
+    |> assign(:email_form, to_form(%{"email" => user.email}, as: :em))
     |> assign_new(:pw_form, fn -> to_form(%{}, as: :pw) end)
   end
 
@@ -159,7 +185,7 @@ defmodule TexttileWeb.ProfileLive do
         <p class="lead">
           {gettext("You are signed in as")}
           <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>. {gettext(
-            "Change here your email, your password and your open sessions. Every change applies the moment you make it."
+            "Change here your name, your address, your password and your open sessions. Your address and your password need your password once, because whoever holds them holds the account."
           )}
         </p>
 
@@ -180,47 +206,55 @@ defmodule TexttileWeb.ProfileLive do
                 phx-debounce="300"
               />
               <div class="hint">
-                {gettext("What others see. Empty falls back to the username.")}
+                {gettext("What others see. Empty shows the part of your address in front of the @.")}
               </div>
             </span>
           </div>
+        </.form>
+
+        <%!-- The one field on this screen that does not save itself.
+             The address is the identity, so it asks for the password
+             the way the password itself does. --%>
+        <h2 class="set-h">{gettext("Email")}</h2>
+        <.form for={@email_form} id="email-form" phx-submit="set_email">
           <div class="drow">
-            <label class="lab" for={@profile_form[:username].id}>{gettext("Username")}</label>
             <span class="val">
-              <input
-                type="text"
-                id={@profile_form[:username].id}
-                name={@profile_form[:username].name}
-                value={@profile_form[:username].value}
-                spellcheck="false"
-                autocapitalize="off"
-                autocorrect="off"
-                phx-debounce="500"
-              />
-              <.field_errors field={@profile_form[:username]} />
+              <span class="flex items-end gap-[10px] flex-wrap">
+                <span class="flex-1 min-w-[180px] max-w-[260px]">
+                  <label class="block text-[12px] text-dim mb-[3px]" for="em-address">
+                    {gettext("Address")}
+                  </label>
+                  <input
+                    type="email"
+                    id="em-address"
+                    name="em[email]"
+                    value={@email_form[:email].value}
+                    autocomplete="username"
+                    spellcheck="false"
+                    autocapitalize="off"
+                  />
+                </span>
+                <span class="flex-1 min-w-[180px] max-w-[260px]">
+                  <label class="block text-[12px] text-dim mb-[3px]" for="em-current">
+                    {gettext("Your password")}
+                  </label>
+                  <input
+                    type="password"
+                    id="em-current"
+                    name="em[current_password]"
+                    autocomplete="current-password"
+                  />
+                </span>
+                <button class="btn" type="submit" id="em-set">{gettext("Change")}</button>
+              </span>
+              <.field_errors field={@email_form[:current_password]} />
+              <.field_errors field={@email_form[:email]} />
               <div class="hint">
                 {gettext(
-                  "The name you sign in with. It must be unique: no two accounts carry the same one. Lower case letters, digits, dot, dash and underscore."
+                  "This is what you sign in with, and where password links go. Readers never see it. Changing it needs your password, because whoever holds the address holds the account."
                 )}
               </div>
-            </span>
-          </div>
-          <div class="drow">
-            <label class="lab" for={@profile_form[:email].id}>{gettext("Email")}</label>
-            <span class="val">
-              <input
-                type="email"
-                id={@profile_form[:email].id}
-                name={@profile_form[:email].name}
-                value={@profile_form[:email].value}
-                phx-debounce="500"
-              />
-              <.field_errors field={@profile_form[:email]} />
-              <div class="hint">
-                {gettext(
-                  "Where notifications and password links go. You never sign in with it. Readers never see it."
-                )}
-              </div>
+              <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
             </span>
           </div>
         </.form>

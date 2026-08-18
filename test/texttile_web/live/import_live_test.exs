@@ -10,7 +10,7 @@ defmodule TexttileWeb.ImportLiveTest do
     Job.discard()
     on_exit(fn -> Job.discard() end)
     Job.subscribe()
-    user = user_fixture(%{username: "kb"})
+    user = user_fixture(%{display_name: "kb"})
     %{conn: log_in_user(conn, user), user: user}
   end
 

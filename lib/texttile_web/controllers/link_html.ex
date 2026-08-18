@@ -9,8 +9,13 @@ defmodule TexttileWeb.LinkHTML do
   def show(assigns) do
     ~H"""
     <Layouts.auth subtitle={gettext("A new password · %{host}", host: @conn.host)}>
-      <p class="text-[13.5px] mt-[20px] leading-[1.6]" id="link-who">
-        {gettext("This link belongs to the account")} <b>{@user.username}</b>, {@user.email}. {gettext(
+      <p :if={@invitation} class="text-[13.5px] mt-[20px] leading-[1.6]" id="link-who">
+        {gettext("This link opens the admin account of")} <b>{@user.email}</b>. {gettext(
+          "The password you choose here becomes its password, and you sign in with it from then on."
+        )}
+      </p>
+      <p :if={not @invitation} class="text-[13.5px] mt-[20px] leading-[1.6]" id="link-who">
+        {gettext("This link belongs to the account")} <b>{@user.email}</b>. {gettext(
           "The old password stops working the moment you set a new one."
         )}
       </p>
@@ -23,7 +28,9 @@ defmodule TexttileWeb.LinkHTML do
         class="mt-[18px]"
       >
         <div class="mb-[7px]">
-          <label class="lab block mb-0" for="link-password">{gettext("New password")}</label>
+          <label class="lab block mb-0" for="link-password">
+            {if @invitation, do: gettext("Your password"), else: gettext("New password")}
+          </label>
           <input
             type="password"
             id="link-password"
@@ -51,7 +58,12 @@ defmodule TexttileWeb.LinkHTML do
       <p :if={@error} class="text-julia text-[13px] mt-[13px]" id="link-error">
         {String.capitalize(@error)}.
       </p>
-      <p class="note mt-[22px] leading-[1.6]">
+      <p :if={@invitation} class="note mt-[22px] leading-[1.6]">
+        {gettext(
+          "This link works one time, and for a week. Nobody else sets your password, and nobody else can read it."
+        )}
+      </p>
+      <p :if={not @invitation} class="note mt-[22px] leading-[1.6]">
         {gettext(
           "This link works one time, and for 24 hours. Nobody else sets your password, and nobody else can read it."
         )}
@@ -71,7 +83,7 @@ defmodule TexttileWeb.LinkHTML do
       </h2>
       <p class="text-[13.5px] mt-[9px] leading-[1.6]">
         {gettext(
-          "A link to set a password works one time, and for 24 hours. Somebody used this one already, or it is older than a day."
+          "A link to set a password works one time: a day for a password reset, a week for an invitation. Somebody used this one already, or it is older than that."
         )}
       </p>
       <p class="note mt-[10px] leading-[1.6]">

@@ -12,7 +12,12 @@ defmodule TexttileWeb.LinkController do
   def show(conn, %{"token" => token}) do
     case Accounts.verify_login_link(token) do
       {:ok, user} ->
-        render(conn, :show, user: user, token: token, error: nil)
+        render(conn, :show,
+          user: user,
+          token: token,
+          error: nil,
+          invitation: Accounts.pending?(user)
+        )
 
       :error ->
         render(conn, :dead)
@@ -48,7 +53,12 @@ defmodule TexttileWeb.LinkController do
         # spent it in between, say so instead of crashing.
         case Accounts.verify_login_link(token) do
           {:ok, user} ->
-            render(conn, :show, user: user, token: token, error: first_error(changeset))
+            render(conn, :show,
+              user: user,
+              token: token,
+              error: first_error(changeset),
+              invitation: Accounts.pending?(user)
+            )
 
           :error ->
             render(conn, :dead)

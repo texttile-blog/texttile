@@ -62,21 +62,24 @@ docker run -d --name texttile \
   -v texttile-data:/data \
   -e SECRET_KEY_BASE="$(openssl rand -base64 48)" \
   -e PHX_HOST=blog.example.com \
-  -e ADMIN_USERS=klaus,julia \
-  ghcr.io/texttile-blog/texttile:2
+  -e ADMIN_USERS=klaus@example.com,julia@example.com \
+  ghcr.io/texttile-blog/texttile:3
 ```
 
 The container prepares the data directories, runs the migrations, drops root and
-starts the server. All state lives in `/data`. Without `ADMIN_USERS` the site
-runs, but nobody can sign in, so put your username there before the first start.
+starts the server. All state lives in `/data`. `ADMIN_USERS` holds the email
+addresses that get an account, so put yours there before the first start.
 
-Then open the site, go to `/login`, type your username, and pick a password. That
-creates your account. See [Accounts](#accounts).
+At the start the server makes an account for every address in it that has none,
+and mails each one a link that sets its password. Open the link, choose a
+password, and you are in. While no account has a password, the server also
+writes the link into its own log (`docker logs texttile`), so a site whose mail
+does not work yet still lets its first admin in. See [Accounts](#accounts).
 
 The image is `linux/amd64`. An update is a pull and a restart:
 
 ```sh
-docker pull ghcr.io/texttile-blog/texttile:2
+docker pull ghcr.io/texttile-blog/texttile:3
 docker rm -f texttile
 # then the docker run above again
 ```
@@ -84,20 +87,20 @@ docker rm -f texttile
 ### Which tag to run
 
 Every build carries the version from `mix.exs`, and each build gets five tags.
-For version 2.0.1 they are:
+For version 3.0.1 they are:
 
 | Tag      | Points at                             |
 | -------- | ------------------------------------- |
-| `2.0.1`  | that one build, and never moves again |
-| `2.0`    | the newest repair of 2.0              |
-| `2`      | the newest build of 2                 |
+| `3.0.1`  | that one build, and never moves again |
+| `3.0`    | the newest repair of 3.0              |
+| `3`      | the newest build of 3                 |
 | `latest` | the newest build there is             |
 | `<sha>`  | the commit the build came from        |
 
-`2` and `2.0` are not version ranges. The registry resolves no version logic: a
+`3` and `3.0` are not version ranges. The registry resolves no version logic: a
 later build with a fitting number takes the tag over, which is what these two
-tags are for. Run `2` to get repairs and new capabilities without a break, `2.0`
-to get repairs only, and `2.0.1` where nothing may move until you move it.
+tags are for. Run `3` to get repairs and new capabilities without a break, `3.0`
+to get repairs only, and `3.0.1` where nothing may move until you move it.
 
 A build is published only when the version rises, and only after CI passes. A
 merge that keeps the version of the build before it publishes nothing and
@@ -119,7 +122,7 @@ variable stops the app at boot with a message that names it.
 | ------------------ | ---------------- | --------------------------- | --------------------------------------------------- |
 | `DATABASE_PATH`    | yes              | `/data/texttile.db` (image) | SQLite database file                                |
 | `UPLOADS_PATH`     | yes              | `/data/uploads` (image)     | directory for uploaded files                        |
-| `ADMIN_USERS`      | yes              | none                        | usernames that may sign in, separated by commas     |
+| `ADMIN_USERS`      | first start      | none                        | addresses that get an account, separated by commas  |
 | `SECRET_KEY_BASE`  | yes              | none                        | signs cookies; generate with `mix phx.gen.secret`   |
 | `PHX_HOST`         | yes              | `example.com`               | public hostname                                     |
 | `PORT`             | no               | `4000`                      | HTTP port                                           |
@@ -386,33 +389,62 @@ one address, and the counter reads them as one person.
 
 ## Accounts
 
-`ADMIN_USERS` names everybody who may sign in. It holds usernames, separated by
-commas:
+You sign in with your email address. There is no username: an account is an
+address, a password, and the name readers see under the entries.
+
+The accounts are the guest list. Nothing else says who may sign in, and there is
+no registration, so there is nothing to guess.
+
+An account comes into being in one of two ways, and both end in a mailed link
+that sets its first password.
+
+**At the start of the server.** `ADMIN_USERS` holds the addresses that get an
+account, separated by commas:
 
 ```sh
-ADMIN_USERS="klaus,julia"
+ADMIN_USERS="klaus@example.com,julia@example.com"
 ```
 
-A name on that list has no account at first. Its owner types the name on the
-sign-in screen and chooses a password there, along with an email address and a
-displayed name. That creates the account, and a confirmation goes to the address.
-From then on the name signs in with that password.
+Every address in it that has no account gets one at the start, and a link. The
+link works one time, and for a week. This is how the first admin of a new
+installation gets in: nobody is inside yet who could invite them, and there is
+no window in which a stranger could take the account instead.
 
-The first account of a new installation is made this way, by whoever gets there
-first: nobody is in yet who could open the door. So sign in right after the first
-deployment, before anybody else finds the site.
+Adding an address later works too. Set the variable, restart, and the new
+address gets its link. Taking one out takes nothing away: see below.
 
-Every name after that one needs an invitation, because the names are no secret:
-they stand under the entries their owners wrote. In **Settings > Users**, a
-configured name that is still waiting shows an **Invitation link** next to it.
-Hand that link to its owner the way you already talk to each other. It opens the
-password screen for that one name, and it stops working after a week or as soon
-as the account exists. Without it, the sign-in screen answers a free name exactly
-like a wrong password and says nothing about which names are still open.
+**From Settings.** In **Settings > Users**, type an address into **Invite an
+admin** and the same link goes out. No deploy, no restart. The account appears
+in the list at once and says it is waiting for its first password. Until the
+link is used it cannot sign in, **Send the link again** replaces the link, and
+**Delete** takes the account back.
 
-The list stays in charge. Take a name out and its access ends at once, in every
-open browser, whether or not the account is still there. Put it back and the
-account works again.
+Both ways prove the same thing: whoever reads that inbox is who the account
+belongs to. Nothing is handed over by hand.
+
+### When the mail does not go out
+
+While no account here has a password, the server writes every link it mails into
+its own log as well:
+
+```sh
+docker logs texttile
+```
+
+That is the way into a fresh installation whose `MAIL_ADAPTER` is missing or
+wrong. Restarting the server mints a fresh link and writes it again. The moment
+one account has a password, the log line stops.
+
+### Taking access away
+
+Delete the account in **Settings > Users**. That ends its open sessions in every
+browser and frees its address; what the person wrote stays, because it belongs
+to the site. Nobody can delete their own account, and the last account cannot go.
+
+`ADMIN_USERS` does not do this. It only ever adds: an address you take out of it
+keeps the account it already has. This is a deliberate trade for a product built
+for people who trust each other. If you need the emergency switch of the older
+versions, delete the row in the database on the volume.
 
 There are no roles and no permission matrix. Everybody who can sign in can do
 everything, which is what a blog of people who trust each other needs.
@@ -424,14 +456,14 @@ address of the account and sends a link that sets a new password. The link works
 one time, and for 24 hours. Outgoing mail has to work for this, so a real
 installation sets `MAIL_ADAPTER`.
 
-Every account has an address: the first sign-in asks for one, exactly so this
-reset always has somewhere to go. The profile changes it later. An address is for
-the reset and for notifications. It is never a sign-in identity, and a name that
-left `ADMIN_USERS` gets no link either.
+The profile changes the address later, and that change asks for the password
+first: whoever holds the address holds the account, so a browser somebody left
+open must not be enough to move it. Readers never see the address; they see the
+displayed name, or the part in front of the @ while that name is empty.
 
-When the mail cannot go out, the way back is to delete the account in Settings;
-its owner then signs in again with the same name and a fresh password. For the
-only account of a site, delete the row in the database instead.
+When the mail cannot go out, another admin deletes the account in Settings and
+invites the address again. For the only account of a site, fix the mail settings
+and restart: while nobody can sign in, the link stands in the log.
 
 ## Import from another system
 
@@ -657,10 +689,11 @@ make db-delete   # delete the shared development SQLite database
 `npm --prefix assets test` runs the JS unit tests on their own: plain
 `node --test` over `assets/js_test/`, no browser involved.
 
-In development the sign-in list holds `admin`, so the first sign-in with that
-name creates the account on an empty database. A second name needs an invitation
+In development `ADMIN_USERS` holds `admin@example.com`, so an empty database
+gets an account at the first start. Nobody can sign in yet, so the link stands
+in the server output: open it and choose a password. A second address is invited
 from Settings, the same way a real installation does. `ADMIN_USERS` in `.env`
-replaces the list. To test a
+replaces the address. To test a
 real mail adapter locally, copy `.env.example` to `.env` in the main checkout;
 dev loads it on every start, from every worktree, and real environment variables
 win over `.env` values.
