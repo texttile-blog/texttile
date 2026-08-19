@@ -4,7 +4,7 @@ defmodule Texttile.MixProject do
   def project do
     [
       app: :texttile,
-      version: "3.0.1",
+      version: "3.0.2",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,

@@ -12,6 +12,9 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # The job takes about 8 minutes. Without a limit, GitHub lets a hung
+    # step run for 6 hours; a sick apt mirror once held it for 33 minutes.
+    timeout-minutes: 15
     env:
       MIX_ENV: test
     steps:
@@ -41,6 +44,8 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    # Takes about 2 minutes; the limit is the brake, not the budget.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t texttile .
