@@ -238,11 +238,11 @@ An empty database is a bad test. Work from real data instead of pointing at it.
 
 ## Pull requests
 
-- Never work on `main`. Create every branch from `main` in a sibling worktree
-  named `../texttile-<slug>`, then enter it with EnterWorktree so the session
-  and the terminals follow. Keep at most ten registered worktrees. Never force
-  a removal, and never remove a dirty or unintegrated one. If you cannot get
-  under the limit safely, ask what to remove.
+- Never work on `main`. Create every branch from `main` in a worktree named
+  `../worktrees/<repo-folder-name>-<slug>`, then enter it with EnterWorktree so
+  the session and the terminals follow. Keep at most ten registered worktrees.
+  Never force a removal, and never remove a dirty or unintegrated one. If you
+  cannot get under the limit safely, ask what to remove.
 - Use `feature/<slug>` for a user-facing capability, a change across several
   modules, or work that will need more than two commits. Use a short branch name
   for anything smaller.
