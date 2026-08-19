@@ -2203,7 +2203,10 @@ defmodule TexttileWeb.EditorLive do
 
             <%!-- who the entry is by. The name is read from the account
                  every time, so it follows a rename. The entry moves to
-                 another admin here; it never moves to nobody. --%>
+                 another account here; it never moves to nobody. An
+                 account that was deleted is offered too, marked: it
+                 wrote entries, and an attribution that belongs to
+                 somebody who has left is one an admin may make. --%>
             <div class="drow gtop">
               <label class="lab" for="edAuthor">{gettext("Author")}</label>
               <span class="val">

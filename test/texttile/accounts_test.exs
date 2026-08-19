@@ -164,6 +164,22 @@ defmodule Texttile.AccountsTest do
       assert Accounts.deleted?(Accounts.get_user!(invited.id))
     end
 
+    # An installation that upgraded from an older version made every
+    # account it has, and the memory starts empty there. The first
+    # start after the upgrade writes what is already here, so an
+    # address its owner leaves later is not handed to a stranger.
+    test "an address that already had an account is remembered at the next start" do
+      user = user_fixture(%{email: "kb@example.org"})
+      configure_admin_emails(["kb@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+      {:ok, _} = Accounts.update_email(user, "kb@elsewhere.org", valid_password())
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("kb@example.org") == nil
+      assert length(Accounts.list_users()) == 1
+    end
+
     test "an address that leaves ADMIN_USERS is not invited again" do
       configure_admin_emails(["kb@example.org"])
       Accounts.invite_configured(invite_opts())
@@ -621,6 +637,34 @@ defmodule Texttile.AccountsTest do
       assert Enum.map(Accounts.list_users(), & &1.id) == [me.id]
       assert :error = Accounts.authenticate_user(other.email, valid_password())
       assert Accounts.get_user_by_email(other.email) == nil
+    end
+
+    # Deleting ends the sessions, and the token has to answer nothing
+    # afterwards whatever else happens: a request that was already on
+    # its way could otherwise write a session row a moment later, and
+    # no screen would ever find that browser again.
+    test "a session of a deleted account signs nobody in" do
+      me = user_fixture()
+      other = user_fixture()
+      {:ok, _} = Accounts.delete_user(other, by: me)
+
+      token = Accounts.create_session(other)
+
+      assert Accounts.get_user_by_session_token(token) == nil
+    end
+
+    test "a link of a deleted account opens nothing" do
+      me = user_fixture()
+      other = user_fixture()
+      {token, link} = Texttile.Accounts.LoginLink.build(other)
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+      # a link that was already on its way when the delete ran, landing
+      # after it
+      Texttile.Repo.insert!(link)
+
+      assert :error = Accounts.verify_login_link(token)
+      assert :error = Accounts.accept_login_link(token, "a long enough password")
     end
 
     # The row stays, because what the person wrote carries their name

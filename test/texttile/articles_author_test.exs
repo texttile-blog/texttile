@@ -47,6 +47,20 @@ defmodule Texttile.ArticlesAuthorTest do
     assert Articles.author_name(read) == "Julia"
   end
 
+  # The picker offers a deleted account, marked, and this is why: an
+  # entry that person wrote can be given back to them.
+  test "an entry can be named after an account that was deleted" do
+    kb = user_fixture(%{display_name: "kb"})
+    left = user_fixture(%{display_name: "Julia"})
+    article = published_post(user: kb, title: "Harbor mornings")
+    {:ok, _} = Accounts.delete_user(left, by: kb)
+
+    {:ok, named} = article.id |> Articles.get_article!() |> Articles.set_author(left.id, by: kb)
+
+    assert Articles.author_name(named) == "Julia"
+    assert named.user_id == left.id
+  end
+
   test "an entry that never had an author has no name" do
     article = published_post(title: "Nobody's")
     {:ok, article} = article |> Ecto.Changeset.change(user_id: nil) |> Texttile.Repo.update()

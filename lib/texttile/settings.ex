@@ -45,10 +45,11 @@ defmodule Texttile.Settings do
     backup_allowed_ips: {:string, ""},
     backup_last_access_at: {:string, ""},
     backup_last_access_ip: {:string, ""},
-    # The addresses ADMIN_USERS has already made an account for,
-    # separated by commas (see `Texttile.Accounts.invite_configured/1`).
-    # It outlives the accounts it names, which is the whole point: an
-    # account somebody deleted must not come back at the next start.
+    # The addresses that have an account here, separated by commas (see
+    # `Texttile.Accounts.invite_configured/1`). The start of the server
+    # reads it so ADMIN_USERS never makes a second account for an
+    # address, not even one whose owner moved to another one. A deleted
+    # account drops out of it: its address is free again, here too.
     admin_emails_made: {:string, ""}
   }
 

@@ -189,9 +189,15 @@ defmodule TexttileWeb.SettingsLive do
   # The mail did not arrive, or the week ran out. The same link again,
   # and the earlier one stops working.
   def handle_event("invite_again", %{"id" => id}, socket) do
-    case Accounts.get_user(id) do
-      nil -> {:noreply, refresh_users(socket)}
-      user -> {:noreply, invited(socket, Accounts.invite(user.email, link_opts()))}
+    user = Accounts.get_user(id)
+
+    # A row the other admin deleted a moment ago is still on this
+    # screen: sending its link again would make a new account for an
+    # address that was just revoked.
+    if is_nil(user) or Accounts.deleted?(user) do
+      {:noreply, refresh_users(socket)}
+    else
+      {:noreply, invited(socket, Accounts.invite(user.email, link_opts()))}
     end
   end
 

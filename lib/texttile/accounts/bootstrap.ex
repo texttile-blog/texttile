@@ -19,6 +19,11 @@ defmodule Texttile.Accounts.Bootstrap do
   def start_link(_opts), do: Task.start_link(__MODULE__, :run, [])
 
   def run do
+    # Mail leaves in the language of the site, and a task that nobody
+    # started from a request owns no locale of its own. See
+    # `Texttile.I18n`.
+    Texttile.I18n.put_site_locale()
+
     Accounts.invite_configured(
       site: TexttileWeb.Endpoint.host(),
       link_url: &(TexttileWeb.Endpoint.url() <> "/link/#{&1}")

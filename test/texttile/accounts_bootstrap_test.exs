@@ -21,6 +21,19 @@ defmodule Texttile.AccountsBootstrapTest do
     assert email.text_body =~ TexttileWeb.Endpoint.url() <> "/link/"
   end
 
+  # The first mail a site ever sends leaves in the language of the
+  # site, like every other word it says. A task nobody started from a
+  # request owns no language of its own.
+  test "the invitation speaks the language of the site" do
+    {:ok, _} = Texttile.Settings.put(:language, "de")
+    configure_admin_emails(["kb@example.org"])
+
+    Bootstrap.run()
+
+    assert_received {:email, email}
+    assert email.text_body =~ "Hallo"
+  end
+
   # A blog answering its readers must not depend on a mail server or on
   # a variable full of typos, so anything that goes wrong here is
   # written into the log and left there.

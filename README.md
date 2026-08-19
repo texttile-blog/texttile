@@ -413,11 +413,13 @@ is no window in which a stranger could take the account instead.
 Adding an address later works too. Set the variable, restart, and the new
 address gets its link.
 
-Each address is made **once**. The installation remembers what this variable
-made, so an account somebody deleted does not come back at the next restart, and
-an address whose owner moved to another one does not become a second account.
-Taking an address out of the variable takes nothing away either: see
-[Taking access away](#taking-access-away).
+An address that has an account here is never given a second one, so an address
+whose owner moved to another one does not come back as a stranger's way in.
+
+A deleted account frees its address again, in this variable too: while the
+address stands here, the next start invites it once more, as a new account.
+Taking an address out of the variable takes nothing away by itself. Both halves
+of that are in [Taking access away](#taking-access-away).
 
 **From Settings.** In **Settings > Users**, type an address into **Invite an
 admin** and the same link goes out. No deploy, no restart. The account appears

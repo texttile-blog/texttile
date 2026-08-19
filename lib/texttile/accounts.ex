@@ -139,6 +139,12 @@ defmodule Texttile.Accounts do
           unless email in made, do: report(email, invite(email, opts))
 
         user ->
+          # An address that already has an account is one this
+          # installation has made, whoever made it: an installation
+          # that upgraded from an older version made all of them, and
+          # the memory would be empty without this line.
+          remember_made(email)
+
           if again? and pending?(user) and not link_recently_sent?(user, opts),
             do: report(email, deliver_link(user, opts))
       end
@@ -250,16 +256,20 @@ defmodule Texttile.Accounts do
   def session_fingerprint(token) when is_binary(token), do: Session.hash(token)
 
   @doc """
-  The user a live session token belongs to, or nil. A deleted account
-  takes its sessions with it, so the browser it left open is out on its
-  next request.
+  The user a live session token belongs to, or nil.
+
+  Deleting an account ends its sessions, and this asks again anyway: a
+  request that was already on its way when the delete ran could
+  otherwise write a session row a moment later, and nothing would ever
+  find that browser again to sign it out.
   """
   def get_user_by_session_token(token, opts \\ []) do
     hash = Session.hash(token)
 
     Repo.one(
       from s in Session,
-        join: u in assoc(s, :user),
+        join: u in ^here(),
+        on: u.id == s.user_id,
         where: s.token_hash == ^hash,
         where: s.expires_at > ^moment(opts),
         select: u
@@ -439,10 +449,14 @@ defmodule Texttile.Accounts do
     now = moment(opts)
     oldest = DateTime.add(now, -@invitation_validity_in_hours * 3600, :second)
 
+    # The account has to still be here: a link that was already being
+    # spent when somebody deleted the account must not give it a
+    # password and a fresh session on the far side of the delete.
     user =
       Repo.one(
         from l in LoginLink,
-          join: u in assoc(l, :user),
+          join: u in ^here(),
+          on: u.id == l.user_id,
           where: l.token_hash == ^hash,
           where: l.inserted_at > ^oldest,
           select: %{user: u, sent_at: l.inserted_at}
@@ -544,6 +558,15 @@ defmodule Texttile.Accounts do
 
         result =
           Repo.transaction(fn ->
+            # Counted again in here, because two admins deleting each
+            # other in the same second would each have seen two
+            # accounts outside and left the site with none.
+            with nil <- delete_user_block(user, by, Repo.aggregate(here(), :count)) do
+              :ok
+            else
+              reason -> Repo.rollback(reason)
+            end
+
             case Repo.one(from u in here(), where: u.id == ^user.id) do
               nil ->
                 Repo.rollback(:gone)

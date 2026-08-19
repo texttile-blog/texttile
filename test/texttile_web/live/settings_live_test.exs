@@ -411,6 +411,27 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Accounts.get_user_by_email(other.email) == nil
     end
 
+    # Two admins have this screen open. What one of them deleted a
+    # moment ago must not be deleted or invited again from the other
+    # one's stale row.
+    test "a row the other admin deleted asks nothing and sends nothing", %{
+      conn: conn,
+      user: user
+    } do
+      anna = invited_user_fixture("anna@example.org")
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
+
+      {:ok, _} = Accounts.delete_user(anna, by: user)
+
+      render_click(view, "ask_delete", %{"id" => to_string(anna.id)})
+      refute has_element?(view, "#dialog-ok")
+
+      render_click(view, "invite_again", %{"id" => to_string(anna.id)})
+      assert_no_email_sent()
+      assert Accounts.get_user_by_email("anna@example.org") == nil
+      assert length(Accounts.list_users()) == 1
+    end
+
     test "your own row cannot be deleted", %{conn: conn, user: user} do
       _other = user_fixture(%{display_name: "julia"})
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
