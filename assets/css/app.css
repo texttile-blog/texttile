@@ -1200,7 +1200,7 @@
      and out of every click */
   .site-here {
     grid-column: 2; min-width: 0; max-width: 420px; pointer-events: none;
-    font-size: 13px; color: var(--tt-ink); opacity: .45;
+    font-size: 13px; color: var(--tt-inksoft);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .site-nav {
