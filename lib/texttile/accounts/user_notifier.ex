@@ -30,6 +30,10 @@ defmodule Texttile.Accounts.UserNotifier do
   @doc """
   The invitation of a new admin: the account is there, and this link
   gives it a password. Nobody types a password for anybody else.
+
+  The blog itself stands in the mail too. The invitation may be the
+  first thing its reader hears of this site, and the way in is not the
+  same thing as the way to look at it.
   """
   def deliver_invitation(user, url, site) do
     deliver(
@@ -50,9 +54,14 @@ defmodule Texttile.Accounts.UserNotifier do
         password, and no mail from this site ever contains one. If you
         did not expect this, you can ignore this mail: without the link
         the account stays closed.
+
+        The blog is here:
+
+        %{blog}
         """,
         site: site,
-        url: url
+        url: url,
+        blog: TexttileWeb.Endpoint.url()
       )
     )
   end

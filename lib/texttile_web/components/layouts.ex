@@ -80,6 +80,10 @@ defmodule TexttileWeb.Layouts do
   The favicon of every page: the uploaded one from Settings, or the
   bundled Texttile mark. Uploaded names carry a random tag, so the
   browser cache never shows a stale icon.
+
+  Beside it stands the square a phone puts on its home screen. A phone
+  takes no SVG there, so that one is a PNG the site renders from the
+  same picture, see `TexttileWeb.IconController`.
   """
   def favicon_link(assigns) do
     assigns =
@@ -98,6 +102,7 @@ defmodule TexttileWeb.Layouts do
 
     ~H"""
     <link rel="icon" href={elem(@favicon, 0)} type={elem(@favicon, 1)} />
+    <link rel="apple-touch-icon" href={~p"/apple-touch-icon.png"} />
     """
   end
 

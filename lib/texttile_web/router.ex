@@ -59,6 +59,9 @@ defmodule TexttileWeb.Router do
     get "/renditions/:edge/*path", UploadsController, :rendition
     get "/theme.css", ThemeController, :show
 
+    # The square for the home screen, rendered from the favicon.
+    get "/apple-touch-icon.png", IconController, :touch
+
     # The feed. Outside the gate and outside the session: it answers a
     # reader's program, not a browser, and a guarded blog has none.
     get "/feed.xml", FeedController, :show

@@ -14,6 +14,19 @@ defmodule Texttile.ImagesTest do
     rel
   end
 
+  # A file to upload as the site's favicon.
+  defp uploaded_mark do
+    path = Path.join(System.tmp_dir!(), "mark-#{System.unique_integer([:positive])}.png")
+    {:ok, black} = Vix.Vips.Operation.black(64, 64)
+    :ok = Vix.Vips.Image.write_to_file(black, path)
+    path
+  end
+
+  defp bands_of(rel) do
+    {:ok, image} = Vix.Vips.Image.new_from_file(Path.join(Uploads.root(), rel))
+    Vix.Vips.Image.bands(image)
+  end
+
   defp size_of(rel) do
     {:ok, image} = Vix.Vips.Image.new_from_file(Path.join(Uploads.root(), rel))
     {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
@@ -146,6 +159,45 @@ defmodule Texttile.ImagesTest do
       {:ok, _} = Settings.put(:image_max_edge, 2000)
 
       assert cache_bytes() == 0
+    end
+  end
+
+  describe "touch_icon/0" do
+    test "renders the bundled mark as a square PNG for the home screen" do
+      {:ok, icon} = Images.touch_icon()
+
+      assert Path.extname(icon) == ".png"
+      assert size_of(icon) == {180, 180}
+      # flattened: a home screen paints a transparent icon on black,
+      # and the mark's ink is nearly black itself
+      assert bands_of(icon) == 3
+    end
+
+    test "an uploaded favicon is the icon, and the old one goes with the swap" do
+      {:ok, first} = Images.touch_icon()
+
+      {:ok, _} = Uploads.put_site_mark(:favicon, uploaded_mark(), "ours.png")
+      {:ok, second} = Images.touch_icon()
+
+      assert second != first
+      assert size_of(second) == {180, 180}
+      refute File.exists?(Path.join(Uploads.root(), first))
+    end
+
+    test "the second ask answers from the cache" do
+      {:ok, icon} = Images.touch_icon()
+      mtime = File.stat!(Path.join(Uploads.root(), icon)).mtime
+
+      assert {:ok, ^icon} = Images.touch_icon()
+      assert File.stat!(Path.join(Uploads.root(), icon)).mtime == mtime
+    end
+
+    test "a favicon whose file is gone falls back to the mark" do
+      {:ok, stored} = Uploads.put_site_mark(:favicon, uploaded_mark(), "ours.png")
+      File.rm!(Path.join(Uploads.root(), stored))
+
+      assert {:ok, icon} = Images.touch_icon()
+      assert size_of(icon) == {180, 180}
     end
   end
 end

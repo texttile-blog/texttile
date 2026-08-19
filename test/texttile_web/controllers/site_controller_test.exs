@@ -93,6 +93,18 @@ defmodule TexttileWeb.SiteControllerTest do
     end
   end
 
+  describe "the icon a phone puts on its home screen" do
+    # A phone takes no SVG for the square on the home screen, so the
+    # site renders one from the favicon and names it in every head.
+    test "every page names it, and the address answers a PNG", %{conn: conn} do
+      assert conn |> get(~p"/blog") |> html_response(200) =~ ~s(rel="apple-touch-icon")
+
+      icon = get(conn, ~p"/apple-touch-icon.png")
+      assert response_content_type(icon, :png) =~ "image/png"
+      assert byte_size(response(icon, 200)) > 0
+    end
+  end
+
   describe "the article page" do
     test "renders title, date and the markdown body", %{conn: conn} do
       published_post(
@@ -109,6 +121,22 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ "<strong>pier</strong>"
       assert html =~ "1 March 2026"
       assert html =~ ~s(href="/tags/sea")
+    end
+
+    # The bar stays over the words the whole way down, so it says
+    # which entry this is once the title has scrolled away.
+    test "the bar carries the name of the entry", %{conn: conn} do
+      published_post(
+        title: "Harbor mornings",
+        slug: "harbor-mornings",
+        publish_date: ~D[2026-03-01]
+      )
+
+      html = conn |> get(~p"/2026/03/01/harbor-mornings") |> html_response(200)
+      assert html =~ ~r/class="site-here"[^>]*>\s*Harbor mornings/
+
+      # the list is not one entry, so its bar names none
+      refute conn |> get(~p"/blog") |> html_response(200) =~ "site-here"
     end
 
     test "a post has no address without its date", %{conn: conn} do
