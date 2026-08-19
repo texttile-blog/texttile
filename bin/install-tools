@@ -23,9 +23,13 @@ if command -v brew >/dev/null 2>&1; then
 	set -x
 	brew install ffmpeg
 elif command -v apt-get >/dev/null 2>&1; then
+	# apt waits on a dead mirror without a limit of its own; a sick
+	# mirror once held CI for half an hour. Give up after seconds and
+	# a few retries instead.
+	apt_opts="-o Acquire::Retries=2 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10"
 	set -x
-	sudo apt-get update
-	sudo apt-get install -y --no-install-recommends ffmpeg
+	sudo apt-get $apt_opts update
+	sudo apt-get $apt_opts install -y --no-install-recommends ffmpeg
 elif command -v dnf >/dev/null 2>&1; then
 	set -x
 	sudo dnf install -y ffmpeg
