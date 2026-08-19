@@ -2,61 +2,56 @@ defmodule Texttile.Accounts.User do
   @moduledoc """
   An admin account. Every account is an admin and all admins are equal.
 
-  The username is the identity everything hangs on: sign-in, sessions,
-  presence. The displayed name is what people read; empty means the
-  username stands in. The email address is where mail goes, never a
-  sign-in identity.
+  An account carries two names for one person, and each says one thing.
+  The email address is the identity: it is what you sign in with, and
+  readers never see it. The displayed name is what readers see; while it
+  is empty the part in front of the @ stands in.
+
+  An account that was invited has no password yet. It exists, it cannot
+  sign in, and the mailed link is what gives it a password.
   """
 
   use Ecto.Schema
   import Ecto.Changeset
-
-  @username_format ~r/^[a-z0-9._-]+$/
-  @username_max 32
+  import Ecto.Query, only: [from: 2]
 
   schema "users" do
-    field :username, :string
     field :display_name, :string
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
+    # A deleted account keeps its row: what it wrote carries its name,
+    # and the admin area still shows who was there. It cannot sign in,
+    # it is not in the list of accounts, and its address is free again.
+    field :deleted_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end
 
   @doc """
-  The account somebody creates at their first sign-in. The username
-  comes from the configuration, not from the form. The password, the
-  email address and the displayed name come from its owner, and this is
-  the one moment to ask: the address is what a password reset needs,
-  so an account never exists without one.
+  The account an invitation opens: an address, and nothing else. The
+  password comes from the mailed link, the displayed name from the
+  profile.
   """
-  def claim_changeset(user, attrs) do
+  def invite_changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :password, :email, :display_name])
-    |> validate_username()
+    |> cast(attrs, [:email])
     |> validate_email()
-    |> validate_length(:display_name, max: 80)
-    |> validate_confirmation(:password, message: "does not match the password")
-    |> validate_password()
   end
+
+  @email_format ~r/^[^@\s]+@[^@\s]+\.[^@\s]+$/
+  @email_max 160
 
   @doc """
-  Whether a name could be a username at all. The configuration asks this
-  about every name it holds, so a typo there stays a typo instead of
-  becoming a name nobody can sign in with.
+  Whether this could be an email address at all. The configuration asks
+  this about every address it holds, while the database is not up yet,
+  so the question stays a question about the text.
   """
-  def valid_username?(name) when is_binary(name) do
-    String.length(name) <= @username_max and Regex.match?(@username_format, name)
+  def valid_email?(email) when is_binary(email) do
+    String.length(email) <= @email_max and Regex.match?(@email_format, email)
   end
 
-  def valid_username?(_name), do: false
-
-  def username_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:username])
-    |> validate_username()
-  end
+  def valid_email?(_email), do: false
 
   def display_name_changeset(user, attrs) do
     user
@@ -76,32 +71,46 @@ defmodule Texttile.Accounts.User do
     |> validate_password()
   end
 
-  defp validate_username(changeset) do
-    changeset
-    |> update_change(:username, &normalize/1)
-    |> validate_required([:username])
-    |> validate_format(:username, @username_format,
-      message: "only lower case letters, digits, dot, dash and underscore"
+  @doc """
+  What the mailed link asks for when the account opens for the first
+  time: the password twice, and the name readers will see.
+
+  The password is typed twice because nobody knows it yet, so a typo
+  would shut its owner out of the account they are opening, with the
+  link spent. The name is asked here because this is the one moment its
+  owner is at the screen, and an entry signed with the part in front of
+  an @ is a byline nobody chose.
+  """
+  def first_password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password, :display_name])
+    |> validate_confirmation(:password,
+      required: true,
+      message: "does not match the password"
     )
-    |> validate_length(:username, max: @username_max)
-    |> unsafe_validate_unique(:username, Texttile.Repo, message: "is already taken")
-    |> unique_constraint(:username, message: "is already taken")
+    |> validate_required([:display_name], message: "cannot be empty")
+    |> validate_length(:display_name, max: 80)
+    |> validate_password()
   end
+
+  @doc "The address as it is stored and compared: trimmed and lower case."
+  def normalize_email(nil), do: nil
+  def normalize_email(email), do: email |> String.trim() |> String.downcase()
 
   defp validate_email(changeset) do
     changeset
-    |> update_change(:email, &normalize/1)
+    |> update_change(:email, &normalize_email/1)
     |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^@\s]+@[^@\s]+\.[^@\s]+$/,
-      message: "must be an email address"
+    |> validate_format(:email, @email_format, message: "must be an email address")
+    |> validate_length(:email, max: @email_max)
+    # An address is taken by the accounts that are still there. A
+    # deleted account keeps its address on its row and holds nothing.
+    |> unsafe_validate_unique(:email, Texttile.Repo,
+      query: from(u in __MODULE__, where: is_nil(u.deleted_at)),
+      message: "is already in use"
     )
-    |> validate_length(:email, max: 160)
-    |> unsafe_validate_unique(:email, Texttile.Repo, message: "is already in use")
     |> unique_constraint(:email, message: "is already in use")
   end
-
-  defp normalize(nil), do: nil
-  defp normalize(value), do: value |> String.trim() |> String.downcase()
 
   defp validate_password(changeset) do
     changeset
@@ -123,7 +132,10 @@ defmodule Texttile.Accounts.User do
     end
   end
 
-  @doc "True when the password matches this user's hash."
+  @doc """
+  True when the password matches this user's hash. An account that was
+  invited and never set one has no hash, so nothing matches it.
+  """
   def valid_password?(%__MODULE__{password_hash: hash}, password)
       when is_binary(hash) and byte_size(password) > 0 do
     Bcrypt.verify_pass(password, hash)

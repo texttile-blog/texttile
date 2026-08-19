@@ -7,8 +7,8 @@ defmodule TexttileWeb.AdminTest do
 
   describe "the Here-now block" do
     test "shows the other admin's tabs as labelled jumps", %{conn: conn} do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "julia"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
       {:ok, _other_texts, _} = live(other_conn, ~p"/admin/texts")
@@ -25,8 +25,8 @@ defmodule TexttileWeb.AdminTest do
     end
 
     test "a rename reaches the other admin's menu and the own other tab", %{conn: conn} do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "julia"})
 
       other_conn = log_in_user(Phoenix.ConnTest.build_conn(), other)
       {:ok, other_texts, _} = live(other_conn, ~p"/admin/texts")
@@ -53,8 +53,8 @@ defmodule TexttileWeb.AdminTest do
   # Presence diffs arrive asynchronously; render until they did.
   describe "an open editor in the Here-now block" do
     test "says which text somebody writes in, as a jump to it", %{conn: conn} do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "julia"})
 
       {:ok, article} = Texttile.Articles.create_draft(other)
       {:ok, article} = Texttile.Articles.update_text(article, %{title: "Doors"})

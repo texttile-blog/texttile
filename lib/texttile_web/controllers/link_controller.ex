@@ -12,7 +12,12 @@ defmodule TexttileWeb.LinkController do
   def show(conn, %{"token" => token}) do
     case Accounts.verify_login_link(token) do
       {:ok, user} ->
-        render(conn, :show, user: user, token: token, error: nil)
+        render(conn, :show,
+          user: user,
+          token: token,
+          changeset: nil,
+          invitation: Accounts.pending?(user)
+        )
 
       :error ->
         render(conn, :dead)
@@ -22,6 +27,13 @@ defmodule TexttileWeb.LinkController do
   def create(conn, %{"token" => token} = params) do
     password = get_in(params, ["user", "password"]) || ""
 
+    # The two fields an account opening for the first time carries as
+    # well: the password again, and the name readers will see.
+    opts = [
+      confirmation: get_in(params, ["user", "password_confirmation"]),
+      display_name: get_in(params, ["user", "display_name"])
+    ]
+
     # The sessions to disconnect are read first: accepting the link
     # deletes their rows, and the open sockets behind them must go too.
     sessions =
@@ -30,7 +42,7 @@ defmodule TexttileWeb.LinkController do
         :error -> []
       end
 
-    case Accounts.accept_login_link(token, password) do
+    case Accounts.accept_login_link(token, password, opts) do
       {:ok, user} ->
         Enum.each(
           sessions,
@@ -48,7 +60,12 @@ defmodule TexttileWeb.LinkController do
         # spent it in between, say so instead of crashing.
         case Accounts.verify_login_link(token) do
           {:ok, user} ->
-            render(conn, :show, user: user, token: token, error: first_error(changeset))
+            render(conn, :show,
+              user: user,
+              token: token,
+              changeset: changeset,
+              invitation: Accounts.pending?(user)
+            )
 
           :error ->
             render(conn, :dead)
@@ -64,18 +81,25 @@ defmodule TexttileWeb.LinkController do
   end
 
   def send_link(conn, %{"user" => %{"email" => email}}) do
-    # The mail goes out only when the address has an account, but the
-    # answer is the same either way: this screen never says who is a
-    # member. One mail per account per minute, so a stranger hammering
-    # this form neither floods an inbox nor churns a pending link. The
-    # site name in the mail comes from the endpoint config, never from
-    # the request's Host header.
+    # The mail goes out only when the address has an account with a
+    # password, but the answer is the same either way: this screen never
+    # says who is a member. An account that never had a password has
+    # nothing to forget, and its invitation belongs to the people who
+    # sent it: a fresh link replaces the pending one, so a stranger who
+    # knows the address could otherwise kill the invitation in the
+    # inbox it just reached, once a minute, for as long as it takes.
+    # That link is sent again from Settings > Users.
+    #
+    # One mail per account per minute either way, so a stranger
+    # hammering this form neither floods an inbox nor churns a link.
+    # The site name in the mail comes from the endpoint config, never
+    # from the request's Host header.
     case Accounts.get_user_by_email(email) do
       nil ->
         :ok
 
       user ->
-        unless Accounts.link_recently_sent?(user) do
+        unless Accounts.pending?(user) or Accounts.link_recently_sent?(user) do
           Accounts.send_password_link(user,
             site: TexttileWeb.Endpoint.host(),
             link_url: &url(~p"/link/#{&1}")
@@ -84,13 +108,5 @@ defmodule TexttileWeb.LinkController do
     end
 
     render(conn, :forgot, sent: true)
-  end
-
-  defp first_error(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(&TexttileWeb.CoreComponents.translate_error/1)
-    |> Map.values()
-    |> List.flatten()
-    |> List.first()
   end
 end

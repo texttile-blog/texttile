@@ -5,8 +5,10 @@ import Config
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-# Tests set the names they need (see Texttile.AccountsFixtures).
-config :texttile, :admin_users, []
+# Tests make the accounts they need (see Texttile.AccountsFixtures), so
+# nothing is invited at the start.
+config :texttile, :admin_emails, []
+config :texttile, :invite_configured_on_boot, false
 
 config :texttile, Texttile.Repo,
   database: Path.expand("../texttile_test.db", __DIR__),

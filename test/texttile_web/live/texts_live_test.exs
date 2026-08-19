@@ -33,7 +33,7 @@ defmodule TexttileWeb.TextsLiveTest do
 
   test "names the signed-in admin in the menu", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/texts")
-    assert has_element?(view, "#wmMe", user.username)
+    assert has_element?(view, "#wmMe", Texttile.Accounts.display_name(user))
   end
 
   describe "the grid" do

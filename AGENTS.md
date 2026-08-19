@@ -45,8 +45,22 @@ editor that serializes it from a tree (ProseMirror, TipTap, Milkdown).
 ### 5. Minimal, and everybody is an admin
 
 A part is right when nothing is left to take away. There are no roles and no
-permission matrix: `ADMIN_USERS` is the whole access model, and it is built for
-people who trust each other. Settings have no Save button. When a feature needs
+permission matrix: the accounts are the whole access model, every one of them
+an admin, and it is built for people who trust each other. `ADMIN_USERS` is not
+that model any more. It says which addresses get an account at the start of the
+server, so the first admin comes in without anybody to invite them, and
+Settings does the same without a deploy. Both ways end in a mailed link, so who
+you are is who reads that inbox.
+
+Taking access away means deleting the account, and the account keeps its row:
+what a person wrote carries their name, so a reader never sees an entry lose its
+byline and the admin area still says who was there, marked as gone. The address
+is free again at once, the variable included: an address that stands in
+`ADMIN_USERS` is invited again at the next start, so revoking somebody means
+deleting the account **and** taking the address out of the variable.
+
+Settings have no Save button. The one exception is a field that owns the
+account: moving your address asks for your password first. When a feature needs
 a configuration switch to be bearable, the feature is wrong.
 
 ### 6. Mobile first
@@ -84,7 +98,14 @@ Use this language in code, in the UI and when talking to me.
 
 - **you** means the agent reading this file and changing Texttile.
 - **we, us, maintainers** mean Klaus and the people building Texttile.
-- **admin** means a person named in `ADMIN_USERS` who signs in and writes.
+- **admin** means a person with an account here who signs in and writes. The
+  account is an email address and a password; there is no username.
+- **invitation** means the mailed link that gives an account its first
+  password. `ADMIN_USERS` sends one at the start of the server, Settings sends
+  one on a click, and the link is the same one a forgotten password gets.
+- **deleted account** means a row with a `deleted_at`: out of every list of
+  accounts, out of every browser, its address free, and still the name under
+  everything it wrote. `Accounts.here/0` is the query that leaves it out.
 - **reader** means anybody who is not signed in.
 - **entry** means one blog item, a post or a page. Every word a person reads
   says entry. The routes and modules keep the older noun on purpose:
@@ -173,10 +194,11 @@ list and say which entries applied.
   checkout is loaded from every worktree, and real environment variables win
   over it. Mail from the development machine goes out through the adapter that
   `.env` configures, so `/dev/mailbox` can stay empty.
-- The development sign-in list holds `admin`, so the first sign-in with that
-  name creates the account while the database has none. Every name after that
-  one needs an invitation link from Settings > Users. `ADMIN_USERS` in `.env`
-  replaces the list.
+- The development configuration invites `admin@example.com`, so a fresh
+  database gets an account at the first start. While no account has a password,
+  the server writes the link into its own log, which is how a development
+  machine gets in without reading mail. `ADMIN_USERS` in `.env` replaces the
+  address. Every address after the first one is invited from Settings > Users.
 - Stop what you started, by the PID you tracked. See rule 1.
 
 ## Test data

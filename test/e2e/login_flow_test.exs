@@ -1,72 +1,77 @@
 defmodule TexttileWeb.E2E.LoginFlowTest do
   use TexttileWeb.E2E
 
-  describe "the first sign-in" do
+  describe "the first admin" do
     # A blog nobody has signed in to yet: these tests make their own
     # first admin, so the shared one would be in the way.
     @describetag :nobody_signed_up
 
-    test "a configured name walks through the password screen into the admin area", %{conn: conn} do
-      configure_admins(["kb"])
+    test "the address in ADMIN_USERS gets a link and walks into the admin area", %{conn: conn} do
+      configure_admin_emails(["kb@example.org"])
+
+      # what the start of the server does, without restarting it
+      Texttile.Accounts.Bootstrap.run()
+
+      assert_receive {:email, %Swoosh.Email{} = mail}, 2000
+      [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
 
       conn
-      |> visit("/admin")
-      |> assert_has("p", text: "Admin sign-in")
-      |> fill_in("Username", with: "kb")
-      |> click_button("Sign in")
-      |> assert_has("h2", text: "Choose a password")
-      |> fill_in("Password", with: "a long password")
+      |> visit(link)
+      |> assert_has("#link-who", text: "opens the admin account of")
+      |> assert_has("#link-who", text: "kb@example.org")
+      |> fill_in("Your password", with: "a long password")
       |> fill_in("Repeat the password", with: "a long password")
-      |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Displayed name", with: "KB")
-      |> click_button("Create the account and sign in")
+      |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
       |> assert_has("h1", text: "Entries")
+      |> click_button("#wmBtn", "Texttile")
+      |> assert_has("#wmMe", text: "KB")
     end
 
-    test "a name nobody configured gets the answer of a wrong password", %{conn: conn} do
-      configure_admins(["kb"])
+    # Nobody knows this password yet, and the name under the entries is
+    # chosen here or nowhere.
+    test "a typo and a missing name stay on the screen", %{conn: conn} do
+      configure_admin_emails(["kb@example.org"])
+      Texttile.Accounts.Bootstrap.run()
+
+      assert_receive {:email, %Swoosh.Email{} = mail}, 2000
+      [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
+
+      conn
+      |> visit(link)
+      |> fill_in("Your password", with: "a long password")
+      |> fill_in("Repeat the password", with: "a long passwort")
+      |> fill_in("Displayed name", with: "KB")
+      |> click_button("Open the account and sign in")
+      |> assert_has("p", text: "does not match the password")
+      # the name that was typed is still there after a refused answer
+      |> assert_has("#link-display-name[value='KB']")
+      |> fill_in("Your password", with: "a long password")
+      |> fill_in("Repeat the password", with: "a long password")
+      |> fill_in("Displayed name", with: "")
+      |> click_button("Open the account and sign in")
+      |> assert_has("p", text: "cannot be empty")
+      |> fill_in("Your password", with: "a long password")
+      |> fill_in("Repeat the password", with: "a long password")
+      |> fill_in("Displayed name", with: "KB")
+      |> click_button("Open the account and sign in")
+      |> assert_has("#crumb", text: "Entries")
+    end
+
+    # There is no door on this screen that makes an account, so a
+    # stranger who knows the address gets nowhere with it.
+    test "the sign-in screen opens nothing for an address that was only invited", %{conn: conn} do
+      configure_admin_emails(["kb@example.org"])
+      Texttile.Accounts.Bootstrap.run()
 
       conn
       |> visit("/login")
-      |> fill_in("Username", with: "julia")
+      |> assert_has("#login-nobody", text: "No account here has a password yet")
+      |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Password", with: "let me in please")
       |> click_button("Sign in")
       |> assert_has("#login-error", text: "do not match")
-    end
-
-    test "bad input stays on the password screen and says why", %{conn: conn} do
-      configure_admins(["kb"])
-
-      conn
-      |> visit("/login")
-      |> fill_in("Username", with: "kb")
-      |> click_button("Sign in")
-      |> fill_in("Password", with: "short")
-      |> fill_in("Repeat the password", with: "shorter")
-      |> fill_in("Email address", with: "kb@example.org")
-      |> click_button("Create the account and sign in")
-      |> assert_has("p", text: "at least 12 characters")
-      |> assert_has("p", text: "does not match")
-    end
-
-    # Show reveals the first field but stands after the second, so Tab
-    # reached it three stops too late, between the repeat and the email
-    # address. It is a button for the pointer; the keyboard runs the
-    # fields.
-    test "Tab runs the fields and does not stop at Show", %{conn: conn} do
-      configure_admins(["kb"])
-
-      conn
-      |> visit("/login")
-      |> fill_in("Username", with: "kb")
-      |> click_button("Sign in")
-      |> assert_has("h2", text: "Choose a password")
-      |> click("#claim-password")
-      |> press("#claim-password", "Tab")
-      |> assert_has("#claim-password-confirmation:focus")
-      |> press("#claim-password-confirmation", "Tab")
-      |> assert_has("#claim-email:focus")
     end
   end
 
@@ -84,20 +89,19 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> visit(link)
-      |> assert_has("#link-who", text: "belongs to the account kb")
+      |> assert_has("#link-who", text: "belongs to the account kb@example.org")
       |> fill_in("New password", with: "a brand new password")
       |> click_button("Set the password and sign in")
       |> assert_has("#crumb", text: "Entries")
 
-      assert {:ok, _} = Texttile.Accounts.authenticate_user("kb", "a brand new password")
+      assert {:ok, _} =
+               Texttile.Accounts.authenticate_user("kb@example.org", "a brand new password")
     end
 
-    test "a name the configuration dropped gets no mail", %{conn: conn, kb: user} do
-      configure_admins([])
-
+    test "an address without an account gets no mail", %{conn: conn} do
       conn
       |> visit("/forgot")
-      |> fill_in("Email address", with: user.email)
+      |> fill_in("Email address", with: "nobody@example.org")
       |> click_button("Send the link")
       |> assert_has("#forgot-sent", text: "The mail is on its way")
 
@@ -110,7 +114,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       conn
       |> visit("/admin")
       |> assert_has("p", text: "Admin sign-in")
-      |> fill_in("Username", with: "kb")
+      |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Password", with: "wrong password!")
       |> click_button("Sign in")
       |> assert_has("#login-error", text: "do not match")
@@ -123,7 +127,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       conn
       |> visit("/login")
       |> assert_has("label", text: "Stay signed in")
-      |> fill_in("Username", with: "kb")
+      |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Password", with: valid_password())
       |> click_button("Sign in")
       |> assert_has("#crumb", text: "Entries")
@@ -135,7 +139,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "the box on the form keeps the browser signed in for longer", %{conn: conn, kb: user} do
       conn
       |> visit("/login")
-      |> fill_in("Username", with: "kb")
+      |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Password", with: valid_password())
       |> check("Stay signed in", exact: false)
       |> click_button("Sign in")
@@ -188,6 +192,22 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> fill_in("New password", with: "a brand new password")
       |> click_button("Set")
       |> assert_has("#pwMeState", text: "Your new password is set")
+    end
+
+    # The address is the identity, so it is the one field here that
+    # asks before it moves.
+    test "the address changes only with the password", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/profile")
+      |> fill_in("Address", with: "klaus@example.org")
+      |> fill_in("Your password", with: "wrong current!")
+      |> click_button("Change")
+      |> assert_has("p", text: "is not your current password")
+      |> fill_in("Address", with: "klaus@example.org")
+      |> fill_in("Your password", with: valid_password())
+      |> click_button("Change")
+      |> assert_has("#emMeState", text: "klaus@example.org")
     end
 
     test "sign out returns to the sign-in screen", %{conn: conn} do

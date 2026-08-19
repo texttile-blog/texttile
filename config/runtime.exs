@@ -34,7 +34,7 @@ if config_env() == :dev do
 
   # Without ADMIN_USERS the dev default from config/dev.exs stands.
   if System.get_env("ADMIN_USERS") do
-    config :texttile, :admin_users, Texttile.Config.admin_users()
+    config :texttile, :admin_emails, Texttile.Config.admin_emails()
   end
 end
 
@@ -45,9 +45,10 @@ if config_env() == :prod do
 
   config :texttile, :uploads_path, Texttile.Config.uploads_path()
 
-  # The guest list of the installation. An empty or missing ADMIN_USERS
-  # means nobody signs in, which is the safe end of the mistake.
-  config :texttile, :admin_users, Texttile.Config.admin_users()
+  # The addresses that get an account. An empty or missing ADMIN_USERS
+  # makes none, which is right once the accounts of the installation
+  # exist: they are the guest list, not this.
+  config :texttile, :admin_emails, Texttile.Config.admin_emails()
 
   config :texttile, Texttile.Mailer, Texttile.Config.mailer_config()
   config :texttile, :mail_from, Texttile.Config.mail_from()

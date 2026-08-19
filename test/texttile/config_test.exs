@@ -29,26 +29,32 @@ defmodule Texttile.ConfigTest do
     end
   end
 
-  describe "admin_users/1" do
-    test "reads the usernames from ADMIN_USERS" do
-      assert Config.admin_users(%{"ADMIN_USERS" => "kb,julia"}) == ["kb", "julia"]
+  describe "admin_emails/1" do
+    test "reads the addresses from ADMIN_USERS" do
+      assert Config.admin_emails(%{"ADMIN_USERS" => "kb@example.org,julia@example.org"}) ==
+               ["kb@example.org", "julia@example.org"]
     end
 
-    test "takes the names as people write them: spaces, case, a trailing comma" do
-      assert Config.admin_users(%{"ADMIN_USERS" => " KB , Julia ,"}) == ["kb", "julia"]
+    test "takes them as people write them: spaces, case, a trailing comma" do
+      assert Config.admin_emails(%{"ADMIN_USERS" => " KB@Example.ORG , julia@example.org ,"}) ==
+               ["kb@example.org", "julia@example.org"]
     end
 
-    test "an unset or empty variable means nobody can sign in" do
-      assert Config.admin_users(%{}) == []
-      assert Config.admin_users(%{"ADMIN_USERS" => "   "}) == []
+    test "an unset or empty variable invites nobody" do
+      assert Config.admin_emails(%{}) == []
+      assert Config.admin_emails(%{"ADMIN_USERS" => "   "}) == []
     end
 
-    test "drops a name that no account could ever carry" do
-      assert Config.admin_users(%{"ADMIN_USERS" => "kb,not a username,julia"}) == ["kb", "julia"]
+    # A username where an address belongs is the mistake this catches:
+    # it could only ever be a leftover from the older setting.
+    test "drops what is not an address" do
+      assert Config.admin_emails(%{"ADMIN_USERS" => "kb,kb@example.org,not an address"}) ==
+               ["kb@example.org"]
     end
 
-    test "keeps every name once" do
-      assert Config.admin_users(%{"ADMIN_USERS" => "kb,KB,kb"}) == ["kb"]
+    test "keeps every address once" do
+      assert Config.admin_emails(%{"ADMIN_USERS" => "kb@example.org,KB@example.org"}) ==
+               ["kb@example.org"]
     end
   end
 

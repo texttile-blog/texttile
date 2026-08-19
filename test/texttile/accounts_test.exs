@@ -6,256 +6,326 @@ defmodule Texttile.AccountsTest do
 
   alias Texttile.Accounts
 
-  describe "sign_in_state/1" do
-    test "is :claimable for a configured name that has no account yet" do
-      configure_admins(["kb"])
-      assert Accounts.sign_in_state("kb") == :claimable
-    end
+  defp link_url(token), do: "http://localhost/link/#{token}"
 
-    test "is :known once the account exists" do
-      user_fixture(%{username: "kb"})
-      assert Accounts.sign_in_state("kb") == :known
-    end
+  defp invite_opts, do: [site: "texttile.blog", link_url: &link_url/1]
 
-    test "is :unknown for a name that nobody configured" do
-      configure_admins(["kb"])
-      assert Accounts.sign_in_state("julia") == :unknown
-    end
-
-    # Taking a name out of the configuration takes the access away, even
-    # though the account is still there.
-    test "is :unknown for an account whose name left the configuration" do
-      user_fixture(%{username: "kb"})
-      configure_admins([])
-      assert Accounts.sign_in_state("kb") == :unknown
-    end
-
-    test "reads the name the way people type it" do
-      configure_admins(["kb"])
-      assert Accounts.sign_in_state(" KB ") == :claimable
-    end
-
-    test "is :unknown while no name is configured at all" do
-      configure_admins([])
-      assert Accounts.sign_in_state("kb") == :unknown
-    end
+  # What a person does with an invitation: the password twice, and the
+  # name readers will see.
+  defp open_account(token, password \\ "a long enough password") do
+    Accounts.accept_login_link(token, password,
+      confirmation: password,
+      display_name: "Anna"
+    )
   end
 
-  describe "claim_account/3" do
-    test "creates the account of a configured name and signs it in from then on" do
-      configure_admins(["kb"])
+  # The token out of the next mail this test has waiting.
+  defp mailed_token do
+    assert_received {:email, email}
+    [_, token] = Regex.run(~r{/link/(\S+)}, email.text_body)
+    token
+  end
 
-      attrs = %{password: "a long password", email: "kb@example.org", display_name: "KB"}
-      assert {:ok, user} = Accounts.claim_account("kb", attrs)
-      assert user.username == "kb"
-      assert user.email == "kb@example.org"
-      assert user.display_name == "KB"
-      assert Bcrypt.verify_pass("a long password", user.password_hash)
-      assert {:ok, _} = Accounts.authenticate_user("kb", "a long password")
-    end
+  describe "invite/2" do
+    test "makes the account and mails it the link that sets its password" do
+      assert {:ok, user} = Accounts.invite("Anna@Example.ORG", invite_opts())
 
-    # The address is what a password reset needs, so an account never
-    # exists without one.
-    test "refuses to create an account without an email address" do
-      configure_admins(["kb"])
-
-      assert {:error, changeset} = Accounts.claim_account("kb", %{password: "a long password"})
-      assert %{email: [_]} = errors_on(changeset)
-      assert Accounts.sign_in_state("kb") == :claimable
-    end
-
-    test "keeps email addresses unique across accounts" do
-      user = user_fixture()
-      configure_admins(["kb" | Accounts.admin_usernames()])
-
-      assert {:error, changeset} =
-               Accounts.claim_account("kb", %{password: "a long password", email: user.email},
-                 invited: true
-               )
-
-      assert %{email: ["is already in use"]} = errors_on(changeset)
-    end
-
-    # The window this closes: a name stands in the configuration and its
-    # owner has not signed in yet. Without the invitation, whoever
-    # guesses the name first becomes an admin, and the bylines of the
-    # blog publish the names.
-    test "refuses an uninvited claim once the installation has an account" do
-      user_fixture(%{username: "kb"})
-      configure_admins(["kb", "anna"])
-
-      attrs = %{password: "a long password", email: "anna@example.org"}
-      assert {:error, :not_allowed} = Accounts.claim_account("anna", attrs)
-      assert Accounts.sign_in_state("anna") == :claimable
-    end
-
-    test "an invited name claims its account" do
-      user_fixture(%{username: "kb"})
-      configure_admins(["kb", "anna"])
-
-      attrs = %{password: "a long password", email: "anna@example.org"}
-      assert {:ok, user} = Accounts.claim_account("anna", attrs, invited: true)
-      assert user.username == "anna"
-    end
-
-    # A fresh installation has nobody who could invite, so the first
-    # account is claimed without one.
-    test "the first account of an empty installation needs no invitation" do
-      configure_admins(["kb"])
-
-      attrs = %{password: "a long password", email: "kb@example.org"}
-      assert {:ok, _user} = Accounts.claim_account("kb", attrs)
-    end
-
-    test "mails a confirmation without the password when a site is given" do
-      configure_admins(["kb"])
-      attrs = %{password: "a long password", email: "kb@example.org"}
-
-      assert {:ok, _user} = Accounts.claim_account("kb", attrs, site: "texttile.blog")
+      assert user.email == "anna@example.org"
+      assert Accounts.pending?(user)
+      assert :error = Accounts.authenticate_user("anna@example.org", valid_password())
 
       assert_email_sent(fn email ->
-        assert email.to == [{"kb", "kb@example.org"}]
+        assert email.to == [{"anna", "anna@example.org"}]
         assert email.subject =~ "texttile.blog"
-        refute email.text_body =~ "a long password"
+        assert email.text_body =~ "http://localhost/link/"
         true
       end)
     end
 
-    test "mails from the site title, not from the product name" do
-      configure_admins(["kb"])
-      {:ok, _} = Texttile.Settings.put(:site_title, "Breyer Blog")
-      attrs = %{password: "a long password", email: "kb@example.org"}
+    test "the mailed link gives the account its password" do
+      {:ok, user} = Accounts.invite("anna@example.org", invite_opts())
+      token = mailed_token()
 
-      assert {:ok, _user} = Accounts.claim_account("kb", attrs, site: "texttile.blog")
+      assert {:ok, user} = open_account(token)
+      refute Accounts.pending?(user)
 
-      assert_email_sent(fn email ->
-        assert {"Breyer Blog", _address} = email.from
-        true
-      end)
+      assert {:ok, found} =
+               Accounts.authenticate_user("anna@example.org", "a long enough password")
+
+      assert found.id == user.id
     end
 
-    test "the displayed name may stay empty, the username stands in" do
-      configure_admins(["kb"])
+    test "an address that is still waiting gets a fresh link, not a second account" do
+      {:ok, first} = Accounts.invite("anna@example.org", invite_opts())
+      assert {:ok, again} = Accounts.invite("anna@example.org", invite_opts())
 
-      assert {:ok, user} =
-               Accounts.claim_account("kb", %{
-                 password: "a long password",
-                 email: "kb@example.org"
-               })
-
-      assert Accounts.display_name(user) == "kb"
+      assert again.id == first.id
+      assert length(Accounts.list_users()) == 1
     end
 
-    test "refuses a name that nobody configured" do
-      configure_admins(["kb"])
-
-      assert {:error, :not_allowed} =
-               Accounts.claim_account("julia", %{
-                 password: "a long password",
-                 email: "j@example.org"
-               })
-
-      assert Accounts.sign_in_state("julia") == :unknown
+    test "an address whose account has a password is refused" do
+      user = user_fixture()
+      assert {:error, :exists} = Accounts.invite(user.email, invite_opts())
     end
 
-    test "refuses a name that already has an account" do
-      user_fixture(%{username: "kb"})
-
-      assert {:error, :taken} =
-               Accounts.claim_account("kb", %{
-                 password: "another long password",
-                 email: "x@example.org"
-               })
+    test "refuses something that is not an address" do
+      assert {:error, changeset} = Accounts.invite("anna", invite_opts())
+      assert %{email: [_]} = errors_on(changeset)
+      assert Accounts.list_users() == []
     end
 
-    test "keeps the password rules and its confirmation" do
-      configure_admins(["kb"])
+    # The account is the half that is worth keeping: the link can go out
+    # again, and a second attempt would otherwise make a second account.
+    test "a mail that cannot leave says so and leaves the account standing" do
+      break_mail()
 
-      assert {:error, changeset} =
-               Accounts.claim_account("kb", %{
-                 password: "short",
-                 password_confirmation: "short",
-                 email: "kb@example.org"
-               })
-
-      assert %{password: [_]} = errors_on(changeset)
-
-      assert {:error, changeset} =
-               Accounts.claim_account("kb", %{
-                 password: "a long password",
-                 password_confirmation: "a long passwort",
-                 email: "kb@example.org"
-               })
-
-      assert %{password_confirmation: [_]} = errors_on(changeset)
-    end
-
-    test "normalizes the name" do
-      configure_admins(["kb"])
-
-      assert {:ok, user} =
-               Accounts.claim_account(" KB ", %{
-                 password: "a long password",
-                 email: "kb@example.org"
-               })
-
-      assert user.username == "kb"
+      assert {:error, {:mail, _reason}} = Accounts.invite("anna@example.org", invite_opts())
+      assert [%{email: "anna@example.org"}] = Accounts.list_users()
     end
   end
 
-  describe "open_claim?/1" do
-    test "is true for a configured name while the installation has no account" do
-      configure_admins(["kb"])
-      assert Accounts.open_claim?("kb")
+  describe "invite_configured/1" do
+    test "invites the configured address that has no account" do
+      configure_admin_emails(["kb@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+
+      assert [%{email: "kb@example.org"} = user] = Accounts.list_users()
+      assert Accounts.pending?(user)
+      assert_email_sent(fn email -> assert email.to == [{"kb", "kb@example.org"}] end)
     end
 
-    test "is false once any account exists" do
-      user_fixture(%{username: "kb"})
-      configure_admins(["kb", "anna"])
-      refute Accounts.open_claim?("anna")
+    test "leaves an account that can sign in alone" do
+      user = user_fixture(%{email: "kb@example.org"})
+      configure_admin_emails(["kb@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+
+      assert [%{id: id}] = Accounts.list_users()
+      assert id == user.id
+      assert_no_email_sent()
     end
 
-    test "is false for a name nobody configured" do
-      configure_admins(["kb"])
-      refute Accounts.open_claim?("stranger")
+    # The restart is the way back into an installation whose first mail
+    # never arrived, so it mints the link again.
+    test "mints the link again while nobody can sign in" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      first = mailed_token()
+
+      minute_on = DateTime.add(DateTime.utc_now(), 120, :second)
+      Accounts.invite_configured(invite_opts() ++ [now: minute_on])
+
+      assert :error = Accounts.verify_login_link(first)
+      assert {:ok, _} = Accounts.verify_login_link(mailed_token())
+    end
+
+    # A crash loop restarts in seconds, and every restart would
+    # otherwise mail again and kill the link that is on its way.
+    test "mails nothing twice within a minute" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      token = mailed_token()
+
+      Accounts.invite_configured(invite_opts())
+
+      assert_no_email_sent()
+      assert {:ok, _} = Accounts.verify_login_link(token)
+    end
+
+    # Somebody is in, so the waiting account is theirs to chase, not the
+    # server's: a restart must not mail a person again and again.
+    test "leaves a waiting account alone once somebody can sign in" do
+      user_fixture()
+      invited_user_fixture("anna@example.org")
+      configure_admin_emails(["anna@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+
+      assert_no_email_sent()
+    end
+
+    # A deleted account frees its address, in the variable as well: the
+    # next start invites it again, as a new account. Taking access away
+    # for good means taking the address out of ADMIN_USERS too.
+    test "a deleted address is invited again at the next start, as a new account" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      [invited] = Accounts.list_users()
+
+      me = user_fixture()
+      {:ok, _} = Accounts.delete_user(invited, by: me)
+
+      Accounts.invite_configured(invite_opts())
+
+      again = Accounts.get_user_by_email("kb@example.org")
+      refute again.id == invited.id
+      assert Accounts.pending?(again)
+      assert Accounts.deleted?(Accounts.get_user!(invited.id))
+    end
+
+    # An installation that upgraded from an older version made every
+    # account it has, and the memory starts empty there. The first
+    # start after the upgrade writes what is already here, so an
+    # address its owner leaves later is not handed to a stranger.
+    test "an address that already had an account is remembered at the next start" do
+      user = user_fixture(%{email: "kb@example.org"})
+      configure_admin_emails(["kb@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+      {:ok, _} = Accounts.update_email(user, "kb@elsewhere.org", valid_password())
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("kb@example.org") == nil
+      assert length(Accounts.list_users()) == 1
+    end
+
+    test "an address that leaves ADMIN_USERS is not invited again" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      [invited] = Accounts.list_users()
+
+      me = user_fixture()
+      {:ok, _} = Accounts.delete_user(invited, by: me)
+      configure_admin_emails([])
+
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("kb@example.org") == nil
+      assert Enum.map(Accounts.list_users(), & &1.id) == [me.id]
+    end
+
+    # The address the account left is an address this installation has
+    # made once. A second account for it would belong to whoever reads
+    # an inbox its owner walked away from.
+    test "an address the account moved away from makes no second account" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      token = mailed_token()
+      {:ok, user} = open_account(token)
+      {:ok, _} = Accounts.update_email(user, "kb@elsewhere.org", "a long enough password")
+
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("kb@example.org") == nil
+      assert length(Accounts.list_users()) == 1
+    end
+
+    # An address that has an account is not made a second one, however
+    # it got that account.
+    test "an address an admin invited is not made a second time" do
+      user_fixture()
+      {:ok, anna} = Accounts.invite("anna@example.org", invite_opts())
+
+      configure_admin_emails(["anna@example.org"])
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("anna@example.org").id == anna.id
+      assert length(Accounts.list_users()) == 2
+    end
+
+    # The variable is still a way to add somebody without touching
+    # Settings: an address it never made before gets its account.
+    test "an address added to the configuration later gets its account" do
+      user_fixture()
+      configure_admin_emails(["kb@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.pending?(Accounts.get_user_by_email("kb@example.org"))
+    end
+
+    # Nobody is at the screen when this runs, so a mail that stays here
+    # has to say so in the log.
+    test "a mail that cannot leave at the start says so in the log" do
+      break_mail()
+      configure_admin_emails(["kb@example.org"])
+
+      log = ExUnit.CaptureLog.capture_log(fn -> Accounts.invite_configured(invite_opts()) end)
+
+      assert log =~ "kb@example.org"
+      assert log =~ "did not leave this server"
+      assert Accounts.get_user_by_email("kb@example.org")
+    end
+
+    test "an address that is not one is dropped by the configuration, not by this" do
+      configure_admin_emails([])
+      Accounts.invite_configured(invite_opts())
+      assert Accounts.list_users() == []
     end
   end
 
-  describe "unclaimed_usernames/0" do
-    test "names the configured people who have no account yet" do
-      user_fixture(%{username: "kb"})
-      configure_admins(["kb", "anna", "tom"])
+  describe "nobody_can_sign_in?/0" do
+    test "true for an empty installation and for one that is only invited" do
+      assert Accounts.nobody_can_sign_in?()
 
-      assert Accounts.unclaimed_usernames() == ["anna", "tom"]
+      invited_user_fixture("anna@example.org")
+      assert Accounts.nobody_can_sign_in?()
+
+      user_fixture()
+      refute Accounts.nobody_can_sign_in?()
+    end
+
+    # The way into an installation whose mail does not leave. It closes
+    # itself: the first password ends it.
+    test "the link stands in the log while nobody can sign in" do
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          {:ok, _} = Accounts.invite("anna@example.org", invite_opts())
+        end)
+
+      assert log =~ "http://localhost/link/"
+      assert log =~ "anna@example.org"
+    end
+
+    test "no link stands in the log once somebody can sign in" do
+      user = user_fixture()
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          {:ok, _} = Accounts.send_password_link(user, invite_opts())
+        end)
+
+      refute log =~ "http://localhost/link/"
     end
   end
 
   describe "authenticate_user/2" do
-    test "returns the user for the right username and password" do
+    test "returns the user for the right address and password" do
       user = user_fixture()
-      assert {:ok, found} = Accounts.authenticate_user(user.username, valid_password())
+      assert {:ok, found} = Accounts.authenticate_user(user.email, valid_password())
       assert found.id == user.id
     end
 
-    test "accepts the username in any case" do
-      user = user_fixture(%{username: "kb"})
-      assert {:ok, found} = Accounts.authenticate_user("KB", valid_password())
+    test "accepts the address in any case, with spaces around it" do
+      user = user_fixture(%{email: "kb@example.org"})
+      assert {:ok, found} = Accounts.authenticate_user(" KB@Example.ORG ", valid_password())
       assert found.id == user.id
     end
 
     test "rejects a wrong password" do
       user = user_fixture()
-      assert :error = Accounts.authenticate_user(user.username, "wrong password!")
+      assert :error = Accounts.authenticate_user(user.email, "wrong password!")
     end
 
-    test "rejects an unknown username" do
-      assert :error = Accounts.authenticate_user("nobody", valid_password())
+    test "rejects an address without an account" do
+      assert :error = Accounts.authenticate_user("nobody@example.org", valid_password())
     end
 
-    test "rejects a user whose name left the configuration" do
+    # The account exists and its address is no secret. Until the link
+    # gives it a password, no password opens it.
+    test "rejects an account that is still waiting for its first password" do
+      user = invited_user_fixture("anna@example.org")
+      assert Accounts.pending?(user)
+      assert :error = Accounts.authenticate_user("anna@example.org", valid_password())
+      assert :error = Accounts.authenticate_user("anna@example.org", "")
+    end
+
+    # ADMIN_USERS is not the guest list any more: it only ever adds.
+    test "an account stays valid when its address leaves the configuration" do
       user = user_fixture()
-      configure_admins([])
-      assert :error = Accounts.authenticate_user(user.username, valid_password())
+      configure_admin_emails([])
+      assert {:ok, _} = Accounts.authenticate_user(user.email, valid_password())
     end
   end
 
@@ -311,14 +381,15 @@ defmodule Texttile.AccountsTest do
       assert Accounts.get_user_by_session_token(:crypto.strong_rand_bytes(32)) == nil
     end
 
-    # The open browser of somebody who left the configuration is out on
-    # the next request, not only at the next sign-in.
-    test "get_user_by_session_token/1 drops the session of a removed name" do
-      user = user_fixture()
-      token = Accounts.create_session(user)
-      assert Accounts.get_user_by_session_token(token).id == user.id
+    # Deleting the account is what ends the browsers it left open, and
+    # the rows go with it.
+    test "get_user_by_session_token/1 finds nobody once the account is gone" do
+      me = user_fixture()
+      other = user_fixture()
+      token = Accounts.create_session(other)
+      assert Accounts.get_user_by_session_token(token).id == other.id
 
-      configure_admins([])
+      {:ok, _} = Accounts.delete_user(other, by: me)
       assert Accounts.get_user_by_session_token(token) == nil
     end
 
@@ -434,71 +505,71 @@ defmodule Texttile.AccountsTest do
   end
 
   describe "profile updates" do
-    test "update_username/2 changes the login name to another configured one" do
-      user = user_fixture()
-      configure_admins([user.username, "newname"])
-
-      assert {:ok, user} = Accounts.update_username(user, "newname")
-      assert user.username == "newname"
-      assert {:ok, _} = Accounts.authenticate_user("newname", valid_password())
-    end
-
-    # Renaming yourself to a name the configuration does not carry would
-    # sign you out of your own account on the next request.
-    test "update_username/2 refuses a name that is not configured" do
-      user = user_fixture()
-
-      assert {:error, changeset} = Accounts.update_username(user, "stranger")
-      assert %{username: ["is not a username this server allows"]} = errors_on(changeset)
-      assert {:ok, _} = Accounts.authenticate_user(user.username, valid_password())
-    end
-
-    test "update_username/2 keeps login names unique, case-insensitively" do
-      user_fixture(%{username: "kb"})
-      user = user_fixture()
-      assert {:error, changeset} = Accounts.update_username(user, "KB")
-      assert %{username: [_]} = errors_on(changeset)
-    end
-
-    test "update_username/2 rejects invalid names" do
-      user = user_fixture()
-      assert {:error, _} = Accounts.update_username(user, "")
-      assert {:error, _} = Accounts.update_username(user, "has spaces")
-    end
-
     test "update_display_name/2 accepts any text, including nothing" do
-      user = user_fixture()
+      user = user_fixture(%{email: "kb@example.org"})
       assert {:ok, user} = Accounts.update_display_name(user, "Klaus")
       assert user.display_name == "Klaus"
       assert {:ok, user} = Accounts.update_display_name(user, "")
-      assert Accounts.display_name(user) == user.username
+      assert Accounts.display_name(user) == "kb"
     end
 
-    test "display_name/1 falls back to the username for blank names" do
-      user = user_fixture(%{username: "kb"})
+    # The address is the identity, and it is not for readers. What a
+    # blank name falls back to is the part in front of the @, never the
+    # address itself.
+    test "display_name/1 falls back to the part before the @" do
+      user = user_fixture(%{email: "kb@example.org"})
       assert Accounts.display_name(user) == "kb"
       {:ok, user} = Accounts.update_display_name(user, "   ")
       assert Accounts.display_name(user) == "kb"
+      refute Accounts.display_name(user) =~ "@"
       {:ok, user} = Accounts.update_display_name(user, "Klaus")
       assert Accounts.display_name(user) == "Klaus"
     end
 
-    test "update_email/2 changes and normalizes the address" do
+    test "update_email/3 changes and normalizes the address" do
       user = user_fixture()
-      assert {:ok, user} = Accounts.update_email(user, "New@Example.ORG")
+      assert {:ok, user} = Accounts.update_email(user, "New@Example.ORG", valid_password())
       assert user.email == "new@example.org"
+      assert {:ok, _} = Accounts.authenticate_user("new@example.org", valid_password())
     end
 
-    test "update_email/2 keeps addresses unique" do
+    # Whoever holds the address holds the account: the next password
+    # link goes there. A stolen session must not be enough to move it.
+    test "update_email/3 needs the current password" do
+      user = user_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_email(user, "new@example.org", "wrong current!")
+
+      assert %{current_password: [_]} = errors_on(changeset)
+      assert Accounts.get_user!(user.id).email == user.email
+    end
+
+    test "update_email/3 keeps addresses unique" do
       user_fixture(%{email: "taken@example.org"})
       user = user_fixture()
-      assert {:error, changeset} = Accounts.update_email(user, "Taken@example.org")
+
+      assert {:error, changeset} =
+               Accounts.update_email(user, "Taken@example.org", valid_password())
+
       assert %{email: [_]} = errors_on(changeset)
     end
 
-    test "update_email/2 rejects an invalid address" do
+    # A link that is on its way to the old inbox dies with the move,
+    # because links belong to the account and not to the address.
+    test "update_email/3 spends the link that was mailed to the old address" do
       user = user_fixture()
-      assert {:error, changeset} = Accounts.update_email(user, "not-a-mail")
+      {:ok, token} = Accounts.send_password_link(user, invite_opts())
+
+      {:ok, _} = Accounts.update_email(user, "moved@example.org", valid_password())
+
+      assert :error = Accounts.verify_login_link(token)
+      assert :error = Accounts.accept_login_link(token, "a long enough password")
+    end
+
+    test "update_email/3 rejects an invalid address" do
+      user = user_fixture()
+      assert {:error, changeset} = Accounts.update_email(user, "not-a-mail", valid_password())
       assert %{email: [_]} = errors_on(changeset)
     end
 
@@ -513,8 +584,19 @@ defmodule Texttile.AccountsTest do
       assert {:ok, user} =
                Accounts.update_password(user, valid_password(), "a brand new password")
 
-      assert {:ok, _} = Accounts.authenticate_user(user.username, "a brand new password")
-      assert :error = Accounts.authenticate_user(user.username, valid_password())
+      assert {:ok, _} = Accounts.authenticate_user(user.email, "a brand new password")
+      assert :error = Accounts.authenticate_user(user.email, valid_password())
+    end
+
+    # The reset somebody asked for and never used opens nothing once
+    # the owner has set the password themselves.
+    test "update_password/3 spends the link that is still in flight" do
+      user = user_fixture()
+      {:ok, token} = Accounts.send_password_link(user, invite_opts())
+
+      {:ok, _} = Accounts.update_password(user, valid_password(), "a brand new password")
+
+      assert :error = Accounts.verify_login_link(token)
     end
 
     test "update_password/3 rejects a short new password" do
@@ -537,33 +619,95 @@ defmodule Texttile.AccountsTest do
 
       # the real current password works, stale struct or not
       assert {:ok, _} = Accounts.update_password(stale, "second password!", "third password!!")
-      assert {:ok, _} = Accounts.authenticate_user(stale.username, "third password!!")
+      assert {:ok, _} = Accounts.authenticate_user(stale.email, "third password!!")
     end
   end
 
   describe "delete_user/2" do
-    test "deletes another account with its sessions" do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
+    test "ends the sessions and takes the account out of the list" do
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "julia"})
       Accounts.create_session(other)
+      {:ok, _} = Accounts.send_password_link(other, invite_opts())
 
-      assert {:ok, _} = Accounts.delete_user(other, by: me)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
+      assert {:ok, deleted} = Accounts.delete_user(other, by: me)
+
+      assert Accounts.deleted?(deleted)
       assert Accounts.list_sessions(other) == []
+      assert Enum.map(Accounts.list_users(), & &1.id) == [me.id]
+      assert :error = Accounts.authenticate_user(other.email, valid_password())
+      assert Accounts.get_user_by_email(other.email) == nil
+    end
+
+    # Deleting ends the sessions, and the token has to answer nothing
+    # afterwards whatever else happens: a request that was already on
+    # its way could otherwise write a session row a moment later, and
+    # no screen would ever find that browser again.
+    test "a session of a deleted account signs nobody in" do
+      me = user_fixture()
+      other = user_fixture()
+      {:ok, _} = Accounts.delete_user(other, by: me)
+
+      token = Accounts.create_session(other)
+
+      assert Accounts.get_user_by_session_token(token) == nil
+    end
+
+    test "a link of a deleted account opens nothing" do
+      me = user_fixture()
+      other = user_fixture()
+      {token, link} = Texttile.Accounts.LoginLink.build(other)
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+      # a link that was already on its way when the delete ran, landing
+      # after it
+      Texttile.Repo.insert!(link)
+
+      assert :error = Accounts.verify_login_link(token)
+      assert :error = Accounts.accept_login_link(token, "a long enough password")
+    end
+
+    # The row stays, because what the person wrote carries their name
+    # and the admin area still has to say who was there.
+    test "the account keeps its row and its name" do
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "Julia"})
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+
+      kept = Accounts.get_user!(other.id)
+      assert Accounts.deleted?(kept)
+      assert Accounts.display_name(kept) == "Julia"
+      assert kept.email == other.email
+      assert Enum.map(Accounts.list_users_and_deleted(), & &1.id) == [me.id, other.id]
+    end
+
+    # The address belongs to nobody again, and what comes back is a new
+    # account: a new row, no sessions, no password.
+    test "the address is free again and the next account for it is a new one" do
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{email: "julia@example.org"})
+      {:ok, _} = Accounts.delete_user(other, by: me)
+
+      assert {:ok, again} = Accounts.invite("julia@example.org", invite_opts())
+
+      refute again.id == other.id
+      assert Accounts.pending?(again)
+      assert Accounts.get_user_by_email("julia@example.org").id == again.id
     end
 
     test "never you, never the last account" do
-      me = user_fixture(%{username: "kb"})
+      me = user_fixture(%{display_name: "kb"})
       assert {:error, :last} = Accounts.delete_user(me, by: me)
 
-      other = user_fixture(%{username: "julia"})
+      other = user_fixture(%{display_name: "julia"})
       assert {:error, :yourself} = Accounts.delete_user(other, by: other)
     end
 
     test "an account another admin deleted first answers :gone, not a crash" do
-      me = user_fixture(%{username: "kb"})
-      other = user_fixture(%{username: "julia"})
-      _third = user_fixture(%{username: "pat"})
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "julia"})
+      _third = user_fixture(%{display_name: "pat"})
 
       {:ok, _} = Accounts.delete_user(other, by: me)
       assert {:error, :gone} = Accounts.delete_user(other, by: me)
@@ -572,8 +716,8 @@ defmodule Texttile.AccountsTest do
 
   describe "list_users/0" do
     test "everybody, oldest account first" do
-      kb = user_fixture(%{username: "kb"})
-      julia = user_fixture(%{username: "julia"})
+      kb = user_fixture(%{display_name: "kb"})
+      julia = user_fixture(%{display_name: "julia"})
 
       assert Enum.map(Accounts.list_users(), & &1.id) == [kb.id, julia.id]
     end

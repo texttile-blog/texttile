@@ -60,7 +60,7 @@ defmodule Texttile.DataCase do
   `setup_sandbox/1`, so they call this themselves.
   """
   def clear_what_no_sandbox_rolls_back do
-    restore_admin_users_afterwards()
+    restore_admin_emails_afterwards()
     forget_open_editors()
     clear_uploads()
     Texttile.RateLimiter.reset()
@@ -199,13 +199,13 @@ defmodule Texttile.DataCase do
   def forget_open_editors, do: Texttile.Articles.Lock.forget_all()
 
   @doc """
-  Puts the configured admin usernames back after the test. Fixtures and
-  tests write that list, and it lives in the application environment,
-  which no sandbox rolls back.
+  Puts the addresses of ADMIN_USERS back after the test. Tests write
+  that list, and it lives in the application environment, which no
+  sandbox rolls back.
   """
-  def restore_admin_users_afterwards do
-    admin_users = Application.get_env(:texttile, :admin_users)
-    on_exit(fn -> Application.put_env(:texttile, :admin_users, admin_users) end)
+  def restore_admin_emails_afterwards do
+    admin_emails = Application.get_env(:texttile, :admin_emails)
+    on_exit(fn -> Application.put_env(:texttile, :admin_emails, admin_emails) end)
   end
 
   @doc """
@@ -232,7 +232,7 @@ defmodule Texttile.DataCase do
   @doc """
   A helper that transforms changeset errors into a map of messages.
 
-      assert {:error, changeset} = Accounts.claim_account("kb", %{password: "short"})
+      assert {:error, changeset} = Accounts.update_password(user, valid_password(), "short")
       assert "password is too short" in errors_on(changeset).password
       assert %{password: ["password is too short"]} = errors_on(changeset)
 

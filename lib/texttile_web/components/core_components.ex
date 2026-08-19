@@ -23,6 +23,24 @@ defmodule TexttileWeb.CoreComponents do
   alias Phoenix.LiveView.JS
 
   @doc """
+  The name of a person in the admin area: the name readers see, and the
+  word that says the account is not there any more.
+
+  Everything a reader gets goes through `Texttile.Accounts.display_name/1`
+  instead. Whether the person who wrote an entry still has an account
+  here is nobody's business but ours.
+  """
+  def admin_name(nil), do: nil
+
+  def admin_name(user) do
+    name = Texttile.Accounts.display_name(user)
+
+    if Texttile.Accounts.deleted?(user),
+      do: gettext("%{name} (deleted)", name: name),
+      else: name
+  end
+
+  @doc """
   Renders flash notices.
 
   ## Examples

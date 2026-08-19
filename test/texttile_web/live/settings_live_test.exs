@@ -2,6 +2,7 @@ defmodule TexttileWeb.SettingsLiveTest do
   use TexttileWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
+  import Swoosh.TestAssertions
   import Texttile.AccountsFixtures
 
   alias Texttile.Accounts
@@ -10,7 +11,7 @@ defmodule TexttileWeb.SettingsLiveTest do
   alias Texttile.Uploads
 
   setup %{conn: conn} do
-    user = user_fixture(%{username: "kb"})
+    user = user_fixture(%{display_name: "kb"})
     %{conn: log_in_user(conn, user), user: user}
   end
 
@@ -291,7 +292,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
   describe "users" do
     test "lists everybody with you marked", %{conn: conn} do
-      other = user_fixture(%{username: "julia"})
+      other = user_fixture(%{display_name: "julia"})
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "julia"
@@ -299,38 +300,103 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ other.email
     end
 
-    test "a name in the configuration without an account is not listed", %{conn: conn} do
-      configure_admins(["kb", "julia"])
-      {:ok, _view, html} = live(conn, ~p"/admin/settings")
-
-      # The screen lists accounts, not names that could become one:
-      # nobody can act on a name that has never signed in.
-      refute html =~ "Not here yet"
-      refute html =~ "These names may sign in but have no account yet"
-    end
-
-    # An account whose name left the configuration is still a row here,
-    # and it has to say why that person no longer gets in.
-    test "an account that left the configuration says so", %{conn: conn, user: user} do
-      other = user_fixture(%{username: "julia"})
-      configure_admins([user.username])
-
-      {:ok, _view, html} = live(conn, ~p"/admin/settings")
-
-      assert html =~ "not in ADMIN_USERS"
-      assert html =~ "cannot sign in"
-      assert html =~ "user-#{other.id}"
-    end
-
-    test "the screen offers no way to add somebody", %{conn: conn} do
+    test "an invited account is in the list and says it is waiting", %{conn: conn} do
+      anna = invited_user_fixture("anna@example.org")
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      refute html =~ "add-user-form"
-      refute has_element?(view, "#add-user-form")
+      assert html =~ "anna@example.org"
+      assert html =~ "waiting for its first password"
+      assert has_element?(view, "#invite-again-#{anna.id}")
+    end
+
+    test "an address that leaves the configuration changes nothing here", %{conn: conn} do
+      other = user_fixture(%{display_name: "julia"})
+      configure_admin_emails([])
+
+      {:ok, _view, html} = live(conn, ~p"/admin/settings")
+
+      assert html =~ "user-#{other.id}"
+      refute html =~ "ADMIN_USERS"
+    end
+
+    test "inviting an address makes the account and mails the link", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html =
+        view
+        |> form("#invite-form", %{"user" => %{"email" => "anna@example.org"}})
+        |> render_submit()
+
+      assert html =~ "on its way to anna@example.org"
+      assert Accounts.pending?(Accounts.get_user_by_email("anna@example.org"))
+      assert_email_sent(fn email -> assert email.to == [{"anna", "anna@example.org"}] end)
+    end
+
+    test "inviting an address that has an account says so and makes nothing", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html =
+        view
+        |> form("#invite-form", %{"user" => %{"email" => user.email}})
+        |> render_submit()
+
+      assert html =~ "has an account already"
+      assert length(Accounts.list_users()) == 1
+      assert_no_email_sent()
+    end
+
+    # A typo is corrected, not typed again; an invitation that went out
+    # leaves an empty field for the next one.
+    test "an address that is none is refused and stays in the field", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html =
+        view
+        |> form("#invite-form", %{"user" => %{"email" => "anna"}})
+        |> render_submit()
+
+      assert html =~ "not an email address"
+      assert html =~ ~s(id="invite-email" name="user[email]" value="anna")
+      assert length(Accounts.list_users()) == 1
+
+      html =
+        view
+        |> form("#invite-form", %{"user" => %{"email" => "anna@example.org"}})
+        |> render_submit()
+
+      assert html =~ ~s(id="invite-email" name="user[email]" value="")
+    end
+
+    # The account is made either way, so the screen offers the way on
+    # instead of leaving half an account unexplained.
+    test "a mail that cannot leave says so and keeps the account", %{conn: conn} do
+      break_mail()
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html =
+        view
+        |> form("#invite-form", %{"user" => %{"email" => "anna@example.org"}})
+        |> render_submit()
+
+      assert html =~ "did not leave this server"
+      assert Accounts.get_user_by_email("anna@example.org")
+    end
+
+    test "sending the link again replaces the earlier one", %{conn: conn} do
+      anna = invited_user_fixture("anna@example.org")
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html = view |> element("#invite-again-#{anna.id}") |> render_click()
+
+      assert html =~ "on its way to anna@example.org"
+      assert_email_sent(fn email -> assert email.to == [{"anna", "anna@example.org"}] end)
     end
 
     test "deleting somebody asks first, then they are gone", %{conn: conn} do
-      other = user_fixture(%{username: "julia"})
+      other = user_fixture(%{display_name: "julia"})
       {:ok, view, _} = live(conn, ~p"/admin/settings")
 
       html = view |> element("#user-#{other.id} button", "Delete") |> render_click()
@@ -338,12 +404,36 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       view |> element("#dialog-ok") |> render_click()
 
+      # out of the list, and out of the guest list: the row stays for
+      # the names under the entries
       refute has_element?(view, "#user-#{other.id}")
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
+      assert Accounts.deleted?(Accounts.get_user!(other.id))
+      assert Accounts.get_user_by_email(other.email) == nil
+    end
+
+    # Two admins have this screen open. What one of them deleted a
+    # moment ago must not be deleted or invited again from the other
+    # one's stale row.
+    test "a row the other admin deleted asks nothing and sends nothing", %{
+      conn: conn,
+      user: user
+    } do
+      anna = invited_user_fixture("anna@example.org")
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
+
+      {:ok, _} = Accounts.delete_user(anna, by: user)
+
+      render_click(view, "ask_delete", %{"id" => to_string(anna.id)})
+      refute has_element?(view, "#dialog-ok")
+
+      render_click(view, "invite_again", %{"id" => to_string(anna.id)})
+      assert_no_email_sent()
+      assert Accounts.get_user_by_email("anna@example.org") == nil
+      assert length(Accounts.list_users()) == 1
     end
 
     test "your own row cannot be deleted", %{conn: conn, user: user} do
-      _other = user_fixture(%{username: "julia"})
+      _other = user_fixture(%{display_name: "julia"})
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "This one is you"

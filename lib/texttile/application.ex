@@ -53,6 +53,16 @@ defmodule Texttile.Application do
       TexttileWeb.Endpoint
     ]
 
+    # ADMIN_USERS invites its addresses once the endpoint stands, because
+    # the mail carries a link and the link needs the address of the site.
+    # It stays out of tests, where the accounts are made by hand.
+    children =
+      if Application.get_env(:texttile, :invite_configured_on_boot, true) do
+        children ++ [Texttile.Accounts.Bootstrap]
+      else
+        children
+      end
+
     # The go-live clock and the two sweepers stay out of tests: they
     # would race the SQL sandbox. The tests call go_live_due/1,
     # Gallery.sweep_due/0 and Comments.sweep_due/0 directly instead.

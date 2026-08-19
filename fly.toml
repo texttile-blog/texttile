@@ -37,7 +37,7 @@
 #   fly apps create texttile-staging --org texttile
 #   fly volumes create data --size 3 --region fra -a texttile-staging
 #   fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret) -a texttile-staging
-#   fly secrets set ADMIN_USERS="klaus,julia" -a texttile-staging
+#   fly secrets set ADMIN_USERS="klaus@example.com,julia@example.com" -a texttile-staging
 #   fly certs add staging.texttile.blog -a texttile-staging
 # Deploy:
 #   fly deploy

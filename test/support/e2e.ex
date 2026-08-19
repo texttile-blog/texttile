@@ -81,7 +81,7 @@ defmodule TexttileWeb.E2E do
   def one_admin_to_sign_in_as(%{nobody_signed_up: true}), do: :ok
 
   def one_admin_to_sign_in_as(_context) do
-    %{kb: Texttile.AccountsFixtures.user_fixture(%{username: "kb"})}
+    %{kb: Texttile.AccountsFixtures.user_fixture(%{email: "kb@example.org", display_name: "kb"})}
   end
 
   @doc """
@@ -146,7 +146,7 @@ defmodule TexttileWeb.E2E do
     # wait for until the admin area answers below.
     session
     |> PhoenixTest.visit("/login")
-    |> PhoenixTest.fill_in("Username", with: "kb")
+    |> PhoenixTest.fill_in("Email address", with: "kb@example.org")
     |> PhoenixTest.fill_in("Password", with: Texttile.AccountsFixtures.valid_password())
     |> PhoenixTest.click_button("Sign in")
     |> PhoenixTest.assert_has("#crumb", text: "Entries")

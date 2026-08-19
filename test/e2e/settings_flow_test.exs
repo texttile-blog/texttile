@@ -66,63 +66,47 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
   end
 
   describe "user management" do
-    test "kb invites a configured name, who signs in for the first time and deletes kb", %{
+    test "kb invites an address, who sets a password and deletes kb", %{
       conn: conn,
       kb: kb
     } do
-      # julia stands in the configuration and has no account yet, so
-      # the screen that lists accounts does not know her. The list of
-      # names still waiting does.
-      configure_admins(["kb", "julia"])
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> refute_has("#usersList", text: "julia@example.org")
+      |> fill_in("#invite-email", "Invite an admin", with: "julia@example.org")
+      |> click_button("#invite-send", "Send the link")
+      |> assert_has("#inviteState", text: "on its way to julia@example.org")
+      |> assert_has("#usersList", text: "waiting for its first password")
 
-      session =
-        conn
-        |> sign_in()
-        |> open("/admin/settings")
-        |> refute_has("#usersList", text: "julia")
-        |> assert_has("#unclaimed-julia", text: "waiting for the first sign-in")
-        |> click_button("#invite-julia", "Invitation link")
-        |> assert_has("#invite-link-julia")
+      # the link is the one that went out, not one the test made up
+      assert_receive {:email, %Swoosh.Email{} = mail}, 2000
+      [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
 
-      # the link kb hands over is the one the screen shows, not one the
-      # test made up
-      parent = self()
-
-      PhoenixTest.Playwright.evaluate(
-        session,
-        "() => document.querySelector('#invite-link-julia').value",
-        [is_function: true],
-        &send(parent, {:invite, &1})
-      )
-
-      assert_receive {:invite, invite_url}
-      invite = URI.parse(invite_url)
-      assert invite.path == "/login/claim"
-
-      # without it, her name answers like a wrong password
+      # until she opens it, her address answers like a wrong password
       conn
       |> open("/admin/profile")
       |> click_link("#sign-out", "Sign out")
       |> assert_has("p", text: "Admin sign-in")
-      |> fill_in("Username", with: "julia")
+      |> fill_in("Email address", with: "julia@example.org")
       |> fill_in("Password", with: "not her password")
       |> click_button("Sign in")
       |> assert_has("#login-error", text: "do not match")
 
       # she opens the link and chooses a password
       conn
-      |> PhoenixTest.visit("#{invite.path}?#{invite.query}")
-      |> assert_has("h2", text: "Choose a password")
-      |> fill_in("Password", with: "julias own password")
+      |> PhoenixTest.visit(link)
+      |> assert_has("#link-who", text: "opens the admin account of")
+      |> fill_in("Your password", with: "julias own password")
       |> fill_in("Repeat the password", with: "julias own password")
-      |> fill_in("Email address", with: "julia@example.org")
-      |> click_button("Create the account and sign in")
+      |> fill_in("Displayed name", with: "Julia")
+      |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
 
       # julia is a full admin now, equal to kb. Her own row cannot go
       # (another admin removes it, not you), but she can delete kb,
       # with one confirmation in between.
-      julia = Enum.find(Texttile.Accounts.list_users(), &(&1.username == "julia"))
+      julia = Texttile.Accounts.get_user_by_email("julia@example.org")
 
       conn
       |> open("/admin/settings")

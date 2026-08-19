@@ -14,7 +14,7 @@ defmodule Texttile.ArticlesAuthorTest do
   alias Texttile.Articles
 
   test "a new entry keeps the person who started it" do
-    user = user_fixture(%{username: "kb"})
+    user = user_fixture(%{display_name: "kb"})
     {:ok, article} = Articles.create_draft(user)
 
     assert article.user_id == user.id
@@ -22,7 +22,7 @@ defmodule Texttile.ArticlesAuthorTest do
   end
 
   test "the name is read now, so a rename reaches every entry" do
-    user = user_fixture(%{username: "kb"})
+    user = user_fixture(%{display_name: "kb"})
     article = published_post(user: user, title: "Harbor mornings")
 
     {:ok, _} = Accounts.update_display_name(user, "Klaus Breyer")
@@ -33,20 +33,43 @@ defmodule Texttile.ArticlesAuthorTest do
 
   # What somebody wrote stays when their account goes; the entry then
   # has no name to show and shows none.
-  test "an entry whose author has gone is shown without a name" do
-    kb = user_fixture(%{username: "kb"})
-    leaving = user_fixture(%{username: "leaving"})
+  # The entry belongs to the site, and the name under it is part of it:
+  # a reader must not see an entry lose the person who wrote it.
+  test "an entry keeps its byline when the account is deleted" do
+    kb = user_fixture(%{display_name: "kb"})
+    leaving = user_fixture(%{display_name: "Julia"})
     article = published_post(user: leaving, title: "Harbor mornings")
 
     {:ok, _} = Accounts.delete_user(leaving, by: kb)
 
     read = Articles.get_article!(article.id)
-    assert read.user_id == nil
-    assert Articles.author_name(read) == nil
+    assert read.user_id == leaving.id
+    assert Articles.author_name(read) == "Julia"
+  end
+
+  # The picker offers a deleted account, marked, and this is why: an
+  # entry that person wrote can be given back to them.
+  test "an entry can be named after an account that was deleted" do
+    kb = user_fixture(%{display_name: "kb"})
+    left = user_fixture(%{display_name: "Julia"})
+    article = published_post(user: kb, title: "Harbor mornings")
+    {:ok, _} = Accounts.delete_user(left, by: kb)
+
+    {:ok, named} = article.id |> Articles.get_article!() |> Articles.set_author(left.id, by: kb)
+
+    assert Articles.author_name(named) == "Julia"
+    assert named.user_id == left.id
+  end
+
+  test "an entry that never had an author has no name" do
+    article = published_post(title: "Nobody's")
+    {:ok, article} = article |> Ecto.Changeset.change(user_id: nil) |> Texttile.Repo.update()
+
+    assert Articles.author_name(Articles.get_article!(article.id)) == nil
   end
 
   test "the name travels with the reader's list and with one entry" do
-    user = user_fixture(%{username: "kb"})
+    user = user_fixture(%{display_name: "kb"})
     article = published_post(user: user, title: "Harbor mornings")
 
     [listed] = Articles.list_published()
@@ -57,8 +80,8 @@ defmodule Texttile.ArticlesAuthorTest do
   end
 
   test "the author moves to another account, and every screen follows" do
-    kb = user_fixture(%{username: "kb"})
-    anna = user_fixture(%{username: "anna"})
+    kb = user_fixture(%{display_name: "kb"})
+    anna = user_fixture(%{display_name: "anna"})
     article = published_post(user: kb, title: "Harbor mornings")
 
     {:ok, moved} = Articles.set_author(article, anna.id, by: kb)
@@ -74,8 +97,8 @@ defmodule Texttile.ArticlesAuthorTest do
   end
 
   test "an entry whose author has gone takes a new one" do
-    kb = user_fixture(%{username: "kb"})
-    leaving = user_fixture(%{username: "leaving"})
+    kb = user_fixture(%{display_name: "kb"})
+    leaving = user_fixture(%{display_name: "leaving"})
     article = published_post(user: leaving, title: "Harbor mornings")
     {:ok, _} = Accounts.delete_user(leaving, by: kb)
 
@@ -87,7 +110,7 @@ defmodule Texttile.ArticlesAuthorTest do
   # Every entry is somebody's. The field offers the accounts and
   # nothing else, and a request for nobody changes nothing.
   test "nobody is not an author" do
-    kb = user_fixture(%{username: "kb"})
+    kb = user_fixture(%{display_name: "kb"})
     article = published_post(user: kb, title: "Harbor mornings")
 
     assert {:error, _} = Articles.set_author(article, nil, by: kb)
@@ -97,7 +120,7 @@ defmodule Texttile.ArticlesAuthorTest do
   end
 
   test "an account that does not exist cannot become the author" do
-    kb = user_fixture(%{username: "kb"})
+    kb = user_fixture(%{display_name: "kb"})
     article = published_post(user: kb, title: "Harbor mornings")
 
     assert {:error, _} = Articles.set_author(article, kb.id + 1000, by: kb)
@@ -105,8 +128,8 @@ defmodule Texttile.ArticlesAuthorTest do
   end
 
   test "the move is a line in the Log" do
-    kb = user_fixture(%{username: "kb"})
-    anna = user_fixture(%{username: "anna"})
+    kb = user_fixture(%{display_name: "kb"})
+    anna = user_fixture(%{display_name: "anna"})
     article = published_post(user: kb, title: "Harbor mornings")
 
     {:ok, moved} = Articles.set_author(article, anna.id, by: kb)
