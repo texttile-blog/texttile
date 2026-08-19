@@ -20,15 +20,10 @@ defmodule TexttileWeb.SiteHTML do
   site description as it stands in Settings, then the menu the app
   builds out of its pages - Home when a fixed page is the front door,
   Blog for the list, then every published page by publish date.
-
-  The bar stays over the words the whole way down an entry, so the
-  middle of it carries the name of that entry, quietly: a reader who
-  has scrolled past the title can still read where they are.
   """
   attr :active, :any, default: nil
   attr :home_page, :any, default: nil
   attr :menu_pages, :list, default: []
-  attr :here, :string, default: nil, doc: "the entry this page shows, for the middle of the bar"
 
   def site_head(assigns) do
     assigns =
@@ -38,22 +33,17 @@ defmodule TexttileWeb.SiteHTML do
 
     ~H"""
     <header class="site-head">
-      <span class="site-lead">
-        <a class="site-mark" href={~p"/"}>
-          <img
-            :if={@brand.logo}
-            src={Texttile.Images.url(@brand.logo, :original)}
-            alt=""
-            class="h-[21px] w-auto max-w-[84px] object-contain"
-          />
-          <Layouts.mark :if={!@brand.logo} size={21} />
-          {@brand.title}
-        </a>
-        <span :if={@desc != ""} class="site-desc">{@desc}</span>
-      </span>
-      <%!-- the heading of the entry says this already, so a screen
-           reader hears it once --%>
-      <span :if={@here} class="site-here" aria-hidden="true">{@here}</span>
+      <a class="site-mark" href={~p"/"}>
+        <img
+          :if={@brand.logo}
+          src={Texttile.Images.url(@brand.logo, :original)}
+          alt=""
+          class="h-[21px] w-auto max-w-[84px] object-contain"
+        />
+        <Layouts.mark :if={!@brand.logo} size={21} />
+        {@brand.title}
+      </a>
+      <span :if={@desc != ""} class="site-desc">{@desc}</span>
       <nav class="site-nav" aria-label={gettext("Site")}>
         <a :if={@home_page} id="menu-home" href={~p"/"} aria-current={@active == :home && "page"}>
           {gettext("Home")}

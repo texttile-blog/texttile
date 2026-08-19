@@ -123,22 +123,6 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(href="/tags/sea")
     end
 
-    # The bar stays over the words the whole way down, so it says
-    # which entry this is once the title has scrolled away.
-    test "the bar carries the name of the entry", %{conn: conn} do
-      published_post(
-        title: "Harbor mornings",
-        slug: "harbor-mornings",
-        publish_date: ~D[2026-03-01]
-      )
-
-      html = conn |> get(~p"/2026/03/01/harbor-mornings") |> html_response(200)
-      assert html =~ ~r/class="site-here"[^>]*>\s*Harbor mornings/
-
-      # the list is not one entry, so its bar names none
-      refute conn |> get(~p"/blog") |> html_response(200) =~ "site-here"
-    end
-
     test "a post has no address without its date", %{conn: conn} do
       published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
 
