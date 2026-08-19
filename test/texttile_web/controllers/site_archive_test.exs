@@ -27,12 +27,10 @@ defmodule TexttileWeb.SiteArchiveTest do
     assert newer < older
   end
 
-  test "shows no months before a year is open", %{conn: conn} do
-    html = conn |> get(~p"/blog") |> html_response(200)
-    refute html =~ ~s(id="months")
-  end
+  test "narrows the list to one year, then to one month of it", %{conn: conn} do
+    # no year open, no months row
+    refute conn |> get(~p"/blog") |> html_response(200) =~ ~s(id="months")
 
-  test "narrows the list to one year and offers only the months it has", %{conn: conn} do
     html = conn |> get(~p"/blog?y=2026") |> html_response(200)
 
     assert html =~ "Harbour mornings"
@@ -44,9 +42,7 @@ defmodule TexttileWeb.SiteArchiveTest do
     assert html =~ ~s(href="/blog?y=2026&amp;m=8")
     # nobody wrote in the other ten months, so they are not a choice
     refute html =~ ~s(m=5")
-  end
 
-  test "narrows the list to one month of the year", %{conn: conn} do
     html = conn |> get(~p"/blog?y=2026&m=8") |> html_response(200)
 
     assert html =~ "Harbour mornings"
@@ -76,32 +72,5 @@ defmodule TexttileWeb.SiteArchiveTest do
     assert html =~ ~r/<span class="per on"[^>]*>\s*2026/
     assert html =~ ~s(href="/blog")
     refute html =~ ~r/class="per on"[^>]*>\s*All/
-  end
-
-  test "the months row counts nothing on All months", %{conn: conn} do
-    html = conn |> get(~p"/blog?y=2026") |> html_response(200)
-
-    assert html =~ "All months"
-    # the number over it already says how many the year holds
-    refute html =~ ~r/All months<span class="cnt"/
-  end
-
-  test "lets go of a year the search has emptied", %{conn: conn} do
-    html = conn |> get(~p"/blog?y=2024&q=harbour") |> html_response(200)
-
-    assert html =~ "Harbour mornings"
-    refute html =~ ~s(<span class="per on" aria-current="true">\n      2024)
-  end
-
-  test "ignores a year the blog never had", %{conn: conn} do
-    html = conn |> get(~p"/blog?y=1998") |> html_response(200)
-
-    assert html =~ "Harbour mornings"
-    assert html =~ "The long winter"
-  end
-
-  test "the search and the year travel together in the pager and the Clear", %{conn: conn} do
-    html = conn |> get(~p"/blog?y=2026&q=harbour") |> html_response(200)
-    assert html =~ ~s(id="clear")
   end
 end

@@ -41,6 +41,20 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert Settings.get(:site_title) == "Two of us"
     end
 
+    test "a typo in the backup allowlist is said on the screen, and nothing is stored",
+         %{conn: conn} do
+      {:ok, _} = Settings.put(:backup_allowed_ips, "10.0.0.7")
+      {:ok, view, _} = live(conn, ~p"/admin/settings")
+
+      html =
+        view
+        |> form("#backup-ips-form", %{"settings" => %{"backup_allowed_ips" => "not an address"}})
+        |> render_change(%{"_target" => ["settings", "backup_allowed_ips"]})
+
+      assert html =~ "no IP address"
+      assert Settings.get(:backup_allowed_ips) == "10.0.0.7"
+    end
+
     test "the blog password field is on screen for a public blog too", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
       assert html =~ ~s(id="setting-site_password")

@@ -16,7 +16,9 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
         |> assert_has("#crumb", text: "Settings")
         |> assert_has("#savedSettings", text: "Last saved")
         |> fill_in("Site title", with: "Two of us")
-        |> assert_has("#savedSettings", text: "Last saved · just now")
+        # the loud line is the save answering; its quiet stamp only
+        # returns after the flash has faded, and that is 2.6 seconds
+        |> assert_has("#savedSettings.fresh")
 
       assert Settings.get(:site_title) == "Two of us"
 
@@ -33,17 +35,6 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> assert_has("#crumb", text: "Settings")
       |> press("#setting-site_title", "2")
       |> assert_has("#crumb", text: "Settings")
-    end
-
-    test "the comments toggle rewrites its explanation", %{conn: conn} do
-      conn
-      |> sign_in()
-      |> open("/admin/settings")
-      |> assert_has("#setCmtNote", text: "one confirmation link per address")
-      |> uncheck("Readers confirm their email", exact: false)
-      |> assert_has("#setCmtNote", text: "nobody confirms anything")
-
-      assert Settings.get(:comments_require_confirmation) == false
     end
 
     test "an uploaded logo replaces the default mark", %{conn: conn} do

@@ -189,31 +189,6 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
-  describe "the feed" do
-    test "the foot points at it, and the feed carries the texts", %{conn: conn} do
-      published_post(title: "Harbor mornings", body: "Fog over the pier.")
-
-      conn
-      |> open_page("/")
-      |> assert_has("#foot-feed", text: "RSS")
-      |> click_link("#foot-feed", "RSS")
-      |> assert_has("body", text: "Harbor mornings")
-    end
-
-    test "is gone once a password guards the blog", %{conn: conn} do
-      published_post(title: "Behind the wall")
-      {:ok, _} = Settings.put(:site_visibility, "protected")
-      {:ok, _} = Settings.put(:site_password, "sesame")
-
-      conn
-      |> open_page("/")
-      |> fill_in("Password", with: "sesame")
-      |> click_button("Read on")
-      |> assert_has("a", text: "Behind the wall")
-      |> refute_has("#foot-feed")
-    end
-  end
-
   describe "walking the blog" do
     test "the pager walks the pages and the text points at the next one", %{conn: conn} do
       {:ok, _} = Settings.put(:posts_per_page, 2)

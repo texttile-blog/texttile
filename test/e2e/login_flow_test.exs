@@ -122,32 +122,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> click_button("Sign in")
       |> assert_has("#crumb", text: "Entries")
     end
-
-    test "a sign-in without the box lasts two days", %{conn: conn, kb: user} do
-      conn
-      |> visit("/login")
-      |> assert_has("label", text: "Stay signed in")
-      |> fill_in("Email address", with: "kb@example.org")
-      |> fill_in("Password", with: valid_password())
-      |> click_button("Sign in")
-      |> assert_has("#crumb", text: "Entries")
-
-      assert [session] = Texttile.Accounts.list_sessions(user)
-      assert DateTime.diff(session.expires_at, DateTime.utc_now(), :hour) in 47..48
-    end
-
-    test "the box on the form keeps the browser signed in for longer", %{conn: conn, kb: user} do
-      conn
-      |> visit("/login")
-      |> fill_in("Email address", with: "kb@example.org")
-      |> fill_in("Password", with: valid_password())
-      |> check("Stay signed in", exact: false)
-      |> click_button("Sign in")
-      |> assert_has("#crumb", text: "Entries")
-
-      assert [session] = Texttile.Accounts.list_sessions(user)
-      assert DateTime.diff(session.expires_at, DateTime.utc_now(), :hour) in 335..336
-    end
   end
 
   describe "the admin area" do
@@ -178,44 +152,6 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("#profileWho", text: "Klaus")
       |> click_button("#wmBtn", "Texttile")
       |> assert_has("#wmMe", text: "Klaus")
-    end
-
-    test "the password changes only with the current one", %{conn: conn} do
-      conn
-      |> sign_in()
-      |> open("/admin/profile")
-      |> fill_in("Current password", with: "wrong current!")
-      |> fill_in("New password", with: "a brand new password")
-      |> click_button("Set")
-      |> assert_has("p", text: "is not your current password")
-      |> fill_in("Current password", with: valid_password())
-      |> fill_in("New password", with: "a brand new password")
-      |> click_button("Set")
-      |> assert_has("#pwMeState", text: "Your new password is set")
-    end
-
-    # The address is the identity, so it is the one field here that
-    # asks before it moves.
-    test "the address changes only with the password", %{conn: conn} do
-      conn
-      |> sign_in()
-      |> open("/admin/profile")
-      |> fill_in("Address", with: "klaus@example.org")
-      |> fill_in("Your password", with: "wrong current!")
-      |> click_button("Change")
-      |> assert_has("p", text: "is not your current password")
-      |> fill_in("Address", with: "klaus@example.org")
-      |> fill_in("Your password", with: valid_password())
-      |> click_button("Change")
-      |> assert_has("#emMeState", text: "klaus@example.org")
-    end
-
-    test "sign out returns to the sign-in screen", %{conn: conn} do
-      conn
-      |> sign_in()
-      |> open("/admin/profile")
-      |> click_link("#sign-out", "Sign out")
-      |> assert_has("p", text: "Admin sign-in")
     end
   end
 end

@@ -95,6 +95,8 @@ defmodule TexttileWeb.FeedControllerTest do
       assert html =~ ~s(rel="alternate")
       assert html =~ ~s(type="application/rss+xml")
       assert html =~ ~s(href="/feed.xml")
+      # the head is for the reader's program, the foot for the reader
+      assert html =~ ~s(id="foot-feed")
     end
 
     test "is gone while a password guards the blog", %{conn: conn} do
@@ -110,6 +112,7 @@ defmodule TexttileWeb.FeedControllerTest do
 
       refute html =~ "application/rss+xml"
       refute html =~ "/feed.xml"
+      refute html =~ ~s(id="foot-feed")
     end
   end
 end
