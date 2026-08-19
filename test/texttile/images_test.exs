@@ -14,10 +14,11 @@ defmodule Texttile.ImagesTest do
     rel
   end
 
-  # A file to upload as the site's favicon.
+  # A file to upload as the site's favicon: three bands and no alpha,
+  # which is what a photo-shaped one brings.
   defp uploaded_mark do
-    path = Path.join(System.tmp_dir!(), "mark-#{System.unique_integer([:positive])}.png")
-    {:ok, black} = Vix.Vips.Operation.black(64, 64)
+    path = Path.join(System.tmp_dir!(), "mark-#{System.unique_integer([:positive])}.jpg")
+    {:ok, black} = Vix.Vips.Operation.black(64, 64, bands: 3)
     :ok = Vix.Vips.Image.write_to_file(black, path)
     path
   end
@@ -176,11 +177,12 @@ defmodule Texttile.ImagesTest do
     test "an uploaded favicon is the icon, and the old one goes with the swap" do
       {:ok, first} = Images.touch_icon()
 
-      {:ok, _} = Uploads.put_site_mark(:favicon, uploaded_mark(), "ours.png")
+      {:ok, _} = Uploads.put_site_mark(:favicon, uploaded_mark(), "ours.jpg")
       {:ok, second} = Images.touch_icon()
 
       assert second != first
       assert size_of(second) == {180, 180}
+      assert bands_of(second) == 3
       refute File.exists?(Path.join(Uploads.root(), first))
     end
 
@@ -193,7 +195,7 @@ defmodule Texttile.ImagesTest do
     end
 
     test "a favicon whose file is gone falls back to the mark" do
-      {:ok, stored} = Uploads.put_site_mark(:favicon, uploaded_mark(), "ours.png")
+      {:ok, stored} = Uploads.put_site_mark(:favicon, uploaded_mark(), "ours.jpg")
       File.rm!(Path.join(Uploads.root(), stored))
 
       assert {:ok, icon} = Images.touch_icon()

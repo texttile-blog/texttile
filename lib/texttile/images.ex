@@ -230,13 +230,21 @@ defmodule Texttile.Images do
     File.mkdir_p!(Path.dirname(destination))
     drop_other_touch_icons(target)
 
-    partial = Path.join(Path.dirname(destination), ".tmp-#{Path.basename(destination)}")
+    # A name of its own, like every other rendition: a reader never
+    # meets a half-made file, and two makers at once never share one.
+    partial =
+      Path.join(
+        Path.dirname(destination),
+        ".tmp-#{System.unique_integer([:positive])}-" <> Path.basename(destination)
+      )
+
     inner = @touch_edge - 2 * @touch_pad
     ground = touch_ground()
 
     with {:ok, thumb} <- Vips.Operation.thumbnail(source, inner, height: inner),
-         {:ok, flat} <- Vips.Operation.flatten(thumb, background: ground),
-         {:ok, square} <- centred(flat, ground),
+         {:ok, colour} <- Vips.Operation.colourspace(thumb, :VIPS_INTERPRETATION_sRGB),
+         {:ok, opaque} <- flattened(colour, ground),
+         {:ok, square} <- centred(opaque, ground),
          :ok <- Vips.Image.write_to_file(square, partial),
          :ok <- File.rename(partial, destination) do
       {:ok, target}
@@ -245,6 +253,15 @@ defmodule Texttile.Images do
         File.rm(partial)
         {:error, reason}
     end
+  end
+
+  # Only a picture that carries transparency is laid on the ground:
+  # vips reads the last band of any other one as its alpha and gives
+  # back an error, or a colour nobody chose.
+  defp flattened(image, ground) do
+    if Vips.Image.has_alpha?(image),
+      do: Vips.Operation.flatten(image, background: ground),
+      else: {:ok, image}
   end
 
   # The rendering keeps its ratio, so a favicon that is not square

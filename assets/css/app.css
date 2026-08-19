@@ -1166,11 +1166,11 @@
   body.site > footer { margin-top: auto; }
 
   /* the header: the reader header of round-13, with the site menu the
-     app builds out of its pages */
-  /* Three columns: the site, the entry the reader is in, the menu.
-     The middle one takes what it needs first, so it stands in the
-     middle of the bar whenever the two ends are of a size; where they
-     are not, it yields and cuts itself instead of running into them. */
+     app builds out of its pages. Three columns: the site, the entry
+     the reader is in, the menu. The middle one takes what it needs
+     first, so it stands in the middle of the bar whenever the two ends
+     are of a size; where they are not, it yields and cuts itself
+     instead of running into them. */
   .site-head {
     position: sticky; top: 0; z-index: 40;
     display: grid; align-items: center; gap: 14px;
@@ -1191,7 +1191,9 @@
   .site-desc {
     color: var(--tt-dim); font-size: 12.5px; white-space: nowrap;
     padding-left: 14px; border-left: 1px solid var(--tt-rule);
-    overflow: hidden; text-overflow: ellipsis;
+    /* it gives way before the name of the site does, and before the
+       bar grows wider than the window */
+    min-width: 0; overflow: hidden; text-overflow: ellipsis;
   }
   /* the entry the reader is in: the one thing the bar can say once the
      title has scrolled away, quiet enough to stay behind the two ends
