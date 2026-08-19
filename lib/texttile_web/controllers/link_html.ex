@@ -31,6 +31,28 @@ defmodule TexttileWeb.LinkHTML do
         id="set-password-form"
         class="mt-[18px]"
       >
+        <%!-- The name readers see, asked at the one moment its owner
+             is at the screen, and first: it is the one field here that
+             is about the person, not about getting in. Empty is not an
+             answer, because an entry signed with the part in front of
+             an @ is a byline nobody chose. --%>
+        <div :if={@invitation} class="mb-[15px]">
+          <label class="lab block mb-0" for="link-display-name">
+            {gettext("Displayed name")}
+          </label>
+          <input
+            type="text"
+            id="link-display-name"
+            name="user[display_name]"
+            value={value(@changeset, :display_name)}
+            autocomplete="name"
+            autofocus
+          />
+          <.field_error changeset={@changeset} field={:display_name} />
+          <p class="note mt-[6px]">
+            {gettext("What readers see under the entries you write. Your address stays private.")}
+          </p>
+        </div>
         <div class="mb-[7px]">
           <label class="lab block mb-0" for="link-password">
             {if @invitation, do: gettext("Your password"), else: gettext("New password")}
@@ -40,7 +62,7 @@ defmodule TexttileWeb.LinkHTML do
             id="link-password"
             name="user[password]"
             autocomplete="new-password"
-            autofocus
+            autofocus={not @invitation}
           />
           <.field_error changeset={@changeset} field={:password} />
         </div>
@@ -74,25 +96,6 @@ defmodule TexttileWeb.LinkHTML do
           >
             {gettext("Show")}
           </button>
-        </div>
-        <%!-- The name readers see, asked at the one moment its owner
-             is at the screen. Empty is not an answer: an entry signed
-             with the part in front of an @ is a byline nobody chose. --%>
-        <div :if={@invitation} class="mt-[22px] mb-[7px]">
-          <label class="lab block mb-0" for="link-display-name">
-            {gettext("Displayed name")}
-          </label>
-          <input
-            type="text"
-            id="link-display-name"
-            name="user[display_name]"
-            value={value(@changeset, :display_name)}
-            autocomplete="name"
-          />
-          <.field_error changeset={@changeset} field={:display_name} />
-          <p class="note mt-[6px]">
-            {gettext("What readers see under the entries you write. Your address stays private.")}
-          </p>
         </div>
         <button class="btn solid w-full h-[38px] mt-[16px]" type="submit">
           {if @invitation,
