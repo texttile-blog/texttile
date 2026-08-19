@@ -569,7 +569,10 @@ defmodule Texttile.Accounts do
     changeset = User.password_changeset(user, %{password: new_password})
 
     if User.valid_password?(user, current_password) do
-      Repo.update(changeset)
+      # A link somebody asked for and did not use dies with the new
+      # password, the same way the moved address spends it: the owner
+      # has acted, so what is still in an inbox opens nothing.
+      changeset |> Repo.update() |> tap_link_spent()
     else
       {:error,
        changeset

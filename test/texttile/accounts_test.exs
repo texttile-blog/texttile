@@ -546,6 +546,17 @@ defmodule Texttile.AccountsTest do
       assert :error = Accounts.authenticate_user(user.email, valid_password())
     end
 
+    # The reset somebody asked for and never used opens nothing once
+    # the owner has set the password themselves.
+    test "update_password/3 spends the link that is still in flight" do
+      user = user_fixture()
+      {:ok, token} = Accounts.send_password_link(user, invite_opts())
+
+      {:ok, _} = Accounts.update_password(user, valid_password(), "a brand new password")
+
+      assert :error = Accounts.verify_login_link(token)
+    end
+
     test "update_password/3 rejects a short new password" do
       user = user_fixture()
       assert {:error, changeset} = Accounts.update_password(user, valid_password(), "short")

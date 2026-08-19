@@ -128,6 +128,20 @@ defmodule TexttileWeb.LinkControllerTest do
       assert {:ok, _} = Accounts.verify_login_link(token)
     end
 
+    # The log carries a link while nobody can sign in, which is the way
+    # into an installation whose mail is broken. Only the server writes
+    # it: a stranger at this form must not be able to ask for one.
+    test "no stranger writes a link into the log through this form", %{conn: conn} do
+      invited_user_fixture("anna@example.org")
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          post(conn, ~p"/forgot", %{"user" => %{"email" => "anna@example.org"}})
+        end)
+
+      refute log =~ "/link/"
+    end
+
     test "an unknown address gets no mail; the answer reads the same", %{conn: conn} do
       conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "nobody@example.org"}})
       assert html_response(conn, 200) =~ "on its way"
