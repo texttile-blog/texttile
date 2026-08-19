@@ -91,6 +91,9 @@ defmodule TexttileWeb.EditorLiveTest do
       assert Articles.get_article!(article.id).status == "scheduled"
       assert has_element?(view, "#stateWord", "Scheduled")
       assert has_element?(view, "#stateBtn .main", "Publish now")
+      assert has_element?(view, "#edDateHint", "It goes live on #{future}")
+      # the mail has one owner on this pane, and it is not the date
+      assert has_element?(view, "#notifyOpt", "Goes out to the confirmed subscribers")
 
       # the chevron menu of a scheduled text: the mail and the undo
       view |> element("#stateBtn [aria-haspopup]") |> render_click()

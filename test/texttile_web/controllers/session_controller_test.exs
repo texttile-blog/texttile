@@ -12,6 +12,9 @@ defmodule TexttileWeb.SessionControllerTest do
       response = html_response(conn, 200)
       assert response =~ "login-form"
       assert response =~ "Admin sign-in"
+      # the box that asks for the longer session, under the name the
+      # tests below hand to the controller
+      assert response =~ ~s(name="user[remember]")
     end
 
     # A fresh installation cannot let anybody choose a password here:

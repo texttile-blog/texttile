@@ -74,23 +74,6 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       assert [%{status: "draft"}] = Articles.list_articles()
     end
 
-    test "a future date turns the click into a scheduling", %{conn: conn} do
-      future = Date.utc_today() |> Date.add(14) |> Date.to_iso8601()
-
-      conn
-      |> sign_in()
-      |> click_button("New entry")
-      |> fill_in("Title", with: "Later")
-      |> fill_in("Publish date", with: future)
-      |> click_button("#stateBtn .main", "Publish")
-      |> assert_has("#stateWord", text: "Scheduled")
-      |> assert_has("#edDateHint", text: "It goes live on #{future}")
-      # the mail has one owner on this pane, and it is not the date
-      |> assert_has("#notifyOpt", text: "Goes out to the confirmed subscribers")
-
-      assert [%{status: "scheduled"}] = Articles.list_articles()
-    end
-
     test "a live entry opens at its dated address through the bar", %{conn: conn} do
       today = Date.utc_today()
 

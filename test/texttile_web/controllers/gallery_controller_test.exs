@@ -72,16 +72,9 @@ defmodule TexttileWeb.GalleryControllerTest do
     assert json_response(conn, 400)
   end
 
-  test "an unknown text is a 404", %{conn: conn} do
-    assert_error_sent 404, fn ->
-      post(conn, ~p"/admin/texts/999999/gallery", %{"file" => jpg_upload("a.jpg")})
-    end
-  end
-
-  test "signed out, the endpoint answers with a redirect to sign-in", %{article: article} do
-    conn = post(build_conn(), ~p"/admin/texts/#{article.id}/gallery", %{})
-    assert redirected_to(conn) == ~p"/login"
-  end
+  # An unknown entry and a signed-out caller answer the same on both
+  # upload endpoints, which share a pipeline and one lookup. They are
+  # proved once, in images_controller_test.exs.
 
   test "the same picture a second time is refused, and named", %{conn: conn, article: article} do
     post(conn, ~p"/admin/texts/#{article.id}/gallery", %{

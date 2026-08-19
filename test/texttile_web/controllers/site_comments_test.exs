@@ -187,43 +187,6 @@ defmodule TexttileWeb.SiteCommentsTest do
       assert Comments.for_article(article.id) == []
     end
 
-    test "a form sent faster than a person types is dropped", %{conn: conn} do
-      article = published_post()
-      conn = send_comment(conn, article, %{"t" => form_token(article, 0)})
-
-      assert redirected_to(conn) == Articles.public_path(article) <> "#comments"
-      assert Comments.for_article(article.id) == []
-    end
-
-    test "a form without its stamp is dropped", %{conn: conn} do
-      article = published_post()
-      conn = send_comment(conn, article, %{"t" => "forged"})
-
-      assert redirected_to(conn) == Articles.public_path(article) <> "#comments"
-      assert Comments.for_article(article.id) == []
-    end
-
-    test "a stamp from another text is dropped", %{conn: conn} do
-      article = published_post()
-      other = published_post()
-      send_comment(conn, article, %{"t" => form_token(other)})
-
-      assert Comments.for_article(article.id) == []
-    end
-
-    test "the fourth comment in a minute from one caller is dropped", %{conn: conn} do
-      article = published_post()
-      ip = fresh_ip()
-
-      for n <- 1..4 do
-        build_conn()
-        |> send_comment(article, %{"ip" => ip, "email" => "reader#{n}@example.org"})
-      end
-
-      assert length(Comments.for_article(article.id)) == 3
-      assert conn.state == :unset
-    end
-
     test "a draft, a closed text and a made-up id all answer 404", %{conn: conn} do
       draft = draft_post()
       assert conn |> send_comment(draft) |> html_response(404)

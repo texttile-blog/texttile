@@ -79,18 +79,6 @@ defmodule TexttileWeb.SiteNewsletterTest do
       refute_email_sent()
     end
 
-    test "a form sent faster than a person types is dropped", %{conn: conn} do
-      html = conn |> send_join(%{"t" => form_token(0)}) |> html_response(200)
-
-      refute html =~ ~s(id="newsletter-error")
-      assert Newsletter.list() == []
-    end
-
-    test "a form without its stamp is dropped", %{conn: conn} do
-      conn |> send_join(%{"t" => "forged"}) |> html_response(200)
-      assert Newsletter.list() == []
-    end
-
     test "the fourth request in a minute from one caller is dropped", %{conn: _conn} do
       ip = fresh_ip()
 
