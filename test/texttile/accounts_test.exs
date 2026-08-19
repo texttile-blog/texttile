@@ -10,6 +10,15 @@ defmodule Texttile.AccountsTest do
 
   defp invite_opts, do: [site: "texttile.blog", link_url: &link_url/1]
 
+  # What a person does with an invitation: the password twice, and the
+  # name readers will see.
+  defp open_account(token, password \\ "a long enough password") do
+    Accounts.accept_login_link(token, password,
+      confirmation: password,
+      display_name: "Anna"
+    )
+  end
+
   # The token out of the next mail this test has waiting.
   defp mailed_token do
     assert_received {:email, email}
@@ -37,7 +46,7 @@ defmodule Texttile.AccountsTest do
       {:ok, user} = Accounts.invite("anna@example.org", invite_opts())
       token = mailed_token()
 
-      assert {:ok, user} = Accounts.accept_login_link(token, "a long enough password")
+      assert {:ok, user} = open_account(token)
       refute Accounts.pending?(user)
 
       assert {:ok, found} =
@@ -160,7 +169,7 @@ defmodule Texttile.AccountsTest do
       configure_admin_emails(["kb@example.org"])
       Accounts.invite_configured(invite_opts())
       token = mailed_token()
-      {:ok, user} = Accounts.accept_login_link(token, "a long enough password")
+      {:ok, user} = open_account(token)
       {:ok, _} = Accounts.update_email(user, "kb@elsewhere.org", "a long enough password")
 
       Accounts.invite_configured(invite_opts())

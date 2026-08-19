@@ -98,7 +98,9 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> PhoenixTest.visit(link)
       |> assert_has("#link-who", text: "opens the admin account of")
       |> fill_in("Your password", with: "julias own password")
-      |> click_button("Set the password and sign in")
+      |> fill_in("Repeat the password", with: "julias own password")
+      |> fill_in("Displayed name", with: "Julia")
+      |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
 
       # julia is a full admin now, equal to kb. Her own row cannot go

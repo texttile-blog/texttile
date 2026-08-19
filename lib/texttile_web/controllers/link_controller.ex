@@ -15,7 +15,7 @@ defmodule TexttileWeb.LinkController do
         render(conn, :show,
           user: user,
           token: token,
-          error: nil,
+          changeset: nil,
           invitation: Accounts.pending?(user)
         )
 
@@ -27,6 +27,13 @@ defmodule TexttileWeb.LinkController do
   def create(conn, %{"token" => token} = params) do
     password = get_in(params, ["user", "password"]) || ""
 
+    # The two fields an account opening for the first time carries as
+    # well: the password again, and the name readers will see.
+    opts = [
+      confirmation: get_in(params, ["user", "password_confirmation"]),
+      display_name: get_in(params, ["user", "display_name"])
+    ]
+
     # The sessions to disconnect are read first: accepting the link
     # deletes their rows, and the open sockets behind them must go too.
     sessions =
@@ -35,7 +42,7 @@ defmodule TexttileWeb.LinkController do
         :error -> []
       end
 
-    case Accounts.accept_login_link(token, password) do
+    case Accounts.accept_login_link(token, password, opts) do
       {:ok, user} ->
         Enum.each(
           sessions,
@@ -56,7 +63,7 @@ defmodule TexttileWeb.LinkController do
             render(conn, :show,
               user: user,
               token: token,
-              error: first_error(changeset),
+              changeset: changeset,
               invitation: Accounts.pending?(user)
             )
 
@@ -101,13 +108,5 @@ defmodule TexttileWeb.LinkController do
     end
 
     render(conn, :forgot, sent: true)
-  end
-
-  defp first_error(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(&TexttileWeb.CoreComponents.translate_error/1)
-    |> Map.values()
-    |> List.flatten()
-    |> List.first()
   end
 end

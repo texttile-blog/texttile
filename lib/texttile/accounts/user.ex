@@ -66,6 +66,28 @@ defmodule Texttile.Accounts.User do
     |> validate_password()
   end
 
+  @doc """
+  What the mailed link asks for when the account opens for the first
+  time: the password twice, and the name readers will see.
+
+  The password is typed twice because nobody knows it yet, so a typo
+  would shut its owner out of the account they are opening, with the
+  link spent. The name is asked here because this is the one moment its
+  owner is at the screen, and an entry signed with the part in front of
+  an @ is a byline nobody chose.
+  """
+  def first_password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password, :display_name])
+    |> validate_confirmation(:password,
+      required: true,
+      message: "does not match the password"
+    )
+    |> validate_required([:display_name], message: "cannot be empty")
+    |> validate_length(:display_name, max: 80)
+    |> validate_password()
+  end
+
   @doc "The address as it is stored and compared: trimmed and lower case."
   def normalize_email(nil), do: nil
   def normalize_email(email), do: email |> String.trim() |> String.downcase()

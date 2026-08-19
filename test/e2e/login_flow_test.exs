@@ -20,9 +20,43 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("#link-who", text: "opens the admin account of")
       |> assert_has("#link-who", text: "kb@example.org")
       |> fill_in("Your password", with: "a long password")
-      |> click_button("Set the password and sign in")
+      |> fill_in("Repeat the password", with: "a long password")
+      |> fill_in("Displayed name", with: "KB")
+      |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
       |> assert_has("h1", text: "Entries")
+      |> click_button("#wmBtn", "Texttile")
+      |> assert_has("#wmMe", text: "KB")
+    end
+
+    # Nobody knows this password yet, and the name under the entries is
+    # chosen here or nowhere.
+    test "a typo and a missing name stay on the screen", %{conn: conn} do
+      configure_admin_emails(["kb@example.org"])
+      Texttile.Accounts.Bootstrap.run()
+
+      assert_receive {:email, %Swoosh.Email{} = mail}, 2000
+      [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
+
+      conn
+      |> visit(link)
+      |> fill_in("Your password", with: "a long password")
+      |> fill_in("Repeat the password", with: "a long passwort")
+      |> fill_in("Displayed name", with: "KB")
+      |> click_button("Open the account and sign in")
+      |> assert_has("p", text: "does not match the password")
+      # the name that was typed is still there after a refused answer
+      |> assert_has("#link-display-name[value='KB']")
+      |> fill_in("Your password", with: "a long password")
+      |> fill_in("Repeat the password", with: "a long password")
+      |> fill_in("Displayed name", with: "")
+      |> click_button("Open the account and sign in")
+      |> assert_has("p", text: "cannot be empty")
+      |> fill_in("Your password", with: "a long password")
+      |> fill_in("Repeat the password", with: "a long password")
+      |> fill_in("Displayed name", with: "KB")
+      |> click_button("Open the account and sign in")
+      |> assert_has("#crumb", text: "Entries")
     end
 
     # There is no door on this screen that makes an account, so a

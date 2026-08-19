@@ -420,12 +420,31 @@ defmodule Texttile.Accounts do
   Sets the password behind a mailed link. The link is spent with it, and
   every open session of the account ends: whoever holds the new password
   signs in fresh. A refused password leaves the link usable.
+
+  An account that opens for the first time is asked for more, and the
+  opts carry it: `:confirmation` is the password typed a second time,
+  `:display_name` the name readers will see. Both are required there
+  and neither is looked at afterwards.
   """
   def accept_login_link(token, password, opts \\ []) do
     with {:ok, user} <- verify_login_link(token, opts) do
+      # An account opening for the first time asks for more than a
+      # password: the same password twice, and the name readers will
+      # see. See `User.first_password_changeset/2`.
+      changeset =
+        if pending?(user) do
+          User.first_password_changeset(user, %{
+            password: password,
+            password_confirmation: opts[:confirmation],
+            display_name: opts[:display_name]
+          })
+        else
+          User.password_changeset(user, %{password: password})
+        end
+
       result =
         Repo.transaction(fn ->
-          case Repo.update(User.password_changeset(user, %{password: password})) do
+          case Repo.update(changeset) do
             {:ok, user} ->
               Repo.delete_all(from l in LoginLink, where: l.user_id == ^user.id)
               Repo.delete_all(from s in Session, where: s.user_id == ^user.id)

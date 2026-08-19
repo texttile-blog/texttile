@@ -55,6 +55,64 @@ defmodule TexttileWeb.LinkControllerTest do
       assert {:ok, _} = Accounts.authenticate_user("julia@example.org", "a long enough password")
     end
 
+    # The first sign-in of an account: the password twice, and the name
+    # readers will see.
+    test "an invitation opens the account with the password twice and a name", %{conn: conn} do
+      user = invited_user_fixture("anna@example.org")
+      token = mailed_link(user)
+
+      conn =
+        post(conn, ~p"/link/#{token}", %{
+          "user" => %{
+            "password" => "a long enough password",
+            "password_confirmation" => "a long enough password",
+            "display_name" => "Anna Berg"
+          }
+        })
+
+      assert redirected_to(conn) == ~p"/admin"
+      assert Accounts.display_name(Accounts.get_user_by_email("anna@example.org")) == "Anna Berg"
+    end
+
+    test "a password that arrives twice differently stays on the form", %{conn: conn} do
+      user = invited_user_fixture("anna@example.org")
+      token = mailed_link(user)
+
+      conn =
+        post(conn, ~p"/link/#{token}", %{
+          "user" => %{
+            "password" => "a long enough password",
+            "password_confirmation" => "a long enough passwort",
+            "display_name" => "Anna"
+          }
+        })
+
+      html = html_response(conn, 200)
+      assert html =~ "does not match the password"
+      assert html =~ "link-password-confirmation"
+      refute get_session(conn, :user_token)
+      assert {:ok, _} = Accounts.verify_login_link(token)
+    end
+
+    test "an empty displayed name stays on the form and keeps the typed one", %{conn: conn} do
+      user = invited_user_fixture("anna@example.org")
+      token = mailed_link(user)
+
+      conn =
+        post(conn, ~p"/link/#{token}", %{
+          "user" => %{
+            "password" => "short",
+            "password_confirmation" => "short",
+            "display_name" => ""
+          }
+        })
+
+      html = html_response(conn, 200)
+      assert html =~ "cannot be empty"
+      assert html =~ "use at least 12 characters"
+      assert Accounts.pending?(Accounts.get_user_by_email("anna@example.org"))
+    end
+
     test "a short password stays on the form and says why", %{conn: conn} do
       user = user_fixture()
       token = mailed_link(user)
@@ -62,7 +120,7 @@ defmodule TexttileWeb.LinkControllerTest do
       conn = post(conn, ~p"/link/#{token}", %{"user" => %{"password" => "short"}})
 
       html = html_response(conn, 200)
-      assert html =~ "Use at least 12 characters."
+      assert html =~ "use at least 12 characters"
       refute html =~ "The password use at least"
     end
 

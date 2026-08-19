@@ -15,6 +15,17 @@ defmodule Texttile.AccountsLinksTest do
 
   defp link_opts, do: [site: "s", link_url: &link_url/1]
 
+  # What a person does with an invitation: the password twice, and the
+  # name readers will see.
+  defp open_account(token, attrs \\ []) do
+    password = Keyword.get(attrs, :password, "a long enough password")
+
+    Accounts.accept_login_link(token, password,
+      confirmation: Keyword.get(attrs, :confirmation, password),
+      display_name: Keyword.get(attrs, :display_name, "Anna")
+    )
+  end
+
   describe "password links" do
     test "the mailed token sets the password once and then is spent" do
       user = user_fixture(%{email: "julia@example.org"})
@@ -61,7 +72,7 @@ defmodule Texttile.AccountsLinksTest do
     test "the account that used its invitation gets a day from then on" do
       user = invited_user_fixture("anna@example.org")
       {:ok, token} = Accounts.send_password_link(user, link_opts())
-      {:ok, user} = Accounts.accept_login_link(token, "a long enough password")
+      {:ok, user} = open_account(token)
 
       {:ok, reset} = Accounts.send_password_link(user, link_opts())
       next_day = DateTime.add(DateTime.utc_now(), 25 * 3600, :second)
@@ -103,6 +114,48 @@ defmodule Texttile.AccountsLinksTest do
         assert email.text_body =~ "for a week"
         true
       end)
+    end
+
+    # Nobody knows this password yet, so a typo would shut its owner
+    # out of the account they are opening, with the link spent.
+    test "the first password of an account is typed twice" do
+      user = invited_user_fixture("anna@example.org")
+      {:ok, token} = Accounts.send_password_link(user, link_opts())
+
+      assert {:error, changeset} = open_account(token, confirmation: "a long enough passwort")
+      assert %{password_confirmation: [_]} = errors_on(changeset)
+
+      assert {:error, changeset} = open_account(token, confirmation: nil)
+      assert %{password_confirmation: [_]} = errors_on(changeset)
+
+      # neither try spent the link
+      assert {:ok, user} = open_account(token)
+      assert {:ok, _} = Accounts.authenticate_user("anna@example.org", "a long enough password")
+      assert user.display_name == "Anna"
+    end
+
+    # This is the one moment its owner is at the screen, and an entry
+    # signed with the part in front of an @ is a byline nobody chose.
+    test "the first password of an account comes with the name readers see" do
+      user = invited_user_fixture("anna@example.org")
+      {:ok, token} = Accounts.send_password_link(user, link_opts())
+
+      assert {:error, changeset} = open_account(token, display_name: "")
+      assert %{display_name: [_]} = errors_on(changeset)
+      assert Accounts.pending?(Accounts.get_user_by_email("anna@example.org"))
+
+      assert {:ok, user} = open_account(token, display_name: "Anna Berg")
+      assert Accounts.display_name(user) == "Anna Berg"
+    end
+
+    # A password its owner already has is typed once, and the name they
+    # chose long ago is not asked for again.
+    test "a reset takes the password alone" do
+      user = user_fixture(%{display_name: "Klaus"})
+      {:ok, token} = Accounts.send_password_link(user, link_opts())
+
+      assert {:ok, user} = Accounts.accept_login_link(token, "a brand new password")
+      assert user.display_name == "Klaus"
     end
 
     test "a rejected password leaves the link usable" do
