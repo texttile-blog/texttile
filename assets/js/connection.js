@@ -34,6 +34,15 @@
 
 export const FALLBACK_MS = 10_000
 
+/* The clocks of the watch below, in one place. A browser test may
+   shorten them through `window.__lineTiming` before the page scripts
+   run, so a test of the mechanism costs seconds and not a minute.
+   Nothing in the product writes that, and the fallback above is not
+   part of it. The silence is only read once a tick, so `quiet` has to
+   stay well above `tick` or a page would call itself quiet between
+   two answers. */
+const clock = {tick: 1000, ask: 4000, quiet: 8000, revive: 10_000, late: 5000, ...(globalThis.window?.__lineTiming || {})}
+
 export function forgetLongpollFallback() {
   try {
     sessionStorage.removeItem("phx:fallback:longpoll")
@@ -53,7 +62,7 @@ export function forgetLongpollFallback() {
 
    The mark waits a few seconds, because no page is live in its first
    moment and a warning there would be a lie. */
-const LATE_MS = 5000
+const LATE_MS = clock.late
 
 /* THE LINE THAT LOOKS FINE
 
@@ -80,9 +89,9 @@ const LATE_MS = 5000
    A line that was put down on purpose is left alone. Phoenix marks
    that close as clean, and a page that was disconnected deliberately
    has nothing to repair. */
-const ASK_MS = 4000
-const QUIET_MS = 8000
-const REVIVE_MS = 10_000
+const ASK_MS = clock.ask
+const QUIET_MS = clock.quiet
+const REVIVE_MS = clock.revive
 
 /**
  * What the page knows about its line, and what follows from it. On its
@@ -263,7 +272,7 @@ export function watchLiveness(liveSocket) {
     socket().onOpen(dropTheViewsOfTheOldLine)
   }
 
-  setInterval(watchTheLine, 1000)
+  setInterval(watchTheLine, clock.tick)
   addEventListener("visibilitychange", backInFront)
   addEventListener("focus", backInFront)
   watchTheLine()

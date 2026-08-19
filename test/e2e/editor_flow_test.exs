@@ -300,7 +300,10 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Versioned")
         |> type(".ed-cm .cm-content", "First words.")
-        |> assert_has("#state", text: "Last saved · just now")
+        # the loud state of the line is the save itself answering. The
+        # quiet stamp under it only returns when the flash has faded,
+        # and waiting for that costs the suite three seconds.
+        |> assert_has("#state.fresh")
         |> click("#stateChev")
         |> click_button("#saveVersionRow", "Save version")
         |> assert_has("#stateLine", text: "Version saved")
