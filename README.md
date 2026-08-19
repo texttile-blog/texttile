@@ -443,19 +443,27 @@ one account has a password, the log line stops.
 
 ### Taking access away
 
-Delete the account in **Settings > Users**. That ends its open sessions in every
-browser; what the person wrote stays, because it belongs to the site. Nobody can
-delete their own account, and the last account cannot go.
+Delete the account in **Settings > Users**. It cannot sign in from that moment,
+every session open right now ends, and it is out of the list. Nobody can delete
+their own account, and the last account cannot go.
 
-A deletion is final. The address may stand in `ADMIN_USERS` and no restart
-brings the account back, because the variable makes each address once. To let
-that person back in, invite the address again from Settings. There is nothing
-else to clean up after a deletion.
+What the person wrote stays, and keeps their name. The entries read exactly as
+before: the byline under an entry is the name that account carries, and a reader
+is told nothing about accounts at all. In the admin area the name says the
+account is gone: `Julia (deleted)` in the author list of an entry, in the
+entries list and in the version list. The account itself is in no list of
+accounts any more.
 
-`ADMIN_USERS` never takes anything away either. An address you remove from it
-keeps the account it already has. This is a deliberate trade for a product built
-for people who trust each other. If you need the emergency switch of the older
-versions, delete the row in the database on the volume.
+The address is free again at once. Invite it from Settings and it gets a **new**
+account, with its own entries from then on; the old one keeps what it wrote. The
+same goes for `ADMIN_USERS`: while the address stands in that variable, the next
+start of the server invites it by itself. **Taking access away from somebody
+named in `ADMIN_USERS` means deleting the account and taking the address out of
+the variable.** One without the other lasts until the next restart.
+
+That is the trade this product takes: the variable is operator configuration,
+and the operator is the person who deploys. If you need more than that, the
+database on the volume is yours.
 
 There are no roles and no permission matrix. Everybody who can sign in can do
 everything, which is what a blog of people who trust each other needs.

@@ -49,8 +49,19 @@ defmodule Texttile.Accounts do
   @doc "The addresses ADMIN_USERS makes an account for."
   def admin_emails, do: Application.get_env(:texttile, :admin_emails, [])
 
+  @doc """
+  The accounts that are still there. A deleted account keeps its row
+  for the names under the entries, and this is the query that says it
+  is not one of us any more: it cannot sign in, it is in no list, and
+  its address is free.
+  """
+  def here, do: from(u in User, where: is_nil(u.deleted_at))
+
+  @doc "Whether this account is deleted."
+  def deleted?(%User{deleted_at: at}), do: not is_nil(at)
+
   @doc "Whether this installation has any account at all."
-  def any_account?, do: Repo.exists?(User)
+  def any_account?, do: Repo.exists?(here())
 
   @doc """
   Whether nobody can sign in here yet: no account has a password.
@@ -61,7 +72,7 @@ defmodule Texttile.Accounts do
   would otherwise be a house with the key locked inside.
   """
   def nobody_can_sign_in? do
-    not Repo.exists?(from u in User, where: not is_nil(u.password_hash))
+    not Repo.exists?(from u in here(), where: not is_nil(u.password_hash))
   end
 
   @doc "Whether this account is still waiting for its first password."
@@ -83,7 +94,7 @@ defmodule Texttile.Accounts do
   second account.
   """
   def invite(email, opts) when is_binary(email) do
-    case Repo.get_by(User, email: User.normalize_email(email)) do
+    case get_user_by_email(email) do
       nil ->
         with {:ok, user} <- Repo.insert(User.invite_changeset(%User{}, %{email: email})) do
           remember_made(user.email)
@@ -100,13 +111,16 @@ defmodule Texttile.Accounts do
   What the start of the server does with ADMIN_USERS: an address in it
   that never had an account here gets one, and a link.
 
-  An address this installation made an account for once is never made
-  again here, because the accounts are the guest list and this variable
-  only ever adds to it. An account somebody deleted stays deleted, an
-  address whose owner moved to another one does not come back as a
-  second account, and neither of them turns a restart into a way back
-  in. What a deleted address needs to return is an invitation from
-  Settings, by somebody who is in.
+  An address this installation made an account for is not made a second
+  one while that account is there, so an address whose owner moved to
+  another one does not come back as a stranger's way in.
+
+  A deleted account frees its address again, here as well: the variable
+  may hand it out once more, and Settings may too. That is the trade
+  this product takes on purpose. Taking access away from somebody whose
+  address stands in ADMIN_USERS means deleting the account **and**
+  taking the address out of the variable; a restart invites it again
+  otherwise.
 
   While nobody can sign in, a restart mints the link of a waiting
   account again, because that restart is the only way back into an
@@ -120,7 +134,7 @@ defmodule Texttile.Accounts do
     Enum.each(admin_emails(), fn email ->
       email = User.normalize_email(email)
 
-      case Repo.get_by(User, email: email) do
+      case get_user_by_email(email) do
         nil ->
           unless email in made, do: report(email, invite(email, opts))
 
@@ -144,6 +158,16 @@ defmodule Texttile.Accounts do
 
     unless email in made do
       {:ok, _} = Settings.put(:admin_emails_made, Enum.join(made ++ [email], ","))
+    end
+
+    :ok
+  end
+
+  defp forget_made(email) do
+    made = made_here()
+
+    if email in made do
+      {:ok, _} = Settings.put(:admin_emails_made, Enum.join(made -- [email], ","))
     end
 
     :ok
@@ -182,7 +206,7 @@ defmodule Texttile.Accounts do
   """
   def authenticate_user(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: User.normalize_email(email))
+    user = get_user_by_email(email)
 
     if User.valid_password?(user, password), do: {:ok, user}, else: :error
   end
@@ -296,8 +320,20 @@ defmodule Texttile.Accounts do
 
   ## Everybody's accounts
 
-  @doc "Every account, the oldest first. All of them are admins, all equal."
+  @doc """
+  Every account that is there, the oldest first. All of them are
+  admins, all equal. This is the list Settings shows.
+  """
   def list_users do
+    Repo.all(from u in here(), order_by: u.id)
+  end
+
+  @doc """
+  Every account the site ever had, the deleted ones included and marked
+  as such. The author of an entry may be somebody who has left, so the
+  screens that name people read this one.
+  """
+  def list_users_and_deleted do
     Repo.all(from u in User, order_by: u.id)
   end
 
@@ -312,9 +348,13 @@ defmodule Texttile.Accounts do
 
   ## The mailed password link
 
-  @doc "The account behind an email address (any case), or nil."
+  @doc """
+  The account behind an email address (any case), or nil. A deleted
+  account is nobody here: its address is free, and the next one to be
+  invited to it is a new account.
+  """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: User.normalize_email(email))
+    Repo.get_by(here(), email: User.normalize_email(email))
   end
 
   @doc """
@@ -484,25 +524,39 @@ defmodule Texttile.Accounts do
   end
 
   @doc """
-  Deletes an account, with its sessions and links, under the rules of
-  `delete_user_block/3`. What the person wrote stays; it belongs to the
-  site. An account that another admin deleted first answers `:gone`
-  instead of raising. The address is free again afterwards, so the same
-  person can be invited back.
+  Deletes an account under the rules of `delete_user_block/3`: it is out
+  of the list, out of every browser it was signed in to, and its address
+  is free again.
+
+  The row stays, marked with the moment it happened. What the person
+  wrote belongs to the site, and their name is part of it: the byline
+  under the entries, the version list, the log and the comments all keep
+  reading the way they did. Readers are told nothing; the admin area
+  says the account is gone wherever it names it.
+
+  An account another admin deleted first answers `:gone` instead of
+  raising.
   """
   def delete_user(%User{} = user, by: %User{} = by) do
-    case delete_user_block(user, by, Repo.aggregate(User, :count)) do
+    case delete_user_block(user, by, Repo.aggregate(here(), :count)) do
       nil ->
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
         result =
           Repo.transaction(fn ->
-            case Repo.get(User, user.id) do
+            case Repo.one(from u in here(), where: u.id == ^user.id) do
               nil ->
                 Repo.rollback(:gone)
 
               fresh ->
                 Repo.delete_all(from l in LoginLink, where: l.user_id == ^fresh.id)
                 Repo.delete_all(from s in Session, where: s.user_id == ^fresh.id)
-                Repo.delete!(fresh)
+
+                # The address goes back to the configuration too: what
+                # ADMIN_USERS made once, it may make again.
+                forget_made(fresh.email)
+
+                Repo.update!(Ecto.Changeset.change(fresh, deleted_at: now))
             end
           end)
 

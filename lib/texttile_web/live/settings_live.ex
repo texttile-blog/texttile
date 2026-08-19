@@ -198,7 +198,7 @@ defmodule TexttileWeb.SettingsLive do
   def handle_event("ask_delete", %{"id" => id}, socket) do
     user = Accounts.get_user(id)
 
-    if is_nil(user) or
+    if is_nil(user) or Accounts.deleted?(user) or
          delete_block(user, socket.assigns.users, socket.assigns.current_scope.user) do
       {:noreply, refresh_users(socket)}
     else
@@ -1534,13 +1534,13 @@ defmodule TexttileWeb.SettingsLive do
         <p>
           <b>{Accounts.display_name(@confirm_delete)}</b>
           {gettext(
-            "can no longer sign in from the moment you confirm, and every session open right now ends. What %{name} already wrote stays: the entries, the images, the comments and every line of every Log belong to the site, not to the account.",
+            "can no longer sign in from the moment you confirm, and every session open right now ends. What %{name} already wrote stays, and keeps this name: the entries, the images, the comments and every line of every Log belong to the site, not to the account. Readers see no difference; here the name says the account is gone.",
             name: Accounts.display_name(@confirm_delete)
           )}
           <br />
           <br />
           {gettext(
-            "There is no undo. While the name stands in ADMIN_USERS, its owner can sign in again and choose a fresh password."
+            "There is no undo, and the address is free again: you can invite it back as a new account. While it stands in ADMIN_USERS, the next start of the server invites it by itself, so take it out of there as well."
           )}
         </p>
       </.ask>

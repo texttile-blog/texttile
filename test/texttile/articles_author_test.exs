@@ -33,16 +33,25 @@ defmodule Texttile.ArticlesAuthorTest do
 
   # What somebody wrote stays when their account goes; the entry then
   # has no name to show and shows none.
-  test "an entry whose author has gone is shown without a name" do
+  # The entry belongs to the site, and the name under it is part of it:
+  # a reader must not see an entry lose the person who wrote it.
+  test "an entry keeps its byline when the account is deleted" do
     kb = user_fixture(%{display_name: "kb"})
-    leaving = user_fixture(%{display_name: "leaving"})
+    leaving = user_fixture(%{display_name: "Julia"})
     article = published_post(user: leaving, title: "Harbor mornings")
 
     {:ok, _} = Accounts.delete_user(leaving, by: kb)
 
     read = Articles.get_article!(article.id)
-    assert read.user_id == nil
-    assert Articles.author_name(read) == nil
+    assert read.user_id == leaving.id
+    assert Articles.author_name(read) == "Julia"
+  end
+
+  test "an entry that never had an author has no name" do
+    article = published_post(title: "Nobody's")
+    {:ok, article} = article |> Ecto.Changeset.change(user_id: nil) |> Texttile.Repo.update()
+
+    assert Articles.author_name(Articles.get_article!(article.id)) == nil
   end
 
   test "the name travels with the reader's list and with one entry" do

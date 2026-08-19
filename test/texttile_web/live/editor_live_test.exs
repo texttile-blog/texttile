@@ -896,6 +896,47 @@ defmodule TexttileWeb.EditorLiveTest do
     end
   end
 
+  # A deleted account is out of the guest list, not out of the history:
+  # it wrote entries, it holds versions, and the admin area has to be
+  # able to say so. Readers are told nothing.
+  describe "an account that was deleted" do
+    setup %{user: user} do
+      julia = Texttile.AccountsFixtures.user_fixture(%{display_name: "Julia"})
+      article = draft(julia)
+      {:ok, _} = Texttile.Accounts.delete_user(julia, by: user)
+      %{julia: julia, article: article}
+    end
+
+    test "stands in the author list, marked", %{conn: conn, article: article, julia: julia} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      assert has_element?(
+               view,
+               "#edAuthor option[value='#{julia.id}'][selected]",
+               "Julia (deleted)"
+             )
+    end
+
+    test "is who the entries list says wrote it, marked", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/admin/texts")
+
+      assert html =~ "Julia (deleted)"
+    end
+
+    test "keeps its plain name under the entry a reader gets", %{
+      conn: conn,
+      user: user,
+      article: article
+    } do
+      {:ok, published} = Articles.publish(Articles.get_article!(article.id), user)
+
+      html = conn |> get(Articles.public_path(published)) |> html_response(200)
+
+      assert html =~ "Julia"
+      refute html =~ "(deleted)"
+    end
+  end
+
   describe "delete" do
     test "asks first, then deletes and returns to the grid", %{conn: conn, user: user} do
       article = draft(user)

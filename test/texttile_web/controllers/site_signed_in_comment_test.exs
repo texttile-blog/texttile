@@ -187,7 +187,7 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
       {:ok, _} = Texttile.Accounts.delete_user(author, by: keeper)
 
       assert [comment] = Comments.for_article(article.id)
-      assert is_nil(comment.user_id)
+      assert comment.user_id == author.id
       assert comment.name == "Katharina"
       assert comment.body == "Still here afterwards."
     end

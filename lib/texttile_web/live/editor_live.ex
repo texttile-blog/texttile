@@ -56,7 +56,7 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
       # The accounts the Author field offers. All admins are equal, so
       # every one of them can carry an entry.
-      |> assign(:accounts, Accounts.list_users())
+      |> assign(:accounts, Accounts.list_users_and_deleted())
       |> TexttileWeb.CommentModeration.attach(
         scope: {:article, & &1.assigns.article.id},
         reload: &reload_comments/1
@@ -369,7 +369,7 @@ defmodule TexttileWeb.EditorLive do
       {:error, _reason} ->
         {:noreply,
          socket
-         |> assign(:accounts, Accounts.list_users())
+         |> assign(:accounts, Accounts.list_users_and_deleted())
          |> mark_saved(gettext("That account is gone · the author stands"))}
     end
   end
@@ -719,7 +719,7 @@ defmodule TexttileWeb.EditorLive do
     name =
       case Accounts.get_user(meta.by) do
         nil -> gettext("Someone")
-        user -> Accounts.display_name(user)
+        user -> admin_name(user)
       end
 
     file =
@@ -2218,7 +2218,7 @@ defmodule TexttileWeb.EditorLive do
                     value={account.id}
                     selected={@article.user_id == account.id}
                   >
-                    {Accounts.display_name(account)}
+                    {admin_name(account)}
                   </option>
                 </select>
               </span>
@@ -2782,15 +2782,15 @@ defmodule TexttileWeb.EditorLive do
   defp holder_name(%{user_id: user_id}) do
     case Accounts.get_user(user_id) do
       nil -> gettext("A deleted account")
-      user -> Accounts.display_name(user)
+      user -> admin_name(user)
     end
   end
 
   defp author_name(%{user: nil}), do: "—"
-  defp author_name(%{user: user}), do: Accounts.display_name(user)
+  defp author_name(%{user: user}), do: admin_name(user)
 
   defp log_line(%{user: nil, text: text}), do: text
-  defp log_line(%{user: user, text: text}), do: "#{Accounts.display_name(user)} #{text}"
+  defp log_line(%{user: user, text: text}), do: "#{admin_name(user)} #{text}"
 
   # Who else has this text open right now, by name; read from the
   # admin presence the wordmark menu already carries.

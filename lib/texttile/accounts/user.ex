@@ -13,12 +13,17 @@ defmodule Texttile.Accounts.User do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   schema "users" do
     field :display_name, :string
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
+    # A deleted account keeps its row: what it wrote carries its name,
+    # and the admin area still shows who was there. It cannot sign in,
+    # it is not in the list of accounts, and its address is free again.
+    field :deleted_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end
@@ -98,7 +103,12 @@ defmodule Texttile.Accounts.User do
     |> validate_required([:email])
     |> validate_format(:email, @email_format, message: "must be an email address")
     |> validate_length(:email, max: @email_max)
-    |> unsafe_validate_unique(:email, Texttile.Repo, message: "is already in use")
+    # An address is taken by the accounts that are still there. A
+    # deleted account keeps its address on its row and holds nothing.
+    |> unsafe_validate_unique(:email, Texttile.Repo,
+      query: from(u in __MODULE__, where: is_nil(u.deleted_at)),
+      message: "is already in use"
+    )
     |> unique_constraint(:email, message: "is already in use")
   end
 

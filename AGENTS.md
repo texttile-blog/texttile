@@ -50,9 +50,14 @@ an admin, and it is built for people who trust each other. `ADMIN_USERS` is not
 that model any more. It says which addresses get an account at the start of the
 server, so the first admin comes in without anybody to invite them, and
 Settings does the same without a deploy. Both ways end in a mailed link, so who
-you are is who reads that inbox. An address this installation made an account
-for once is never made again by the variable, so a restart cannot undo anything.
-Taking access away means deleting the account, and that deletion is final.
+you are is who reads that inbox.
+
+Taking access away means deleting the account, and the account keeps its row:
+what a person wrote carries their name, so a reader never sees an entry lose its
+byline and the admin area still says who was there, marked as gone. The address
+is free again at once, the variable included: an address that stands in
+`ADMIN_USERS` is invited again at the next start, so revoking somebody means
+deleting the account **and** taking the address out of the variable.
 
 Settings have no Save button. The one exception is a field that owns the
 account: moving your address asks for your password first. When a feature needs
@@ -98,6 +103,9 @@ Use this language in code, in the UI and when talking to me.
 - **invitation** means the mailed link that gives an account its first
   password. `ADMIN_USERS` sends one at the start of the server, Settings sends
   one on a click, and the link is the same one a forgotten password gets.
+- **deleted account** means a row with a `deleted_at`: out of every list of
+  accounts, out of every browser, its address free, and still the name under
+  everything it wrote. `Accounts.here/0` is the query that leaves it out.
 - **reader** means anybody who is not signed in.
 - **entry** means one blog item, a post or a page. Every word a person reads
   says entry. The routes and modules keep the older noun on purpose:

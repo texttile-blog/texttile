@@ -404,8 +404,11 @@ defmodule TexttileWeb.SettingsLiveTest do
 
       view |> element("#dialog-ok") |> render_click()
 
+      # out of the list, and out of the guest list: the row stays for
+      # the names under the entries
       refute has_element?(view, "#user-#{other.id}")
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
+      assert Accounts.deleted?(Accounts.get_user!(other.id))
+      assert Accounts.get_user_by_email(other.email) == nil
     end
 
     test "your own row cannot be deleted", %{conn: conn, user: user} do

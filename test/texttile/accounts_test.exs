@@ -145,16 +145,33 @@ defmodule Texttile.AccountsTest do
       assert_no_email_sent()
     end
 
-    # Deleting the account is the whole revocation model now, so a
-    # restart must not hand the address back. The variable adds each
-    # address once and remembers it.
-    test "a deleted account does not come back at the next start" do
+    # A deleted account frees its address, in the variable as well: the
+    # next start invites it again, as a new account. Taking access away
+    # for good means taking the address out of ADMIN_USERS too.
+    test "a deleted address is invited again at the next start, as a new account" do
       configure_admin_emails(["kb@example.org"])
       Accounts.invite_configured(invite_opts())
       [invited] = Accounts.list_users()
 
       me = user_fixture()
       {:ok, _} = Accounts.delete_user(invited, by: me)
+
+      Accounts.invite_configured(invite_opts())
+
+      again = Accounts.get_user_by_email("kb@example.org")
+      refute again.id == invited.id
+      assert Accounts.pending?(again)
+      assert Accounts.deleted?(Accounts.get_user!(invited.id))
+    end
+
+    test "an address that leaves ADMIN_USERS is not invited again" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      [invited] = Accounts.list_users()
+
+      me = user_fixture()
+      {:ok, _} = Accounts.delete_user(invited, by: me)
+      configure_admin_emails([])
 
       Accounts.invite_configured(invite_opts())
 
@@ -178,17 +195,17 @@ defmodule Texttile.AccountsTest do
       assert length(Accounts.list_users()) == 1
     end
 
-    # The memory is about the installation, not about the variable: an
-    # address Settings made and somebody deleted stays deleted too.
-    test "an address an admin invited and deleted is not made again" do
-      me = user_fixture()
+    # An address that has an account is not made a second one, however
+    # it got that account.
+    test "an address an admin invited is not made a second time" do
+      user_fixture()
       {:ok, anna} = Accounts.invite("anna@example.org", invite_opts())
-      {:ok, _} = Accounts.delete_user(anna, by: me)
 
       configure_admin_emails(["anna@example.org"])
       Accounts.invite_configured(invite_opts())
 
-      assert Accounts.get_user_by_email("anna@example.org") == nil
+      assert Accounts.get_user_by_email("anna@example.org").id == anna.id
+      assert length(Accounts.list_users()) == 2
     end
 
     # The variable is still a way to add somebody without touching
@@ -591,14 +608,48 @@ defmodule Texttile.AccountsTest do
   end
 
   describe "delete_user/2" do
-    test "deletes another account with its sessions" do
+    test "ends the sessions and takes the account out of the list" do
       me = user_fixture(%{display_name: "kb"})
       other = user_fixture(%{display_name: "julia"})
       Accounts.create_session(other)
+      {:ok, _} = Accounts.send_password_link(other, invite_opts())
 
-      assert {:ok, _} = Accounts.delete_user(other, by: me)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(other.id) end
+      assert {:ok, deleted} = Accounts.delete_user(other, by: me)
+
+      assert Accounts.deleted?(deleted)
       assert Accounts.list_sessions(other) == []
+      assert Enum.map(Accounts.list_users(), & &1.id) == [me.id]
+      assert :error = Accounts.authenticate_user(other.email, valid_password())
+      assert Accounts.get_user_by_email(other.email) == nil
+    end
+
+    # The row stays, because what the person wrote carries their name
+    # and the admin area still has to say who was there.
+    test "the account keeps its row and its name" do
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{display_name: "Julia"})
+
+      {:ok, _} = Accounts.delete_user(other, by: me)
+
+      kept = Accounts.get_user!(other.id)
+      assert Accounts.deleted?(kept)
+      assert Accounts.display_name(kept) == "Julia"
+      assert kept.email == other.email
+      assert Enum.map(Accounts.list_users_and_deleted(), & &1.id) == [me.id, other.id]
+    end
+
+    # The address belongs to nobody again, and what comes back is a new
+    # account: a new row, no sessions, no password.
+    test "the address is free again and the next account for it is a new one" do
+      me = user_fixture(%{display_name: "kb"})
+      other = user_fixture(%{email: "julia@example.org"})
+      {:ok, _} = Accounts.delete_user(other, by: me)
+
+      assert {:ok, again} = Accounts.invite("julia@example.org", invite_opts())
+
+      refute again.id == other.id
+      assert Accounts.pending?(again)
+      assert Accounts.get_user_by_email("julia@example.org").id == again.id
     end
 
     test "never you, never the last account" do
