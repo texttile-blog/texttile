@@ -694,7 +694,7 @@ make start       # dev server on port 4000, no configuration needed
 make test        # JS unit tests, Elixir unit tests, browser tests
 make check       # everything CI checks: warnings, formatting, tests
 make db-pull     # pull the production snapshot next to the dev database
-make db-delete   # delete the shared development SQLite database
+make dev-reset   # throw the shared development database and uploads away
 ```
 
 `npm --prefix assets test` runs the JS unit tests on their own: plain
@@ -728,8 +728,11 @@ All git worktrees of the repository share the dev state of the main checkout: th
 `make db-pull` writes the snapshot to `texttile-snapshot.db` in that same
 checkout root. Outside a git checkout, everything stays next to the code.
 
-Stop the development server before running `make db-delete`. The next
-`make start` recreates the database and applies all migrations.
+`make dev-reset` throws that state away: the database and the uploads together,
+because a database without its uploads is a site full of pictures that are not
+there. It takes the state of every worktree with it, so stop the development
+server first; it refuses while a process holds the database. The next
+`make start` makes an empty installation and applies all migrations.
 
 ### Translations
 

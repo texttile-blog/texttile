@@ -1,11 +1,12 @@
 # Port 4000 belongs to the human developer (make start).
 # Agents never use it; they run on 4440+ (see AGENTS.md).
 
-.PHONY: prepare tools test check kill-port-4000 start db-delete db-pull
+.PHONY: prepare tools test check kill-port-4000 start dev-reset db-pull
 
 # Development state is shared by all worktrees, see config/dev.exs.
 SHARED_ROOT := $(shell common_dir="$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; if [ -n "$$common_dir" ]; then dirname "$$common_dir"; else pwd; fi)
 DB_DEV := $(SHARED_ROOT)/texttile_dev.db
+UPLOADS_DEV := $(SHARED_ROOT)/priv/uploads
 
 # Local, stable path for the remote DB snapshot. Point TablePlus at this file.
 DB_LOCAL := $(SHARED_ROOT)/texttile-snapshot.db
@@ -62,16 +63,22 @@ db-pull:
 	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a $(FLY_APP)
 	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
 
-# Delete the shared development database. The next `make start` recreates it.
-db-delete:
+# Throw the whole development installation away: the shared database and
+# the files that belong to it. Both halves go together, because a
+# database without its uploads is a site full of pictures that are not
+# there. Every worktree shares this state (see config/dev.exs). The next
+# `make start` makes an empty installation and migrates it.
+dev-reset:
 	@pids="$$(lsof -t "$(DB_DEV)" "$(DB_DEV)-shm" "$(DB_DEV)-wal" 2>/dev/null | sort -u || true)"; \
 	if [ -n "$$pids" ]; then \
 		echo "Database is in use by process(es): $$pids" >&2; \
-		echo "Stop the development server before running make db-delete." >&2; \
+		echo "Stop the development server before running make dev-reset." >&2; \
 		exit 1; \
 	fi
 	@rm -f -- "$(DB_DEV)" "$(DB_DEV)-shm" "$(DB_DEV)-wal"
 	@echo "Deleted development database: $(DB_DEV)"
+	@rm -rf -- "$(UPLOADS_DEV)"
+	@echo "Deleted development uploads: $(UPLOADS_DEV)"
 
 # Optional: a git-ignored .env (see .env.example) is loaded into the server,
 # e.g. to test a real mail adapter locally. Dev needs no env vars by default.
