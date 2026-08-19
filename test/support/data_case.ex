@@ -232,7 +232,7 @@ defmodule Texttile.DataCase do
   @doc """
   A helper that transforms changeset errors into a map of messages.
 
-      assert {:error, changeset} = Accounts.claim_account("kb", %{password: "short"})
+      assert {:error, changeset} = Accounts.update_password(user, valid_password(), "short")
       assert "password is too short" in errors_on(changeset).password
       assert %{password: ["password is too short"]} = errors_on(changeset)
 

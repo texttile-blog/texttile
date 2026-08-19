@@ -50,7 +50,9 @@ an admin, and it is built for people who trust each other. `ADMIN_USERS` is not
 that model any more. It says which addresses get an account at the start of the
 server, so the first admin comes in without anybody to invite them, and
 Settings does the same without a deploy. Both ways end in a mailed link, so who
-you are is who reads that inbox. Taking access away means deleting the account.
+you are is who reads that inbox. An address this installation made an account
+for once is never made again by the variable, so a restart cannot undo anything.
+Taking access away means deleting the account, and that deletion is final.
 
 Settings have no Save button. The one exception is a field that owns the
 account: moving your address asks for your password first. When a feature needs

@@ -106,6 +106,28 @@ defmodule TexttileWeb.LinkControllerTest do
       assert_email_sent(to: [{Accounts.display_name(user), "kb@example.org"}])
     end
 
+    # A fresh link replaces the pending one, so a stranger who knows the
+    # address of an invited person could otherwise kill the invitation
+    # in the inbox it just reached, once a minute, forever.
+    test "an account that was only invited keeps its link, whatever this form is told", %{
+      conn: conn
+    } do
+      user = invited_user_fixture("anna@example.org")
+
+      {:ok, token} =
+        Accounts.send_password_link(user, site: "s", link_url: fn t -> "http://x/link/#{t}" end)
+
+      # the invitation itself, out of the way, so the next mailbox
+      # question is about this form alone
+      assert_received {:email, _invitation}
+
+      conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "anna@example.org"}})
+
+      assert html_response(conn, 200) =~ "on its way"
+      assert_no_email_sent()
+      assert {:ok, _} = Accounts.verify_login_link(token)
+    end
+
     test "an unknown address gets no mail; the answer reads the same", %{conn: conn} do
       conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "nobody@example.org"}})
       assert html_response(conn, 200) =~ "on its way"

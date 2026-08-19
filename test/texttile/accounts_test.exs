@@ -136,6 +136,76 @@ defmodule Texttile.AccountsTest do
       assert_no_email_sent()
     end
 
+    # Deleting the account is the whole revocation model now, so a
+    # restart must not hand the address back. The variable adds each
+    # address once and remembers it.
+    test "a deleted account does not come back at the next start" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      [invited] = Accounts.list_users()
+
+      me = user_fixture()
+      {:ok, _} = Accounts.delete_user(invited, by: me)
+
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("kb@example.org") == nil
+      assert Enum.map(Accounts.list_users(), & &1.id) == [me.id]
+    end
+
+    # The address the account left is an address this installation has
+    # made once. A second account for it would belong to whoever reads
+    # an inbox its owner walked away from.
+    test "an address the account moved away from makes no second account" do
+      configure_admin_emails(["kb@example.org"])
+      Accounts.invite_configured(invite_opts())
+      token = mailed_token()
+      {:ok, user} = Accounts.accept_login_link(token, "a long enough password")
+      {:ok, _} = Accounts.update_email(user, "kb@elsewhere.org", "a long enough password")
+
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("kb@example.org") == nil
+      assert length(Accounts.list_users()) == 1
+    end
+
+    # The memory is about the installation, not about the variable: an
+    # address Settings made and somebody deleted stays deleted too.
+    test "an address an admin invited and deleted is not made again" do
+      me = user_fixture()
+      {:ok, anna} = Accounts.invite("anna@example.org", invite_opts())
+      {:ok, _} = Accounts.delete_user(anna, by: me)
+
+      configure_admin_emails(["anna@example.org"])
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.get_user_by_email("anna@example.org") == nil
+    end
+
+    # The variable is still a way to add somebody without touching
+    # Settings: an address it never made before gets its account.
+    test "an address added to the configuration later gets its account" do
+      user_fixture()
+      configure_admin_emails(["kb@example.org"])
+
+      Accounts.invite_configured(invite_opts())
+
+      assert Accounts.pending?(Accounts.get_user_by_email("kb@example.org"))
+    end
+
+    # Nobody is at the screen when this runs, so a mail that stays here
+    # has to say so in the log.
+    test "a mail that cannot leave at the start says so in the log" do
+      break_mail()
+      configure_admin_emails(["kb@example.org"])
+
+      log = ExUnit.CaptureLog.capture_log(fn -> Accounts.invite_configured(invite_opts()) end)
+
+      assert log =~ "kb@example.org"
+      assert log =~ "did not leave this server"
+      assert Accounts.get_user_by_email("kb@example.org")
+    end
+
     test "an address that is not one is dropped by the configuration, not by this" do
       configure_admin_emails([])
       Accounts.invite_configured(invite_opts())
@@ -441,6 +511,18 @@ defmodule Texttile.AccountsTest do
                Accounts.update_email(user, "Taken@example.org", valid_password())
 
       assert %{email: [_]} = errors_on(changeset)
+    end
+
+    # A link that is on its way to the old inbox dies with the move,
+    # because links belong to the account and not to the address.
+    test "update_email/3 spends the link that was mailed to the old address" do
+      user = user_fixture()
+      {:ok, token} = Accounts.send_password_link(user, invite_opts())
+
+      {:ok, _} = Accounts.update_email(user, "moved@example.org", valid_password())
+
+      assert :error = Accounts.verify_login_link(token)
+      assert :error = Accounts.accept_login_link(token, "a long enough password")
     end
 
     test "update_email/3 rejects an invalid address" do

@@ -44,7 +44,12 @@ defmodule Texttile.Settings do
     backup_token_hash: {:string, ""},
     backup_allowed_ips: {:string, ""},
     backup_last_access_at: {:string, ""},
-    backup_last_access_ip: {:string, ""}
+    backup_last_access_ip: {:string, ""},
+    # The addresses ADMIN_USERS has already made an account for,
+    # separated by commas (see `Texttile.Accounts.invite_configured/1`).
+    # It outlives the accounts it names, which is the whole point: an
+    # account somebody deleted must not come back at the next start.
+    admin_emails_made: {:string, ""}
   }
 
   # The iris theme is the default the whole site wears, admin and public

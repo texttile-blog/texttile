@@ -23,6 +23,7 @@ defmodule Texttile.Accounts do
 
   alias Texttile.Accounts.{LoginLink, Session, User, UserNotifier}
   alias Texttile.Repo
+  alias Texttile.Settings
 
   ## The brake on the password doors
 
@@ -85,6 +86,7 @@ defmodule Texttile.Accounts do
     case Repo.get_by(User, email: User.normalize_email(email)) do
       nil ->
         with {:ok, user} <- Repo.insert(User.invite_changeset(%User{}, %{email: email})) do
+          remember_made(user.email)
           broadcast_users_changed()
           deliver_link(user, opts)
         end
@@ -96,27 +98,74 @@ defmodule Texttile.Accounts do
 
   @doc """
   What the start of the server does with ADMIN_USERS: an address in it
-  that has no account gets one, and a link.
+  that never had an account here gets one, and a link.
+
+  An address this installation made an account for once is never made
+  again here, because the accounts are the guest list and this variable
+  only ever adds to it. An account somebody deleted stays deleted, an
+  address whose owner moved to another one does not come back as a
+  second account, and neither of them turns a restart into a way back
+  in. What a deleted address needs to return is an invitation from
+  Settings, by somebody who is in.
 
   While nobody can sign in, a restart mints the link of a waiting
   account again, because that restart is the only way back into an
   installation whose first mail never arrived. Once somebody has a
-  password, a restart mails nobody: the accounts are the guest list from
-  then on, and this variable only ever adds to them.
+  password, a restart mails nobody.
   """
   def invite_configured(opts) do
     again? = nobody_can_sign_in?()
+    made = made_here()
 
     Enum.each(admin_emails(), fn email ->
-      case Repo.get_by(User, email: User.normalize_email(email)) do
+      email = User.normalize_email(email)
+
+      case Repo.get_by(User, email: email) do
         nil ->
-          invite(email, opts)
+          unless email in made, do: report(email, invite(email, opts))
 
         user ->
           if again? and pending?(user) and not link_recently_sent?(user, opts),
-            do: deliver_link(user, opts)
+            do: report(email, deliver_link(user, opts))
       end
     end)
+  end
+
+  # Every address this installation ever made an account for, whether
+  # the configuration made it or an admin did. It outlives the accounts
+  # it names, which is the whole point: the start of the server reads
+  # it and adds nothing twice.
+  defp made_here do
+    :admin_emails_made |> Settings.get() |> String.split(",", trim: true)
+  end
+
+  defp remember_made(email) do
+    made = made_here()
+
+    unless email in made do
+      {:ok, _} = Settings.put(:admin_emails_made, Enum.join(made ++ [email], ","))
+    end
+
+    :ok
+  end
+
+  # The start of the server has nobody to answer to, so what went wrong
+  # goes into the log. The account it made stands either way, and
+  # Settings sends its link again.
+  defp report(_email, {:ok, _user}), do: :ok
+
+  defp report(email, {:error, {:mail, reason}}) do
+    Logger.error("""
+    The account for #{email} is there, but its link did not leave this \
+    server: #{inspect(reason)}
+
+    Check the mail configuration, then send the link again from \
+    Settings > Users.\
+    """)
+  end
+
+  defp report(email, {:error, reason}) do
+    Logger.error("ADMIN_USERS could not invite #{email}: #{inspect(reason)}")
   end
 
   defp deliver_link(user, opts) do
@@ -470,13 +519,21 @@ defmodule Texttile.Accounts do
   account: whoever changes it owns every link that follows, the one
   that sets a new password included. A stolen session must not be
   enough to walk through it.
+
+  A link that is still in flight to the old address dies with the move.
+  Links belong to the account, not to the address, so one that was
+  mailed a minute ago would otherwise still open the account from an
+  inbox the owner just walked away from.
   """
   def update_email(user, email, current_password) do
     user = get_user!(user.id)
     changeset = User.email_changeset(user, %{email: email})
 
     if User.valid_password?(user, current_password) do
-      changeset |> Repo.update() |> tap_users_changed()
+      changeset
+      |> Repo.update()
+      |> tap_link_spent()
+      |> tap_users_changed()
     else
       {:error,
        changeset
@@ -487,6 +544,13 @@ defmodule Texttile.Accounts do
 
   # A profile edit is also a users-list edit: the Settings screen of
   # every admin shows these fields.
+  defp tap_link_spent({:ok, user} = result) do
+    Repo.delete_all(from l in LoginLink, where: l.user_id == ^user.id)
+    result
+  end
+
+  defp tap_link_spent(result), do: result
+
   defp tap_users_changed({:ok, _} = result) do
     broadcast_users_changed()
     result

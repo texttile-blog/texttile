@@ -405,13 +405,19 @@ account, separated by commas:
 ADMIN_USERS="klaus@example.com,julia@example.com"
 ```
 
-Every address in it that has no account gets one at the start, and a link. The
-link works one time, and for a week. This is how the first admin of a new
-installation gets in: nobody is inside yet who could invite them, and there is
-no window in which a stranger could take the account instead.
+Every address in it that never had an account here gets one at the start, and a
+link. The link works one time, and for a week. This is how the first admin of a
+new installation gets in: nobody is inside yet who could invite them, and there
+is no window in which a stranger could take the account instead.
 
 Adding an address later works too. Set the variable, restart, and the new
-address gets its link. Taking one out takes nothing away: see below.
+address gets its link.
+
+Each address is made **once**. The installation remembers what this variable
+made, so an account somebody deleted does not come back at the next restart, and
+an address whose owner moved to another one does not become a second account.
+Taking an address out of the variable takes nothing away either: see
+[Taking access away](#taking-access-away).
 
 **From Settings.** In **Settings > Users**, type an address into **Invite an
 admin** and the same link goes out. No deploy, no restart. The account appears
@@ -438,10 +444,15 @@ one account has a password, the log line stops.
 ### Taking access away
 
 Delete the account in **Settings > Users**. That ends its open sessions in every
-browser and frees its address; what the person wrote stays, because it belongs
-to the site. Nobody can delete their own account, and the last account cannot go.
+browser; what the person wrote stays, because it belongs to the site. Nobody can
+delete their own account, and the last account cannot go.
 
-`ADMIN_USERS` does not do this. It only ever adds: an address you take out of it
+A deletion is final. The address may stand in `ADMIN_USERS` and no restart
+brings the account back, because the variable makes each address once. To let
+that person back in, invite the address again from Settings. There is nothing
+else to clean up after a deletion.
+
+`ADMIN_USERS` never takes anything away either. An address you remove from it
 keeps the account it already has. This is a deliberate trade for a product built
 for people who trust each other. If you need the emergency switch of the older
 versions, delete the row in the database on the volume.
