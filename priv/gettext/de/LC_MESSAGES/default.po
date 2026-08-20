@@ -1033,7 +1033,7 @@ msgstr "Überschrift"
 msgid "Heading. Click again for the next size."
 msgstr "Überschrift. Noch ein Klick für die nächste Größe."
 
-#: lib/texttile/accounts/user_notifier.ex:73
+#: lib/texttile/accounts/user_notifier.ex:76
 #, elixir-autogen, elixir-format
 msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n\n%{url}\n\nThe link works once and for 24 hours. The old password works until\nyou set the new one. If you did not ask for this, you can ignore\nthis mail.\n"
 msgstr "Hallo %{name},\n\njemand hat für dein Konto auf %{site} ein neues Passwort angefordert.\n\nÖffne diesen Link und setze ein neues Passwort:\n\n%{url}\n\nDer Link gilt einmal und 24 Stunden lang. Das alte Passwort gilt, bis\ndu das neue gesetzt hast. Wenn du das nicht angefordert hast, kannst\ndu diese Mail einfach liegen lassen.\n"
@@ -1910,7 +1910,7 @@ msgstr "September"
 msgid "Set"
 msgstr "Setzen"
 
-#: lib/texttile/accounts/user_notifier.ex:72
+#: lib/texttile/accounts/user_notifier.ex:75
 #, elixir-autogen, elixir-format
 msgid "Set a new password on %{site}"
 msgstr "Neues Passwort auf %{site} setzen"
@@ -3852,5 +3852,5 @@ msgstr "kann sich ab dem Moment, in dem du bestätigst, nicht mehr anmelden, und
 
 #: lib/texttile/accounts/user_notifier.ex:43
 #, elixir-autogen, elixir-format
-msgid "Hello,\n\nYou have an admin account on %{blog}. Your email address is\nwhat you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
-msgstr "Hallo,\n\ndu hast ein Adminkonto auf %{blog}. Mit deiner E-Mail-Adresse\nmeldest du dich an.\n\nÖffne diesen Link und wähle dein Passwort:\n\n%{url}\n\nDer Link gilt einmal und eine Woche lang. Niemand sonst setzt dein\nPasswort, und keine Mail von dieser Seite enthält je eines. Wenn du\ndamit nicht gerechnet hast, kannst du diese Mail ignorieren: ohne\nden Link bleibt das Konto zu.\n"
+msgid "Hello,\n\nYou have an admin account on this blog:\n\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
+msgstr "Hallo,\n\ndu hast ein Adminkonto auf diesem Blog:\n\n%{blog}\n\nMit deiner E-Mail-Adresse meldest du dich an.\n\nÖffne diesen Link und wähle dein Passwort:\n\n%{url}\n\nDer Link gilt einmal und eine Woche lang. Niemand sonst setzt dein\nPasswort, und keine Mail von dieser Seite enthält je eines. Wenn du\ndamit nicht gerechnet hast, kannst du diese Mail ignorieren: ohne\nden Link bleibt das Konto zu.\n"

@@ -1033,7 +1033,7 @@ msgstr ""
 msgid "Heading. Click again for the next size."
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:73
+#: lib/texttile/accounts/user_notifier.ex:76
 #, elixir-autogen, elixir-format
 msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n\n%{url}\n\nThe link works once and for 24 hours. The old password works until\nyou set the new one. If you did not ask for this, you can ignore\nthis mail.\n"
 msgstr ""
@@ -1910,7 +1910,7 @@ msgstr ""
 msgid "Set"
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:72
+#: lib/texttile/accounts/user_notifier.ex:75
 #, elixir-autogen, elixir-format
 msgid "Set a new password on %{site}"
 msgstr ""
@@ -3846,5 +3846,5 @@ msgstr ""
 
 #: lib/texttile/accounts/user_notifier.ex:43
 #, elixir-autogen, elixir-format
-msgid "Hello,\n\nYou have an admin account on %{blog}. Your email address is\nwhat you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
+msgid "Hello,\n\nYou have an admin account on this blog:\n\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
 msgstr ""
