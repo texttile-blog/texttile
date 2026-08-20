@@ -30,6 +30,11 @@ defmodule Texttile.Accounts.UserNotifier do
   @doc """
   The invitation of a new admin: the account is there, and this link
   gives it a password. Nobody types a password for anybody else.
+
+  The blog stands at the top as its own address, not as its name: the
+  invitation may be the first thing its reader hears of this site. Like
+  every other address in the mail it stands alone on its line, so no
+  mail program can read a comma or a full stop as part of it.
   """
   def deliver_invitation(user, url, site) do
     deliver(
@@ -39,8 +44,11 @@ defmodule Texttile.Accounts.UserNotifier do
         """
         Hello,
 
-        You have an admin account on %{site}. This address is what you
-        sign in with.
+        You have an admin account on this blog:
+
+        %{blog}
+
+        Your email address is what you sign in with.
 
         Open this link and choose your password:
 
@@ -51,8 +59,8 @@ defmodule Texttile.Accounts.UserNotifier do
         did not expect this, you can ignore this mail: without the link
         the account stays closed.
         """,
-        site: site,
-        url: url
+        url: url,
+        blog: TexttileWeb.Endpoint.url()
       )
     )
   end

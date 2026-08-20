@@ -11,18 +11,18 @@
 msgid ""
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:364
-#: lib/texttile_web/components/layouts.ex:376
+#: lib/texttile_web/components/layouts.ex:369
+#: lib/texttile_web/components/layouts.ex:381
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:371
+#: lib/texttile_web/components/layouts.ex:376
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:359
+#: lib/texttile_web/components/layouts.ex:364
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr ""
@@ -237,7 +237,7 @@ msgstr ""
 msgid "%{mark} uploaded · %{file}"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:337
+#: lib/texttile_web/components/layouts.ex:342
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{last}"
 msgstr ""
@@ -277,7 +277,7 @@ msgstr ""
 msgid "%{site} sends no more mail to this address."
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:178
+#: lib/texttile_web/components/layouts.ex:183
 #, elixir-autogen, elixir-format
 msgid "%{site}, sections menu"
 msgstr ""
@@ -307,7 +307,7 @@ msgstr ""
 msgid "+%{count} more in the gallery"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:330
+#: lib/texttile_web/components/layouts.ex:335
 #, elixir-autogen, elixir-format
 msgid ", %{names} is here"
 msgid_plural ", %{names} are here"
@@ -1033,7 +1033,7 @@ msgstr ""
 msgid "Heading. Click again for the next size."
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:68
+#: lib/texttile/accounts/user_notifier.ex:76
 #, elixir-autogen, elixir-format
 msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n\n%{url}\n\nThe link works once and for 24 hours. The old password works until\nyou set the new one. If you did not ask for this, you can ignore\nthis mail.\n"
 msgstr ""
@@ -1043,7 +1043,7 @@ msgstr ""
 msgid "Hello %{name},\n\nYou wrote a comment on \"%{title}\".\n\nOpen this link, and your comment appears under the entry:\n\n%{url}\n\nYou confirm this address once. Every comment you write after\nthat appears at once. If you did not write a comment on %{site},\nignore this mail.\n"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:236
+#: lib/texttile_web/components/layouts.ex:241
 #, elixir-autogen, elixir-format
 msgid "Here now"
 msgstr ""
@@ -1371,7 +1371,7 @@ msgstr ""
 msgid "No numbers yet. It goes live on %{date}."
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:246
+#: lib/texttile_web/components/layouts.ex:251
 #, elixir-autogen, elixir-format
 msgid "No one else right now."
 msgstr ""
@@ -1874,7 +1874,7 @@ msgstr ""
 msgid "Search titles, tags and text"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:199
+#: lib/texttile_web/components/layouts.ex:204
 #, elixir-autogen, elixir-format
 msgid "Sections"
 msgstr ""
@@ -1910,7 +1910,7 @@ msgstr ""
 msgid "Set"
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:67
+#: lib/texttile/accounts/user_notifier.ex:75
 #, elixir-autogen, elixir-format
 msgid "Set a new password on %{site}"
 msgstr ""
@@ -1952,7 +1952,7 @@ msgstr ""
 msgid "Sign in"
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:256
+#: lib/texttile_web/components/layouts.ex:261
 #: lib/texttile_web/live/profile_live.ex:324
 #, elixir-autogen, elixir-format
 msgid "Sign out"
@@ -2598,7 +2598,7 @@ msgid "Videos"
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:75
-#: lib/texttile_web/components/layouts.ex:303
+#: lib/texttile_web/components/layouts.ex:308
 #, elixir-autogen, elixir-format
 msgid "View site"
 msgstr ""
@@ -2695,7 +2695,7 @@ msgstr ""
 msgid "Your address is never published. Your comment appears under the entry at once."
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:37
+#: lib/texttile/accounts/user_notifier.ex:42
 #, elixir-autogen, elixir-format
 msgid "Your admin account on %{site}"
 msgstr ""
@@ -2710,7 +2710,7 @@ msgstr ""
 msgid "Your new password is set. Every other session is signed out; this browser stays in. Nothing was mailed to anyone: you changed your own."
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:254
+#: lib/texttile_web/components/layouts.ex:259
 #: lib/texttile_web/live/profile_live.ex:26
 #: lib/texttile_web/live/profile_live.ex:166
 #: lib/texttile_web/live/profile_live.ex:184
@@ -2795,7 +2795,7 @@ msgstr ""
 msgid "gets no mail from this blog from the moment you confirm, and the reader is not told."
 msgstr ""
 
-#: lib/texttile_web/components/layouts.ex:242
+#: lib/texttile_web/components/layouts.ex:247
 #, elixir-autogen, elixir-format
 msgid "go"
 msgstr ""
@@ -3693,11 +3693,6 @@ msgstr ""
 msgid "Change"
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:38
-#, elixir-autogen, elixir-format
-msgid "Hello,\n\nYou have an admin account on %{site}. This address is what you\nsign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
-msgstr ""
-
 #: lib/texttile_web/live/settings_live.ex:1179
 #, elixir-autogen, elixir-format
 msgid "Invite an admin"
@@ -3847,4 +3842,9 @@ msgstr ""
 #: lib/texttile_web/live/settings_live.ex:1542
 #, elixir-autogen, elixir-format
 msgid "can no longer sign in from the moment you confirm, and every session open right now ends. What %{name} already wrote stays, and keeps this name: the entries, the images, the comments and every line of every Log belong to the site, not to the account. Readers see no difference; here the name says the account is gone."
+msgstr ""
+
+#: lib/texttile/accounts/user_notifier.ex:43
+#, elixir-autogen, elixir-format
+msgid "Hello,\n\nYou have an admin account on this blog:\n\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
 msgstr ""

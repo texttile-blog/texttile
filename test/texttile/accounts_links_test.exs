@@ -112,6 +112,10 @@ defmodule Texttile.AccountsLinksTest do
       assert_email_sent(fn email ->
         assert email.subject =~ "admin account"
         assert email.text_body =~ "for a week"
+        # the blog stands at the top, alone on its line: a mail program
+        # makes a link out of a http address and out of nothing else,
+        # and out of a line with nothing else on it it makes a whole one
+        assert email.text_body =~ "\n#{TexttileWeb.Endpoint.url()}\n"
         true
       end)
     end

@@ -185,6 +185,124 @@ defmodule Texttile.Images do
     end
   end
 
+  # The square a phone puts on its home screen. A phone takes no SVG
+  # there and no tab-sized picture either, so the icon is rendered
+  # from whatever the site wears in the tab and cached like every
+  # other rendition.
+  @touch_edge 180
+  # Air around the mark, so the rounded mask a phone lays over the
+  # square does not cut into it.
+  @touch_pad 18
+  @bundled_mark "priv/static/images/texttile-mark.svg"
+
+  @doc """
+  The icon for the home screen: the uploaded favicon, or the bundled
+  Texttile mark, as a #{@touch_edge} px PNG below the cache. The name
+  carries the favicon's own, so a new favicon is a new file and the
+  earlier one goes with it.
+  """
+  def touch_icon do
+    source = touch_source()
+    target = "#{@cache_dir}/touch-#{Path.basename(source, Path.extname(source))}.png"
+
+    if File.exists?(Uploads.absolute(target)) do
+      {:ok, target}
+    else
+      make_touch_icon(source, target)
+    end
+  end
+
+  # The uploaded favicon while its file is there, the bundled mark
+  # otherwise: an icon of the wrong blog would be worse than none, but
+  # a settings row pointing at nothing is not the wrong blog.
+  defp touch_source do
+    with stored when is_binary(stored) <- Settings.get(:favicon),
+         path = Uploads.absolute(stored),
+         true <- File.exists?(path) do
+      path
+    else
+      _ -> Application.app_dir(:texttile, @bundled_mark)
+    end
+  end
+
+  defp make_touch_icon(source, target) do
+    destination = Uploads.absolute(target)
+    File.mkdir_p!(Path.dirname(destination))
+    drop_other_touch_icons(target)
+
+    # A name of its own, like every other rendition: a reader never
+    # meets a half-made file, and two makers at once never share one.
+    partial =
+      Path.join(
+        Path.dirname(destination),
+        ".tmp-#{System.unique_integer([:positive])}-" <> Path.basename(destination)
+      )
+
+    inner = @touch_edge - 2 * @touch_pad
+    ground = touch_ground()
+
+    with {:ok, thumb} <- Vips.Operation.thumbnail(source, inner, height: inner),
+         {:ok, colour} <- Vips.Operation.colourspace(thumb, :VIPS_INTERPRETATION_sRGB),
+         {:ok, opaque} <- flattened(colour, ground),
+         {:ok, square} <- centred(opaque, ground),
+         :ok <- Vips.Image.write_to_file(square, partial),
+         :ok <- File.rename(partial, destination) do
+      {:ok, target}
+    else
+      {:error, reason} ->
+        File.rm(partial)
+        {:error, reason}
+    end
+  end
+
+  # Only a picture that carries transparency is laid on the ground:
+  # vips reads the last band of any other one as its alpha and gives
+  # back an error, or a colour nobody chose.
+  defp flattened(image, ground) do
+    if Vips.Image.has_alpha?(image),
+      do: Vips.Operation.flatten(image, background: ground),
+      else: {:ok, image}
+  end
+
+  # The rendering keeps its ratio, so a favicon that is not square
+  # stands in the middle of the square instead of in a corner.
+  defp centred(image, ground) do
+    left = div(@touch_edge - Vips.Image.width(image), 2)
+    top = div(@touch_edge - Vips.Image.height(image), 2)
+
+    Vips.Operation.embed(image, left, top, @touch_edge, @touch_edge,
+      extend: :VIPS_EXTEND_BACKGROUND,
+      background: ground
+    )
+  end
+
+  # The icon carries no transparency: a home screen paints one over
+  # black, and the ink of the mark is nearly black itself. The ground
+  # is the colour the browser paints its own chrome with, so the
+  # square and the site agree.
+  defp touch_ground do
+    case Settings.theme_color() do
+      "#" <> <<r::binary-2, g::binary-2, b::binary-2>> ->
+        Enum.map([r, g, b], &(String.to_integer(&1, 16) * 1.0))
+
+      _ ->
+        [255.0, 255.0, 255.0]
+    end
+  end
+
+  # The icon of an earlier favicon answers nobody any more.
+  defp drop_other_touch_icons(keep) do
+    with {:ok, names} <- File.ls(Uploads.absolute(@cache_dir)) do
+      for name <- names,
+          String.starts_with?(name, "touch-"),
+          String.ends_with?(name, ".png"),
+          "#{@cache_dir}/#{name}" != keep,
+          do: Uploads.remove("#{@cache_dir}/#{name}")
+    end
+
+    :ok
+  end
+
   @doc "Drops every cached rendition of one original, e.g. when it goes."
   def drop_renditions(relative) do
     drop_other_sizes(relative, :none)

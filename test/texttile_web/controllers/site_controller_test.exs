@@ -93,6 +93,18 @@ defmodule TexttileWeb.SiteControllerTest do
     end
   end
 
+  describe "the icon a phone puts on its home screen" do
+    # A phone takes no SVG for the square on the home screen, so the
+    # site renders one from the favicon and names it in every head.
+    test "every page names it, and the address answers a PNG", %{conn: conn} do
+      assert conn |> get(~p"/blog") |> html_response(200) =~ ~s(rel="apple-touch-icon")
+
+      icon = get(conn, ~p"/apple-touch-icon.png")
+      assert response_content_type(icon, :png) =~ "image/png"
+      assert byte_size(response(icon, 200)) > 0
+    end
+  end
+
   describe "the article page" do
     test "renders title, date and the markdown body", %{conn: conn} do
       published_post(
