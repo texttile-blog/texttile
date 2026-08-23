@@ -1174,21 +1174,25 @@
     background: var(--tt-bar); border-bottom: 1px solid var(--tt-rule);
     backdrop-filter: blur(8px) saturate(1.5); -webkit-backdrop-filter: blur(8px) saturate(1.5);
   }
+  /* the bar carries the name of the blog, so it is read before the
+     page and not under it: the mark a step larger and heavier than the
+     body serif, the line beside it and the menu a step over the small
+     print they were */
   .site-mark {
     display: inline-flex; align-items: center; gap: 9px; flex: none;
-    font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
+    font-family: var(--tt-font-serif); font-size: 19px; font-weight: 700;
     letter-spacing: -.01em; color: var(--tt-ink); text-decoration: none;
   }
   .site-mark svg { color: var(--tt-ink); }
   /* the site description, as it stands in Settings: the whole
      positioning line, and it costs no chrome */
   .site-desc {
-    color: var(--tt-dim); font-size: 12.5px; white-space: nowrap;
+    color: var(--tt-dim); font-size: 14px; white-space: nowrap;
     padding-left: 14px; border-left: 1px solid var(--tt-rule);
   }
   .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
   .site-nav a {
-    font-size: 13px; color: var(--tt-dim); text-decoration: none; white-space: nowrap;
+    font-size: 14px; color: var(--tt-dim); text-decoration: none; white-space: nowrap;
     padding: 5px 8px; border-radius: var(--tt-radius); transition: color .15s ease, background-color .15s ease;
   }
   .site-nav a:hover { color: var(--tt-ink); background: var(--tt-field); }
