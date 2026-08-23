@@ -1174,42 +1174,56 @@
     background: var(--tt-bar); border-bottom: 1px solid var(--tt-rule);
     backdrop-filter: blur(8px) saturate(1.5); -webkit-backdrop-filter: blur(8px) saturate(1.5);
   }
+  /* the bar carries the name of the blog, so it is read before the
+     page and not under it: the mark a step larger and heavier than the
+     body serif, the line beside it and the menu a step over the small
+     print they were */
   .site-mark {
-    display: inline-flex; align-items: center; gap: 9px; flex: none;
-    font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 9px; min-width: 0;
+    font-family: var(--tt-font-serif); font-size: 19px; font-weight: 700;
     letter-spacing: -.01em; color: var(--tt-ink); text-decoration: none;
   }
   .site-mark svg { color: var(--tt-ink); }
+  /* the mark keeps its size and the name gives way: a long site title
+     on a narrow phone would otherwise push the menu out of the bar */
+  .site-mark svg, .site-mark img { flex: none; }
+  .site-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* the site description, as it stands in Settings: the whole
-     positioning line, and it costs no chrome */
+     positioning line, and it costs no chrome. The bar is read, not
+     skimmed past, so it carries reading ink like the name does: the
+     note ink it wore made a header of quiet grey. */
   .site-desc {
-    color: var(--tt-dim); font-size: 12.5px; white-space: nowrap;
+    color: var(--tt-ink); font-size: 14px; white-space: nowrap;
     padding-left: 14px; border-left: 1px solid var(--tt-rule);
+    min-width: 0; overflow: hidden; text-overflow: ellipsis;
   }
-  .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: none; }
   .site-nav a {
-    font-size: 13px; color: var(--tt-dim); text-decoration: none; white-space: nowrap;
-    padding: 5px 8px; border-radius: var(--tt-radius); transition: color .15s ease, background-color .15s ease;
+    font-size: 14px; color: var(--tt-ink); text-decoration: none; white-space: nowrap;
+    padding: 5px 8px; border-radius: var(--tt-radius); transition: background-color .15s ease;
   }
-  .site-nav a:hover { color: var(--tt-ink); background: var(--tt-field); }
-  .site-nav a[aria-current] { color: var(--tt-ink); font-weight: 600; }
+  /* the ground answers the pointer, because the ink has nowhere darker
+     to go, and the page you are on is the one in bold */
+  .site-nav a:hover { background: var(--tt-field); }
+  .site-nav a[aria-current] { font-weight: 600; }
   @media (max-width: 900px) { .site-desc { display: none; } }
 
-  /* the foot of every page: one row, dim text, links that answer the
-     pointer instead of underlining themselves permanently. On a phone
-     it keeps clear of the browser's own bar at the bottom edge, which
-     lies over the page and hides whatever ends under it. The padding
+  /* the foot of every page: one row, small type in reading ink, links
+     that answer the pointer instead of underlining themselves
+     permanently. On a phone it keeps clear of the browser's own bar at
+     the bottom edge, which lies over the page and hides whatever ends
+     under it. The padding
      carries `.wrap` too: `.wrap` writes the padding shorthand, and it
      stands later in this layer, so a single class would lose. */
-  .f-foot { font-size: 13px; color: var(--tt-inksoft); }
+  .f-foot { font-size: 13px; color: var(--tt-ink); }
   .wrap.f-foot { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   @media (max-width: 700px) { .wrap.f-foot { padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
   /* Share is a button, because it opens the browser's own sheet and
      leads nowhere. It stands in the row of the links all the same, so
      it wears what they wear. */
-  .f-foot a, .f-foot button { color: var(--tt-inksoft); text-decoration: none; font: inherit; }
+  .f-foot a, .f-foot button { color: var(--tt-ink); text-decoration: none; font: inherit; }
   .f-foot a:hover, .f-foot button:hover {
-    color: var(--tt-ink); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration: underline; text-underline-offset: 3px;
   }
 
   /* one wrapper, two widths, both the admin area's */
@@ -1507,14 +1521,16 @@
   .f-eyebrow {
     font-size: 13px; font-weight: 600; color: var(--tt-ink); margin-bottom: 9px;
   }
-  /* Reading ink, not note ink: the band's ground is a tint and not the
-     page, so dim sat too close to it. These are paragraphs somebody is
+  /* Reading ink: the band's ground is a tint and not the page, so a
+     quiet grey sat too close to it. These are paragraphs somebody is
      meant to read, not a caption under a field. */
   section.foot-band p, section.foot-band .about-md {
-    font-size: 13.5px; line-height: 1.6; color: var(--tt-inksoft); max-width: 58ch;
+    font-size: 13.5px; line-height: 1.6; color: var(--tt-ink); max-width: 58ch;
   }
-  section.foot-band b, section.foot-band strong { color: var(--tt-ink); }
   section.foot-band input { border-bottom-color: var(--b-rule); }
+  /* the hint in the field stays a hint, one step behind the words
+     around it and no further */
+  section.foot-band ::placeholder { color: var(--tt-dim); }
 
   /* a comment arrives as a reader typed it, line breaks and all */
   .comment-body { white-space: pre-line; }

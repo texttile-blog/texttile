@@ -1594,7 +1594,7 @@ msgid "Pagination"
 msgstr ""
 
 #: lib/texttile_web/controllers/session_html.ex:34
-#: lib/texttile_web/controllers/site_html/unlock.html.heex:21
+#: lib/texttile_web/controllers/site_html/unlock.html.heex:20
 #: lib/texttile_web/live/profile_live.ex:262
 #, elixir-autogen, elixir-format
 msgid "Password"
@@ -1732,11 +1732,6 @@ msgstr ""
 #: lib/texttile_web/components/core_components.ex:261
 #, elixir-autogen, elixir-format
 msgid "Quote"
-msgstr ""
-
-#: lib/texttile_web/controllers/site_html/unlock.html.heex:41
-#, elixir-autogen, elixir-format
-msgid "Read on"
 msgstr ""
 
 #: lib/texttile_web/live/settings_live.ex:1067
@@ -2124,7 +2119,7 @@ msgstr ""
 msgid "That does not look like an email address. Check it and send it again."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/unlock.html.heex:38
+#: lib/texttile_web/controllers/site_html/unlock.html.heex:36
 #, elixir-autogen, elixir-format
 msgid "That is not the password. Check it and try again."
 msgstr ""
@@ -2409,7 +2404,7 @@ msgstr ""
 msgid "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/unlock.html.heex:17
+#: lib/texttile_web/controllers/site_html/unlock.html.heex:16
 #, elixir-autogen, elixir-format
 msgid "This blog asks for its password."
 msgstr ""
@@ -3673,7 +3668,7 @@ msgid "The account has gone"
 msgstr ""
 
 #: lib/texttile_web/controllers/session_html.ex:68
-#: lib/texttile_web/controllers/site_html/unlock.html.heex:37
+#: lib/texttile_web/controllers/site_html/unlock.html.heex:35
 #, elixir-autogen, elixir-format
 msgid "Too many tries. Wait a minute, then try again."
 msgstr ""
@@ -3847,4 +3842,9 @@ msgstr ""
 #: lib/texttile/accounts/user_notifier.ex:43
 #, elixir-autogen, elixir-format
 msgid "Hello,\n\nYou have an admin account on this blog:\n\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your\npassword, and no mail from this site ever contains one. If you\ndid not expect this, you can ignore this mail: without the link\nthe account stays closed.\n"
+msgstr ""
+
+#: lib/texttile_web/controllers/site_html/unlock.html.heex:39
+#, elixir-autogen, elixir-format
+msgid "To the blog"
 msgstr ""

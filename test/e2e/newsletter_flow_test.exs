@@ -3,6 +3,21 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
 
   alias Texttile.Newsletter
 
+  # The card of the newsletter pages stands in the middle of the page:
+  # the same room to its left and to its right, measured on `main`,
+  # because `body.site > main` is a flex column that turns
+  # `justify-center` into vertical centring and would leave the card
+  # against the left edge.
+  @card_in_room """
+  () => {
+    const main = document.querySelector("main")
+    const card = main.firstElementChild.getBoundingClientRect()
+    const mb = main.getBoundingClientRect(), ms = getComputedStyle(main)
+    return Math.abs((card.left - (mb.left + parseFloat(ms.paddingLeft))) -
+                    ((mb.right - parseFloat(ms.paddingRight)) - card.right))
+  }
+  """
+
   test "a reader joins by mail, the admin adds one by hand, a publish mails both, one leaves",
        %{conn: conn} do
     # Mails from the server processes land in this test process.
@@ -71,6 +86,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     conn
     |> visit(leave)
     |> assert_has("main", text: "Leave the list?")
+    |> evaluate(@card_in_room, [is_function: true], &assert(&1 < 1.5))
     |> click_button("Take me off the list")
     |> assert_has("main", text: "You are off the list.")
 
