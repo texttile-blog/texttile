@@ -41,7 +41,7 @@ defmodule TexttileWeb.SiteHTML do
           class="h-[21px] w-auto max-w-[84px] object-contain"
         />
         <Layouts.mark :if={!@brand.logo} size={21} />
-        {@brand.title}
+        <span class="site-name">{@brand.title}</span>
       </a>
       <span :if={@desc != ""} class="site-desc">{@desc}</span>
       <nav class="site-nav" aria-label={gettext("Site")}>

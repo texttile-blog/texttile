@@ -250,6 +250,30 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
+  describe "the reader bar" do
+    # The bar is the mark, the name of the blog, the line beside it and
+    # the menu. The name is the only one of them that may give way: a
+    # long one pushed the menu out of the bar on a narrow phone.
+    @bar_fits """
+    () => {
+      const head = document.querySelector(".site-head")
+      const nav = document.querySelector(".site-nav").getBoundingClientRect()
+      return Math.max(head.scrollWidth - head.clientWidth,
+                      nav.right - head.getBoundingClientRect().right)
+    }
+    """
+
+    @tag browser_context_opts: [viewport: %{width: 320, height: 700}]
+    test "keeps the menu in it when the site title is long", %{conn: conn} do
+      {:ok, _} = Settings.put(:site_title, "The blog of Klaus and Julia Breyer")
+
+      conn
+      |> open_page("/")
+      |> assert_has(".site-name", text: "The blog of Klaus and Julia Breyer")
+      |> evaluate(@bar_fits, [is_function: true], &assert(&1 <= 1))
+    end
+  end
+
   describe "the foot" do
     # The foot wears .wrap and .f-foot together. `.wrap` writes the
     # padding shorthand, so the space under the last line only holds

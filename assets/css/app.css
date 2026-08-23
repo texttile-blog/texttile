@@ -1179,18 +1179,23 @@
      body serif, the line beside it and the menu a step over the small
      print they were */
   .site-mark {
-    display: inline-flex; align-items: center; gap: 9px; flex: none;
+    display: inline-flex; align-items: center; gap: 9px; min-width: 0;
     font-family: var(--tt-font-serif); font-size: 19px; font-weight: 700;
     letter-spacing: -.01em; color: var(--tt-ink); text-decoration: none;
   }
   .site-mark svg { color: var(--tt-ink); }
+  /* the mark keeps its size and the name gives way: a long site title
+     on a narrow phone would otherwise push the menu out of the bar */
+  .site-mark svg, .site-mark img { flex: none; }
+  .site-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* the site description, as it stands in Settings: the whole
      positioning line, and it costs no chrome */
   .site-desc {
     color: var(--tt-dim); font-size: 14px; white-space: nowrap;
     padding-left: 14px; border-left: 1px solid var(--tt-rule);
+    min-width: 0; overflow: hidden; text-overflow: ellipsis;
   }
-  .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: none; }
   .site-nav a {
     font-size: 14px; color: var(--tt-dim); text-decoration: none; white-space: nowrap;
     padding: 5px 8px; border-radius: var(--tt-radius); transition: color .15s ease, background-color .15s ease;

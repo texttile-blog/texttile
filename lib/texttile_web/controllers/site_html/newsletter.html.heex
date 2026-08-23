@@ -1,5 +1,9 @@
-<main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[13vh] pb-10">
-  <div class="w-[min(374px,100%)]">
+<%!-- The card is placed with a margin and not with a flex rule, like
+     the gate: the site layout makes every `main` a flex column of its
+     own (`body.site > main`), which turns `justify-center` into
+     vertical centring and leaves the card against the left edge. --%>
+<main class="min-h-[100dvh] px-5 pt-[13vh] pb-10">
+  <div class="w-[min(374px,100%)] mx-auto">
     <div class="flex items-center gap-[11px]">
       <Layouts.mark size={28} ink="var(--tt-ink)" />
       <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">
