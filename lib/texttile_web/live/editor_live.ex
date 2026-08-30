@@ -1270,8 +1270,8 @@ defmodule TexttileWeb.EditorLive do
     if Visibility.live?(article) do
       assign(socket, :stats, %{
         views: Stats.article_views(article.id),
-        days: Stats.by_day(14, article_id: article.id),
-        referrers: Stats.referrers(14, article_id: article.id)
+        series: Stats.series(Stats.window(14), article_id: article.id),
+        referrers: Stats.referrers(Stats.window(14), article_id: article.id)
       })
     else
       assign(socket, :stats, nil)
@@ -1866,7 +1866,7 @@ defmodule TexttileWeb.EditorLive do
                 </div>
 
                 <h2 class="sec-h">{gettext("Views, last 14 days")}</h2>
-                <.day_chart id="tpDayChart" days={@stats.days} />
+                <.day_chart id="tpDayChart" series={@stats.series} />
 
                 <h2 class="sec-h">{gettext("Referrers, last 14 days")}</h2>
                 <p :if={@stats.referrers == []} class="note" id="tpReferrersEmpty">

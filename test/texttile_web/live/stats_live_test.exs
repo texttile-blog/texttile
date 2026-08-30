@@ -51,7 +51,7 @@ defmodule TexttileWeb.StatsLiveTest do
     chart = view |> element("#dayChart") |> render()
 
     assert chart =~ "height:100%"
-    assert chart |> String.split("<i ") |> length() == 31
+    assert chart |> String.split("<button ") |> length() == 31
   end
 
   test "the top table names the entries and jumps into their Stats tab", %{conn: conn} do
@@ -121,5 +121,92 @@ defmodule TexttileWeb.StatsLiveTest do
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
     assert has_element?(view, "#figViews", "0")
+  end
+
+  test "the window is picked in the URL, and the chart and the figures follow", %{conn: conn} do
+    seed_views(1, day: Date.add(Date.utc_today(), -45))
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=90")
+
+    assert has_element?(view, "#win-90.on")
+    assert has_element?(view, "#figViews", "1")
+    assert render(view) =~ "views, last 90 days"
+
+    # Ninety days are thirteen or fourteen weeks, not ninety bars.
+    bars = view |> element("#dayChart") |> render() |> String.split("<button ") |> length()
+    assert bars in [14, 15]
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=30")
+    assert has_element?(view, "#win-30.on")
+    assert has_element?(view, "#figViews", "0")
+
+    # A window that is none is the usual one.
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=forever")
+    assert has_element?(view, "#win-30.on")
+  end
+
+  test "a clicked bar opens what was read under the chart, and the URL remembers it", %{
+    conn: conn
+  } do
+    article = published_post(%{title: "Concrete flowers"})
+    today = Date.utc_today()
+    seed_views(3, article_id: article.id, path: "/x", referrer_host: "lobste.rs")
+    seed_views(2, path: "/blog", day: Date.add(today, -1))
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+    refute has_element?(view, "#barDetail")
+
+    view |> element("#bar-#{today}") |> render_click()
+
+    assert_patch(view, "/admin/stats?days=30&day=#{today}")
+    assert has_element?(view, "#bar-#{today}.on")
+    assert has_element?(view, "#barDetail")
+    assert has_element?(view, "#barTitle", "3 views")
+    assert has_element?(view, "#barPages", "Concrete flowers")
+    refute has_element?(view, "#barPages", "/blog")
+    assert has_element?(view, "#barReferrers", "lobste.rs")
+
+    # The bar again, or the link, closes it.
+    view |> element("#barClose") |> render_click()
+    assert_patch(view, ~p"/admin/stats?days=30")
+    refute has_element?(view, "#barDetail")
+
+    # Straight from the address, the day is open already.
+    {:ok, view, _html} = live(conn, "/admin/stats?days=30&day=#{Date.add(today, -1)}")
+    assert has_element?(view, "#barPages", "/blog")
+    assert has_element?(view, "#barPages", "2")
+  end
+
+  test "a day outside the window opens nothing", %{conn: conn} do
+    seed_views(1)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=7&day=2020-01-01")
+    refute has_element?(view, "#barDetail")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=7&day=not-a-day")
+    refute has_element?(view, "#barDetail")
+  end
+
+  test "the figures say how the window moved against the one before", %{conn: conn} do
+    seed_views(3)
+    seed_views(2, day: Date.add(Date.utc_today(), -35))
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+    assert view |> element("#statsFigures") |> render() =~ ~r{\+50\s%}u
+
+    # All time has nothing to move against.
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")
+    refute view |> element("#statsFigures") |> render() =~ "%"
+  end
+
+  test "the top table counts the window, with the people beside the views", %{conn: conn} do
+    article = published_post(%{title: "Concrete flowers"})
+    seed_views(4, article_id: article.id, day: Date.add(Date.utc_today(), -200))
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+    refute has_element?(view, "#top-#{article.id}")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")
+    assert has_element?(view, "#top-#{article.id} .people", "4")
   end
 end

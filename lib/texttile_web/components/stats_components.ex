@@ -12,18 +12,27 @@ defmodule TexttileWeb.StatsComponents do
   use Gettext, backend: TexttileWeb.Gettext
 
   @doc """
-  One bar per day of the window, oldest left, with the two dates that
+  One bar per step of the series, oldest left, with the two dates that
   bound it under the row. The busiest bar carries the accent, so the
   shape of the month reads without reading a number.
+
+  With `pick`, every bar is a button that sends that event with the
+  bar's first day, and the bar that is `open` is drawn in ink. Without
+  it the bars are only drawn.
 
   A window nobody read holds no chart. Thirty flat stubs under an
   empty box say less than one line does, and they read as a fault.
   """
   attr :id, :string, required: true
-  attr :days, :list, required: true
+  attr :series, :list, required: true
+  attr :pick, :string, default: nil
+  attr :open, :map, default: nil
 
   def day_chart(assigns) do
-    assigns = assign(assigns, :max, Enum.max(Enum.map(assigns.days, & &1.views), fn -> 0 end))
+    assigns =
+      assigns
+      |> assign(:max, Enum.max(Enum.map(assigns.series, & &1.views), fn -> 0 end))
+      |> assign(:months?, months?(assigns.series))
 
     ~H"""
     <p :if={@max == 0} class="note" id={"#{@id}Empty"}>
@@ -33,25 +42,87 @@ defmodule TexttileWeb.StatsComponents do
     </p>
     <div :if={@max > 0}>
       <div id={@id} class="flex items-end gap-[3px] h-[132px] pt-[18px] pb-[6px]">
-        <i
-          :for={day <- @days}
-          class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(day.views, @max)]}
-          style={"height:#{height(day.views, @max)}%"}
-          title={
-            gettext("%{day}: %{views}",
-              day: day_label(day.day),
-              views: ngettext("1 view", "%{count} views", day.views)
-            )
-          }
-        >
-        </i>
+        <%= for bar <- @series do %>
+          <button
+            :if={@pick}
+            type="button"
+            id={"bar-#{bar.from}"}
+            class={[
+              "flex-1 self-stretch flex items-end cursor-pointer rounded-t-[2px]",
+              @open && @open.from == bar.from && "on"
+            ]}
+            title={bar_title(bar)}
+            phx-click={@pick}
+            phx-value-day={bar.from}
+          >
+            <i
+              class={[
+                "block w-full min-h-[2px] rounded-t-[2px]",
+                bar_colour(bar.views, @max),
+                @open && @open.from == bar.from && "!bg-ink"
+              ]}
+              style={"height:#{height(bar.views, @max)}%"}
+            >
+            </i>
+          </button>
+          <i
+            :if={is_nil(@pick)}
+            class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(bar.views, @max)]}
+            style={"height:#{height(bar.views, @max)}%"}
+            title={bar_title(bar)}
+          >
+          </i>
+        <% end %>
       </div>
       <div class="flex justify-between text-[12px] text-faint pb-2 border-b border-hair">
-        <span>{day_label(List.first(@days).day)}</span>
-        <span>{day_label(List.last(@days).day)}</span>
+        <span>{axis_label(List.first(@series).from, @months?)}</span>
+        <span>{axis_label(List.last(@series).to, @months?)}</span>
       </div>
     </div>
     """
+  end
+
+  # A series in months reaches over a year or more, so its ends carry
+  # the year. The first bar of such a series is always a whole month.
+  defp months?([first | _]), do: Date.diff(first.to, first.from) >= 27
+  defp months?([]), do: false
+
+  defp axis_label(day, true), do: Texttile.I18n.format_month(day)
+  defp axis_label(day, false), do: day_label(day)
+
+  @doc "What one bar of the series is: `:day`, `:week` or `:month`."
+  def step([first | _]) do
+    case Date.diff(first.to, first.from) do
+      0 -> :day
+      n when n < 27 -> :week
+      _ -> :month
+    end
+  end
+
+  def step([]), do: :day
+
+  defp bar_title(bar) do
+    gettext("%{day}: %{views}",
+      day: span_label(bar),
+      views: ngettext("1 view", "%{count} views", bar.views)
+    )
+  end
+
+  @doc """
+  A span the way a person names it: one day as "18 Aug", a whole month
+  as "Aug 2026", anything else as its two ends.
+  """
+  def span_label(%{from: from, to: to}) do
+    cond do
+      from == to ->
+        day_label(from)
+
+      from == Date.beginning_of_month(from) and to == Date.end_of_month(from) ->
+        Texttile.I18n.format_month(from)
+
+      true ->
+        gettext("%{from} to %{to}", from: day_label(from), to: day_label(to))
+    end
   end
 
   @doc """

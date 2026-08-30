@@ -53,6 +53,19 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     |> assert_has("#top-#{article.id}", text: "Concrete flowers of Kaunas")
     |> assert_has("#referrers", text: "news.ycombinator.com")
     |> assert_has("#otherPages", text: "/blog")
+    # A bar opens the day under the chart, the address remembers it,
+    # and the window switch is a link that keeps the page live.
+    |> click_button("#bar-#{Date.utc_today()}", "")
+    |> assert_has("#barTitle", text: "9 views")
+    |> assert_has("#barPages", text: "Concrete flowers of Kaunas")
+    |> assert_has("#barPages", text: "/blog")
+    |> assert_path("/admin/stats",
+      query_params: %{"days" => "30", "day" => Date.to_iso8601(Date.utc_today())}
+    )
+    |> click_link("#win-7", "7 days")
+    |> assert_has("#win-7.on")
+    |> assert_has("#figViews", text: "12")
+    |> refute_has("#barDetail")
     |> click_link("#top-#{article.id} a", "details")
     |> assert_has("#tp-stats")
     |> assert_has("#tpFigViews", text: "10")

@@ -38,6 +38,7 @@ msgid "can't be blank"
 msgstr "darf nicht leer sein"
 
 #: lib/texttile_web/components/core_components.ex:84
+#: lib/texttile_web/live/stats_live.ex:164
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr "schließen"
@@ -227,7 +228,7 @@ msgstr "%{day}. %{month}"
 msgid "%{day} %{month} %{year}"
 msgstr "%{day}. %{month} %{year}"
 
-#: lib/texttile_web/components/stats_components.ex:41
+#: lib/texttile_web/components/stats_components.ex:105
 #, elixir-autogen, elixir-format
 msgid "%{day}: %{views}"
 msgstr "%{day}: %{views}"
@@ -272,7 +273,7 @@ msgstr "%{shown} von %{total}"
 msgid "%{site} asks for its access word before it shows the entry.\nThe word is: %{password}\n"
 msgstr "%{site} fragt nach seinem Zugangswort, bevor es den Eintrag zeigt.\nDas Wort lautet: %{password}\n"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:75
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:79
 #, elixir-autogen, elixir-format
 msgid "%{site} sends no more mail to this address."
 msgstr "%{site} schickt keine Mail mehr an diese Adresse."
@@ -375,7 +376,8 @@ msgid_plural "%{count} tiles"
 msgstr[0] "1 Kachel"
 msgstr[1] "%{count} Kacheln"
 
-#: lib/texttile_web/components/stats_components.ex:43
+#: lib/texttile_web/components/stats_components.ex:107
+#: lib/texttile_web/live/stats_live.ex:152
 #, elixir-autogen, elixir-format
 msgid "1 view"
 msgid_plural "%{count} views"
@@ -414,7 +416,7 @@ msgstr "Eine feste Seite"
 msgid "A new password · %{host}"
 msgstr "Neues Passwort · %{host}"
 
-#: lib/texttile_web/live/stats_live.ex:143
+#: lib/texttile_web/live/stats_live.ex:271
 #, elixir-autogen, elixir-format
 msgid "A reader is a number for one day: their address and their browser line, mixed with a secret this server draws every morning and forgets every night. Nothing links the same reader to two days, so somebody who reads every week counts as one person each time. A page counts once per reader every half hour, and what says it is a bot, or only fetched the page ahead, counts not at all."
 msgstr "Wer liest, ist für einen Tag eine Zahl: die Adresse und die Browser-Kennung, vermischt mit einem Geheimnis, das dieser Server jeden Morgen zieht und jede Nacht vergisst. Nichts verbindet dieselbe Person über zwei Tage hinweg, wer also jede Woche liest, zählt jedes Mal neu. Eine Seite zählt einmal pro Person und halbe Stunde, und was sich als Bot ausgibt oder die Seite nur vorab geladen hat, zählt gar nicht."
@@ -479,7 +481,7 @@ msgstr "Bilder und Videos zur Galerie hinzufügen"
 
 #: lib/texttile_web/live/editor_live.ex:2130
 #: lib/texttile_web/live/profile_live.ex:225
-#: lib/texttile_web/live/stats_live.ex:126
+#: lib/texttile_web/live/stats_live.ex:254
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr "Adresse"
@@ -531,12 +533,12 @@ msgstr "Ein anderer Browser"
 msgid "Anyone can read the blog."
 msgstr "Jede und jeder kann das Blog lesen."
 
-#: lib/texttile/i18n.ex:160
+#: lib/texttile/i18n.ex:165
 #, elixir-autogen, elixir-format
 msgid "Apr"
 msgstr "Apr"
 
-#: lib/texttile/i18n.ex:148
+#: lib/texttile/i18n.ex:153
 #, elixir-autogen, elixir-format
 msgid "April"
 msgstr "April"
@@ -563,17 +565,17 @@ msgstr "Fordere einen neuen an, er kommt in dasselbe Postfach. Der alte Link ble
 msgid "At least 12 characters. Nothing else is required."
 msgstr "Mindestens 12 Zeichen. Mehr wird nicht verlangt."
 
-#: lib/texttile/i18n.ex:163
+#: lib/texttile/i18n.ex:168
 #, elixir-autogen, elixir-format
 msgid "Aug"
 msgstr "Aug"
 
-#: lib/texttile/i18n.ex:152
+#: lib/texttile/i18n.ex:157
 #, elixir-autogen, elixir-format
 msgid "August"
 msgstr "August"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:80
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:84
 #, elixir-autogen, elixir-format
 msgid "Back to %{site}"
 msgstr "Zurück zu %{site}"
@@ -683,7 +685,7 @@ msgstr "Kommentar"
 #: lib/texttile_web/live/editor_live.ex:1624
 #: lib/texttile_web/live/editor_live.ex:2533
 #: lib/texttile_web/live/settings_live.ex:1055
-#: lib/texttile_web/live/stats_live.ex:85
+#: lib/texttile_web/live/stats_live.ex:214
 #, elixir-autogen, elixir-format
 msgid "Comments"
 msgstr "Kommentare"
@@ -716,7 +718,7 @@ msgstr "Bestätigt. Dein Kommentar steht jetzt unter dem Eintrag."
 msgid "Copy"
 msgstr "Kopieren"
 
-#: lib/texttile_web/live/stats_live.ex:53
+#: lib/texttile_web/live/stats_live.ex:108
 #, elixir-autogen, elixir-format
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party."
 msgstr "Gezählt allein von diesem Server. Kein Cookie, kein Fingerabdruck, kein Dritter."
@@ -736,12 +738,12 @@ msgstr "Aktuelles Passwort"
 msgid "Date"
 msgstr "Datum"
 
-#: lib/texttile/i18n.ex:167
+#: lib/texttile/i18n.ex:172
 #, elixir-autogen, elixir-format
 msgid "Dec"
 msgstr "Dez"
 
-#: lib/texttile/i18n.ex:156
+#: lib/texttile/i18n.ex:161
 #, elixir-autogen, elixir-format
 msgid "December"
 msgstr "Dezember"
@@ -821,7 +823,7 @@ msgstr "Kachel löschen"
 msgid "Description"
 msgstr "Beschreibung"
 
-#: lib/texttile_web/live/stats_live.ex:86
+#: lib/texttile_web/live/stats_live.ex:215
 #, elixir-autogen, elixir-format
 msgid "Details"
 msgstr "Details"
@@ -874,7 +876,7 @@ msgid "Editing"
 msgstr "Bearbeiten"
 
 #: lib/texttile_web/controllers/site_html/article.html.heex:209
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:29
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:33
 #: lib/texttile_web/live/newsletter_live.ex:101
 #: lib/texttile_web/live/newsletter_live.ex:102
 #: lib/texttile_web/live/profile_live.ex:218
@@ -906,7 +908,7 @@ msgstr "Leer heißt: sobald du veröffentlichst. Ein Datum in der Zukunft plant 
 msgid "Entries"
 msgstr "Einträge"
 
-#: lib/texttile_web/live/stats_live.ex:82
+#: lib/texttile_web/live/stats_live.ex:210
 #, elixir-autogen, elixir-format
 msgid "Entry"
 msgstr "Eintrag"
@@ -931,7 +933,7 @@ msgstr "Jeder Kommentar steht sofort unter dem Eintrag, und niemand bestätigt e
 msgid "Every new comment travels to everybody with an account here"
 msgstr "Jeder neue Kommentar geht an alle mit einem Konto hier"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:43
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:47
 #, elixir-autogen, elixir-format
 msgid "Every new entry of %{site} now goes to %{email} by mail. Every one of those mails carries the way off the list."
 msgstr "Jeder neue Eintrag von %{site} geht ab jetzt per Mail an %{email}. Jede dieser Mails enthält den Weg von der Liste herunter."
@@ -962,12 +964,12 @@ msgstr "Alles, was mit diesem Eintrag geschehen ist, das Neueste zuerst: deine �
 msgid "Favicon"
 msgstr "Favicon"
 
-#: lib/texttile/i18n.ex:158
+#: lib/texttile/i18n.ex:163
 #, elixir-autogen, elixir-format
 msgid "Feb"
 msgstr "Feb"
 
-#: lib/texttile/i18n.ex:146
+#: lib/texttile/i18n.ex:151
 #, elixir-autogen, elixir-format
 msgid "February"
 msgstr "Februar"
@@ -1008,7 +1010,7 @@ msgstr "Startseite"
 msgid "Full size"
 msgstr "Volle Größe"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:35
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:39
 #, elixir-autogen, elixir-format
 msgid "Get new entries by mail"
 msgstr "Neue Einträge per Mail bekommen"
@@ -1111,32 +1113,32 @@ msgstr "Kursiv"
 msgid "Italic (Ctrl or Cmd + I)"
 msgstr "Kursiv (Strg oder Cmd + I)"
 
-#: lib/texttile/i18n.ex:157
+#: lib/texttile/i18n.ex:162
 #, elixir-autogen, elixir-format
 msgid "Jan"
 msgstr "Jan"
 
-#: lib/texttile/i18n.ex:145
+#: lib/texttile/i18n.ex:150
 #, elixir-autogen, elixir-format
 msgid "January"
 msgstr "Januar"
 
-#: lib/texttile/i18n.ex:162
+#: lib/texttile/i18n.ex:167
 #, elixir-autogen, elixir-format
 msgid "Jul"
 msgstr "Jul"
 
-#: lib/texttile/i18n.ex:151
+#: lib/texttile/i18n.ex:156
 #, elixir-autogen, elixir-format
 msgid "July"
 msgstr "Juli"
 
-#: lib/texttile/i18n.ex:161
+#: lib/texttile/i18n.ex:166
 #, elixir-autogen, elixir-format
 msgid "Jun"
 msgstr "Jun"
 
-#: lib/texttile/i18n.ex:150
+#: lib/texttile/i18n.ex:155
 #, elixir-autogen, elixir-format
 msgid "June"
 msgstr "Juni"
@@ -1164,7 +1166,7 @@ msgstr "Zuletzt gesichert · gerade eben"
 msgid "Latest entries"
 msgstr "Neueste Einträge"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:51
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:55
 #, elixir-autogen, elixir-format
 msgid "Leave the list?"
 msgstr "Die Liste verlassen?"
@@ -1226,12 +1228,12 @@ msgstr "Logo und Favicon"
 msgid "Mail me every new comment"
 msgstr "Mir jeden neuen Kommentar mailen"
 
-#: lib/texttile/i18n.ex:159
+#: lib/texttile/i18n.ex:164
 #, elixir-autogen, elixir-format
 msgid "Mar"
 msgstr "Mär"
 
-#: lib/texttile/i18n.ex:147
+#: lib/texttile/i18n.ex:152
 #, elixir-autogen, elixir-format
 msgid "March"
 msgstr "März"
@@ -1247,7 +1249,7 @@ msgstr "Markdown-Editor"
 msgid "Max longer edge"
 msgstr "Längere Kante höchstens"
 
-#: lib/texttile/i18n.ex:149
+#: lib/texttile/i18n.ex:154
 #, elixir-autogen, elixir-format
 msgid "May"
 msgstr "Mai"
@@ -1346,11 +1348,6 @@ msgstr "Kein Eintrag trug %{tag} noch"
 msgid "No entry carries a tag yet. Tags are written beside the entry, in the settings of the entry itself."
 msgstr "Noch kein Eintrag trägt ein Schlagwort. Schlagwörter stehen neben dem Eintrag, in seinen eigenen Einstellungen."
 
-#: lib/texttile_web/live/stats_live.ex:76
-#, elixir-autogen, elixir-format
-msgid "No entry has been read yet. The first reader who opens one puts it here."
-msgstr "Noch wurde kein Eintrag gelesen. Wer als Erstes einen öffnet, setzt ihn hierher."
-
 #: lib/texttile_web/live/settings_live.ex:566
 #, elixir-autogen, elixir-format
 msgid "No mail goes out for a comment"
@@ -1406,13 +1403,13 @@ msgstr "Nicht gefunden"
 msgid "Not stored · %{message}"
 msgstr "Nicht gespeichert · %{message}"
 
-#: lib/texttile_web/components/stats_components.ex:30
+#: lib/texttile_web/components/stats_components.ex:39
 #, elixir-autogen, elixir-format
 msgid "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
 msgstr "In diesen Tagen wurde noch nichts gezählt. Wer als Erstes eine Seite öffnet, zeichnet den ersten Balken."
 
 #: lib/texttile_web/live/editor_live.ex:1873
-#: lib/texttile_web/live/stats_live.ex:109
+#: lib/texttile_web/live/stats_live.ex:239
 #, elixir-autogen, elixir-format
 msgid "Nothing counted yet, so there is nowhere readers came from."
 msgstr "Noch nichts gezählt, also gibt es auch keine Herkunft."
@@ -1447,17 +1444,17 @@ msgstr "Dazu passt nichts."
 msgid "Nothing matches. The search covers titles, tags and the entry itself."
 msgstr "Dazu passt nichts. Die Suche geht über Titel, Schlagwörter und den Eintrag selbst."
 
-#: lib/texttile/i18n.ex:166
+#: lib/texttile/i18n.ex:171
 #, elixir-autogen, elixir-format
 msgid "Nov"
 msgstr "Nov"
 
-#: lib/texttile/i18n.ex:155
+#: lib/texttile/i18n.ex:160
 #, elixir-autogen, elixir-format
 msgid "November"
 msgstr "November"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:13
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:17
 #, elixir-autogen, elixir-format
 msgid "Now check your mail."
 msgstr "Sieh jetzt in dein Postfach."
@@ -1468,12 +1465,12 @@ msgstr "Sieh jetzt in dein Postfach."
 msgid "Numbered list"
 msgstr "Nummerierte Liste"
 
-#: lib/texttile/i18n.ex:165
+#: lib/texttile/i18n.ex:170
 #, elixir-autogen, elixir-format
 msgid "Oct"
 msgstr "Okt"
 
-#: lib/texttile/i18n.ex:154
+#: lib/texttile/i18n.ex:159
 #, elixir-autogen, elixir-format
 msgid "October"
 msgstr "Oktober"
@@ -1489,7 +1486,7 @@ msgstr "Alte Adressen, die weiter hier ankommen"
 msgid "Older"
 msgstr "Ältere"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:54
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:58
 #, elixir-autogen, elixir-format
 msgid "One click, and %{email} gets no more mail from %{site}."
 msgstr "Ein Klick, und %{email} bekommt keine Mail mehr von %{site}."
@@ -1501,7 +1498,7 @@ msgid_plural "%{count} entries have this tag."
 msgstr[0] "1 Eintrag trägt dieses Schlagwort."
 msgstr[1] "%{count} Einträge tragen dieses Schlagwort."
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:16
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "One mail is on its way to %{email}. Follow the link in it, and every new entry of %{site} lands in your mailbox."
 msgstr "Eine Mail ist unterwegs zu %{email}. Folge dem Link darin, und jeder neue Eintrag von %{site} landet in deinem Postfach."
@@ -1560,11 +1557,6 @@ msgstr "Öffnet den Eintrag auf der öffentlichen Site, in einem neuen Tab"
 #, elixir-autogen, elixir-format
 msgid "Original"
 msgstr "Original"
-
-#: lib/texttile_web/live/stats_live.ex:120
-#, elixir-autogen, elixir-format
-msgid "Other addresses, last %{days} days"
-msgstr "Andere Adressen, letzte %{days} Tage"
 
 #: lib/texttile_web/live/editor_live.ex:2254
 #, elixir-autogen, elixir-format
@@ -1703,7 +1695,7 @@ msgid "Publish now"
 msgstr "Jetzt veröffentlichen"
 
 #: lib/texttile_web/components/core_components.ex:554
-#: lib/texttile_web/live/stats_live.ex:83
+#: lib/texttile_web/live/stats_live.ex:211
 #, elixir-autogen, elixir-format
 msgid "Published"
 msgstr "Veröffentlicht"
@@ -1758,11 +1750,6 @@ msgstr "Lesende sehen jeden davon."
 #, elixir-autogen, elixir-format
 msgid "Reading %{name} …"
 msgstr "%{name} wird gelesen …"
-
-#: lib/texttile_web/live/stats_live.ex:107
-#, elixir-autogen, elixir-format
-msgid "Referrers, last %{days} days"
-msgstr "Herkunft, letzte %{days} Tage"
 
 #: lib/texttile_web/live/editor_live.ex:1871
 #, elixir-autogen, elixir-format
@@ -1890,12 +1877,12 @@ msgstr "Abgeschickt. Folge dem Link in deiner Mail, dann erscheint dein Kommenta
 msgid "Sent. Your comment is under the entry now."
 msgstr "Abgeschickt. Dein Kommentar steht jetzt unter dem Eintrag."
 
-#: lib/texttile/i18n.ex:164
+#: lib/texttile/i18n.ex:169
 #, elixir-autogen, elixir-format
 msgid "Sep"
 msgstr "Sep"
 
-#: lib/texttile/i18n.ex:153
+#: lib/texttile/i18n.ex:158
 #, elixir-autogen, elixir-format
 msgid "September"
 msgstr "September"
@@ -1923,7 +1910,7 @@ msgstr "Passwort setzen und anmelden"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: lib/texttile_web/components/stats_components.ex:72
+#: lib/texttile_web/components/stats_components.ex:143
 #: lib/texttile_web/controllers/site_html.ex:88
 #: lib/texttile_web/live/editor_live.ex:2623
 #, elixir-autogen, elixir-format
@@ -1984,7 +1971,7 @@ msgstr "Titel der Site"
 msgid "Someone"
 msgstr "Jemand"
 
-#: lib/texttile_web/components/stats_components.ex:71
+#: lib/texttile_web/components/stats_components.ex:142
 #, elixir-autogen, elixir-format
 msgid "Source"
 msgstr "Herkunft"
@@ -2001,9 +1988,9 @@ msgstr "Von vorn beginnen"
 
 #: lib/texttile_web/components/layouts.ex:67
 #: lib/texttile_web/live/editor_live.ex:1625
-#: lib/texttile_web/live/stats_live.ex:28
-#: lib/texttile_web/live/stats_live.ex:43
-#: lib/texttile_web/live/stats_live.ex:51
+#: lib/texttile_web/live/stats_live.ex:31
+#: lib/texttile_web/live/stats_live.ex:98
+#: lib/texttile_web/live/stats_live.ex:106
 #, elixir-autogen, elixir-format
 msgid "Stats"
 msgstr "Statistik"
@@ -2042,7 +2029,7 @@ msgstr "Schlagwörter"
 msgid "Take %{email} off the list?"
 msgstr "%{email} von der Liste nehmen?"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:67
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:71
 #, elixir-autogen, elixir-format
 msgid "Take me off the list"
 msgstr "Nimm mich von der Liste"
@@ -2104,7 +2091,7 @@ msgstr "Diese Adresse ist von einem anderen Eintrag belegt"
 msgid "That date could not be read"
 msgstr "Dieses Datum war nicht lesbar"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:24
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:28
 #, elixir-autogen, elixir-format
 msgid "That did not work."
 msgstr "Das hat nicht geklappt."
@@ -2114,7 +2101,7 @@ msgstr "Das hat nicht geklappt."
 msgid "That does not look like an email address."
 msgstr "Das sieht nicht nach einer E-Mail-Adresse aus."
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:32
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:36
 #, elixir-autogen, elixir-format
 msgid "That does not look like an email address. Check it and send it again."
 msgstr "Das sieht nicht nach einer E-Mail-Adresse aus. Prüfe sie und schicke sie noch einmal ab."
@@ -2139,12 +2126,12 @@ msgstr "Dieser Titel ist zu lang, 500 Zeichen sind die Grenze"
 msgid "The %{mark} is the Texttile mark again"
 msgstr "Das %{mark} ist wieder das Texttile-Zeichen"
 
-#: lib/texttile_web/live/stats_live.ex:113
+#: lib/texttile_web/live/stats_live.ex:243
 #, elixir-autogen, elixir-format
 msgid "The %{rows} biggest sources. What the shares leave short of a hundred came from the others."
 msgstr "Die %{rows} größten Quellen. Was den Anteilen auf hundert fehlt, kam von den übrigen."
 
-#: lib/texttile_web/live/stats_live.ex:139
+#: lib/texttile_web/live/stats_live.ex:267
 #, elixir-autogen, elixir-format
 msgid "The %{rows} most read addresses."
 msgstr "Die %{rows} meistgelesenen Adressen."
@@ -2485,11 +2472,6 @@ msgstr "Titel"
 msgid "Too late · the picture is gone for good"
 msgstr "Zu spät · das Bild ist endgültig weg"
 
-#: lib/texttile_web/live/stats_live.ex:74
-#, elixir-autogen, elixir-format
-msgid "Top entries, all time"
-msgstr "Meistgelesene Einträge, seit Beginn"
-
 #: lib/texttile_web/live/comments_live.ex:139
 #, elixir-autogen, elixir-format
 msgid "Trash"
@@ -2598,16 +2580,13 @@ msgstr "Videos"
 msgid "View site"
 msgstr "Site ansehen"
 
-#: lib/texttile_web/live/stats_live.ex:84
-#: lib/texttile_web/live/stats_live.ex:127
+#: lib/texttile_web/live/stats_live.ex:145
+#: lib/texttile_web/live/stats_live.ex:174
+#: lib/texttile_web/live/stats_live.ex:212
+#: lib/texttile_web/live/stats_live.ex:255
 #, elixir-autogen, elixir-format
 msgid "Views"
 msgstr "Aufrufe"
-
-#: lib/texttile_web/live/stats_live.ex:71
-#, elixir-autogen, elixir-format
-msgid "Views, last %{days} days"
-msgstr "Aufrufe, letzte %{days} Tage"
 
 #: lib/texttile_web/live/editor_live.ex:1868
 #, elixir-autogen, elixir-format
@@ -2645,12 +2624,12 @@ msgstr "Schreib. Markdown geht: ## für eine Überschrift. Füge ein Bild ein od
 msgid "You"
 msgstr "Du"
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:72
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:76
 #, elixir-autogen, elixir-format
 msgid "You are off the list."
 msgstr "Du bist von der Liste."
 
-#: lib/texttile_web/controllers/site_html/newsletter.html.heex:40
+#: lib/texttile_web/controllers/site_html/newsletter.html.heex:44
 #, elixir-autogen, elixir-format
 msgid "You are on the list."
 msgstr "Du stehst auf der Liste."
@@ -2745,12 +2724,12 @@ msgstr "und der Reiter Versionen gehen weiterhin."
 msgid "bigger than the %{roof} MB roof"
 msgstr "größer als die Grenze von %{roof} MB"
 
-#: lib/texttile_web/live/stats_live.ex:155
+#: lib/texttile_web/live/stats_live.ex:315
 #, elixir-autogen, elixir-format
 msgid "busiest day"
 msgstr "stärkster Tag"
 
-#: lib/texttile_web/live/stats_live.ex:156
+#: lib/texttile_web/live/stats_live.ex:316
 #, elixir-autogen, elixir-format
 msgid "busiest day, %{day}"
 msgstr "stärkster Tag, %{day}"
@@ -2765,12 +2744,12 @@ msgstr "Kommentare"
 msgid "converting"
 msgstr "wird umgewandelt"
 
-#: lib/texttile_web/live/stats_live.ex:99
+#: lib/texttile_web/live/stats_live.ex:229
 #, elixir-autogen, elixir-format
 msgid "details"
 msgstr "Details"
 
-#: lib/texttile_web/components/stats_components.ex:78
+#: lib/texttile_web/components/stats_components.ex:149
 #, elixir-autogen, elixir-format
 msgid "direct"
 msgstr "direkt"
@@ -2870,11 +2849,6 @@ msgstr "noch nicht bestätigt"
 msgid "page"
 msgstr "Seite"
 
-#: lib/texttile_web/live/stats_live.ex:63
-#, elixir-autogen, elixir-format
-msgid "people, last %{days} days"
-msgstr "Personen, letzte %{days} Tage"
-
 #: lib/texttile_web/live/editor_live.ex:2034
 #, elixir-autogen, elixir-format
 msgid "preview"
@@ -2953,6 +2927,7 @@ msgid "uploading %{pct}%"
 msgstr "lädt hoch, %{pct}%"
 
 #: lib/texttile_web/live/editor_live.ex:1295
+#: lib/texttile_web/live/stats_live.ex:126
 #, elixir-autogen, elixir-format
 msgid "views"
 msgstr "Aufrufe"
@@ -2961,11 +2936,6 @@ msgstr "Aufrufe"
 #, elixir-autogen, elixir-format
 msgid "views since %{date}"
 msgstr "Aufrufe seit %{date}"
-
-#: lib/texttile_web/live/stats_live.ex:59
-#, elixir-autogen, elixir-format
-msgid "views, last %{days} days"
-msgstr "Aufrufe, letzte %{days} Tage"
 
 #: lib/texttile_web/controllers/site_html/article.html.heex:156
 #, elixir-autogen, elixir-format
@@ -3854,3 +3824,101 @@ msgstr "Hallo,\n\ndu hast ein Adminkonto auf diesem Blog:\n\n%{blog}\n\nMit dein
 #, elixir-autogen, elixir-format
 msgid "To the blog"
 msgstr "Zum Blog"
+
+#: lib/texttile_web/components/stats_components.ex:124
+#, elixir-autogen, elixir-format
+msgid "%{from} to %{to}"
+msgstr "%{from} bis %{to}"
+
+#: lib/texttile/i18n.ex:118
+#, elixir-autogen, elixir-format
+msgid "%{month} %{year}"
+msgstr "%{month} %{year}"
+
+#: lib/texttile_web/live/stats_live.ex:290
+#, elixir-autogen, elixir-format
+msgid "%{noun}, all time"
+msgstr "%{noun}, seit Beginn"
+
+#: lib/texttile_web/live/stats_live.ex:291
+#, elixir-autogen, elixir-format
+msgid "%{noun}, last %{days} days"
+msgstr "%{noun}, letzte %{days} Tage"
+
+#: lib/texttile_web/live/stats_live.ex:152
+#, elixir-autogen, elixir-format
+msgid "1 person"
+msgid_plural "%{count} people"
+msgstr[0] "1 Person"
+msgstr[1] "%{count} Personen"
+
+#: lib/texttile_web/live/stats_live.ex:283
+#, elixir-autogen, elixir-format
+msgid "30 days"
+msgstr "30 Tage"
+
+#: lib/texttile_web/live/stats_live.ex:282
+#, elixir-autogen, elixir-format
+msgid "7 days"
+msgstr "7 Tage"
+
+#: lib/texttile_web/live/stats_live.ex:284
+#, elixir-autogen, elixir-format
+msgid "90 days"
+msgstr "90 Tage"
+
+#: lib/texttile_web/live/stats_live.ex:202
+#, elixir-autogen, elixir-format
+msgid "No entry has been read in these days. The first reader who opens one puts it here."
+msgstr "In diesen Tagen wurde kein Eintrag gelesen. Wer als Erstes einen öffnet, setzt ihn hierher."
+
+#: lib/texttile_web/live/stats_live.ex:249
+#, elixir-autogen, elixir-format
+msgid "Other addresses"
+msgstr "Andere Adressen"
+
+#: lib/texttile_web/live/stats_live.ex:175
+#: lib/texttile_web/live/stats_live.ex:213
+#, elixir-autogen, elixir-format
+msgid "People"
+msgstr "Personen"
+
+#: lib/texttile_web/live/stats_live.ex:173
+#, elixir-autogen, elixir-format
+msgid "Read"
+msgstr "Gelesen"
+
+#: lib/texttile_web/live/stats_live.ex:237
+#, elixir-autogen, elixir-format
+msgid "Referrers"
+msgstr "Herkunft"
+
+#: lib/texttile_web/live/stats_live.ex:200
+#, elixir-autogen, elixir-format
+msgid "Top entries"
+msgstr "Meistgelesene Einträge"
+
+#: lib/texttile_web/live/stats_live.ex:286
+#, elixir-autogen, elixir-format
+msgid "all time"
+msgstr "seit Beginn"
+
+#: lib/texttile_web/live/stats_live.ex:132
+#, elixir-autogen, elixir-format
+msgid "people"
+msgstr "Personen"
+
+#: lib/texttile_web/live/stats_live.ex:285
+#, elixir-autogen, elixir-format
+msgid "year"
+msgstr "Jahr"
+
+#: lib/texttile_web/live/stats_live.ex:296
+#, elixir-autogen, elixir-format
+msgid ", by month"
+msgstr ", je Monat"
+
+#: lib/texttile_web/live/stats_live.ex:295
+#, elixir-autogen, elixir-format
+msgid ", by week"
+msgstr ", je Woche"
