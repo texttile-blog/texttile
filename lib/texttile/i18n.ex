@@ -113,6 +113,11 @@ defmodule Texttile.I18n do
     gettext("%{day} %{month}", day: date.day, month: short_month_name(date.month))
   end
 
+  @doc "A month in a chart: the short month and the year."
+  def format_month(date) do
+    gettext("%{month} %{year}", month: short_month_name(date.month), year: date.year)
+  end
+
   @doc """
   A moment the admin area writes plainly: `2026-08-09 14:30`.
 

@@ -33,19 +33,19 @@ defmodule Texttile.StatsTest do
   describe "count/1: what is a person" do
     test "a browser on a reader page is one view" do
       assert :counted = Stats.count(view())
-      assert Stats.summary(30).views == 1
+      assert Stats.summary(Stats.window(30)).views == 1
     end
 
     test "the same person on the same page counts once for half an hour" do
       assert :counted = Stats.count(view())
       assert {:dropped, :repeat} = Stats.count(view())
-      assert Stats.summary(30).views == 1
+      assert Stats.summary(Stats.window(30)).views == 1
     end
 
     test "the same person on another page counts again" do
       assert :counted = Stats.count(view())
       assert :counted = Stats.count(view(%{path: "/2026/08/08/a-text"}))
-      assert Stats.summary(30).views == 2
+      assert Stats.summary(Stats.window(30)).views == 2
     end
 
     test "a repeat after the window counts again" do
@@ -54,21 +54,21 @@ defmodule Texttile.StatsTest do
 
       # An hour on, past the window: the same person, a new visit.
       assert :counted = Stats.count(view(), now: DateTime.add(now, 3600, :second))
-      assert Stats.summary(30).views == 2
+      assert Stats.summary(Stats.window(30)).views == 2
     end
 
     test "two addresses are two people, one address is one" do
       assert :counted = Stats.count(view(%{ip: "203.0.113.9"}))
       assert :counted = Stats.count(view(%{ip: "198.51.100.4", path: "/blog"}))
 
-      assert Stats.summary(30).people == 2
+      assert Stats.summary(Stats.window(30)).people == 2
     end
 
     test "the same address in another browser is another person" do
       assert :counted = Stats.count(view())
       assert :counted = Stats.count(view(%{user_agent: @agent <> " Firefox/128.0"}))
 
-      assert Stats.summary(30).people == 2
+      assert Stats.summary(Stats.window(30)).people == 2
     end
 
     test "the visitor is a hash, so no address is ever stored" do
@@ -95,7 +95,7 @@ defmodule Texttile.StatsTest do
         assert {:dropped, :bot} = Stats.count(view(%{user_agent: agent}))
       end
 
-      assert Stats.summary(30).views == 0
+      assert Stats.summary(Stats.window(30)).views == 0
     end
 
     test "no user agent at all is dropped" do
@@ -247,60 +247,160 @@ defmodule Texttile.StatsTest do
       %{article: article, other: other}
     end
 
-    test "summary counts views, people and the busiest day", %{article: article} do
+    test "a window reaches back from today, and all reaches to the first view" do
+      today = ~D[2026-08-30]
+
+      assert Stats.window(30, today: today) == %{from: ~D[2026-08-01], to: today}
+      assert Stats.window(:all, today: today) == %{from: nil, to: today}
+    end
+
+    test "summary counts views, people, the busiest day and the window before", %{
+      article: article
+    } do
       seed_views(3, article_id: article.id)
       seed_views(5, article_id: article.id, day: Date.add(Date.utc_today(), -1))
       seed_views(9, article_id: article.id, day: Date.add(Date.utc_today(), -40))
 
-      summary = Stats.summary(30)
+      summary = Stats.summary(Stats.window(30))
 
       assert summary.views == 8
       assert summary.people == 8
       assert summary.busiest == {Date.add(Date.utc_today(), -1), 5}
+      assert summary.before == %{views: 9, people: 9}
     end
 
-    test "a blog nobody read yet has a summary too" do
-      assert Stats.summary(30) == %{views: 0, people: 0, busiest: nil}
+    test "a blog nobody read yet has a summary too, and all time has no before" do
+      assert Stats.summary(Stats.window(30)) == %{
+               views: 0,
+               people: 0,
+               busiest: nil,
+               before: %{views: 0, people: 0}
+             }
+
+      assert Stats.summary(Stats.window(:all)).before == nil
     end
 
-    test "by_day holds one number for every day of the window, oldest first" do
+    test "a short window is drawn in days, every day present, oldest first" do
       seed_views(2)
 
-      days = Stats.by_day(30)
+      series = Stats.series(Stats.window(30))
 
-      assert length(days) == 30
-      assert List.first(days).day == Date.add(Date.utc_today(), -29)
-      assert List.last(days) == %{day: Date.utc_today(), views: 2}
-      assert Enum.at(days, 28) == %{day: Date.add(Date.utc_today(), -1), views: 0}
+      assert length(series) == 30
+      assert List.first(series).from == Date.add(Date.utc_today(), -29)
+      today = Date.utc_today()
+      assert List.last(series) == %{from: today, to: today, views: 2, people: 2}
+      yesterday = Date.add(today, -1)
+      assert Enum.at(series, 28) == %{from: yesterday, to: yesterday, views: 0, people: 0}
     end
 
-    test "top entries are counted for all time, most read first", %{
+    test "ninety days are drawn in weeks that start on a Monday" do
+      today = ~D[2026-08-30]
+      seed_views(1, day: ~D[2026-08-25])
+      seed_views(1, day: ~D[2026-08-30])
+
+      # The day before the window sits in the same week as its first
+      # day. It is in no bar: the chart counts what the figures count.
+      seed_views(5, day: ~D[2026-06-01])
+
+      window = Stats.window(90, today: today)
+      series = Stats.series(window)
+
+      assert Stats.step(window) == :week
+      assert length(series) == 13
+
+      assert List.first(series) == %{
+               from: ~D[2026-06-02],
+               to: ~D[2026-06-07],
+               views: 0,
+               people: 0
+             }
+
+      assert Date.day_of_week(Enum.at(series, 1).from) == 1
+      assert List.last(series) == %{from: ~D[2026-08-24], to: today, views: 2, people: 2}
+      assert Stats.bar(window, ~D[2026-06-01]) == nil
+    end
+
+    test "a year and all time are drawn in months, from the first view on" do
+      today = ~D[2026-08-30]
+      seed_views(1, day: ~D[2025-11-03])
+
+      seed_views(2, day: ~D[2025-08-30])
+
+      year = Stats.window(365, today: today)
+      assert Stats.step(year) == :month
+      year = Stats.series(year)
+      assert length(year) == 13
+      assert List.first(year) == %{from: ~D[2025-08-31], to: ~D[2025-08-31], views: 0, people: 0}
+      assert List.last(year) == %{from: ~D[2026-08-01], to: today, views: 0, people: 0}
+
+      all = Stats.window(:all, today: today)
+      assert Stats.step(all) == :month
+      all = Stats.series(all)
+      assert length(all) == 13
+      assert List.first(all) == %{from: ~D[2025-08-01], to: ~D[2025-08-31], views: 2, people: 2}
+      assert Enum.at(all, 3) == %{from: ~D[2025-11-01], to: ~D[2025-11-30], views: 1, people: 1}
+    end
+
+    test "all time with nothing counted is this month alone" do
+      today = ~D[2026-08-30]
+
+      assert [%{from: ~D[2026-08-01], to: ^today, views: 0}] =
+               Stats.series(Stats.window(:all, today: today))
+    end
+
+    test "a bar is found by any day inside it" do
+      today = ~D[2026-08-30]
+      window = Stats.window(90, today: today)
+
+      assert Stats.bar(window, ~D[2026-08-26]) == %{from: ~D[2026-08-24], to: today}
+      assert Stats.bar(window, ~D[2026-01-01]) == nil
+      assert Stats.bar(window, ~D[2027-01-01]) == nil
+    end
+
+    test "top entries are counted for the window, most read first, with their people", %{
       article: article,
       other: other
     } do
       seed_views(4, article_id: article.id, day: Date.add(Date.utc_today(), -200))
       seed_views(7, article_id: other.id)
+      seed_views(1, article_id: article.id)
 
-      assert [first, second] = Stats.top_articles(10)
-
+      assert [first, second] = Stats.top_articles(Stats.window(30), 10)
       assert first.article.id == other.id
       assert first.views == 7
+      assert first.people == 7
       assert second.article.id == article.id
-      assert second.views == 4
+      assert second.views == 1
+
+      assert [%{views: 7}, %{views: 5}] = Stats.top_articles(Stats.window(:all), 10)
     end
 
     test "an entry nobody read is not in the table", %{article: article} do
       seed_views(1, article_id: article.id)
 
-      assert [row] = Stats.top_articles(10)
+      assert [row] = Stats.top_articles(Stats.window(30), 10)
       assert row.article.id == article.id
+    end
+
+    test "what was read in a span lists entries and other addresses together", %{
+      article: article
+    } do
+      seed_views(3, article_id: article.id, path: "/2026/05/30/concrete-flowers")
+      seed_views(2, path: "/blog")
+      seed_views(1, path: "/blog", day: Date.add(Date.utc_today(), -1))
+
+      today = Date.utc_today()
+      assert [entry, blog] = Stats.pages_read(%{from: today, to: today})
+      assert entry.article.id == article.id
+      assert entry.views == 3
+      assert blog == %{article: nil, path: "/blog", views: 2, people: 2}
     end
 
     test "the pages that are no entry are counted by address" do
       seed_views(3, path: "/blog")
       seed_views(1, path: "/tags/trains")
 
-      assert [blog, tag] = Stats.other_pages(30)
+      assert [blog, tag] = Stats.other_pages(Stats.window(30))
       assert blog == %{path: "/blog", views: 3}
       assert tag == %{path: "/tags/trains", views: 1}
     end
@@ -309,7 +409,7 @@ defmodule Texttile.StatsTest do
       seed_views(3, path: "/blog", referrer_host: "news.ycombinator.com")
       seed_views(1, path: "/blog", referrer_host: "lobste.rs")
 
-      assert [hn, lobsters] = Stats.referrers(30)
+      assert [hn, lobsters] = Stats.referrers(Stats.window(30))
       assert hn == %{host: "news.ycombinator.com", views: 3, share: 75}
       assert lobsters == %{host: "lobste.rs", views: 1, share: 25}
     end
@@ -321,15 +421,17 @@ defmodule Texttile.StatsTest do
         seed_views(1, path: "/made-up-#{n}", referrer_host: "host#{n}.example")
       end
 
-      assert length(Stats.other_pages(30)) == Stats.rows()
-      assert length(Stats.referrers(30)) == Stats.rows()
+      assert length(Stats.other_pages(Stats.window(30))) == Stats.rows()
+      assert length(Stats.referrers(Stats.window(30))) == Stats.rows()
+      assert length(Stats.pages_read(Stats.window(30))) == Stats.rows()
     end
 
     test "a share is of every view of the window, not of the rows shown" do
       seed_views(1, path: "/blog", referrer_host: "lobste.rs")
       seed_views(3, path: "/blog")
 
-      assert %{host: nil, views: 3, share: 75} = Enum.find(Stats.referrers(30), &is_nil(&1.host))
+      assert %{host: nil, views: 3, share: 75} =
+               Enum.find(Stats.referrers(Stats.window(30)), &is_nil(&1.host))
     end
 
     test "a source nobody can have sent is no source" do
@@ -343,7 +445,7 @@ defmodule Texttile.StatsTest do
       seed_views(3)
       seed_views(1, path: "/blog", referrer_host: "lobste.rs")
 
-      assert [direct, lobsters] = Stats.referrers(30)
+      assert [direct, lobsters] = Stats.referrers(Stats.window(30))
       assert direct == %{host: nil, views: 3, share: 75}
       assert lobsters == %{host: "lobste.rs", views: 1, share: 25}
     end
@@ -354,17 +456,17 @@ defmodule Texttile.StatsTest do
       %{article: published_post(%{title: "Concrete flowers"})}
     end
 
-    test "views count for all time, and the day row for the window", %{article: article} do
+    test "views count for all time, and the series for the window", %{article: article} do
       seed_views(4, article_id: article.id, day: Date.add(Date.utc_today(), -30))
       seed_views(2, article_id: article.id)
       seed_views(9)
 
       assert Stats.article_views(article.id) == 6
 
-      days = Stats.by_day(14, article_id: article.id)
-      assert length(days) == 14
-      assert List.last(days) == %{day: Date.utc_today(), views: 2}
-      assert Enum.sum(Enum.map(days, & &1.views)) == 2
+      series = Stats.series(Stats.window(14), article_id: article.id)
+      assert length(series) == 14
+      assert List.last(series).views == 2
+      assert Enum.sum(Enum.map(series, & &1.views)) == 2
     end
 
     test "referrers are the entry's own", %{article: article} do
@@ -372,13 +474,13 @@ defmodule Texttile.StatsTest do
       seed_views(8, path: "/blog", referrer_host: "news.ycombinator.com")
 
       assert [%{host: "lobste.rs", views: 2, share: 100}] =
-               Stats.referrers(30, article_id: article.id)
+               Stats.referrers(Stats.window(30), article_id: article.id)
     end
 
     test "an entry counts for the whole blog too", %{article: article} do
       seed_views(2, article_id: article.id)
 
-      assert Stats.summary(30).views == 2
+      assert Stats.summary(Stats.window(30)).views == 2
     end
   end
 end
