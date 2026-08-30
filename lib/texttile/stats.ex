@@ -213,18 +213,39 @@ defmodule Texttile.Stats do
   ## The numbers the screens read
 
   @doc """
-  Views, people and the busiest day of the last `days` days.
+  A span of days the screens read: `from` the first day (nil for all
+  time) `to` the last. `window(30)` is the last thirty days up to
+  today, `window(:all)` is everything ever counted.
+
+  A bar of the chart is a span too (`bar/2`), so what is read for
+  the whole window is read for one bar with the same functions.
+
+  `today:` names the last day, the way `count/2` takes `now:`.
+  """
+  def window(days, opts \\ [])
+
+  def window(:all, opts), do: %{from: nil, to: today(opts)}
+
+  def window(days, opts) when is_integer(days) do
+    today = today(opts)
+    %{from: Date.add(today, -(days - 1)), to: today}
+  end
+
+  @doc """
+  Views, people and the busiest day of the span, and `before`: the
+  views and people of the span of the same length just before it, so a
+  figure can say how it moved. All time has nothing before it.
 
   A person is counted once a day, because that is as far as a visitor
   hash reaches. Somebody who reads on ten days is ten people here.
   """
-  def summary(days, opts \\ []) do
+  def summary(span) do
     # One row per day out of the database, never one row per view: the
     # table grows with the readers, and this screen must not grow with
     # it. Three numbers per day is all three figures need.
     rows =
       View
-      |> where([v], v.day >= ^first_day(days, opts))
+      |> in_span(span)
       |> group_by([v], v.day)
       |> select([v], {v.day, count(v.id), count(v.visitor, :distinct)})
       |> Repo.all()
@@ -236,63 +257,168 @@ defmodule Texttile.Stats do
         case Enum.max_by(rows, &elem(&1, 1), fn -> nil end) do
           nil -> nil
           {day, views, _people} -> {day, views}
-        end
+        end,
+      before: before(span)
     }
   end
 
+  defp before(%{from: nil}), do: nil
+
+  defp before(%{from: from, to: to}) do
+    length = Date.diff(to, from) + 1
+
+    View
+    |> in_span(%{from: Date.add(from, -length), to: Date.add(from, -1)})
+    |> select([v], %{views: count(v.id), people: count(v.visitor, :distinct)})
+    |> Repo.one!()
+  end
+
   @doc """
-  One number per day of the window, oldest first, every day present.
+  One bar per step of the span, oldest first, every step present, each
+  with its `from` and `to` day, its views and its people. Up to sixty
+  days a step is a day, up to a year a week (Monday first), and above
+  that a month. All time starts at the month of the first view, or at
+  this month when nothing was counted yet.
 
   `article_id:` narrows it to one entry.
   """
-  def by_day(days, opts \\ []) do
-    first = first_day(days, opts)
+  def series(span, opts \\ []) do
+    bars = bars(span)
 
     counted =
       View
-      |> where([v], v.day >= ^first)
+      |> in_span(%{from: List.first(bars).from, to: span.to})
       |> for_article(opts[:article_id])
       |> group_by([v], v.day)
-      |> select([v], {v.day, count(v.id)})
+      |> select([v], {v.day, count(v.id), count(v.visitor, :distinct)})
       |> Repo.all()
-      |> Map.new()
 
-    Enum.map(0..(days - 1), fn n ->
-      day = Date.add(first, n)
-      %{day: day, views: Map.get(counted, day, 0)}
+    Enum.map(bars, fn bar ->
+      inside = Enum.filter(counted, fn {day, _, _} -> in_bar?(bar, day) end)
+
+      Map.merge(bar, %{
+        views: inside |> Enum.map(&elem(&1, 1)) |> Enum.sum(),
+        people: inside |> Enum.map(&elem(&1, 2)) |> Enum.sum()
+      })
     end)
   end
 
-  @doc "The most read entries of all time, with the entry itself."
-  def top_articles(limit) do
+  @doc "The bar of the span that holds `day`, or nil when none does."
+  def bar(span, day) do
+    Enum.find(bars(span), &in_bar?(&1, day))
+  end
+
+  defp in_bar?(%{from: from, to: to}, day) do
+    Date.compare(day, from) != :lt and Date.compare(day, to) != :gt
+  end
+
+  defp bars(%{from: nil, to: to}) do
+    first =
+      View
+      |> select([v], min(v.day))
+      |> Repo.one()
+      |> case do
+        nil -> to
+        day -> day
+      end
+
+    bars(:month, Date.beginning_of_month(first), to)
+  end
+
+  defp bars(%{from: from, to: to}) do
+    case Date.diff(to, from) + 1 do
+      days when days <= 60 -> bars(:day, from, to)
+      days when days < 365 -> bars(:week, Date.beginning_of_week(from), to)
+      _days -> bars(:month, Date.beginning_of_month(from), to)
+    end
+  end
+
+  # From `from` in whole steps up to and including `to`, the last step
+  # cut at `to`. The bars of a window all reach back to a whole step's
+  # start, so a bar found by a day is the bar that was drawn.
+  defp bars(step, from, to) do
+    from
+    |> Stream.iterate(&next(step, &1))
+    |> Enum.take_while(&(Date.compare(&1, to) != :gt))
+    |> Enum.map(fn start ->
+      %{from: start, to: Enum.min([Date.add(next(step, start), -1), to], Date)}
+    end)
+  end
+
+  defp next(:day, date), do: Date.add(date, 1)
+  defp next(:week, date), do: Date.add(date, 7)
+  defp next(:month, date), do: date |> Date.end_of_month() |> Date.add(1)
+
+  @doc """
+  The most read entries of the span, with the entry itself, its views
+  and its people.
+  """
+  def top_articles(span, limit) do
     counted =
       View
+      |> in_span(span)
       |> where([v], not is_nil(v.article_id))
       |> group_by([v], v.article_id)
-      |> select([v], {v.article_id, count(v.id)})
+      |> select([v], {v.article_id, count(v.id), count(v.visitor, :distinct)})
       |> order_by([v], desc: count(v.id))
       |> limit(^limit)
       |> Repo.all()
 
-    articles =
-      from(a in Article, where: a.id in ^Enum.map(counted, &elem(&1, 0)))
-      |> Repo.all()
-      |> Map.new(&{&1.id, &1})
+    articles = articles(Enum.map(counted, &elem(&1, 0)))
 
-    for {id, views} <- counted, article = articles[id], do: %{article: article, views: views}
+    for {id, views, people} <- counted, article = articles[id] do
+      %{article: article, views: views, people: people}
+    end
+  end
+
+  @doc """
+  Everything read in the span, entries and other addresses in one
+  list, most read first. An entry comes with `article`, any other page
+  with `article: nil` and its address. This is what a clicked bar
+  shows. At most `rows/0` of them, like the tables.
+  """
+  def pages_read(span) do
+    counted =
+      View
+      |> in_span(span)
+      |> group_by([v], [v.article_id, v.path])
+      |> select([v], %{
+        article_id: v.article_id,
+        path: v.path,
+        views: count(v.id),
+        people: count(v.visitor, :distinct)
+      })
+      |> order_by([v], desc: count(v.id), asc: v.path)
+      |> limit(@rows)
+      |> Repo.all()
+
+    articles = counted |> Enum.map(& &1.article_id) |> Enum.reject(&is_nil/1) |> articles()
+
+    for row <- counted do
+      %{article: articles[row.article_id], path: row.path, views: row.views, people: row.people}
+    end
+  end
+
+  defp articles([]), do: %{}
+
+  defp articles(ids) do
+    from(a in Article, where: a.id in ^ids)
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
   end
 
   @doc """
   The reader pages that are no entry - the front door, the list, the
-  tag archives - counted by address over the window, biggest first.
+  tag archives - counted by address over the span, biggest first.
 
   At most `rows/0` of them: the address is written by the caller, so
   the number of different ones is theirs to choose, and a screen that
   draws a row per address is a screen they can make unusable.
   """
-  def other_pages(days, opts \\ []) do
+  def other_pages(span) do
     View
-    |> where([v], v.day >= ^first_day(days, opts) and is_nil(v.article_id))
+    |> in_span(span)
+    |> where([v], is_nil(v.article_id))
     |> group_by([v], v.path)
     |> select([v], %{path: v.path, views: count(v.id)})
     |> order_by([v], desc: count(v.id), asc: v.path)
@@ -301,26 +427,25 @@ defmodule Texttile.Stats do
   end
 
   @doc """
-  Where the readers of the window came from, biggest source first,
-  each with its share in whole percent. `host: nil` is a reader who
-  arrived direct: a bookmark, a typed address, a mail program.
+  Where the readers of the span came from, biggest source first, each
+  with its share in whole percent. `host: nil` is a reader who arrived
+  direct: a bookmark, a typed address, a mail program.
 
   At most `rows/0` sources, and for the same reason: the source comes
-  from the caller too. The share is of every view of the window, so
-  the sources left out are the difference to a hundred.
-  """
-  def referrers(days, opts \\ []) do
-    window =
-      View
-      |> where([v], v.day >= ^first_day(days, opts))
-      |> for_article(opts[:article_id])
+  from the caller too. The share is of every view of the span, so the
+  sources left out are the difference to a hundred.
 
-    case Repo.aggregate(window, :count) do
+  `article_id:` narrows it to one entry.
+  """
+  def referrers(span, opts \\ []) do
+    inside = View |> in_span(span) |> for_article(opts[:article_id])
+
+    case Repo.aggregate(inside, :count) do
       0 ->
         []
 
       total ->
-        window
+        inside
         |> group_by([v], v.referrer_host)
         |> select([v], %{host: v.referrer_host, views: count(v.id)})
         |> order_by([v], desc: count(v.id))
@@ -338,10 +463,10 @@ defmodule Texttile.Stats do
   defp for_article(query, nil), do: query
   defp for_article(query, id), do: where(query, [v], v.article_id == ^id)
 
-  # `today:` names the last day of the window, the way `count/2` takes
-  # `now:`; the window reaches back from it.
-  defp first_day(days, opts) do
-    today = Keyword.get(opts, :today, Date.utc_today())
-    Date.add(today, -(days - 1))
-  end
+  defp in_span(query, %{from: nil, to: to}), do: where(query, [v], v.day <= ^to)
+
+  defp in_span(query, %{from: from, to: to}),
+    do: where(query, [v], v.day >= ^from and v.day <= ^to)
+
+  defp today(opts), do: Keyword.get(opts, :today, Date.utc_today())
 end
