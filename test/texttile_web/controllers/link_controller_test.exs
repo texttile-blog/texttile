@@ -217,5 +217,24 @@ defmodule TexttileWeb.LinkControllerTest do
       assert html_response(conn, 200) =~ "on its way"
       assert_no_email_sent()
     end
+
+    # The form knocks at the same door the sign-in does: one bucket per
+    # caller, so pacing one password door is pacing them all. The
+    # answer reads the same either way.
+    test "hammering the form spends the door the sign-in knocks at", %{conn: conn} do
+      user_fixture(%{email: "kb@example.org"})
+
+      for _try <- 1..Accounts.door_limiter_per_minute() do
+        conn = post(conn, ~p"/forgot", %{"user" => %{"email" => "kb@example.org"}})
+        assert html_response(conn, 200) =~ "on its way"
+      end
+
+      conn =
+        post(conn, ~p"/login", %{
+          "user" => %{"email" => "kb@example.org", "password" => valid_password()}
+        })
+
+      assert html_response(conn, 200) =~ "Too many tries"
+    end
   end
 end

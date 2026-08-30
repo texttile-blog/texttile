@@ -29,10 +29,10 @@ defmodule Texttile.Accounts do
 
   @doc """
   The limiter in front of every door that takes a password: the
-  sign-in, the first sign-in and the site password of the blog. They
-  share one bucket per caller, because they are one question asked
-  three ways, and a caller who is guessing at one of them has no
-  business hammering the next.
+  sign-in, the form that asks for a mailed link, and the site password
+  of the blog. They share one bucket per caller, because they are one
+  question asked three ways, and a caller who is guessing at one of
+  them has no business hammering the next.
 
   The doors are the one place where a few tries per minute is plenty
   for a person and far too few for a machine. bcrypt already makes the
