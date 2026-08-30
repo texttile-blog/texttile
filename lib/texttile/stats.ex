@@ -75,7 +75,8 @@ defmodule Texttile.Stats do
   `:bot`, `:prefetch`, `:bad_path`, `:repeat` or `:flood`.
 
   The limit is spent on storable views only, so a reader who reloads
-  never loses a slot to the reload.
+  never loses a slot to the reload, and a caller past the limit is
+  turned away before anything reads the database.
 
   `now:` names the moment the view is counted at, which decides both
   the day it belongs to and whether it repeats an earlier one. It
@@ -91,11 +92,20 @@ defmodule Texttile.Stats do
   end
 
   defp store(attrs, path, visitor, now) do
+    ip = to_string(attrs[:ip])
+
     cond do
+      # A flood is turned away before anything reads the database. The
+      # knock is not counted here, so a reader who reloads never loses
+      # a slot to the reload: the slot is spent only when a row is
+      # written.
+      RateLimiter.over?(ip, @limiter) ->
+        {:dropped, :flood}
+
       repeat?(visitor, path, now) ->
         {:dropped, :repeat}
 
-      not RateLimiter.allow?(to_string(attrs[:ip]), @limiter) ->
+      not RateLimiter.allow?(ip, @limiter) ->
         {:dropped, :flood}
 
       true ->

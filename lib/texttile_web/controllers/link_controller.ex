@@ -7,6 +7,8 @@ defmodule TexttileWeb.LinkController do
   use TexttileWeb, :controller
 
   alias Texttile.Accounts
+  alias Texttile.RateLimiter
+  alias TexttileWeb.ClientIP
   alias TexttileWeb.UserAuth
 
   def show(conn, %{"token" => token}) do
@@ -81,6 +83,10 @@ defmodule TexttileWeb.LinkController do
   end
 
   def send_link(conn, %{"user" => %{"email" => email}}) do
+    # The door comes first: the same few knocks a minute the sign-in
+    # gets, out of the same bucket, so a stranger pacing this form is
+    # pacing the sign-in too. The answer reads the same either way.
+    #
     # The mail goes out only when the address has an account with a
     # password, but the answer is the same either way: this screen never
     # says who is a member. An account that never had a password has
@@ -94,17 +100,19 @@ defmodule TexttileWeb.LinkController do
     # hammering this form neither floods an inbox nor churns a link.
     # The site name in the mail comes from the endpoint config, never
     # from the request's Host header.
-    case Accounts.get_user_by_email(email) do
-      nil ->
-        :ok
+    if RateLimiter.allow?(ClientIP.of(conn), Accounts.door_limiter()) do
+      case Accounts.get_user_by_email(email) do
+        nil ->
+          :ok
 
-      user ->
-        unless Accounts.pending?(user) or Accounts.link_recently_sent?(user) do
-          Accounts.send_password_link(user,
-            site: TexttileWeb.Endpoint.host(),
-            link_url: &url(~p"/link/#{&1}")
-          )
-        end
+        user ->
+          unless Accounts.pending?(user) or Accounts.link_recently_sent?(user) do
+            Accounts.send_password_link(user,
+              site: TexttileWeb.Endpoint.host(),
+              link_url: &url(~p"/link/#{&1}")
+            )
+          end
+      end
     end
 
     render(conn, :forgot, sent: true)

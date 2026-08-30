@@ -114,6 +114,57 @@ defmodule Texttile.StatsTest do
     end
   end
 
+  describe "count/1: the flood" do
+    test "a caller past the limit writes no more rows" do
+      for n <- 1..Stats.limiter_per_minute() do
+        assert :counted = Stats.count(view(%{path: "/page-#{n}"}))
+      end
+
+      assert {:dropped, :flood} = Stats.count(view(%{path: "/page-late"}))
+      assert {:dropped, :flood} = Stats.count(view(%{path: "/page-later"}))
+    end
+
+    # The turn-away happens before anything reads the database: a flood
+    # costs the installation no query, only the answer.
+    test "a caller past the limit touches no database" do
+      for n <- 1..Stats.limiter_per_minute() do
+        Stats.count(view(%{path: "/page-#{n}"}))
+      end
+
+      counter = :counters.new(1, [:atomics])
+      me = self()
+      ref = "stats-flood-#{System.unique_integer([:positive])}"
+
+      :ok =
+        :telemetry.attach(
+          ref,
+          [:texttile, :repo, :query],
+          fn _event, _measurements, _metadata, _config ->
+            if self() == me, do: :counters.add(counter, 1, 1)
+          end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(ref) end)
+
+      assert {:dropped, :flood} = Stats.count(view(%{path: "/page-late"}))
+      assert :counters.get(counter, 1) == 0
+    end
+
+    # A reload is not a knock: the same reader on the same page spends
+    # nothing of the limit, so the fresh pages of the same minute keep
+    # counting.
+    test "a reload never loses a slot to the repeat" do
+      assert :counted = Stats.count(view())
+
+      for _ <- 1..Stats.limiter_per_minute() do
+        assert {:dropped, :repeat} = Stats.count(view())
+      end
+
+      assert :counted = Stats.count(view(%{path: "/another-page"}))
+    end
+  end
+
   describe "count/1: what it stores" do
     test "the query and a trailing slash are not part of the address" do
       assert :counted = Stats.count(view(%{path: "/blog?page=2&q=trains"}))

@@ -46,6 +46,16 @@ defmodule Texttile.RateLimiter do
   end
 
   @doc """
+  Whether the window for the key is full, without counting a knock. A
+  caller past the limit can be turned away at the door, before any of
+  the work behind it runs; the knock itself is counted only by
+  `allow?/2`.
+  """
+  def over?(key, name \\ __MODULE__) do
+    GenServer.call(name, {:over?, key})
+  end
+
+  @doc """
   Forgets every window. One test's requests must not count against the
   next one's: every caller in a test run wears the same address.
   """
@@ -90,19 +100,27 @@ defmodule Texttile.RateLimiter do
 
   def handle_call({:allow?, key}, _from, %{table: table, limit: limit} = state) do
     now = System.monotonic_time(:millisecond)
-
-    recent =
-      case :ets.lookup(table, key) do
-        [{^key, stamps}] -> Enum.filter(stamps, &(now - &1 < @window_ms))
-        [] -> []
-      end
+    recent = recent(table, key, now)
 
     if length(recent) < limit do
       :ets.insert(table, {key, [now | recent]})
       {:reply, true, state}
     else
-      :ets.insert(table, {key, recent})
       {:reply, false, state}
+    end
+  end
+
+  def handle_call({:over?, key}, _from, %{table: table, limit: limit} = state) do
+    now = System.monotonic_time(:millisecond)
+    {:reply, length(recent(table, key, now)) >= limit, state}
+  end
+
+  # The stamps of the key that still count. An unknown key and a
+  # window that has run out read the same: nothing.
+  defp recent(table, key, now) do
+    case :ets.lookup(table, key) do
+      [{^key, stamps}] -> Enum.filter(stamps, &(now - &1 < @window_ms))
+      [] -> []
     end
   end
 end

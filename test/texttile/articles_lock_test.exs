@@ -187,4 +187,96 @@ defmodule Texttile.Articles.LockTest do
       assert DateTime.compare(t1, t0) == :gt
     end
   end
+
+  # A lock that is free and waits for nobody has nothing left to watch.
+  # The process ends itself, so the supervisor does not carry one
+  # process per entry ever opened; the next editor starts a fresh one.
+  describe "the process ends when its work is done" do
+    setup :start_lock
+
+    test "an explicit release ends the process", %{id: id, lock: lock} do
+      ref = Process.monitor(lock)
+      assert :ok = Lock.acquire(id, 1, self())
+      assert :ok = Lock.release(id, self())
+
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+      assert Lock.state(id) == :free
+    end
+
+    test "a release of a lock nobody held ends the process", %{id: id, lock: lock} do
+      ref = Process.monitor(lock)
+      assert :ok = Lock.release(id, self())
+
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+    end
+
+    # A watcher closing its tab releases nothing; that must not start a
+    # process only to end it.
+    test "releasing a lock that has no process starts none" do
+      id = System.unique_integer([:positive])
+      assert :ok = Lock.release(id, self())
+      assert Registry.lookup(Lock.registry(), id) == []
+    end
+
+    test "an idle timeout with no holder ends the process", %{id: id, lock: lock} do
+      ref = Process.monitor(lock)
+      assert :ok = Lock.acquire(id, 1, self())
+
+      # nobody writes: the idle timeout frees the text, and with the
+      # text free the process has nothing left to watch
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+      assert Lock.state(id) == :free
+    end
+
+    test "a release while a takeover is pending lets the transfer finish",
+         %{id: id, lock: lock} do
+      holder = spawn_holder()
+      assert :ok = Lock.acquire(id, 1, holder)
+      assert :pending = Lock.takeover(id, 2, self())
+
+      ref = Process.monitor(lock)
+      assert :ok = Lock.release(id, holder)
+
+      # the transfer still resolves; only once the text is free and
+      # nobody waits does the process go
+      refute_receive {:DOWN, ^ref, :process, ^lock, _}, 100
+      assert_receive {:lock_granted, ^id}, 500
+      assert %{user_id: 2, pid: pid} = Lock.state(id)
+      assert pid == self()
+    end
+
+    # The lock announces the change and then ends. A watcher that reads
+    # the state on that announcement can reach the process while it is
+    # still going: the call must read :free, not crash the watcher.
+    test "reading the state of a lock that is ending answers :free", %{id: id, lock: lock} do
+      assert :ok = Lock.acquire(id, 1, self())
+      me = self()
+
+      reader =
+        spawn_link(fn ->
+          send(me, :ready)
+          for _ <- 1..2_000, do: Lock.state(id)
+          send(me, :done)
+        end)
+
+      assert_receive :ready
+      ref = Process.monitor(lock)
+      assert :ok = Lock.release(id, self())
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+      assert_receive :done, 5_000
+      refute Process.alive?(reader)
+    end
+
+    # The same holds for the doors that start the process on demand: a
+    # pid found alive can be ending by the time the call lands.
+    test "acquiring while the lock is ending lands on a fresh process", %{id: id, lock: lock} do
+      assert :ok = Lock.acquire(id, 1, self())
+      ref = Process.monitor(lock)
+      # the release stops the process; the acquire lands right behind it
+      assert :ok = Lock.release(id, self())
+      assert :ok = Lock.acquire(id, 2, self())
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+      assert %{user_id: 2} = Lock.state(id)
+    end
+  end
 end
