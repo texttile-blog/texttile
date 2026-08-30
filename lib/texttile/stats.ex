@@ -274,11 +274,26 @@ defmodule Texttile.Stats do
   end
 
   @doc """
+  What one bar of the span is: `:day` up to sixty days, `:week` up to
+  a year (Monday first), `:month` above that and for all time.
+  """
+  def step(%{from: nil}), do: :month
+
+  def step(%{from: from, to: to}) do
+    case Date.diff(to, from) + 1 do
+      days when days <= 60 -> :day
+      days when days < 365 -> :week
+      _days -> :month
+    end
+  end
+
+  @doc """
   One bar per step of the span, oldest first, every step present, each
-  with its `from` and `to` day, its views and its people. Up to sixty
-  days a step is a day, up to a year a week (Monday first), and above
-  that a month. All time starts at the month of the first view, or at
-  this month when nothing was counted yet.
+  with its `from` and `to` day, its views and its people. The bars are
+  whole weeks or months, except the two at the ends: the first starts
+  and the last stops where the span does, so the chart counts exactly
+  what the figures count. All time starts at the month of the first
+  view, or at this month when nothing was counted yet.
 
   `article_id:` narrows it to one entry.
   """
@@ -287,7 +302,7 @@ defmodule Texttile.Stats do
 
     counted =
       View
-      |> in_span(%{from: List.first(bars).from, to: span.to})
+      |> in_span(span)
       |> for_article(opts[:article_id])
       |> group_by([v], v.day)
       |> select([v], {v.day, count(v.id), count(v.visitor, :distinct)})
@@ -325,17 +340,16 @@ defmodule Texttile.Stats do
     bars(:month, Date.beginning_of_month(first), to)
   end
 
-  defp bars(%{from: from, to: to}) do
-    case Date.diff(to, from) + 1 do
-      days when days <= 60 -> bars(:day, from, to)
-      days when days < 365 -> bars(:week, Date.beginning_of_week(from), to)
-      _days -> bars(:month, Date.beginning_of_month(from), to)
+  defp bars(%{from: from, to: to} = span) do
+    case step(span) do
+      :day -> bars(:day, from, to)
+      :week -> bars(:week, Date.beginning_of_week(from), to) |> clip(from)
+      :month -> bars(:month, Date.beginning_of_month(from), to) |> clip(from)
     end
   end
 
   # From `from` in whole steps up to and including `to`, the last step
-  # cut at `to`. The bars of a window all reach back to a whole step's
-  # start, so a bar found by a day is the bar that was drawn.
+  # cut at `to`.
   defp bars(step, from, to) do
     from
     |> Stream.iterate(&next(step, &1))
@@ -344,6 +358,10 @@ defmodule Texttile.Stats do
       %{from: start, to: Enum.min([Date.add(next(step, start), -1), to], Date)}
     end)
   end
+
+  # The first bar starts where the span does, not where its week or
+  # month does: a day before the span is in no bar.
+  defp clip([first | rest], from), do: [%{first | from: from} | rest]
 
   defp next(:day, date), do: Date.add(date, 1)
   defp next(:week, date), do: Date.add(date, 7)

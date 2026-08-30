@@ -298,26 +298,47 @@ defmodule Texttile.StatsTest do
       seed_views(1, day: ~D[2026-08-25])
       seed_views(1, day: ~D[2026-08-30])
 
-      series = Stats.series(Stats.window(90, today: today))
+      # The day before the window sits in the same week as its first
+      # day. It is in no bar: the chart counts what the figures count.
+      seed_views(5, day: ~D[2026-06-01])
 
+      window = Stats.window(90, today: today)
+      series = Stats.series(window)
+
+      assert Stats.step(window) == :week
       assert length(series) == 13
-      assert List.first(series).from == ~D[2026-06-01]
-      assert Date.day_of_week(List.first(series).from) == 1
+
+      assert List.first(series) == %{
+               from: ~D[2026-06-02],
+               to: ~D[2026-06-07],
+               views: 0,
+               people: 0
+             }
+
+      assert Date.day_of_week(Enum.at(series, 1).from) == 1
       assert List.last(series) == %{from: ~D[2026-08-24], to: today, views: 2, people: 2}
+      assert Stats.bar(window, ~D[2026-06-01]) == nil
     end
 
     test "a year and all time are drawn in months, from the first view on" do
       today = ~D[2026-08-30]
       seed_views(1, day: ~D[2025-11-03])
 
-      year = Stats.series(Stats.window(365, today: today))
+      seed_views(2, day: ~D[2025-08-30])
+
+      year = Stats.window(365, today: today)
+      assert Stats.step(year) == :month
+      year = Stats.series(year)
       assert length(year) == 13
-      assert List.first(year).from == ~D[2025-08-01]
+      assert List.first(year) == %{from: ~D[2025-08-31], to: ~D[2025-08-31], views: 0, people: 0}
       assert List.last(year) == %{from: ~D[2026-08-01], to: today, views: 0, people: 0}
 
-      all = Stats.series(Stats.window(:all, today: today))
-      assert length(all) == 10
-      assert List.first(all) == %{from: ~D[2025-11-01], to: ~D[2025-11-30], views: 1, people: 1}
+      all = Stats.window(:all, today: today)
+      assert Stats.step(all) == :month
+      all = Stats.series(all)
+      assert length(all) == 13
+      assert List.first(all) == %{from: ~D[2025-08-01], to: ~D[2025-08-31], views: 2, people: 2}
+      assert Enum.at(all, 3) == %{from: ~D[2025-11-01], to: ~D[2025-11-30], views: 1, people: 1}
     end
 
     test "all time with nothing counted is this month alone" do

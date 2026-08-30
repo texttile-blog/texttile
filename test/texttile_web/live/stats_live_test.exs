@@ -140,9 +140,32 @@ defmodule TexttileWeb.StatsLiveTest do
     assert has_element?(view, "#win-30.on")
     assert has_element?(view, "#figViews", "0")
 
-    # A window that is none is the usual one.
+    # A window that is none is the usual one, a number or not.
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=forever")
     assert has_element?(view, "#win-30.on")
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=45")
+    assert has_element?(view, "#win-30.on")
+  end
+
+  test "a bar that is no day says so, and a month axis carries the year", %{conn: conn} do
+    seed_views(1, day: Date.add(Date.utc_today(), -45))
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=90")
+    assert render(view) =~ "Views, last 90 days, by week"
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=365")
+    assert render(view) =~ "Views, last 365 days, by month"
+
+    assert view |> element("#dayChart + div") |> render() =~
+             Integer.to_string(Date.utc_today().year)
+
+    # A fresh blog with one month of views is a month bar too.
+    {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")
+    assert render(view) =~ "Views, all time, by month"
+
+    assert view |> element("#dayChart + div") |> render() =~
+             Integer.to_string(Date.utc_today().year)
   end
 
   test "a clicked bar opens what was read under the chart, and the URL remembers it", %{
@@ -193,6 +216,11 @@ defmodule TexttileWeb.StatsLiveTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
     assert view |> element("#statsFigures") |> render() =~ ~r{\+50\s%}u
+
+    # Fewer than before is written with its sign too.
+    seed_views(4, day: Date.add(Date.utc_today(), -35))
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+    assert view |> element("#statsFigures") |> render() =~ ~r{-50\s%}u
 
     # All time has nothing to move against.
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")

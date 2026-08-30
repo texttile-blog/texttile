@@ -16,23 +16,22 @@ defmodule TexttileWeb.StatsComponents do
   bound it under the row. The busiest bar carries the accent, so the
   shape of the month reads without reading a number.
 
-  With `pick`, every bar is a button that sends that event with the
-  bar's first day, and the bar that is `open` is drawn in ink. Without
-  it the bars are only drawn.
+  `step` says what a bar is (`Texttile.Stats.step/1`): a series in
+  months carries the year on its axis. With `pick`, every bar is a
+  button that sends that event with the bar's first day, and the bar
+  that is `open` is drawn in ink. Without it the bars are only drawn.
 
   A window nobody read holds no chart. Thirty flat stubs under an
   empty box say less than one line does, and they read as a fault.
   """
   attr :id, :string, required: true
   attr :series, :list, required: true
+  attr :step, :atom, default: :day
   attr :pick, :string, default: nil
   attr :open, :map, default: nil
 
   def day_chart(assigns) do
-    assigns =
-      assigns
-      |> assign(:max, Enum.max(Enum.map(assigns.series, & &1.views), fn -> 0 end))
-      |> assign(:months?, months?(assigns.series))
+    assigns = assign(assigns, :max, Enum.max(Enum.map(assigns.series, & &1.views), fn -> 0 end))
 
     ~H"""
     <p :if={@max == 0} class="note" id={"#{@id}Empty"}>
@@ -75,31 +74,17 @@ defmodule TexttileWeb.StatsComponents do
         <% end %>
       </div>
       <div class="flex justify-between text-[12px] text-faint pb-2 border-b border-hair">
-        <span>{axis_label(List.first(@series).from, @months?)}</span>
-        <span>{axis_label(List.last(@series).to, @months?)}</span>
+        <span>{axis_label(List.first(@series).from, @step)}</span>
+        <span>{axis_label(List.last(@series).to, @step)}</span>
       </div>
     </div>
     """
   end
 
   # A series in months reaches over a year or more, so its ends carry
-  # the year. The first bar of such a series is always a whole month.
-  defp months?([first | _]), do: Date.diff(first.to, first.from) >= 27
-  defp months?([]), do: false
-
-  defp axis_label(day, true), do: Texttile.I18n.format_month(day)
-  defp axis_label(day, false), do: day_label(day)
-
-  @doc "What one bar of the series is: `:day`, `:week` or `:month`."
-  def step([first | _]) do
-    case Date.diff(first.to, first.from) do
-      0 -> :day
-      n when n < 27 -> :week
-      _ -> :month
-    end
-  end
-
-  def step([]), do: :day
+  # the year.
+  defp axis_label(day, :month), do: Texttile.I18n.format_month(day)
+  defp axis_label(day, _step), do: day_label(day)
 
   defp bar_title(bar) do
     gettext("%{day}: %{views}",

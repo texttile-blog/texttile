@@ -43,7 +43,7 @@ defmodule TexttileWeb.StatsLive do
     {:noreply,
      socket
      |> assign(:days, days)
-     |> assign(:window, window)
+     |> assign(:step, Stats.step(window))
      |> assign(:summary, Stats.summary(window))
      |> assign(:series, series)
      |> assign(:top, Stats.top_articles(window, 20))
@@ -142,8 +142,8 @@ defmodule TexttileWeb.StatsLive do
           </div>
         </div>
 
-        <h2 class="sec-h">{window_label(gettext("Views"), @days)}{step_label(step(@series))}</h2>
-        <.day_chart id="dayChart" series={@series} pick="pick" open={@bar} />
+        <h2 class="sec-h">{window_label(gettext("Views"), @days)}{step_label(@step)}</h2>
+        <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">
           <p class="text-[15px] font-semibold" id="barTitle">

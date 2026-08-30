@@ -228,7 +228,7 @@ msgstr ""
 msgid "%{day} %{month} %{year}"
 msgstr ""
 
-#: lib/texttile_web/components/stats_components.ex:105
+#: lib/texttile_web/components/stats_components.ex:90
 #, elixir-autogen, elixir-format
 msgid "%{day}: %{views}"
 msgstr ""
@@ -376,7 +376,7 @@ msgid_plural "%{count} tiles"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/components/stats_components.ex:107
+#: lib/texttile_web/components/stats_components.ex:92
 #: lib/texttile_web/live/stats_live.ex:152
 #, elixir-autogen, elixir-format
 msgid "1 view"
@@ -1403,7 +1403,7 @@ msgstr ""
 msgid "Not stored · %{message}"
 msgstr ""
 
-#: lib/texttile_web/components/stats_components.ex:39
+#: lib/texttile_web/components/stats_components.ex:38
 #, elixir-autogen, elixir-format
 msgid "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
 msgstr ""
@@ -1910,7 +1910,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: lib/texttile_web/components/stats_components.ex:143
+#: lib/texttile_web/components/stats_components.ex:128
 #: lib/texttile_web/controllers/site_html.ex:88
 #: lib/texttile_web/live/editor_live.ex:2623
 #, elixir-autogen, elixir-format
@@ -1971,7 +1971,7 @@ msgstr ""
 msgid "Someone"
 msgstr ""
 
-#: lib/texttile_web/components/stats_components.ex:142
+#: lib/texttile_web/components/stats_components.ex:127
 #, elixir-autogen, elixir-format
 msgid "Source"
 msgstr ""
@@ -2749,7 +2749,7 @@ msgstr ""
 msgid "details"
 msgstr ""
 
-#: lib/texttile_web/components/stats_components.ex:149
+#: lib/texttile_web/components/stats_components.ex:134
 #, elixir-autogen, elixir-format
 msgid "direct"
 msgstr ""
@@ -3819,7 +3819,7 @@ msgstr ""
 msgid "To the blog"
 msgstr ""
 
-#: lib/texttile_web/components/stats_components.ex:124
+#: lib/texttile_web/components/stats_components.ex:109
 #, elixir-autogen, elixir-format
 msgid "%{from} to %{to}"
 msgstr ""
