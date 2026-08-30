@@ -210,6 +210,14 @@ defmodule Texttile.Articles.LockTest do
       assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
     end
 
+    # A watcher closing its tab releases nothing; that must not start a
+    # process only to end it.
+    test "releasing a lock that has no process starts none" do
+      id = System.unique_integer([:positive])
+      assert :ok = Lock.release(id, self())
+      assert Registry.lookup(Lock.registry(), id) == []
+    end
+
     test "an idle timeout with no holder ends the process", %{id: id, lock: lock} do
       ref = Process.monitor(lock)
       assert :ok = Lock.acquire(id, 1, self())

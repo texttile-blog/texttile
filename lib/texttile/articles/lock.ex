@@ -111,9 +111,15 @@ defmodule Texttile.Articles.Lock do
     GenServer.cast(ensure(article_id), {:ping, pid})
   end
 
-  @doc "The editor closed or navigated away."
+  @doc """
+  The editor closed or navigated away. A text without a process is
+  free already, so none is started just to say so.
+  """
   def release(article_id, pid) do
-    call(article_id, {:release, pid})
+    case Registry.lookup(@registry, article_id) do
+      [{lock, _}] -> call_or(lock, {:release, pid}, fn -> :ok end)
+      [] -> :ok
+    end
   end
 
   # A lock process ends itself once its text is free, and a caller can
