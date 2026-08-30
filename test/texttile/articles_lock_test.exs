@@ -236,5 +236,39 @@ defmodule Texttile.Articles.LockTest do
       assert %{user_id: 2, pid: pid} = Lock.state(id)
       assert pid == self()
     end
+
+    # The lock announces the change and then ends. A watcher that reads
+    # the state on that announcement can reach the process while it is
+    # still going: the call must read :free, not crash the watcher.
+    test "reading the state of a lock that is ending answers :free", %{id: id, lock: lock} do
+      assert :ok = Lock.acquire(id, 1, self())
+      me = self()
+
+      reader =
+        spawn_link(fn ->
+          send(me, :ready)
+          for _ <- 1..2_000, do: Lock.state(id)
+          send(me, :done)
+        end)
+
+      assert_receive :ready
+      ref = Process.monitor(lock)
+      assert :ok = Lock.release(id, self())
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+      assert_receive :done, 5_000
+      refute Process.alive?(reader)
+    end
+
+    # The same holds for the doors that start the process on demand: a
+    # pid found alive can be ending by the time the call lands.
+    test "acquiring while the lock is ending lands on a fresh process", %{id: id, lock: lock} do
+      assert :ok = Lock.acquire(id, 1, self())
+      ref = Process.monitor(lock)
+      # the release stops the process; the acquire lands right behind it
+      assert :ok = Lock.release(id, self())
+      assert :ok = Lock.acquire(id, 2, self())
+      assert_receive {:DOWN, ^ref, :process, ^lock, :normal}, 500
+      assert %{user_id: 2} = Lock.state(id)
+    end
   end
 end

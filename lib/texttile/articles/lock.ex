@@ -85,29 +85,20 @@ defmodule Texttile.Articles.Lock do
   straight back, which is what the grace is for.
   """
   def acquire(article_id, user_id, pid) do
-    GenServer.call(ensure(article_id), {:acquire, user_id, pid})
+    call(article_id, {:acquire, user_id, pid})
   end
 
   @doc "The holder's state, or :free. Feeds the banner and the takeover dialog."
   def state(article_id) do
     case Registry.lookup(@registry, article_id) do
-      [{pid, _}] ->
-        # The registry learns of an ended process a breath after the
-        # monitors do, so the pid it names can already be gone.
-        try do
-          GenServer.call(pid, :state)
-        catch
-          :exit, {:noproc, _} -> :free
-        end
-
-      [] ->
-        :free
+      [{pid, _}] -> call_or(pid, :state, fn -> :free end)
+      [] -> :free
     end
   end
 
   @doc "Take the text over. Returns :ok when it was free, :pending while the holder flushes."
   def takeover(article_id, user_id, pid) do
-    GenServer.call(ensure(article_id), {:takeover, user_id, pid})
+    call(article_id, {:takeover, user_id, pid})
   end
 
   @doc "The holder finished flushing; the transfer may go ahead."
@@ -122,7 +113,23 @@ defmodule Texttile.Articles.Lock do
 
   @doc "The editor closed or navigated away."
   def release(article_id, pid) do
-    GenServer.call(ensure(article_id), {:release, pid})
+    call(article_id, {:release, pid})
+  end
+
+  # A lock process ends itself once its text is free, and a caller can
+  # reach it a breath too late: the registry still names the pid, or
+  # the pid is alive but already on its way out. Either way the call
+  # exits, with :noproc or with :normal. That is no failure of the
+  # caller, so the door is knocked at again on a fresh process. A second
+  # miss is a real fault and is left to crash.
+  defp call(article_id, msg) do
+    call_or(ensure(article_id), msg, fn -> GenServer.call(ensure(article_id), msg) end)
+  end
+
+  defp call_or(pid, msg, on_gone) do
+    GenServer.call(pid, msg)
+  catch
+    :exit, {reason, {GenServer, :call, _}} when reason in [:noproc, :normal] -> on_gone.()
   end
 
   ## GenServer
