@@ -19,6 +19,11 @@ defmodule Texttile.Articles.Lock do
   transfer. A holder that does not answer within the flush timeout is
   not waited for.
 
+  The process itself lives only as long as its lock: once the text is
+  free and nobody waits for a flush, it ends, so the supervisor carries
+  a process per open text, not per entry ever opened. The next editor
+  starts a fresh one on demand.
+
   Messages to the LiveViews involved:
 
     * `{:lock_flush, article_id}` — to the holder: flush, then `flushed/1`
@@ -86,8 +91,17 @@ defmodule Texttile.Articles.Lock do
   @doc "The holder's state, or :free. Feeds the banner and the takeover dialog."
   def state(article_id) do
     case Registry.lookup(@registry, article_id) do
-      [{pid, _}] -> GenServer.call(pid, :state)
-      [] -> :free
+      [{pid, _}] ->
+        # The registry learns of an ended process a breath after the
+        # monitors do, so the pid it names can already be gone.
+        try do
+          GenServer.call(pid, :state)
+        catch
+          :exit, {:noproc, _} -> :free
+        end
+
+      [] ->
+        :free
     end
   end
 
@@ -150,11 +164,14 @@ defmodule Texttile.Articles.Lock do
   end
 
   def handle_call({:release, pid}, _from, state) do
-    if state.holder && state.holder.pid == pid do
-      {:reply, :ok, state |> drop_holder() |> announce()}
-    else
-      {:reply, :ok, state}
-    end
+    state =
+      if state.holder && state.holder.pid == pid do
+        state |> drop_holder() |> announce()
+      else
+        state
+      end
+
+    stop_reply(state)
   end
 
   def handle_call({:takeover, user_id, pid}, _from, state) do
@@ -194,11 +211,11 @@ defmodule Texttile.Articles.Lock do
   def handle_info(:flush_timeout, state), do: {:noreply, transfer(state)}
 
   def handle_info(:grace_over, state) do
-    {:noreply, state |> drop_holder() |> announce()}
+    state |> drop_holder() |> announce() |> stop_noreply()
   end
 
   def handle_info(:idle_over, state) do
-    {:noreply, state |> drop_holder() |> announce()}
+    state |> drop_holder() |> announce() |> stop_noreply()
   end
 
   def handle_info({:DOWN, ref, :process, _pid, _reason}, state) do
@@ -258,6 +275,16 @@ defmodule Texttile.Articles.Lock do
     |> cancel(:grace_timer)
     |> cancel(:idle_timer)
   end
+
+  # A lock that is free and waits for nobody has nothing left to watch.
+  # A takeover still in flight keeps the process alive until it is
+  # resolved: its requester waits for a message this process alone can
+  # send.
+  defp stop_noreply(%{holder: nil, pending: nil} = state), do: {:stop, :normal, state}
+  defp stop_noreply(state), do: {:noreply, state}
+
+  defp stop_reply(%{holder: nil, pending: nil} = state), do: {:stop, :normal, :ok, state}
+  defp stop_reply(state), do: {:reply, :ok, state}
 
   defp reset_idle(state) do
     state = cancel(state, :idle_timer)
