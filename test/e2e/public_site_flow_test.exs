@@ -129,16 +129,20 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     test "a tile opens the lightbox, the arrows walk, Escape closes", %{conn: conn} do
       article = published_post(title: "Tiles", slug: "tiles", body: "Pictures below.")
       {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
-      {:ok, _second} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
+      {:ok, second} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
+      {:ok, _} = Texttile.Gallery.set_description(article.id, first.id, "The pier at sunrise.")
+
+      {:ok, _} =
+        Texttile.Gallery.set_description(article.id, second.id, "Still water in the lagoon.")
 
       conn
       |> open_page(Articles.public_path(article))
       |> click("#tile-#{first.id}")
       |> assert_has("#lbCount", text: "1 / 2")
-      |> assert_has("#lbCap", text: "pier.jpg")
+      |> assert_has("#lbCap", text: "The pier at sunrise.")
       |> press("body", "ArrowRight")
       |> assert_has("#lbCount", text: "2 / 2")
-      |> assert_has("#lbCap", text: "lagoon.jpg")
+      |> assert_has("#lbCap", text: "Still water in the lagoon.")
       |> press("body", "Escape")
       |> refute_has("#lbCount", text: "2 / 2")
     end
