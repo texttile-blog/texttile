@@ -176,6 +176,10 @@ An entry that is not live yet answers at the address it will wear, but only for
 somebody signed in; a reader gets a 404 there. So the way out of the editor leads
 into the real reader's page, drafts included.
 
+Each live entry has its own search description and link preview, taken from the
+published text. Its canonical link omits query parameters. A page used as the
+front page names `/` as its canonical address. Drafts have no public link preview.
+
 ### The feed
 
 The blog has an RSS feed at `/feed.xml`. It carries every published post, newest
