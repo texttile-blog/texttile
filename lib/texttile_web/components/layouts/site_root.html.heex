@@ -7,10 +7,19 @@
          the page, so it wears the bar's colour, not the page's --%>
     <meta name="theme-color" content={Texttile.Settings.theme_color()} />
     <.live_title default={site_title()} suffix={" · " <> site_title()} phx-no-format>{assigns[:page_title]}</.live_title>
-    <meta name="description" content={Texttile.Settings.get(:site_description)} />
-    <%!-- what a shared link shows: the title, and the text's preview image --%>
-    <meta :if={assigns[:page_title]} property="og:title" content={assigns[:page_title]} />
+    <% description = assigns[:meta_description] || Texttile.Settings.get(:site_description) %>
+    <% og_title = Map.get(assigns, :og_title, assigns[:page_title]) %>
+    <meta name="description" content={description} />
+    <meta property="og:description" content={description} />
+    <meta :if={og_title} property="og:title" content={og_title} />
     <meta :if={assigns[:og_image]} property="og:image" content={assigns[:og_image]} />
+    <link :if={assigns[:canonical_url]} rel="canonical" href={assigns[:canonical_url]} />
+    <meta :if={assigns[:canonical_url]} property="og:url" content={assigns[:canonical_url]} />
+    <meta
+      :if={assigns[:noindex] || Texttile.Settings.guarded?()}
+      name="robots"
+      content="noindex, nofollow"
+    />
     <.favicon_link />
     <%!-- the feed, for readers who follow from their own reader; a
          blog behind a password offers none --%>

@@ -573,11 +573,7 @@ defmodule TexttileWeb.SiteController do
     home? = conn.assigns.home_page && conn.assigns.home_page.id == article.id
     gallery = Gallery.list(article.id)
 
-    og_image =
-      case Gallery.preview_still(article, Enum.map(gallery, & &1.path)) do
-        nil -> nil
-        path -> TexttileWeb.Endpoint.url() <> Texttile.Images.url(path, :max)
-      end
+    metadata = entry_metadata(article, gallery, home?)
 
     # A video tile has nothing to show before ffmpeg is through, so the
     # reader's gallery waits for it instead of holding an empty square.
@@ -588,7 +584,7 @@ defmodule TexttileWeb.SiteController do
     conn
     |> assign(:page_title, if(home?, do: nil, else: Articles.display_title(article)))
     |> assign(:active, if(home?, do: :home, else: article.id))
-    |> assign(:og_image, og_image)
+    |> merge_assigns(metadata)
     |> assign(:count_entry, countable_entry(conn, article))
     |> merge_assigns(comment_assigns(conn, article))
     |> render(:article,
@@ -598,6 +594,31 @@ defmodule TexttileWeb.SiteController do
       newer: newer,
       unpublished_changes: pending?
     )
+  end
+
+  # Link previews always describe the live version, including on an admin's working copy.
+  defp entry_metadata(article, gallery, home?) do
+    if Visibility.live?(article) do
+      published = Articles.as_read(article)
+      path = if home?, do: "/", else: Articles.public_path(published)
+      lead = Articles.lead(published)
+
+      image =
+        case Gallery.preview_still(published, Enum.map(gallery, & &1.path)) do
+          nil -> nil
+          path -> TexttileWeb.Endpoint.url() <> Texttile.Images.url(path, :max)
+        end
+
+      %{
+        meta_description: if(lead == "", do: nil, else: lead),
+        og_title: Articles.display_title(published),
+        og_image: image,
+        canonical_url: path && TexttileWeb.Endpoint.url() <> path,
+        noindex: false
+      }
+    else
+      %{meta_description: nil, og_title: nil, og_image: nil, canonical_url: nil, noindex: true}
+    end
   end
 
   # The entry the beacon names, if this page counts at all and the

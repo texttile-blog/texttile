@@ -1393,7 +1393,7 @@ msgstr ""
 msgid "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:714
+#: lib/texttile_web/controllers/site_controller.ex:735
 #, elixir-autogen, elixir-format
 msgid "Not found"
 msgstr ""
@@ -2639,7 +2639,7 @@ msgstr ""
 msgid "You are signed in as"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:671
+#: lib/texttile_web/controllers/site_controller.ex:692
 #, elixir-autogen, elixir-format
 msgid "You are signed in, so your name and your address come from your account. Your address is never published, and your comment appears under the entry at once."
 msgstr ""
@@ -2659,12 +2659,12 @@ msgstr ""
 msgid "You have the entry · %{name} was told"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:661
+#: lib/texttile_web/controllers/site_controller.ex:682
 #, elixir-autogen, elixir-format
 msgid "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:667
+#: lib/texttile_web/controllers/site_controller.ex:688
 #, elixir-autogen, elixir-format
 msgid "Your address is never published. Your comment appears under the entry at once."
 msgstr ""
