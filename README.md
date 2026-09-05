@@ -1,18 +1,17 @@
 # Texttile
 
-A blog for two people who write together. Phoenix, LiveView and SQLite in one
-Docker image. One volume holds everything: the database, the pictures, the
-videos. No external service, no tracker, no account anywhere else.
+A self-hosted blog for two people who write together.
 
-Two people can have the same entry open. One writes the text while the other
-watches it arrive, moves tiles in the gallery, sets the tags, and takes over the
-writing with one click.
+[Read the demo](https://demo.texttile.blog) · [Run your own](#get-it-running)
 
-It is meant to stay small. A part of this blog is right when nothing is left to
-take away.
+One person writes. The other follows live, arranges pictures, and takes over
+when ready. Both work on the same entry, with their own account.
+
+Phoenix, LiveView, and SQLite in one Docker image. One volume holds the database,
+pictures, and videos. No external service, tracker, or hosted account is required.
 
 **Status:** ready for a real site. Run a version tag, not `latest`, and keep a
-copy of `/data`.
+copy of `/data`. Texttile uses the [MIT License](LICENSE).
 
 ## What you get
 
