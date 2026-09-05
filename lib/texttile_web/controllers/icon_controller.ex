@@ -14,9 +14,6 @@ defmodule TexttileWeb.IconController do
       {:ok, relative} ->
         conn
         |> put_resp_content_type("image/png")
-        # the address never changes, the favicon behind it can, so the
-        # icon is kept for an hour and no longer
-        |> put_resp_header("cache-control", "public, max-age=3600")
         |> send_file(200, Uploads.absolute(relative))
 
       {:error, _reason} ->

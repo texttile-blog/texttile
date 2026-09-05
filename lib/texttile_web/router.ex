@@ -51,16 +51,43 @@ defmodule TexttileWeb.Router do
     Plug.Conn.delete_resp_header(conn, "content-security-policy")
   end
 
-  # Uploaded files and their scaled renditions. Public on purpose; the
-  # public site shows them to readers. The theme stylesheet lives here
-  # too: every page wears it, signed in or not.
+  # Media follows the blog password without the HTML-only browser pipeline.
+  pipeline :media do
+    plug :guard_media
+  end
+
+  defp guard_media(conn, _opts) do
+    guarded? = Texttile.Settings.guarded?()
+    cache = if guarded?, do: "private, no-store", else: "private, no-cache"
+
+    conn =
+      conn
+      |> Plug.Conn.assign(:media_guarded, guarded?)
+      |> Plug.Conn.put_resp_header("cache-control", cache)
+
+    if guarded? do
+      conn
+      |> Plug.Conn.fetch_session()
+      |> fetch_current_scope_for_user([])
+      |> TexttileWeb.SiteGate.call([])
+    else
+      conn
+    end
+  end
+
   scope "/", TexttileWeb do
+    pipe_through :media
+
     get "/uploads/*path", UploadsController, :show
     get "/renditions/:edge/*path", UploadsController, :rendition
-    get "/theme.css", ThemeController, :show
 
     # The square for the home screen, rendered from the favicon.
     get "/apple-touch-icon.png", IconController, :touch
+  end
+
+  scope "/", TexttileWeb do
+    # Every page needs the theme, including the password gate.
+    get "/theme.css", ThemeController, :show
 
     # The feed. Outside the gate and outside the session: it answers a
     # reader's program, not a browser, and a guarded blog has none.

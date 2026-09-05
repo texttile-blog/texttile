@@ -1,7 +1,8 @@
 defmodule TexttileWeb.UploadsController do
   @moduledoc """
-  Serves the files below the uploads root. Stored names carry a random
-  tag, so a file may be cached hard: a changed logo is a new name.
+  Serves files below the uploads root after the router checks access.
+  Public files require revalidation, so later password protection takes effect.
+  Protected files must not be stored in browser or shared caches.
   """
   use TexttileWeb, :controller
 
@@ -33,8 +34,6 @@ defmodule TexttileWeb.UploadsController do
   # moment (the Images setting) - for the lightboxes.
   @edges ~w(320 640 1320 max)
 
-  @immutable "public, max-age=31536000, immutable"
-
   @doc """
   A scaled reading of an upload: the cached rendition, made on the fly
   when it is missing. The editor's thumbnails come from here instead of
@@ -43,13 +42,9 @@ defmodule TexttileWeb.UploadsController do
   def rendition(conn, %{"edge" => edge, "path" => parts}) when edge in @edges do
     max_edge = if edge == "max", do: nil, else: String.to_integer(edge)
 
-    # A numbered edge of an immutably named original never changes;
-    # "max" follows the Images setting, so it may only be cached briefly.
-    cache = if edge == "max", do: "public, max-age=3600", else: @immutable
-
     with relative when is_binary(relative) <- Uploads.under_root(parts),
          {:ok, scaled} <- Texttile.Images.rendition(relative, max_edge) do
-      serve(conn, scaled, cache)
+      serve(conn, scaled)
     else
       _ -> send_resp(conn, 404, "not found")
     end
@@ -57,11 +52,9 @@ defmodule TexttileWeb.UploadsController do
 
   def rendition(conn, _params), do: send_resp(conn, 404, "not found")
 
-  defp serve(conn, relative, cache \\ @immutable)
+  defp serve(conn, nil), do: send_resp(conn, 404, "not found")
 
-  defp serve(conn, nil, _cache), do: send_resp(conn, 404, "not found")
-
-  defp serve(conn, relative, cache) do
+  defp serve(conn, relative) do
     path = Uploads.absolute(relative)
     type = @types[path |> Path.extname() |> String.downcase()]
 
@@ -70,18 +63,36 @@ defmodule TexttileWeb.UploadsController do
       # origin when somebody opens it directly.
       conn
       |> put_resp_content_type(type)
-      |> put_resp_header("cache-control", cache)
       |> put_resp_header("x-content-type-options", "nosniff")
       |> put_resp_header(
         "content-security-policy",
         "default-src 'none'; style-src 'unsafe-inline'"
       )
       |> put_resp_header("accept-ranges", "bytes")
-      |> send_part(path, File.stat!(path).size)
+      |> send_cached(path, File.stat!(path))
     else
       send_resp(conn, 404, "not found")
     end
   end
+
+  defp send_cached(%{assigns: %{media_guarded: false}} = conn, path, stat) do
+    # Include the resolved path: the max rendition changes with the Images setting.
+    digest = :crypto.hash(:sha256, :erlang.term_to_binary({path, stat.size, stat.mtime}))
+    etag = ~s(W/"#{Base.url_encode64(digest, padding: false)}")
+    conn = put_resp_header(conn, "etag", etag)
+
+    matches? =
+      conn
+      |> get_req_header("if-none-match")
+      |> Enum.flat_map(&Plug.Conn.Utils.list/1)
+      |> Enum.any?(
+        &(&1 == "*" or String.trim_leading(&1, "W/") == String.trim_leading(etag, "W/"))
+      )
+
+    if matches?, do: send_resp(conn, 304, ""), else: send_part(conn, path, stat.size)
+  end
+
+  defp send_cached(conn, path, stat), do: send_part(conn, path, stat.size)
 
   # A player asks for the piece it needs, not for the whole film: it
   # seeks by asking for a range of bytes, and some browsers play

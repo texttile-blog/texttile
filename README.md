@@ -188,6 +188,15 @@ The blog can sit behind one shared password (Settings > Access). It is an access
 word to hand around, not a login: it is stored in plain text, one word opens the
 whole blog, and it guards the blog or nothing. No entry has a switch of its own.
 
+The password covers uploaded files, image renditions, and the home-screen icon.
+Admins can access these files while signed in. Readers must enter the blog password.
+Protected media uses `private, no-store`. Public media uses `private, no-cache`,
+so the browser checks access before reuse. Unchanged uploads return 304 without
+the file contents. A password change revokes existing reader access.
+
+Files cached under an older version's public cache rules can remain available
+until that cache expires. The server cannot recall copies already downloaded.
+
 While the blog is protected, the editor of every entry shows the word under
 Share, so you never have to go and look it up. Once an entry is live, the same
 block holds the lines to hand on: the title, the address, and the password under
