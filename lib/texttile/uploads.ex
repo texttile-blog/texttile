@@ -239,8 +239,7 @@ defmodule Texttile.Uploads do
   Stores an image pasted or dropped into a text's body, below `images/`.
   The original is kept as it came; display sizes are renditions
   (`Texttile.Images`). The stored name keeps the readable base of the
-  original plus a random tag, so names never collide and the file may
-  be cached hard.
+  original plus a random tag to prevent name collisions.
 
   What the file is made of is remembered with it, so an entry can take
   each picture once (`duplicate/2`). `article_id:` names the entry it
@@ -312,7 +311,7 @@ defmodule Texttile.Uploads do
     match?({:ok, _}, Vix.Vips.Image.new_from_file(path))
   end
 
-  # Stored names carry this, so they never collide and may be cached hard.
+  # Stored names carry a random tag to prevent name collisions.
   defp random_tag, do: 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
 
   ## What a picture is made of

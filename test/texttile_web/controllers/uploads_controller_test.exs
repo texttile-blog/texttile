@@ -10,13 +10,12 @@ defmodule TexttileWeb.UploadsControllerTest do
     :ok
   end
 
-  test "serves a stored file with its type and long caching", %{conn: conn} do
+  test "serves a stored file with its type and required cache revalidation", %{conn: conn} do
     conn = get(conn, ~p"/uploads/site/logo-abcd.svg")
 
     assert response(conn, 200) =~ "<svg"
     assert response_content_type(conn, :svg) =~ "image/svg+xml"
-    assert [cache] = get_resp_header(conn, "cache-control")
-    assert cache =~ "max-age"
+    assert get_resp_header(conn, "cache-control") == ["private, no-cache"]
   end
 
   describe "a video file" do
