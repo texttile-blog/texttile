@@ -130,6 +130,62 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
   end
 
   describe "the lightbox" do
+    test "descriptions autosave, follow remote edits, and clear", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      image = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+
+      session =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> click("#tile-#{image.id}")
+        |> fill_in("Description", with: "The pier in the morning.")
+
+      eventually(fn ->
+        Gallery.get!(article.id, image.id).description == "The pier in the morning."
+      end)
+
+      {:ok, _} = Gallery.set_description(article.id, image.id, "A gull above the pier.")
+
+      session
+      |> assert_has("#lbDescription", value: "A gull above the pier.")
+      |> fill_in("Description", with: "")
+      |> click_button("Close")
+      |> refute_has("#lbRoot")
+
+      eventually(fn -> Gallery.get!(article.id, image.id).description == "" end)
+    end
+
+    test "navigation saves the description on the tile it belongs to", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      a = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+      b = seed!(article, "gull.jpg", "2024:05:01 12:00:00")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> click("#tile-#{a.id}")
+      |> fill_in("Description", with: "The pier.")
+      |> click_button("Next tile")
+      |> assert_has("#lbName", text: "gull.jpg")
+      |> assert_has("#lbDescription", value: "")
+
+      eventually(fn -> Gallery.get!(article.id, a.id).description == "The pier." end)
+      assert Gallery.get!(article.id, b.id).description == ""
+    end
+
+    test "readers see the description in the lightbox", %{conn: conn, kb: kb} do
+      article = published_post(user: kb)
+      image = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+      {:ok, _} = Gallery.set_description(article.id, image.id, "The pier in the morning.")
+
+      conn
+      |> open_page(Texttile.Articles.public_path(article))
+      |> assert_has("#gal img[alt='The pier in the morning.']")
+      |> click("#gal a")
+      |> assert_has("#lbCap", text: "The pier in the morning.")
+    end
+
     test "opens on a tap, navigates, edits, and survives background changes",
          %{conn: conn, kb: kb} do
       article = draft!(kb)

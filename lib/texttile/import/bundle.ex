@@ -6,6 +6,8 @@ defmodule Texttile.Import.Bundle do
   belong to the dry run itself (`Texttile.Import`).
   """
 
+  use Gettext, backend: TexttileWeb.Gettext
+
   alias Texttile.Articles
   alias Texttile.Import.Comments
   alias Texttile.Import.Frontmatter
@@ -22,13 +24,14 @@ defmodule Texttile.Import.Bundle do
             allow_comments: true,
             preview: nil,
             gallery: [],
+            gallery_descriptions: [],
             body_refs: [],
             body: "",
             comments: [],
             errors: [],
             warnings: []
 
-  @keys ~w(title slug date status type tags allow_comments preview gallery)
+  @keys ~w(title slug date status type tags allow_comments preview gallery gallery_descriptions)
   @picture_extensions ~w(.png .jpg .jpeg .webp .gif)
 
   @doc "The supported picture extensions, lowercase, with the dot."
@@ -71,6 +74,7 @@ defmodule Texttile.Import.Bundle do
     |> list_fields(entries)
     |> derive_slug(entries)
     |> resolve_gallery(entries)
+    |> read_descriptions(entries)
     |> read_body_refs()
     |> check_sources()
     |> check_preview()
@@ -222,6 +226,39 @@ defmodule Texttile.Import.Bundle do
           |> Enum.map(&"gallery/#{&1}")
 
         %{bundle | gallery: shorthand}
+    end
+  end
+
+  defp read_descriptions(bundle, entries) do
+    case Map.fetch(entries, "gallery_descriptions") do
+      :error ->
+        %{bundle | gallery_descriptions: List.duplicate("", length(bundle.gallery))}
+
+      {:ok, descriptions} ->
+        cond do
+          not is_list(Map.get(entries, "gallery")) ->
+            complain(bundle, gettext("gallery_descriptions requires an explicit gallery list."))
+
+          not is_list(descriptions) ->
+            complain(bundle, gettext("gallery_descriptions must be a list."))
+
+          length(descriptions) != length(bundle.gallery) ->
+            complain(
+              bundle,
+              gettext(
+                "Add one description for each gallery item. Use an empty string for no description."
+              )
+            )
+
+          not Enum.all?(descriptions, &Texttile.Gallery.valid_description?/1) ->
+            complain(
+              bundle,
+              gettext("Use one line of at most 500 characters for each gallery description.")
+            )
+
+          true ->
+            %{bundle | gallery_descriptions: descriptions}
+        end
     end
   end
 

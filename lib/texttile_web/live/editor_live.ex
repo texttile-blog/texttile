@@ -631,6 +631,28 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
+  def handle_event("gallery_set_description", %{"id" => id, "description" => description}, socket) do
+    %{article: article, current_scope: scope} = socket.assigns
+
+    with {:ok, id} <- parse_id(id),
+         {:ok, image} <- Gallery.set_description(article.id, id, description, by: scope.user.id) do
+      Articles.push_log(
+        article,
+        scope.user,
+        gettext("changed the description of %{file}", file: image.filename)
+      )
+
+      {:reply, %{ok: true}, socket |> assign_gallery() |> mark_saved()}
+    else
+      {:error, :invalid_description} ->
+        {:reply, %{ok: false, error: gettext("Use one line of at most 500 characters.")}, socket}
+
+      _ ->
+        {:reply, %{ok: false, error: gone_note()},
+         socket |> assign_gallery() |> mark_saved(gone_note())}
+    end
+  end
+
   def handle_event("gallery_delete", %{"id" => id}, socket) do
     %{article: article, current_scope: scope} = socket.assigns
 
@@ -2013,6 +2035,7 @@ defmodule TexttileWeb.EditorLive do
                   data-id={image.id}
                   data-rev={@gallery_rev}
                   data-filename={image.filename}
+                  data-description={image.description}
                   data-date={I18n.format_field_moment(image.gallery_date)}
                   data-full={@media[image.path].still && Images.url(@media[image.path].still, :max)}
                   data-video={

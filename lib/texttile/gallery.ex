@@ -137,6 +137,7 @@ defmodule Texttile.Gallery do
       %{
         id: image.id,
         filename: image.filename,
+        description: image.description,
         original: image.path,
         still: media.still,
         film: media.film
@@ -214,7 +215,7 @@ defmodule Texttile.Gallery do
 
   @doc """
   The importer's swap: the old rows go, the bundle's tiles come, in the
-  given order as `{relative, filename, gallery_date}`, and the open
+  given order as `{relative, filename, gallery_date, description}`, and the open
   editors hear one broadcast for the whole move. The files are not
   touched: the old ones are the caller's to remove once its transaction
   holds, the new ones are stored uploads already.
@@ -223,8 +224,8 @@ defmodule Texttile.Gallery do
     Repo.delete_all(from i in Image, where: i.article_id == ^article.id)
 
     images =
-      Enum.map(tiles, fn {relative, filename, gallery_date} ->
-        insert_stored(article, relative, filename, gallery_date)
+      Enum.map(tiles, fn {relative, filename, gallery_date, description} ->
+        insert_stored(article, relative, filename, gallery_date, description)
       end)
 
     broadcast(article.id, :replaced, nil, nil)
@@ -235,7 +236,7 @@ defmodule Texttile.Gallery do
   # the row inserted. Without a date the picture speaks for itself
   # (EXIF), and the fallback is this very moment. A video says nothing
   # here; its size comes with the conversion, and so does its poster.
-  defp insert_stored(article, relative, filename, gallery_date) do
+  defp insert_stored(article, relative, filename, gallery_date, description \\ "") do
     {taken, width, height} =
       if Texttile.Videos.video?(relative) do
         {nil, nil, nil}
@@ -248,6 +249,7 @@ defmodule Texttile.Gallery do
         article_id: article.id,
         path: relative,
         filename: String.slice(filename, 0, 120),
+        description: description,
         gallery_date: gallery_date || taken || DateTime.utc_now(:microsecond),
         width: width,
         height: height
@@ -297,6 +299,26 @@ defmodule Texttile.Gallery do
       as_utc(naive)
     else
       _ -> nil
+    end
+  end
+
+  @doc "A tile description is one line with at most 500 characters."
+  def valid_description?(value) when is_binary(value) do
+    String.length(value) <= 500 and not String.contains?(value, ["\n", "\r"])
+  end
+
+  def valid_description?(_value), do: false
+
+  @doc "Sets or clears a tile description without changing its file or gallery date."
+  def set_description(article_id, image_id, value, opts \\ []) do
+    with true <- valid_description?(value),
+         %Image{} = image <- fetch(article_id, image_id) do
+      image = image |> Ecto.Changeset.change(description: value) |> Repo.update!()
+      broadcast(article_id, :description, image.id, opts[:by])
+      {:ok, image}
+    else
+      false -> {:error, :invalid_description}
+      nil -> {:error, :gone}
     end
   end
 

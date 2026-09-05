@@ -5,6 +5,7 @@
         gallery_changed), gallery_moved {id, note} when somebody else
         sorted
    out: gallery_reorder {id, ids}, gallery_set_date {id, date},
+        gallery_set_description {id, description},
         gallery_undo {id}, gallery_refresh - and files as one POST per
         file to the upload url
 
@@ -63,6 +64,8 @@ class Gallery {
     this.uid = 0
     this.drag = null
     this.lb = null
+    this.pendingDescription = null
+    this.descriptionSaves = 0
     this.renderQueued = false
 
     this.mountAdd()
@@ -616,6 +619,7 @@ class Gallery {
       index,
       count: list.length,
       filename: t.dataset.filename,
+      description: t.dataset.description || "",
       date: t.dataset.date,
       full: t.dataset.full,
       video: t.dataset.video,
@@ -681,6 +685,9 @@ class Gallery {
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
           <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
+          <label class="lab block mt-3 mb-[3px]" for="lbDescription">${esc(t("Description"))}</label>
+          <input type="text" id="lbDescription" maxlength="500" class="w-full" aria-describedby="lbDescriptionHelp">
+          <p class="note mt-1" id="lbDescriptionHelp">${esc(t("Shown as the image description and caption. Saves automatically."))}</p>
           <div class="flex flex-wrap items-end gap-x-3 gap-y-2 mt-2">
             <span class="min-w-[220px]">
               <label class="lab block mb-[3px]" for="lbDate">${esc(t("Date"))}</label>
@@ -721,6 +728,14 @@ class Gallery {
       })
     })
 
+    const description = root.querySelector("#lbDescription")
+    description.addEventListener("input", () => {
+      this.pendingDescription = {id: this.lb.id, description: description.value}
+      clearTimeout(this.descriptionTimer)
+      this.descriptionTimer = setTimeout(() => this.saveDescription(), 400)
+    })
+    description.addEventListener("change", () => this.saveDescription())
+
     // the one lightbox's swipe rule and focus trap
     attachSwipe(root.querySelector("#lbStage"), step => this.nav(step))
     trapTab(root)
@@ -749,8 +764,14 @@ class Gallery {
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {
       this.root.querySelector("#lbDate").value = data.date
+      this.root.querySelector("#lbDescription").value = data.description
       lb.formFor = lb.id
+    } else if (!this.pendingDescription && this.descriptionSaves === 0) {
+      this.root.querySelector("#lbDescription").value = data.description
     }
+
+    const art = this.root.querySelector("#lbStage video, #lbImg")
+    if (art) art.setAttribute("aria-label", data.description || data.filename)
 
     // a paint from a background update must not restart a load that is
     // already on its way: on a slow line the picture would never land
@@ -781,7 +802,7 @@ class Gallery {
     film.preload = lb.opening ? "metadata" : "none"
     film.poster = data.full
     film.src = data.video
-    film.setAttribute("aria-label", data.filename)
+    film.setAttribute("aria-label", data.description || data.filename)
     img.replaceChildren(film)
     if (lb.opening) film.play().catch(() => {})
     lb.opening = false
@@ -797,7 +818,7 @@ class Gallery {
     quiet(img)
     img.replaceChildren()
     img.style.backgroundImage = ""
-    img.setAttribute("aria-label", data.filename)
+    img.setAttribute("aria-label", data.description || data.filename)
     state.hidden = false
     state.textContent = t("Loading the full size…")
 
@@ -825,6 +846,7 @@ class Gallery {
   }
 
   nav(direction) {
+    this.saveDescription()
     const lb = this.lb
     if (!lb) return
     const list = this.shownTiles()
@@ -876,6 +898,9 @@ class Gallery {
   }
 
   closeLightbox(silent) {
+    if (!silent) this.saveDescription()
+    clearTimeout(this.descriptionTimer)
+    this.pendingDescription = null
     if (this.root) {
       // a film goes quiet the moment the lightbox leaves
       const film = this.root.querySelector("video")
@@ -895,6 +920,22 @@ class Gallery {
       else if (prev && document.contains(prev)) prev.focus()
     }
     this.lb = null
+  }
+
+  // Flush before navigation or close, so a delayed save keeps its original tile ID.
+  saveDescription() {
+    clearTimeout(this.descriptionTimer)
+    const pending = this.pendingDescription
+    if (!pending) return
+    this.pendingDescription = null
+    this.descriptionSaves += 1
+    this.hook.pushEvent("gallery_set_description", pending, reply => {
+      this.descriptionSaves -= 1
+      if (this.lb && this.lb.id === pending.id) {
+        this.savedNote(reply.ok ? null : reply.error)
+        this.paint()
+      }
+    })
   }
 
   savedNote(problem) {

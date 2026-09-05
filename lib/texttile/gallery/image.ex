@@ -15,6 +15,7 @@ defmodule Texttile.Gallery.Image do
 
     field :path, :string
     field :filename, :string
+    field :description, :string, default: ""
     field :gallery_date, :utc_datetime_usec
     field :width, :integer
     field :height, :integer

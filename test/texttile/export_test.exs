@@ -64,6 +64,20 @@ defmodule Texttile.ExportTest do
   end
 
   describe "the shape of the bundle" do
+    test "gallery descriptions survive export and import, including empty descriptions" do
+      user = user_fixture()
+      article = published_post(user: user, slug: "described-pictures")
+      first = tile!(article, "pier.jpg")
+      _second = tile!(article, "gull.jpg")
+      description = ~s|The "pier" by the sea.|
+      {:ok, _} = Gallery.set_description(article.id, first.id, description)
+
+      {entries, _body} = index!(export!(article))
+      assert entries["gallery_descriptions"] == [description, ""]
+      restored = round_trip!(article, user, "original-pictures")
+      assert Enum.map(Gallery.list(restored.id), & &1.description) == [description, ""]
+    end
+
     test "one folder, named after the address of the entry" do
       article = published_post(%{title: "Beach days", slug: "beach-days"})
 
