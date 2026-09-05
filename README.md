@@ -768,3 +768,7 @@ are the exception the tool cannot see by itself: they are listed in
 `AGENTS.md` holds the permanent rules of this repository: branches, worktrees,
 versioning, tests, and the words to use. `PHOENIX.md` is the framework guide.
 `IMPORT.md` is the bundle format contract.
+
+## License
+
+Texttile uses the [MIT License](LICENSE).
