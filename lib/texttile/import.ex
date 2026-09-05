@@ -966,7 +966,9 @@ defmodule Texttile.Import do
       |> Enum.with_index()
       |> Enum.map(fn {source, index} ->
         %{path: path, name: name} = stored[source]
-        {path, name, DateTime.add(base, index, :second)}
+
+        {path, name, DateTime.add(base, index, :second),
+         Enum.at(bundle.gallery_descriptions, index)}
       end)
 
     Gallery.replace_imported(article, tiles)

@@ -243,6 +243,11 @@ with a Delete for the day you want it gone.
 
 ## Pictures and videos
 
+Open a gallery tile to add its description. The field saves automatically.
+Both admins can edit it, including the admin who does not hold the writing lock.
+Readers get the description as image alt text and as the lightbox caption.
+An empty description adds no filename caption. Export and import preserve descriptions.
+
 Pictures and videos go into an entry the same way: paste one into the body, drop
 one on it, or add it to the entry's gallery. Every original file is kept as it
 came, below `UPLOADS_PATH`, and nothing leaves the server: no external player, no

@@ -104,6 +104,7 @@ this subset. Do not use other YAML features.
 | `allow_comments` | no       | `true` or `false`. Default: `true`.                            |
 | `preview`        | no       | The source of the preview picture. See below.                  |
 | `gallery`        | no       | The tiles of the entry, as a list of sources. See below.       |
+| `gallery_descriptions` | no | One description per gallery item, in the same order.         |
 
 Details:
 
@@ -196,6 +197,20 @@ A converter that skips this check hands the dry run a list of dead pictures,
 and the work starts again at the export.
 
 ## The gallery
+
+An optional `gallery_descriptions` list supplies each tile's description and caption.
+It requires an explicit `gallery` list with the same number of items.
+Each description is one line of at most 500 characters. Use `""` for no description.
+Without this key, all descriptions are empty. An export includes it when any tile has a description.
+
+```yaml
+gallery:
+  - gallery/001.jpg
+  - gallery/002.jpg
+gallery_descriptions:
+  - "A gull above the harbor."
+  - ""
+```
 
 The gallery holds the tiles of an entry. There are two ways to define it:
 

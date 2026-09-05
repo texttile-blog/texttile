@@ -24,4 +24,10 @@ export default {
     this._dead = true
     if (this.destroyed_core) this.destroyed_core()
   },
+  disconnected() {
+    if (this.disconnected_core) this.disconnected_core()
+  },
+  reconnected() {
+    if (this.reconnected_core) this.reconnected_core()
+  },
 }

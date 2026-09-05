@@ -97,6 +97,7 @@ defmodule Texttile.Export do
       |> Enum.map(fn {image, at} ->
         %{
           path: image.path,
+          description: image.description,
           url: @uploads_prefix <> image.path,
           name: "gallery/#{count(at)}_#{tile_name(image)}"
         }
@@ -212,7 +213,15 @@ defmodule Texttile.Export do
         tiles -> "gallery:\n" <> Enum.map_join(tiles, fn tile -> "  - #{tile.name}\n" end)
       end
 
-    "---\n" <> Enum.join(lines) <> gallery <> "---\n"
+    descriptions =
+      if Enum.any?(tiles, &(&1.description != "")) do
+        "gallery_descriptions:\n" <>
+          Enum.map_join(tiles, fn tile -> "  - #{quoted(tile.description)}\n" end)
+      else
+        ""
+      end
+
+    "---\n" <> Enum.join(lines) <> gallery <> descriptions <> "---\n"
   end
 
   # The importer needs a title, and an entry does not: an untitled one

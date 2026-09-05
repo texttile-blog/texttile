@@ -75,6 +75,25 @@ defmodule Texttile.Import.BundleTest do
   end
 
   describe "the gallery shorthand" do
+    test "description lists must match an explicit gallery and fit the description field", %{
+      tmp_dir: dir
+    } do
+      for extra <- [
+            "gallery_descriptions: words\n",
+            "gallery_descriptions: []\n",
+            "gallery_descriptions: [one, two]\n",
+            "gallery_descriptions: [#{String.duplicate("a", 501)}]\n"
+          ] do
+        result = bundle(dir, "title: A\ngallery: [image.jpg]\n" <> extra, "", ["image.jpg"])
+        assert result.errors != []
+      end
+
+      result =
+        bundle(dir, "title: A\ngallery_descriptions: [A gull.]\n", "", ["gallery/image.jpg"])
+
+      assert result.errors != []
+    end
+
     test "without a gallery key the gallery folder counts, sorted by name", %{tmp_dir: dir} do
       bundle = bundle(dir, "title: A\n", "", ["gallery/b.jpg", "gallery/a.jpg"])
       assert bundle.gallery == ["gallery/a.jpg", "gallery/b.jpg"]

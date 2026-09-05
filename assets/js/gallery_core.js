@@ -5,6 +5,7 @@
         gallery_changed), gallery_moved {id, note} when somebody else
         sorted
    out: gallery_reorder {id, ids}, gallery_set_date {id, date},
+        gallery_set_description {id, description},
         gallery_undo {id}, gallery_refresh - and files as one POST per
         file to the upload url
 
@@ -17,7 +18,7 @@
    whose rev bump guarantees a diff that morphs the whole grid back
    to the server's truth. */
 
-import {t, esc} from "./i18n"
+import {t, esc} from "./i18n.js"
 import {attachSwipe, trapTab, quiet} from "./lightbox.js"
 
 const MAX_PARALLEL = 2
@@ -42,9 +43,14 @@ export function mount(hook) {
   const core = new Gallery(hook)
   hook.updated_core = () => core.updated()
   hook.destroyed_core = () => core.destroy()
+  hook.disconnected_core = () => { core.offline = true }
+  hook.reconnected_core = () => {
+    core.offline = false
+    core.saveDescription()
+  }
 }
 
-class Gallery {
+export class Gallery {
   constructor(hook) {
     this.hook = hook
     this.el = hook.el
@@ -63,6 +69,9 @@ class Gallery {
     this.uid = 0
     this.drag = null
     this.lb = null
+    this.pendingDescriptions = new Map()
+    this.descriptionSaves = new Set()
+    this.offline = false
     this.renderQueued = false
 
     this.mountAdd()
@@ -85,6 +94,8 @@ class Gallery {
   }
 
   destroy() {
+    this.dead = true
+    clearTimeout(this.descriptionRetry)
     this.records.forEach(r => {
       if (r.xhr) r.xhr.abort()
       if (r.objurl) URL.revokeObjectURL(r.objurl)
@@ -616,6 +627,7 @@ class Gallery {
       index,
       count: list.length,
       filename: t.dataset.filename,
+      description: t.dataset.description || "",
       date: t.dataset.date,
       full: t.dataset.full,
       video: t.dataset.video,
@@ -681,6 +693,9 @@ class Gallery {
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
           <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
+          <label class="lab block mt-3 mb-[3px]" for="lbDescription">${esc(t("Description"))}</label>
+          <input type="text" id="lbDescription" maxlength="500" class="w-full" aria-describedby="lbDescriptionHelp">
+          <p class="note mt-1" id="lbDescriptionHelp">${esc(t("Shown as the image description and caption. Saves automatically."))}</p>
           <div class="flex flex-wrap items-end gap-x-3 gap-y-2 mt-2">
             <span class="min-w-[220px]">
               <label class="lab block mb-[3px]" for="lbDate">${esc(t("Date"))}</label>
@@ -721,6 +736,14 @@ class Gallery {
       })
     })
 
+    const description = root.querySelector("#lbDescription")
+    description.addEventListener("input", () => {
+      this.pendingDescriptions.set(this.lb.id, {id: this.lb.id, description: description.value})
+      clearTimeout(this.descriptionTimer)
+      this.descriptionTimer = setTimeout(() => this.saveDescription(), 400)
+    })
+    description.addEventListener("change", () => this.saveDescription())
+
     // the one lightbox's swipe rule and focus trap
     attachSwipe(root.querySelector("#lbStage"), step => this.nav(step))
     trapTab(root)
@@ -749,8 +772,16 @@ class Gallery {
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {
       this.root.querySelector("#lbDate").value = data.date
+      this.root.querySelector("#lbDescription").value =
+        this.pendingDescriptions.get(lb.id)?.description ?? data.description
       lb.formFor = lb.id
+    } else if (!this.pendingDescriptions.has(lb.id)) {
+      this.root.querySelector("#lbDescription").value = data.description
     }
+
+    this.root.querySelectorAll("#lbStage video, #lbImg").forEach(art =>
+      art.setAttribute("aria-label", data.description || data.filename)
+    )
 
     // a paint from a background update must not restart a load that is
     // already on its way: on a slow line the picture would never land
@@ -781,7 +812,7 @@ class Gallery {
     film.preload = lb.opening ? "metadata" : "none"
     film.poster = data.full
     film.src = data.video
-    film.setAttribute("aria-label", data.filename)
+    film.setAttribute("aria-label", data.description || data.filename)
     img.replaceChildren(film)
     if (lb.opening) film.play().catch(() => {})
     lb.opening = false
@@ -797,7 +828,7 @@ class Gallery {
     quiet(img)
     img.replaceChildren()
     img.style.backgroundImage = ""
-    img.setAttribute("aria-label", data.filename)
+    img.setAttribute("aria-label", data.description || data.filename)
     state.hidden = false
     state.textContent = t("Loading the full size…")
 
@@ -825,6 +856,7 @@ class Gallery {
   }
 
   nav(direction) {
+    this.saveDescription()
     const lb = this.lb
     if (!lb) return
     const list = this.shownTiles()
@@ -876,6 +908,9 @@ class Gallery {
   }
 
   closeLightbox(silent) {
+    if (!silent) this.saveDescription()
+    clearTimeout(this.descriptionTimer)
+    if (silent) this.pendingDescriptions.clear()
     if (this.root) {
       // a film goes quiet the moment the lightbox leaves
       const film = this.root.querySelector("video")
@@ -895,6 +930,37 @@ class Gallery {
       else if (prev && document.contains(prev)) prev.focus()
     }
     this.lb = null
+  }
+
+  // Flush before navigation or close, so a delayed save keeps its original tile ID.
+  async saveDescription() {
+    clearTimeout(this.descriptionTimer)
+    if (this.dead) return
+    await Promise.all([...this.pendingDescriptions.values()].map(async pending => {
+      if (this.descriptionSaves.has(pending.id)) return
+      this.descriptionSaves.add(pending.id)
+      let replied = false
+      try {
+        const reply = await this.hook.pushEvent("gallery_set_description", pending)
+        replied = true
+        if (this.pendingDescriptions.get(pending.id) === pending) {
+          this.pendingDescriptions.delete(pending.id)
+        }
+        if (this.lb && this.lb.id === pending.id) {
+          this.savedNote(reply.ok ? null : reply.error)
+          this.paint()
+        }
+      } catch {
+        // Keep edits through a lost connection, including tiles already closed.
+        if (!this.offline && !this.dead) {
+          clearTimeout(this.descriptionRetry)
+          this.descriptionRetry = setTimeout(() => this.saveDescription(), 1000)
+        }
+      } finally {
+        this.descriptionSaves.delete(pending.id)
+        if (replied && this.pendingDescriptions.has(pending.id)) this.saveDescription()
+      }
+    }))
   }
 
   savedNote(problem) {
