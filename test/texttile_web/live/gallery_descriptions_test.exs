@@ -67,4 +67,14 @@ defmodule TexttileWeb.GalleryDescriptionsTest do
     assert LazyHTML.attribute(tile, "aria-label") == ["Open image"]
     assert tile |> LazyHTML.query("img") |> LazyHTML.attribute("alt") == [""]
   end
+
+  test "a whitespace-only description keeps the image link accessible", %{
+    article: article,
+    image: image
+  } do
+    {:ok, _} = Gallery.set_description(article.id, image.id, "   ")
+    html = build_conn() |> get(Articles.public_path(article)) |> html_response(200)
+    tile = html |> LazyHTML.from_document() |> LazyHTML.query("#gal a")
+    assert LazyHTML.attribute(tile, "aria-label") == ["Open image"]
+  end
 end

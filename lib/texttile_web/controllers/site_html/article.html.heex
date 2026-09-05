@@ -71,7 +71,7 @@
           data-video={tile.film && Images.url(tile.film, :original)}
           data-caption={tile.description}
           aria-label={
-            if tile.description == "",
+            if String.trim(tile.description) == "",
               do: if(tile.film, do: gettext("Open video"), else: gettext("Open image"))
           }
         >
