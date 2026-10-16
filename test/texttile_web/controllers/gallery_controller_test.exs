@@ -33,10 +33,14 @@ defmodule TexttileWeb.GalleryControllerTest do
   end
 
   test "puts the picture into the text's gallery", %{conn: conn, article: article} do
-    conn = post(conn, ~p"/admin/texts/#{article.id}/gallery", %{"file" => jpg_upload("Pier.jpg")})
+    upload = jpg_upload("Pier.jpg")
+    original = File.stat!(upload.path)
+    conn = post(conn, ~p"/admin/texts/#{article.id}/gallery", %{"file" => upload})
 
     assert %{"id" => id} = json_response(conn, 200)
-    assert [%{id: ^id, filename: "Pier.jpg"}] = Gallery.list(article.id)
+    assert [%{id: ^id, filename: "Pier.jpg", path: path}] = Gallery.list(article.id)
+    assert File.stat!(Texttile.Uploads.absolute(path)).inode == original.inode
+    refute File.exists?(upload.path)
   end
 
   test "puts a video into the gallery and in line for the conversion", %{
@@ -54,6 +58,7 @@ defmodule TexttileWeb.GalleryControllerTest do
     assert %{"id" => id} = json_response(conn, 200)
     assert [%{id: ^id, path: path}] = Gallery.list(article.id)
     assert Texttile.Videos.get(path).state == "queued"
+    refute File.exists?(upload.path)
   end
 
   test "a file that is no image is refused", %{conn: conn, article: article} do

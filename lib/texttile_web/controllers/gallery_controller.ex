@@ -16,7 +16,7 @@ defmodule TexttileWeb.GalleryController do
     article = Articles.get_article!(id)
     user = conn.assigns.current_scope.user
 
-    case Gallery.add_file(article, upload.path, upload.filename, by: user.id) do
+    case Gallery.add_file(article, upload.path, upload.filename, by: user.id, consume: true) do
       {:ok, image} ->
         json(conn, %{id: image.id})
 

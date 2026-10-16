@@ -143,6 +143,50 @@ defmodule Texttile.UploadsTest do
     end
   end
 
+  describe "temporary HTTP uploads" do
+    test "moves an accepted video without copying its bytes" do
+      source = temporary_video(Uploads.root())
+      original = File.stat!(source)
+
+      assert {:ok, relative} = Uploads.put_body_video(source, "clip.mp4", consume: true)
+      stored = File.stat!(Uploads.absolute(relative))
+      assert stored.inode == original.inode
+      assert File.read!(Uploads.absolute(relative)) == "video bytes"
+      refute File.exists?(source)
+    end
+
+    test "keeps reusable sources when consumption was not requested" do
+      source = temporary_video(Uploads.root())
+      assert {:ok, relative} = Uploads.put_body_video(source, "clip.mp4")
+      assert File.read!(source) == File.read!(Uploads.absolute(relative))
+    end
+
+    test "keeps a rejected temporary file for the upload owner's cleanup" do
+      source = temporary_video(Uploads.root())
+      assert {:error, _} = Uploads.put_body_video(source, "clip.exe", consume: true)
+      assert File.read!(source) == "video bytes"
+    end
+
+    @tag skip: not File.dir?("/dev/shm")
+    test "copies across filesystems before removing the temporary source" do
+      source = temporary_video("/dev/shm")
+      on_exit(fn -> File.rm(source) end)
+      File.mkdir_p!(Uploads.root())
+      refute File.stat!(source).major_device == File.stat!(Uploads.root()).major_device
+
+      assert {:ok, relative} = Uploads.put_body_video(source, "clip.mp4", consume: true)
+      assert File.read!(Uploads.absolute(relative)) == "video bytes"
+      refute File.exists?(source)
+    end
+  end
+
+  defp temporary_video(directory) do
+    File.mkdir_p!(directory)
+    path = Path.join(directory, "upload-#{System.unique_integer([:positive])}.tmp")
+    File.write!(path, "video bytes")
+    path
+  end
+
   describe "body images" do
     test "stores the original below images/ under a tagged, readable name" do
       {:ok, stored} = Uploads.put_body_image(raster_file(".jpg", 300, 200), "Pier Lantern.JPG")

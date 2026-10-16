@@ -164,6 +164,7 @@ defmodule Texttile.Gallery do
 
   @doc """
   Stores an uploaded picture or video and puts it into the gallery.
+  HTTP callers set `consume: true` to move their temporary file.
   The file is kept exactly as it came; the gallery date starts as the
   EXIF capture date when the file carries one, otherwise as the upload
   moment. A video stands in line for its conversion right away; the
@@ -174,7 +175,12 @@ defmodule Texttile.Gallery do
   """
   def add_file(%Article{} = article, source_path, original_name, opts \\ []) do
     if Texttile.Videos.video?(original_name) do
-      add_stored(article, Uploads.put_body_video(source_path, original_name), original_name, opts)
+      add_stored(
+        article,
+        Uploads.put_body_video(source_path, original_name, consume: opts[:consume]),
+        original_name,
+        opts
+      )
     else
       # Asking and storing stand together, so two uploads of one
       # photograph cannot both find nothing.
@@ -183,7 +189,10 @@ defmodule Texttile.Gallery do
           nil ->
             add_stored(
               article,
-              Uploads.put_body_image(source_path, original_name, article_id: article.id),
+              Uploads.put_body_image(source_path, original_name,
+                article_id: article.id,
+                consume: opts[:consume]
+              ),
               original_name,
               opts
             )

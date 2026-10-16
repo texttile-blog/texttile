@@ -40,13 +40,19 @@ defmodule TexttileWeb.ImagesController do
 
   defp store_picture(article, upload) do
     case Articles.duplicate_picture(article, upload.path) do
-      nil -> Uploads.put_body_image(upload.path, upload.filename, article_id: article.id)
-      name -> {:duplicate, name}
+      nil ->
+        Uploads.put_body_image(upload.path, upload.filename,
+          article_id: article.id,
+          consume: true
+        )
+
+      name ->
+        {:duplicate, name}
     end
   end
 
   defp store_video(upload) do
-    with {:ok, relative} <- Uploads.put_body_video(upload.path, upload.filename) do
+    with {:ok, relative} <- Uploads.put_body_video(upload.path, upload.filename, consume: true) do
       Videos.queue(relative)
       {:ok, relative}
     end

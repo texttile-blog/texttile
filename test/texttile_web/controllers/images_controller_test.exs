@@ -33,12 +33,14 @@ defmodule TexttileWeb.ImagesControllerTest do
   end
 
   test "stores the image and answers with its address", %{conn: conn, article: article} do
-    conn =
-      post(conn, ~p"/admin/texts/#{article.id}/images", %{"file" => png_upload("Pier Gull.png")})
+    upload = png_upload("Pier Gull.png")
+    original = File.stat!(upload.path)
+    conn = post(conn, ~p"/admin/texts/#{article.id}/images", %{"file" => upload})
 
     assert %{"url" => "/uploads/images/" <> stored} = json_response(conn, 200)
     assert stored =~ ~r/^pier-gull-\w+\.png$/
-    assert File.exists?(Uploads.absolute("images/" <> stored))
+    assert File.stat!(Uploads.absolute("images/" <> stored)).inode == original.inode
+    refute File.exists?(upload.path)
   end
 
   test "stores a video and puts it in line for the conversion", %{conn: conn, article: article} do
@@ -54,6 +56,39 @@ defmodule TexttileWeb.ImagesControllerTest do
     assert stored =~ ~r/^harbour-morning-\w+\.mov$/
     assert File.exists?(Uploads.absolute("videos/" <> stored))
     assert Texttile.Videos.get("videos/" <> stored).state == "queued"
+    refute File.exists?(upload.path)
+  end
+
+  test "a multipart upload reports reception and storage separately", %{
+    conn: conn,
+    article: article
+  } do
+    body =
+      "--timing-test\r\n" <>
+        "Content-Disposition: form-data; name=\"file\"; filename=\"clip.mp4\"\r\n" <>
+        "Content-Type: video/mp4\r\n\r\nvideo bytes\r\n--timing-test--\r\n"
+
+    previous_level = Logger.level()
+    Logger.configure(level: :info)
+
+    log =
+      try do
+        ExUnit.CaptureLog.capture_log([level: :info], fn ->
+          response =
+            conn
+            |> put_req_header("content-type", "multipart/form-data; boundary=timing-test")
+            |> post(~p"/admin/texts/#{article.id}/images", body)
+
+          assert %{"url" => "/uploads/" <> relative} = json_response(response, 200)
+          assert File.read!(Uploads.absolute(relative)) == "video bytes"
+        end)
+      after
+        Logger.configure(level: previous_level)
+      end
+
+    assert log =~ ~r/Upload received upload_receive_ms=\d+/
+    assert log =~ ~r/Upload stored bytes=11 upload_store_ms=\d+ method=rename/
+    refute log =~ "video bytes"
   end
 
   test "a file that is no image is refused", %{conn: conn, article: article} do

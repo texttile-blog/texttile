@@ -121,6 +121,7 @@ variable stops the app at boot with a message that names it.
 | ------------------ | ---------------- | --------------------------- | --------------------------------------------------- |
 | `DATABASE_PATH`    | yes              | `/data/texttile.db` (image) | SQLite database file                                |
 | `UPLOADS_PATH`     | yes              | `/data/uploads` (image)     | directory for uploaded files                        |
+| `PLUG_TMPDIR`      | no               | system temporary directory | temporary HTTP uploads, use the uploads volume to avoid a second copy |
 | `ADMIN_USERS`      | first start      | none                        | addresses that get an account, separated by commas  |
 | `SECRET_KEY_BASE`  | yes              | none                        | signs cookies; generate with `mix phx.gen.secret`   |
 | `PHX_HOST`         | yes              | `example.com`               | public hostname                                     |
@@ -251,6 +252,23 @@ Pictures and videos go into an entry the same way: paste one into the body, drop
 one on it, or add it to the entry's gallery. Every original file is kept as it
 came, below `UPLOADS_PATH`, and nothing leaves the server: no external player, no
 third-party host.
+
+For large HTTP uploads, set `PLUG_TMPDIR=/data/tmp` when `/data` holds the
+uploads volume. The container prepares this directory before it drops root.
+The app moves each accepted temporary file into place on the same filesystem.
+With separate filesystems, it copies the file before it removes the temporary
+source. Imports keep their source files.
+
+Upload logs separate `upload_receive_ms` (body reception, parsing and temporary
+writes) from `upload_store_ms` (the final move or copy). The storage log includes
+the byte count and `method=rename` or `method=copy`. Use the request ID to match
+the lines. These timings do not include time spent in a proxy before the request
+reaches Texttile. Video conversion still runs in the background.
+
+Plug removes temporary uploads when their request process exits. An abrupt
+container stop can leave files in `PLUG_TMPDIR`. Remove stale temporary files
+only while the application is stopped. Never expose this directory through a
+static file server or include it in backups.
 
 One roof holds for a picture and for a video: Settings > Storage > Biggest
 upload, 512 MB by default. The browser turns a bigger file away before the upload

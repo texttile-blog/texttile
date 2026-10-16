@@ -1,6 +1,8 @@
 defmodule TexttileWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :texttile
 
+  require Logger
+
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
@@ -105,7 +107,13 @@ defmodule TexttileWeb.Endpoint do
 
   defp parse_body(conn, _opts) do
     conn = fetch_session(conn)
-    Plug.Parsers.call(conn, roof(conn))
+    {microseconds, conn} = :timer.tc(fn -> Plug.Parsers.call(conn, roof(conn)) end)
+
+    if conn.method == "POST" and upload_address?(conn.path_info) do
+      Logger.info("Upload received upload_receive_ms=#{div(microseconds, 1000)}")
+    end
+
+    conn
   end
 
   defp roof(conn) do

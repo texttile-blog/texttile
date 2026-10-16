@@ -11,6 +11,8 @@ defmodule Texttile.Uploads do
       cache/   renditions, disposable (see Texttile.Images)
   """
 
+  require Logger
+
   import Ecto.Query
 
   alias Texttile.Repo
@@ -244,7 +246,8 @@ defmodule Texttile.Uploads do
   What the file is made of is remembered with it, so an entry can take
   each picture once (`duplicate/2`). `article_id:` names the entry it
   came in through, which is what a picture still on its way is
-  recognised by.
+  recognised by. HTTP callers set `consume: true` to move their temporary
+  file. Other callers keep the source.
   """
   def put_body_image(source_path, original_name, opts \\ []) do
     store(source_path, original_name,
@@ -254,6 +257,7 @@ defmodule Texttile.Uploads do
       refusal: "PNG, JPG, WebP or GIF, please",
       remember: true,
       article_id: opts[:article_id],
+      consume: opts[:consume],
       readable: fn path ->
         if readable_image?(path),
           do: :ok,
@@ -267,14 +271,16 @@ defmodule Texttile.Uploads do
   as it came; what a page plays is derived from it later
   (`Texttile.Videos`). Nothing is read here: a video is only opened
   once, by ffmpeg, and a file that turns out to hold no video fails
-  there with a reason the editor shows.
+  there with a reason the editor shows. HTTP callers set `consume: true`
+  to move their temporary file. Other callers keep the source.
   """
-  def put_body_video(source_path, original_name) do
+  def put_body_video(source_path, original_name, opts \\ []) do
     store(source_path, original_name,
       directory: videos_dir(),
       extensions: Texttile.Videos.extensions(),
       fallback: "video",
-      refusal: "MP4, MOV, M4V, WebM, AVI or MKV, please"
+      refusal: "MP4, MOV, M4V, WebM, AVI or MKV, please",
+      consume: opts[:consume]
     )
   end
 
@@ -297,10 +303,49 @@ defmodule Texttile.Uploads do
       relative = "#{opts[:directory]}/#{base}-#{random_tag()}#{extension}"
       destination = absolute(relative)
       File.mkdir_p!(Path.dirname(destination))
-      File.cp!(source_path, destination)
+      store_file(source_path, destination, opts[:consume])
       if opts[:remember], do: remember(relative, digest(destination), opts[:article_id])
       {:ok, relative}
     end
+  end
+
+  # Only HTTP upload callers opt in to consuming their temporary file.
+  # Imports and other reusable sources keep the copy behavior.
+  defp store_file(source, destination, consume) do
+    bytes = File.stat!(source).size
+    {microseconds, method} = :timer.tc(fn -> transfer(source, destination, consume) end)
+
+    Logger.info(
+      "Upload stored bytes=#{bytes} upload_store_ms=#{div(microseconds, 1000)} method=#{method}"
+    )
+  end
+
+  defp transfer(source, destination, true) do
+    case File.rename(source, destination) do
+      :ok ->
+        :rename
+
+      {:error, :exdev} ->
+        # A separate temporary filesystem still works. Remove the source only
+        # after a complete copy, and leave no partial destination on failure.
+        case File.copy(source, destination) do
+          {:ok, _bytes} ->
+            File.rm!(source)
+            :copy
+
+          {:error, reason} ->
+            File.rm(destination)
+            raise File.Error, reason: reason, action: "store upload", path: source
+        end
+
+      {:error, reason} ->
+        raise File.Error, reason: reason, action: "move upload", path: source
+    end
+  end
+
+  defp transfer(source, destination, _preserve) do
+    File.cp!(source, destination)
+    :copy
   end
 
   defp allowed(extension, opts) do
