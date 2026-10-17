@@ -32,3 +32,6 @@ priv/uploads/
 *.db-wal
 /priv/static/assets/
 .env
+
+# Python deployment helpers
+__pycache__/

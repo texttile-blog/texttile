@@ -205,9 +205,9 @@ list and say which entries applied.
 
 An empty database is a bad test. Work from real data instead of pointing at it.
 
-- `make db-pull` fetches a consistent snapshot of `texttile-staging` to
-  `texttile-snapshot.db` in the shared checkout root. It uses `VACUUM INTO`,
-  which is safe while a server has the file open.
+- `make db-pull` fetches a consistent snapshot from the staging backup API to
+  `texttile-snapshot.db` in the shared checkout root. Set `TEXTTILE_TOKEN` from
+  Settings > Backup. The API uses `VACUUM INTO` while the server stays online.
 - Copy a SQLite database only with `VACUUM INTO`, `.backup` or `make db-pull`. A
   plain `cp` of a live file is a corrupt copy, and it needs the `-wal` and
   `-shm` siblings.
@@ -318,11 +318,10 @@ server.
 - Texttile reads its configuration from environment variables at boot, and a
   missing one stops the boot with a message that names it. `README.md` holds the
   table. Keep it true.
-- Keep both Fly configurations aligned. This checkout deploys `texttile-staging`
-  to `staging.texttile.blog`. The `texttile-blog/demo` repository deploys
-  `texttile-demo` to `demo.texttile.blog` from the published image. Only the app
-  name, `PHX_HOST` and the demo `[build]` section may differ. Mirror changes to
-  Fly settings, ports, volume paths and image names into the demo repository.
+- Staging runs on Bunny Magic Containers. `bunny.json` and
+  `scripts/deploy-bunny.py` define its single region, replica, and persistent volume.
+  The published commit deploys only after image publication succeeds.
+  `fly.toml` is a manual recovery configuration, not an active deployment target.
 - One machine, never two. SQLite takes one writer and a volume mounts on one
   machine. `README.md` says what a second one costs.
 - Treat `/data` as the complete installation.

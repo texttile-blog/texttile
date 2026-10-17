@@ -137,3 +137,32 @@ jobs:
             --target "$COMMIT" \
             --notes "$notes" \
             --generate-notes
+
+  staging:
+    name: Deploy staging to Bunny
+    needs: publish
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Bunny CLI
+        run: npm install --global @bunny.net/cli@0.19.0
+      - name: Check deployment safeguards
+        run: |
+          sh -n scripts/start-bunny.sh
+          python3 -m unittest discover -s test/deployment
+      - name: Deploy the published commit and verify its volume
+        run: python3 scripts/deploy-bunny.py --image-tag "$COMMIT"
+        env:
+          BUNNYNET_API_KEY: ${{ secrets.BUNNYNET_API_KEY }}

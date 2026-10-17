@@ -1,0 +1,16 @@
+{
+  "app_id": "pDv9olHdr3LjdSw",
+  "container": "app",
+  "region": "DE",
+  "volume": "data",
+  "volume_size_gb": 4,
+  "volume_instance_id": "87a83e55-5cdd-4bff-8899-4ae473f0921d",
+  "url": "https://staging.texttile.blog",
+  "environment": {
+    "PHX_HOST": "staging.texttile.blog",
+    "PORT": "4000",
+    "DATABASE_PATH": "/data/db/texttile.db",
+    "UPLOADS_PATH": "/data/uploads",
+    "CLIENT_IP_HEADER": "x-real-ip"
+  }
+}
