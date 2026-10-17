@@ -31,6 +31,8 @@ test: prepare
 # you saw here first. CI checks the formatting before it runs a single
 # test, and a branch whose tests are green still fails there.
 check: prepare
+	python3 -m unittest discover -s test/deployment
+	sh -n scripts/start-bunny.sh
 	mix compile --warnings-as-errors
 	mix format --check-formatted
 	npm --prefix assets test
@@ -49,19 +51,11 @@ kill-port-4000:
 		fi; \
 	fi
 
-# Pull a consistent snapshot of a running SQLite DB to $(DB_LOCAL).
-# VACUUM INTO gives a stable copy of the live WAL database; never copy the raw file.
-# This repository deploys texttile-staging, so that is the default.
-# The demo: `make db-pull FLY_APP=texttile-demo`.
-FLY_APP ?= texttile-staging
-
+# Fetch a consistent SQLite snapshot from the current installation.
+# Enable Settings > Backup and export TEXTTILE_TOKEN before running this target.
+# TEXTTILE_URL defaults to the Bunny staging domain.
 db-pull:
-	@echo "Waking the machine..."
-	@curl -fs -o /dev/null --max-time 30 https://$(FLY_APP).fly.dev/ || true
-	fly ssh console -a $(FLY_APP) -C "/app/bin/texttile rpc \"File.rm(~s{/data/db/snapshot.db}); Texttile.Repo.query!(~s{VACUUM INTO '/data/db/snapshot.db'})\""
-	@rm -f -- "$(DB_LOCAL)"
-	fly ssh sftp get /data/db/snapshot.db "$(DB_LOCAL)" -a $(FLY_APP)
-	@echo "Snapshot ready: $(abspath $(DB_LOCAL))"
+	python3 scripts/pull-db.py "$(DB_LOCAL)"
 
 # Throw the whole development installation away: the shared database and
 # the files that belong to it. Both halves go together, because a

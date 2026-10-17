@@ -1,3 +1,6 @@
+# Legacy Fly configuration for manual recovery. Staging now runs on Bunny.
+# Do not deploy this file unless you are restoring the Fly installation.
+
 # ============================================================
 #  ONE MACHINE. NEVER TWO.
 # ============================================================

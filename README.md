@@ -50,6 +50,7 @@ copy of `/data`. Texttile uses the [MIT License](LICENSE).
 - [Import from another system](#import-from-another-system)
 - [Export one entry](#export-one-entry)
 - [Backup](#backup)
+- [Deploy staging on Bunny](#deploy-staging-on-bunny)
 - [Deploy on Fly.io](#deploy-on-flyio)
 - [Development](#development)
 
@@ -656,15 +657,70 @@ After that a hash is stored beside the file's size and write time, and a manifes
 is a query: ten gigabytes of pictures cost that one first run and nothing after
 it.
 
+## Deploy staging on Bunny
+
+`staging.texttile.blog` runs on Bunny Magic Containers. `bunny.json` records the app,
+region, volume size, and volume instance ID. One container runs in Germany (`DE`).
+One 4 GB volume holds `/data/db/texttile.db` and `/data/uploads`.
+
+Fly allocated 3 GiB. Bunny allocates decimal GB, so 4 GB preserves at least the
+previous capacity. Keep both replica limits at one. Do not add another region.
+
+The image publication workflow deploys staging after it publishes a tested commit.
+It uses that commit's immutable image tag. Deployments finish before the next
+one starts. GitHub Actions uses the `BUNNYNET_API_KEY` repository secret.
+
+For a read-only check with an authenticated Bunny CLI:
+
+```sh
+python3 scripts/deploy-bunny.py --check
+```
+
+To deploy a specific published commit:
+
+```sh
+python3 scripts/deploy-bunny.py --image-tag <full-commit-sha>
+```
+
+The script refuses unexpected replicas, regions, volume sizes, or volume identities.
+It waits for the replacement pod and checks the blog and login pages over HTTPS.
+It preserves the existing account, mail, and signing-key environment variables.
+`scripts/start-bunny.sh` retains the volume's group for uploads and tolerates
+unsupported I/O priority when converting video.
+
+The Bunny endpoint forces HTTPS, supports WebSockets, and disables CDN caching.
+`CLIENT_IP_HEADER=x-real-ip` uses the visitor address that Bunny supplies.
+Cloudflare points `staging` to `mc-h7tgoxkcvb.b-cdn.net` with DNS-only proxy status.
+Mail records stay at Cloudflare.
+
+A deployment briefly stops this single instance while Bunny transfers its volume.
+Never undeploy, scale down, or recreate the app as a deployment step.
+Bunny does not guarantee volume reattachment after scaling down.
+Bunny volumes have no automatic backups. Use the [backup client](#backup) for
+recurring backups outside this volume.
+
+`make db-pull` now reads the installation's backup API instead of Fly SSH.
+Enable **Settings > Backup**, then export its token as `TEXTTILE_TOKEN`.
+`TEXTTILE_URL` defaults to `https://staging.texttile.blog`.
+The command verifies SQLite integrity before replacing `texttile-snapshot.db`.
+Set `DB_LOCAL` to change that destination.
+
+```sh
+make db-pull
+```
+
+The migration retained the stopped Fly machine and its 3 GiB volume for recovery.
+The former Fly deploy workflow is disabled. `fly.toml` remains a manual recovery
+configuration. Do not deploy it while Bunny serves staging.
+
 ## Deploy on Fly.io
 
-`fly.toml` in this repo deploys from source with one volume for the database and
-the uploads. Its header documents the one-time setup (app, volume, secrets,
+For a separate Fly installation, `fly.toml` deploys from source with one volume for
+the database and the uploads. Its header documents the one-time setup (app, volume, secrets,
 certificate).
 
-A push to `main` deploys itself, but only after CI passes. The deploy starts when
-the CI run of the same commit reports success, and it deploys that commit, not
-the head of the branch.
+Change the app name and domain before you use this file for a separate installation.
+This repository no longer deploys to Fly automatically.
 
 ### One machine, never two
 
