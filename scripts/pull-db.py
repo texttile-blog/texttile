@@ -9,6 +9,11 @@ import tempfile
 import urllib.request
 
 
+class NoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        raise ValueError("Backup downloads must not redirect. Use the direct HTTPS installation URL.")
+
+
 def download(url, token, target):
     """Replace the local snapshot only after SQLite verifies the download."""
     if not url.startswith("https://") or not token:
@@ -19,7 +24,8 @@ def download(url, token, target):
     with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as temporary:
         path = Path(temporary.name)
     try:
-        with urllib.request.urlopen(request, timeout=300) as response, path.open("wb") as output:
+        opener = urllib.request.build_opener(NoRedirects())
+        with opener.open(request, timeout=300) as response, path.open("wb") as output:
             shutil.copyfileobj(response, output)
         with path.open("rb") as downloaded:
             if downloaded.read(16) != b"SQLite format 3\0":
