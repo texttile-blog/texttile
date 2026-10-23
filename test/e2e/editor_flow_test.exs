@@ -54,6 +54,28 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
   end
 
   describe "publish" do
+    test "an empty live address can be restored after reloading the editor", %{conn: conn, kb: kb} do
+      article = draft!(kb, "Doors")
+      {:ok, article} = Articles.publish(article, kb)
+
+      conn =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> click("#edSlug")
+        |> press("#edSlug", "ControlOrMeta+a")
+        |> press("#edSlug", "Backspace")
+
+      eventually(fn -> Articles.get_article!(article.id).slug == nil end)
+
+      conn
+      |> open_editor(article.id)
+      |> type("#edSlug", "restored-doors")
+      |> assert_has("#slugHint", text: "restored-doors is live")
+
+      assert Articles.get_article!(article.id).slug == "restored-doors"
+    end
+
     test "one click publishes; the chevron menu unpublishes", %{conn: conn} do
       conn =
         conn

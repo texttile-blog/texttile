@@ -519,8 +519,8 @@ defmodule TexttileWeb.EditorLive do
     article = socket.assigns.article
 
     live_line =
-      if Visibility.live?(article) do
-        address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
+      if path = Visibility.live?(article) && Articles.public_path(article) do
+        address = TexttileWeb.Endpoint.host() <> path
 
         [
           gettext(
@@ -2930,9 +2930,11 @@ defmodule TexttileWeb.EditorLive do
   defp slug_hint(%{status: "draft"}), do: gettext("Free to change while the entry is a draft.")
 
   defp slug_hint(article) do
-    gettext("%{address} is live; changing it breaks old links.",
-      address: TexttileWeb.Endpoint.host() <> Articles.public_path(article)
-    )
+    if path = Articles.public_path(article) do
+      gettext("%{address} is live; changing it breaks old links.",
+        address: TexttileWeb.Endpoint.host() <> path
+      )
+    end
   end
 
   # The stamp outranks the status: a text that carried its email out
