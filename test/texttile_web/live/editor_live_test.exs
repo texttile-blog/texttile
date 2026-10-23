@@ -838,6 +838,25 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#tile-#{a.id} .cov")
     end
 
+    test "the preview picker offers every image, not only the first eight", %{
+      conn: conn,
+      user: user
+    } do
+      article = draft(user)
+
+      tiles =
+        for n <- 1..9 do
+          gallery_image(article, "p#{n}.jpg", "2024:05:01 1#{n}:00:00")
+        end
+
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      ninth = List.last(tiles)
+      view |> element("#coverRow button[phx-value-path='#{ninth.path}']") |> render_click()
+
+      assert Articles.get_article!(article.id).preview_path == ninth.path
+    end
+
     test "a forged preview path changes nothing", %{conn: conn, user: user} do
       article = draft(user)
       _a = gallery_image(article, "a.jpg", "2024:05:01 10:00:00")
