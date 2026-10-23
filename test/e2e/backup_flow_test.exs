@@ -42,9 +42,8 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         |> sign_in()
         |> open("/admin/settings")
         |> check("Serve a backup client", exact: false)
-        # the loud line is the save answering; its quiet stamp only
-        # returns after the flash has faded, and that is 2.6 seconds
-        |> assert_has("#savedSettings.fresh")
+        # the toast is the save answering
+        |> assert_has("#toast", text: "Saved")
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 

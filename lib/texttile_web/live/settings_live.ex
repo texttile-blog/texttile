@@ -2,8 +2,9 @@ defmodule TexttileWeb.SettingsLive do
   @moduledoc """
   Settings: what may change while you live with the site, and the
   accounts of everybody who runs it. Nothing here has a Save button:
-  every change applies the moment you make it, and the Last-saved line
-  keeps itself current. Ported from the round-13 prototype.
+  every change applies the moment you make it, a toast answers it, and
+  the Last-saved stamp keeps itself current. Ported from the round-13
+  prototype.
   """
   use TexttileWeb, :live_view
 

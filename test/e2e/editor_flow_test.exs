@@ -283,10 +283,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Versioned")
         |> type(".ed-cm .cm-content", "First words.")
-        # the loud state of the line is the save itself answering. The
-        # quiet stamp under it only returns when the flash has faded,
-        # and waiting for that costs the suite three seconds.
-        |> assert_has("#state.fresh")
+        # the toast is the save itself answering
+        |> assert_has("#toast", text: "Saved")
         |> click("#stateChev")
         |> click_button("#saveVersionRow", "Save version")
         |> assert_has("#stateLine", text: "Version saved")
@@ -305,7 +303,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       # pre-restore state is snapshotted first, so nothing is lost
       conn
       |> click("#versionsList > div:nth-of-type(2) button", "Restore this version")
-      |> assert_has("#state", text: "restored")
+      |> assert_has("#toast", text: "restored")
 
       assert [article] = Articles.list_articles()
       assert article.body == "First words."
@@ -413,7 +411,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> click_button("New entry")
       |> assert_has(".mdbar")
       |> upload("Put pictures and videos in the text", huge)
-      |> assert_has("#state", text: "over the 10 MB roof")
+      |> assert_has("#toast", text: "over the 10 MB roof")
       |> refute_has(".cm-content", text: "Uploading")
     end
 

@@ -72,8 +72,7 @@ defmodule TexttileWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="fixed left-4 bottom-4 z-[95] flex items-start gap-3 bg-paper px-4 py-3 text-[13px] max-w-[min(420px,calc(100vw-32px))]"
-      style="border-radius: var(--tt-radius-pop); border: 1px solid var(--tt-rule); box-shadow: 0 14px 34px rgb(var(--tt-shadow) / .2)"
+      class="toast flex items-start gap-3"
       {@rest}
     >
       <span :if={@kind == :error} class="dot text-julia mt-[6px]" aria-hidden="true"></span>

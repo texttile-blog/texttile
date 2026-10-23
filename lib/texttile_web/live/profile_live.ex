@@ -2,8 +2,8 @@ defmodule TexttileWeb.ProfileLive do
   @moduledoc """
   Your profile: your name, your address, your password, your open
   sessions. The displayed name has no Save button; it applies the
-  moment you type it, and the Last-saved line in the corner keeps
-  itself current. The address and the password are the two that ask
+  moment you type it, a toast answers it, and the Last-saved stamp in
+  the bar keeps itself current. The address and the password are the two that ask
   for the password first, because each of them owns the account.
   """
   use TexttileWeb, :live_view

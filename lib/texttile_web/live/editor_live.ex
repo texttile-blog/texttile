@@ -175,11 +175,11 @@ defmodule TexttileWeb.EditorLive do
 
   # The button answers for itself. A version is not a save of the text -
   # the text saved itself while it was typed - so the news belongs on
-  # the control that was pressed, not on the Last-saved line beside it.
+  # the control that was pressed, not on the Last-saved stamp beside it.
   # Save version is a row of the publish menu now, and a row that is
   # clicked closes its menu, so the answer cannot be written on the
   # control itself. It goes where every other answer of this screen
-  # goes: the state line.
+  # goes: the toast.
   def handle_event("save_version", _params, socket) do
     %{article: article, current_scope: scope} = socket.assigns
     socket = assign(socket, :state_menu, false)
