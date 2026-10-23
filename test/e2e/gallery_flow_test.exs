@@ -163,12 +163,26 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == b.path end)
 
       # the first picture speaks again
-      conn
-      |> uncheck("Preview image")
-      |> assert_has("#tile-#{a.id} .cov")
-      |> assert_has("#lbPreview:not(:checked)")
+      conn =
+        conn
+        |> uncheck("Preview image")
+        |> assert_has("#tile-#{a.id} .cov")
+        |> assert_has("#lbPreview:not(:checked)")
 
       eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == nil end)
+
+      # the first picture is the preview whether ticked or not: the box
+      # stays with the server and does not unstick
+      conn
+      |> click_button("Previous tile")
+      |> assert_has("#lbName", text: "pier.jpg")
+      |> assert_has("#lbPreview:checked")
+      |> uncheck("Preview image")
+      |> assert_has("#lbPreview:checked")
+      |> assert_has("#tile-#{a.id} .cov")
+
+      # the lightbox's untick asked to choose it, and that stays
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == a.path end)
     end
 
     test "descriptions autosave, follow remote edits, and clear", %{conn: conn, kb: kb} do

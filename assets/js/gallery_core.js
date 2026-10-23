@@ -740,11 +740,16 @@ export class Gallery {
     })
 
     // the same event as the picker in the settings: a tick chooses,
-    // untick lets the first picture speak again. The server's answer
-    // re-renders the tiles, and the box follows them in paint().
-    root.querySelector("#lbPreview").addEventListener("change", () => {
+    // untick lets the first picture speak again. The box only ever
+    // shows what the server says: it springs back here, and the
+    // server's answer re-renders the tiles, which paint() follows.
+    // Unticking the first picture changes nothing, and nothing moves.
+    const preview = root.querySelector("#lbPreview")
+    preview.addEventListener("change", () => {
       const data = this.lb && this.tileData(this.lb.id)
-      if (data) this.hook.pushEvent("set_preview", {path: data.path})
+      if (!data) return
+      preview.checked = data.preview
+      this.hook.pushEvent("set_preview", {path: data.path})
     })
 
     const description = root.querySelector("#lbDescription")
