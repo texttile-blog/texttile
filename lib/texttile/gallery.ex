@@ -253,12 +253,13 @@ defmodule Texttile.Gallery do
 
   # The one way a row enters the gallery: the stored file is probed,
   # the row inserted. Without a date the picture speaks for itself
-  # (EXIF), and the fallback is this very moment. A video says nothing
-  # here; its size comes with the conversion, and so does its poster.
+  # (EXIF), and the fallback is this very moment. A video says no date;
+  # its poster comes with the conversion.
   defp insert_stored(article, relative, filename, gallery_date, description \\ "") do
     {taken, width, height} =
       if Texttile.Videos.video?(relative) do
-        {nil, nil, nil}
+        {width, height} = Texttile.Videos.dimensions(Uploads.absolute(relative))
+        {nil, width, height}
       else
         probe(Uploads.absolute(relative))
       end

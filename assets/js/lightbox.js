@@ -131,8 +131,7 @@ class DialogLightbox {
       <div class="lb-bar-a">
         <span id="mlCount" class="num"></span>
         <span class="sp"></span>
-        <a id="mlOrig" class="lb-abtn plain" target="_blank" rel="noopener"
-           ><span class="lb-word">${esc(t("Open original"))}</span><span class="lb-word-s">${esc(t("Original"))}</span></a>
+        <a id="mlOrig" class="lb-abtn plain" target="_blank" rel="noopener">${esc(t("Original"))}</a>
         <button type="button" id="mlClose" class="lb-abtn">${esc(t("Close"))}</button>
       </div>
       <div class="lb-stage" id="mlStage">

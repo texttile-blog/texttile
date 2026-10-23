@@ -130,6 +130,19 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
   end
 
   describe "the lightbox" do
+    test "the lightbox names the pixels and the weight of the original", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      a = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> click("#tile-#{a.id}")
+      |> assert_has("#lbName", text: "pier.jpg")
+      |> assert_has("#lbMeta", text: "1 of 1 · 40 × 20 · ")
+      |> assert_has("#lbMeta", text: " KB")
+    end
+
     test "descriptions autosave, follow remote edits, and clear", %{conn: conn, kb: kb} do
       article = draft!(kb)
       image = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
@@ -252,7 +265,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> open_editor(article.id)
       |> click("#tileServer [data-id='#{a.id}']")
       |> assert_has("#lbRoot")
-      |> click_button("Delete tile")
+      |> click_button("#lbDelete", "Delete")
       |> assert_has("#undoBar", text: "pier.jpg")
       |> assert_has("#tileCount", text: "1 tile")
       |> assert_has("#lbName", text: "gull.jpg")

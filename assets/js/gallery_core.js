@@ -632,6 +632,8 @@ export class Gallery {
       full: t.dataset.full,
       video: t.dataset.video,
       original: t.dataset.original,
+      pixels: t.dataset.pixels,
+      weight: t.dataset.weight,
     }
   }
 
@@ -669,15 +671,12 @@ export class Gallery {
     // would pop a picker over the picture on a phone
     root.tabIndex = -1
 
-    // aria-label on the delete button: its name stays whole for a
-    // screen reader whatever the width, only the eye sees the short
-    // word on a phone
     root.innerHTML = `
       <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <button type="button" id="lbDelete" class="lb-abtn danger" aria-label="${esc(t("Delete tile"))}"><span class="lb-word">${esc(t("Delete tile"))}</span><span class="lb-word-s">${esc(t("Delete"))}</span></button>
-        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">${esc(t("Open original"))}</span><span class="lb-word-s">${esc(t("Original"))}</span></a>
+        <button type="button" id="lbDelete" class="lb-abtn plain danger">${esc(t("Delete"))}</button>
+        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener">${esc(t("Original"))}</a>
         <button type="button" id="lbClose" class="lb-abtn" aria-label="${esc(t("Close"))}">${esc(t("Close"))}</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
@@ -761,13 +760,21 @@ export class Gallery {
     orig.setAttribute("download", data.filename)
     this.root.querySelector("#lbName").textContent = data.filename
 
+    // the facts of the original follow the place in the gallery; a
+    // video that is not probed yet says nothing about its pixels
     this.root.querySelector("#lbMeta").textContent =
       " · " +
-      t("%{date} · %{index} of %{count}", {
-        date: data.date.slice(0, 10),
-        index: data.index + 1,
-        count: data.count,
-      })
+      [
+        t("%{date} · %{index} of %{count}", {
+          date: data.date.slice(0, 10),
+          index: data.index + 1,
+          count: data.count,
+        }),
+        data.pixels,
+        data.weight,
+      ]
+        .filter(Boolean)
+        .join(" · ")
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {

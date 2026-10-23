@@ -8,11 +8,13 @@ defmodule Texttile.VideoFixtures do
   @doc """
   Writes a one second test video of the given size and answers its
   path. `seconds` and `extension` let a test ask for a longer clip or
-  another container.
+  another container, `rotate` for the turn flag a phone writes instead
+  of turning the frames.
   """
   def video_file(width \\ 640, height \\ 480, opts \\ []) do
     seconds = Keyword.get(opts, :seconds, 1)
     extension = Keyword.get(opts, :extension, ".mp4")
+    rotate = Keyword.get(opts, :rotate)
     path = Path.join(System.tmp_dir!(), "clip-#{System.unique_integer([:positive])}#{extension}")
 
     {_out, 0} =
@@ -37,7 +39,23 @@ defmodule Texttile.VideoFixtures do
         stderr_to_stdout: true
       )
 
-    path
+    if rotate, do: turn(path, rotate), else: path
+  end
+
+  # Writes the turn flag the way a phone does: the frames stay as they
+  # are, the container says how to show them.
+  defp turn(path, degrees) do
+    extension = Path.extname(path)
+    turned = String.replace_suffix(path, extension, "-turned#{extension}")
+
+    {_out, 0} =
+      System.cmd(
+        "ffmpeg",
+        ~w(-nostdin -hide_banner -loglevel error -y -display_rotation #{degrees} -i #{path} -c copy #{turned}),
+        stderr_to_stdout: true
+      )
+
+    turned
   end
 
   @doc "A file that ends in .mp4 and holds no video at all."

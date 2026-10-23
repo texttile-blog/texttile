@@ -541,8 +541,20 @@ defmodule Texttile.Videos do
     end
   end
 
-  # The size the reader will see, read off the finished file, so no
-  # rotation flag has to be understood here.
+  @doc """
+  The size of a stored video as it is shown: a phone keeps its frames
+  on their side and writes a turn flag, and the flag is honoured here.
+  `{nil, nil}` when ffprobe is missing or the file holds no picture.
+  """
+  def dimensions(path) do
+    case probe(path) do
+      {:ok, %{width: width, height: height}} -> {width, height}
+      {:error, _reason} -> {nil, nil}
+    end
+  end
+
+  # The size the viewer will see. The finished file carries no turn
+  # flag, an original from a phone usually does.
   defp probe(path) do
     args = [
       "-v",
@@ -550,7 +562,7 @@ defmodule Texttile.Videos do
       "-select_streams",
       "v:0",
       "-show_entries",
-      "stream=width,height",
+      "stream=width,height:stream_side_data=rotation",
       "-of",
       "default=noprint_wrappers=1",
       path
@@ -562,7 +574,7 @@ defmodule Texttile.Videos do
 
         with {:ok, width} <- integer(fields["width"]),
              {:ok, height} <- integer(fields["height"]) do
-          {:ok, %{width: width, height: height}}
+          {:ok, turned(width, height, fields["rotation"])}
         else
           _ -> {:error, "the converted file has no picture"}
         end
@@ -586,6 +598,15 @@ defmodule Texttile.Videos do
       end
     end)
     |> Map.new()
+  end
+
+  # A quarter turn swaps the edges. ffprobe writes the turn as -90, 90
+  # or 270, at times with a fraction behind it.
+  defp turned(width, height, rotation) do
+    case integer(rotation) do
+      {:ok, degrees} when rem(abs(degrees), 180) == 90 -> %{width: height, height: width}
+      _ -> %{width: width, height: height}
+    end
   end
 
   defp integer(nil), do: :error
