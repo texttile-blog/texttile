@@ -62,16 +62,22 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
   end
 
   # Waits until the page has called its line quiet with the mark on,
-  # however briefly that stood.
-  defp said_quiet(conn) do
-    eventually(
-      fn ->
-        Enum.any?(line_said(conn), &(String.starts_with?(&1, "marked") and &1 =~ "quiet"))
-      end,
-      5_000
-    )
+  # however briefly that stood. A failure shows the whole record, so a
+  # red run on CI says what the page said instead of what it did not.
+  defp said_quiet(conn, tries \\ 50) do
+    said = line_said(conn)
 
-    conn
+    cond do
+      Enum.any?(said, &(String.starts_with?(&1, "marked") and &1 =~ "quiet")) ->
+        conn
+
+      tries == 0 ->
+        flunk("the page never called its line quiet, it said: #{inspect(said)}")
+
+      true ->
+        Process.sleep(100)
+        said_quiet(conn, tries - 1)
+    end
   end
 
   defp line_said(conn) do
