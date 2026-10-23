@@ -32,28 +32,63 @@ jobs:
        github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write on contents sets the version tag, read on pull requests
+      # finds the label that says how far to count
+      contents: write
       packages: write
+      pull-requests: read
     outputs:
       version: ${{ steps.version.outputs.exact }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.COMMIT }}
+          # the version comes from the tags, so the checkout needs them
+          fetch-depth: 0
 
-      # The version in mix.exs is the version of the build. Settings
-      # shows this number, and the image tags carry it.
-      - name: Read the version
+      # The version of a build is the Git tag v<version> on its commit,
+      # and this step sets it. No pull request carries a number: every
+      # build counts one step up from the newest tag, the patch number
+      # unless the pull request is labeled "minor" or "major". A commit
+      # that is tagged already keeps its number, so a re-run of a failed
+      # build finishes the same version instead of burning the next one.
+      # Settings shows this number, and the image tags carry it.
+      - name: Decide the version
         id: version
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          version="$(sed -n 's/^[[:space:]]*version: "\([^"]*\)",/\1/p' mix.exs)"
+          pattern='v[0-9]*.[0-9]*.[0-9]*'
+          version="$(git tag --list "$pattern" --points-at "$COMMIT" --sort=-v:refname | head -n 1)"
 
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "mix.exs holds no usable version: '$version'"
-            exit 1
+          if [[ -n "$version" ]]; then
+            echo "Commit $COMMIT carries $version already."
+          else
+            last="$(git tag --list "$pattern" --sort=-v:refname | head -n 1)"
+            if [[ ! "$last" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              echo "No version tag to count from: '$last'"
+              exit 1
+            fi
+            major="${BASH_REMATCH[1]}" minor="${BASH_REMATCH[2]}" patch="${BASH_REMATCH[3]}"
+
+            # The pull request the commit was merged from, if any. A
+            # direct push has none and counts as a repair.
+            labels="$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT/pulls" --jq '.[].labels[].name')"
+            if grep -qx major <<<"$labels"; then
+              version="v$((major + 1)).0.0"
+            elif grep -qx minor <<<"$labels"; then
+              version="v$major.$((minor + 1)).0"
+            else
+              version="v$major.$minor.$((patch + 1))"
+            fi
+
+            echo "$last -> $version"
+            git tag "$version" "$COMMIT"
+            git push origin "$version"
           fi
 
+          version="${version#v}"
           echo "exact=$version" >> "$GITHUB_OUTPUT"
           echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
           echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
@@ -64,9 +99,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # The exact tag never moves, so it must not exist yet. A merge
-      # that keeps the version of the last one stops here: raise the
-      # version in mix.exs, as every pull request must.
+      # The exact tag never moves, so it must not exist yet. A re-run
+      # of a commit whose image is published stops here; a re-run whose
+      # build failed before the push gets past it and finishes.
       #
       # Only the registry's own word for "there is no such tag" lets the
       # build go on. Any other failure - the registry is down, the login
@@ -78,7 +113,7 @@ jobs:
           version="${{ steps.version.outputs.exact }}"
 
           if said="$(docker buildx imagetools inspect "$IMAGE:$version" 2>&1)"; then
-            echo "Version $version is published already. Raise the version in mix.exs."
+            echo "Version $version is published already."
             exit 1
           fi
 
@@ -92,6 +127,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            TEXTTILE_VERSION=${{ steps.version.outputs.exact }}
           # Two tags stand still, three move: the exact version and the
           # commit name one build for good, while the minor, the major
           # and latest follow the newest build that fits them.
@@ -102,9 +139,9 @@ jobs:
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ env.COMMIT }}
 
-  # The release is the version's public record on GitHub: the tag
-  # v<version> on the commit the image was built from, and notes that
-  # name the pull requests since the release before. It is a job of its
+  # The release is the version's public record on GitHub: it stands on
+  # the tag v<version> the publish set, and its notes name the pull
+  # requests since the release before. It is a job of its
   # own so a failed release does not read as a failed image, and
   # "re-run failed jobs" repeats only this part while the image check
   # above stops a full re-run.

@@ -248,13 +248,15 @@ An empty database is a bad test. Work from real data instead of pointing at it.
   for anything smaller.
 - Branch names, commits and pull request text are English. Add no co-author and
   no generation trailer.
-- Raise the version in `mix.exs` in the same pull request, before you open it.
-  Read the version on `main`, not on your branch, and raise it by one step: the
-  patch number for a repair or a small change, the minor number for a new
-  capability, the major number when behavior, stored data or configuration
-  breaks. Never lower it and never skip a step. If another pull request takes
-  your number first, raise yours again on top of theirs. Settings shows this
-  number, and it is the only mark of which build runs.
+- Never write a version number into the code. The publish counts the version
+  one step up at every merge, from the newest `v<version>` tag, and sets the
+  next tag itself. You say how far it counts with one label on the pull
+  request: none for a repair or a small change (the patch number), `minor` for
+  a new capability, `major` when behavior, stored data or configuration breaks.
+  Set it when you open the pull request, with `--label minor` on
+  `gh pr create` or later with `gh pr edit --add-label minor`, and check it
+  once more before the merge. Settings shows the number of the build, and it
+  is the only mark of which build runs.
 - Rebase onto the latest `main` before you open a pull request.
 - Open a normal pull request, never a draft: a draft gets no review bot. Title in
   plain language, body with the problem in a sentence or two and then how you

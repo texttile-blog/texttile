@@ -2,7 +2,7 @@ defmodule Texttile.VersionTest do
   use ExUnit.Case, async: true
 
   describe "version/0" do
-    test "is the number that stands in mix.exs" do
+    test "is the number the build was given" do
       assert Texttile.version() == Mix.Project.config()[:version]
     end
 
