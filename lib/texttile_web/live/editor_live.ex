@@ -326,6 +326,10 @@ defmodule TexttileWeb.EditorLive do
 
   ## Events · article settings
 
+  # Mount already loaded the saved settings. A reconnect must not replay
+  # an old tab's values over changes another admin saved while it was away.
+  def handle_event("recover_settings", _params, socket), do: {:noreply, socket}
+
   def handle_event("settings_changed", %{"_target" => ["publish_date" | _]} = params, socket) do
     %{article: article, current_scope: scope} = socket.assigns
     was = article.status
@@ -519,8 +523,8 @@ defmodule TexttileWeb.EditorLive do
     article = socket.assigns.article
 
     live_line =
-      if Visibility.live?(article) do
-        address = TexttileWeb.Endpoint.host() <> Articles.public_path(article)
+      if path = Visibility.live?(article) && Articles.public_path(article) do
+        address = TexttileWeb.Endpoint.host() <> path
 
         [
           gettext(
@@ -2107,6 +2111,7 @@ defmodule TexttileWeb.EditorLive do
             class="mt-[34px]"
             phx-change="settings_changed"
             phx-submit="settings_changed"
+            phx-auto-recover="recover_settings"
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">{gettext("Article settings")}</span>
@@ -2930,9 +2935,11 @@ defmodule TexttileWeb.EditorLive do
   defp slug_hint(%{status: "draft"}), do: gettext("Free to change while the entry is a draft.")
 
   defp slug_hint(article) do
-    gettext("%{address} is live; changing it breaks old links.",
-      address: TexttileWeb.Endpoint.host() <> Articles.public_path(article)
-    )
+    if path = Articles.public_path(article) do
+      gettext("%{address} is live; changing it breaks old links.",
+        address: TexttileWeb.Endpoint.host() <> path
+      )
+    end
   end
 
   # The stamp outranks the status: a text that carried its email out
