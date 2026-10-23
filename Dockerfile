@@ -66,6 +66,12 @@ COPY assets assets
 # stays out of the image
 RUN npm --prefix assets ci --omit=dev
 
+# The version of this build, set by the publish workflow from the Git
+# tag. It is declared this late so a new number does not throw away the
+# cached dependency layers above; only the project itself carries it.
+ARG TEXTTILE_VERSION=0.0.0
+ENV TEXTTILE_VERSION="${TEXTTILE_VERSION}"
+
 # Compile the release
 RUN mix compile
 

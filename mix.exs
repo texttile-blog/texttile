@@ -4,7 +4,7 @@ defmodule Texttile.MixProject do
   def project do
     [
       app: :texttile,
-      version: "3.2.2",
+      version: version(),
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -14,6 +14,11 @@ defmodule Texttile.MixProject do
       listeners: [Phoenix.CodeReloader]
     ]
   end
+
+  # The version of a build is the Git tag the publish workflow sets on
+  # the merge commit, handed in as TEXTTILE_VERSION. No pull request
+  # raises it. A development machine and the test suite run as 0.0.0.
+  defp version, do: System.get_env("TEXTTILE_VERSION", "0.0.0")
 
   # Configuration for the OTP application.
   #

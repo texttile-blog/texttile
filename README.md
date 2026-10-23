@@ -86,8 +86,8 @@ docker rm -f texttile
 
 ### Which tag to run
 
-Every build carries the version from `mix.exs`, and each build gets five tags.
-For version 3.0.1 they are:
+Every build carries a version, and each build gets five tags. For version 3.0.1
+they are:
 
 | Tag      | Points at                             |
 | -------- | ------------------------------------- |
@@ -102,16 +102,18 @@ later build with a fitting number takes the tag over, which is what these two
 tags are for. Run `3` to get repairs and new capabilities without a break, `3.0`
 to get repairs only, and `3.0.1` where nothing may move until you move it.
 
-A build is published only when the version rises, and only after CI passes. A
-merge that keeps the version of the build before it publishes nothing and
-reports a failure. The publish starts when the CI run of the same commit reports
-success, and a red run publishes nothing. An exact tag never moves, so a version
-that carried a broken build stays broken: raise the version in `mix.exs` and
-merge the repair.
+Every merge to `main` that passes CI becomes a build, and every build counts
+one step up from the build before it. Nobody writes the number into the code:
+the publish reads the newest Git tag `v<version>`, raises the patch number, or
+the minor or major number when the merged pull request carries the label
+`minor` or `major`, and sets the new tag on the merge commit before it builds.
+The publish starts when the CI run of the same commit reports success, and a
+red run publishes nothing. An exact tag never moves, so a version that carried
+a broken build stays broken: merge the repair, and it gets the next number.
 
-Each published build also gets a GitHub release. The release tags the commit the
-image was built from as `v<version>`, shows the pull command, and lists the pull
-requests since the release before.
+Each published build also gets a GitHub release. The release stands on the
+`v<version>` tag, shows the pull command, and lists the pull requests since the
+release before.
 
 ## Configuration
 
