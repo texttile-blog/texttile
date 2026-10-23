@@ -136,13 +136,20 @@ if (document.body.dataset.count) {
   // A plain click opens the lightbox; a click with a modifier (or the
   // middle button) stays the link it looks like and fetches the
   // original in its own tab.
-  tiles.forEach((tile, i) =>
-    tile.addEventListener("click", (e) => {
+  function openOn(link, i) {
+    link.addEventListener("click", (e) => {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
       open(i);
-    })
-  );
+    });
+  }
+  tiles.forEach(openOn);
+
+  // The square at the head of the text is one of the tiles shown
+  // again: it opens the lightbox on that tile, not on a copy of it.
+  const hero = document.getElementById("preview");
+  const heroAt = hero ? tiles.findIndex((tile) => tile.href === hero.href) : -1;
+  if (heroAt >= 0) openOn(hero, heroAt);
   document.getElementById("lbClose").addEventListener("click", close);
   document.getElementById("lbPrev").addEventListener("click", () => nav(-1));
   document.getElementById("lbNext").addEventListener("click", () => nav(1));

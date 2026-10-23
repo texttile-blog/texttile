@@ -158,6 +158,25 @@ defmodule Texttile.Gallery do
     end
   end
 
+  @doc """
+  The square at the head of a post: the chosen preview the way the
+  reader page draws it, or nil without one. `still` is the picture to
+  show, `link` the file a click leads to - the film behind a video,
+  the picture itself otherwise. That is the address the tile or the
+  picture in the text carries, which is how the lightbox finds the
+  tile the square stands for.
+  """
+  def hero(article, gallery_paths) do
+    case effective_preview(article, gallery_paths) do
+      nil ->
+        nil
+
+      path ->
+        %{still: still, film: film} = Texttile.Videos.stills([path])[path]
+        %{still: still, film: film, link: film || path}
+    end
+  end
+
   defp inline_paths(body), do: Texttile.Articles.Body.upload_paths(body)
 
   ## Adding
