@@ -64,7 +64,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     |> assert_has("#dialog", text: "Publish and email 2 subscribers?")
     |> click_button("#dialog-ok", "Publish and send")
     |> assert_has("#stateWord", text: "Published")
-    |> assert_has("#state", text: "the mail is on its way")
+    |> assert_has("#toast", text: "the mail is on its way")
     |> assert_has("#notifyOpt", text: "went out on")
 
     mails =
