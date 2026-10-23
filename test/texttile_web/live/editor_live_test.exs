@@ -47,6 +47,17 @@ defmodule TexttileWeb.EditorLiveTest do
       view |> element("#text-form") |> render_change(%{title: "Fourteen doors"})
       assert Articles.get_article!(article.id).title == "Fourteen doors"
       assert has_element?(view, "#crumb", "Fourteen doors")
+      assert page_title(view) =~ "Fourteen doors"
+    end
+
+    test "names a fresh entry Untitled in the tab until it has a title", %{conn: conn, user: user} do
+      article = draft(user, %{title: "", body: ""})
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      assert page_title(view) =~ "Untitled"
+      view |> element("#text-form") |> render_change(%{title: "Doors"})
+      assert page_title(view) =~ "Doors"
+      refute page_title(view) =~ "Untitled"
     end
 
     test "autosaves the body from the editor hook", %{conn: conn, user: user} do

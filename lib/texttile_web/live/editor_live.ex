@@ -84,7 +84,7 @@ defmodule TexttileWeb.EditorLive do
         socket
       end
 
-    {:ok, assign(socket, :page_title, Articles.display_title(article))}
+    {:ok, socket}
   end
 
   # The Comments overview jumps straight into a text's Comments tab;
@@ -1276,11 +1276,12 @@ defmodule TexttileWeb.EditorLive do
   # The entry, and with it the one question the whole bar hangs on:
   # does the working copy say something the readers have not been given
   # yet? Every path that writes the entry comes through here, so the
-  # word in the bar, the main button and the menu can never disagree
-  # with the text on the screen.
+  # word in the bar, the main button, the menu and the browser tab can
+  # never disagree with the text on the screen.
   defp assign_article(socket, article) do
     socket
     |> assign(:article, article)
+    |> assign(:page_title, Articles.display_title(article))
     |> assign(:pending, Articles.unpublished_changes?(article))
   end
 
