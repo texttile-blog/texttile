@@ -186,6 +186,32 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(id="lb")
     end
 
+    # The chosen preview stands once more at the head of the post, as
+    # a square the size of a tile, and its link is the tile's link, so
+    # the lightbox can open on that tile.
+    test "shows the chosen preview as a square above the title", %{conn: conn} do
+      article = published_post(title: "Square", slug: "square", publish_date: ~D[2026-03-01])
+      {:ok, _first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+      {:ok, chosen} = Texttile.Gallery.add_file(article, jpg_fixture(), "gull.jpg")
+      {:ok, _} = Texttile.Articles.update_settings(article, %{preview_path: chosen.path})
+
+      html = conn |> get(~p"/2026/03/01/square") |> html_response(200)
+
+      assert attribute(html, "#preview", "href") == ["/uploads/#{chosen.path}"]
+      assert attribute(html, "#preview img", "src") == ["/renditions/640/#{chosen.path}"]
+      # the square comes before the title
+      assert :binary.match(html, ~s(id="preview")) < :binary.match(html, ~s(class="f-h1"))
+    end
+
+    test "a post without a picture and a page with one get no square", %{conn: conn} do
+      published_post(title: "Bare", slug: "bare", publish_date: ~D[2026-03-01])
+      page = published_page(title: "About", slug: "about-me", publish_date: ~D[2026-03-01])
+      {:ok, _} = Texttile.Gallery.add_file(page, jpg_fixture(), "pier.jpg")
+
+      refute conn |> get(~p"/2026/03/01/bare") |> html_response(200) =~ ~s(id="preview")
+      refute conn |> get(~p"/about-me") |> html_response(200) =~ ~s(id="preview")
+    end
+
     test "a tile of the wide grid fetches the card size", %{conn: conn} do
       article = published_post(title: "Grid", slug: "grid", publish_date: ~D[2026-03-01])
 

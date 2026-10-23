@@ -20,6 +20,20 @@
   </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
+      <%!-- the chosen preview once more, at the head of the post: a
+           square the size of a tile, so the page opens the way its card
+           in the list does. It links the file the tile links, and the
+           script turns the click into the lightbox, on that tile. --%>
+      <a
+        :if={@hero}
+        id="preview"
+        class="hero"
+        href={Images.url(@hero.link, :original)}
+        aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
+      >
+        <img src={Images.url(@hero.still, :card)} alt="" />
+        <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
+      </a>
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
       <%!-- the line under the title: the day, the tags, and for the
            admin who is signed in the way straight into the admin area.
