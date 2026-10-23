@@ -2125,9 +2125,7 @@ defmodule TexttileWeb.EditorLive do
                     </span>
                   <% else %>
                     <button
-                      :for={
-                        {path, index} <- @preview_candidates |> Enum.take(8) |> Enum.with_index(1)
-                      }
+                      :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
                       type="button"
                       class={["cover-opt", @effective_preview == path && "on"]}
                       style={tile_bg((@media[path] && @media[path].still) || path)}
@@ -2136,11 +2134,6 @@ defmodule TexttileWeb.EditorLive do
                       aria-label={gettext("Use image %{index} as the preview image", index: index)}
                     >
                     </button>
-                    <span :if={length(@preview_candidates) > 8} class="note">
-                      {gettext("+%{count} more in the gallery",
-                        count: length(@preview_candidates) - 8
-                      )}
-                    </span>
                   <% end %>
                 </div>
                 <div class="hint">
