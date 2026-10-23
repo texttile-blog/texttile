@@ -32,14 +32,63 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
   # one, only faster.
   @fast_clocks "window.__lineTiming = {tick: 500, ask: 400, quiet: 1200, revive: 1000, late: 400}"
 
+  # The quiet mark stands for one tick. The watch finds the silence,
+  # says so and builds the line again in the same breath, and the next
+  # tick finds a line that answers. A browser assertion looks only once
+  # a second by then and walks past those 500 ms, which is what a slow
+  # CI runner did. So the page keeps a record of what its line said,
+  # and the tests read the record instead of racing the bar. Nothing in
+  # the product knows about it.
+  @record """
+  window.__lineSaid = [];
+  (function record() {
+    const html = document.documentElement;
+    if (!html) return setTimeout(record, 0);
+    new MutationObserver(() => {
+      const said = (html.classList.contains("phx-late") ? "marked · " : "") + html.getAttribute("data-line");
+      if (window.__lineSaid.at(-1) !== said) window.__lineSaid.push(said);
+    }).observe(html, {attributes: true, attributeFilter: ["class", "data-line"]});
+  })();
+  """
+
   defp fast_clocks(conn) do
     {:ok, _} =
       PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
-        source: @fast_clocks,
+        source: @fast_clocks <> ";" <> @record,
         timeout: 5_000
       )
 
     conn
+  end
+
+  # Waits until the page has called its line quiet with the mark on,
+  # however briefly that stood. A failure shows the whole record, so a
+  # red run on CI says what the page said instead of what it did not.
+  defp said_quiet(conn, tries \\ 50) do
+    said = line_said(conn)
+
+    cond do
+      Enum.any?(said, &(String.starts_with?(&1, "marked") and &1 =~ "quiet")) ->
+        conn
+
+      tries == 0 ->
+        flunk("the page never called its line quiet, it said: #{inspect(said)}")
+
+      true ->
+        Process.sleep(100)
+        said_quiet(conn, tries - 1)
+    end
+  end
+
+  defp line_said(conn) do
+    {:ok, said} =
+      PlaywrightEx.Frame.evaluate(conn.frame_id,
+        expression: "() => window.__lineSaid",
+        is_function: true,
+        timeout: 5_000
+      )
+
+    said
   end
 
   describe "the transport" do
@@ -131,8 +180,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> open_editor(article.id)
       |> refute_has("#stateOffline")
       |> evaluate(@cut, [is_function: true], &assert(&1 == true))
-      |> assert_has("#stateOffline", text: "Not saved", timeout: 5_000)
-      |> assert_has("html[data-line*='quiet']", timeout: 5_000)
+      |> said_quiet()
     end
 
     test "and builds the line again, without anybody reloading", %{conn: conn, kb: kb} do
@@ -143,7 +191,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> sign_in()
       |> open_editor(article.id)
       |> evaluate(@cut, [is_function: true], &assert(&1 == true))
-      |> assert_has("#stateOffline", timeout: 5_000)
+      |> said_quiet()
       # nobody reloads and nobody clicks: the page takes the dead line
       # down and builds it again, and says so when it stands.
       |> assert_has("#state", text: "Last saved", timeout: 10_000)
@@ -175,7 +223,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       conn
       |> evaluate(@cut, [is_function: true], &assert(&1 == true))
       |> type(".ed-cm .cm-content", " and after it went")
-      |> assert_has("#stateOffline", timeout: 5_000)
+      |> said_quiet()
       |> assert_has("#state", text: "Last saved", timeout: 10_000)
       |> assert_has(".ed-cm", text: "Before the line went and after it went")
       # one more keystroke on the line that stands, and the words that
