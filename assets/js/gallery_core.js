@@ -632,6 +632,8 @@ export class Gallery {
       full: t.dataset.full,
       video: t.dataset.video,
       original: t.dataset.original,
+      path: t.dataset.path,
+      preview: "preview" in t.dataset,
       pixels: t.dataset.pixels,
       weight: t.dataset.weight,
     }
@@ -702,6 +704,8 @@ export class Gallery {
             </span>
             <span class="note pb-[6px]" id="lbSaved">${esc(t("The date saves itself and sorts the gallery."))}</span>
           </div>
+          <label class="opt mt-3"><input type="checkbox" id="lbPreview"> <span>${esc(t("Preview image"))}</span></label>
+          <p class="note mt-1">${esc(t("Used in the entries grid, on the front page and in link previews."))}</p>
         </div>
       </div>`
 
@@ -733,6 +737,14 @@ export class Gallery {
           this.savedNote(t("That date could not be read"))
         }
       })
+    })
+
+    // the same event as the picker in the settings: a tick chooses,
+    // untick lets the first picture speak again. The server's answer
+    // re-renders the tiles, and the box follows them in paint().
+    root.querySelector("#lbPreview").addEventListener("change", () => {
+      const data = this.lb && this.tileData(this.lb.id)
+      if (data) this.hook.pushEvent("set_preview", {path: data.path})
     })
 
     const description = root.querySelector("#lbDescription")
@@ -785,6 +797,8 @@ export class Gallery {
     } else if (!this.pendingDescriptions.has(lb.id)) {
       this.root.querySelector("#lbDescription").value = data.description
     }
+
+    this.root.querySelector("#lbPreview").checked = data.preview
 
     this.root.querySelectorAll("#lbStage video, #lbImg").forEach(art =>
       art.setAttribute("aria-label", data.description || data.filename)

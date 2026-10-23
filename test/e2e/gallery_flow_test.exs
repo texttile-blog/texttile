@@ -143,6 +143,34 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> assert_has("#lbMeta", text: " KB")
     end
 
+    test "the lightbox picks the preview image and lets it go again", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      a = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+      b = seed!(article, "gull.jpg", "2024:05:01 12:00:00")
+
+      conn =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> assert_has("#tile-#{a.id} .cov")
+        |> click("#tile-#{b.id}")
+        |> assert_has("#lbPreview:not(:checked)")
+        |> check("Preview image")
+        |> assert_has("#lbPreview:checked")
+        |> assert_has("#tile-#{b.id} .cov")
+        |> refute_has("#tile-#{a.id} .cov")
+
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == b.path end)
+
+      # the first picture speaks again
+      conn
+      |> uncheck("Preview image")
+      |> assert_has("#tile-#{a.id} .cov")
+      |> assert_has("#lbPreview:not(:checked)")
+
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == nil end)
+    end
+
     test "descriptions autosave, follow remote edits, and clear", %{conn: conn, kb: kb} do
       article = draft!(kb)
       image = seed!(article, "pier.jpg", "2024:05:01 10:00:00")

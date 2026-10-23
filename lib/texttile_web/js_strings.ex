@@ -51,6 +51,8 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Description"),
     gettext_noop("Shown as the image description and caption. Saves automatically."),
     gettext_noop("The date saves itself and sorts the gallery."),
+    gettext_noop("Preview image"),
+    gettext_noop("Used in the entries grid, on the front page and in link previews."),
     gettext_noop("That date could not be read"),
     gettext_noop("Saved · just now"),
     gettext_noop("Loading the full size…"),

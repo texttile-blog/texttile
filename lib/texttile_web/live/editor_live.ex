@@ -2057,6 +2057,8 @@ defmodule TexttileWeb.EditorLive do
                     @media[image.path].film && Images.url(@media[image.path].film, :original)
                   }
                   data-original={Images.url(image.path, :original)}
+                  data-path={image.path}
+                  data-preview={@effective_preview == image.path && "1"}
                   data-pixels={image.width && "#{image.width} × #{image.height}"}
                   data-weight={weight(image.path)}
                   title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}

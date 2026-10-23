@@ -176,7 +176,7 @@ msgstr[1] ""
 msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{lead}%{password}\nYou get this mail because this address is on the %{site} list.\nTo leave the list, open this link:\n\n%{unsubscribe}\n"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2951
+#: lib/texttile_web/live/editor_live.ex:2953
 #, elixir-autogen, elixir-format
 msgid "%{address} is live; changing it breaks old links."
 msgstr ""
@@ -186,13 +186,13 @@ msgstr ""
 msgid "%{browser} · signed in %{when}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2876
+#: lib/texttile_web/live/editor_live.ex:2878
 #, elixir-autogen, elixir-format
 msgid "%{count} failed"
 msgstr ""
 
 #: lib/texttile_web/js_strings.ex:37
-#: lib/texttile_web/live/editor_live.ex:2875
+#: lib/texttile_web/live/editor_live.ex:2877
 #, elixir-autogen, elixir-format
 msgid "%{count} on the way"
 msgstr ""
@@ -212,7 +212,7 @@ msgstr ""
 msgid "%{created} created · %{updated} updated"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:57
+#: lib/texttile_web/js_strings.ex:59
 #, elixir-autogen, elixir-format
 msgid "%{date} · %{index} of %{count}"
 msgstr ""
@@ -243,7 +243,7 @@ msgstr ""
 msgid "%{names} and %{last}"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:58
+#: lib/texttile_web/js_strings.ex:60
 #, elixir-autogen, elixir-format
 msgid "%{name} deleted"
 msgstr ""
@@ -298,7 +298,7 @@ msgstr ""
 msgid "%{tag} is off %{entries}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2096
+#: lib/texttile_web/live/editor_live.ex:2098
 #, elixir-autogen, elixir-format
 msgid "+ Add"
 msgstr ""
@@ -320,7 +320,7 @@ msgid_plural "%{count} comments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2803
+#: lib/texttile_web/live/editor_live.ex:2805
 #, elixir-autogen, elixir-format
 msgid "1 comment is still out of the entry: that reader has not followed the confirmation link yet."
 msgid_plural "%{count} comments are still out of the entry: those readers have not followed the confirmation link yet."
@@ -350,7 +350,7 @@ msgid_plural "%{count} entries"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2874
+#: lib/texttile_web/live/editor_live.ex:2876
 #, elixir-autogen, elixir-format
 msgid "1 file"
 msgid_plural "%{count} files"
@@ -394,7 +394,7 @@ msgstr ""
 msgid "A comment needs some words. Nothing was saved."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2821
+#: lib/texttile_web/live/editor_live.ex:2823
 #, elixir-autogen, elixir-format
 msgid "A deleted account"
 msgstr ""
@@ -459,22 +459,22 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2108
+#: lib/texttile_web/live/editor_live.ex:2110
 #, elixir-autogen, elixir-format
 msgid "Add it to the gallery, at the end"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2094
+#: lib/texttile_web/live/editor_live.ex:2096
 #, elixir-autogen, elixir-format
 msgid "Add pictures and videos"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2105
+#: lib/texttile_web/live/editor_live.ex:2107
 #, elixir-autogen, elixir-format
 msgid "Add pictures and videos to the gallery"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2164
+#: lib/texttile_web/live/editor_live.ex:2166
 #: lib/texttile_web/live/profile_live.ex:225
 #: lib/texttile_web/live/stats_live.ex:254
 #, elixir-autogen, elixir-format
@@ -503,7 +503,7 @@ msgstr ""
 msgid "All years"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2577
+#: lib/texttile_web/live/editor_live.ex:2579
 #, elixir-autogen, elixir-format
 msgid "Allow comments"
 msgstr ""
@@ -545,7 +545,7 @@ msgid "Archive"
 msgstr ""
 
 #: lib/texttile_web/live/editor_live.ex:2020
-#: lib/texttile_web/live/editor_live.ex:2129
+#: lib/texttile_web/live/editor_live.ex:2131
 #, elixir-autogen, elixir-format
 msgid "Article settings"
 msgstr ""
@@ -603,18 +603,18 @@ msgstr ""
 msgid "Blog Entries"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2685
+#: lib/texttile_web/live/editor_live.ex:2687
 #: lib/texttile_web/live/settings_live.ex:1037
 #, elixir-autogen, elixir-format
 msgid "Blog password"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2275
+#: lib/texttile_web/live/editor_live.ex:2277
 #, elixir-autogen, elixir-format
 msgid "Blog post"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:65
+#: lib/texttile_web/js_strings.ex:67
 #: lib/texttile_web/live/editor_live.ex:1722
 #: lib/texttile_web/live/editor_live.ex:1731
 #, elixir-autogen, elixir-format
@@ -678,7 +678,7 @@ msgstr ""
 #: lib/texttile_web/live/comments_live.ex:77
 #: lib/texttile_web/live/comments_live.ex:85
 #: lib/texttile_web/live/editor_live.ex:1661
-#: lib/texttile_web/live/editor_live.ex:2567
+#: lib/texttile_web/live/editor_live.ex:2569
 #: lib/texttile_web/live/settings_live.ex:1056
 #: lib/texttile_web/live/stats_live.ex:214
 #, elixir-autogen, elixir-format
@@ -706,8 +706,8 @@ msgstr ""
 msgid "Confirmed. Your comment is under the entry now."
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:68
-#: lib/texttile_web/live/editor_live.ex:2662
+#: lib/texttile_web/js_strings.ex:70
+#: lib/texttile_web/live/editor_live.ex:2664
 #: lib/texttile_web/live/settings_live.ex:1415
 #, elixir-autogen, elixir-format
 msgid "Copy"
@@ -751,7 +751,7 @@ msgstr ""
 
 #: lib/texttile_web/components/comment_components.ex:110
 #: lib/texttile_web/js_strings.ex:49
-#: lib/texttile_web/live/editor_live.ex:2204
+#: lib/texttile_web/live/editor_live.ex:2206
 #: lib/texttile_web/live/settings_live.ex:1118
 #: lib/texttile_web/live/settings_live.ex:1160
 #, elixir-autogen, elixir-format
@@ -763,7 +763,7 @@ msgstr ""
 msgid "Delete \"%{title}\"?"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2083
+#: lib/texttile_web/live/editor_live.ex:2085
 #, elixir-autogen, elixir-format
 msgid "Delete %{file}"
 msgstr ""
@@ -835,7 +835,7 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:63
+#: lib/texttile_web/js_strings.ex:65
 #, elixir-autogen, elixir-format
 msgid "Done. Untick it."
 msgstr ""
@@ -886,7 +886,7 @@ msgstr ""
 msgid "Email for new entries"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2925
+#: lib/texttile_web/live/editor_live.ex:2927
 #, elixir-autogen, elixir-format
 msgid "Empty means whenever you publish. A future date schedules the entry."
 msgstr ""
@@ -909,7 +909,7 @@ msgstr ""
 msgid "Entry sections"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2131
+#: lib/texttile_web/live/editor_live.ex:2133
 #, elixir-autogen, elixir-format
 msgid "Every change saves itself."
 msgstr ""
@@ -970,7 +970,7 @@ msgstr ""
 msgid "Filter by status"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2193
+#: lib/texttile_web/live/editor_live.ex:2195
 #, elixir-autogen, elixir-format
 msgid "Follows the old address, in a new tab"
 msgstr ""
@@ -985,7 +985,7 @@ msgstr ""
 msgid "Formatting"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2947
+#: lib/texttile_web/live/editor_live.ex:2949
 #, elixir-autogen, elixir-format
 msgid "Free to change while the entry is a draft."
 msgstr ""
@@ -1006,7 +1006,7 @@ msgstr ""
 msgid "Get new entries by mail"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2215
+#: lib/texttile_web/live/editor_live.ex:2217
 #, elixir-autogen, elixir-format
 msgid "Goes live"
 msgstr ""
@@ -1139,12 +1139,12 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:76
+#: lib/texttile_web/js_strings.ex:78
 #, elixir-autogen, elixir-format
 msgid "Last saved %{time}"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:75
+#: lib/texttile_web/js_strings.ex:77
 #: lib/texttile_web/live/editor_live.ex:1430
 #: lib/texttile_web/live/profile_live.ex:179
 #: lib/texttile_web/live/settings_live.ex:672
@@ -1178,7 +1178,7 @@ msgstr ""
 msgid "List"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2275
+#: lib/texttile_web/live/editor_live.ex:2277
 #, elixir-autogen, elixir-format
 msgid "Listed on the front page and in the feed, has tags, can email subscribers."
 msgstr ""
@@ -1188,12 +1188,12 @@ msgstr ""
 msgid "Live"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2940
+#: lib/texttile_web/live/editor_live.ex:2942
 #, elixir-autogen, elixir-format
 msgid "Live since %{date}. A future date changes it to unpublished until the date."
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:56
+#: lib/texttile_web/js_strings.ex:58
 #, elixir-autogen, elixir-format
 msgid "Loading the full size…"
 msgstr ""
@@ -1266,7 +1266,7 @@ msgstr ""
 msgid "New entry"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2727
+#: lib/texttile_web/live/editor_live.ex:2729
 #, elixir-autogen, elixir-format
 msgid "New on %{site}: "
 msgstr ""
@@ -1319,7 +1319,7 @@ msgstr ""
 msgid "No comments yet."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2986
+#: lib/texttile_web/live/editor_live.ex:2988
 #, elixir-autogen, elixir-format
 msgid "No email went out for this entry. The email goes out only at the moment an entry goes live."
 msgstr ""
@@ -1364,7 +1364,7 @@ msgstr ""
 msgid "No one else right now."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2140
+#: lib/texttile_web/live/editor_live.ex:2142
 #, elixir-autogen, elixir-format
 msgid "No pictures yet. Once the entry or the gallery has one, pick it here."
 msgstr ""
@@ -1466,7 +1466,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2186
+#: lib/texttile_web/live/editor_live.ex:2188
 #, elixir-autogen, elixir-format
 msgid "Old addresses, still arriving here"
 msgstr ""
@@ -1524,17 +1524,17 @@ msgstr ""
 msgid "Open the import"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:64
+#: lib/texttile_web/js_strings.ex:66
 #, elixir-autogen, elixir-format
 msgid "Open. Tick it off."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2747
+#: lib/texttile_web/live/editor_live.ex:2749
 #, elixir-autogen, elixir-format
 msgid "Opens the entry as it was last saved, in a new tab. Only somebody signed in can open this address."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2745
+#: lib/texttile_web/live/editor_live.ex:2747
 #, elixir-autogen, elixir-format
 msgid "Opens the entry on the public site, in a new tab"
 msgstr ""
@@ -1544,7 +1544,7 @@ msgstr ""
 msgid "Original"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2288
+#: lib/texttile_web/live/editor_live.ex:2290
 #, elixir-autogen, elixir-format
 msgid "Page"
 msgstr ""
@@ -1561,7 +1561,7 @@ msgstr ""
 msgid "Pages"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2588
+#: lib/texttile_web/live/editor_live.ex:2590
 #, elixir-autogen, elixir-format
 msgid "Pages never email anyone."
 msgstr ""
@@ -1593,12 +1593,12 @@ msgstr ""
 msgid "Paste one into the text, or drop one on it."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2934
+#: lib/texttile_web/live/editor_live.ex:2936
 #, elixir-autogen, elixir-format
 msgid "Pick the day it goes live."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2944
+#: lib/texttile_web/live/editor_live.ex:2946
 #, elixir-autogen, elixir-format
 msgid "Pick the day it went live. An empty field makes the entry a draft again."
 msgstr ""
@@ -1628,7 +1628,8 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2135
+#: lib/texttile_web/js_strings.ex:54
+#: lib/texttile_web/live/editor_live.ex:2137
 #, elixir-autogen, elixir-format
 msgid "Preview image"
 msgstr ""
@@ -1665,7 +1666,7 @@ msgstr ""
 msgid "Publish anyway"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2216
+#: lib/texttile_web/live/editor_live.ex:2218
 #, elixir-autogen, elixir-format
 msgid "Publish date"
 msgstr ""
@@ -1764,7 +1765,7 @@ msgstr ""
 msgid "Request a new link"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2229
+#: lib/texttile_web/live/editor_live.ex:2231
 #: lib/texttile_web/live/settings_live.ex:966
 #, elixir-autogen, elixir-format
 msgid "Reset"
@@ -1800,12 +1801,12 @@ msgstr ""
 msgid "Save version"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:72
+#: lib/texttile_web/js_strings.ex:74
 #, elixir-autogen, elixir-format
 msgid "Saved"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:55
+#: lib/texttile_web/js_strings.ex:57
 #, elixir-autogen, elixir-format
 msgid "Saved · just now"
 msgstr ""
@@ -1898,7 +1899,7 @@ msgstr ""
 
 #: lib/texttile_web/components/stats_components.ex:128
 #: lib/texttile_web/controllers/site_html.ex:88
-#: lib/texttile_web/live/editor_live.ex:2657
+#: lib/texttile_web/live/editor_live.ex:2659
 #, elixir-autogen, elixir-format
 msgid "Share"
 msgstr ""
@@ -1962,7 +1963,7 @@ msgstr ""
 msgid "Source"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2288
+#: lib/texttile_web/live/editor_live.ex:2290
 #, elixir-autogen, elixir-format
 msgid "Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
 msgstr ""
@@ -1986,7 +1987,7 @@ msgstr ""
 msgid "Stats screen"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2202
+#: lib/texttile_web/live/editor_live.ex:2204
 #, elixir-autogen, elixir-format
 msgid "Stop answering %{path}"
 msgstr ""
@@ -2003,8 +2004,8 @@ msgstr ""
 msgid "Subscribe"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2297
-#: lib/texttile_web/live/editor_live.ex:2312
+#: lib/texttile_web/live/editor_live.ex:2299
+#: lib/texttile_web/live/editor_live.ex:2314
 #: lib/texttile_web/live/settings_live.ex:1092
 #, elixir-autogen, elixir-format
 msgid "Tags"
@@ -2071,7 +2072,7 @@ msgstr ""
 msgid "That address is taken by another entry"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:54
+#: lib/texttile_web/js_strings.ex:56
 #: lib/texttile_web/live/editor_live.ex:631
 #, elixir-autogen, elixir-format
 msgid "That date could not be read"
@@ -2132,7 +2133,7 @@ msgstr ""
 msgid "The bar here and the public site use it. SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2711
+#: lib/texttile_web/live/editor_live.ex:2713
 #, elixir-autogen, elixir-format
 msgid "The blog is open right now, so nobody is asked for this word. Settings > Access turns the gate on."
 msgstr ""
@@ -2142,7 +2143,7 @@ msgstr ""
 msgid "The blog is open to everyone"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2732
+#: lib/texttile_web/live/editor_live.ex:2734
 #, elixir-autogen, elixir-format
 msgid "The blog password is: "
 msgstr ""
@@ -2234,7 +2235,7 @@ msgstr ""
 msgid "The latest comments across all entries, newest first."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2677
+#: lib/texttile_web/live/editor_live.ex:2679
 #, elixir-autogen, elixir-format
 msgid "The lines to pass on"
 msgstr ""
@@ -2269,7 +2270,7 @@ msgstr ""
 msgid "The report for %{name}"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2964
+#: lib/texttile_web/live/editor_live.ex:2966
 #, elixir-autogen, elixir-format
 msgid "The subscriber email for this entry went out on %{day}. It goes out once; publishing again does not send it again."
 msgstr ""
@@ -2317,7 +2318,7 @@ msgstr ""
 msgid "The whole blog speaks it: the reader pages, this admin area, the dates and the mails. What you write yourself stays as you wrote it."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2705
+#: lib/texttile_web/live/editor_live.ex:2707
 #, elixir-autogen, elixir-format
 msgid "The whole blog waits behind this one word, this entry with it. Settings > Access is where it changes."
 msgstr ""
@@ -2392,7 +2393,7 @@ msgstr ""
 msgid "This deletes the entry and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:61
+#: lib/texttile_web/js_strings.ex:63
 #, elixir-autogen, elixir-format
 msgid "This film is still being converted. It plays here once that is done."
 msgstr ""
@@ -2437,7 +2438,7 @@ msgstr ""
 msgid "Those words were not saved."
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2067
+#: lib/texttile_web/live/editor_live.ex:2069
 #, elixir-autogen, elixir-format
 msgid "Tile %{index}, %{file}, grab to sort, tap to see it big"
 msgstr ""
@@ -2463,7 +2464,7 @@ msgstr ""
 msgid "Trash"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2265
+#: lib/texttile_web/live/editor_live.ex:2267
 #, elixir-autogen, elixir-format
 msgid "Type"
 msgstr ""
@@ -2473,7 +2474,7 @@ msgstr ""
 msgid "Type the email address of your account. A link to set a new password goes to that address."
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:59
+#: lib/texttile_web/js_strings.ex:61
 #, elixir-autogen, elixir-format
 msgid "Undo"
 msgstr ""
@@ -2530,12 +2531,13 @@ msgstr ""
 msgid "Use default"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2152
+#: lib/texttile_web/live/editor_live.ex:2154
 #, elixir-autogen, elixir-format
 msgid "Use image %{index} as the preview image"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2158
+#: lib/texttile_web/js_strings.ex:55
+#: lib/texttile_web/live/editor_live.ex:2160
 #, elixir-autogen, elixir-format
 msgid "Used in the entries grid, on the front page and in link previews."
 msgstr ""
@@ -2835,7 +2837,7 @@ msgstr ""
 msgid "page"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2074
+#: lib/texttile_web/live/editor_live.ex:2076
 #, elixir-autogen, elixir-format
 msgid "preview"
 msgstr ""
@@ -2856,12 +2858,12 @@ msgstr ""
 msgid "removed"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:73
+#: lib/texttile_web/js_strings.ex:75
 #, elixir-autogen, elixir-format
 msgid "saved"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:74
+#: lib/texttile_web/js_strings.ex:76
 #, elixir-autogen, elixir-format
 msgid "saved %{time}"
 msgstr ""
@@ -3087,7 +3089,7 @@ msgstr ""
 msgid "Free on this volume"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2971
+#: lib/texttile_web/live/editor_live.ex:2973
 #, elixir-autogen, elixir-format
 msgid "Goes out to the confirmed subscribers when this goes live on %{date}."
 msgstr ""
@@ -3102,7 +3104,7 @@ msgstr ""
 msgid "More actions for this entry"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2976
+#: lib/texttile_web/live/editor_live.ex:2978
 #, elixir-autogen, elixir-format
 msgid "No email will go out on %{date}."
 msgstr ""
@@ -3149,7 +3151,7 @@ msgstr ""
 msgid "Publish quietly, no mail"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2980
+#: lib/texttile_web/live/editor_live.ex:2982
 #, elixir-autogen, elixir-format
 msgid "Publish sends one plain email with the title and the first paragraph to the confirmed subscribers. Publish quietly sends none."
 msgstr ""
@@ -3179,7 +3181,7 @@ msgstr ""
 msgid "Size"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:77
+#: lib/texttile_web/js_strings.ex:79
 #, elixir-autogen, elixir-format
 msgid "The last save was at %{time}."
 msgstr ""
@@ -3249,7 +3251,7 @@ msgstr ""
 msgid "the logo and the favicon"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:66
+#: lib/texttile_web/js_strings.ex:68
 #, elixir-autogen, elixir-format
 msgid "the pasted picture"
 msgstr ""
@@ -3259,7 +3261,7 @@ msgstr ""
 msgid "%{name} is writing"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2933
+#: lib/texttile_web/live/editor_live.ex:2935
 #, elixir-autogen, elixir-format
 msgid "Scheduled. It goes live on %{date}."
 msgstr ""
@@ -3286,14 +3288,14 @@ msgid_plural "%{names} read along and see it as you type. The title and the body
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2860
+#: lib/texttile_web/live/editor_live.ex:2862
 #, elixir-autogen, elixir-format
 msgid "Another tab of yours"
 msgid_plural "%{count} other tabs of yours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2864
+#: lib/texttile_web/live/editor_live.ex:2866
 #, elixir-autogen, elixir-format
 msgid "another tab of yours"
 msgid_plural "%{count} other tabs of yours"
@@ -3455,7 +3457,7 @@ msgstr ""
 msgid "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides. Behind a proxy this is only as good as the header the proxy writes, so read it as a second lock and never as the first."
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:69
+#: lib/texttile_web/js_strings.ex:71
 #, elixir-autogen, elixir-format
 msgid "Copied"
 msgstr ""
@@ -3465,7 +3467,7 @@ msgstr ""
 msgid "The backup token"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:70
+#: lib/texttile_web/js_strings.ex:72
 #, elixir-autogen, elixir-format
 msgid "Now press the copy key"
 msgstr ""
@@ -3562,7 +3564,7 @@ msgstr ""
 msgid "live"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2316
+#: lib/texttile_web/live/editor_live.ex:2318
 #, elixir-autogen, elixir-format
 msgid "new"
 msgstr ""
@@ -3608,7 +3610,7 @@ msgstr ""
 msgid "Up to %{limit} · %{size} free for the import"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2245
+#: lib/texttile_web/live/editor_live.ex:2247
 #, elixir-autogen, elixir-format
 msgid "Author"
 msgstr ""
@@ -3618,7 +3620,7 @@ msgstr ""
 msgid "That account is gone · the author stands"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:2251
+#: lib/texttile_web/live/editor_live.ex:2253
 #, elixir-autogen, elixir-format
 msgid "The account has gone"
 msgstr ""
