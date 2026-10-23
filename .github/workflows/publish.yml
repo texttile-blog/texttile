@@ -6,12 +6,20 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
+    # A pull request's CI run has nothing to publish. Keeping it out
+    # here keeps it out of the queue below.
+    branches: [main]
   workflow_dispatch:
 
-# One publish at a time, and never a cancelled one: two runs would push
-# the moving tags in an order nobody chose.
+# One publish per commit, and never a cancelled one. A shared group
+# would hold one waiting run at most: GitHub cancels the waiting run
+# when the next one arrives, whatever cancel-in-progress says, and
+# three merges in a minute lost two builds that way. Two builds that
+# run side by side are kept apart further down: the tag push refuses a
+# number that is taken, and the moving tags follow the newest version
+# only.
 concurrency:
-  group: publish-image
+  group: publish-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: false
 
 env:
@@ -39,6 +47,7 @@ jobs:
       pull-requests: read
     outputs:
       version: ${{ steps.version.outputs.exact }}
+      newest: ${{ steps.floating.outputs.newest }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,6 +62,10 @@ jobs:
       # that is tagged already keeps its number, so a re-run of a failed
       # build finishes the same version instead of burning the next one.
       # Settings shows this number, and the image tags carry it.
+      #
+      # Two builds may count at the same time and arrive at the same
+      # number. The remote refuses the second tag, and that build counts
+      # again from the tags as they stand now.
       - name: Decide the version
         id: version
         shell: bash
@@ -60,11 +73,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           pattern='v[0-9]*.[0-9]*.[0-9]*'
-          version="$(git tag --list "$pattern" --points-at "$COMMIT" --sort=-v:refname | head -n 1)"
 
-          if [[ -n "$version" ]]; then
-            echo "Commit $COMMIT carries $version already."
-          else
+          # The pull request the commit was merged from, if any. A
+          # direct push has none and counts as a repair.
+          labels="$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT/pulls" --jq '.[].labels[].name')"
+
+          for attempt in 1 2 3 4 5; do
+            version="$(git tag --list "$pattern" --points-at "$COMMIT" --sort=-v:refname | head -n 1)"
+            if [[ -n "$version" ]]; then
+              echo "Commit $COMMIT carries $version already."
+              break
+            fi
+
             last="$(git tag --list "$pattern" --sort=-v:refname | head -n 1)"
             if [[ ! "$last" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               echo "No version tag to count from: '$last'"
@@ -72,9 +92,6 @@ jobs:
             fi
             major="${BASH_REMATCH[1]}" minor="${BASH_REMATCH[2]}" patch="${BASH_REMATCH[3]}"
 
-            # The pull request the commit was merged from, if any. A
-            # direct push has none and counts as a repair.
-            labels="$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT/pulls" --jq '.[].labels[].name')"
             if grep -qx major <<<"$labels"; then
               version="v$((major + 1)).0.0"
             elif grep -qx minor <<<"$labels"; then
@@ -85,7 +102,19 @@ jobs:
 
             echo "$last -> $version"
             git tag "$version" "$COMMIT"
-            git push origin "$version"
+            if git push origin "$version"; then
+              break
+            fi
+
+            echo "Another build took $version first. Counting again."
+            git tag --delete "$version"
+            git fetch --tags --force origin
+            version=""
+          done
+
+          if [[ -z "$version" ]]; then
+            echo "Could not set a version tag after $attempt attempts."
+            exit 1
           fi
 
           version="${version#v}"
@@ -123,21 +152,51 @@ jobs:
             exit 1
           fi
 
+      # Two tags stand still: the exact version and the commit name one
+      # build for good. The moving tags come in the step after.
       - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           build-args: |
             TEXTTILE_VERSION=${{ steps.version.outputs.exact }}
-          # Two tags stand still, three move: the exact version and the
-          # commit name one build for good, while the minor, the major
-          # and latest follow the newest build that fits them.
           tags: |
             ${{ env.IMAGE }}:${{ steps.version.outputs.exact }}
-            ${{ env.IMAGE }}:${{ steps.version.outputs.minor }}
-            ${{ env.IMAGE }}:${{ steps.version.outputs.major }}
-            ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ env.COMMIT }}
+
+      # Three tags move: the minor, the major and latest follow the
+      # newest build that fits them. Builds run side by side, so each
+      # moving tag goes to this build only when no newer version stands
+      # under it. A build that was overtaken keeps its exact tag and
+      # moves nothing, and it does not deploy either.
+      - name: Move the floating tags
+        id: floating
+        shell: bash
+        run: |
+          exact="${{ steps.version.outputs.exact }}"
+          git fetch --tags --force --quiet origin
+
+          newest() {
+            git tag --list "v$1[0-9]*" --sort=-v:refname | head -n 1
+          }
+
+          moved=()
+          for pair in "${{ steps.version.outputs.minor }}:${{ steps.version.outputs.minor }}." \
+                      "${{ steps.version.outputs.major }}:${{ steps.version.outputs.major }}." \
+                      "latest:"; do
+            tag="${pair%%:*}" prefix="${pair#*:}"
+            if [[ "$(newest "$prefix")" == "v$exact" ]]; then
+              moved+=("--tag" "$IMAGE:$tag")
+            else
+              echo "$tag stays: $(newest "$prefix") is newer than v$exact."
+            fi
+          done
+
+          if (( ${#moved[@]} )); then
+            docker buildx imagetools create "${moved[@]}" "$IMAGE:$exact"
+          fi
+
+          [[ "$(newest "")" == "v$exact" ]] && echo "newest=true" >> "$GITHUB_OUTPUT" || true
 
   # The release is the version's public record on GitHub: it stands on
   # the tag v<version> the publish set, and its notes name the pull
@@ -175,10 +234,13 @@ jobs:
             --notes "$notes" \
             --generate-notes
 
+  # Staging runs the newest build. A build that an overtaking one has
+  # passed stays off the server, so two publishes side by side never
+  # leave the older one standing.
   staging:
     name: Deploy staging to Bunny
     needs: publish
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.publish.outputs.newest == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
