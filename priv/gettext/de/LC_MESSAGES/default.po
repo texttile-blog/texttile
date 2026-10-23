@@ -11,18 +11,18 @@ msgstr ""
 "Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/texttile_web/components/layouts.ex:369
-#: lib/texttile_web/components/layouts.ex:381
+#: lib/texttile_web/components/layouts.ex:373
+#: lib/texttile_web/components/layouts.ex:385
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Verbindung wird wiederhergestellt"
 
-#: lib/texttile_web/components/layouts.ex:376
+#: lib/texttile_web/components/layouts.ex:380
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "Da ist etwas schiefgegangen."
 
-#: lib/texttile_web/components/layouts.ex:364
+#: lib/texttile_web/components/layouts.ex:368
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "Das Internet ist nicht erreichbar"
@@ -238,7 +238,7 @@ msgstr "%{day}: %{views}"
 msgid "%{mark} uploaded · %{file}"
 msgstr "%{mark} hochgeladen · %{file}"
 
-#: lib/texttile_web/components/layouts.ex:342
+#: lib/texttile_web/components/layouts.ex:346
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{last}"
 msgstr "%{names} und %{last}"
@@ -303,7 +303,7 @@ msgstr "%{tag} ist von %{entries} entfernt"
 msgid "+ Add"
 msgstr "+ Hinzufügen"
 
-#: lib/texttile_web/components/layouts.ex:335
+#: lib/texttile_web/components/layouts.ex:339
 #, elixir-autogen, elixir-format
 msgid ", %{names} is here"
 msgid_plural ", %{names} are here"
@@ -2571,7 +2571,7 @@ msgid "Videos"
 msgstr "Videos"
 
 #: lib/texttile_web/components/layouts.ex:75
-#: lib/texttile_web/components/layouts.ex:308
+#: lib/texttile_web/components/layouts.ex:312
 #, elixir-autogen, elixir-format
 msgid "View site"
 msgstr "Site ansehen"

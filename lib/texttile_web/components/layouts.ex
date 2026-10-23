@@ -259,6 +259,10 @@ defmodule TexttileWeb.Layouts do
           {gettext("Your profile")}
         </.link>
         <.link href={~p"/logout"} method="delete" class="row">{gettext("Sign out")}</.link>
+        <%!-- which build runs, in every menu and nowhere a reader gets --%>
+        <p class="px-[10px] pt-[6px] pb-[2px] text-[11.5px] text-faint tabular-nums" id="wmVersion">
+          Texttile {Texttile.version()}
+        </p>
       </nav>
 
       <%!-- Two zones. This is the left one: what this screen is. The

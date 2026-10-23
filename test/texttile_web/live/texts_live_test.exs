@@ -36,6 +36,19 @@ defmodule TexttileWeb.TextsLiveTest do
     assert has_element?(view, "#wmMe", Texttile.Accounts.display_name(user))
   end
 
+  # The build that runs stands at the foot of every menu, so nobody has
+  # to open Settings to name it. The number comes from the project, not
+  # from Texttile.version/0, so a broken reader cannot agree with itself.
+  test "names the version at the foot of the menu", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/texts")
+
+    assert has_element?(
+             view,
+             "#navMenu #wmVersion",
+             "Texttile " <> Mix.Project.config()[:version]
+           )
+  end
+
   describe "the grid" do
     test "lists the entries as cards", %{conn: conn, user: user} do
       {:ok, article} = Articles.create_draft(user)
