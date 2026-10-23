@@ -230,6 +230,15 @@ An empty database is a bad test. Work from real data instead of pointing at it.
 - Before a pull request, run `mix test --max-cases 4`. One green run under a
   different command is not enough. `make check` runs what CI runs, in the order
   CI runs it.
+- A green test is not the end. Use the change in a real browser before you call
+  it done: a throwaway `test/e2e` probe through the project's Playwright
+  tooling, or your own server on 4441 to 4449. Read the real value, not the
+  assertion: the tab title from `document.title`, the words on the screen, the
+  row in the database. Delete the probe afterwards.
+- Say what you did against regressions: the full run with its counts, the
+  browser tests included. A test you did not touch and that fails is yours to
+  explain before the pull request opens. A fix that was checked only on the
+  path it changed is not checked.
 - Treat a failure that only happens in CI as an ordering or timing race until
   you have disproved it. Reproduce suspected contamination by ordering the files
   with `--seed 0`, and timing races under CPU load. Rerunning proves nothing.
