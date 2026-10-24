@@ -59,7 +59,7 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
 
-    assert has_element?(view, "#commentsSub", "1 comment waits for the reader")
+    assert has_element?(view, "#commentsSub", "1 not confirmed yet")
   end
 
   test "a ninth comment moves the oldest behind the overflow line", %{conn: conn} do

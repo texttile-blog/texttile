@@ -82,19 +82,16 @@ defmodule TexttileWeb.CommentsLive do
         <Layouts.view_site />
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">{gettext("Comments")}</h1>
-        <%!-- the one piece of news under the heading: what readers cannot
-             see yet. The number keeps its own tag and stays out of the
-             message: a translation file is prose, and prose must not
-             be able to write markup into this page. --%>
-        <p :if={@waiting > 0} class="lead" id="commentsSub">
-          <b class="num">{@waiting}</b>
-          {ngettext(
-            "comment waits for the reader to confirm the email address, so readers do not see it yet.",
-            "comments wait for the reader to confirm the email address, so readers do not see them yet.",
-            @waiting
-          )}
-        </p>
+        <%!-- the heading carries the one piece of news: how many wait for
+             a confirmed address, in the words of the mark each of them
+             wears. Beside the heading like the count of the Entries
+             grid, and gone while nothing waits. --%>
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-[18px]">
+          <h1 class="page-h">{gettext("Comments")}</h1>
+          <span :if={@waiting > 0} class="note num" id="commentsSub">
+            {ngettext("1 not confirmed yet", "%{count} not confirmed yet", @waiting)}
+          </span>
+        </div>
         <div id="commentsList">
           <p :if={@recent == []} class="note">
             {gettext("No comments yet, anywhere. Every comment a reader sends shows up here.")}

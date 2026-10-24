@@ -39,7 +39,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments")
-    |> assert_has("#commentsSub", text: "1 comment across all entries")
+    |> refute_has("#commentsSub")
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")
