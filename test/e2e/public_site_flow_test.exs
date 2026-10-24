@@ -169,6 +169,24 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
+  # Waits until the full pictures of the tiles at `wanted` (indexes)
+  # have been fetched, up to four seconds, then says for every tile
+  # whether its full picture was.
+  @fetched """
+  (wanted) => new Promise((done) => {
+    const want = [...document.querySelectorAll('#gal a')].map((a) => a.dataset.full);
+    const got = () => performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname);
+    const started = Date.now();
+    const look = () => {
+      const paths = got();
+      const have = want.map((u) => paths.includes(u));
+      if (wanted.every((i) => have[i]) || Date.now() - started > 4000) done(have);
+      else setTimeout(look, 50);
+    };
+    look();
+  })
+  """
+
   describe "the gallery" do
     test "a tile opens the lightbox, the arrows walk, Escape closes", %{conn: conn} do
       article = published_post(title: "Tiles", slug: "tiles", body: "Pictures below.")
@@ -228,6 +246,64 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> assert_has("#lbCap", text: "the pier")
       |> press("body", "Escape")
       |> refute_has("#lbCount", text: "1 / 1")
+    end
+
+    # The dark around the picture is a way out. The picture's box is as
+    # wide as the stage, so the dark beside the picture counts too; the
+    # picture itself and the arrows do not.
+    test "a click on the dark beside the picture closes the lightbox", %{conn: conn} do
+      article = published_post(title: "Ground", slug: "ground", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
+
+      session =
+        conn
+        |> open_page(Articles.public_path(article))
+        |> click("#tile-#{first.id}")
+        |> assert_has("#lbCount", text: "1 / 2")
+
+      # the picture (20 by 10 pixels, in the middle of its box) stays
+      click_at(session, "#lbArt img", 5, 5)
+      assert_has(session, "#lbCount", text: "1 / 2")
+
+      # the arrow walks, as before
+      click(session, "#lbNext")
+      assert_has(session, "#lbCount", text: "2 / 2")
+
+      # the corner of the box, far from the picture, is the dark
+      click_at(session, "#lbArt", 4, 4)
+      refute_has(session, "#lbCount", text: "2 / 2")
+
+      evaluate(
+        session,
+        "() => document.getElementById('lb').hidden",
+        [is_function: true],
+        &assert(&1 == true)
+      )
+    end
+
+    # On a slow line the next picture takes seconds. The two after the
+    # one on show come in behind it, and the ones beyond stay unfetched.
+    test "the two pictures after the one on show are fetched ahead", %{conn: conn} do
+      article = published_post(title: "Ahead", slug: "ahead", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "one.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "two.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "three.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "four.jpg")
+
+      conn
+      |> open_page(Articles.public_path(article))
+      |> click("#tile-#{first.id}")
+      |> assert_has("#lbCount", text: "1 / 4")
+      |> evaluate(@fetched, [arg: [1, 2], is_function: true], fn have ->
+        assert have == [true, true, true, false]
+      end)
+      # a page forward moves the window: now the fourth is wanted too
+      |> press("body", "ArrowRight")
+      |> assert_has("#lbCount", text: "2 / 4")
+      |> evaluate(@fetched, [arg: [3], is_function: true], fn have ->
+        assert have == [true, true, true, true]
+      end)
     end
   end
 
@@ -378,5 +454,18 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
         assert title =~ "Harbor mornings"
       end)
     end
+  end
+
+  # A real mouse click at a point inside the element, measured from its
+  # top left corner. `click/2` aims at the centre, which is the picture.
+  defp click_at(session, selector, x, y) do
+    {:ok, _} =
+      PlaywrightEx.Frame.click(session.frame_id,
+        selector: selector,
+        position: %{x: x, y: y},
+        timeout: 5_000
+      )
+
+    session
   end
 end

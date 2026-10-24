@@ -117,13 +117,42 @@ if (document.body.dataset.count) {
     const inner = tile.querySelector("img");
     const caption = tile.dataset.caption || (inner && inner.alt) || "";
 
-    document.getElementById("lbArt").replaceChildren(
+    const art = document.getElementById("lbArt");
+    art.replaceChildren(
       tile.dataset.video
         ? mediaNode({film: tile.dataset.video, poster: tile.dataset.full, caption}, playing)
         : mediaNode({src: tile.dataset.full || tile.href, caption}, false)
     );
     document.getElementById("lbCount").textContent = at + 1 + " / " + tiles.length;
     document.getElementById("lbCap").textContent = caption;
+
+    // The next ones come in once this one is there, not beside it: on
+    // a slow line the picture on show is the one that must not wait.
+    // A picture that fails is no reason to keep the next ones waiting.
+    const shown = art.querySelector("img");
+    if (shown && !shown.complete) {
+      shown.addEventListener("load", () => warm(at), {once: true});
+      shown.addEventListener("error", () => warm(at), {once: true});
+    } else {
+      warm(at);
+    }
+  }
+
+  // The two pictures after the one on show are fetched ahead, so a
+  // page forward on a slow line finds them in the cache. A film is
+  // never fetched ahead; its poster is a picture and is. The
+  // wrap-around stops at the picture on show, so a short row warms
+  // only what it has.
+  const warmed = new Set();
+  function warm(i) {
+    for (const step of [1, 2]) {
+      const tile = tiles[wrapIndex(i, step, tiles.length)];
+      if (tile === tiles[i]) break;
+      const src = tile.dataset.full || tile.href;
+      if (warmed.has(src)) continue;
+      warmed.add(src);
+      new Image().src = src;
+    }
   }
 
   function open(i) {
@@ -164,8 +193,14 @@ if (document.body.dataset.count) {
   document.getElementById("lbClose").addEventListener("click", close);
   document.getElementById("lbPrev").addEventListener("click", () => nav(-1));
   document.getElementById("lbNext").addEventListener("click", () => nav(1));
+  // The dark is a way out. What stands on it is not: the picture, the
+  // film and its controls, the buttons, and the caption a reader may
+  // be selecting. The picture's box is as wide as the stage, so a
+  // click in the dark beside the picture lands on the box, and it
+  // counts as the dark.
   lb.addEventListener("click", (e) => {
-    if (e.target === lb || e.target.id === "lbStage") close();
+    if (e.target.closest("img, video, button, a, .lb-cap")) return;
+    close();
   });
 
   addEventListener("keydown", (e) => {
