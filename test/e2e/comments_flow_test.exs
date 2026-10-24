@@ -145,12 +145,10 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#comments", text: "Writing under my own name.")
     |> refute_has("#comments", text: "waiting for your confirmation")
 
-    # And the count travels to both lists.
+    # And the count travels to the reader's list.
     session
     |> open_page("/blog")
     |> assert_has("#texts", text: "1 comment")
-    |> open("/admin/texts")
-    |> assert_has("#cards", text: "1 comment")
 
     assert [comment] = Texttile.Comments.for_article(article.id)
     assert comment.user_id == user.id
