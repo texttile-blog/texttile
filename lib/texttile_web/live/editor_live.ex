@@ -795,8 +795,8 @@ defmodule TexttileWeb.EditorLive do
               ),
             readers > 0 &&
               ngettext(
-                "One confirmed subscriber gets a mail with the title and the first paragraph. It goes out once and cannot be called back.",
-                "%{count} confirmed subscribers get a mail with the title and the first paragraph. It goes out once and cannot be called back.",
+                "One confirmed subscriber gets a mail with the title and the link. It goes out once and cannot be called back.",
+                "%{count} confirmed subscribers get a mail with the title and the link. It goes out once and cannot be called back.",
                 readers,
                 count: readers
               ),
@@ -2972,7 +2972,7 @@ defmodule TexttileWeb.EditorLive do
   defp notify_note(%{status: "draft"}),
     do:
       gettext(
-        "Publish sends one plain email with the title and the first paragraph to the confirmed subscribers. Publish quietly sends none."
+        "Publish sends one plain email with the title and the link to the confirmed subscribers. Publish quietly sends none."
       )
 
   defp notify_note(_article),

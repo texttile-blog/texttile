@@ -177,7 +177,8 @@ defmodule Texttile.NewsletterTest do
 
       assert first.subject =~ "Harbor mornings"
       assert first.text_body =~ Articles.public_path(article)
-      assert first.text_body =~ "Fog over the pier."
+      # the mail says where the entry is, not what it says: no lead, no excerpt
+      refute first.text_body =~ "Fog over the pier."
       assert first.text_body =~ "/newsletter/unsubscribe/"
 
       # the same way off, where the mail program reads it

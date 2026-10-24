@@ -3033,13 +3033,6 @@ msgstr ""
 msgid "Nothing changed since the last version"
 msgstr ""
 
-#: lib/texttile_web/live/editor_live.ex:797
-#, elixir-autogen, elixir-format
-msgid "One confirmed subscriber gets a mail with the title and the first paragraph. It goes out once and cannot be called back."
-msgid_plural "%{count} confirmed subscribers get a mail with the title and the first paragraph. It goes out once and cannot be called back."
-msgstr[0] ""
-msgstr[1] ""
-
 #: lib/texttile_web/live/editor_live.ex:786
 #, elixir-autogen, elixir-format
 msgid "Publish and email %{count} subscribers?"
@@ -3048,11 +3041,6 @@ msgstr ""
 #: lib/texttile_web/live/editor_live.ex:807
 #, elixir-autogen, elixir-format
 msgid "Publish and send"
-msgstr ""
-
-#: lib/texttile_web/live/editor_live.ex:2974
-#, elixir-autogen, elixir-format
-msgid "Publish sends one plain email with the title and the first paragraph to the confirmed subscribers. Publish quietly sends none."
 msgstr ""
 
 #: lib/texttile_web/live/editor_live.ex:847
@@ -3847,14 +3835,9 @@ msgstr ""
 msgid "gallery_descriptions requires an explicit gallery list."
 msgstr ""
 
-#: lib/texttile/newsletter/notifier.ex:104
+#: lib/texttile/newsletter/notifier.ex:96
 #, elixir-autogen, elixir-format
 msgid "Password: %{password}"
-msgstr ""
-
-#: lib/texttile/newsletter/notifier.ex:69
-#, elixir-autogen, elixir-format
-msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{lead}%{password}\nYou get this mail because this address is on the %{site} list. To leave the list, open this link:\n\n%{unsubscribe}\n"
 msgstr ""
 
 #: lib/texttile/comments/notifier.ex:102
@@ -3928,4 +3911,21 @@ msgstr ""
 #: lib/texttile_web/live/editor_live.ex:1559
 #, elixir-autogen, elixir-format
 msgid "Publish quietly"
+msgstr ""
+
+#: lib/texttile/newsletter/notifier.ex:69
+#, elixir-autogen, elixir-format
+msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{password}\nYou get this mail because this address is on the %{site} list. To leave the list, open this link:\n\n%{unsubscribe}\n"
+msgstr ""
+
+#: lib/texttile_web/live/editor_live.ex:797
+#, elixir-autogen, elixir-format
+msgid "One confirmed subscriber gets a mail with the title and the link. It goes out once and cannot be called back."
+msgid_plural "%{count} confirmed subscribers get a mail with the title and the link. It goes out once and cannot be called back."
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/texttile_web/live/editor_live.ex:2974
+#, elixir-autogen, elixir-format
+msgid "Publish sends one plain email with the title and the link to the confirmed subscribers. Publish quietly sends none."
 msgstr ""
