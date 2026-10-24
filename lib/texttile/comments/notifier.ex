@@ -110,7 +110,7 @@ defmodule Texttile.Comments.Notifier do
       %{where}    All comments:  %{url}
 
       %{site} sends this mail because "Mail me every new comment" stands
-      in its settings. Switch it off there to stop it.
+      in its settings.
       """,
       name: comment.name,
       title: title,

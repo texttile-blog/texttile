@@ -253,11 +253,6 @@ msgstr ""
 msgid "%{name} is bigger than the %{roof} MB roof."
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:104
-#, elixir-autogen, elixir-format
-msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings. Switch it off there to stop it.\n"
-msgstr ""
-
 #: lib/texttile_web/components/core_components.ex:566
 #, elixir-autogen, elixir-format
 msgid "%{shown} of %{total}"
@@ -3940,4 +3935,9 @@ msgstr ""
 #: lib/texttile/import/bundle.ex:240
 #, elixir-autogen, elixir-format
 msgid "gallery_descriptions requires an explicit gallery list."
+msgstr ""
+
+#: lib/texttile/comments/notifier.ex:104
+#, elixir-autogen, elixir-format
+msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings.\n"
 msgstr ""

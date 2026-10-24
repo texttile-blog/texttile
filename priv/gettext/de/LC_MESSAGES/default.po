@@ -253,11 +253,6 @@ msgstr "%{name} konnte nicht hochgeladen werden. Erneut versuchen oder entfernen
 msgid "%{name} is bigger than the %{roof} MB roof."
 msgstr "%{name} ist größer als die Grenze von %{roof} MB."
 
-#: lib/texttile/comments/notifier.ex:104
-#, elixir-autogen, elixir-format
-msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings. Switch it off there to stop it.\n"
-msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n%{where}    Alle Kommentare: %{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen\nKommentar mailen\" steht. Dort schaltest du es wieder aus.\n"
-
 #: lib/texttile_web/components/core_components.ex:566
 #, elixir-autogen, elixir-format
 msgid "%{shown} of %{total}"
@@ -3947,3 +3942,8 @@ msgstr "gallery_descriptions muss eine Liste sein."
 #, elixir-autogen, elixir-format
 msgid "gallery_descriptions requires an explicit gallery list."
 msgstr "gallery_descriptions benötigt eine ausdrücklich angegebene gallery-Liste."
+
+#: lib/texttile/comments/notifier.ex:104
+#, elixir-autogen, elixir-format
+msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings.\n"
+msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n%{where}    Alle Kommentare: %{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen\nKommentar mailen\" steht.\n"
