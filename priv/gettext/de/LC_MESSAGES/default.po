@@ -654,7 +654,7 @@ msgstr "Wähle ein Passwort"
 msgid "Clear"
 msgstr "Zurücksetzen"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:319
+#: lib/texttile_web/controllers/site_html/article.html.heex:320
 #: lib/texttile_web/js_strings.ex:43
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -1303,7 +1303,7 @@ msgstr "Newsletter"
 msgid "Next"
 msgstr "Weiter"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:326
+#: lib/texttile_web/controllers/site_html/article.html.heex:340
 #: lib/texttile_web/js_strings.ex:47
 #, elixir-autogen, elixir-format
 msgid "Next tile"
@@ -1640,7 +1640,7 @@ msgstr "Vorschaubild"
 msgid "Previous"
 msgstr "Zurück"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:322
+#: lib/texttile_web/controllers/site_html/article.html.heex:336
 #: lib/texttile_web/js_strings.ex:46
 #, elixir-autogen, elixir-format
 msgid "Previous tile"

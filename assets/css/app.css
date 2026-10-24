@@ -891,6 +891,8 @@
   .lb-abtn:hover { color: #fff; background: rgb(255 255 255 / .1); }
   .lb-abtn.plain { box-shadow: none; text-decoration: underline; text-underline-offset: 2px; }
   .lb-abtn.danger { color: var(--tt-julialine, #f0d7c5); }
+  /* Close is an X, square and as tall as the words beside it */
+  .lb-abtn.lb-x { display: inline-flex; align-items: center; justify-content: center; padding: 6px; }
 
   /* the undo bar stays one line on any screen: a long filename gives
      way, Undo and the countdown never wrap */
@@ -1621,6 +1623,7 @@
     border-radius: var(--tt-radius); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .35);
   }
   .lb-btn:hover { color: #fff; background: rgb(255 255 255 / .1); }
+  .lb-btn.lb-x { display: inline-flex; align-items: center; justify-content: center; padding: 6px; }
   .lb-stage {
     flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
     gap: 4px; padding: 0 6px; touch-action: pan-y pinch-zoom;

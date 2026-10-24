@@ -19,7 +19,7 @@
    to the server's truth. */
 
 import {t, esc} from "./i18n.js"
-import {attachSwipe, trapTab, quiet} from "./lightbox.js"
+import {attachSwipe, trapTab, quiet, closeMark} from "./lightbox.js"
 
 const MAX_PARALLEL = 2
 /* one roof for a photograph and for a film, and the server owns the
@@ -679,7 +679,7 @@ export class Gallery {
         <span class="sp"></span>
         <button type="button" id="lbDelete" class="lb-abtn plain danger">${esc(t("Delete"))}</button>
         <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener">${esc(t("Original"))}</a>
-        <button type="button" id="lbClose" class="lb-abtn" aria-label="${esc(t("Close"))}">${esc(t("Close"))}</button>
+        <button type="button" id="lbClose" class="lb-abtn lb-x" aria-label="${esc(t("Close"))}">${closeMark}</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
