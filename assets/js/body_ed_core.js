@@ -497,8 +497,7 @@ const impl = {
       EditorView.lineWrapping,
       syntaxHighlighting(mdHighlight),
       livePreview,
-      placeholder(this.el.dataset.placeholder ||
-        "Write. Markdown works: ## for a heading. Paste a picture or a video, or drop one here to put it in the text."),
+      placeholder(this.el.dataset.placeholder || "Write with Markdown."),
       EditorView.contentAttributes.of({"aria-label": this.el.dataset.label || t("Body, Markdown")}),
       keymap.of([
         {key: "Mod-b", run: cmds.bold},
