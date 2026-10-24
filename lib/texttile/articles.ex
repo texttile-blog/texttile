@@ -916,7 +916,7 @@ defmodule Texttile.Articles do
   @doc """
   The lead line of a text: its first sentences, the markdown stripped,
   cut at a word before 160 characters. The cards of the public list
-  carry it, and so does the subscriber mail.
+  carry it, and so does the feed.
 
   It reads over the blank lines. The first paragraph alone is often one
   short line, and a card that carries "So, the way home." beside a card

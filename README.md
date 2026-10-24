@@ -357,8 +357,8 @@ only after its reader follows the mailed link. Admins see the list at
 at once.
 
 When a post goes live with "Email subscribers" checked (the switch is in the
-entry's settings), every confirmed address gets one plain email: the title, the
-first paragraph, and the address the entry lives at. If the blog sits behind the
+entry's settings), every confirmed address gets one plain email: the title and
+the address the entry lives at. If the blog sits behind the
 shared password, the mail includes it. Every mail carries the way off the list.
 The email goes out once per entry; publishing the same entry again does not send
 it again.

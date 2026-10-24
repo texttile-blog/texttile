@@ -3033,13 +3033,6 @@ msgstr "Nicht gesichert · offline"
 msgid "Nothing changed since the last version"
 msgstr "Seit der letzten Version hat sich nichts geändert"
 
-#: lib/texttile_web/live/editor_live.ex:797
-#, elixir-autogen, elixir-format
-msgid "One confirmed subscriber gets a mail with the title and the first paragraph. It goes out once and cannot be called back."
-msgid_plural "%{count} confirmed subscribers get a mail with the title and the first paragraph. It goes out once and cannot be called back."
-msgstr[0] "Ein bestätigter Abonnent bekommt eine Mail mit Titel und erstem Absatz. Sie geht einmal hinaus und lässt sich nicht zurückholen."
-msgstr[1] "%{count} bestätigte Abonnenten bekommen eine Mail mit Titel und erstem Absatz. Sie geht einmal hinaus und lässt sich nicht zurückholen."
-
 #: lib/texttile_web/live/editor_live.ex:786
 #, elixir-autogen, elixir-format
 msgid "Publish and email %{count} subscribers?"
@@ -3049,11 +3042,6 @@ msgstr "Veröffentlichen und %{count} Abonnenten mailen?"
 #, elixir-autogen, elixir-format
 msgid "Publish and send"
 msgstr "Veröffentlichen und senden"
-
-#: lib/texttile_web/live/editor_live.ex:2974
-#, elixir-autogen, elixir-format
-msgid "Publish sends one plain email with the title and the first paragraph to the confirmed subscribers. Publish quietly sends none."
-msgstr "Veröffentlichen schickt eine schlichte Mail mit Titel und erstem Absatz an die bestätigten Abonnenten. Still veröffentlichen schickt keine."
 
 #: lib/texttile_web/live/editor_live.ex:847
 #, elixir-autogen, elixir-format
@@ -3853,15 +3841,10 @@ msgstr "gallery_descriptions muss eine Liste sein."
 msgid "gallery_descriptions requires an explicit gallery list."
 msgstr "gallery_descriptions benötigt eine ausdrücklich angegebene gallery-Liste."
 
-#: lib/texttile/newsletter/notifier.ex:104
+#: lib/texttile/newsletter/notifier.ex:96
 #, elixir-autogen, elixir-format
 msgid "Password: %{password}"
 msgstr "Passwort: %{password}"
-
-#: lib/texttile/newsletter/notifier.ex:69
-#, elixir-autogen, elixir-format
-msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{lead}%{password}\nYou get this mail because this address is on the %{site} list. To leave the list, open this link:\n\n%{unsubscribe}\n"
-msgstr "\"%{title}\" steht jetzt auf %{site}:\n\n%{url}\n%{lead}%{password}\nDu bekommst diese Mail, weil diese Adresse auf der Liste von %{site} steht. Um die Liste zu verlassen, öffne diesen Link:\n\n%{unsubscribe}\n"
 
 #: lib/texttile/comments/notifier.ex:102
 #, elixir-autogen, elixir-format
@@ -3935,3 +3918,20 @@ msgstr "hält einen Stand fest, zu dem du zurück kannst."
 #, elixir-autogen, elixir-format
 msgid "Publish quietly"
 msgstr "Still veröffentlichen"
+
+#: lib/texttile/newsletter/notifier.ex:69
+#, elixir-autogen, elixir-format
+msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{password}\nYou get this mail because this address is on the %{site} list. To leave the list, open this link:\n\n%{unsubscribe}\n"
+msgstr "\"%{title}\" steht jetzt auf %{site}:\n\n%{url}\n%{password}\nDu bekommst diese Mail, weil diese Adresse auf der Liste von %{site} steht. Um die Liste zu verlassen, öffne diesen Link:\n\n%{unsubscribe}\n"
+
+#: lib/texttile_web/live/editor_live.ex:797
+#, elixir-autogen, elixir-format
+msgid "One confirmed subscriber gets a mail with the title and the link. It goes out once and cannot be called back."
+msgid_plural "%{count} confirmed subscribers get a mail with the title and the link. It goes out once and cannot be called back."
+msgstr[0] "Ein bestätigter Abonnent bekommt eine Mail mit Titel und Link. Sie geht einmal hinaus und lässt sich nicht zurückholen."
+msgstr[1] "%{count} bestätigte Abonnenten bekommen eine Mail mit Titel und Link. Sie geht einmal hinaus und lässt sich nicht zurückholen."
+
+#: lib/texttile_web/live/editor_live.ex:2974
+#, elixir-autogen, elixir-format
+msgid "Publish sends one plain email with the title and the link to the confirmed subscribers. Publish quietly sends none."
+msgstr "Veröffentlichen schickt eine schlichte Mail mit Titel und Link an die bestätigten Abonnenten. Still veröffentlichen schickt keine."

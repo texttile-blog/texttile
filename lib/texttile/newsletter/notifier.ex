@@ -52,8 +52,8 @@ defmodule Texttile.Newsletter.Notifier do
 
   @doc """
   Mails one subscriber the text that just went live: the title, the
-  first paragraph, the address it lives at - and the access word, while
-  the blog asks for one.
+  address it lives at, and the access word while the blog asks for one.
+  Nothing of the text itself: the entry is read on the site.
   """
   def deliver_new_text(%Subscriber{} = subscriber, article, site, password) do
     title = Articles.display_title(article)
@@ -71,7 +71,7 @@ defmodule Texttile.Newsletter.Notifier do
         "%{title}" is now on %{site}:
 
         %{url}
-        %{lead}%{password}
+        %{password}
         You get this mail because this address is on the %{site} list. To leave the list, open this link:
 
         %{unsubscribe}
@@ -79,7 +79,6 @@ defmodule Texttile.Newsletter.Notifier do
         title: title,
         site: site,
         url: url,
-        lead: lead_block(article),
         password: password_block(password),
         unsubscribe: unsubscribe_url
       )
@@ -89,13 +88,6 @@ defmodule Texttile.Newsletter.Notifier do
     # goes to a list files it as the kind of mail nobody asked for.
     |> header("List-Unsubscribe", "<#{unsubscribe_url}>")
     |> send()
-  end
-
-  defp lead_block(article) do
-    case Articles.lead(article) do
-      "" -> ""
-      lead -> "\n#{lead}\n"
-    end
   end
 
   defp password_block(nil), do: ""
