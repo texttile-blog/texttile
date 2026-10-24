@@ -22,6 +22,12 @@ export const SWIPE_PX = 48
 export const FOCUSABLE =
   "button, [href], input, select, textarea, video, [tabindex]:not([tabindex='-1'])"
 
+/* the X of the Close button: one inline SVG in the stage's white, so
+   neither bundle fetches an icon and the word stays an aria-label */
+export const closeMark =
+  '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">' +
+  '<path d="M4 4l10 10M14 4L4 14"/></svg>'
+
 /* one step through a row that wraps in both directions */
 export function wrapIndex(at, step, count) {
   return (at + step + count) % count
@@ -131,9 +137,8 @@ class DialogLightbox {
       <div class="lb-bar-a">
         <span id="mlCount" class="num"></span>
         <span class="sp"></span>
-        <a id="mlOrig" class="lb-abtn plain" target="_blank" rel="noopener"
-           ><span class="lb-word">${esc(t("Open original"))}</span><span class="lb-word-s">${esc(t("Original"))}</span></a>
-        <button type="button" id="mlClose" class="lb-abtn">${esc(t("Close"))}</button>
+        <a id="mlOrig" class="lb-abtn plain" target="_blank" rel="noopener">${esc(t("Original"))}</a>
+        <button type="button" id="mlClose" class="lb-abtn lb-x" aria-label="${esc(t("Close"))}">${closeMark}</button>
       </div>
       <div class="lb-stage" id="mlStage">
         <button type="button" class="lb-arrow lb-nav" data-nav="-1"

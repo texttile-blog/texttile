@@ -316,7 +316,21 @@
   <div class="lb-bar">
     <span class="num" id="lbCount"></span>
     <span class="sp"></span>
-    <button class="lb-btn" type="button" id="lbClose">{gettext("Close")}</button>
+    <%!-- the same X as closeMark in lightbox.js: the reader page gets no script for a button --%>
+    <button class="lb-btn lb-x" type="button" id="lbClose" aria-label={gettext("Close")}>
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M4 4l10 10M14 4L4 14" />
+      </svg>
+    </button>
   </div>
   <div class="lb-stage" id="lbStage">
     <button class="lb-arrow" type="button" id="lbPrev" aria-label={gettext("Previous tile")}>

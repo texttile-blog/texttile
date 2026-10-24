@@ -65,6 +65,14 @@ defmodule Texttile.VideosInTextsTest do
   end
 
   describe "the gallery" do
+    test "a video tile knows the size of the original, as it is held", %{article: article} do
+      {:ok, flat} = Gallery.add_file(article, video_file(320, 240), "flat.mp4")
+      {:ok, turned} = Gallery.add_file(article, video_file(320, 240, rotate: 90), "turned.mp4")
+
+      assert {flat.width, flat.height} == {320, 240}
+      assert {turned.width, turned.height} == {240, 320}
+    end
+
     test "takes a video as a tile", %{article: article} do
       relative = stored_video()
 

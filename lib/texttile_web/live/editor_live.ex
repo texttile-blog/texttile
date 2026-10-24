@@ -978,6 +978,16 @@ defmodule TexttileWeb.EditorLive do
 
   defp conversion_note(_media), do: nil
 
+  # What the original weighs, for the lightbox. An original is never
+  # rewritten, so one stat per tile is the truth and needs no column.
+  # The number keeps its unit on one line, even on a phone.
+  defp weight(path) do
+    case Texttile.Uploads.size(path) do
+      nil -> nil
+      bytes -> bytes |> human_size() |> String.replace(" ", " ")
+    end
+  end
+
   defp tile_count(gallery) do
     ngettext("1 tile", "%{count} tiles", length(gallery))
   end
@@ -2047,6 +2057,10 @@ defmodule TexttileWeb.EditorLive do
                     @media[image.path].film && Images.url(@media[image.path].film, :original)
                   }
                   data-original={Images.url(image.path, :original)}
+                  data-path={image.path}
+                  data-preview={@effective_preview == image.path && "1"}
+                  data-pixels={image.width && "#{image.width} × #{image.height}"}
+                  data-weight={weight(image.path)}
                   title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}
                   style={@media[image.path].still && tile_bg(@media[image.path].still)}
                   role="button"

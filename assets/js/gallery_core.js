@@ -19,7 +19,7 @@
    to the server's truth. */
 
 import {t, esc} from "./i18n.js"
-import {attachSwipe, trapTab, quiet} from "./lightbox.js"
+import {attachSwipe, trapTab, quiet, closeMark} from "./lightbox.js"
 
 const MAX_PARALLEL = 2
 /* one roof for a photograph and for a film, and the server owns the
@@ -632,6 +632,10 @@ export class Gallery {
       full: t.dataset.full,
       video: t.dataset.video,
       original: t.dataset.original,
+      path: t.dataset.path,
+      preview: "preview" in t.dataset,
+      pixels: t.dataset.pixels,
+      weight: t.dataset.weight,
     }
   }
 
@@ -669,16 +673,13 @@ export class Gallery {
     // would pop a picker over the picture on a phone
     root.tabIndex = -1
 
-    // aria-label on the delete button: its name stays whole for a
-    // screen reader whatever the width, only the eye sees the short
-    // word on a phone
     root.innerHTML = `
       <div class="lb-bar-a">
         <span id="lbCount" class="num"></span>
         <span class="sp"></span>
-        <button type="button" id="lbDelete" class="lb-abtn danger" aria-label="${esc(t("Delete tile"))}"><span class="lb-word">${esc(t("Delete tile"))}</span><span class="lb-word-s">${esc(t("Delete"))}</span></button>
-        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener"><span class="lb-word">${esc(t("Open original"))}</span><span class="lb-word-s">${esc(t("Original"))}</span></a>
-        <button type="button" id="lbClose" class="lb-abtn" aria-label="${esc(t("Close"))}">${esc(t("Close"))}</button>
+        <button type="button" id="lbDelete" class="lb-abtn plain danger">${esc(t("Delete"))}</button>
+        <a id="lbOrig" class="lb-abtn plain" target="_blank" rel="noopener">${esc(t("Original"))}</a>
+        <button type="button" id="lbClose" class="lb-abtn lb-x" aria-label="${esc(t("Close"))}">${closeMark}</button>
       </div>
       <div id="lbStage" class="relative flex-1 min-h-0 flex items-center justify-center px-2 gap-2" style="touch-action:pan-y">
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
@@ -692,7 +693,10 @@ export class Gallery {
       </div>
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
-          <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
+          <p class="lb-head">
+            <b id="lbName"></b>
+            <span class="lb-facts"><span id="lbPixels"></span><span id="lbWeight"></span></span>
+          </p>
           <label class="lab block mt-3 mb-[3px]" for="lbDescription">${esc(t("Description"))}</label>
           <input type="text" id="lbDescription" maxlength="500" class="w-full" aria-describedby="lbDescriptionHelp">
           <p class="note mt-1" id="lbDescriptionHelp">${esc(t("Shown as the image description and caption. Saves automatically."))}</p>
@@ -703,6 +707,8 @@ export class Gallery {
             </span>
             <span class="note pb-[6px]" id="lbSaved">${esc(t("The date saves itself and sorts the gallery."))}</span>
           </div>
+          <label class="opt mt-3"><input type="checkbox" id="lbPreview"> <span>${esc(t("Preview image"))}</span></label>
+          <p class="note mt-1">${esc(t("Used in the entries grid, on the front page and in link previews."))}</p>
         </div>
       </div>`
 
@@ -736,6 +742,19 @@ export class Gallery {
       })
     })
 
+    // the same event as the picker in the settings: a tick chooses,
+    // untick lets the first picture speak again. The box only ever
+    // shows what the server says: it springs back here, and the
+    // server's answer re-renders the tiles, which paint() follows.
+    // Unticking the first picture changes nothing, and nothing moves.
+    const preview = root.querySelector("#lbPreview")
+    preview.addEventListener("change", () => {
+      const data = this.lb && this.tileData(this.lb.id)
+      if (!data) return
+      preview.checked = data.preview
+      this.hook.pushEvent("set_preview", {path: data.path})
+    })
+
     const description = root.querySelector("#lbDescription")
     description.addEventListener("input", () => {
       this.pendingDescriptions.set(this.lb.id, {id: this.lb.id, description: description.value})
@@ -761,13 +780,11 @@ export class Gallery {
     orig.setAttribute("download", data.filename)
     this.root.querySelector("#lbName").textContent = data.filename
 
-    this.root.querySelector("#lbMeta").textContent =
-      " · " +
-      t("%{date} · %{index} of %{count}", {
-        date: data.date.slice(0, 10),
-        index: data.index + 1,
-        count: data.count,
-      })
+    // the two facts of the original that stand nowhere else in this
+    // dialog: the date has its field and the place its count in the
+    // bar. A video that is not probed yet says nothing about its pixels.
+    this.root.querySelector("#lbPixels").textContent = data.pixels ? `${data.pixels} px` : ""
+    this.root.querySelector("#lbWeight").textContent = data.weight || ""
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {
@@ -778,6 +795,8 @@ export class Gallery {
     } else if (!this.pendingDescriptions.has(lb.id)) {
       this.root.querySelector("#lbDescription").value = data.description
     }
+
+    this.root.querySelector("#lbPreview").checked = data.preview
 
     this.root.querySelectorAll("#lbStage video, #lbImg").forEach(art =>
       art.setAttribute("aria-label", data.description || data.filename)

@@ -25,6 +25,14 @@ defmodule Texttile.Uploads do
   @doc "The absolute path behind a stored relative one."
   def absolute(relative), do: Path.join(root(), relative)
 
+  @doc "How many bytes a stored file weighs, or nil when it is not there."
+  def size(relative) do
+    case File.stat(absolute(relative)) do
+      {:ok, %File.Stat{size: size}} -> size
+      {:error, _reason} -> nil
+    end
+  end
+
   @doc """
   The relative path below the root that these pieces name, or nil when
   they climb out of it.

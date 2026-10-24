@@ -130,6 +130,61 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
   end
 
   describe "the lightbox" do
+    test "the lightbox names the pixels and the weight of the original", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      a = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> click("#tile-#{a.id}")
+      |> assert_has("#lbName", text: "pier.jpg")
+      |> assert_has("#lbPixels", text: "40 × 20 px")
+      |> assert_has("#lbWeight", text: " KB")
+    end
+
+    test "the lightbox picks the preview image and lets it go again", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      a = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+      b = seed!(article, "gull.jpg", "2024:05:01 12:00:00")
+
+      conn =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> assert_has("#tile-#{a.id} .cov")
+        |> click("#tile-#{b.id}")
+        |> assert_has("#lbPreview:not(:checked)")
+        |> check("Preview image")
+        |> assert_has("#lbPreview:checked")
+        |> assert_has("#tile-#{b.id} .cov")
+        |> refute_has("#tile-#{a.id} .cov")
+
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == b.path end)
+
+      # the first picture speaks again
+      conn =
+        conn
+        |> uncheck("Preview image")
+        |> assert_has("#tile-#{a.id} .cov")
+        |> assert_has("#lbPreview:not(:checked)")
+
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == nil end)
+
+      # the first picture is the preview whether ticked or not: the box
+      # stays with the server and does not unstick
+      conn
+      |> click_button("Previous tile")
+      |> assert_has("#lbName", text: "pier.jpg")
+      |> assert_has("#lbPreview:checked")
+      |> uncheck("Preview image")
+      |> assert_has("#lbPreview:checked")
+      |> assert_has("#tile-#{a.id} .cov")
+
+      # the lightbox's untick asked to choose it, and that stays
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == a.path end)
+    end
+
     test "descriptions autosave, follow remote edits, and clear", %{conn: conn, kb: kb} do
       article = draft!(kb)
       image = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
@@ -252,7 +307,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> open_editor(article.id)
       |> click("#tileServer [data-id='#{a.id}']")
       |> assert_has("#lbRoot")
-      |> click_button("Delete tile")
+      |> click_button("#lbDelete", "Delete")
       |> assert_has("#undoBar", text: "pier.jpg")
       |> assert_has("#tileCount", text: "1 tile")
       |> assert_has("#lbName", text: "gull.jpg")
