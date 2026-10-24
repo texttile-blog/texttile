@@ -258,11 +258,6 @@ msgstr ""
 msgid "%{shown} of %{total}"
 msgstr ""
 
-#: lib/texttile/newsletter/notifier.ex:107
-#, elixir-autogen, elixir-format
-msgid "%{site} asks for its access word before it shows the entry.\nThe word is: %{password}\n"
-msgstr ""
-
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:79
 #, elixir-autogen, elixir-format
 msgid "%{site} sends no more mail to this address."
@@ -3940,4 +3935,9 @@ msgstr ""
 #: lib/texttile/comments/notifier.ex:104
 #, elixir-autogen, elixir-format
 msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings.\n"
+msgstr ""
+
+#: lib/texttile/newsletter/notifier.ex:106
+#, elixir-autogen, elixir-format
+msgid "Password: %{password}"
 msgstr ""

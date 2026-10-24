@@ -258,11 +258,6 @@ msgstr "%{name} ist größer als die Grenze von %{roof} MB."
 msgid "%{shown} of %{total}"
 msgstr "%{shown} von %{total}"
 
-#: lib/texttile/newsletter/notifier.ex:107
-#, elixir-autogen, elixir-format
-msgid "%{site} asks for its access word before it shows the entry.\nThe word is: %{password}\n"
-msgstr "%{site} fragt nach seinem Zugangswort, bevor es den Eintrag zeigt.\nDas Wort lautet: %{password}\n"
-
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:79
 #, elixir-autogen, elixir-format
 msgid "%{site} sends no more mail to this address."
@@ -3947,3 +3942,8 @@ msgstr "gallery_descriptions benötigt eine ausdrücklich angegebene gallery-Lis
 #, elixir-autogen, elixir-format
 msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands\nin its settings.\n"
 msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n%{where}    Alle Kommentare: %{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen\nKommentar mailen\" steht.\n"
+
+#: lib/texttile/newsletter/notifier.ex:106
+#, elixir-autogen, elixir-format
+msgid "Password: %{password}"
+msgstr "Passwort: %{password}"

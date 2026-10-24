@@ -284,7 +284,7 @@ defmodule Texttile.NewsletterTest do
     test "an open blog's mail carries no access word" do
       published_post()
       assert_receive {:email, mail}, 1000
-      refute mail.text_body =~ "access word"
+      refute mail.text_body =~ "Password:"
     end
 
     test "with nobody on the list the text still goes live, marked" do

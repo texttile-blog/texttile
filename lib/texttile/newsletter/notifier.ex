@@ -82,7 +82,7 @@ defmodule Texttile.Newsletter.Notifier do
         site: site,
         url: url,
         lead: lead_block(article),
-        password: password_block(site, password),
+        password: password_block(password),
         unsubscribe: unsubscribe_url
       )
     )
@@ -100,18 +100,10 @@ defmodule Texttile.Newsletter.Notifier do
     end
   end
 
-  defp password_block(_site, nil), do: ""
+  defp password_block(nil), do: ""
 
-  defp password_block(site, password) do
-    "\n" <>
-      gettext(
-        """
-        %{site} asks for its access word before it shows the entry.
-        The word is: %{password}
-        """,
-        site: site,
-        password: password
-      )
+  defp password_block(password) do
+    "\n" <> gettext("Password: %{password}", password: password) <> "\n"
   end
 
   defp deliver(to, site, subject, body) do
