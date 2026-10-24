@@ -177,9 +177,10 @@
               {comment_when(comment.inserted_at)}
             </span>
           </div>
-          <p class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]">
-            {comment.body}
-          </p>
+          <p
+            class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
+            phx-no-format
+          >{comment.body}</p>
           <p :if={kind == :own} class="f-note mt-[6px]">
             {gettext("Only you see this. Follow the link in the mail and everybody sees it.")}
           </p>

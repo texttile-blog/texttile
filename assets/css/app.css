@@ -324,11 +324,23 @@
   select { max-width: 280px; }
   textarea, select.wide { max-width: none; }
 
-  /* the name over a comment, in the admin area: it is the way to write
-     back, so it answers the pointer, but it carries no underline of its
-     own - the row is a name and a date, not a paragraph of links */
-  .writer { color: inherit; text-decoration: none; }
-  .writer:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
+  /* A COMMENT IN THE ADMIN AREA · a block of paper on the page, the
+     shape the tile lightbox's foot has. The top line holds the name,
+     the ways to reach its writer as quiet icons, the waiting mark, and
+     the moment pushed to the right; the entry stands alone under it. */
+  .cmt {
+    background: var(--tt-paper); border: 1px solid var(--tt-hair);
+    border-radius: var(--tt-radius); padding: 11px 14px 9px; margin-bottom: 10px;
+  }
+  .cmt-top {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    column-gap: 8px; row-gap: 3px; font-size: 13.5px;
+  }
+  .cmt-when { margin-left: auto; font-size: 12.5px; color: var(--tt-faint); }
+  .cmt-when .num { white-space: nowrap; }
+  .cmt-ico { color: var(--tt-faint); align-self: center; display: inline-flex; }
+  .cmt-ico:hover { color: var(--tt-accent); }
+  .cmt-ent { display: block; width: fit-content; margin-top: 2px; font-size: 12.5px; }
 
   /* the same name under a text, when an imported comment carries the
      address its author gave. A reader has no reason to hover a name,
