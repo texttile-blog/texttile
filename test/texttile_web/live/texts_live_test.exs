@@ -59,8 +59,8 @@ defmodule TexttileWeb.TextsLiveTest do
       assert has_element?(view, "#gridCount", "1 entry")
 
       # the state with its day, and who it is by apart from them
-      assert has_element?(view, "#cards .card .cm", "draft")
-      assert has_element?(view, "#cards .card .cm", "last edited")
+      assert has_element?(view, "#cards .card .cm", "draft,")
+      assert has_element?(view, "#cards .card .cm", Date.to_string(Date.utc_today()))
       assert has_element?(view, "#cards .card .cm .by", Texttile.Accounts.display_name(user))
       refute has_element?(view, "#cards .card .cm", "· #{Texttile.Accounts.display_name(user)}")
     end

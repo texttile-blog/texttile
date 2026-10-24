@@ -2687,7 +2687,7 @@ msgstr ""
 msgid "direct"
 msgstr ""
 
-#: lib/texttile_web/live/texts_live.ex:302
+#: lib/texttile_web/live/texts_live.ex:301
 #, elixir-autogen, elixir-format
 msgid "draft"
 msgstr ""
@@ -2712,7 +2712,7 @@ msgstr ""
 msgid "goes for good on"
 msgstr ""
 
-#: lib/texttile_web/live/texts_live.ex:311
+#: lib/texttile_web/live/texts_live.ex:306
 #, elixir-autogen, elixir-format
 msgid "goes live %{date}"
 msgstr ""
@@ -2747,11 +2747,6 @@ msgstr ""
 msgid "in the repository is the format, written so a script or an AI agent can build the zip from any export."
 msgstr ""
 
-#: lib/texttile_web/live/texts_live.ex:303
-#, elixir-autogen, elixir-format
-msgid "last edited %{date}"
-msgstr ""
-
 #: lib/texttile_web/live/settings_live.ex:1583
 #, elixir-autogen, elixir-format
 msgid "leaves every entry that carries it, and /tags/%{slug} answers nothing from that moment. The entries stay where they are, with the rest of their tags."
@@ -2777,7 +2772,7 @@ msgstr ""
 msgid "not confirmed yet"
 msgstr ""
 
-#: lib/texttile_web/live/texts_live.ex:325
+#: lib/texttile_web/live/texts_live.ex:320
 #, elixir-autogen, elixir-format
 msgid "page"
 msgstr ""
@@ -2813,7 +2808,7 @@ msgstr ""
 msgid "saved %{time}"
 msgstr ""
 
-#: lib/texttile_web/live/texts_live.ex:312
+#: lib/texttile_web/live/texts_live.ex:307
 #, elixir-autogen, elixir-format
 msgid "scheduled, no date yet"
 msgstr ""
@@ -3478,7 +3473,7 @@ msgstr ""
 msgid "Throw the unpublished changes away?"
 msgstr ""
 
-#: lib/texttile_web/live/texts_live.ex:321
+#: lib/texttile_web/live/texts_live.ex:316
 #, elixir-autogen, elixir-format
 msgid "edited since publishing"
 msgstr ""

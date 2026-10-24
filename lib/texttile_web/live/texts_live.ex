@@ -298,12 +298,7 @@ defmodule TexttileWeb.TextsLive do
     bits =
       case article.status do
         "draft" ->
-          [
-            gettext("draft"),
-            gettext("last edited %{date}",
-              date: Texttile.I18n.format_plain_day(article.updated_at)
-            )
-          ]
+          [gettext("draft"), Texttile.I18n.format_plain_day(article.updated_at)]
 
         "scheduled" ->
           [
