@@ -42,8 +42,7 @@ defmodule Texttile.Newsletter.Notifier do
 
         %{url}
 
-        You confirm this address once. If you did not ask for this,
-        ignore this mail. Without the link, the address gets nothing.
+        You confirm this address once. If you did not ask for this, ignore this mail. Without the link, the address gets nothing.
         """,
         site: site,
         url: url
@@ -73,8 +72,7 @@ defmodule Texttile.Newsletter.Notifier do
 
         %{url}
         %{lead}%{password}
-        You get this mail because this address is on the %{site} list.
-        To leave the list, open this link:
+        You get this mail because this address is on the %{site} list. To leave the list, open this link:
 
         %{unsubscribe}
         """,

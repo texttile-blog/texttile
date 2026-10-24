@@ -49,9 +49,7 @@ defmodule Texttile.Comments.Notifier do
 
           %{url}
 
-          You confirm this address once. Every comment you write after
-          that appears at once. If you did not write a comment on %{site},
-          ignore this mail.
+          You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.
           """,
           name: comment.name,
           title: title,
@@ -109,8 +107,7 @@ defmodule Texttile.Comments.Notifier do
 
       %{where}    All comments:  %{url}
 
-      %{site} sends this mail because "Mail me every new comment" stands
-      in its settings.
+      %{site} sends this mail because "Mail me every new comment" stands in its settings.
       """,
       name: comment.name,
       title: title,

@@ -54,10 +54,7 @@ defmodule Texttile.Accounts.UserNotifier do
 
         %{url}
 
-        The link works once, and for a week. Nobody else sets your
-        password, and no mail from this site ever contains one. If you
-        did not expect this, you can ignore this mail: without the link
-        the account stays closed.
+        The link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed.
         """,
         url: url,
         blog: TexttileWeb.Endpoint.url()
@@ -83,9 +80,7 @@ defmodule Texttile.Accounts.UserNotifier do
 
         %{url}
 
-        The link works once and for 24 hours. The old password works until
-        you set the new one. If you did not ask for this, you can ignore
-        this mail.
+        The link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail.
         """,
         name: Texttile.Accounts.display_name(user),
         site: site,
