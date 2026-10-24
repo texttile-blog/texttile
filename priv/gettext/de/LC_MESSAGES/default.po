@@ -307,7 +307,7 @@ msgid_plural "%{count} comments are still out of the entry: those readers have n
 msgstr[0] "1 Kommentar steht noch nicht im Eintrag: diese Person ist dem Bestätigungslink noch nicht gefolgt."
 msgstr[1] "%{count} Kommentare stehen noch nicht im Eintrag: diese Personen sind dem Bestätigungslink noch nicht gefolgt."
 
-#: lib/texttile_web/live/comments_live.ex:172
+#: lib/texttile_web/live/comments_live.ex:155
 #, elixir-autogen, elixir-format
 msgid "1 deleted comment waits here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood."
 msgid_plural "%{count} deleted comments wait here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood."
@@ -1268,7 +1268,7 @@ msgstr "Weiter"
 msgid "Next tile"
 msgstr "Nächste Kachel"
 
-#: lib/texttile_web/live/comments_live.ex:117
+#: lib/texttile_web/live/comments_live.ex:100
 #, elixir-autogen, elixir-format
 msgid "No comments yet, anywhere. Every comment a reader sends shows up here."
 msgstr "Noch keine Kommentare, nirgends. Jeder Kommentar, den jemand abschickt, taucht hier auf."
@@ -1686,11 +1686,6 @@ msgstr "Lesende bestätigen zuerst ihre Adresse. Ein Kommentar bleibt aus dem Ei
 #, elixir-autogen, elixir-format
 msgid "Readers confirm their email · new comments wait for the link"
 msgstr "Lesende bestätigen ihre Adresse · neue Kommentare warten auf den Link"
-
-#: lib/texttile_web/live/comments_live.ex:104
-#, elixir-autogen, elixir-format
-msgid "Readers see every one of them."
-msgstr "Lesende sehen jeden davon."
 
 #: lib/texttile_web/live/import_live.ex:172
 #, elixir-autogen, elixir-format
@@ -2190,11 +2185,6 @@ msgstr "Der Import läuft"
 msgid "The import runs on the server; this page may close."
 msgstr "Der Import läuft auf dem Server, diese Seite darf zugehen."
 
-#: lib/texttile_web/live/comments_live.ex:92
-#, elixir-autogen, elixir-format
-msgid "The latest comments across all entries, newest first."
-msgstr "Die neuesten Kommentare über alle Einträge hinweg, die neuesten zuerst."
-
 #: lib/texttile_web/live/editor_live.ex:2679
 #, elixir-autogen, elixir-format
 msgid "The lines to pass on"
@@ -2414,7 +2404,7 @@ msgstr "Titel"
 msgid "Too late · the picture is gone for good"
 msgstr "Zu spät · das Bild ist endgültig weg"
 
-#: lib/texttile_web/live/comments_live.ex:139
+#: lib/texttile_web/live/comments_live.ex:122
 #, elixir-autogen, elixir-format
 msgid "Trash"
 msgstr "Papierkorb"
@@ -2645,14 +2635,14 @@ msgstr "Deine Sitzungen"
 msgid "added"
 msgstr "hinzugefügt"
 
-#: lib/texttile_web/live/comments_live.ex:148
+#: lib/texttile_web/live/comments_live.ex:131
 #, elixir-autogen, elixir-format
 msgid "and %{count} deleted earlier, closer to the day it goes for good."
 msgid_plural "and %{count} deleted earlier, closer to the day they go for good."
 msgstr[0] "und %{count} früher gelöschter, näher an dem Tag, an dem er endgültig weg ist."
 msgstr[1] "und %{count} früher gelöschte, näher an dem Tag, an dem sie endgültig weg sind."
 
-#: lib/texttile_web/live/comments_live.ex:133
+#: lib/texttile_web/live/comments_live.ex:116
 #, elixir-autogen, elixir-format
 msgid "and %{count} more on their entries."
 msgstr "und %{count} weitere bei ihren Einträgen."
@@ -2978,14 +2968,7 @@ msgstr "Schreibt in „%{title}“"
 msgid "\"%{title}\" is deleted. Its versions and its log went with it."
 msgstr "\"%{title}\" ist gelöscht. Seine Versionen und sein Protokoll sind mitgegangen."
 
-#: lib/texttile_web/live/comments_live.ex:95
-#, elixir-autogen, elixir-format
-msgid "comment across all entries, newest first."
-msgid_plural "comments across all entries, newest first."
-msgstr[0] "Kommentar über alle Einträge hinweg, der neueste zuerst."
-msgstr[1] "Kommentare über alle Einträge hinweg, die neuesten zuerst."
-
-#: lib/texttile_web/live/comments_live.ex:107
+#: lib/texttile_web/live/comments_live.ex:92
 #, elixir-autogen, elixir-format
 msgid "comment waits for the reader to confirm the email address, so readers do not see it yet."
 msgid_plural "comments wait for the reader to confirm the email address, so readers do not see them yet."

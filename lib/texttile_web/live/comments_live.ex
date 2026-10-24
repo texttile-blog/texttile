@@ -83,34 +83,17 @@ defmodule TexttileWeb.CommentsLive do
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h">{gettext("Comments")}</h1>
-        <%!-- the counts carry the news, so they carry the weight. The
-             number keeps its own tag here and stays out of the
+        <%!-- the one piece of news under the heading: what readers cannot
+             see yet. The number keeps its own tag and stays out of the
              message: a translation file is prose, and prose must not
              be able to write markup into this page. --%>
-        <p class="lead" id="commentsSub">
-          <%= if @total == 0 do %>
-            {gettext("The latest comments across all entries, newest first.")}
-          <% else %>
-            <b class="num">{@total}</b>
-            {ngettext(
-              "comment across all entries, newest first.",
-              "comments across all entries, newest first.",
-              @total
-            )}
-            <%= if @waiting == 0 do %>
-              <%!-- not "every one is confirmed": a comment an admin let
-                   through stands under its entry with an address that
-                   never was --%>
-              {gettext("Readers see every one of them.")}
-            <% else %>
-              <b class="num">{@waiting}</b>
-              {ngettext(
-                "comment waits for the reader to confirm the email address, so readers do not see it yet.",
-                "comments wait for the reader to confirm the email address, so readers do not see them yet.",
-                @waiting
-              )}
-            <% end %>
-          <% end %>
+        <p :if={@waiting > 0} class="lead" id="commentsSub">
+          <b class="num">{@waiting}</b>
+          {ngettext(
+            "comment waits for the reader to confirm the email address, so readers do not see it yet.",
+            "comments wait for the reader to confirm the email address, so readers do not see them yet.",
+            @waiting
+          )}
         </p>
         <div id="commentsList">
           <p :if={@recent == []} class="note">

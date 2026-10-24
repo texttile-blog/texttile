@@ -59,7 +59,6 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
 
-    assert has_element?(view, "#commentsSub", "across all entries")
     assert has_element?(view, "#commentsSub", "1 comment waits for the reader")
   end
 
@@ -304,9 +303,8 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       refute has_element?(view, "#comment-#{comment.id} .wait")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
-      # not "every one of them is confirmed": this one never was
-      assert has_element?(view, "#commentsSub", "Readers see every one of them")
-      refute has_element?(view, "#commentsSub", "confirmed")
+      # nothing waits any more, so the line under the heading goes
+      refute has_element?(view, "#commentsSub")
       assert Comments.shown_to_readers?(Comments.get_comment!(comment.id))
 
       # the next comment from the same address waits like every other
