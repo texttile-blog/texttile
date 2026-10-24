@@ -1556,7 +1556,7 @@ defmodule TexttileWeb.EditorLive do
              click somewhere else. --%>
         <%= if @article.status == "draft" do %>
           <button class="row" id="publishQuietRow" phx-click="publish_quietly">
-            {gettext("Publish quietly, no mail")}
+            {gettext("Publish quietly")}
           </button>
         <% end %>
         <%= if @article.status == "scheduled" do %>
@@ -1720,21 +1720,13 @@ defmodule TexttileWeb.EditorLive do
                     data-drop-flag="#bodyDropFlag"
                     data-posters={Jason.encode!(poster_map(@media))}
                     data-label={gettext("Body, Markdown")}
-                    data-placeholder={
-                      gettext(
-                        "Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
-                      )
-                    }
+                    data-placeholder={gettext("Write with Markdown.")}
                   >
                     <textarea
                       class="ed-body"
                       aria-label={gettext("Body, Markdown")}
                       spellcheck="false"
-                      placeholder={
-                        gettext(
-                          "Write. Markdown works: ## for a heading. Paste an image or drop one here to put it in the text."
-                        )
-                      }
+                      placeholder={gettext("Write with Markdown.")}
                       readonly={!@holds_lock}
                     >{@article.body}</textarea>
                   </div>
@@ -1748,9 +1740,7 @@ defmodule TexttileWeb.EditorLive do
                       <%= if @holds_lock do %>
                         {gettext("The draft saves as you type.")}
                         <b>{gettext("Save version")}</b>
-                        {gettext(
-                          "takes a snapshot of the title and the body that you can go back to."
-                        )}
+                        {gettext("takes a snapshot that you can go back to.")}
                       <% else %>
                         {gettext("The title and the body are read-only right now.")}
                         <b>{gettext("Save version")}</b>
@@ -1788,8 +1778,6 @@ defmodule TexttileWeb.EditorLive do
                     {gettext("Pictures and videos in the text")}
                     <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                   </span>
-                  <span class="sp"></span>
-                  <span class="note">{gettext("Paste one into the text, or drop one on it.")}</span>
                 </div>
                 <div id="inlineImgs">
                   <p :if={Body.refs(@article.body) == []} class="note pt-[10px]">
@@ -2578,19 +2566,23 @@ defmodule TexttileWeb.EditorLive do
                     checked={@article.allow_comments}
                   /> <span>{gettext("Allow comments")}</span>
                 </label>
-                <%!-- The mail used to be a switch here, armed on a pane
+              </span>
+            </div>
+
+            <%!-- The mail used to be a switch here, armed on a pane
                      and fired by a click at the other end of the
                      screen. It is a verb in the publish menu now, so
                      the step that cannot be taken back is the step you
                      ask for. What is left here is the one fact this
                      pane still owes: whether this kind of entry mails
                      anybody at all. --%>
-                <span id="notifyOpt">
-                  <span :if={@article.type == "page"} class="note">
-                    {gettext("Pages never email anyone.")}
-                  </span>
-                  <span :if={@article.type != "page"} class="note">{notify_note(@article)}</span>
+            <div class="drow gtop">
+              <span class="lab">{gettext("Email")}</span>
+              <span class="val" id="notifyOpt">
+                <span :if={@article.type == "page"} class="note">
+                  {gettext("Pages never email anyone.")}
                 </span>
+                <span :if={@article.type != "page"} class="note">{notify_note(@article)}</span>
               </span>
             </div>
           </form>
