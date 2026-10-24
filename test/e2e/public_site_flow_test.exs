@@ -59,6 +59,37 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> assert_has("a", text: "Desert nights", timeout: 5_000)
       |> assert_has("#q[value='']")
     end
+
+    # The year is a choice on the search form, and a choice goes as soon
+    # as it is made: nothing else to press, and the term stays with it.
+    test "choosing a year narrows the list and keeps the term", %{conn: conn} do
+      published_post(
+        title: "Harbor mornings",
+        body: "Fog over the pier.",
+        publish_date: ~D[2024-05-05]
+      )
+
+      published_post(
+        title: "Harbor nights",
+        body: "Lamps on the pier.",
+        publish_date: ~D[2023-05-05]
+      )
+
+      published_post(
+        title: "Desert nights",
+        body: "Stars and sand.",
+        publish_date: ~D[2023-06-06]
+      )
+
+      conn
+      |> open_page("/blog?q=harbor")
+      |> refute_has("a", text: "Desert nights")
+      |> select("Year", option: "2023 (1)")
+      |> assert_has("#narrowed", text: "Entries matching “harbor” from 2023.", timeout: 5_000)
+      |> assert_has("a", text: "Harbor nights")
+      |> refute_has("a", text: "Harbor mornings")
+      |> assert_has("#q[value='harbor']")
+    end
   end
 
   describe "the password gate" do

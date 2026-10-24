@@ -3,66 +3,15 @@
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1">{gettext("Blog Entries")}</h1>
 
-    <div class="searchrow mt-7">
-      <form action={@list_path} method="get" role="search">
-        <label for="q" class="sr">{gettext("Search the entries")}</label>
-        <input
-          type="search"
-          id="q"
-          name="q"
-          value={@q}
-          placeholder={gettext("Search titles, tags and text")}
-          autocomplete="off"
-          spellcheck="false"
-        />
-      </form>
-      <a :if={@q != "" || @year} class="btn sm" id="clear" href={@list_path}>
-        {gettext("Clear")}
-      </a>
-      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
-    </div>
+    <%!-- the list is narrowed from under it, so a reader who lands on
+         a year or a term reads here why the list is shorter than the
+         blog, and finds the way back --%>
+    <p :if={@q != "" || @year} class="f-note mt-3" id="narrowed">
+      {narrowed(@q, @year, @month)}
+      <a class="link" href={@list_path}>{gettext("Show all entries")}</a>
+    </p>
 
-    <%!-- the archive: one line of years, and the months of the year
-         that is open under it. Two lines, whatever the age of the blog.
-         The counts follow the search, so a year that holds nothing for
-         the term goes quiet instead of lying about it. --%>
-    <nav :if={@years != []} class="periods" id="periods" aria-label={gettext("Archive")}>
-      <p class="prow" id="years">
-        <.period
-          label={gettext("All years")}
-          on={is_nil(@year)}
-          all
-          href={@period_path.(nil, nil)}
-          count={@across_years}
-        />
-        <.period
-          :for={{year, count} <- @years}
-          label={year}
-          on={@year == year}
-          href={@period_path.(year, nil)}
-          count={count}
-        />
-      </p>
-      <p :if={@months != []} class="prow" id="months">
-        <%!-- no count on this row at all: the year over it already
-             says how many the year holds, and twelve numbers in a row
-             is a table, not a line --%>
-        <.period
-          label={gettext("All months")}
-          on={is_nil(@month)}
-          all
-          href={@period_path.(@year, nil)}
-        />
-        <.period
-          :for={{month, _count} <- @months}
-          label={Articles.month_name(month)}
-          on={@month == month}
-          href={@period_path.(@year, month)}
-        />
-      </p>
-    </nav>
-
-    <div class="cards" id="texts">
+    <div class="cards mt-9" id="texts">
       <.card
         :for={article <- @articles}
         article={article}
@@ -108,6 +57,50 @@
       <a class="link" href={@list_path}>{gettext("Show all entries")}</a>.
     </p>
     <p :if={@articles == [] && @q == ""} class="f-body mt-8">{gettext("Nothing here yet.")}</p>
+
+    <%!-- the way through the archive, under the list: the field, the
+         year, the month of the year that is open, and the count. One
+         form, so Enter in the field keeps the year, and a change of
+         year goes with the term (public.js submits it). The counts in
+         the choices follow the search, so a year that holds nothing
+         for the term says so instead of lying about it. --%>
+    <form
+      class="searchrow mt-14 pt-7 border-t border-rule"
+      id="archive"
+      action={@list_path}
+      method="get"
+      role="search"
+    >
+      <label for="q" class="sr">{gettext("Search the entries")}</label>
+      <input
+        type="search"
+        id="q"
+        name="q"
+        value={@q}
+        placeholder={gettext("Search titles, tags and text")}
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <label :if={@years != []} for="year" class="sr">{gettext("Year")}</label>
+      <span :if={@years != []} class="pick">
+        <select name="y" id="year">
+          <option value="">{gettext("All years")}</option>
+          <option :for={{year, count} <- @years} value={year} selected={@year == year}>
+            {year} ({count})
+          </option>
+        </select>
+      </span>
+      <label :if={@months != []} for="month" class="sr">{gettext("Month")}</label>
+      <span :if={@months != []} class="pick">
+        <select name="m" id="month">
+          <option value="">{gettext("All months")}</option>
+          <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
+            {Texttile.I18n.month_name(month)}
+          </option>
+        </select>
+      </span>
+      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
+    </form>
   </div>
 
   <%!-- the second zone: what belongs to the blog and not to the list --%>

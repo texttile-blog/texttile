@@ -64,6 +64,13 @@ if (document.body.dataset.count) {
   field.addEventListener("input", cleared);
   field.addEventListener("search", cleared);
 
+  // The year and the month are choices on the same form, and a choice
+  // is an answer: it goes as soon as it is made, with whatever stands
+  // in the field.
+  field.form.addEventListener("change", (e) => {
+    if (e.target.tagName === "SELECT") field.form.requestSubmit();
+  });
+
   // "/" jumps into the field from anywhere on the page; Escape empties
   // it, which is one of the three ways above.
   addEventListener("keydown", (e) => {

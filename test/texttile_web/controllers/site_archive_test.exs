@@ -1,7 +1,8 @@
 defmodule TexttileWeb.SiteArchiveTest do
   @moduledoc """
-  The archive over the reader's list: one line of years, the months of
-  the open year under it, and both of them real addresses.
+  The archive under the reader's list: the year and the month as
+  choices on the search form, and the line under the heading that
+  says what narrowed the list.
   """
   use TexttileWeb.ConnCase, async: false
 
@@ -15,21 +16,26 @@ defmodule TexttileWeb.SiteArchiveTest do
     }
   end
 
-  test "names every year the blog has, newest first, with its count", %{conn: conn} do
+  test "offers every year the blog has, newest first, with its count", %{conn: conn} do
     html = conn |> get(~p"/blog") |> html_response(200)
 
-    assert html =~ ~s(id="years")
-    assert html =~ ~s(href="/blog?y=2026")
-    assert html =~ ~s(href="/blog?y=2024")
+    assert html =~ ~s(id="year")
+    assert html =~ ~r/<option value="2026"[^>]*>\s*2026 \(2\)/
+    assert html =~ ~r/<option value="2024"[^>]*>\s*2024 \(1\)/
 
-    {newer, _} = :binary.match(html, "2026")
-    {older, _} = :binary.match(html, "2024")
+    {newer, _} = :binary.match(html, ~s(value="2026"))
+    {older, _} = :binary.match(html, ~s(value="2024"))
     assert newer < older
+
+    # the archive stands under the list, not over it
+    {list, _} = :binary.match(html, ~s(id="texts"))
+    {archive, _} = :binary.match(html, ~s(id="archive"))
+    assert list < archive
   end
 
   test "narrows the list to one year, then to one month of it", %{conn: conn} do
-    # no year open, no months row
-    refute conn |> get(~p"/blog") |> html_response(200) =~ ~s(id="months")
+    # no year open, no month to choose
+    refute conn |> get(~p"/blog") |> html_response(200) =~ ~s(id="month")
 
     html = conn |> get(~p"/blog?y=2026") |> html_response(200)
 
@@ -37,40 +43,42 @@ defmodule TexttileWeb.SiteArchiveTest do
     assert html =~ "Desert nights"
     refute html =~ "The long winter"
 
-    assert html =~ ~s(id="months")
-    assert html =~ ~s(href="/blog?y=2026&amp;m=3")
-    assert html =~ ~s(href="/blog?y=2026&amp;m=8")
+    assert html =~ ~r/<option value="2026"[^>]*selected/
+    assert html =~ ~s(id="month")
+    assert html =~ ~s(<option value="3")
+    assert html =~ ~s(<option value="8")
     # nobody wrote in the other ten months, so they are not a choice
-    refute html =~ ~s(m=5")
+    refute html =~ ~s(<option value="5")
 
     html = conn |> get(~p"/blog?y=2026&m=8") |> html_response(200)
 
     assert html =~ "Harbour mornings"
     refute html =~ "Desert nights"
+    assert html =~ ~r/<option value="8"[^>]*selected/
   end
 
-  test "All years counts what the search found, like the years beside it", %{conn: conn} do
-    html = conn |> get(~p"/blog") |> html_response(200)
-    assert html =~ ~r/All years<span class="cnt"[^>]*>3<\/span>/
-
+  test "the counts in the choices follow the search", %{conn: conn} do
     # one of the three carries the word, and one of the years does too:
     # both numbers have to come from the same list
     html = conn |> get(~p"/blog?q=harbour") |> html_response(200)
-    assert html =~ ~r/All years<span class="cnt"[^>]*>1<\/span>/
-    refute html =~ ~r/All years<span class="cnt"[^>]*>3<\/span>/
+    assert html =~ ~r/<option value="2026"[^>]*>\s*2026 \(1\)/
+    refute html =~ "2024 ("
   end
 
-  test "the mark of the open one goes on a year, never on All years", %{conn: conn} do
-    # nothing chosen: All years is where the reader stands, and it says
-    # so by being no way anywhere. It is not a choice, so it wears no
-    # mark of one.
-    html = conn |> get(~p"/blog") |> html_response(200)
-    refute html =~ ~s(class="per on")
+  test "says under the heading what narrowed the list, and the way back", %{conn: conn} do
+    refute conn |> get(~p"/blog") |> html_response(200) =~ ~s(id="narrowed")
 
-    # a year chosen: the year wears the mark, All years is the way back
     html = conn |> get(~p"/blog?y=2026") |> html_response(200)
-    assert html =~ ~r/<span class="per on"[^>]*>\s*2026/
-    assert html =~ ~s(href="/blog")
-    refute html =~ ~r/class="per on"[^>]*>\s*All/
+    assert html =~ "Entries from 2026."
+    assert html =~ ~r/id="narrowed".*href="\/blog"/s
+
+    html = conn |> get(~p"/blog?y=2026&m=8") |> html_response(200)
+    assert html =~ "Entries from August 2026."
+
+    html = conn |> get(~p"/blog?q=harbour") |> html_response(200)
+    assert html =~ "Entries matching “harbour”."
+
+    html = conn |> get(~p"/blog?q=harbour&y=2026") |> html_response(200)
+    assert html =~ "Entries matching “harbour” from 2026."
   end
 end
