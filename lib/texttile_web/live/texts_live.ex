@@ -11,13 +11,11 @@ defmodule TexttileWeb.TextsLive do
   alias Texttile.Articles
   alias Texttile.Articles.Listing
   alias Texttile.Images
-  alias Texttile.Comments
   alias Texttile.Gallery
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Articles.subscribe_admin()
-      Comments.subscribe()
     end
 
     {:ok,
@@ -56,7 +54,6 @@ defmodule TexttileWeb.TextsLive do
     |> assign(:shown, list.shown)
     |> assign(:articles, list.entries)
     |> assign(:covers, Gallery.previews(list.entries))
-    |> assign(:comment_counts, Comments.count_map())
     # which live entries are being rewritten right now. One query for
     # the whole grid: the bodies of every entry are far too much to
     # carry here a second time just to compare them.
@@ -95,12 +92,6 @@ defmodule TexttileWeb.TextsLive do
   def handle_info({:article_deleted, _id}, socket), do: {:noreply, load(socket)}
   def handle_info({:text_changed, _article}, socket), do: {:noreply, load(socket)}
   def handle_info({:gallery_changed, _id, _meta}, socket), do: {:noreply, load(socket)}
-  def handle_info({:comment_posted, _comment}, socket), do: {:noreply, load(socket)}
-  def handle_info({:comment_deleted, _comment}, socket), do: {:noreply, load(socket)}
-  # a restore puts a comment back into the count on its card
-  def handle_info({:comment_changed, _comment}, socket), do: {:noreply, load(socket)}
-  # an import brings a whole conversation with the entry
-  def handle_info({:comments_imported, _article_id}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 
   def render(assigns) do
@@ -212,12 +203,19 @@ defmodule TexttileWeb.TextsLive do
                 <span class="cimg empty">{gettext("no images yet")}</span>
               <% end %>
               <span class="ct">{Articles.display_title(article)}</span>
+              <%!-- the state and its day on the left, who it is by on the
+                   right: two facts, two ends of the line. A narrow card
+                   wraps the line between the facts, never inside a day. --%>
               <span class="cm">
-                <span class={["st", article.status]}></span>{card_meta(
-                  article,
-                  @comment_counts[article.id],
-                  article.id in @pending
-                )}
+                <%!-- a bit holds no whitespace of the template: the browser
+                     would carry a space of a nowrap span over to the gap
+                     between two bits and refuse to break there --%>
+                <span>
+                  <%= for {bit, i} <- card_meta(article, article.id in @pending) do %>
+                    <span class="whitespace-nowrap" phx-no-format><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
+                  <% end %>
+                </span>
+                <span :if={article.user} class="by">{admin_name(article.user)}</span>
               </span>
             </.link>
             <a
@@ -294,16 +292,13 @@ defmodule TexttileWeb.TextsLive do
     "background-image:url('#{Images.url(path, :thumb)}')"
   end
 
-  defp card_meta(article, comment_count, pending?) do
+  # The facts of a card's line, in order: the state with its day, and
+  # "page" in front of them for a page.
+  defp card_meta(article, pending?) do
     bits =
       case article.status do
         "draft" ->
-          [
-            gettext("draft"),
-            gettext("last edited %{date}",
-              date: Texttile.I18n.format_plain_day(article.updated_at)
-            )
-          ]
+          [gettext("draft"), Texttile.I18n.format_plain_day(article.updated_at)]
 
         "scheduled" ->
           [
@@ -322,27 +317,11 @@ defmodule TexttileWeb.TextsLive do
             else: [to_string(article.publish_date)]
       end
 
-    # The count stands on every card that has one, whatever state the
-    # text is in: a text taken off the site keeps the comments it
-    # collected, and the overview is where somebody looks for them.
-    bits =
-      bits ++
-        case comment_count do
-          nil -> []
-          0 -> []
-          n -> [ngettext("1 comment", "%{count} comments", n)]
-        end
-
     bits = if article.type == "page", do: [gettext("page") | bits], else: bits
 
-    # Who it is by, beside the day, and whether that account is still
-    # here. Nil where the entry never had an author.
-    bits =
-      case admin_name(article.user) do
-        nil -> bits
-        name -> bits ++ [name]
-      end
-
-    Enum.join(bits, " · ")
+    # a comma after every bit but the last, and each bit with its
+    # place, so the template can hang the state mark on the first
+    last = length(bits) - 1
+    Enum.with_index(bits, fn bit, i -> {if(i < last, do: bit <> ",", else: bit), i} end)
   end
 end

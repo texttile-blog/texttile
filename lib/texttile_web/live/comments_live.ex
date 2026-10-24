@@ -106,10 +106,7 @@ defmodule TexttileWeb.CommentsLive do
             editing={@editing_comment == to_string(comment.id)}
             error={@comment_error}
           />
-          <div
-            :if={@total > length(@recent)}
-            class="py-[11px] text-[12.5px] text-faint border-t border-hair"
-          >
+          <div :if={@total > length(@recent)} class="pt-[4px] text-[12.5px] text-faint">
             {gettext("and %{count} more on their entries.", count: @total - length(@recent))}
           </div>
         </div>
@@ -121,10 +118,7 @@ defmodule TexttileWeb.CommentsLive do
             {trash_line(length(@trashed) + @trashed_earlier)}
           </p>
           <.trashed_item :for={comment <- @trashed} comment={comment} />
-          <div
-            :if={@trashed_earlier > 0}
-            class="py-[11px] text-[12.5px] text-faint border-t border-hair"
-          >
+          <div :if={@trashed_earlier > 0} class="pt-[4px] text-[12.5px] text-faint">
             {ngettext(
               "and %{count} deleted earlier, closer to the day it goes for good.",
               "and %{count} deleted earlier, closer to the day they go for good.",

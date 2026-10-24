@@ -8,16 +8,20 @@ defmodule TexttileWeb.CommentComponents do
   use Phoenix.Component
   use Gettext, backend: TexttileWeb.Gettext
 
+  import TexttileWeb.CoreComponents, only: [icon: 1]
+
   alias Texttile.Comments
   alias Texttile.I18n
 
   @doc """
-  One comment on an admin screen: the name, the waiting mark while the
-  reader has not confirmed, the moment it arrived, the words, and what
-  an admin can do with it - Edit, Release while it waits, Delete.
-  `article` set draws the "on <text>" jump of the overview. `editing`
-  puts the words in a field instead, `error` says why the last save
-  did not take.
+  One comment on an admin screen, as a block on the page: the name with
+  the ways to reach its writer, the waiting mark while the reader has
+  not confirmed, the moment at the right, the entry under it, then the
+  words and what an admin can do with them - Edit, Release while it
+  waits, Delete. `article` set draws the entry line, the jump of the
+  overview; the editor is on the entry already and leaves it out.
+  `editing` puts the words in a field instead, `error` says why the
+  last save did not take.
   """
   attr :comment, :any, required: true
   attr :waiting, :boolean, required: true
@@ -27,35 +31,16 @@ defmodule TexttileWeb.CommentComponents do
 
   def comment_item(assigns) do
     ~H"""
-    <div class="py-[14px] border-b border-hair" id={"comment-#{@comment.id}"}>
-      <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
-        <.writer comment={@comment} />
+    <div class="cmt" id={"comment-#{@comment.id}"}>
+      <div class="cmt-top">
+        <span class="font-semibold">{@comment.name}</span>
+        <.writer_links comment={@comment} />
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
-        <span class="font-normal text-faint text-[12.5px]">
-          <span class="num">{I18n.format_moment(@comment.inserted_at)}</span>
-          <%= if @article do %>
-            · {pgettext("before the title of an entry", "on")}
-            <.link navigate={"/admin/texts/#{@article.id}?tab=comments"} class="link">
-              {Texttile.Articles.display_title(@article)}
-            </.link>
-          <% end %>
-          <span :if={Comments.released?(@comment)}>· {gettext("let through")}</span>
-          <span :if={Comments.edited?(@comment)}>· {gettext("edited")}</span>
-          <%!-- the website its author gave: an admin reading the list
-               is the one who should see where a name points --%>
-          <span :if={@comment.website}>
-            ·
-            <a
-              href={@comment.website}
-              class="link"
-              rel="nofollow noopener ugc"
-              target="_blank"
-            >
-              {host_of(@comment.website)}
-            </a>
-          </span>
-        </span>
+        <span class="cmt-when num">{moment_line(@comment)}</span>
       </div>
+      <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent link">
+        {Texttile.Articles.display_title(@article)}
+      </.link>
 
       <form
         :if={@editing}
@@ -85,16 +70,17 @@ defmodule TexttileWeb.CommentComponents do
       </form>
 
       <%!-- comment-body: the words stand here the way the reader typed
-           them, line breaks and all, exactly as under the text --%>
+           them, line breaks and all, exactly as under the text. The tag
+           hugs the words: a line break of the template would be one
+           more empty line at the top. --%>
       <p
         :if={!@editing}
-        class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
-      >
-        {@comment.body}
-      </p>
+        class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
+        phx-no-format
+      >{@comment.body}</p>
       <%!-- three actions on every row would shout in a list this long,
            so they are quiet like the Restore of a version --%>
-      <div :if={!@editing} class="mt-[7px] btn-row -ml-[10px]">
+      <div :if={!@editing} class="mt-[6px] btn-row -ml-[10px]">
         <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
           {gettext("Edit")}
         </button>
@@ -115,28 +101,55 @@ defmodule TexttileWeb.CommentComponents do
   end
 
   @doc """
-  Who wrote a comment, as a way to answer them. Only the admin area
-  ever draws this, and the address goes no further than the mail
-  client it opens: readers never see it anywhere.
+  The ways to reach the writer of a comment, as two quiet icons after
+  the name: the mail they left, and the website they gave. Only the
+  admin area ever draws this, and the address goes no further than the
+  mail client it opens: readers never see it anywhere. The website is
+  the writer's own, so the link carries the marks of a link a reader
+  put there.
 
-  A comment whose address row is gone keeps its name as plain words.
+  A comment whose address row is gone, or whose author left none, gets
+  no mail icon.
   """
   attr :comment, :any, required: true
 
-  def writer(assigns) do
+  def writer_links(assigns) do
     assigns = assign(assigns, :email, email_of(assigns.comment))
 
     ~H"""
     <a
       :if={@email}
-      class="writer"
+      class="cmt-ico"
       href={"mailto:#{@email}"}
       title={gettext("Write to %{email}", email: @email)}
+      aria-label={gettext("Write to %{email}", email: @email)}
     >
-      {@comment.name}
+      <.icon name="hero-envelope" class="size-[15px]" />
     </a>
-    <span :if={!@email}>{@comment.name}</span>
+    <a
+      :if={@comment.website}
+      class="cmt-ico"
+      href={@comment.website}
+      title={host_of(@comment.website)}
+      aria-label={host_of(@comment.website)}
+      rel="nofollow noopener ugc"
+      target="_blank"
+    >
+      <.icon name="hero-globe-alt" class="size-[15px]" />
+    </a>
     """
+  end
+
+  # The moment a comment arrived, and the marks it earned since: let
+  # through by an admin, rewritten by one. Commas between them.
+  defp moment_line(comment) do
+    [
+      I18n.format_moment(comment.inserted_at),
+      Comments.released?(comment) && gettext("let through"),
+      Comments.edited?(comment) && gettext("edited")
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(", ")
   end
 
   # The address to write back to. An imported comment whose author
@@ -148,34 +161,35 @@ defmodule TexttileWeb.CommentComponents do
 
   defp email_of(_comment), do: nil
 
-  # The host alone: a whole URL in a row of names is a wall of text.
+  # The host alone: a whole URL after a name is a wall of text.
   defp host_of(website), do: URI.parse(website).host || website
 
   @doc """
-  One comment in the trash: what it said, where it stood, the day it
-  goes for good, and the way back.
+  One comment in the trash: the same block, dimmed, with the day it
+  goes for good beside the moment, and the way back.
   """
   attr :comment, :any, required: true
 
   def trashed_item(assigns) do
     ~H"""
-    <div class="py-[14px] border-b border-hair" id={"trash-#{@comment.id}"}>
-      <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
-        <.writer comment={@comment} />
-        <span class="font-normal text-faint text-[12.5px]">
-          <span class="num">{I18n.format_moment(@comment.inserted_at)}</span>
-          · {pgettext("before the title of an entry", "on")}
-          <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="link">
-            {Texttile.Articles.display_title(@comment.article)}
-          </.link>
-          · {gettext("goes for good on")}
-          <span class="num">{I18n.format_plain_day(@comment.delete_after)}</span>
+    <div class="cmt" id={"trash-#{@comment.id}"}>
+      <div class="cmt-top">
+        <span class="font-semibold">{@comment.name}</span>
+        <.writer_links comment={@comment} />
+        <span class="cmt-when num">
+          {I18n.format_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_plain_day(
+            @comment.delete_after
+          )}
         </span>
       </div>
-      <p class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim">
-        {@comment.body}
-      </p>
-      <div class="mt-[7px] -ml-[10px]">
+      <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent link">
+        {Texttile.Articles.display_title(@comment.article)}
+      </.link>
+      <p
+        class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim"
+        phx-no-format
+      >{@comment.body}</p>
+      <div class="mt-[6px] -ml-[10px]">
         <button class="btn quiet sm" phx-click="restore_comment" phx-value-id={@comment.id}>
           {gettext("Restore")}
         </button>

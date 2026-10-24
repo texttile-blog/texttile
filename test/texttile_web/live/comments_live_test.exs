@@ -24,16 +24,22 @@ defmodule TexttileWeb.CommentsLiveTest do
     comment
   end
 
-  test "the name of a writer is the way to answer them", %{conn: conn} do
+  test "the icons after a name are the ways to answer its writer", %{conn: conn} do
     article = published_post(title: "Harbor mornings")
-    comment = post!(article)
+    comment = post!(article, %{"website" => "https://christel.example.org/garden"})
 
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
 
+    assert has_element?(view, "#comment-#{comment.id}", "Grandma Christel")
+
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a[href="mailto:christel@example.org"]),
-             "Grandma Christel"
+             ~s(#comment-#{comment.id} a.cmt-ico[href="mailto:christel@example.org"][title="Write to christel@example.org"])
+           )
+
+    assert has_element?(
+             view,
+             ~s(#comment-#{comment.id} a.cmt-ico[href="https://christel.example.org/garden"][title="christel.example.org"][rel~="nofollow"])
            )
   end
 
@@ -55,9 +61,15 @@ defmodule TexttileWeb.CommentsLiveTest do
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
 
     assert has_element?(view, "#comment-#{waiting.id}", "not confirmed yet")
-    assert has_element?(view, "#comment-#{waiting.id} a", "Harbor mornings")
     assert has_element?(view, "#comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
+
+    # the entry stands alone under the name, as the jump to its tab
+    assert has_element?(
+             view,
+             ~s(#comment-#{waiting.id} a.cmt-ent[href="/admin/texts/#{a.id}?tab=comments"]),
+             "Harbor mornings"
+           )
 
     assert has_element?(view, "#commentsSub", "1 not confirmed yet")
   end
