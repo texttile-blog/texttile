@@ -90,6 +90,19 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> refute_has("a", text: "Harbor mornings")
       |> assert_has("#q[value='harbor']")
     end
+
+    test "a new year lets go of the month", %{conn: conn} do
+      published_post(title: "May 2025", publish_date: ~D[2025-05-05])
+      published_post(title: "May 2024", publish_date: ~D[2024-05-05])
+      published_post(title: "June 2024", publish_date: ~D[2024-06-06])
+
+      conn
+      |> open_page("/blog?y=2025&m=5")
+      |> refute_has("a", text: "June 2024")
+      |> select("Year", option: "2024 (2)")
+      |> assert_has("#narrowed", text: "Entries from 2024.", timeout: 5_000)
+      |> assert_has("a", text: "June 2024")
+    end
   end
 
   describe "the password gate" do

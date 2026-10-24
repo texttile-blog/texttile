@@ -1413,9 +1413,12 @@
   .pick { position: relative; flex: none; }
   .pick select {
     appearance: none; -webkit-appearance: none; width: auto; max-width: none;
-    font-size: 13px; font-weight: 600; color: var(--tt-ink); cursor: pointer;
+    font-weight: 600; color: var(--tt-ink); cursor: pointer;
     padding-right: 18px; font-variant-numeric: tabular-nums;
   }
+  /* the field size base.css gives a phone stays: iOS zooms on a smaller
+     control the moment it opens */
+  @media (min-width: 900px) { .pick select { font-size: 13px; } }
   .pick::after {
     content: ""; position: absolute; right: 4px; top: 50%; width: 6px; height: 6px;
     border-right: 1.5px solid var(--tt-dim); border-bottom: 1.5px solid var(--tt-dim);

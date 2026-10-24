@@ -68,7 +68,11 @@ if (document.body.dataset.count) {
   // is an answer: it goes as soon as it is made, with whatever stands
   // in the field.
   field.form.addEventListener("change", (e) => {
-    if (e.target.tagName === "SELECT") field.form.requestSubmit();
+    if (e.target.tagName !== "SELECT") return;
+    // a month belongs to the year it was picked in; a new year starts whole
+    const month = document.getElementById("month");
+    if (e.target.id === "year" && month) month.value = "";
+    field.form.requestSubmit();
   });
 
   // "/" jumps into the field from anywhere on the page; Escape empties
