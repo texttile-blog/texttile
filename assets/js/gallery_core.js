@@ -693,7 +693,10 @@ export class Gallery {
       </div>
       <div id="lbFoot" class="flex-none bg-paper border-t border-rule px-4 py-3">
         <div class="max-w-[900px] mx-auto">
-          <p class="text-[13px]"><b id="lbName"></b> <span class="note" id="lbMeta"></span></p>
+          <p class="lb-head">
+            <b id="lbName"></b>
+            <span class="lb-facts"><span id="lbPixels"></span><span id="lbWeight"></span></span>
+          </p>
           <label class="lab block mt-3 mb-[3px]" for="lbDescription">${esc(t("Description"))}</label>
           <input type="text" id="lbDescription" maxlength="500" class="w-full" aria-describedby="lbDescriptionHelp">
           <p class="note mt-1" id="lbDescriptionHelp">${esc(t("Shown as the image description and caption. Saves automatically."))}</p>
@@ -777,21 +780,11 @@ export class Gallery {
     orig.setAttribute("download", data.filename)
     this.root.querySelector("#lbName").textContent = data.filename
 
-    // the facts of the original follow the place in the gallery; a
-    // video that is not probed yet says nothing about its pixels
-    this.root.querySelector("#lbMeta").textContent =
-      " · " +
-      [
-        t("%{date} · %{index} of %{count}", {
-          date: data.date.slice(0, 10),
-          index: data.index + 1,
-          count: data.count,
-        }),
-        data.pixels,
-        data.weight,
-      ]
-        .filter(Boolean)
-        .join(" · ")
+    // the two facts of the original that stand nowhere else in this
+    // dialog: the date has its field and the place its count in the
+    // bar. A video that is not probed yet says nothing about its pixels.
+    this.root.querySelector("#lbPixels").textContent = data.pixels ? `${data.pixels} px` : ""
+    this.root.querySelector("#lbWeight").textContent = data.weight || ""
 
     // never write over what somebody is typing right now
     if (lb.formFor !== lb.id) {

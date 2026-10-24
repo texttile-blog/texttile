@@ -212,11 +212,6 @@ msgstr "%{count} Wörter"
 msgid "%{created} created · %{updated} updated"
 msgstr "%{created} angelegt · %{updated} aktualisiert"
 
-#: lib/texttile_web/js_strings.ex:59
-#, elixir-autogen, elixir-format
-msgid "%{date} · %{index} of %{count}"
-msgstr "%{date} · %{index} von %{count}"
-
 #: lib/texttile/i18n.ex:108
 #: lib/texttile/i18n.ex:113
 #, elixir-autogen, elixir-format
@@ -243,7 +238,7 @@ msgstr "%{mark} hochgeladen · %{file}"
 msgid "%{names} and %{last}"
 msgstr "%{names} und %{last}"
 
-#: lib/texttile_web/js_strings.ex:60
+#: lib/texttile_web/js_strings.ex:59
 #, elixir-autogen, elixir-format
 msgid "%{name} deleted"
 msgstr "%{name} gelöscht"
@@ -614,7 +609,7 @@ msgstr "Blog-Passwort"
 msgid "Blog post"
 msgstr "Blogeintrag"
 
-#: lib/texttile_web/js_strings.ex:67
+#: lib/texttile_web/js_strings.ex:66
 #: lib/texttile_web/live/editor_live.ex:1722
 #: lib/texttile_web/live/editor_live.ex:1731
 #, elixir-autogen, elixir-format
@@ -706,7 +701,7 @@ msgstr "Bestätige deine Adresse auf %{site}"
 msgid "Confirmed. Your comment is under the entry now."
 msgstr "Bestätigt. Dein Kommentar steht jetzt unter dem Eintrag."
 
-#: lib/texttile_web/js_strings.ex:70
+#: lib/texttile_web/js_strings.ex:69
 #: lib/texttile_web/live/editor_live.ex:2664
 #: lib/texttile_web/live/settings_live.ex:1415
 #, elixir-autogen, elixir-format
@@ -835,7 +830,7 @@ msgstr "Angezeigter Name"
 msgid "Done"
 msgstr "Fertig"
 
-#: lib/texttile_web/js_strings.ex:65
+#: lib/texttile_web/js_strings.ex:64
 #, elixir-autogen, elixir-format
 msgid "Done. Untick it."
 msgstr "Erledigt. Haken entfernen."
@@ -1139,12 +1134,12 @@ msgstr "Juni"
 msgid "Language"
 msgstr "Sprache"
 
-#: lib/texttile_web/js_strings.ex:78
+#: lib/texttile_web/js_strings.ex:77
 #, elixir-autogen, elixir-format
 msgid "Last saved %{time}"
 msgstr "Zuletzt gesichert %{time}"
 
-#: lib/texttile_web/js_strings.ex:77
+#: lib/texttile_web/js_strings.ex:76
 #: lib/texttile_web/live/editor_live.ex:1430
 #: lib/texttile_web/live/profile_live.ex:179
 #: lib/texttile_web/live/settings_live.ex:672
@@ -1524,7 +1519,7 @@ msgstr "Eintrag öffnen"
 msgid "Open the import"
 msgstr "Import öffnen"
 
-#: lib/texttile_web/js_strings.ex:66
+#: lib/texttile_web/js_strings.ex:65
 #, elixir-autogen, elixir-format
 msgid "Open. Tick it off."
 msgstr "Offen. Haken setzen."
@@ -1801,7 +1796,7 @@ msgstr "Speichern"
 msgid "Save version"
 msgstr "Version sichern"
 
-#: lib/texttile_web/js_strings.ex:74
+#: lib/texttile_web/js_strings.ex:73
 #, elixir-autogen, elixir-format
 msgid "Saved"
 msgstr "Gesichert"
@@ -2393,7 +2388,7 @@ msgstr "Dieser Browser"
 msgid "This deletes the entry and everything that belongs to it: the title and the body, the images in the text, every saved version and the whole Log."
 msgstr "Das löscht den Eintrag und alles, was zu ihm gehört: Titel und Text, die Bilder im Text, jede gesicherte Version und das ganze Protokoll."
 
-#: lib/texttile_web/js_strings.ex:63
+#: lib/texttile_web/js_strings.ex:62
 #, elixir-autogen, elixir-format
 msgid "This film is still being converted. It plays here once that is done."
 msgstr "Dieser Film wird noch umgewandelt. Er läuft hier, sobald das fertig ist."
@@ -2474,7 +2469,7 @@ msgstr "Art"
 msgid "Type the email address of your account. A link to set a new password goes to that address."
 msgstr "Gib die E-Mail-Adresse deines Kontos ein. An diese Adresse geht ein Link, mit dem du ein neues Passwort setzt."
 
-#: lib/texttile_web/js_strings.ex:61
+#: lib/texttile_web/js_strings.ex:60
 #, elixir-autogen, elixir-format
 msgid "Undo"
 msgstr "Rückgängig"
@@ -2858,12 +2853,12 @@ msgstr "in der Schlange"
 msgid "removed"
 msgstr "entfernt"
 
-#: lib/texttile_web/js_strings.ex:75
+#: lib/texttile_web/js_strings.ex:74
 #, elixir-autogen, elixir-format
 msgid "saved"
 msgstr "gesichert"
 
-#: lib/texttile_web/js_strings.ex:76
+#: lib/texttile_web/js_strings.ex:75
 #, elixir-autogen, elixir-format
 msgid "saved %{time}"
 msgstr "gesichert %{time}"
@@ -3181,7 +3176,7 @@ msgstr "Geplant für %{date} · dann geht die Mail hinaus"
 msgid "Size"
 msgstr "Größe"
 
-#: lib/texttile_web/js_strings.ex:79
+#: lib/texttile_web/js_strings.ex:78
 #, elixir-autogen, elixir-format
 msgid "The last save was at %{time}."
 msgstr "Zuletzt gesichert um %{time}."
@@ -3251,7 +3246,7 @@ msgstr "die Datenbank, eine SQLite-Datei"
 msgid "the logo and the favicon"
 msgstr "das Logo und das Favicon"
 
-#: lib/texttile_web/js_strings.ex:68
+#: lib/texttile_web/js_strings.ex:67
 #, elixir-autogen, elixir-format
 msgid "the pasted picture"
 msgstr "das eingefügte Bild"
@@ -3457,7 +3452,7 @@ msgstr "Er öffnet die Sicherungs-Endpunkte und sonst nichts, und er liest immer
 msgid "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides. Behind a proxy this is only as good as the header the proxy writes, so read it as a second lock and never as the first."
 msgstr "Die Adressen, von denen dein Sicherungsrechner anruft, durch Kommas getrennt. Leer ist der Normalfall: Dann entscheidet der Token allein. Hinter einem Proxy ist das nur so gut wie der Header, den der Proxy schreibt, also lies es als zweites Schloss und nie als erstes."
 
-#: lib/texttile_web/js_strings.ex:71
+#: lib/texttile_web/js_strings.ex:70
 #, elixir-autogen, elixir-format
 msgid "Copied"
 msgstr "Kopiert"
@@ -3467,7 +3462,7 @@ msgstr "Kopiert"
 msgid "The backup token"
 msgstr "Der Sicherungs-Token"
 
-#: lib/texttile_web/js_strings.ex:72
+#: lib/texttile_web/js_strings.ex:71
 #, elixir-autogen, elixir-format
 msgid "Now press the copy key"
 msgstr "Jetzt die Kopiertaste drücken"

@@ -891,6 +891,17 @@
   .lb-abtn:hover { color: #fff; background: rgb(255 255 255 / .1); }
   .lb-abtn.plain { box-shadow: none; text-decoration: underline; text-underline-offset: 2px; }
   .lb-abtn.danger { color: var(--tt-julialine, #f0d7c5); }
+  /* the head of the foot: the name on the left, the facts of the
+     original on the right, a hairline between facts. On a phone the
+     facts wrap under the name. An empty fact takes its line with it. */
+  .lb-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 24px; font-size: 13px; }
+  .lb-head b { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .lb-facts {
+    display: flex; gap: 12px; color: var(--tt-dim);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .lb-facts span:empty { display: none; }
+  .lb-facts span:not(:empty) ~ span:not(:empty) { border-left: 1px solid var(--tt-rule); padding-left: 12px; }
   /* Close is an X, square and as tall as the words beside it */
   .lb-abtn.lb-x { display: inline-flex; align-items: center; justify-content: center; padding: 6px; }
 

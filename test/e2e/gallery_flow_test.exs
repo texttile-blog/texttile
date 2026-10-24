@@ -139,8 +139,8 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> open_editor(article.id)
       |> click("#tile-#{a.id}")
       |> assert_has("#lbName", text: "pier.jpg")
-      |> assert_has("#lbMeta", text: "1 of 1 · 40 × 20 · ")
-      |> assert_has("#lbMeta", text: " KB")
+      |> assert_has("#lbPixels", text: "40 × 20 px")
+      |> assert_has("#lbWeight", text: " KB")
     end
 
     test "the lightbox picks the preview image and lets it go again", %{conn: conn, kb: kb} do

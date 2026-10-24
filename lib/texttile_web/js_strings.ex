@@ -56,7 +56,6 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("That date could not be read"),
     gettext_noop("Saved · just now"),
     gettext_noop("Loading the full size…"),
-    gettext_noop("%{date} · %{index} of %{count}"),
     gettext_noop("%{name} deleted"),
     gettext_noop("Undo"),
     # lightbox.js: a film the reader opens from the body
