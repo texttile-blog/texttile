@@ -523,7 +523,6 @@ defmodule TexttileWeb.SiteController do
       comment_counts: Comments.reader_count_map(),
       found: list.shown,
       total: total,
-      across_years: list.across_years,
       year: list.year,
       month: list.month,
       years: list.years,
@@ -531,7 +530,6 @@ defmodule TexttileWeb.SiteController do
       page: list.page,
       pages: list.pages,
       page_path: &list_link(list_path, q, list.year, list.month, &1),
-      period_path: &list_link(list_path, q, &1, &2, 1),
       list_path: list_path
     )
   end

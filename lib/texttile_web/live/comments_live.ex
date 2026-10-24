@@ -82,36 +82,16 @@ defmodule TexttileWeb.CommentsLive do
         <Layouts.view_site />
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">{gettext("Comments")}</h1>
-        <%!-- the counts carry the news, so they carry the weight. The
-             number keeps its own tag here and stays out of the
-             message: a translation file is prose, and prose must not
-             be able to write markup into this page. --%>
-        <p class="lead" id="commentsSub">
-          <%= if @total == 0 do %>
-            {gettext("The latest comments across all entries, newest first.")}
-          <% else %>
-            <b class="num">{@total}</b>
-            {ngettext(
-              "comment across all entries, newest first.",
-              "comments across all entries, newest first.",
-              @total
-            )}
-            <%= if @waiting == 0 do %>
-              <%!-- not "every one is confirmed": a comment an admin let
-                   through stands under its entry with an address that
-                   never was --%>
-              {gettext("Readers see every one of them.")}
-            <% else %>
-              <b class="num">{@waiting}</b>
-              {ngettext(
-                "comment waits for the reader to confirm the email address, so readers do not see it yet.",
-                "comments wait for the reader to confirm the email address, so readers do not see them yet.",
-                @waiting
-              )}
-            <% end %>
-          <% end %>
-        </p>
+        <%!-- the heading carries the one piece of news: how many wait for
+             a confirmed address, in the words of the mark each of them
+             wears. Beside the heading like the count of the Entries
+             grid, and gone while nothing waits. --%>
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-[18px]">
+          <h1 class="page-h">{gettext("Comments")}</h1>
+          <span :if={@waiting > 0} class="note num" id="commentsSub">
+            {ngettext("1 not confirmed yet", "%{count} not confirmed yet", @waiting)}
+          </span>
+        </div>
         <div id="commentsList">
           <p :if={@recent == []} class="note">
             {gettext("No comments yet, anywhere. Every comment a reader sends shows up here.")}

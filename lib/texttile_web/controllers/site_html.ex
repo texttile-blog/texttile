@@ -299,6 +299,26 @@ defmodule TexttileWeb.SiteHTML do
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
   defdelegate lead(article), to: Articles
 
+  @doc """
+  Why the list is shorter than the blog: the term, the year, the month,
+  in one sentence under the heading. Only called while one of them is
+  set.
+  """
+  def narrowed(q, year, month) do
+    period =
+      cond do
+        month -> gettext("%{month} %{year}", month: Texttile.I18n.month_name(month), year: year)
+        year -> to_string(year)
+        true -> nil
+      end
+
+    case {q, period} do
+      {"", period} -> gettext("Entries from %{period}.", period: period)
+      {q, nil} -> gettext("Entries matching “%{q}”.", q: q)
+      {q, period} -> gettext("Entries matching “%{q}” from %{period}.", q: q, period: period)
+    end
+  end
+
   @doc "The heading of the comments block: the count while there is one."
   def comment_heading(0), do: gettext("Comments")
   def comment_heading(n), do: ngettext("1 comment", "%{count} comments", n)
