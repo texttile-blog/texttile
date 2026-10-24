@@ -130,9 +130,7 @@ defmodule Texttile.Comments.Notifier do
         gettext("It is out of sight for now: the entry itself is not on the site.") <> "\n\n"
 
       path ->
-        gettext("It stands under the entry now.") <>
-          "\n\n" <>
-          gettext("The entry:     %{url}", url: TexttileWeb.Endpoint.url() <> path) <> "\n"
+        gettext("The entry:     %{url}", url: TexttileWeb.Endpoint.url() <> path) <> "\n"
     end
   end
 end

@@ -1084,11 +1084,6 @@ msgstr "Er ist vorerst nicht zu sehen: der Eintrag selbst steht nicht auf der Si
 msgid "It removes the comment from the entry at once, and the reader is not told."
 msgstr "Der Kommentar verschwindet sofort aus dem Eintrag, und die schreibende Person erfährt nichts davon."
 
-#: lib/texttile/comments/notifier.ex:133
-#, elixir-autogen, elixir-format
-msgid "It stands under the entry now."
-msgstr "Er steht jetzt unter dem Eintrag."
-
 #: lib/texttile_web/components/core_components.ex:230
 #, elixir-autogen, elixir-format
 msgid "Italic"
@@ -2190,7 +2185,7 @@ msgstr "Der Eintrag ist live. Ab jetzt bekommt jede und jeder, die einem alten L
 msgid "The entry was deleted while you had it open."
 msgstr "Der Eintrag wurde gelöscht, während du ihn offen hattest."
 
-#: lib/texttile/comments/notifier.ex:135
+#: lib/texttile/comments/notifier.ex:133
 #, elixir-autogen, elixir-format
 msgid "The entry:     %{url}"
 msgstr "Der Eintrag:   %{url}"
