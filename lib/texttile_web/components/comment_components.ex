@@ -36,11 +36,7 @@ defmodule TexttileWeb.CommentComponents do
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
-        <span class="cmt-when">
-          <span class="num">{I18n.format_moment(@comment.inserted_at)}</span>
-          <span :if={Comments.released?(@comment)}>· {gettext("let through")}</span>
-          <span :if={Comments.edited?(@comment)}>· {gettext("edited")}</span>
-        </span>
+        <span class="cmt-when num">{moment_line(@comment)}</span>
       </div>
       <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent link">
         {Texttile.Articles.display_title(@article)}
@@ -144,6 +140,18 @@ defmodule TexttileWeb.CommentComponents do
     """
   end
 
+  # The moment a comment arrived, and the marks it earned since: let
+  # through by an admin, rewritten by one. Commas between them.
+  defp moment_line(comment) do
+    [
+      I18n.format_moment(comment.inserted_at),
+      Comments.released?(comment) && gettext("let through"),
+      Comments.edited?(comment) && gettext("edited")
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(", ")
+  end
+
   # The address to write back to. An imported comment whose author
   # left none carries the placeholder address instead, and a mailto to
   # that one would be a dead letter.
@@ -168,10 +176,10 @@ defmodule TexttileWeb.CommentComponents do
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
-        <span class="cmt-when">
-          <span class="num">{I18n.format_moment(@comment.inserted_at)}</span>
-          · {gettext("goes for good on")}
-          <span class="num">{I18n.format_plain_day(@comment.delete_after)}</span>
+        <span class="cmt-when num">
+          {I18n.format_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_plain_day(
+            @comment.delete_after
+          )}
         </span>
       </div>
       <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent link">

@@ -324,9 +324,9 @@ defmodule TexttileWeb.TextsLive do
 
     bits = if article.type == "page", do: [gettext("page") | bits], else: bits
 
-    # a dot after every bit but the last, and each bit with its place,
-    # so the template can hang the state mark on the first
+    # a comma after every bit but the last, and each bit with its
+    # place, so the template can hang the state mark on the first
     last = length(bits) - 1
-    Enum.with_index(bits, fn bit, i -> {if(i < last, do: bit <> " ·", else: bit), i} end)
+    Enum.with_index(bits, fn bit, i -> {if(i < last, do: bit <> ",", else: bit), i} end)
   end
 end
