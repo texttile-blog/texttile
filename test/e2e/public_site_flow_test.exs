@@ -229,6 +229,40 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> press("body", "Escape")
       |> refute_has("#lbCount", text: "1 / 1")
     end
+
+    # The dark around the picture is a way out. The picture's box is as
+    # wide as the stage, so the dark beside the picture counts too; the
+    # picture itself and the arrows do not.
+    test "a click on the dark beside the picture closes the lightbox", %{conn: conn} do
+      article = published_post(title: "Ground", slug: "ground", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
+
+      session =
+        conn
+        |> open_page(Articles.public_path(article))
+        |> click("#tile-#{first.id}")
+        |> assert_has("#lbCount", text: "1 / 2")
+
+      # the picture (20 by 10 pixels, in the middle of its box) stays
+      click_at(session, "#lbArt img", 5, 5)
+      assert_has(session, "#lbCount", text: "1 / 2")
+
+      # the arrow walks, as before
+      click(session, "#lbNext")
+      assert_has(session, "#lbCount", text: "2 / 2")
+
+      # the corner of the box, far from the picture, is the dark
+      click_at(session, "#lbArt", 4, 4)
+      refute_has(session, "#lbCount", text: "2 / 2")
+
+      evaluate(
+        session,
+        "() => document.getElementById('lb').hidden",
+        [is_function: true],
+        &assert(&1 == true)
+      )
+    end
   end
 
   describe "walking the blog" do
@@ -378,5 +412,18 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
         assert title =~ "Harbor mornings"
       end)
     end
+  end
+
+  # A real mouse click at a point inside the element, measured from its
+  # top left corner. `click/2` aims at the centre, which is the picture.
+  defp click_at(session, selector, x, y) do
+    {:ok, _} =
+      PlaywrightEx.Frame.click(session.frame_id,
+        selector: selector,
+        position: %{x: x, y: y},
+        timeout: 5_000
+      )
+
+    session
   end
 end

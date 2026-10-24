@@ -164,8 +164,14 @@ if (document.body.dataset.count) {
   document.getElementById("lbClose").addEventListener("click", close);
   document.getElementById("lbPrev").addEventListener("click", () => nav(-1));
   document.getElementById("lbNext").addEventListener("click", () => nav(1));
+  // The dark is a way out. What stands on it is not: the picture, the
+  // film and its controls, the buttons, and the caption a reader may
+  // be selecting. The picture's box is as wide as the stage, so a
+  // click in the dark beside the picture lands on the box, and it
+  // counts as the dark.
   lb.addEventListener("click", (e) => {
-    if (e.target === lb || e.target.id === "lbStage") close();
+    if (e.target.closest("img, video, button, a, .lb-cap")) return;
+    close();
   });
 
   addEventListener("keydown", (e) => {
