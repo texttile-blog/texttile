@@ -169,6 +169,24 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
+  # Waits until the full pictures of the tiles at `wanted` (indexes)
+  # have been fetched, up to four seconds, then says for every tile
+  # whether its full picture was.
+  @fetched """
+  (wanted) => new Promise((done) => {
+    const want = [...document.querySelectorAll('#gal a')].map((a) => a.dataset.full);
+    const got = () => performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname);
+    const started = Date.now();
+    const look = () => {
+      const paths = got();
+      const have = want.map((u) => paths.includes(u));
+      if (wanted.every((i) => have[i]) || Date.now() - started > 4000) done(have);
+      else setTimeout(look, 50);
+    };
+    look();
+  })
+  """
+
   describe "the gallery" do
     test "a tile opens the lightbox, the arrows walk, Escape closes", %{conn: conn} do
       article = published_post(title: "Tiles", slug: "tiles", body: "Pictures below.")
@@ -262,6 +280,30 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
         [is_function: true],
         &assert(&1 == true)
       )
+    end
+
+    # On a slow line the next picture takes seconds. The two after the
+    # one on show come in behind it, and the ones beyond stay unfetched.
+    test "the two pictures after the one on show are fetched ahead", %{conn: conn} do
+      article = published_post(title: "Ahead", slug: "ahead", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "one.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "two.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "three.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "four.jpg")
+
+      conn
+      |> open_page(Articles.public_path(article))
+      |> click("#tile-#{first.id}")
+      |> assert_has("#lbCount", text: "1 / 4")
+      |> evaluate(@fetched, [arg: [1, 2], is_function: true], fn have ->
+        assert have == [true, true, true, false]
+      end)
+      # a page forward moves the window: now the fourth is wanted too
+      |> press("body", "ArrowRight")
+      |> assert_has("#lbCount", text: "2 / 4")
+      |> evaluate(@fetched, [arg: [3], is_function: true], fn have ->
+        assert have == [true, true, true, true]
+      end)
     end
   end
 
