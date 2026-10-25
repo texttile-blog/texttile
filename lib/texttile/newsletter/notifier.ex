@@ -3,7 +3,9 @@ defmodule Texttile.Newsletter.Notifier do
   The two mails of the newsletter: the link that confirms an address,
   and the text that just went live. Both are plain text, both carry
   the same token - as the confirmation link in the first, as the way
-  off the list in the second.
+  off the list in the second. Every link stands alone on the line
+  right under its sentence: no mail program reads a full stop into it,
+  and no blank line pushes it away from the words it belongs to.
 
   The new-text mail may leave from the go-live clock, where no request
   stands behind it, so this module asks the endpoint for the site's
@@ -39,7 +41,6 @@ defmodule Texttile.Newsletter.Notifier do
         This address asked for the new entries of %{site} by mail.
 
         Open this link, and you are on the list:
-
         %{url}
 
         You confirm this address once. If you did not ask for this, ignore this mail. Without the link, the address gets nothing.
@@ -69,11 +70,9 @@ defmodule Texttile.Newsletter.Notifier do
       gettext(
         """
         "%{title}" is now on %{site}:
-
         %{url}
         %{password}
         You get this mail because this address is on the %{site} list. To leave the list, open this link:
-
         %{unsubscribe}
         """,
         title: title,
@@ -90,10 +89,11 @@ defmodule Texttile.Newsletter.Notifier do
     |> send()
   end
 
+  # The access word stands right under the link, before the blank line.
   defp password_block(nil), do: ""
 
   defp password_block(password) do
-    "\n" <> gettext("Password: %{password}", password: password) <> "\n"
+    gettext("Password: %{password}", password: password) <> "\n"
   end
 
   defp deliver(to, site, subject, body) do

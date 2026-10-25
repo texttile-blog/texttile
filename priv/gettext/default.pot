@@ -664,7 +664,7 @@ msgid "Confirm the current password once to change it. Needs to be at least 12 c
 msgstr ""
 
 #: lib/texttile/comments/notifier.ex:40
-#: lib/texttile/newsletter/notifier.ex:36
+#: lib/texttile/newsletter/notifier.ex:38
 #, elixir-autogen, elixir-format
 msgid "Confirm your email on %{site}"
 msgstr ""
@@ -1038,7 +1038,7 @@ msgstr ""
 msgid "Imported: %{name}"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:127
+#: lib/texttile/comments/notifier.ex:126
 #, elixir-autogen, elixir-format
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr ""
@@ -1209,7 +1209,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:78
+#: lib/texttile/comments/notifier.ex:77
 #, elixir-autogen, elixir-format
 msgid "New comment on %{title}"
 msgstr ""
@@ -1225,7 +1225,7 @@ msgstr ""
 msgid "New on %{site}: "
 msgstr ""
 
-#: lib/texttile/newsletter/notifier.ex:68
+#: lib/texttile/newsletter/notifier.ex:69
 #, elixir-autogen, elixir-format
 msgid "New on %{site}: %{title}"
 msgstr ""
@@ -1823,7 +1823,7 @@ msgstr ""
 msgid "Set"
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:72
+#: lib/texttile/accounts/user_notifier.ex:71
 #, elixir-autogen, elixir-format
 msgid "Set a new password on %{site}"
 msgstr ""
@@ -2140,7 +2140,7 @@ msgstr ""
 msgid "The entry was deleted while you had it open."
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:130
+#: lib/texttile/comments/notifier.ex:129
 #, elixir-autogen, elixir-format
 msgid "The entry:     %{url}"
 msgstr ""
@@ -2587,7 +2587,7 @@ msgstr ""
 msgid "Your address is never published. Your comment appears under the entry at once."
 msgstr ""
 
-#: lib/texttile/accounts/user_notifier.ex:42
+#: lib/texttile/accounts/user_notifier.ex:43
 #, elixir-autogen, elixir-format
 msgid "Your admin account on %{site}"
 msgstr ""
@@ -3835,29 +3835,9 @@ msgstr ""
 msgid "Password: %{password}"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:102
+#: lib/texttile/comments/notifier.ex:101
 #, elixir-autogen, elixir-format
 msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands in its settings.\n"
-msgstr ""
-
-#: lib/texttile/accounts/user_notifier.ex:73
-#, elixir-autogen, elixir-format
-msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n\n%{url}\n\nThe link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail.\n"
-msgstr ""
-
-#: lib/texttile/comments/notifier.ex:42
-#, elixir-autogen, elixir-format
-msgid "Hello %{name},\n\nYou wrote a comment on \"%{title}\".\n\nOpen this link, and your comment appears under the entry:\n\n%{url}\n\nYou confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.\n"
-msgstr ""
-
-#: lib/texttile/accounts/user_notifier.ex:43
-#, elixir-autogen, elixir-format
-msgid "Hello,\n\nYou have an admin account on this blog:\n\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n\n%{url}\n\nThe link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed.\n"
-msgstr ""
-
-#: lib/texttile/newsletter/notifier.ex:37
-#, elixir-autogen, elixir-format
-msgid "This address asked for the new entries of %{site} by mail.\n\nOpen this link, and you are on the list:\n\n%{url}\n\nYou confirm this address once. If you did not ask for this, ignore this mail. Without the link, the address gets nothing.\n"
 msgstr ""
 
 #: lib/texttile_web/controllers/site_html.ex:316
@@ -3908,11 +3888,6 @@ msgstr ""
 msgid "Publish quietly"
 msgstr ""
 
-#: lib/texttile/newsletter/notifier.ex:69
-#, elixir-autogen, elixir-format
-msgid "\"%{title}\" is now on %{site}:\n\n%{url}\n%{password}\nYou get this mail because this address is on the %{site} list. To leave the list, open this link:\n\n%{unsubscribe}\n"
-msgstr ""
-
 #: lib/texttile_web/live/editor_live.ex:797
 #, elixir-autogen, elixir-format
 msgid "One confirmed subscriber gets a mail with the title and the link. It goes out once and cannot be called back."
@@ -3928,4 +3903,29 @@ msgstr ""
 #: lib/texttile_web/live/editor_live.ex:2945
 #, elixir-autogen, elixir-format
 msgid "%{address} is live. After a change, the old address leads here."
+msgstr ""
+
+#: lib/texttile/newsletter/notifier.ex:70
+#, elixir-autogen, elixir-format
+msgid "\"%{title}\" is now on %{site}:\n%{url}\n%{password}\nYou get this mail because this address is on the %{site} list. To leave the list, open this link:\n%{unsubscribe}\n"
+msgstr ""
+
+#: lib/texttile/accounts/user_notifier.ex:72
+#, elixir-autogen, elixir-format
+msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n%{url}\n\nThe link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail.\n"
+msgstr ""
+
+#: lib/texttile/comments/notifier.ex:42
+#, elixir-autogen, elixir-format
+msgid "Hello %{name},\n\nYou wrote a comment on \"%{title}\".\n\nOpen this link, and your comment appears under the entry:\n%{url}\n\nYou confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.\n"
+msgstr ""
+
+#: lib/texttile/accounts/user_notifier.ex:44
+#, elixir-autogen, elixir-format
+msgid "Hello,\n\nYou have an admin account on this blog:\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n%{url}\n\nThe link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed.\n"
+msgstr ""
+
+#: lib/texttile/newsletter/notifier.ex:39
+#, elixir-autogen, elixir-format
+msgid "This address asked for the new entries of %{site} by mail.\n\nOpen this link, and you are on the list:\n%{url}\n\nYou confirm this address once. If you did not ask for this, ignore this mail. Without the link, the address gets nothing.\n"
 msgstr ""

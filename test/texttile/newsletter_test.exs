@@ -27,7 +27,8 @@ defmodule Texttile.NewsletterTest do
       assert_email_sent(fn mail ->
         assert mail.to == [{"", @email}]
         assert mail.subject == "Confirm your email on Texttile"
-        assert mail.text_body =~ "http://test/newsletter/confirm/#{subscriber.token}"
+        # the link stands on the line right after its sentence
+        assert mail.text_body =~ "list:\nhttp://test/newsletter/confirm/#{subscriber.token}\n"
       end)
     end
 
@@ -176,10 +177,13 @@ defmodule Texttile.NewsletterTest do
                ["one@example.org", "two@example.org"]
 
       assert first.subject =~ "Harbor mornings"
-      assert first.text_body =~ Articles.public_path(article)
+      # every link stands on the line right after its sentence
+      assert first.text_body =~
+               "Texttile:\n#{TexttileWeb.Endpoint.url()}#{Articles.public_path(article)}\n\n"
+
       # the mail says where the entry is, not what it says: no lead, no excerpt
       refute first.text_body =~ "Fog over the pier."
-      assert first.text_body =~ "/newsletter/unsubscribe/"
+      assert first.text_body =~ ~r"link:\nhttp://\S+/newsletter/unsubscribe/\S+\n$"
 
       # the same way off, where the mail program reads it
       assert %{"List-Unsubscribe" => header} = first.headers
@@ -277,9 +281,10 @@ defmodule Texttile.NewsletterTest do
       {:ok, _} = Settings.put(:site_visibility, "protected")
       {:ok, _} = Settings.put(:site_password, "sesame")
 
-      published_post()
+      article = published_post()
       assert_receive {:email, mail}, 1000
-      assert mail.text_body =~ "sesame"
+      # under the link, before the blank line
+      assert mail.text_body =~ "#{Articles.public_path(article)}\nPassword: sesame\n\n"
     end
 
     test "an open blog's mail carries no access word" do

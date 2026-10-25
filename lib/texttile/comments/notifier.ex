@@ -46,7 +46,6 @@ defmodule Texttile.Comments.Notifier do
           You wrote a comment on "%{title}".
 
           Open this link, and your comment appears under the entry:
-
           %{url}
 
           You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.
