@@ -56,17 +56,15 @@ defmodule TexttileWeb.Router do
     plug :guard_media
   end
 
+  # The gate's own answers (a redirect to the password door, a 404)
+  # are never kept, so nothing stale stands in a browser. The file
+  # itself is kept, see `keep_media/1`.
   defp guard_media(conn, _opts) do
-    guarded? = Texttile.Settings.guarded?()
-    cache = if guarded?, do: "private, no-store", else: "private, no-cache"
+    conn = Plug.Conn.register_before_send(conn, &keep_media/1)
 
-    conn =
+    if Texttile.Settings.guarded?() do
       conn
-      |> Plug.Conn.assign(:media_guarded, guarded?)
-      |> Plug.Conn.put_resp_header("cache-control", cache)
-
-    if guarded? do
-      conn
+      |> Plug.Conn.put_resp_header("cache-control", "private, no-store")
       |> Plug.Conn.fetch_session()
       |> fetch_current_scope_for_user([])
       |> TexttileWeb.SiteGate.call([])
@@ -74,6 +72,16 @@ defmodule TexttileWeb.Router do
       conn
     end
   end
+
+  # A served file is kept by the reader's browser for a day and asked
+  # about after that; the ETag answers 304 when nothing changed. Kept
+  # by that browser alone: no cache between the server and the reader
+  # ever holds a file, so a password set later locks out everybody who
+  # has not seen a picture, and what a reader has seen they keep.
+  defp keep_media(%{status: status} = conn) when status in [200, 206, 304],
+    do: Plug.Conn.put_resp_header(conn, "cache-control", "private, max-age=86400")
+
+  defp keep_media(conn), do: conn
 
   scope "/", TexttileWeb do
     pipe_through :media

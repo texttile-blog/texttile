@@ -61,6 +61,24 @@ defmodule Texttile.ImagesTest do
       assert size_of(cached) == {1600, 800}
     end
 
+    # A progressive JPEG carries a SOF2 marker; a baseline one SOF0. In
+    # scan data an 0xFF is always stuffed, so the marker is unmistakable.
+    defp progressive?(rel) do
+      bytes = File.read!(Path.join(Uploads.root(), rel))
+
+      :binary.match(bytes, <<0xFF, 0xC2>>) != :nomatch and
+        :binary.match(bytes, <<0xFF, 0xC0>>) == :nomatch
+    end
+
+    test "a JPEG rendition is progressive, so a slow line shows it early" do
+      rel = original("images/slow.jpg", 4000, 2000)
+      refute progressive?(rel)
+
+      {:ok, cached} = Images.rendition(rel, 1600)
+
+      assert progressive?(cached)
+    end
+
     test "the second ask answers from the cache without touching the file" do
       rel = original("images/a.jpg", 4000, 2000)
       {:ok, cached} = Images.rendition(rel, 1600)
@@ -175,6 +193,34 @@ defmodule Texttile.ImagesTest do
       {:ok, _} = Settings.put(:image_max_edge, 2000)
 
       assert cache_bytes() == 0
+    end
+  end
+
+  describe "ensure_format/0" do
+    test "drops a cache made before the format marker, once" do
+      rel = original("images/f.jpg", 4000, 2000)
+      {:ok, _} = Images.rendition(rel, 1600)
+      File.rm(Uploads.absolute(".rendition-format"))
+
+      :ok = Images.ensure_format()
+      assert cache_bytes() == 0
+
+      {:ok, _} = Images.rendition(rel, 1600)
+      :ok = Images.ensure_format()
+      assert cache_bytes() > 0
+    end
+  end
+
+  describe "srcset/1" do
+    test "offers the reading size and the reader size, each by its longer edge" do
+      assert Images.srcset("images/a.jpg") ==
+               "/renditions/1320/images/a.jpg 1320w, /renditions/max/images/a.jpg 2560w"
+    end
+
+    test "a setting no larger than the reading size leaves one candidate" do
+      {:ok, _} = Settings.put(:image_max_edge, 1000)
+
+      assert Images.srcset("images/a.jpg") == "/renditions/max/images/a.jpg 1000w"
     end
   end
 

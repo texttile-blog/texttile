@@ -10,12 +10,30 @@ defmodule TexttileWeb.UploadsControllerTest do
     :ok
   end
 
-  test "serves a stored file with its type and required cache revalidation", %{conn: conn} do
+  test "serves a stored file with its type, kept by the browser for a day", %{conn: conn} do
     conn = get(conn, ~p"/uploads/site/logo-abcd.svg")
 
     assert response(conn, 200) =~ "<svg"
     assert response_content_type(conn, :svg) =~ "image/svg+xml"
-    assert get_resp_header(conn, "cache-control") == ["private, no-cache"]
+    assert get_resp_header(conn, "cache-control") == ["private, max-age=86400"]
+  end
+
+  test "after the day, an unchanged file answers 304 without its bytes", %{conn: conn} do
+    first = get(conn, ~p"/uploads/site/logo-abcd.svg")
+    [tag] = get_resp_header(first, "etag")
+
+    again = conn |> put_req_header("if-none-match", tag) |> get(~p"/uploads/site/logo-abcd.svg")
+
+    assert response(again, 304) == ""
+    assert get_resp_header(again, "cache-control") == ["private, max-age=86400"]
+  end
+
+  test "a missing file is not kept", %{conn: conn} do
+    conn = get(conn, ~p"/uploads/site/missing.svg")
+
+    assert response(conn, 404)
+    assert [cache] = get_resp_header(conn, "cache-control")
+    refute cache =~ "86400"
   end
 
   describe "a video file" do

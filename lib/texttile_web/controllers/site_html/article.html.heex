@@ -71,7 +71,9 @@
 
          Every tile links the original file, so a crawler finds it;
          the script turns the click into the lightbox, which shows the
-         reader size from data-full. Without the script the link stands
+         reader size from data-full, or the smaller of the sizes in
+         data-srcset when that is all the screen can show. Without the
+         script the link stands
          and answers the picture, or the film, itself. A video tile is
          its poster with a play mark; the lightbox plays the film from
          data-video. --%>
@@ -82,6 +84,7 @@
           id={"tile-#{tile.id}"}
           href={Images.url(tile.film || tile.original, :original)}
           data-full={Images.url(tile.still, :max)}
+          data-srcset={Images.srcset(tile.still)}
           data-video={tile.film && Images.url(tile.film, :original)}
           data-caption={tile.description}
           aria-label={

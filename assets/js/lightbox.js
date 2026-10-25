@@ -78,8 +78,10 @@ export function trapTab(root) {
 
 /* What stands on the stage for one item. A film only plays when it was
    the thing tapped: paging past one must neither start nor fetch it.
-   item: {film, poster, src, caption} - `film` set makes it a film with
-   `poster` behind it; otherwise `src` is the picture. */
+   item: {film, poster, src, srcset, caption} - `film` set makes it a
+   film with `poster` behind it; otherwise `src` is the picture, and
+   `srcset`, when given, the sizes the browser picks from so a phone
+   never fetches more than its screen shows. */
 export function mediaNode(item, playing) {
   if (item.film) {
     const film = document.createElement("video")
@@ -93,6 +95,10 @@ export function mediaNode(item, playing) {
     return film
   }
   const img = document.createElement("img")
+  if (item.srcset) {
+    img.sizes = "100vw"
+    img.srcset = item.srcset
+  }
   img.src = item.src
   img.alt = item.caption || ""
   return img

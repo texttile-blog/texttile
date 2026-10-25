@@ -70,23 +70,37 @@ defmodule TexttileWeb.MediaAccessTest do
       refute File.exists?(Uploads.absolute("cache/images__private-abcd-640.png"))
     end
 
-    test "the shared password opens every media route without caching", %{conn: conn} do
+    # What the reader has seen their browser may keep for a day, for
+    # itself only: no cache between the server and the reader ever
+    # holds a protected file. The gate's own answers are never kept.
+    test "the shared password opens every media route, kept by the browser alone", %{conn: conn} do
       conn = post(conn, "/unlock", %{"password" => "sesame", "to" => @original})
       assert redirected_to(conn) == @original
 
       for path <- @paths do
         response = conn |> recycle() |> get(path)
         assert response(response, 200) != ""
-        assert get_resp_header(response, "cache-control") == ["private, no-store"]
+        assert get_resp_header(response, "cache-control") == ["private, max-age=86400"]
       end
 
       response = conn |> recycle() |> put_req_header("range", "bytes=2-5") |> get(@video)
       assert response(response, 206) == "2345"
-      assert get_resp_header(response, "cache-control") == ["private, no-store"]
+      assert get_resp_header(response, "cache-control") == ["private, max-age=86400"]
 
       response = conn |> recycle() |> get("/uploads/images/missing.png")
       assert response.status == 404
       assert get_resp_header(response, "cache-control") == ["private, no-store"]
+    end
+
+    test "after the day, an unlocked reader's unchanged picture answers 304", %{conn: conn} do
+      conn = post(conn, "/unlock", %{"password" => "sesame"})
+      first = conn |> recycle() |> get(@original)
+      [tag] = get_resp_header(first, "etag")
+
+      again = conn |> recycle() |> put_req_header("if-none-match", tag) |> get(@original)
+
+      assert response(again, 304) == ""
+      assert get_resp_header(again, "cache-control") == ["private, max-age=86400"]
     end
 
     test "an admin can read media until the session is revoked", %{conn: conn} do
@@ -95,7 +109,7 @@ defmodule TexttileWeb.MediaAccessTest do
       for path <- @paths do
         response = get(conn, path)
         assert response.status == 200
-        assert get_resp_header(response, "cache-control") == ["private, no-store"]
+        assert get_resp_header(response, "cache-control") == ["private, max-age=86400"]
       end
 
       Accounts.delete_session(get_session(conn, :user_token))
@@ -125,17 +139,19 @@ defmodule TexttileWeb.MediaAccessTest do
         for path <- @paths do
           response = get(conn, path)
           assert response.status == 200
-          assert get_resp_header(response, "cache-control") == ["private, no-cache"]
+          assert get_resp_header(response, "cache-control") == ["private, max-age=86400"]
         end
       end
     end
   end
 
-  test "public media must revalidate before reuse", %{conn: conn} do
+  test "public media is kept by the reader's browser for a day, by no cache between", %{
+    conn: conn
+  } do
     for path <- @paths do
       response = get(conn, path)
       assert response.status == 200
-      assert get_resp_header(response, "cache-control") == ["private, no-cache"]
+      assert get_resp_header(response, "cache-control") == ["private, max-age=86400"]
     end
   end
 
@@ -146,7 +162,7 @@ defmodule TexttileWeb.MediaAccessTest do
 
       response = conn |> put_req_header("if-none-match", etag) |> get(path)
       assert response(response, 304) == ""
-      assert get_resp_header(response, "cache-control") == ["private, no-cache"]
+      assert get_resp_header(response, "cache-control") == ["private, max-age=86400"]
     end
   end
 

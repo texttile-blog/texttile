@@ -1,8 +1,8 @@
 defmodule TexttileWeb.UploadsController do
   @moduledoc """
   Serves files below the uploads root after the router checks access.
-  Public files require revalidation, so later password protection takes effect.
-  Protected files must not be stored in browser or shared caches.
+  The router says how long a browser keeps a file; the ETag here lets
+  it ask after that and get a 304 instead of the bytes.
   """
   use TexttileWeb, :controller
 
@@ -84,7 +84,7 @@ defmodule TexttileWeb.UploadsController do
     end
   end
 
-  defp send_cached(%{assigns: %{media_guarded: false}} = conn, path, stat) do
+  defp send_cached(conn, path, stat) do
     # Include the resolved path: the max rendition changes with the Images setting.
     digest = :crypto.hash(:sha256, :erlang.term_to_binary({path, stat.size, stat.mtime}))
     etag = ~s(W/"#{Base.url_encode64(digest, padding: false)}")
@@ -100,8 +100,6 @@ defmodule TexttileWeb.UploadsController do
 
     if matches?, do: send_resp(conn, 304, ""), else: send_part(conn, path, stat.size)
   end
-
-  defp send_cached(conn, path, stat), do: send_part(conn, path, stat.size)
 
   # A player asks for the piece it needs, not for the whole film: it
   # seeks by asking for a range of bytes, and some browsers play

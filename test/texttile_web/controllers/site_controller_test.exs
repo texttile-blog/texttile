@@ -221,8 +221,8 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/2026/03/01/grid") |> html_response(200)
 
-      assert html =~ "/renditions/640/"
-      refute html =~ "/renditions/1320/"
+      assert html =~ ~s(src="/renditions/640/)
+      refute html =~ ~s(src="/renditions/1320/)
     end
 
     # A few pictures are not a grid. One, two or three of them stand in

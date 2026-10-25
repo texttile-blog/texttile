@@ -121,7 +121,7 @@ if (document.body.dataset.count) {
     art.replaceChildren(
       tile.dataset.video
         ? mediaNode({film: tile.dataset.video, poster: tile.dataset.full, caption}, playing)
-        : mediaNode({src: tile.dataset.full || tile.href, caption}, false)
+        : mediaNode({src: tile.dataset.full || tile.href, srcset: tile.dataset.srcset, caption}, false)
     );
     document.getElementById("lbCount").textContent = at + 1 + " / " + tiles.length;
     document.getElementById("lbCap").textContent = caption;
@@ -142,7 +142,8 @@ if (document.body.dataset.count) {
   // page forward on a slow line finds them in the cache. A film is
   // never fetched ahead; its poster is a picture and is. The
   // wrap-around stops at the picture on show, so a short row warms
-  // only what it has.
+  // only what it has. The warming picture is built the way the shown
+  // one is, so the browser picks the same size and the cache hits.
   const warmed = new Set();
   function warm(i) {
     for (const step of [1, 2]) {
@@ -151,7 +152,7 @@ if (document.body.dataset.count) {
       const src = tile.dataset.full || tile.href;
       if (warmed.has(src)) continue;
       warmed.add(src);
-      new Image().src = src;
+      mediaNode({src, srcset: tile.dataset.srcset}, false);
     }
   }
 

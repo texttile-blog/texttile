@@ -1,5 +1,6 @@
 defmodule TexttileWeb.SiteHTMLTest do
-  use ExUnit.Case, async: true
+  # the sizes a picture offers the lightbox read the Images setting
+  use Texttile.DataCase, async: false
 
   alias TexttileWeb.CoreComponents
   alias TexttileWeb.SiteHTML
@@ -103,6 +104,10 @@ defmodule TexttileWeb.SiteHTMLTest do
 
       assert html =~ ~s(src="/renditions/1320/images/pier.jpg")
       refute html =~ ~s(src="/uploads/)
+
+      # and offer the lightbox its two sizes
+      assert html =~
+               ~s(data-srcset="/renditions/1320/images/pier.jpg 1320w, /renditions/max/images/pier.jpg 2560w")
     end
   end
 
