@@ -7,6 +7,10 @@ defmodule Texttile.Application do
 
   @impl true
   def start(_type, _args) do
+    # A rendition cache from before a change in how renditions are
+    # written goes before the first page asks for one.
+    Texttile.Images.ensure_format()
+
     children = [
       TexttileWeb.Telemetry,
       Texttile.Repo,

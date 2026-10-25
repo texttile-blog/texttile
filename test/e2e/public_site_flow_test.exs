@@ -171,18 +171,34 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
   # Waits until the full pictures of the tiles at `wanted` (indexes)
   # have been fetched, up to four seconds, then says for every tile
-  # whether its full picture was.
+  # whether its full picture was. A tile offers the browser several
+  # sizes; the one that counts is the size the browser chose for the
+  # picture on show, so a page forward finds the next one in the cache.
   @fetched """
   (wanted) => new Promise((done) => {
-    const want = [...document.querySelectorAll('#gal a')].map((a) => a.dataset.full);
+    const sizesOf = (a) => a.dataset.srcset.split(',').map((c) => c.trim().split(' ')[0]);
+    const tiles = [...document.querySelectorAll('#gal a')];
     const got = () => performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname);
     const started = Date.now();
     const look = () => {
+      const src = document.querySelector('#lbArt img').currentSrc;
+      if (!src) return setTimeout(look, 50);
+      const shown = new URL(src).pathname;
+      const chosen = tiles.map(sizesOf).map((sizes) => sizes.indexOf(shown)).find((k) => k >= 0);
       const paths = got();
-      const have = want.map((u) => paths.includes(u));
+      const have = tiles.map((a) => paths.includes(sizesOf(a)[chosen]));
       if (wanted.every((i) => have[i]) || Date.now() - started > 4000) done(have);
       else setTimeout(look, 50);
     };
+    look();
+  })
+  """
+
+  # The address the browser picked for the picture on show.
+  @chosen """
+  () => new Promise((done) => {
+    const img = document.querySelector('#lbArt img');
+    const look = () => (img.currentSrc ? done(new URL(img.currentSrc).pathname) : setTimeout(look, 50));
     look();
   })
   """
@@ -304,6 +320,34 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> evaluate(@fetched, [arg: [3], is_function: true], fn have ->
         assert have == [true, true, true, true]
       end)
+    end
+  end
+
+  # The lightbox offers two sizes and the browser takes the smallest
+  # that fills its screen: a phone a third of the bytes of a desktop.
+  describe "the lightbox sizes" do
+    @tag browser_context_opts: [viewport: %{width: 390, height: 844}, device_scale_factor: 3.0]
+    test "a phone gets the reading size", %{conn: conn} do
+      article = published_post(title: "Phone", slug: "phone", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+
+      conn
+      |> open_page(Articles.public_path(article))
+      |> click("#tile-#{first.id}")
+      |> assert_has("#lbCount", text: "1 / 1")
+      |> evaluate(@chosen, [is_function: true], &assert(&1 =~ "/renditions/1320/"))
+    end
+
+    @tag browser_context_opts: [viewport: %{width: 1440, height: 900}, device_scale_factor: 2.0]
+    test "a sharp desktop gets the reader size", %{conn: conn} do
+      article = published_post(title: "Desk", slug: "desk", body: "Pictures below.")
+      {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+
+      conn
+      |> open_page(Articles.public_path(article))
+      |> click("#tile-#{first.id}")
+      |> assert_has("#lbCount", text: "1 / 1")
+      |> evaluate(@chosen, [is_function: true], &assert(&1 =~ "/renditions/max/"))
     end
   end
 

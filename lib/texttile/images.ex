@@ -49,6 +49,22 @@ defmodule Texttile.Images do
   def url(path, :max), do: "/renditions/max/#{escape(path)}"
   def url(path, :original), do: "/uploads/#{escape(path)}"
 
+  @doc """
+  The sizes a lightbox offers the browser for one picture, as a
+  `srcset`: the reading size and the reader size of the moment, each
+  named by its longer edge. The browser takes the smallest that fills
+  the screen it has, so a phone gets a third of the bytes a sharp
+  desktop gets. When the setting is no larger than the reading size,
+  there is one candidate.
+  """
+  def srcset(path) do
+    max_edge = Settings.get(:image_max_edge)
+    reading = @edges.reading
+    max = "#{url(path, :max)} #{max_edge}w"
+
+    if max_edge > reading, do: "#{url(path, :reading)} #{reading}w, #{max}", else: max
+  end
+
   # A quote is the one character a stored name can carry that breaks
   # out of a CSS url('...'); everywhere else the escape is harmless.
   defp escape(path), do: String.replace(path, "'", "%27")
@@ -175,9 +191,18 @@ defmodule Texttile.Images do
   # (the Linux build in the Docker image) tries to write the map back
   # into the JPEG and fails on the maps an iPhone makes. A rendition is
   # the plain picture: the map goes, EXIF and the colour profile stay.
+  #
+  # A JPEG is written progressive: on a slow line the reader sees a
+  # coarse picture after a few percent of the bytes and watches it
+  # sharpen, instead of nothing until the last byte. The other formats
+  # have no such mode worth its bytes; an interlaced PNG is larger.
   defp save(image, path) do
     with {:ok, plain} <- without_gain_map(image) do
-      Vips.Image.write_to_file(plain, path)
+      if String.downcase(Path.extname(path)) in [".jpg", ".jpeg"] do
+        Vips.Operation.jpegsave(plain, path, interlace: true)
+      else
+        Vips.Image.write_to_file(plain, path)
+      end
     end
   end
 
@@ -186,6 +211,26 @@ defmodule Texttile.Images do
       {:ok, _map} -> Vips.Image.mutate(image, &Vips.MutableImage.remove(&1, "gainmap-data"))
       {:error, _} -> {:ok, image}
     end
+  end
+
+  # The way a rendition is written has a version. A cache made the old
+  # way is dropped once, at boot, so no reader keeps getting files made
+  # the old way after a deploy. The marker sits beside the cache, not in
+  # it, so clearing the cache for another reason leaves it alone.
+  @format "1 progressive jpeg"
+  @format_marker ".rendition-format"
+
+  @doc "Drops the rendition cache once when the way a rendition is written has changed."
+  def ensure_format do
+    marker = Uploads.absolute(@format_marker)
+
+    if File.read(marker) != {:ok, @format} do
+      clear_cache()
+      File.mkdir_p!(Path.dirname(marker))
+      File.write!(marker, @format)
+    end
+
+    :ok
   end
 
   @doc """

@@ -232,9 +232,9 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   # A picture stands in a link to the original, and the script turns
-  # that link into the lightbox.
+  # that link into the lightbox, which picks from the sizes offered.
   defp draw_media(%Media{video?: false} = media) do
-    ~s(<a class="bodypic" href="#{Images.url(media.path, :original)}" data-full="#{Images.url(media.path, :max)}">) <>
+    ~s(<a class="bodypic" href="#{Images.url(media.path, :original)}" data-full="#{Images.url(media.path, :max)}" data-srcset="#{Images.srcset(media.path)}">) <>
       Media.picture(media, Images.url(media.path, :reading)) <>
       ~s(</a>)
   end
