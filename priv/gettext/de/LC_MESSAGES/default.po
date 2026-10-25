@@ -1030,7 +1030,7 @@ msgstr "%{entries} importieren"
 msgid "Imported: %{name}"
 msgstr "Importiert: %{name}"
 
-#: lib/texttile/comments/notifier.ex:126
+#: lib/texttile/comments/notifier.ex:129
 #, elixir-autogen, elixir-format
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr "Er ist vorerst nicht zu sehen: der Eintrag selbst steht nicht auf der Site."
@@ -2125,11 +2125,6 @@ msgstr "Der Eintrag ist live. Ab jetzt bekommt jede und jeder, die einem alten L
 #, elixir-autogen, elixir-format
 msgid "The entry was deleted while you had it open."
 msgstr "Der Eintrag wurde gelöscht, während du ihn offen hattest."
-
-#: lib/texttile/comments/notifier.ex:129
-#, elixir-autogen, elixir-format
-msgid "The entry:     %{url}"
-msgstr "Der Eintrag:   %{url}"
 
 #: lib/texttile_web/upload_news.ex:101
 #, elixir-autogen, elixir-format
@@ -3822,11 +3817,6 @@ msgstr "gallery_descriptions benötigt eine ausdrücklich angegebene gallery-Lis
 msgid "Password: %{password}"
 msgstr "Passwort: %{password}"
 
-#: lib/texttile/comments/notifier.ex:101
-#, elixir-autogen, elixir-format
-msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands in its settings.\n"
-msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n%{where}    Alle Kommentare: %{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen Kommentar mailen\" steht.\n"
-
 #: lib/texttile_web/controllers/site_html.ex:320
 #, elixir-autogen, elixir-format
 msgid "Entries from %{period}."
@@ -3991,3 +3981,13 @@ msgstr "Dieser Tag wurde während deiner Bearbeitung geändert."
 #, elixir-autogen, elixir-format
 msgid "This tag no longer exists."
 msgstr "Dieser Tag existiert nicht mehr."
+
+#: lib/texttile/comments/notifier.ex:101
+#, elixir-autogen, elixir-format
+msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n---\n%{where}\n\nAll comments:\n%{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands in its settings.\n"
+msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n---\n%{where}\n\nAlle Kommentare:\n%{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen Kommentar mailen\" steht.\n"
+
+#: lib/texttile/comments/notifier.ex:130
+#, elixir-autogen, elixir-format
+msgid "The entry:"
+msgstr "Der Eintrag:"

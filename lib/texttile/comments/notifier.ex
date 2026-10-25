@@ -104,7 +104,11 @@ defmodule Texttile.Comments.Notifier do
 
       %{body}
 
-      %{where}    All comments:  %{url}
+      ---
+      %{where}
+
+      All comments:
+      %{url}
 
       %{site} sends this mail because "Mail me every new comment" stands in its settings.
       """,
@@ -122,11 +126,8 @@ defmodule Texttile.Comments.Notifier do
   # nowhere.
   defp where_it_stands(article) do
     case Articles.public_path(article) do
-      nil ->
-        gettext("It is out of sight for now: the entry itself is not on the site.") <> "\n\n"
-
-      path ->
-        gettext("The entry:     %{url}", url: TexttileWeb.Endpoint.url() <> path) <> "\n"
+      nil -> gettext("It is out of sight for now: the entry itself is not on the site.")
+      path -> gettext("The entry:") <> "\n" <> TexttileWeb.Endpoint.url() <> path
     end
   end
 end

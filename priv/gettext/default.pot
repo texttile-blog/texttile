@@ -1030,7 +1030,7 @@ msgstr ""
 msgid "Imported: %{name}"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:126
+#: lib/texttile/comments/notifier.ex:129
 #, elixir-autogen, elixir-format
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr ""
@@ -2124,11 +2124,6 @@ msgstr ""
 #: lib/texttile_web/live/editor_live.ex:1046
 #, elixir-autogen, elixir-format
 msgid "The entry was deleted while you had it open."
-msgstr ""
-
-#: lib/texttile/comments/notifier.ex:129
-#, elixir-autogen, elixir-format
-msgid "The entry:     %{url}"
 msgstr ""
 
 #: lib/texttile_web/upload_news.ex:101
@@ -3816,11 +3811,6 @@ msgstr ""
 msgid "Password: %{password}"
 msgstr ""
 
-#: lib/texttile/comments/notifier.ex:101
-#, elixir-autogen, elixir-format
-msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n%{where}    All comments:  %{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands in its settings.\n"
-msgstr ""
-
 #: lib/texttile_web/controllers/site_html.ex:320
 #, elixir-autogen, elixir-format
 msgid "Entries from %{period}."
@@ -3984,4 +3974,14 @@ msgstr ""
 #: lib/texttile_web/live/tags_live.ex:118
 #, elixir-autogen, elixir-format
 msgid "This tag no longer exists."
+msgstr ""
+
+#: lib/texttile/comments/notifier.ex:101
+#, elixir-autogen, elixir-format
+msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n---\n%{where}\n\nAll comments:\n%{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands in its settings.\n"
+msgstr ""
+
+#: lib/texttile/comments/notifier.ex:130
+#, elixir-autogen, elixir-format
+msgid "The entry:"
 msgstr ""
