@@ -160,13 +160,31 @@ defmodule Texttile.Images do
              height: max_edge,
              size: :VIPS_SIZE_DOWN
            ),
-         :ok <- Vips.Image.write_to_file(thumb, partial),
+         :ok <- save(thumb, partial),
          :ok <- File.rename(partial, destination) do
       {:ok, target}
     else
       {:error, reason} ->
         File.rm(partial)
         {:error, reason}
+    end
+  end
+
+  # Every scaled picture is written through here. A phone photo carries
+  # an HDR gain map beside the picture, and a vips built with UltraHDR
+  # (the Linux build in the Docker image) tries to write the map back
+  # into the JPEG and fails on the maps an iPhone makes. A rendition is
+  # the plain picture: the map goes, EXIF and the colour profile stay.
+  defp save(image, path) do
+    with {:ok, plain} <- without_gain_map(image) do
+      Vips.Image.write_to_file(plain, path)
+    end
+  end
+
+  defp without_gain_map(image) do
+    case Vips.Image.header_value(image, "gainmap-data") do
+      {:ok, _map} -> Vips.Image.mutate(image, &Vips.MutableImage.remove(&1, "gainmap-data"))
+      {:error, _} -> {:ok, image}
     end
   end
 
@@ -181,7 +199,7 @@ defmodule Texttile.Images do
              height: max_edge,
              size: :VIPS_SIZE_DOWN
            ) do
-      Vips.Image.write_to_file(thumb, destination)
+      save(thumb, destination)
     end
   end
 
@@ -245,7 +263,7 @@ defmodule Texttile.Images do
          {:ok, colour} <- Vips.Operation.colourspace(thumb, :VIPS_INTERPRETATION_sRGB),
          {:ok, opaque} <- flattened(colour, ground),
          {:ok, square} <- centred(opaque, ground),
-         :ok <- Vips.Image.write_to_file(square, partial),
+         :ok <- save(square, partial),
          :ok <- File.rename(partial, destination) do
       {:ok, target}
     else

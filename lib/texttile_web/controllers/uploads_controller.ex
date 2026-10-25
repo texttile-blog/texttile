@@ -6,6 +6,8 @@ defmodule TexttileWeb.UploadsController do
   """
   use TexttileWeb, :controller
 
+  require Logger
+
   alias Texttile.Uploads
 
   @types %{
@@ -46,7 +48,14 @@ defmodule TexttileWeb.UploadsController do
          {:ok, scaled} <- Texttile.Images.rendition(relative, max_edge) do
       serve(conn, scaled)
     else
-      _ -> send_resp(conn, 404, "not found")
+      # A picture vips cannot scale is a 404 to the browser and a line
+      # in the log for us; the silent 404 kept one such file a mystery.
+      {:error, reason} when reason != :not_found ->
+        Logger.warning("rendition #{edge} of #{Enum.join(parts, "/")} failed: #{inspect(reason)}")
+        send_resp(conn, 404, "not found")
+
+      _ ->
+        send_resp(conn, 404, "not found")
     end
   end
 
