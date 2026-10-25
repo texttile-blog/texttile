@@ -150,5 +150,18 @@ defmodule TexttileWeb.UploadsControllerTest do
       conn = get(build_conn(), "/renditions/320/images/pier-ijkl.png")
       assert response(conn, 200)
     end
+
+    test "a picture vips cannot scale is a 404 that names itself in the log", %{conn: conn} do
+      path = Uploads.absolute("images/pier-mnop.jpg")
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, "this is not a jpeg")
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert conn |> get("/renditions/320/images/pier-mnop.jpg") |> response(404)
+        end)
+
+      assert log =~ "rendition 320 of images/pier-mnop.jpg failed"
+    end
   end
 end

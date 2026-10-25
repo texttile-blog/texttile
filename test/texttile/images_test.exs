@@ -113,6 +113,21 @@ defmodule Texttile.ImagesTest do
       assert {:ok, ^full} = Images.rendition(rel)
     end
 
+    test "a phone photo with an HDR gain map renders as a plain picture" do
+      # An iPhone JPEG carries a gain map beside the picture. A vips
+      # built with UltraHDR, the Linux build CI and the Docker image
+      # run, refuses to write that map back at rendition size. The
+      # macOS build has no UltraHDR and never sees the map.
+      rel = "images/phone-hdr.jpeg"
+      abs = Path.join(Uploads.root(), rel)
+      File.mkdir_p!(Path.dirname(abs))
+      File.cp!("test/support/fixtures/phone-hdr.jpeg", abs)
+
+      {:ok, cached} = Images.rendition(rel, 48)
+
+      assert size_of(cached) == {48, 36}
+    end
+
     test "a corrupt file with an image extension is an error, not a crash" do
       abs = Path.join(Uploads.root(), "images/broken.jpg")
       File.mkdir_p!(Path.dirname(abs))
