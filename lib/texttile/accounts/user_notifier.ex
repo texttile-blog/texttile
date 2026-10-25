@@ -33,8 +33,9 @@ defmodule Texttile.Accounts.UserNotifier do
 
   The blog stands at the top as its own address, not as its name: the
   invitation may be the first thing its reader hears of this site. Like
-  every other address in the mail it stands alone on its line, so no
-  mail program can read a comma or a full stop as part of it.
+  every other address in the mail it stands alone on the line right
+  under its sentence, so no mail program can read a comma or a full
+  stop as part of it.
   """
   def deliver_invitation(user, url, site) do
     deliver(
@@ -45,13 +46,11 @@ defmodule Texttile.Accounts.UserNotifier do
         Hello,
 
         You have an admin account on this blog:
-
         %{blog}
 
         Your email address is what you sign in with.
 
         Open this link and choose your password:
-
         %{url}
 
         The link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed.
@@ -77,7 +76,6 @@ defmodule Texttile.Accounts.UserNotifier do
         Somebody asked for a password reset for your account on %{site}.
 
         Open this link and set a new password:
-
         %{url}
 
         The link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail.

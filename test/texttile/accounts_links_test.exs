@@ -94,7 +94,13 @@ defmodule Texttile.AccountsLinksTest do
       _token = Accounts.create_session(user)
 
       {:ok, token} = Accounts.send_password_link(user, link_opts())
-      assert_email_sent(fn email -> assert email.subject =~ "password" end)
+
+      assert_email_sent(fn email ->
+        assert email.subject =~ "password"
+        # the link stands on the line right after its sentence
+        assert email.text_body =~ ~r"password:\nhttp://\S+/link/\S+\n\n"
+        true
+      end)
 
       assert {:ok, _} = Accounts.accept_login_link(token, "a brand new password")
       assert Accounts.list_sessions(user) == []
@@ -115,7 +121,9 @@ defmodule Texttile.AccountsLinksTest do
         # the blog stands at the top, alone on its line: a mail program
         # makes a link out of a http address and out of nothing else,
         # and out of a line with nothing else on it it makes a whole one
-        assert email.text_body =~ "\n#{TexttileWeb.Endpoint.url()}\n"
+        assert email.text_body =~ "blog:\n#{TexttileWeb.Endpoint.url()}\n\n"
+        # the link, too, on the line right after its sentence
+        assert email.text_body =~ ~r"password:\nhttp://\S+/link/\S+\n\n"
         true
       end)
     end

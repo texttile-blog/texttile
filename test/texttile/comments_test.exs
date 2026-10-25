@@ -70,7 +70,8 @@ defmodule Texttile.CommentsTest do
 
       assert_email_sent(fn mail ->
         assert mail.to == [{"Grandma Christel", "christel@example.org"}]
-        assert mail.text_body =~ "http://test/comments/confirm/"
+        # the link stands on the line right after its sentence
+        assert mail.text_body =~ ~r"entry:\nhttp://test/comments/confirm/\S+\n\n"
       end)
     end
 
