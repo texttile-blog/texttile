@@ -171,11 +171,6 @@ msgid_plural "should have at most %{count} item(s)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/editor_live.ex:2945
-#, elixir-autogen, elixir-format
-msgid "%{address} is live; changing it breaks old links."
-msgstr ""
-
 #: lib/texttile_web/live/profile_live.ex:310
 #, elixir-autogen, elixir-format
 msgid "%{browser} · signed in %{when}"
@@ -3928,4 +3923,9 @@ msgstr[1] ""
 #: lib/texttile_web/live/editor_live.ex:2974
 #, elixir-autogen, elixir-format
 msgid "Publish sends one plain email with the title and the link to the confirmed subscribers. Publish quietly sends none."
+msgstr ""
+
+#: lib/texttile_web/live/editor_live.ex:2945
+#, elixir-autogen, elixir-format
+msgid "%{address} is live. After a change, the old address leads here."
 msgstr ""

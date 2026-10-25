@@ -427,6 +427,8 @@ defmodule TexttileWeb.EditorLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       refute has_element?(view, "#oldAddresses")
+      assert has_element?(view, "#slugHint", "the old address leads here")
+      refute has_element?(view, "#slugHint", "breaks old links")
 
       view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "the-harbour"})
 

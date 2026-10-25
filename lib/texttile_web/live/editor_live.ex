@@ -2942,7 +2942,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp slug_hint(article) do
     if path = Articles.public_path(article) do
-      gettext("%{address} is live; changing it breaks old links.",
+      gettext("%{address} is live. After a change, the old address leads here.",
         address: TexttileWeb.Endpoint.host() <> path
       )
     end
