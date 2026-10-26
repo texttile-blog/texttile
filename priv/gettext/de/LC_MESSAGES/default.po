@@ -622,7 +622,7 @@ msgstr "Deinen angezeigten Namen, deine Adresse und dein Passwort änderst du in
 msgid "Choose a password"
 msgstr "Wähle ein Passwort"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:321
+#: lib/texttile_web/controllers/site_html/article.html.heex:324
 #: lib/texttile_web/js_strings.ex:43
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -634,14 +634,14 @@ msgstr "Schließen"
 msgid "Code"
 msgstr "Code"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:204
+#: lib/texttile_web/controllers/site_html/article.html.heex:207
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr "Kommentar"
 
 #: lib/texttile_web/components/layouts.ex:55
 #: lib/texttile_web/controllers/site_html.ex:323
-#: lib/texttile_web/controllers/site_html/article.html.heex:138
+#: lib/texttile_web/controllers/site_html/article.html.heex:141
 #: lib/texttile_web/live/comments_live.ex:28
 #: lib/texttile_web/live/comments_live.ex:77
 #: lib/texttile_web/live/comments_live.ex:90
@@ -834,7 +834,7 @@ msgstr "Bearbeiten"
 msgid "Editing"
 msgstr "Bearbeiten"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:228
+#: lib/texttile_web/controllers/site_html/article.html.heex:231
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:33
 #: lib/texttile_web/live/editor_live.ex:2580
 #: lib/texttile_web/live/newsletter_live.ex:101
@@ -964,7 +964,7 @@ msgstr "Frei änderbar, solange der Eintrag ein Entwurf ist."
 msgid "Front page"
 msgstr "Startseite"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:315
+#: lib/texttile_web/controllers/site_html/article.html.heex:318
 #: lib/texttile_web/js_strings.ex:42
 #, elixir-autogen, elixir-format
 msgid "Full size"
@@ -1199,12 +1199,12 @@ msgstr "Längere Kante höchstens"
 msgid "May"
 msgstr "Mai"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:115
+#: lib/texttile_web/controllers/site_html/article.html.heex:118
 #, elixir-autogen, elixir-format
 msgid "More entries"
 msgstr "Weitere Einträge"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:213
+#: lib/texttile_web/controllers/site_html/article.html.heex:216
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Name"
@@ -1251,13 +1251,13 @@ msgstr "Neuere"
 msgid "Newsletter"
 msgstr "Newsletter"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:124
+#: lib/texttile_web/controllers/site_html/article.html.heex:127
 #: lib/texttile_web/js_strings.ex:45
 #, elixir-autogen, elixir-format
 msgid "Next"
 msgstr "Weiter"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:341
+#: lib/texttile_web/controllers/site_html/article.html.heex:344
 #: lib/texttile_web/js_strings.ex:47
 #, elixir-autogen, elixir-format
 msgid "Next tile"
@@ -1463,7 +1463,7 @@ msgstr "Ein Passwort für das ganze Blog. Wer liest, gibt es einmal ein und wird
 msgid "Only a .zip file works here"
 msgstr "Hier geht nur eine .zip-Datei"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:185
+#: lib/texttile_web/controllers/site_html/article.html.heex:188
 #, elixir-autogen, elixir-format
 msgid "Only you see this. Follow the link in the mail and everybody sees it."
 msgstr "Das siehst nur du. Folge dem Link in der Mail, dann sehen es alle."
@@ -1557,12 +1557,12 @@ msgstr "Wähle den Tag, an dem er live ging. Ein leeres Feld macht den Eintrag w
 msgid "Pictures and videos in the text"
 msgstr "Bilder und Videos im Text"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:189
+#: lib/texttile_web/controllers/site_html/article.html.heex:192
 #, elixir-autogen, elixir-format
 msgid "Post a comment"
 msgstr "Einen Kommentar schreiben"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:294
+#: lib/texttile_web/controllers/site_html/article.html.heex:297
 #, elixir-autogen, elixir-format
 msgid "Post comment"
 msgstr "Kommentar abschicken"
@@ -1583,13 +1583,13 @@ msgstr "Vorschau"
 msgid "Preview image"
 msgstr "Vorschaubild"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:118
+#: lib/texttile_web/controllers/site_html/article.html.heex:121
 #: lib/texttile_web/js_strings.ex:44
 #, elixir-autogen, elixir-format
 msgid "Previous"
 msgstr "Zurück"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:337
+#: lib/texttile_web/controllers/site_html/article.html.heex:340
 #: lib/texttile_web/js_strings.ex:46
 #, elixir-autogen, elixir-format
 msgid "Previous tile"
@@ -2123,7 +2123,7 @@ msgstr "Das Datum speichert sich selbst und sortiert die Galerie."
 msgid "The draft saves as you type."
 msgstr "Der Entwurf speichert sich beim Tippen."
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:146
+#: lib/texttile_web/controllers/site_html/article.html.heex:149
 #, elixir-autogen, elixir-format
 msgid "The earliest comment is not shown here."
 msgid_plural "The %{count} earliest comments are not shown here."
@@ -2845,7 +2845,7 @@ msgstr "Aufrufe"
 msgid "views since %{date}"
 msgstr "Aufrufe seit %{date}"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:174
+#: lib/texttile_web/controllers/site_html/article.html.heex:177
 #, elixir-autogen, elixir-format
 msgid "waiting for your confirmation"
 msgstr "wartet auf deine Bestätigung"
@@ -3204,12 +3204,12 @@ msgstr "Diese Installation"
 msgid "Version"
 msgstr "Version"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:289
+#: lib/texttile_web/controllers/site_html/article.html.heex:292
 #, elixir-autogen, elixir-format
 msgid "A comment needs a name, an email address and some words, and a website has to read like example.org. Check the form and send it again."
 msgstr "Ein Kommentar braucht einen Namen, eine E-Mail-Adresse und ein paar Worte, und eine Website muss wie example.org aussehen. Prüfe das Formular und schicke es noch einmal ab."
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:245
+#: lib/texttile_web/controllers/site_html/article.html.heex:248
 #, elixir-autogen, elixir-format
 msgid "Website"
 msgstr "Website"
@@ -3354,17 +3354,17 @@ msgstr "Der Sicherungs-Token"
 msgid "Now press the copy key"
 msgstr "Jetzt die Kopiertaste drücken"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:276
+#: lib/texttile_web/controllers/site_html/article.html.heex:279
 #, elixir-autogen, elixir-format
 msgid "Remember me on this device, so the next comment is one line and a button."
 msgstr "Auf diesem Gerät merken, damit der nächste Kommentar eine Zeile und ein Knopf ist."
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:228
+#: lib/texttile_web/controllers/site_html/article.html.heex:231
 #, elixir-autogen, elixir-format
 msgid "never published"
 msgstr "wird nie veröffentlicht"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:245
+#: lib/texttile_web/controllers/site_html/article.html.heex:248
 #, elixir-autogen, elixir-format
 msgid "optional"
 msgstr "freiwillig"
@@ -3795,13 +3795,13 @@ msgid "Add one description for each gallery item. Use an empty string for no des
 msgstr "Gib für jede Kachel eine Beschreibung an. Verwende eine leere Zeichenfolge, wenn sie keine Beschreibung hat."
 
 #: lib/texttile_web/controllers/site_html/article.html.heex:32
-#: lib/texttile_web/controllers/site_html/article.html.heex:89
+#: lib/texttile_web/controllers/site_html/article.html.heex:92
 #, elixir-autogen, elixir-format
 msgid "Open image"
 msgstr "Bild öffnen"
 
 #: lib/texttile_web/controllers/site_html/article.html.heex:32
-#: lib/texttile_web/controllers/site_html/article.html.heex:89
+#: lib/texttile_web/controllers/site_html/article.html.heex:92
 #, elixir-autogen, elixir-format
 msgid "Open video"
 msgstr "Video öffnen"

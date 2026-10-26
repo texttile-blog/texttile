@@ -9,10 +9,11 @@ defmodule Texttile.VideoFixtures do
   Writes a one second test video of the given size and answers its
   path. `seconds` and `extension` let a test ask for a longer clip or
   another container, `rotate` for the turn flag a phone writes instead
-  of turning the frames.
+  of turning the frames. `fps` sets the frame rate (default: 10).
   """
   def video_file(width \\ 640, height \\ 480, opts \\ []) do
     seconds = Keyword.get(opts, :seconds, 1)
+    fps = Keyword.get(opts, :fps, 10)
     extension = Keyword.get(opts, :extension, ".mp4")
     rotate = Keyword.get(opts, :rotate)
     path = Path.join(System.tmp_dir!(), "clip-#{System.unique_integer([:positive])}#{extension}")
@@ -29,7 +30,7 @@ defmodule Texttile.VideoFixtures do
           "-f",
           "lavfi",
           "-i",
-          "testsrc=size=#{width}x#{height}:rate=10:duration=#{seconds}",
+          "testsrc=size=#{width}x#{height}:rate=#{fps}:duration=#{seconds}",
           "-pix_fmt",
           "yuv420p",
           "-threads",

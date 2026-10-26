@@ -87,11 +87,38 @@ defmodule Texttile.VideosTest do
     test "the original stays as it came" do
       original = video_file(640, 480)
       relative = stored(original)
-      before = File.stat!(Uploads.absolute(relative))
+      before = File.read!(Uploads.absolute(relative))
 
       {:ok, _video} = Videos.convert(Videos.ensure(relative))
 
-      assert File.stat!(Uploads.absolute(relative)).size == before.size
+      assert File.read!(Uploads.absolute(relative)) == before
+    end
+
+    for fps <- [24, 30, 60] do
+      test "converts #{fps} fps to a constant 30 fps" do
+        relative = stored(video_file(320, 240, fps: unquote(fps)))
+
+        assert {:ok, video} = Videos.convert(Videos.ensure(relative))
+
+        {output, 0} =
+          System.cmd("ffprobe", [
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=r_frame_rate,avg_frame_rate,nb_frames,duration",
+            "-of",
+            "json",
+            Uploads.absolute(video.mp4_path)
+          ])
+
+        assert %{"streams" => [stream]} = Jason.decode!(output)
+        assert stream["r_frame_rate"] == "30/1"
+        assert stream["avg_frame_rate"] == "30/1"
+        assert stream["nb_frames"] == "30"
+        assert String.to_float(stream["duration"]) == 1.0
+      end
     end
 
     test "the longer edge stays within the setting" do

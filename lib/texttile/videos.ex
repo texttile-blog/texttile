@@ -411,8 +411,8 @@ defmodule Texttile.Videos do
 
   @doc """
   The ffmpeg call that makes the playable file: one MP4, H.264 and
-  AAC, the longer edge within `max_edge` and never scaled up, the
-  index at the front so a browser can start before the file is there.
+  AAC at a constant 30 fps. The longer edge stays within `max_edge`,
+  with no upscaling. The index comes first so playback can start early.
 
   It runs on one thread and at the lowest priority the machine
   offers. A conversion is never the most important thing on this
@@ -438,7 +438,7 @@ defmodule Texttile.Videos do
       "-i",
       input,
       "-vf",
-      scale_filter(max_edge),
+      "fps=30," <> scale_filter(max_edge),
       "-c:v",
       "libx264",
       "-preset",
