@@ -65,14 +65,16 @@ defmodule TexttileWeb.TagsLive do
     if tag = socket.assigns.confirm_tag do
       count = Articles.delete_tag(tag)
 
+      note =
+        if count == 0,
+          do: gettext("This tag no longer exists."),
+          else: ngettext("Tag removed from 1 entry.", "Tag removed from %{count} entries.", count)
+
       {:noreply,
        socket
        |> assign(:confirm_tag, nil)
        |> load()
-       |> put_flash(
-         :info,
-         ngettext("Tag removed from 1 entry.", "Tag removed from %{count} entries.", count)
-       )}
+       |> put_flash(:info, note)}
     else
       {:noreply, socket}
     end
@@ -87,12 +89,25 @@ defmodule TexttileWeb.TagsLive do
   defp load(socket) do
     tags = Articles.tag_counts()
     editing = socket.assigns.editing
+    confirm_tag = socket.assigns.confirm_tag
     socket = assign(socket, :tags, tags)
 
-    if editing && not Enum.any?(tags, fn {tag, _} -> tag == editing end) do
+    socket =
+      if editing && not Enum.any?(tags, fn {tag, _} -> tag == editing end) do
+        socket
+        |> assign(editing: nil, error: nil)
+        |> put_flash(:info, gettext("This tag changed while you were editing it."))
+      else
+        socket
+      end
+
+    if confirm_tag &&
+         not Enum.any?(tags, fn {tag, _} ->
+           String.downcase(tag) == String.downcase(confirm_tag)
+         end) do
       socket
-      |> assign(editing: nil, error: nil)
-      |> put_flash(:info, gettext("This tag changed while you were editing it."))
+      |> assign(:confirm_tag, nil)
+      |> put_flash(:info, gettext("This tag no longer exists."))
     else
       socket
     end

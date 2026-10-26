@@ -105,4 +105,38 @@ defmodule TexttileWeb.TagsLiveTest do
     assert has_element?(view, "#tagrow-unterwegs", "Unterwegs")
     assert has_element?(view, "#flash-info", "changed while you were editing")
   end
+
+  test "a delete dialog follows case changes and closes when its tag disappears", %{conn: conn} do
+    entry = draft_post(tags: "travel")
+    {:ok, view, _} = live(conn, "/admin/tags")
+    view |> element("#delete-tag-travel") |> render_click()
+
+    assert {:ok, 1} = Articles.rename_tag("travel", "Travel")
+    assert has_element?(view, "#dialog-ok")
+
+    assert {:ok, 1} = Articles.rename_tag("Travel", "Trips")
+    refute has_element?(view, "#dialog-ok")
+    assert has_element?(view, "#flash-info", "This tag no longer exists.")
+    render_click(view, "delete_tag")
+    assert Articles.get_article!(entry.id).tags == "Trips"
+
+    view |> element("#delete-tag-trips") |> render_click()
+    assert Articles.delete_tag("Trips") == 1
+    refute has_element?(view, "#dialog-ok")
+  end
+
+  test "a delete received before the change notification does not report success on zero entries",
+       %{conn: conn} do
+    entry = draft_post(tags: "travel")
+    {:ok, view, _} = live(conn, "/admin/tags")
+    view |> element("#delete-tag-travel") |> render_click()
+
+    # Simulate the interval between another admin's commit and its PubSub notification.
+    entry |> Ecto.Changeset.change(tags: "Trips") |> Texttile.Repo.update!()
+    view |> element("#dialog-ok") |> render_click()
+
+    assert has_element?(view, "#flash-info", "This tag no longer exists.")
+    refute has_element?(view, "#dialog-ok")
+    assert Articles.get_article!(entry.id).tags == "Trips"
+  end
 end
