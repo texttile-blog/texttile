@@ -262,10 +262,10 @@ much room is left.
 
 A picture is scaled to display sizes on demand, capped by Settings > Images > Max
 longer edge. A video is converted once, by ffmpeg, into one MP4 (H.264 and AAC)
-that every browser plays, plus a poster frame. Settings > Videos > Max longer
-edge caps it, 1280 px by default; nothing is ever scaled up. A new value applies
-to what is converted after the change, because a converted video is never made
-again.
+at a constant 30 fps, plus a poster frame. Existing conversions keep their frame
+rate. Settings > Videos > Max longer edge caps it, 1280 px by default; nothing
+is ever scaled up. A new value applies to what is converted after the change,
+because a converted video is never made again.
 
 The conversion is the most expensive thing this server does, so it stays out of
 everybody's way: one video at a time, ffmpeg on one thread, at the lowest
