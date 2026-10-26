@@ -58,6 +58,13 @@ defmodule TexttileWeb.Layouts do
         active: "comments"
       },
       %{
+        key: "4",
+        label: gettext("Tags"),
+        kind: :screen,
+        to: ~p"/admin/tags",
+        active: "tags"
+      },
+      %{
         key: "7",
         label: gettext("Newsletter"),
         kind: :screen,

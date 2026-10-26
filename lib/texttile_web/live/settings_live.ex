@@ -32,7 +32,6 @@ defmodule TexttileWeb.SettingsLive do
     if connected?(socket) do
       Settings.subscribe()
       Accounts.subscribe_users()
-      Articles.subscribe_admin()
     end
 
     socket =
@@ -40,7 +39,6 @@ defmodule TexttileWeb.SettingsLive do
       |> assign(:page_title, gettext("Settings"))
       |> assign(:errors, %{})
       |> assign(:confirm_delete, nil)
-      |> assign(:confirm_tag, nil)
       |> assign(:confirm_token, false)
       # The one moment the backup token exists in the clear: from the
       # click that made it to the next thing this screen does.
@@ -67,7 +65,6 @@ defmodule TexttileWeb.SettingsLive do
       )
       |> refresh_settings()
       |> refresh_users()
-      |> refresh_tags()
       |> refresh_storage()
       |> mark_saved(nil)
 
@@ -218,7 +215,6 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply,
      socket
      |> assign(:confirm_delete, nil)
-     |> assign(:confirm_tag, nil)
      |> assign(:confirm_token, false)}
   end
 
@@ -258,29 +254,6 @@ defmodule TexttileWeb.SettingsLive do
             # :gone, :last or :yourself: the world moved; show it as it is
             {:noreply, socket |> assign(:confirm_delete, nil) |> refresh_users()}
         end
-    end
-  end
-
-  ## Tags
-
-  def handle_event("ask_delete_tag", %{"tag" => tag}, socket) do
-    {:noreply, assign(socket, :confirm_tag, tag)}
-  end
-
-  def handle_event("delete_tag", _params, socket) do
-    # nil on a double click: the first click already closed the dialog
-    case socket.assigns.confirm_tag do
-      nil ->
-        {:noreply, socket}
-
-      tag ->
-        count = Articles.delete_tag(tag)
-
-        {:noreply,
-         socket
-         |> assign(:confirm_tag, nil)
-         |> refresh_tags()
-         |> mark_saved(tag_deleted_note(tag, count))}
     end
   end
 
@@ -335,15 +308,6 @@ defmodule TexttileWeb.SettingsLive do
   def handle_info({:setting_changed, key, _value}, socket) do
     socket = refresh_settings(socket)
     {:noreply, if(key == :image_max_edge, do: refresh_storage(socket), else: socket)}
-  end
-
-  # A text changed or went away somewhere in the admin area, so the row
-  # of tags may have changed with it. Every other message of the admin
-  # topic is about a body, a version or a log, and none of those
-  # touches a tag.
-  def handle_info({message, _what}, socket)
-      when message in [:article_changed, :article_deleted] do
-    {:noreply, refresh_tags(socket)}
   end
 
   def handle_info(:users_changed, socket) do
@@ -515,15 +479,6 @@ defmodule TexttileWeb.SettingsLive do
   defp page_sizes(current) do
     if current in @page_sizes, do: @page_sizes, else: Enum.sort([current | @page_sizes])
   end
-
-  defp refresh_tags(socket), do: assign(socket, :tags, Articles.tag_counts())
-
-  defp tag_texts(count), do: ngettext("1 entry", "%{count} entries", count)
-
-  defp tag_deleted_note(tag, 0), do: gettext("No entry carried %{tag} any more", tag: tag)
-
-  defp tag_deleted_note(tag, count),
-    do: gettext("%{tag} is off %{entries}", tag: tag, entries: tag_texts(count))
 
   defp refresh_storage(socket) do
     db_path = Texttile.Repo.config()[:database]
@@ -1089,37 +1044,6 @@ defmodule TexttileWeb.SettingsLive do
           </label>
         </.form>
 
-        <.section>{gettext("Tags")}</.section>
-        <p class="note mb-1 leading-[1.6]">
-          {gettext(
-            "Every tag any entry carries. Deleting one takes it off all of them at once and closes its archive page. The entries themselves stay, and so do all the other tags."
-          )}
-        </p>
-        <div id="tagsList">
-          <p :if={@tags == []} class="note">
-            {gettext(
-              "No entry carries a tag yet. Tags are written beside the entry, in the settings of the entry itself."
-            )}
-          </p>
-          <div
-            :for={{tag, count} <- @tags}
-            class="py-[10px] border-b border-hair flex items-center gap-[10px] flex-wrap"
-            id={"tagrow-#{Articles.slugify(tag)}"}
-          >
-            <b class="text-[14.5px]">{tag}</b>
-            <span class="note">{tag_texts(count)}</span>
-            <span class="sp"></span>
-            <button
-              class="btn sm"
-              id={"delete-tag-#{Articles.slugify(tag)}"}
-              phx-click="ask_delete_tag"
-              phx-value-tag={tag}
-            >
-              {gettext("Delete")}
-            </button>
-          </div>
-        </div>
-
         <.section>{gettext("Users")}</.section>
         <p class="note mb-1 leading-[1.6]">
           {gettext(
@@ -1568,25 +1492,6 @@ defmodule TexttileWeb.SettingsLive do
           {gettext(
             "Do this when a token may have got out, and after that whenever you like: the copies you already keep are untouched by it."
           )}
-        </p>
-      </.ask>
-
-      <.ask
-        :if={@confirm_tag}
-        heading={gettext("Delete the tag %{tag}?", tag: @confirm_tag)}
-        ok={gettext("Delete the tag")}
-        on_ok="delete_tag"
-        on_cancel="cancel_delete"
-      >
-        <p>
-          <b>{@confirm_tag}</b>
-          {gettext(
-            "leaves every entry that carries it, and /tags/%{slug} answers nothing from that moment. The entries stay where they are, with the rest of their tags.",
-            slug: Articles.slugify(@confirm_tag)
-          )}
-          <br />
-          <br />
-          {gettext("There is no undo. To have the tag back, write it on an entry again.")}
         </p>
       </.ask>
     </Layouts.app>

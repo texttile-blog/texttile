@@ -73,6 +73,7 @@ defmodule TexttileWeb.EditorLive do
     socket =
       if connected?(socket) do
         Articles.subscribe(article.id)
+        Articles.subscribe_tags()
         Comments.subscribe()
         Texttile.Settings.subscribe()
         Videos.subscribe()
@@ -423,7 +424,7 @@ defmodule TexttileWeb.EditorLive do
   # only the tag being toggled comes and goes.
   def handle_event("toggle_tag", %{"tag" => tag}, socket) do
     %{article: article} = socket.assigns
-    tag = tag |> to_string() |> String.trim() |> String.downcase()
+    tag = tag |> to_string() |> String.trim()
 
     written =
       article.tags
@@ -432,7 +433,7 @@ defmodule TexttileWeb.EditorLive do
       |> Enum.map(&String.trim/1)
       |> Enum.reject(&(&1 == ""))
 
-    kept = Enum.reject(written, &(String.downcase(&1) == tag))
+    kept = Enum.reject(written, &(String.downcase(&1) == String.downcase(tag)))
     tags = if kept == written, do: written ++ [tag], else: kept
 
     case Articles.update_settings(article, %{tags: Enum.join(tags, ", ")}) do
@@ -1030,11 +1031,13 @@ defmodule TexttileWeb.EditorLive do
 
       # Another admin may have moved the entry, and the address it left
       # behind belongs on this screen too.
-      {:noreply, socket |> put_article(article) |> load_redirects()}
+      {:noreply, socket |> put_article(article) |> known_tags() |> load_redirects()}
     else
       {:noreply, socket}
     end
   end
+
+  def handle_info(:tags_changed, socket), do: {:noreply, known_tags(socket)}
 
   def handle_info({:article_deleted, id}, socket) do
     if id == socket.assigns.article.id do
@@ -1333,7 +1336,12 @@ defmodule TexttileWeb.EditorLive do
 
   defp known_tags(socket) do
     standing = socket.assigns[:known_tags] || []
-    carried = Articles.known_tags() ++ Articles.tag_list(socket.assigns.article)
+
+    carried =
+      Enum.uniq_by(
+        Articles.known_tags() ++ Articles.tag_list(socket.assigns.article),
+        &String.downcase/1
+      )
 
     kept = Enum.filter(standing, &(&1 in carried))
 
@@ -2412,10 +2420,10 @@ defmodule TexttileWeb.EditorLive do
                       const taken = this.written()
                       const known = this.known()
                       const hits = known.filter(
-                        tag => tag.includes(term) && !taken.includes(tag)
+                        tag => tag.toLowerCase().includes(term) && !taken.includes(tag.toLowerCase())
                       )
                       // what the word starts, before what it only touches
-                      hits.sort((a, b) => a.startsWith(term) === b.startsWith(term) ? 0 : a.startsWith(term) ? -1 : 1)
+                      hits.sort((a, b) => Number(b.toLowerCase().startsWith(term)) - Number(a.toLowerCase().startsWith(term)))
 
                       // A word the blog does not carry yet is a tag as
                       // much as any other, and the menu is where a tag
@@ -2542,7 +2550,7 @@ defmodule TexttileWeb.EditorLive do
                   <button
                     :for={tag <- @known_tags}
                     type="button"
-                    class={["tagchip", tag in Articles.tag_list(@article) && "on"]}
+                    class={["tagchip", Articles.has_tag?(@article, tag) && "on"]}
                     id={"tagchip-#{Articles.slugify(tag)}"}
                     phx-click="toggle_tag"
                     phx-value-tag={tag}

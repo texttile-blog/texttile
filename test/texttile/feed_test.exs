@@ -36,6 +36,12 @@ defmodule Texttile.FeedTest do
     end
   end
 
+  test "tag renames keep their spelling in feed categories" do
+    published_post(tags: "reisen")
+    assert {:ok, 1} = Articles.rename_tag("reisen", "Reisen")
+    assert Feed.rss(@base) =~ "<category>Reisen</category>"
+  end
+
   describe "the channel" do
     test "carries the site's name, description, address and language" do
       {:ok, _} = Settings.put(:site_title, "Harbor & Fog")
