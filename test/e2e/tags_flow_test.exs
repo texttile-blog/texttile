@@ -6,6 +6,7 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
   test "digit 4 opens Tags and a rename reaches every entry and the reader", %{conn: conn} do
     live = published_post(tags: "reisen, Meer")
     draft = draft_post(tags: "REISEN")
+    blank = draft_post()
 
     session =
       conn
@@ -28,6 +29,11 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
     session
     |> open_editor(draft.id)
     |> assert_has("#edTags[value='Reisen']")
+    |> assert_has("#tagchip-reisen.on", text: "Reisen")
+    |> open_editor(blank.id)
+    |> type("#edTags", "rei")
+    |> assert_has(~s(#tagMenu li[data-tag="Reisen"]), text: "Reisen")
+    |> press("#edTags", "Enter")
     |> assert_has("#tagchip-reisen.on", text: "Reisen")
     |> open_page("/tags/reisen")
     |> assert_has("#title", text: "#Reisen")
