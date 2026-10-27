@@ -351,6 +351,25 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     end
   end
 
+  # The square stands beside the title on a desktop, so the title has a
+  # narrow column there. A long German compound breaks inside it instead
+  # of running out past the edge of the page.
+  describe "the square beside the title" do
+    @tag browser_context_opts: [viewport: %{width: 1440, height: 900}]
+    test "a long word stays inside the title", %{conn: conn} do
+      article = published_post(title: "Die Donaudampfschifffahrtsgesellschaft", slug: "long")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+
+      conn
+      |> open_page(Articles.public_path(article))
+      |> assert_has("#preview img")
+      |> evaluate(
+        "(() => { const h = document.querySelector('.f-h1'); return h.scrollWidth <= h.clientWidth })()",
+        &assert(&1)
+      )
+    end
+  end
+
   describe "walking the blog" do
     test "the pager walks the pages and the text points at the next one", %{conn: conn} do
       {:ok, _} = Settings.put(:posts_per_page, 2)

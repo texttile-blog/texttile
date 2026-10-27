@@ -1618,9 +1618,11 @@
   /* the square at the head of a post: the chosen preview once more,
      left of the title and its line, the two together as wide as the
      column. On a phone the square goes over the title, across the
-     column. It is always a square, like its tile. */
+     column. It is always a square, like its tile. Beside it the title
+     has a narrow column, so a long compound breaks instead of running
+     out of the page. */
   .post-head { display: flex; align-items: flex-end; gap: 26px; }
-  .post-head > div { flex: 1; min-width: 0; }
+  .post-head > div { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
   .hero {
     display: block; flex: none; width: min(46%, 280px); aspect-ratio: 1; overflow: hidden;
     border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);
