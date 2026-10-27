@@ -2049,6 +2049,7 @@ defmodule TexttileWeb.EditorLive do
                   data-description={image.description}
                   data-date={I18n.format_field_moment(image.gallery_date)}
                   data-full={@media[image.path].still && Images.url(@media[image.path].still, :max)}
+                  data-srcset={@media[image.path].still && Images.srcset(@media[image.path].still)}
                   data-video={
                     @media[image.path].film && Images.url(@media[image.path].film, :original)
                   }
