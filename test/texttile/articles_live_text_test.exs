@@ -200,4 +200,92 @@ defmodule Texttile.ArticlesLiveTextTest do
       refute rss =~ "Not out yet"
     end
   end
+
+  describe "publication is atomic" do
+    test "a failed publication log rolls back its version and emits no updates", %{user: user} do
+      article = draft_post(user: user)
+      before = Articles.get_article!(article.id)
+      {:ok, _} = Texttile.Newsletter.add("delivered@resend.dev")
+      Articles.subscribe(article.id)
+
+      Repo.query!("""
+      CREATE TEMP TRIGGER reject_publication_log
+      BEFORE INSERT ON article_log
+      BEGIN SELECT RAISE(ABORT, 'publication log failure'); END
+      """)
+
+      try do
+        assert_raise Exqlite.Error, fn -> Articles.publish(article, user) end
+      after
+        Repo.query!("DROP TRIGGER reject_publication_log")
+      end
+
+      assert Articles.get_article!(article.id) == before
+      assert Articles.versions(article) == []
+      refute_receive {:versions_changed, _}
+      refute_receive {:log_changed, _}
+      refute_receive {:article_changed, _}
+      refute_receive {:email, _}
+    end
+
+    for operation <- [:publish, :schedule, :date, :due, :changes] do
+      @tag publication_operation: operation
+      test "#{operation} keeps the previous state when the live version cannot be stored", %{
+        user: user,
+        publication_operation: operation
+      } do
+        article =
+          case operation do
+            :changes -> published_post(user: user)
+            op when op in [:date, :due] -> scheduled_post(user: user)
+            _ -> draft_post(user: user)
+          end
+
+        {:ok, article} = Articles.update_text(article, %{body: "New working copy."})
+
+        article =
+          if operation == :schedule do
+            {:ok, dated} = Articles.set_publish_date(article, user, Date.add(Date.utc_today(), 7))
+            dated
+          else
+            article
+          end
+
+        before = Articles.get_article!(article.id)
+        versions = Articles.versions(before)
+        log = Articles.log(before)
+        Articles.subscribe(article.id)
+
+        # Fail after the state write, at the version insert. The trigger is
+        # local to this connection and is removed before the sandbox returns it.
+        Repo.query!("""
+        CREATE TEMP TRIGGER reject_publication_version
+        BEFORE INSERT ON article_versions
+        BEGIN SELECT RAISE(ABORT, 'publication test failure'); END
+        """)
+
+        try do
+          assert_raise Exqlite.Error, fn ->
+            case operation do
+              :publish -> Articles.publish(article, user)
+              :schedule -> Articles.publish(article, user, today: Date.add(Date.utc_today(), -1))
+              :date -> Articles.set_publish_date(article, user, Date.utc_today())
+              :due -> Articles.go_live_due(article.publish_date)
+              :changes -> Articles.publish_changes(article, user)
+            end
+          end
+        after
+          Repo.query!("DROP TRIGGER reject_publication_version")
+        end
+
+        after_failure = Articles.get_article!(article.id)
+        assert after_failure == before
+        assert Articles.versions(after_failure) == versions
+        assert Articles.log(after_failure) == log
+        refute_receive {:article_changed, _}
+        refute_receive {:versions_changed, _}
+        refute_receive {:log_changed, _}
+      end
+    end
+  end
 end

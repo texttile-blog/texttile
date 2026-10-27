@@ -28,7 +28,7 @@ animations are out; they cost the reader battery and the writer frames.
 
 ### 3. Written together
 
-Two people work on the same entry at the same time. Only the body text is
+Two people work on the same entry at the same time. The title and body are
 locked, and only softly: the holder writes, the other one watches the text
 arrive live and can take over in one click. Tiles, tags, settings and publish
 controls stay free for both, last write wins per field. The admin area shows
@@ -122,7 +122,7 @@ Use this language in code, in the UI and when talking to me.
   in `gallery_date` and nowhere else.
 - **rendition** means a scaled picture or a converted video. It is made again on
   demand and never backed up.
-- **the lock** means the soft document lock on the body text.
+- **the lock** means the soft document lock on the title and body.
 - **admin area** means the signed-in area behind `/admin`, `TexttileWeb.Admin`.
   Never "the desk". `Admin` alone names the person.
 - **installation** means everything under `/data`: the database and the uploads.

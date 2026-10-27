@@ -17,7 +17,7 @@ copy of `/data`. Texttile uses the [MIT License](LICENSE).
 
 - **One container, your data.** SQLite and the uploads in `/data`. Move that
   directory and you moved the blog.
-- **Two writers, one entry.** Only the body text is locked, and softly. Tiles,
+- **Two writers, one entry.** The title and body are locked, and softly. Tiles,
   tags and settings stay open for both.
 - **Your Markdown, byte for byte.** What you typed is what is stored, so a
   version diff shows real edits and nothing else.

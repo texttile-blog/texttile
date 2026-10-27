@@ -470,6 +470,10 @@ defmodule Texttile.ImportTest do
       again = Repo.get_by!(Article, slug: "beach-days")
       assert again.id == first.id
       assert again.title == "Beach days again"
+      read = Articles.as_read(again)
+      assert read.title == "Beach days again"
+      assert read.body == "New body.\n"
+      refute Articles.unpublished_changes?(again)
       assert Gallery.list(again.id) == []
 
       # the pictures of the first import are gone, files included

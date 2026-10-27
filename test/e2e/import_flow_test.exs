@@ -57,6 +57,43 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     assert kb.name == "kb"
   end
 
+  test "reimport replaces the title and body that a signed-out reader sees", %{conn: conn, kb: kb} do
+    article =
+      published_post(
+        user: kb,
+        title: "Before the import",
+        body: "Old public words.",
+        slug: "beach-days",
+        publish_date: ~D[2019-06-02]
+      )
+
+    zip = build_zip()
+
+    conn
+    |> sign_in()
+    |> open("/admin/settings/import")
+    |> upload("#import-upload input[type=file]", "Upload the zip", zip, exact: false)
+    |> assert_has("#import-report", text: "The report")
+    |> click_button("#import-run", "Import 1 entry")
+    |> assert_has("#import-summary", text: "1 updated")
+    |> click_button("#wmBtn", "Texttile")
+    |> assert_has("#navMenu", text: "Sign out")
+    |> click_link("Sign out")
+    |> open_page(Texttile.Articles.public_path(article))
+    |> assert_has("h1", text: "Beach days")
+    |> assert_has("body", text: "of the trip.")
+    |> refute_has("body", text: "Old public words.")
+    |> refute_has("#unpublished")
+    |> evaluate(
+      "() => ({title: document.title, heading: document.querySelector('h1').textContent})",
+      [is_function: true],
+      fn page ->
+        assert page["title"] =~ "Beach days"
+        assert page["heading"] == "Beach days"
+      end
+    )
+  end
+
   defp build_zip do
     source = Path.join(System.tmp_dir!(), "e2e-import-#{System.unique_integer([:positive])}")
 

@@ -16,7 +16,7 @@ defmodule Texttile.Gallery do
   import Ecto.Query
 
   alias Texttile.Articles.Article
-  alias Texttile.Gallery.Image
+  alias Texttile.Gallery.Tile
   alias Texttile.Gallery.Sweeper
   alias Texttile.Repo
   alias Texttile.Uploads
@@ -33,7 +33,7 @@ defmodule Texttile.Gallery do
 
   @doc "The living gallery of a text, in the order readers will see."
   def list(article_id) do
-    Image
+    Tile
     |> where([i], i.article_id == ^article_id and is_nil(i.delete_after))
     |> order_by([i], asc: i.gallery_date, asc: i.id)
     |> Repo.all()
@@ -42,7 +42,7 @@ defmodule Texttile.Gallery do
   @doc "One living image of this text; raises when it is not there."
   def get!(article_id, image_id) do
     Repo.one!(
-      from i in Image,
+      from i in Tile,
         where: i.article_id == ^article_id and i.id == ^image_id and is_nil(i.delete_after)
     )
   end
@@ -51,7 +51,7 @@ defmodule Texttile.Gallery do
   # mutation answers {:error, :gone} then instead of raising.
   defp fetch(article_id, image_id) do
     Repo.one(
-      from i in Image,
+      from i in Tile,
         where: i.article_id == ^article_id and i.id == ^image_id and is_nil(i.delete_after)
     )
   end
@@ -61,7 +61,7 @@ defmodule Texttile.Gallery do
   included. For the article's own deletion, which takes the files along.
   """
   def paths(article_id) do
-    Repo.all(from i in Image, where: i.article_id == ^article_id, select: i.path)
+    Repo.all(from i in Tile, where: i.article_id == ^article_id, select: i.path)
   end
 
   @doc """
@@ -70,7 +70,7 @@ defmodule Texttile.Gallery do
   it arrived under.
   """
   def rows(article_id) do
-    Repo.all(from i in Image, where: i.article_id == ^article_id)
+    Repo.all(from i in Tile, where: i.article_id == ^article_id)
   end
 
   @doc """
@@ -81,7 +81,7 @@ defmodule Texttile.Gallery do
     ids = Enum.map(articles, & &1.id)
 
     by_article =
-      Image
+      Tile
       |> where([i], i.article_id in ^ids and is_nil(i.delete_after))
       |> order_by([i], asc: i.gallery_date, asc: i.id)
       |> Repo.all()
@@ -240,7 +240,7 @@ defmodule Texttile.Gallery do
   holds, the new ones are stored uploads already.
   """
   def replace_imported(%Article{} = article, tiles) do
-    Repo.delete_all(from i in Image, where: i.article_id == ^article.id)
+    Repo.delete_all(from i in Tile, where: i.article_id == ^article.id)
 
     images =
       Enum.map(tiles, fn {relative, filename, gallery_date, description} ->
@@ -265,7 +265,7 @@ defmodule Texttile.Gallery do
       end
 
     image =
-      Repo.insert!(%Image{
+      Repo.insert!(%Tile{
         article_id: article.id,
         path: relative,
         filename: String.slice(filename, 0, 120),
@@ -332,7 +332,7 @@ defmodule Texttile.Gallery do
   @doc "Sets or clears a tile description without changing its file or gallery date."
   def set_description(article_id, image_id, value, opts \\ []) do
     with true <- valid_description?(value),
-         %Image{} = image <- fetch(article_id, image_id) do
+         %Tile{} = image <- fetch(article_id, image_id) do
       image = image |> Ecto.Changeset.change(description: value) |> Repo.update!()
       broadcast(article_id, :description, image.id, opts[:by])
       {:ok, image}
@@ -351,7 +351,7 @@ defmodule Texttile.Gallery do
   """
   def set_date(article_id, image_id, value, opts \\ []) do
     with {:ok, date} <- parse_date(to_string(value)),
-         %Image{} = image <- fetch(article_id, image_id) do
+         %Tile{} = image <- fetch(article_id, image_id) do
       image = image |> Ecto.Changeset.change(gallery_date: date) |> Repo.update!()
       broadcast(article_id, :date, image.id, opts[:by])
       {:ok, image}
@@ -510,7 +510,7 @@ defmodule Texttile.Gallery do
     now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:microsecond) end)
 
     query =
-      from i in Image,
+      from i in Tile,
         where:
           i.article_id == ^article_id and i.id == ^image_id and
             not is_nil(i.delete_after) and i.delete_after > ^now
@@ -533,12 +533,12 @@ defmodule Texttile.Gallery do
   """
   def sweep_due(now \\ DateTime.utc_now(:microsecond)) do
     due =
-      Repo.all(from i in Image, where: not is_nil(i.delete_after) and i.delete_after <= ^now)
+      Repo.all(from i in Tile, where: not is_nil(i.delete_after) and i.delete_after <= ^now)
 
     Enum.each(due, fn image ->
       # by id, not by struct: a row a second sweep already took must
       # not raise as stale here
-      Repo.delete_all(from i in Image, where: i.id == ^image.id)
+      Repo.delete_all(from i in Tile, where: i.id == ^image.id)
       Uploads.remove_upload(image.path)
     end)
 
@@ -547,7 +547,7 @@ defmodule Texttile.Gallery do
 
   @doc "The next moment the sweeper has to wake, or nil."
   def next_due do
-    Repo.one(from i in Image, where: not is_nil(i.delete_after), select: min(i.delete_after))
+    Repo.one(from i in Tile, where: not is_nil(i.delete_after), select: min(i.delete_after))
   end
 
   ## PubSub
