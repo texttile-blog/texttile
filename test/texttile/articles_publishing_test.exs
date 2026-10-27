@@ -119,6 +119,28 @@ defmodule Texttile.Articles.PublishingTest do
   end
 
   describe "run/3" do
+    test "a failed publish keeps the previous mail choice and emits no update", %{user: user} do
+      article = draft(user, %{"notify_on_publish" => true})
+      before = Articles.get_article!(article.id)
+      plan = Publishing.plan(article, :quiet)
+      Articles.subscribe(article.id)
+
+      Repo.query!("""
+      CREATE TEMP TRIGGER reject_planned_publication
+      BEFORE INSERT ON article_versions
+      BEGIN SELECT RAISE(ABORT, 'planned publication failure'); END
+      """)
+
+      try do
+        assert_raise Exqlite.Error, fn -> Publishing.run(article, user, plan) end
+      after
+        Repo.query!("DROP TRIGGER reject_planned_publication")
+      end
+
+      assert Articles.get_article!(article.id) == before
+      refute_receive {:article_changed, _}
+    end
+
     test "carries the plan out and records what the click asked for", %{user: user} do
       article = draft(user, %{"notify_on_publish" => true})
 

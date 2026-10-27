@@ -92,26 +92,19 @@ defmodule Texttile.Articles.Publishing do
   end
 
   @doc """
-  Carries the plan out: the entry records what the click asked for
-  about the mail, then goes live or is scheduled.
+  Publishes or schedules the entry and saves its mail choice in the
+  same transaction.
 
   The verb carries the decision, so the record follows it. What the
   entry remembers is what the click asked for, and the go-live clock
   reads the same field when a scheduled entry goes live on its own.
   """
   def run(%Article{} = article, user, %Plan{} = plan) do
-    article
-    |> remember_mail(plan)
-    |> Articles.publish(user, force: plan.force?, today: plan.today)
-  end
-
-  defp remember_mail(%Article{notify_on_publish: wanted} = article, %Plan{mails?: wanted}) do
-    article
-  end
-
-  defp remember_mail(article, %Plan{mails?: wanted}) do
-    {:ok, moved} = Articles.update_settings(article, %{"notify_on_publish" => wanted})
-    moved
+    Articles.publish(article, user,
+      force: plan.force?,
+      today: plan.today,
+      notify_on_publish: plan.mails?
+    )
   end
 
   # A page never mails anybody, so a click records that instead of

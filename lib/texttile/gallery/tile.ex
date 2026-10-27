@@ -1,6 +1,6 @@
-defmodule Texttile.Gallery.Image do
+defmodule Texttile.Gallery.Tile do
   @moduledoc """
-  One picture in a text's gallery. The file itself lives below the
+  One picture or video in an entry's gallery. The file itself lives below the
   uploads root and is never rewritten; this row carries what the CMS
   knows about it, above all `gallery_date`, the one field every
   ordering of the gallery reads.

@@ -277,9 +277,10 @@ Warnings:
 ## Importing twice
 
 The slug identifies the entry. When the slug already exists, the import
-updates that entry: title, body, settings, and date. The gallery is replaced
-with the gallery of the bundle. Pictures of the earlier import that the
-bundle no longer references are deleted. The comments are replaced the same
+updates that entry: title, body, settings, and date. If the imported entry is live,
+readers get the imported title and body.
+The gallery is replaced with the gallery of the bundle. Pictures of the earlier
+import that the bundle no longer references are deleted. The comments are replaced the same
 way: what the last import wrote goes, and the comments of the bundle stand
 in its place. A bundle without a `comments.yaml` therefore leaves the entry
 without imported comments. What a reader wrote here, on this site, is never

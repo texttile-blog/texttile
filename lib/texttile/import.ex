@@ -940,12 +940,10 @@ defmodule Texttile.Import do
 
     {:ok, article} = Articles.set_publish_date(article, user, date, today: today)
 
-    if article.status == "draft" do
-      {:ok, article} = Articles.publish(article, user, today: today)
-      article
-    else
-      article
-    end
+    # Import replaces the published text too. Publishing an existing live
+    # entry keeps its date and does not send another subscriber mail.
+    {:ok, article} = Articles.publish(article, user, today: today)
+    article
   end
 
   defp mark_notified(article, date, today) do

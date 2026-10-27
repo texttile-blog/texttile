@@ -579,34 +579,23 @@ defmodule Texttile.Articles do
     {day, status} = Publishing.landing(article, opts)
     went_live? = status == Visibility.live_status() and not Visibility.live?(article)
 
-    attrs = %{status: status, publish_date: day, slug: article.slug || free_slug(article)}
+    attrs = %{
+      status: status,
+      publish_date: day,
+      slug: article.slug || free_slug(article),
+      notify_on_publish: Keyword.get(opts, :notify_on_publish, article.notify_on_publish)
+    }
 
-    with {:ok, article} <- article |> Article.state_changeset(attrs) |> Repo.update() do
-      article =
-        if status == Visibility.live_status() do
-          hand_to_readers(article, user)
-        else
-          snapshot(article, user)
-          article
-        end
-
-      push_log(
-        article,
-        user,
+    change_publication(article, user, attrs,
+      version: if(status == Visibility.live_status(), do: :live, else: :snapshot),
+      log:
         if(status == "scheduled",
           do: "scheduled the entry for #{day}",
           else: "published the entry"
-        )
-      )
-
-      article =
-        if went_live?,
-          do: Texttile.Newsletter.notify_published(article, today: today),
-          else: article
-
-      broadcast({:article_changed, article})
-      {:ok, article}
-    end
+        ),
+      notify: went_live?,
+      today: today
+    )
   end
 
   @doc """
@@ -617,10 +606,7 @@ defmodule Texttile.Articles do
   """
   def publish_changes(%Article{} = article, user) do
     if unpublished_changes?(article) do
-      article = hand_to_readers(article, user)
-      push_log(article, user, "published the changes")
-      broadcast({:article_changed, article})
-      {:ok, article}
+      change_publication(article, user, %{}, version: :live, log: "published the changes")
     else
       :unchanged
     end
@@ -646,7 +632,7 @@ defmodule Texttile.Articles do
   # change in between writes one version and points at it twice.
   defp hand_to_readers(%Article{} = article, user) do
     version =
-      case snapshot(article, user) do
+      case store_snapshot(article, user) do
         {:ok, version} -> version
         :unchanged -> newest_version(article)
       end
@@ -671,19 +657,9 @@ defmodule Texttile.Articles do
   def unpublish(%Article{} = article, user) do
     was = article.status
 
-    with {:ok, article} <-
-           article
-           |> Article.state_changeset(%{status: "draft", publish_date: nil})
-           |> Repo.update() do
-      push_log(
-        article,
-        user,
-        if(was == "scheduled", do: "unscheduled the entry", else: "unpublished the entry")
-      )
-
-      broadcast({:article_changed, article})
-      {:ok, article}
-    end
+    change_publication(article, user, %{status: "draft", publish_date: nil},
+      log: if(was == "scheduled", do: "unscheduled the entry", else: "unpublished the entry")
+    )
   end
 
   @doc """
@@ -700,11 +676,7 @@ defmodule Texttile.Articles do
         unpublish(article, user)
 
       article.status == "draft" ->
-        with {:ok, article} <-
-               article |> Article.state_changeset(%{publish_date: date}) |> Repo.update() do
-          broadcast({:article_changed, article})
-          {:ok, article}
-        end
+        change_publication(article, user, %{publish_date: date})
 
       true ->
         status =
@@ -715,29 +687,12 @@ defmodule Texttile.Articles do
         # already-live text is not.
         went_live? = status == Visibility.live_status() and article.status == "scheduled"
 
-        with {:ok, moved} <-
-               article
-               |> Article.state_changeset(%{publish_date: date, status: status})
-               |> Repo.update() do
-          # The date is part of the address of a post, so a live entry
-          # that gets another day has moved and leaves the old day
-          # standing as a redirect.
-          moved = remember_address(article, moved)
-
-          # A date dragged back onto today is a go-live, so the words
-          # as they stand become the words the readers get. Without
-          # this the entry would be live with no published version
-          # behind it, and every later keystroke would be on the site.
-          moved = if went_live?, do: hand_to_readers(moved, user), else: moved
-
-          moved =
-            if went_live?,
-              do: Texttile.Newsletter.notify_published(moved, today: today),
-              else: moved
-
-          broadcast({:article_changed, moved})
-          {:ok, moved}
-        end
+        change_publication(article, user, %{publish_date: date, status: status},
+          version: if(went_live?, do: :live),
+          remember_address: true,
+          notify: went_live?,
+          today: today
+        )
     end
   end
 
@@ -751,20 +706,58 @@ defmodule Texttile.Articles do
     |> Repo.all()
     |> Enum.map(fn article ->
       {:ok, article} =
-        article
-        |> Article.state_changeset(%{status: Visibility.live_status()})
-        |> Repo.update()
+        change_publication(article, nil, %{status: Visibility.live_status()},
+          version: :live,
+          log: "the entry went live as scheduled",
+          notify: true,
+          today: today
+        )
 
-      # The words as they stand on the morning it goes out are the
-      # words the readers get; everything written after that waits for
-      # a publish like any other change.
-      article = hand_to_readers(article, nil)
-
-      push_log(article, nil, "the entry went live as scheduled")
-      article = Texttile.Newsletter.notify_published(article, today: today)
-      broadcast({:article_changed, article})
       article
     end)
+  end
+
+  # State, version, redirects and log belong to one database change.
+  # Mail and broadcasts follow a successful commit.
+  defp change_publication(article, user, attrs, opts \\ []) do
+    result =
+      Repo.transaction(fn ->
+        moved =
+          case article |> Article.state_changeset(attrs) |> Repo.update() do
+            {:ok, moved} -> moved
+            {:error, changeset} -> Repo.rollback(changeset)
+          end
+
+        moved = if opts[:remember_address], do: remember_address(article, moved), else: moved
+
+        moved =
+          case opts[:version] do
+            :live ->
+              hand_to_readers(moved, user)
+
+            :snapshot ->
+              store_snapshot(moved, user)
+              moved
+
+            nil ->
+              moved
+          end
+
+        if opts[:log], do: insert_log(moved, user, opts[:log])
+        moved
+      end)
+
+    with {:ok, moved} <- result do
+      moved =
+        if opts[:notify],
+          do: Texttile.Newsletter.notify_published(moved, today: opts[:today]),
+          else: moved
+
+      if opts[:version], do: broadcast({:versions_changed, moved.id})
+      if opts[:log], do: broadcast({:log_changed, moved.id})
+      broadcast({:article_changed, moved})
+      {:ok, moved}
+    end
   end
 
   @doc """
@@ -881,6 +874,17 @@ defmodule Texttile.Articles do
   on handover) use this. Deduplicates against the newest version.
   """
   def snapshot(%Article{} = article, user) do
+    case store_snapshot(article, user) do
+      {:ok, version} ->
+        broadcast({:versions_changed, article.id})
+        {:ok, version}
+
+      :unchanged ->
+        :unchanged
+    end
+  end
+
+  defp store_snapshot(article, user) do
     newest = newest_version(article)
 
     if newest && newest.title == article.title && newest.body == article.body do
@@ -894,7 +898,6 @@ defmodule Texttile.Articles do
           user_id: user && user.id
         })
 
-      broadcast({:versions_changed, article.id})
       {:ok, version}
     end
   end
@@ -934,11 +937,13 @@ defmodule Texttile.Articles do
 
   @doc "One line into the Log. `user` may be nil for the system."
   def push_log(%Article{} = article, user, text) do
-    entry =
-      Repo.insert!(%LogEntry{article_id: article.id, user_id: user && user.id, text: text})
-
+    entry = insert_log(article, user, text)
     broadcast({:log_changed, article.id})
     entry
+  end
+
+  defp insert_log(article, user, text) do
+    Repo.insert!(%LogEntry{article_id: article.id, user_id: user && user.id, text: text})
   end
 
   ## Slugs
@@ -1050,99 +1055,6 @@ defmodule Texttile.Articles do
 
   ## Diff
 
-  @word_diff_cap 500_000
-
-  @doc """
-  The word-level diff between two texts, as a flat list of
-  `{:same | :add | :del, token}` runs in reading order. Tokens are
-  words and the whitespace between them, so joining the `:same` and
-  `:add` tokens gives back the new text byte for byte.
-
-  The untouched head and tail of the text are peeled off before the
-  LCS runs, so a long article with a small edit still gets a real
-  diff; only a rewrite of half a book falls back to "all new".
-  """
-  def diff(old_text, new_text) do
-    a = tokenize(old_text)
-    b = tokenize(new_text)
-
-    {head, a, b, tail} = peel(a, b)
-
-    n = length(a)
-    m = length(b)
-
-    middle =
-      cond do
-        n == 0 and m == 0 -> []
-        n * m > @word_diff_cap -> Enum.map(a, &{:del, &1}) ++ Enum.map(b, &{:add, &1})
-        true -> walk(List.to_tuple(a), List.to_tuple(b), lcs_table(a, b, m))
-      end
-
-    Enum.map(head, &{:same, &1}) ++ middle ++ Enum.map(tail, &{:same, &1})
-  end
-
-  # The common head and tail, token by token: {head, a_rest, b_rest, tail}.
-  defp peel(a, b) do
-    {head, a, b} = peel_head(a, b, [])
-    {a_rev, b_rev} = {Enum.reverse(a), Enum.reverse(b)}
-    {tail_rev, a_rev, b_rev} = peel_head(a_rev, b_rev, [])
-    {Enum.reverse(head), Enum.reverse(a_rev), Enum.reverse(b_rev), tail_rev}
-  end
-
-  defp peel_head([x | a], [x | b], acc), do: peel_head(a, b, [x | acc])
-  defp peel_head(a, b, acc), do: {acc, a, b}
-
-  defp tokenize(text) do
-    text
-    |> to_string()
-    |> String.split(~r/(?<=\s)(?=\S)|(?<=\S)(?=\s)/)
-    |> Enum.reject(&(&1 == ""))
-  end
-
-  # The classic LCS table, built bottom-up: row i holds, for every j,
-  # the length of the longest common run of a[i..] and b[j..].
-  defp lcs_table(a, b, m) do
-    b_tuple = List.to_tuple(b)
-    empty = Tuple.duplicate(0, m + 1)
-
-    a
-    |> Enum.reverse()
-    |> Enum.reduce([empty], fn token, [below | _] = rows ->
-      row =
-        Enum.reduce((m - 1)..0//-1, [elem(empty, 0)], fn j, [right | _] = acc ->
-          cell =
-            if token == elem(b_tuple, j) do
-              elem(below, j + 1) + 1
-            else
-              max(elem(below, j), right)
-            end
-
-          [cell | acc]
-        end)
-
-      [List.to_tuple(row) | rows]
-    end)
-    |> List.to_tuple()
-  end
-
-  defp walk(a, b, table), do: walk(a, b, table, 0, 0, [])
-
-  defp walk(a, b, table, i, j, acc) do
-    n = tuple_size(a)
-    m = tuple_size(b)
-
-    cond do
-      i < n and j < m and elem(a, i) == elem(b, j) ->
-        walk(a, b, table, i + 1, j + 1, [{:same, elem(a, i)} | acc])
-
-      i < n and (j == m or elem(elem(table, i + 1), j) >= elem(elem(table, i), j + 1)) ->
-        walk(a, b, table, i + 1, j, [{:del, elem(a, i)} | acc])
-
-      j < m ->
-        walk(a, b, table, i, j + 1, [{:add, elem(b, j)} | acc])
-
-      true ->
-        Enum.reverse(acc)
-    end
-  end
+  @doc "Word differences that preserve the original whitespace."
+  defdelegate diff(old_text, new_text), to: Texttile.Articles.Diff, as: :between
 end

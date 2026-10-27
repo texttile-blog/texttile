@@ -93,7 +93,7 @@ defmodule Texttile.Articles.Article do
   @doc "A state move: publish, schedule, unpublish, go live."
   def state_changeset(article, attrs) do
     article
-    |> cast(attrs, [:status, :publish_date, :slug, :notified_on])
+    |> cast(attrs, [:status, :publish_date, :slug, :notify_on_publish, :notified_on])
     |> validate_inclusion(:status, @statuses)
     |> unique_constraint(:slug)
   end

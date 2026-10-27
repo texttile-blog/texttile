@@ -369,7 +369,7 @@ defmodule Texttile.GalleryTest do
       {:ok, _} = Gallery.delete(article.id, image.id)
 
       assert Gallery.sweep_due(a_minute_on()) == 1
-      assert Repo.get(Gallery.Image, image.id) == nil
+      assert Repo.get(Gallery.Tile, image.id) == nil
       refute File.exists?(Uploads.absolute(image.path))
     end
 
@@ -379,7 +379,7 @@ defmodule Texttile.GalleryTest do
       {:ok, _} = Gallery.delete(article.id, image.id)
 
       assert Gallery.sweep_due() == 0
-      assert Repo.get(Gallery.Image, image.id)
+      assert Repo.get(Gallery.Tile, image.id)
     end
 
     test "the window is measured from the moment the caller names" do
@@ -390,7 +390,7 @@ defmodule Texttile.GalleryTest do
       {:ok, _} = Gallery.delete(article.id, image.id, now: long_ago)
 
       assert Gallery.sweep_due() == 1
-      assert Repo.get(Gallery.Image, image.id) == nil
+      assert Repo.get(Gallery.Tile, image.id) == nil
     end
 
     # A minute is well past the ten second window and asks for no clock
@@ -447,7 +447,7 @@ defmodule Texttile.GalleryTest do
 
       {:ok, _} = Articles.delete_article(article)
 
-      assert Repo.get(Gallery.Image, image.id) == nil
+      assert Repo.get(Gallery.Tile, image.id) == nil
       refute File.exists?(Uploads.absolute(image.path))
     end
   end
