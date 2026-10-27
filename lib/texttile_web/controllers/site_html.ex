@@ -203,7 +203,11 @@ defmodule TexttileWeb.SiteHTML do
       </p>
       <p :if={lead(@article) != ""} class="clead">{lead(@article)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
-        <a :for={tag <- Articles.tag_list(@article)} class="ctag" href={~p"/tags/#{tag}"}>
+        <a
+          :for={tag <- Articles.tag_list(@article)}
+          class="ctag"
+          href={~p"/tags/#{String.downcase(tag)}"}
+        >
           #{tag}
         </a>
       </p>

@@ -17,7 +17,7 @@
         <span :if={tag == @tag} class="ctag" style="color:var(--tt-ink);font-weight:600">
           #{tag} <span class="cnt">{count}</span>
         </span>
-        <a :if={tag != @tag} class="ctag" href={~p"/tags/#{tag}"}>
+        <a :if={tag != @tag} class="ctag" href={~p"/tags/#{String.downcase(tag)}"}>
           #{tag} <span class="cnt">{count}</span>
         </a>
       <% end %>

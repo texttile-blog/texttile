@@ -476,13 +476,13 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#tagchip-sea", "sea")
+      assert has_element?(view, "#tagchip-sea", "Sea")
       assert has_element?(view, "#tagchip-fog", "fog")
       refute has_element?(view, "#tagchip-sea.on")
 
       view |> element("#tagchip-sea") |> render_click()
 
-      assert Articles.get_article!(article.id).tags == "sea"
+      assert Articles.get_article!(article.id).tags == "Sea"
       assert has_element?(view, "#tagchip-sea.on")
 
       # the same click again takes the tag off, and the chip stays
@@ -494,7 +494,7 @@ defmodule TexttileWeb.EditorLiveTest do
       refute has_element?(view, "#tagchip-sea.on")
 
       view |> element("#tagchip-sea") |> render_click()
-      assert Articles.get_article!(article.id).tags == "sea"
+      assert Articles.get_article!(article.id).tags == "Sea"
     end
 
     test "a tag typed by hand joins the suggestions and keeps its spelling",

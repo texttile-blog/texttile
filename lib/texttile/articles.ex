@@ -29,6 +29,9 @@ defmodule Texttile.Articles do
     Phoenix.PubSub.subscribe(Texttile.PubSub, @admin_topic)
   end
 
+  @doc "Changes to the shared tag vocabulary, for open editor suggestions."
+  def subscribe_tags, do: Phoenix.PubSub.subscribe(Texttile.PubSub, "tags")
+
   def subscribe(article_id) do
     Phoenix.PubSub.subscribe(Texttile.PubSub, topic(article_id))
   end
@@ -388,68 +391,99 @@ defmodule Texttile.Articles do
   """
   def known_tags, do: Enum.map(tag_counts(), fn {tag, _count} -> tag end)
 
-  @doc """
-  The same list with the number of texts on each tag. Settings shows
-  it, so whoever deletes a tag sees what it costs first.
-  """
+  @doc "Tags with entry counts, grouped without regard to case. The first spelling stays."
   def tag_counts do
     Article
+    |> order_by([a], a.id)
     |> select([a], a.tags)
     |> Repo.all()
     |> Enum.flat_map(&tag_list(%{tags: &1}))
-    |> Enum.frequencies()
-    |> Enum.sort_by(fn {tag, count} -> {-count, tag} end)
+    |> Enum.group_by(&String.downcase/1)
+    |> Enum.map(fn {_key, tags} -> {hd(tags), length(tags)} end)
+    |> Enum.sort_by(fn {tag, count} -> {-count, String.downcase(tag)} end)
   end
 
-  @doc """
-  Takes a tag off every text that carries it, whatever it is spelled
-  like there, and answers how many texts changed. The archive page of
-  the tag is gone with the last text on it.
-  """
-  def delete_tag(tag) do
-    wanted = tag |> to_string() |> String.trim() |> String.downcase()
+  @doc "Renames a tag on every entry. An existing different tag cannot be overwritten."
+  def rename_tag(old, name) do
+    old = old |> to_string() |> String.trim()
+    name = name |> to_string() |> String.trim()
 
-    if wanted == "" do
-      0
+    if old == "" or name == "" or String.contains?(name, ",") do
+      {:error, :invalid_tag}
     else
-      # The like narrows the rows the database hands over; a text
-      # carries its whole body, and a blog of five hundred of them is
-      # no reason to read them all. The word itself is checked after
-      # that, so "sea" never takes "seawall" with it.
-      like = "%#{wanted}%"
-
-      Article
-      |> where([a], like(fragment("lower(?)", a.tags), ^like))
-      |> Repo.all()
-      |> Enum.filter(&(wanted in tag_list(&1)))
-      |> Enum.map(&drop_tag(&1, wanted))
-      |> length()
+      change_tag(old, name)
     end
   end
 
-  defp drop_tag(article, wanted) do
-    kept =
-      article.tags
-      |> String.split(",")
-      |> Enum.reject(&(&1 |> String.trim() |> String.downcase() == wanted))
-      |> Enum.join(",")
-
-    {:ok, article} = update_settings(article, %{tags: kept})
-    article
+  @doc "Removes a tag from every entry and returns the number of entries changed."
+  def delete_tag(tag) do
+    {:ok, count} = change_tag(tag |> to_string() |> String.trim(), nil)
+    count
   end
 
-  @doc """
-  The tags of a text as a clean list: split on commas, trimmed,
-  lowercased, each tag once. Every tag is an archive page.
-  """
+  # Read and write together so another admin cannot change the set halfway through.
+  # Fetch only IDs and tags first. Bodies are loaded only for affected entries.
+  # Broadcast after commit so open editors see the complete change.
+  defp change_tag(old, name) do
+    result =
+      Repo.transaction(
+        fn ->
+          rows = Repo.all(from a in Article, select: %{id: a.id, tags: a.tags})
+          matching = Enum.filter(rows, &has_tag?(&1, old))
+
+          if name do
+            if matching == [], do: Repo.rollback(:not_found)
+
+            if String.downcase(old) != String.downcase(name) and
+                 Enum.any?(rows, &has_tag?(&1, name)),
+               do: Repo.rollback(:tag_exists)
+          end
+
+          Enum.map(matching, fn row ->
+            tags =
+              row
+              |> tag_list()
+              |> Enum.flat_map(fn tag ->
+                if String.downcase(tag) == String.downcase(old),
+                  do: if(name, do: [name], else: []),
+                  else: [tag]
+              end)
+              |> Enum.join(", ")
+
+            row.id
+            |> get_article!()
+            |> Article.settings_changeset(%{tags: tags})
+            |> Repo.update!()
+          end)
+        end,
+        mode: :immediate
+      )
+
+    case result do
+      {:ok, entries} ->
+        Enum.each(entries, &broadcast({:article_changed, &1}))
+        if entries != [], do: Phoenix.PubSub.broadcast(Texttile.PubSub, "tags", :tags_changed)
+        {:ok, length(entries)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "An entry's tags, trimmed and deduplicated, with their spelling intact."
   def tag_list(%{tags: tags}) do
     tags
     |> to_string()
-    |> String.downcase()
     |> String.split(",")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
-    |> Enum.uniq()
+    |> Enum.uniq_by(&String.downcase/1)
+  end
+
+  @doc "Whether an entry carries a tag, without regard to case."
+  def has_tag?(article, tag) do
+    wanted = String.downcase(tag)
+    Enum.any?(tag_list(article), &(String.downcase(&1) == wanted))
   end
 
   # Every reader query carries the author, who stands beside the day,

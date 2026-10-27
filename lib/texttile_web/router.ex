@@ -188,6 +188,7 @@ defmodule TexttileWeb.Router do
       live "/newsletter", NewsletterLive
       live "/stats", StatsLive
       live "/profile", ProfileLive
+      live "/tags", TagsLive
       live "/settings", SettingsLive
       live "/settings/import", ImportLive
     end

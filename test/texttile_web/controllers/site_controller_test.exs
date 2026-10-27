@@ -4,6 +4,7 @@ defmodule TexttileWeb.SiteControllerTest do
   import Texttile.AccountsFixtures
   import Texttile.ArticlesFixtures
 
+  alias Texttile.Articles
   alias Texttile.Settings
 
   describe "the front page" do
@@ -465,7 +466,7 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/tags/sea") |> html_response(200)
 
-      assert html =~ "#sea"
+      assert html =~ "#Sea"
       assert html =~ "entry has this tag."
       assert html =~ ~s(id="text-#{sea.id}")
       refute html =~ "Desert nights"
@@ -473,6 +474,27 @@ defmodule TexttileWeb.SiteControllerTest do
       # the other tags stay on the page, each a way into its archive
       assert html =~ ~s(href="/tags/fog")
       assert html =~ ~s(href="/tags/travel")
+    end
+
+    test "a case rename preserves archive URLs, spelling and the live text", %{conn: conn} do
+      entry = published_post(title: "Live title", body: "Live body", tags: "reisen")
+      {:ok, _} = Articles.update_text(entry, %{title: "Working title", body: "Working body"})
+      draft_post(title: "Hidden draft", tags: "REISEN")
+      assert {:ok, 2} = Articles.rename_tag("reisen", "Reisen")
+
+      for path <- ["/tags/reisen", "/tags/REISEN", "/tags/Reisen"] do
+        html = conn |> get(path) |> html_response(200)
+        assert html =~ "#Reisen"
+        assert html =~ "Live title"
+        refute html =~ "Working title"
+        refute html =~ "Hidden draft"
+      end
+
+      html = conn |> get(Articles.public_path(entry)) |> html_response(200)
+      assert html =~ "Reisen"
+      assert html =~ ~s(href="/tags/reisen")
+      assert html =~ "Live body"
+      refute html =~ "Working body"
     end
 
     test "a tag nobody uses is a 404", %{conn: conn} do

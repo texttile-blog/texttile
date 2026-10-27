@@ -103,7 +103,7 @@ defmodule Texttile.ExportTest do
         published_post(%{
           title: "Beach days",
           slug: "beach-days",
-          tags: "travel, sea",
+          tags: "Travel, Sea",
           publish_date: ~D[2019-06-02],
           body: "Plain words."
         })
@@ -115,7 +115,7 @@ defmodule Texttile.ExportTest do
       assert entries["date"] == "2019-06-02"
       assert entries["status"] == "published"
       assert entries["type"] == "post"
-      assert entries["tags"] == ["travel", "sea"]
+      assert entries["tags"] == ["Travel", "Sea"]
       assert entries["allow_comments"] == "true"
       assert String.trim(body) == "Plain words."
     end
@@ -342,7 +342,7 @@ defmodule Texttile.ExportTest do
   describe "back through the import" do
     test "the bundle builds the entry again", %{} do
       user = user_fixture()
-      article = draft_post(%{title: "Beach days", slug: "beach-days", tags: "travel, sea"})
+      article = draft_post(%{title: "Beach days", slug: "beach-days", tags: "Travel, Sea"})
       tile!(article, "beach.jpg")
       map = in_body!(article, "map.png")
 
@@ -353,7 +353,7 @@ defmodule Texttile.ExportTest do
 
       assert built.title == "Beach days"
       assert built.status == "draft"
-      assert Articles.tag_list(built) == ["travel", "sea"]
+      assert Articles.tag_list(built) == ["Travel", "Sea"]
       # The importer stores the bundle file under its own name, so the
       # words point at a fresh upload and at nothing in the bundle.
       assert built.body =~ ~r"!\[The map\]\(/uploads/images/[a-z0-9-]+\.png\)"

@@ -160,8 +160,8 @@ defmodule Texttile.ArticlesPublicTest do
   end
 
   describe "tag_list/1" do
-    test "splits, trims, lowercases and deduplicates" do
-      assert Articles.tag_list(%{tags: "Sea, fog , sea,,  "}) == ["sea", "fog"]
+    test "splits, trims and deduplicates while keeping spelling" do
+      assert Articles.tag_list(%{tags: "Sea, fog , sea,,  "}) == ["Sea", "fog"]
       assert Articles.tag_list(%{tags: ""}) == []
     end
   end

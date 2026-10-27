@@ -23,6 +23,7 @@ defmodule TexttileWeb.Admin do
     TexttileWeb.NewsletterLive => :newsletter,
     TexttileWeb.StatsLive => :stats,
     TexttileWeb.ProfileLive => :profile,
+    TexttileWeb.TagsLive => :tags,
     TexttileWeb.SettingsLive => :settings
   }
 
@@ -171,6 +172,7 @@ defmodule TexttileWeb.Admin do
   defp activity(%{view: :newsletter}), do: gettext("In the newsletter")
   defp activity(%{view: :stats}), do: gettext("In the stats")
   defp activity(%{view: :profile}), do: gettext("In the profile")
+  defp activity(%{view: :tags}), do: gettext("In Tags")
   defp activity(%{view: :settings}), do: gettext("In Settings")
 
   defp path(%{view: :editor} = meta) do
@@ -184,6 +186,7 @@ defmodule TexttileWeb.Admin do
   defp path(%{view: :newsletter}), do: "/admin/newsletter"
   defp path(%{view: :stats}), do: "/admin/stats"
   defp path(%{view: :profile}), do: "/admin/profile"
+  defp path(%{view: :tags}), do: "/admin/tags"
   defp path(%{view: :settings}), do: "/admin/settings"
   defp path(_meta), do: "/admin"
 

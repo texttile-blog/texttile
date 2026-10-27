@@ -126,21 +126,18 @@ defmodule TexttileWeb.SiteController do
   def tag(conn, %{"tag" => raw}) do
     tag = raw |> String.downcase() |> String.trim()
     posts = Articles.list_published() |> Reading.text(audience(conn))
-    articles = Enum.filter(posts, &(tag in Articles.tag_list(&1)))
+    articles = Enum.filter(posts, &Articles.has_tag?(&1, tag))
 
     if articles == [] do
       not_found(conn)
     else
-      # every tag of the blog, in the order it first appears, with a
-      # count each
       tags =
         posts
         |> Enum.flat_map(&Articles.tag_list/1)
-        |> Enum.reduce([], fn t, acc -> if t in acc, do: acc, else: [t | acc] end)
-        |> Enum.reverse()
-        |> Enum.map(fn t ->
-          {t, Enum.count(posts, &(t in Articles.tag_list(&1)))}
-        end)
+        |> Enum.uniq_by(&String.downcase/1)
+        |> Enum.map(fn t -> {t, Enum.count(posts, &Articles.has_tag?(&1, t))} end)
+
+      {tag, _count} = Enum.find(tags, fn {name, _} -> String.downcase(name) == tag end)
 
       conn
       |> assign(:page_title, "##{tag}")
