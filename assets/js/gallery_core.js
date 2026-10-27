@@ -19,7 +19,7 @@
    to the server's truth. */
 
 import {t, esc} from "./i18n.js"
-import {attachSwipe, trapTab, quiet, closeMark} from "./lightbox.js"
+import {attachSwipe, trapTab, quiet, closeMark, mediaNode} from "./lightbox.js"
 
 const MAX_PARALLEL = 2
 /* one roof for a photograph and for a film, and the server owns the
@@ -630,6 +630,7 @@ export class Gallery {
       description: t.dataset.description || "",
       date: t.dataset.date,
       full: t.dataset.full,
+      srcset: t.dataset.srcset,
       video: t.dataset.video,
       original: t.dataset.original,
       path: t.dataset.path,
@@ -650,6 +651,7 @@ export class Gallery {
       token: 0,
       formFor: null,
       paintedUrl: null,
+      warmed: new Set(),
       /* only the tile that was tapped starts playing by itself;
          paging past a film must not start it */
       opening: true,
@@ -685,7 +687,7 @@ export class Gallery {
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
            data-nav="-1" aria-label="${esc(t("Previous tile"))}">&#8249;</button>
         <div class="relative flex-1 h-full min-w-0 flex items-center justify-center">
-          <div id="lbImg" class="w-full h-full bg-center bg-contain bg-no-repeat" role="img" aria-label=""></div>
+          <div id="lbImg" class="w-full h-full"></div>
           <div id="lbState" class="absolute inset-0 grid place-items-center text-white/80 text-[13px] text-center px-6" hidden></div>
         </div>
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
@@ -798,9 +800,11 @@ export class Gallery {
 
     this.root.querySelector("#lbPreview").checked = data.preview
 
-    this.root.querySelectorAll("#lbStage video, #lbImg").forEach(art =>
+    this.root.querySelectorAll("#lbStage video").forEach(art =>
       art.setAttribute("aria-label", data.description || data.filename)
     )
+    const picture = this.root.querySelector("#lbImg img")
+    if (picture) picture.alt = data.description || data.filename
 
     // a paint from a background update must not restart a load that is
     // already on its way: on a slow line the picture would never land
@@ -821,7 +825,6 @@ export class Gallery {
     const state = this.root.querySelector("#lbState")
 
     state.hidden = true
-    img.style.backgroundImage = ""
     quiet(img)
 
     const film = document.createElement("video")
@@ -835,6 +838,7 @@ export class Gallery {
     img.replaceChildren(film)
     if (lb.opening) film.play().catch(() => {})
     lb.opening = false
+    this.warmNext()
   }
 
   loadImage(data, bust) {
@@ -845,33 +849,53 @@ export class Gallery {
     const state = this.root.querySelector("#lbState")
 
     quiet(img)
-    img.replaceChildren()
-    img.style.backgroundImage = ""
-    img.setAttribute("aria-label", data.description || data.filename)
     state.hidden = false
     state.textContent = t("Loading the full size…")
 
-    const url = bust ? `${data.full}${data.full.includes("?") ? "&" : "?"}r=${Date.now()}` : data.full
-    const probe = new Image()
-    probe.onload = () => {
+    // Keep the browser's chosen size on retry. A new request bypasses
+    // a cached error without making a phone fetch the largest size.
+    const failed = img.querySelector("img")?.currentSrc || data.full
+    const src = bust ? `${failed}${failed.includes("?") ? "&" : "?"}r=${Date.now()}` : data.full
+    const picture = mediaNode({src, srcset: bust ? null : data.srcset, caption: data.description || data.filename}, false)
+    picture.className = "w-full h-full object-contain"
+    picture.onload = () => {
       // a late answer may not repaint a closed lightbox or another image
-      if (!this.lb || this.lb.token !== token) return
-      this.lb.loadingUrl = null
+      if (this.lb !== lb || lb.token !== token) return
+      lb.loadingUrl = null
       state.hidden = true
-      img.style.backgroundImage = `url('${url}')`
-      this.lb.paintedUrl = data.full
+      lb.paintedUrl = data.full
+      this.warmNext()
     }
-    probe.onerror = () => {
-      if (!this.lb || this.lb.token !== token) return
-      this.lb.loadingUrl = null
-      this.lb.paintedUrl = null
+    picture.onerror = () => {
+      if (this.lb !== lb || lb.token !== token) return
+      picture.hidden = true
+      lb.loadingUrl = null
+      lb.paintedUrl = null
       state.hidden = false
       state.innerHTML = `<span>This image could not be shown.
         The original is safe on disk, the display size failed to load.<br>
         <button type="button" class="link" id="lbRetry" style="color:#fff;text-decoration:underline">Try again</button></span>`
       state.querySelector("#lbRetry").addEventListener("click", () => this.loadImage(data, true))
+      this.warmNext()
     }
-    probe.src = url
+    // Attach before loading finishes so progressive JPEGs can appear
+    // while their bytes arrive, instead of waiting behind a probe.
+    img.replaceChildren(picture)
+  }
+
+  warmNext() {
+    const lb = this.lb
+    const list = this.shownTiles()
+    const index = list.findIndex(tile => tile.dataset.id === lb.id)
+    if (index < 0) return
+    for (let step = 1; step <= Math.min(2, list.length - 1); step++) {
+      const tile = list[(index + step) % list.length].dataset
+      if (lb.warmed.has(tile.full)) continue
+      lb.warmed.add(tile.full)
+      // A film contributes only its poster, at the size the video uses.
+      const picture = mediaNode({src: tile.full, srcset: tile.video ? null : tile.srcset}, false)
+      picture.onerror = () => lb.warmed.delete(tile.full)
+    }
   }
 
   nav(direction) {
