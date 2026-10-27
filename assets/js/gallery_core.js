@@ -222,7 +222,11 @@ export class Gallery {
      failed tiles, so their admin chooses Retry or Remove; sending them
      on their own could race another tab of the same entry. */
   async restore() {
-    const left = await waiting(this.uploadUrl)
+    /* a file picked while the browser was still reading is this
+       page's own, already on its way */
+    const kept = await waiting(this.uploadUrl)
+    const mine = new Set(this.records.map(r => r.cacheKey))
+    const left = kept.filter(l => !mine.has(l.key))
     if (this.dead || !left.length) return
     for (const {key, file} of left) {
       this.records.push({
