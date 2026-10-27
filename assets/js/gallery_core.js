@@ -20,6 +20,7 @@
 
 import {t, esc} from "./i18n.js"
 import {attachSwipe, trapTab, quiet, closeMark, mediaNode} from "./lightbox.js"
+import {keep, forget, waiting} from "./upload_cache.js"
 
 const MAX_PARALLEL = 2
 /* one roof for a photograph and for a film, and the server owns the
@@ -48,6 +49,7 @@ export function mount(hook) {
     core.offline = false
     core.saveDescription()
   }
+  return core.restore()
 }
 
 export class Gallery {
@@ -202,6 +204,8 @@ export class Gallery {
         error: oversize ? t("bigger than the %{roof} MB roof", {roof}) : null,
         noRetry: oversize,
         pct: 0,
+        /* a file that cannot be sent is not kept either */
+        cacheKey: oversize ? null : keep(this.uploadUrl, file),
       })
 
       if (oversize)
@@ -211,6 +215,33 @@ export class Gallery {
       this.renderLocal()
       this.pump()
     }
+  }
+
+  /* The files a page before this one picked and never sent: a reload,
+     a closed tab, a phone that dropped the page. They come back as
+     failed tiles, so their admin chooses Retry or Remove; sending them
+     on their own could race another tab of the same entry. */
+  async restore() {
+    /* a file picked while the browser was still reading is this
+       page's own, already on its way */
+    const kept = await waiting(this.uploadUrl)
+    const mine = new Set(this.records.map(r => r.cacheKey))
+    const left = kept.filter(l => !mine.has(l.key))
+    if (this.dead || !left.length) return
+    for (const {key, file} of left) {
+      this.records.push({
+        id: "u" + ++this.uid,
+        file,
+        name: file.name,
+        objurl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null,
+        status: "failed",
+        error: t("not uploaded"),
+        pct: 0,
+        cacheKey: key,
+      })
+    }
+    this.renderLocal()
+    this.noteTile(t("Not uploaded yet: %{names}.", {names: left.map(l => l.file.name).join(", ")}))
   }
 
   pump() {
@@ -249,6 +280,7 @@ export class Gallery {
       if (xhr.status === 200 && xhr.response && xhr.response.id != null) {
         record.serverId = String(xhr.response.id)
         record.done = true
+        forget(record.cacheKey)
         this.settleDone()
       } else if (xhr.status === 409 && xhr.response && xhr.response.error) {
         /* the picture is in this entry already: nothing failed, and a
@@ -257,6 +289,7 @@ export class Gallery {
         record.status = "failed"
         record.noRetry = true
         record.error = t("already here")
+        forget(record.cacheKey)
         this.noteTile(xhr.response.error)
       } else {
         record.status = "failed"
@@ -314,6 +347,7 @@ export class Gallery {
       if (!record) return
 
       if (button.dataset.act === "cancel" || button.dataset.act === "remove") {
+        forget(record.cacheKey)
         if (record.xhr) record.xhr.abort()
         else this.dropRecord(record)
       } else if (button.dataset.act === "retry") {

@@ -34,6 +34,8 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("%{name} is bigger than the %{roof} MB roof."),
     gettext_noop("%{name} failed to upload. Retry or remove it."),
     gettext_noop("already here"),
+    gettext_noop("not uploaded"),
+    gettext_noop("Not uploaded yet: %{names}."),
     gettext_noop("%{count} on the way"),
     gettext_noop("Retry"),
     gettext_noop("Remove"),
