@@ -103,7 +103,8 @@ defmodule Texttile.VideosQueueTest do
     until(fn -> Queue.running(queue) == dies end)
 
     server = Process.whereis(queue)
-    %{task: %Task{ref: ref}} = :sys.get_state(server)
+    %{task: %Task{ref: ref, pid: worker}} = :sys.get_state(server)
+    worker_ref = Process.monitor(worker)
     send(server, {:DOWN, ref, :process, self(), :killed})
     Queue.push(queue, next)
 
@@ -111,6 +112,10 @@ defmodule Texttile.VideosQueueTest do
     # the work, the line moves on
     until(fn -> Videos.get(next).state == "done" end)
     until_empty(queue)
+
+    # The simulated death leaves the real worker alive. Wait before the
+    # sandbox rolls back, or it can write into the next test's reused row id.
+    assert_receive {:DOWN, ^worker_ref, :process, ^worker, _reason}, @conversion_ms
   end
 
   test "picks up what a stopped server left behind" do
