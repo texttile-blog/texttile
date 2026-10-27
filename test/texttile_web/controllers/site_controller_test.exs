@@ -188,9 +188,9 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     # The chosen preview stands once more at the head of the post, as
-    # a square the size of a tile, and its link is the tile's link, so
-    # the lightbox can open on that tile.
-    test "shows the chosen preview as a square above the title", %{conn: conn} do
+    # a square beside the title (above it on a phone), and its link is
+    # the tile's link, so the lightbox can open on that tile.
+    test "shows the chosen preview as a square at the head of the post", %{conn: conn} do
       article = published_post(title: "Square", slug: "square", publish_date: ~D[2026-03-01])
       {:ok, _first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
       {:ok, chosen} = Texttile.Gallery.add_file(article, jpg_fixture(), "gull.jpg")
@@ -200,6 +200,11 @@ defmodule TexttileWeb.SiteControllerTest do
 
       assert attribute(html, "#preview", "href") == ["/uploads/#{chosen.path}"]
       assert attribute(html, "#preview img", "src") == ["/renditions/640/#{chosen.path}"]
+      # a phone shows the square across the column and takes the larger size
+      assert attribute(html, "#preview img", "srcset") == [
+               "/renditions/640/#{chosen.path} 640w, /renditions/1320/#{chosen.path} 1320w"
+             ]
+
       # the square comes before the title
       assert :binary.match(html, ~s(id="preview")) < :binary.match(html, ~s(class="f-h1"))
     end

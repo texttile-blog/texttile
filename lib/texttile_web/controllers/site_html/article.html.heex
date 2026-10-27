@@ -20,47 +20,57 @@
   </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
-      <%!-- the chosen preview once more, at the head of the post: a
-           square the size of a tile, so the page opens the way its card
-           in the list does. It links the file the tile links, and the
-           script turns the click into the lightbox, on that tile. --%>
-      <a
-        :if={@hero}
-        id="preview"
-        class="hero"
-        href={Images.url(@hero.link, :original)}
-        aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
-      >
-        <img src={Images.url(@hero.still, :card)} alt="" />
-        <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
-      </a>
-      <h1 class="f-h1">{Articles.display_title(@article)}</h1>
-      <%!-- the line under the title: the day, the tags, and for the
-           admin who is signed in the way straight into the admin area.
-           A page has no date and no tags, so there the line is the way
-           in and nothing else. --%>
-      <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
-        <%= if @article.type == "post" do %>
-          <span class="num">{format_date(@article.publish_date)}</span>
-          <%!-- who started the entry, read from the account now, so a
-               rename reaches every entry that person ever wrote --%>
-          <span :if={Articles.author_name(@article)} id="by">
-            · {Articles.author_name(@article)}
-          </span>
-          <span :if={Articles.tag_list(@article) != []}>·</span>
-          <span :for={tag <- Articles.tag_list(@article)}>
-            <a href={~p"/tags/#{String.downcase(tag)}"} class="link">#{tag}</a>
-          </span>
-        <% end %>
+      <div class={@hero && "post-head"}>
+        <%!-- the chosen preview once more, at the head of the post: a
+             square beside the title, and above it on a phone, so the page
+             opens the way its card in the list does. It links the file
+             the tile links, and the script turns the click into the
+             lightbox, on that tile. --%>
         <a
-          :if={@current_scope}
-          id="edit-text"
-          class="edit-link"
-          href={~p"/admin/texts/#{@article.id}"}
+          :if={@hero}
+          id="preview"
+          class="hero"
+          href={Images.url(@hero.link, :original)}
+          aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
         >
-          {gettext("Edit")}
+          <img
+            src={Images.url(@hero.still, :card)}
+            srcset={"#{Images.url(@hero.still, :card)} 640w, #{Images.url(@hero.still, :reading)} 1320w"}
+            sizes="(max-width: 559px) 100vw, 280px"
+            alt=""
+          />
+          <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
         </a>
-      </p>
+        <div>
+          <h1 class="f-h1">{Articles.display_title(@article)}</h1>
+          <%!-- the line under the title: the day, the tags, and for the
+               admin who is signed in the way straight into the admin area.
+               A page has no date and no tags, so there the line is the way
+               in and nothing else. --%>
+          <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
+            <%= if @article.type == "post" do %>
+              <span class="num">{format_date(@article.publish_date)}</span>
+              <%!-- who started the entry, read from the account now, so a
+                   rename reaches every entry that person ever wrote --%>
+              <span :if={Articles.author_name(@article)} id="by">
+                · {Articles.author_name(@article)}
+              </span>
+              <span :if={Articles.tag_list(@article) != []}>·</span>
+              <span :for={tag <- Articles.tag_list(@article)}>
+                <a href={~p"/tags/#{String.downcase(tag)}"} class="link">#{tag}</a>
+              </span>
+            <% end %>
+            <a
+              :if={@current_scope}
+              id="edit-text"
+              class="edit-link"
+              href={~p"/admin/texts/#{@article.id}"}
+            >
+              {gettext("Edit")}
+            </a>
+          </p>
+        </div>
+      </div>
 
       <div class="prose" id="body">{body_html(@article)}</div>
     </div>

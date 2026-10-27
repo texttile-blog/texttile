@@ -1616,12 +1616,19 @@
   .prose a.videofile { text-decoration: underline; text-underline-offset: 2px; }
 
   /* the square at the head of a post: the chosen preview once more,
-     the size of a tile of the wide grid on a desk (a quarter of 1060
-     less the gutters and the gaps) and half the column on a phone */
+     left of the title and its line, the two together as wide as the
+     column. On a phone the square goes over the title, across the
+     column. It is always a square, like its tile. */
+  .post-head { display: flex; align-items: flex-end; gap: 26px; }
+  .post-head > div { flex: 1; min-width: 0; }
   .hero {
-    display: block; width: 246px; max-width: 50%; aspect-ratio: 1; overflow: hidden;
-    margin-bottom: 22px; border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);
+    display: block; flex: none; width: min(46%, 280px); aspect-ratio: 1; overflow: hidden;
+    border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);
     position: relative; transition: transform .18s ease, box-shadow .18s ease;
+  }
+  @media (max-width: 559px) {
+    .post-head { display: block; }
+    .hero { width: 100%; margin-bottom: 22px; }
   }
   .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hero:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
