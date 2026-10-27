@@ -245,21 +245,19 @@ An empty database is a bad test. Work from real data instead of pointing at it.
 - Treat a failure that only happens in CI as an ordering or timing race until
   you have disproved it. Reproduce suspected contamination by ordering the files
   with `--seed 0`, and timing races under CPU load. Rerunning proves nothing.
-- Finish every UI change with `/visual-qa` in a headless browser, and judge the
-  desktop and phone screenshots together.
+- Finish every UI change with the shared `visual-qa` skill in a headless browser.
+  Judge the desktop and phone screenshots together.
 
 ## Pull requests
 
-- Never work on `main`. Create every branch from `main` in a worktree named
-  `../worktrees/<repo-folder-name>-<slug>`, then enter it with EnterWorktree so
-  the session and the terminals follow. Keep at most ten registered worktrees.
+- Never work on `main`. Follow the global worktree location and session rules.
+  Keep at most ten registered worktrees.
   Never force a removal, and never remove a dirty or unintegrated one. If you
   cannot get under the limit safely, ask what to remove.
 - Use `feature/<slug>` for a user-facing capability, a change across several
   modules, or work that will need more than two commits. Use a short branch name
   for anything smaller.
-- Branch names, commits and pull request text are English. Add no co-author and
-  no generation trailer.
+- Branch names, commits and pull request text are English. Add no co-author.
 - Never write a version number into the code. The publish counts the version
   one step up at every merge, from the newest `v<version>` tag, and sets the
   next tag itself. You say how far it counts with one label on the pull
@@ -274,15 +272,13 @@ An empty database is a bad test. Work from real data instead of pointing at it.
   plain language, body with the problem in a sentence or two and then how you
   solved it. End with the model and the harness that did the work. UI changes
   carry before and after images.
-- One concern per pull request. If the description says "also", split it.
-- Every open pull request gets `/review-pr`. Fix findings with commits on its
-  branch. Review agents leave untracked `*_probe_test.exs` files behind: turn a
+- Every open pull request gets the shared `review-pr` skill. Fix findings with
+  commits on its branch. Review agents leave untracked `*_probe_test.exs` files behind: turn a
   real finding into a fix plus a real test, and never commit a probe.
 - When you babysit a pull request, poll checks and comments newer than the last
   push, verify each bot finding against the source, fix the real ones, and
   dismiss a false positive with a written reason. Stay quiet when nothing is
   new. Stop when the bots are green on the latest commit.
-- Never merge a pull request.
 
 ## How it works
 
@@ -354,10 +350,18 @@ server.
 
 ## Prose
 
-- Apply `/ste-writing` to English pull request text, documentation, error
-  messages and UI copy. Strict mode for procedures and errors, flavored mode
-  everywhere else.
+- Apply the shared `ste-writing` skill to English pull request text,
+  documentation, error messages and UI copy. Strict mode for procedures and
+  errors, flavored mode everywhere else.
 - Never use an em dash. Use a comma, a colon, parentheses or two sentences.
 - Say **entry**, not "text", in everything a person reads. Say **admin area**,
   never "the desk".
 - Keep it short. A sentence a reader has to read twice is a sentence to rewrite.
+
+## Shared skills
+
+The personal skills live in `~/skills` and are loaded through the agent's global
+configuration. Use `feature` for substantial feature work, `review-pr` for code
+review, `visual-qa` for UI checks, and `ste-writing` for prose. In Claude these
+commands have the `v01-skills:` prefix, for example `/v01-skills:review-pr`.
+This repository keeps no local copies or saved review workflow.
