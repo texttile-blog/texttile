@@ -12,7 +12,10 @@ export default {
     this._loading = import("./gallery_core")
     const core = await this._loading
     if (this._dead) return
-    core.mount(this)
+    /* the files an earlier page left behind are on screen before the
+       flag, so a test that waits for it sees them */
+    await core.mount(this)
+    if (this._dead) return
     this.el.dataset.ready = "1"
   },
   updated() {

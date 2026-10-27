@@ -107,6 +107,81 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
     end
   end
 
+  # The browser keeps a picked file until the server has it, so a
+  # reload, a closed tab or a phone that dropped the page does not
+  # lose it. A file that arrived, or that its admin removed, leaves
+  # the browser too.
+  describe "a file that has not arrived" do
+    @broken_line """
+    () => {
+      XMLHttpRequest.prototype.send = function () {
+        setTimeout(() => this.onerror && this.onerror())
+      }
+      return true
+    }
+    """
+
+    # How many files the browser keeps, read straight from IndexedDB,
+    # waiting up to five seconds for the expected count. A reload right
+    # after a click would race the write.
+    @kept_files """
+    want => new Promise(resolve => {
+      const deadline = Date.now() + 5000
+      const look = () => {
+        const open = indexedDB.open("texttile-uploads")
+        open.onsuccess = () => {
+          const count = open.result.transaction("files").objectStore("files").count()
+          count.onsuccess = () => {
+            open.result.close()
+            if (count.result === want || Date.now() > deadline) resolve(count.result)
+            else setTimeout(look, 50)
+          }
+        }
+      }
+      look()
+    })
+    """
+
+    test "comes back after a reload and can be sent again", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(@broken_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileLocal .tile.failed", text: "upload failed")
+      |> evaluate(@kept_files, [arg: 1, is_function: true], &assert(&1 == 1))
+      |> open_editor(article.id)
+      |> assert_has("#tileLocal .tile.failed", text: "not uploaded")
+      |> click_button("#tileLocal button[data-act=retry]", "Retry")
+      |> assert_has("#tileServer [data-id]")
+      |> assert_has("#tileCount", text: "1 tile")
+      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+      |> open_editor(article.id)
+      |> assert_has("#tileServer [data-id]")
+      |> refute_has("#tileLocal .tile")
+
+      assert [_] = Gallery.list(article.id)
+    end
+
+    test "leaves for good when it is removed", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(@broken_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileLocal .tile.failed", text: "upload failed")
+      |> click_button("#tileLocal button[data-act=remove]", "Remove")
+      |> refute_has("#tileLocal .tile")
+      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+      |> open_editor(article.id)
+      |> refute_has("#tileLocal .tile")
+    end
+  end
+
   describe "sorting" do
     test "a mouse drag over the tiles writes a new order", %{conn: conn, kb: kb} do
       article = draft!(kb)
