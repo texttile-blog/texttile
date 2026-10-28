@@ -273,8 +273,7 @@ An empty database is a bad test. Work from real data instead of pointing at it.
 - Rebase onto the latest `main` before you open a pull request.
 - Open a normal pull request, never a draft: a draft gets no review bot. Title in
   plain language, body with the problem in a sentence or two and then how you
-  solved it. End with the model and the harness that did the work. UI changes
-  carry before and after images.
+  solved it. End with the model and the harness that did the work.
 - Every open pull request gets the shared `review-pr` skill. Fix findings with
   commits on its branch. Review agents leave untracked `*_probe_test.exs` files behind: turn a
   real finding into a fix plus a real test, and never commit a probe.
