@@ -98,6 +98,44 @@ defmodule TexttileWeb.E2E.VideoFlowTest do
     |> refute_has("#lbState", text: "could not be shown")
   end
 
+  # where the film stands in the admin lightbox, once it knows its size
+  @film_box """
+  () => new Promise(resolve => {
+    const check = () => {
+      const film = document.querySelector('#lbImg video');
+      if (!film || film.readyState < 1) return setTimeout(check, 25);
+      const box = r => ({left: r.left, right: r.right, top: r.top, bottom: r.bottom});
+      resolve({film: box(film.getBoundingClientRect()),
+               room: box(document.querySelector('#lbImg').getBoundingClientRect())});
+    };
+    check();
+  })
+  """
+
+  @tag browser_context_opts: [viewport: %{width: 1440, height: 900}]
+  test "the admin lightbox fits a film whole and centers it", %{conn: conn, kb: kb} do
+    article = draft!(kb)
+    {:ok, portrait} = Gallery.add_file(article, video_file(720, 1280), "Gorge.mp4")
+    {:ok, landscape} = Gallery.add_file(article, video_file(1280, 720), "Village.mp4")
+    wait_until(fn -> Enum.all?([portrait, landscape], &(Videos.get(&1.path).state == "done")) end)
+
+    session = conn |> sign_in() |> open_editor(article.id)
+
+    for tile <- [portrait, landscape] do
+      session
+      |> click("#tile-#{tile.id}")
+      |> assert_has("#lbImg video")
+      |> evaluate(@film_box, [is_function: true], fn %{"film" => film, "room" => room} ->
+        assert film["top"] >= room["top"] - 1 and film["bottom"] <= room["bottom"] + 1
+        assert film["left"] >= room["left"] - 1 and film["right"] <= room["right"] + 1
+        center = fn box -> (box["left"] + box["right"]) / 2 end
+        assert_in_delta center.(film), center.(room), 1
+      end)
+      |> click_button("Close")
+      |> refute_has("#lbRoot")
+    end
+  end
+
   test "a video dropped into the words plays where it stands", %{conn: conn, kb: kb} do
     article = draft!(kb)
     {:ok, relative} = Uploads.put_body_video(video_file(640, 480), "Harbour.mov")

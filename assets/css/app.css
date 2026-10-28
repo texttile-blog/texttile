@@ -1667,7 +1667,9 @@
   /* a film in the gallery: the poster with the play mark on it */
   .gal a { position: relative; }
   .gal a .play-badge { --play: 44px; }
-  .lb-img video {
+  /* a film in either lightbox fits the stage whole and stands in its
+     middle, the reader's and the admin area's alike */
+  .lb-img video, #lbImg video {
     max-width: 100%; max-height: 100%; width: auto; height: auto;
     border-radius: var(--tt-radius-img, 3px); background: #000;
   }
