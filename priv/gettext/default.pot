@@ -280,8 +280,8 @@ msgid_plural ", %{names} are here"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/controllers/site_html.ex:328
-#: lib/texttile_web/controllers/site_html.ex:336
+#: lib/texttile_web/controllers/site_html.ex:333
+#: lib/texttile_web/controllers/site_html.ex:341
 #: lib/texttile_web/live/import_live.ex:198
 #, elixir-autogen, elixir-format
 msgid "1 comment"
@@ -400,14 +400,14 @@ msgstr ""
 msgid "A zip of bundles becomes entries: one folder per entry, with Markdown, settings and pictures. Pictures may be files in the bundle or URLs; the server downloads the URLs itself, so the zip stays small."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:122
-#: lib/texttile_web/controllers/site_html.ex:123
+#: lib/texttile_web/controllers/site_html.ex:127
+#: lib/texttile_web/controllers/site_html.ex:128
 #: lib/texttile_web/live/settings_live.ex:783
 #, elixir-autogen, elixir-format
 msgid "About"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:120
+#: lib/texttile_web/controllers/site_html.ex:125
 #: lib/texttile_web/live/settings_live.ex:785
 #, elixir-autogen, elixir-format
 msgid "About this blog"
@@ -460,13 +460,13 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:96
+#: lib/texttile_web/controllers/site_html/texts.html.heex:101
 #: lib/texttile_web/live/texts_live.ex:173
 #, elixir-autogen, elixir-format
 msgid "All months"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:87
+#: lib/texttile_web/controllers/site_html/texts.html.heex:92
 #: lib/texttile_web/live/texts_live.ex:153
 #, elixir-autogen, elixir-format
 msgid "All years"
@@ -550,23 +550,23 @@ msgstr ""
 msgid "Back to sign-in"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:11
-#: lib/texttile_web/controllers/site_html/article.html.heex:19
+#: lib/texttile_web/controllers/site_html/article.html.heex:16
+#: lib/texttile_web/controllers/site_html/article.html.heex:24
 #, elixir-autogen, elixir-format
 msgid "Back to the editor"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/not_found.html.heex:7
+#: lib/texttile_web/controllers/site_html/not_found.html.heex:12
 #, elixir-autogen, elixir-format
 msgid "Back to the front page"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:52
+#: lib/texttile_web/controllers/site_html.ex:54
 #, elixir-autogen, elixir-format
 msgid "Blog"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:4
+#: lib/texttile_web/controllers/site_html/texts.html.heex:9
 #, elixir-autogen, elixir-format
 msgid "Blog Entries"
 msgstr ""
@@ -618,7 +618,7 @@ msgstr ""
 msgid "Choose a password"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:324
+#: lib/texttile_web/controllers/site_html/article.html.heex:329
 #: lib/texttile_web/js_strings.ex:45
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -630,14 +630,14 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:207
+#: lib/texttile_web/controllers/site_html/article.html.heex:212
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:55
-#: lib/texttile_web/controllers/site_html.ex:327
-#: lib/texttile_web/controllers/site_html/article.html.heex:141
+#: lib/texttile_web/controllers/site_html.ex:332
+#: lib/texttile_web/controllers/site_html/article.html.heex:146
 #: lib/texttile_web/live/comments_live.ex:28
 #: lib/texttile_web/live/comments_live.ex:77
 #: lib/texttile_web/live/comments_live.ex:90
@@ -820,7 +820,7 @@ msgid "Drafts"
 msgstr ""
 
 #: lib/texttile_web/components/comment_components.ex:85
-#: lib/texttile_web/controllers/site_html/article.html.heex:61
+#: lib/texttile_web/controllers/site_html/article.html.heex:66
 #: lib/texttile_web/live/tags_live.ex:159
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -831,7 +831,7 @@ msgstr ""
 msgid "Editing"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:231
+#: lib/texttile_web/controllers/site_html/article.html.heex:236
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:33
 #: lib/texttile_web/live/editor_live.ex:2589
 #: lib/texttile_web/live/newsletter_live.ex:101
@@ -847,7 +847,7 @@ msgstr ""
 msgid "Email address"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:155
+#: lib/texttile_web/controllers/site_html.ex:160
 #, elixir-autogen, elixir-format
 msgid "Email for new entries"
 msgstr ""
@@ -956,7 +956,7 @@ msgstr ""
 msgid "Front page"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:318
+#: lib/texttile_web/controllers/site_html/article.html.heex:323
 #: lib/texttile_web/js_strings.ex:44
 #, elixir-autogen, elixir-format
 msgid "Full size"
@@ -992,7 +992,7 @@ msgstr ""
 msgid "Here now"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:49
+#: lib/texttile_web/controllers/site_html.ex:51
 #, elixir-autogen, elixir-format
 msgid "Home"
 msgstr ""
@@ -1191,12 +1191,12 @@ msgstr ""
 msgid "May"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:118
+#: lib/texttile_web/controllers/site_html/article.html.heex:123
 #, elixir-autogen, elixir-format
 msgid "More entries"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:216
+#: lib/texttile_web/controllers/site_html/article.html.heex:221
 #: lib/texttile_web/live/tags_live.ex:178
 #, elixir-autogen, elixir-format
 msgid "Name"
@@ -1229,7 +1229,7 @@ msgstr ""
 msgid "New password"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:36
+#: lib/texttile_web/controllers/site_html/texts.html.heex:41
 #: lib/texttile_web/live/texts_live.ex:250
 #, elixir-autogen, elixir-format
 msgid "Newer"
@@ -1244,13 +1244,13 @@ msgstr ""
 msgid "Newsletter"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:127
+#: lib/texttile_web/controllers/site_html/article.html.heex:132
 #: lib/texttile_web/js_strings.ex:47
 #, elixir-autogen, elixir-format
 msgid "Next"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:344
+#: lib/texttile_web/controllers/site_html/article.html.heex:349
 #: lib/texttile_web/js_strings.ex:49
 #, elixir-autogen, elixir-format
 msgid "Next tile"
@@ -1342,7 +1342,7 @@ msgstr ""
 msgid "Nothing counted yet, so there is nowhere readers came from."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/not_found.html.heex:4
+#: lib/texttile_web/controllers/site_html/not_found.html.heex:9
 #, elixir-autogen, elixir-format
 msgid "Nothing here"
 msgstr ""
@@ -1352,7 +1352,7 @@ msgstr ""
 msgid "Nothing here has a Save button: every change applies the moment you make it."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:59
+#: lib/texttile_web/controllers/site_html/texts.html.heex:64
 #, elixir-autogen, elixir-format
 msgid "Nothing here yet."
 msgstr ""
@@ -1362,7 +1362,7 @@ msgstr ""
 msgid "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:56
+#: lib/texttile_web/controllers/site_html/texts.html.heex:61
 #, elixir-autogen, elixir-format
 msgid "Nothing matches that."
 msgstr ""
@@ -1408,7 +1408,7 @@ msgstr ""
 msgid "Old addresses, still arriving here"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:50
+#: lib/texttile_web/controllers/site_html/texts.html.heex:55
 #: lib/texttile_web/live/texts_live.ex:264
 #, elixir-autogen, elixir-format
 msgid "Older"
@@ -1419,7 +1419,7 @@ msgstr ""
 msgid "One click, and %{email} gets no more mail from %{site}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/tag.html.heex:6
+#: lib/texttile_web/controllers/site_html/tag.html.heex:11
 #, elixir-autogen, elixir-format
 msgid "One entry has this tag."
 msgid_plural "%{count} entries have this tag."
@@ -1446,7 +1446,7 @@ msgstr ""
 msgid "Only a .zip file works here"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:188
+#: lib/texttile_web/controllers/site_html/article.html.heex:193
 #, elixir-autogen, elixir-format
 msgid "Only you see this. Follow the link in the mail and everybody sees it."
 msgstr ""
@@ -1486,13 +1486,13 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:40
+#: lib/texttile_web/controllers/site_html/texts.html.heex:45
 #: lib/texttile_web/live/texts_live.ex:254
 #, elixir-autogen, elixir-format
 msgid "Page %{page} of %{pages}"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:29
+#: lib/texttile_web/controllers/site_html/texts.html.heex:34
 #: lib/texttile_web/live/texts_live.ex:240
 #, elixir-autogen, elixir-format
 msgid "Pages"
@@ -1540,12 +1540,12 @@ msgstr ""
 msgid "Pictures and videos in the text"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:192
+#: lib/texttile_web/controllers/site_html/article.html.heex:197
 #, elixir-autogen, elixir-format
 msgid "Post a comment"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:297
+#: lib/texttile_web/controllers/site_html/article.html.heex:302
 #, elixir-autogen, elixir-format
 msgid "Post comment"
 msgstr ""
@@ -1566,13 +1566,13 @@ msgstr ""
 msgid "Preview image"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:121
+#: lib/texttile_web/controllers/site_html/article.html.heex:126
 #: lib/texttile_web/js_strings.ex:46
 #, elixir-autogen, elixir-format
 msgid "Previous"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:340
+#: lib/texttile_web/controllers/site_html/article.html.heex:345
 #: lib/texttile_web/js_strings.ex:48
 #, elixir-autogen, elixir-format
 msgid "Previous tile"
@@ -1755,7 +1755,7 @@ msgstr ""
 msgid "Search entries"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:74
+#: lib/texttile_web/controllers/site_html/texts.html.heex:79
 #, elixir-autogen, elixir-format
 msgid "Search the entries"
 msgstr ""
@@ -1765,7 +1765,7 @@ msgstr ""
 msgid "Search title, tags, text"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:80
+#: lib/texttile_web/controllers/site_html/texts.html.heex:85
 #, elixir-autogen, elixir-format
 msgid "Search titles, tags and text"
 msgstr ""
@@ -1825,7 +1825,7 @@ msgid "Settings"
 msgstr ""
 
 #: lib/texttile_web/components/stats_components.ex:128
-#: lib/texttile_web/controllers/site_html.ex:88
+#: lib/texttile_web/controllers/site_html.ex:93
 #: lib/texttile_web/live/editor_live.ex:2660
 #, elixir-autogen, elixir-format
 msgid "Share"
@@ -1836,15 +1836,16 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:11
-#: lib/texttile_web/controllers/site_html/texts.html.heex:57
+#: lib/texttile_web/controllers/site_html/texts.html.heex:16
+#: lib/texttile_web/controllers/site_html/texts.html.heex:62
 #, elixir-autogen, elixir-format
 msgid "Show all entries"
 msgstr ""
 
 #: lib/texttile_web/controllers/session_html.ex:58
-#: lib/texttile_web/controllers/site_html.ex:89
-#: lib/texttile_web/controllers/site_html.ex:90
+#: lib/texttile_web/controllers/site_html.ex:65
+#: lib/texttile_web/controllers/site_html.ex:94
+#: lib/texttile_web/controllers/site_html.ex:95
 #, elixir-autogen, elixir-format
 msgid "Sign in"
 msgstr ""
@@ -1870,7 +1871,7 @@ msgstr ""
 msgid "Sign out everywhere ends all of them, in every browser."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:47
+#: lib/texttile_web/controllers/site_html.ex:49
 #: lib/texttile_web/live/settings_live.ex:637
 #, elixir-autogen, elixir-format
 msgid "Site"
@@ -1925,9 +1926,9 @@ msgstr ""
 msgid "Storage"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:126
-#: lib/texttile_web/controllers/site_html.ex:127
-#: lib/texttile_web/controllers/site_html.ex:158
+#: lib/texttile_web/controllers/site_html.ex:131
+#: lib/texttile_web/controllers/site_html.ex:132
+#: lib/texttile_web/controllers/site_html.ex:163
 #, elixir-autogen, elixir-format
 msgid "Subscribe"
 msgstr ""
@@ -2109,7 +2110,7 @@ msgstr ""
 msgid "The draft saves as you type."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:149
+#: lib/texttile_web/controllers/site_html/article.html.heex:154
 #, elixir-autogen, elixir-format
 msgid "The earliest comment is not shown here."
 msgid_plural "The %{count} earliest comments are not shown here."
@@ -2269,7 +2270,7 @@ msgstr ""
 msgid "There is no report to import"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/not_found.html.heex:6
+#: lib/texttile_web/controllers/site_html/not_found.html.heex:11
 #, elixir-autogen, elixir-format
 msgid "There is no text at this address."
 msgstr ""
@@ -2314,7 +2315,7 @@ msgstr ""
 msgid "This film is still being converted. It plays here once that is done."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:8
+#: lib/texttile_web/controllers/site_html/article.html.heex:13
 #, elixir-autogen, elixir-format
 msgid "This is the entry as it was last saved. Only somebody signed in can open this address; a reader gets a 404."
 msgstr ""
@@ -2543,7 +2544,7 @@ msgstr ""
 msgid "You are signed in, so your name and your address come from your account. Your address is never published, and your comment appears under the entry at once."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:129
+#: lib/texttile_web/controllers/site_html.ex:134
 #, elixir-autogen, elixir-format
 msgid "You get an email when a new entry goes out, nothing else. Unsubscribe is one click, no questions."
 msgstr ""
@@ -2821,7 +2822,7 @@ msgstr ""
 msgid "views since %{date}"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:177
+#: lib/texttile_web/controllers/site_html/article.html.heex:182
 #, elixir-autogen, elixir-format
 msgid "waiting for your confirmation"
 msgstr ""
@@ -3180,12 +3181,12 @@ msgstr ""
 msgid "Version"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:292
+#: lib/texttile_web/controllers/site_html/article.html.heex:297
 #, elixir-autogen, elixir-format
 msgid "A comment needs a name, an email address and some words, and a website has to read like example.org. Check the form and send it again."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:248
+#: lib/texttile_web/controllers/site_html/article.html.heex:253
 #, elixir-autogen, elixir-format
 msgid "Website"
 msgstr ""
@@ -3330,17 +3331,17 @@ msgstr ""
 msgid "Now press the copy key"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:279
+#: lib/texttile_web/controllers/site_html/article.html.heex:284
 #, elixir-autogen, elixir-format
 msgid "Remember me on this device, so the next comment is one line and a button."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:231
+#: lib/texttile_web/controllers/site_html/article.html.heex:236
 #, elixir-autogen, elixir-format
 msgid "never published"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:248
+#: lib/texttile_web/controllers/site_html/article.html.heex:253
 #, elixir-autogen, elixir-format
 msgid "optional"
 msgstr ""
@@ -3377,7 +3378,7 @@ msgstr ""
 msgid "Hands the text as it stands to the readers. The day, the address and the state do not move, and no mail goes out."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:17
+#: lib/texttile_web/controllers/site_html/article.html.heex:22
 #, elixir-autogen, elixir-format
 msgid "Not published yet."
 msgstr ""
@@ -3402,7 +3403,7 @@ msgstr ""
 msgid "The text goes back to the words the readers have. What is written here now is kept as a version, so you can bring it back from the Versions tab."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:18
+#: lib/texttile_web/controllers/site_html/article.html.heex:23
 #, elixir-autogen, elixir-format
 msgid "This is the working copy. Readers still get the text as it was last published."
 msgstr ""
@@ -3666,7 +3667,7 @@ msgid "%{from} to %{to}"
 msgstr ""
 
 #: lib/texttile/i18n.ex:118
-#: lib/texttile_web/controllers/site_html.ex:314
+#: lib/texttile_web/controllers/site_html.ex:319
 #, elixir-autogen, elixir-format
 msgid "%{month} %{year}"
 msgstr ""
@@ -3764,14 +3765,14 @@ msgstr ""
 msgid "Add one description for each gallery item. Use an empty string for no description."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:32
-#: lib/texttile_web/controllers/site_html/article.html.heex:92
+#: lib/texttile_web/controllers/site_html/article.html.heex:37
+#: lib/texttile_web/controllers/site_html/article.html.heex:97
 #, elixir-autogen, elixir-format
 msgid "Open image"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:32
-#: lib/texttile_web/controllers/site_html/article.html.heex:92
+#: lib/texttile_web/controllers/site_html/article.html.heex:37
+#: lib/texttile_web/controllers/site_html/article.html.heex:97
 #, elixir-autogen, elixir-format
 msgid "Open video"
 msgstr ""
@@ -3811,27 +3812,27 @@ msgstr ""
 msgid "Password: %{password}"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:320
+#: lib/texttile_web/controllers/site_html.ex:325
 #, elixir-autogen, elixir-format
 msgid "Entries from %{period}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:322
+#: lib/texttile_web/controllers/site_html.ex:327
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}” from %{period}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:321
+#: lib/texttile_web/controllers/site_html.ex:326
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}”."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:93
+#: lib/texttile_web/controllers/site_html/texts.html.heex:98
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html/texts.html.heex:84
+#: lib/texttile_web/controllers/site_html/texts.html.heex:89
 #, elixir-autogen, elixir-format
 msgid "Year"
 msgstr ""

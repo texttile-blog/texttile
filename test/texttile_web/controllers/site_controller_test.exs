@@ -549,6 +549,17 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(id="menu-texts" href="/blog")
     end
 
+    test "Sign in closes the menu: to the login for a reader, to the admin area once signed in",
+         %{conn: conn} do
+      published_post(title: "A post")
+
+      html = conn |> get(~p"/blog") |> html_response(200)
+      assert html =~ ~s(id="menu-signin" href="/login")
+
+      html = conn |> log_in_user(user_fixture()) |> get(~p"/blog") |> html_response(200)
+      assert html =~ ~s(id="menu-signin" href="/admin")
+    end
+
     test "a fixed front page that disappears sends the door to the list", %{conn: conn} do
       user = Texttile.AccountsFixtures.user_fixture()
       page = published_page(title: "Welcome", user: user)
