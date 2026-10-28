@@ -700,9 +700,12 @@ Keep both replica limits at one. Do not add another region.
 
 `bunny.json` sets `ERL_FLAGS=+S 2:2` for this small installation. Erlang uses
 two normal scheduler threads and two dirty CPU scheduler threads. This reduces
-thread and allocator overhead. It also limits Erlang CPU parallelism to two
-schedulers, so measure response times before using this setting for a busy site.
-Other installations keep Erlang's automatic scheduler count.
+thread and allocator overhead. Normal Erlang code runs on at most two schedulers,
+so measure response times before using this setting for a busy site.
+
+`MALLOC_ARENA_MAX=2` limits glibc's allocation arenas to reduce retained native
+memory after image processing. Fewer arenas can increase allocation contention.
+Other installations keep Erlang's automatic scheduler count and glibc's defaults.
 
 The image publication workflow deploys staging after it publishes a tested commit.
 It uses that commit's immutable image tag. Deployments finish before the next

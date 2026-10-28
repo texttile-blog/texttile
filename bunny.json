@@ -12,6 +12,7 @@
     "DATABASE_PATH": "/data/db/texttile.db",
     "UPLOADS_PATH": "/data/uploads",
     "CLIENT_IP_HEADER": "x-real-ip",
-    "ERL_FLAGS": "+S 2:2"
+    "ERL_FLAGS": "+S 2:2",
+    "MALLOC_ARENA_MAX": "2"
   }
 }
