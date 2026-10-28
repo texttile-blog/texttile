@@ -64,6 +64,7 @@ export class Gallery {
     this.local = this.el.querySelector("#tileLocal")
     this.note = this.el.querySelector("#tileNote")
     this.onWay = this.el.querySelector("#tileOnWay")
+    this.resume = this.el.querySelector("#tileResume")
     this.dropFlag = this.el.querySelector("#tileDropFlag")
 
     this.records = []
@@ -219,8 +220,9 @@ export class Gallery {
 
   /* The files a page before this one picked and never sent: a reload,
      a closed tab, a phone that dropped the page. They come back as
-     failed tiles, so their admin chooses Retry or Remove; sending them
-     on their own could race another tab of the same entry. */
+     failed tiles, so their admin chooses Retry or Remove, or Resume
+     all for the lot; sending them on their own could race
+     another tab of the same entry. */
   async restore() {
     /* a file picked while the browser was still reading is this
        page's own, already on its way */
@@ -351,12 +353,24 @@ export class Gallery {
         if (record.xhr) record.xhr.abort()
         else this.dropRecord(record)
       } else if (button.dataset.act === "retry") {
-        record.status = "queued"
-        record.pct = 0
-        this.renderLocal()
-        this.pump()
+        this.resend([record])
       }
     })
+    this.resume.querySelector("button").addEventListener("click", () => this.resend(this.retryable()))
+  }
+
+  // the failed tiles a Retry can still help
+  retryable() {
+    return this.records.filter(r => !r.done && r.status === "failed" && !r.noRetry)
+  }
+
+  resend(records) {
+    for (const record of records) {
+      record.status = "queued"
+      record.pct = 0
+    }
+    this.renderLocal()
+    this.pump()
   }
 
   // the delete button on a finished tile: gone at once, undo below
@@ -396,6 +410,10 @@ export class Gallery {
 
     const away = this.records.filter(r => !r.done && r.status !== "failed").length
     this.onWay.textContent = away ? ` · ${t("%{count} on the way", {count: away})}` : ""
+    /* one tile has a Retry of its own */
+    const stuck = this.retryable().length
+    this.resume.hidden = stuck < 2
+    this.resume.querySelector("b").textContent = t("%{count} uploads did not arrive", {count: stuck})
   }
 
   // What a travelling tile says about itself, in words. The screen

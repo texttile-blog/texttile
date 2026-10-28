@@ -440,6 +440,49 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> refute_has(".cm-content", text: "Uploading")
     end
 
+    # The line drops, both pictures fail, the line comes back: one
+    # button sends both again instead of a Retry per picture.
+    test "failed pictures in the text go again with one button", %{conn: conn} do
+      # two different pictures: the entry refuses the same one twice
+      picture = fn width ->
+        path = Path.join(System.tmp_dir!(), "e2e-#{System.unique_integer([:positive])}.png")
+        {:ok, black} = Vix.Vips.Operation.black(width, 20)
+        :ok = Vix.Vips.Image.write_to_file(black, path)
+        path
+      end
+
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      # the picker listens once the surface stands, see the roof test
+      |> assert_has(".ed-cm .cm-content")
+      |> evaluate(
+        """
+        () => {
+          window.realSend = XMLHttpRequest.prototype.send
+          XMLHttpRequest.prototype.send = function () {
+            setTimeout(() => this.dispatchEvent(new Event("error")))
+          }
+          return true
+        }
+        """,
+        is_function: true
+      )
+      |> upload("Put pictures and videos in the text", picture.(40))
+      |> assert_has("#inlineCount", text: "1 failed")
+      |> refute_has("#inlineResume")
+      |> upload("Put pictures and videos in the text", picture.(41))
+      |> assert_has("#inlineCount", text: "2 failed")
+      |> evaluate("() => { XMLHttpRequest.prototype.send = window.realSend; return true }",
+        is_function: true
+      )
+      |> assert_has("#inlineResume", text: "2 uploads did not arrive")
+      |> click_button("#inlineResume button", "Resume all")
+      |> assert_has("#inlineCount", text: "2 files")
+      |> refute_has("#inlineCount", text: "failed")
+      |> refute_has("#inlineResume")
+    end
+
     # The lines to hand on are a field of the pane, in the same clothes
     # as every other field beside them. They were a bare paragraph.
     # The address is one field now (round 19): `.addr` carries the

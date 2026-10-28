@@ -598,8 +598,8 @@ const impl = {
      The queue, the requests and the token rewriting live in uploads.js;
      what stands here is only the wiring to this page. The panel under
      the text is server-rendered from the body; its Retry / Remove /
-     Cancel buttons land here, because the file and the running request
-     live only in this browser. */
+     Cancel buttons and Resume all land here, because the file
+     and the running request live only in this browser. */
   mountUploads() {
     this.uploader = createUploads({
       tokens: this.tokens,
@@ -668,6 +668,9 @@ const impl = {
       const name = b.dataset.imgFile
       const action = b.dataset.imgAction
       if (action === "retry") this.uploader.retry(name)
+      /* every file the panel offers a Retry for */
+      else if (action === "retry-all")
+        document.querySelectorAll("#inlineImgs [data-img-action=retry]").forEach(r => this.uploader.retry(r.dataset.imgFile))
       else this.uploader.remove(name, action)
     }
     document.addEventListener("click", this.onPanelClick)

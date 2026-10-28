@@ -1854,6 +1854,25 @@ defmodule TexttileWeb.EditorLive do
                     </div>
                   <% end %>
                 </div>
+                <%!-- under the list it sends: one failed file has a
+                     Retry of its own --%>
+                <div
+                  :if={@holds_lock and inline_failed(@article.body) >= 2}
+                  class="upwarn mt-[10px]"
+                  id="inlineResume"
+                >
+                  <.warn_icon />
+                  <span class="t">
+                    <b>
+                      {gettext("%{count} uploads did not arrive",
+                        count: inline_failed(@article.body)
+                      )}
+                    </b>
+                  </span>
+                  <button type="button" class="btn sm" data-img-action="retry-all">
+                    <.retry_icon /> {gettext("Resume all")}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2094,6 +2113,19 @@ defmodule TexttileWeb.EditorLive do
                 aria-label={gettext("Add pictures and videos")}
               >
                 {gettext("+ Add")}
+              </button>
+            </div>
+            <%!-- the hook shows it under the tiles it sends, while two
+                 or more wait for a Retry: after a reload, or when the
+                 line dropped. It writes the count into the b. --%>
+            <div class="upwarn mt-[12px]" id="tileResume" phx-update="ignore" hidden>
+              <.warn_icon />
+              <span class="t">
+                <b></b>
+                {gettext("The files are still in this browser.")}
+              </span>
+              <button type="button" class="btn sm">
+                <.retry_icon /> {gettext("Resume all")}
               </button>
             </div>
             <input
@@ -2754,6 +2786,45 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
+  # the warning sign of an upload that did not arrive
+  defp warn_icon(assigns) do
+    ~H"""
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 1.8 15 14H1z" />
+      <path d="M8 6.2v3.6" stroke-linecap="round" />
+      <circle cx="8" cy="11.8" r=".5" fill="currentColor" />
+    </svg>
+    """
+  end
+
+  defp retry_icon(assigns) do
+    ~H"""
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" />
+      <path d="M13.5 2.5v3.2h-3.2" />
+    </svg>
+    """
+  end
+
   defp chevron_icon(assigns) do
     ~H"""
     <svg
@@ -2873,12 +2944,14 @@ defmodule TexttileWeb.EditorLive do
     refs = Body.refs(body)
     done = Enum.count(refs, &(&1.kind == :done))
     running = Enum.count(refs, &(&1.kind == :running))
-    failed = Enum.count(refs, &(&1.kind == :failed))
+    failed = inline_failed(body)
 
     ngettext("1 file", "%{count} files", done) <>
       if(running > 0, do: " · " <> gettext("%{count} on the way", count: running), else: "") <>
       if(failed > 0, do: " · " <> gettext("%{count} failed", count: failed), else: "")
   end
+
+  defp inline_failed(body), do: Enum.count(Body.refs(body), &(&1.kind == :failed))
 
   defp word_count(text) do
     case text |> to_string() |> String.split(~r/\s+/, trim: true) do
