@@ -34,7 +34,7 @@ class DeploymentGuardsTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "exactly one persistent volume"):
             deploy.volume_identity(volumes, {"volume": "data", "region": "DE"})
 
-    def test_volume_capacity_must_cover_the_original_fly_disk(self):
+    def test_volume_size_must_match_the_recorded_size(self):
         volumes = {"items": [{"name": "data", "size": 4, "volumeInstances": [{
             "id": "original", "region": "DE", "status": "attached",
             "attachedPods": ["one"], "size": 3,

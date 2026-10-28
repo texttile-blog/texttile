@@ -113,7 +113,7 @@ defmodule Texttile.Config do
   The header that carries the reader's address, from CLIENT_IP_HEADER,
   lowercased. `nil` means: read the address off the socket. Set it only
   where a proxy stands in front and writes the header itself, for
-  example `fly-client-ip` on Fly.io. A header the caller may write is a
+  example `x-real-ip` on Bunny. A header the caller may write is a
   header the caller may change, and the comment rate limit counts by it.
   """
   def client_ip_header(env \\ System.get_env()) do

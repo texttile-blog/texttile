@@ -321,7 +321,7 @@ server.
   `test/e2e/` is browser, `test/support/` holds the cases and fixtures.
 - `priv/gettext/` holds one file per language. English is the source and has
   none.
-- `config/`, `Dockerfile`, `fly.toml`, `Makefile` and
+- `config/`, `Dockerfile`, `bunny.json`, `Makefile` and
   `scripts/texttile-backup.sh` are the runtime and the operations.
 - Read `PHOENIX.md` before writing Phoenix code.
 
@@ -333,7 +333,6 @@ server.
 - Staging runs on Bunny Magic Containers. `bunny.json` and
   `scripts/deploy-bunny.py` define its single region, replica, and persistent volume.
   The published commit deploys only after image publication succeeds.
-  `fly.toml` is a manual recovery configuration, not an active deployment target.
 - One machine, never two. SQLite takes one writer and a volume mounts on one
   machine. `README.md` says what a second one costs.
 - Treat `/data` as the complete installation.

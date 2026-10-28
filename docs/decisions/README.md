@@ -14,7 +14,7 @@ sources describe it.
 
 - Copy the headings of any record: Status, Date, Context, Decision,
   Alternatives Considered, Consequences, Sources.
-- Number it next in line, `029-short-title.md`, and link it from the table.
+- Number it next in line, `030-short-title.md`, and link it from the table.
 - Never delete or rewrite a record. When a decision changes, write a new one
   that supersedes the old, and mark the old one superseded.
 - Write the record in the pull request that makes the decision, in the prose
@@ -50,5 +50,6 @@ sources describe it.
 | [024](024-the-build-carries-its-version-from-mix-exs.md) | The build carries its version from `mix.exs`; five image tags (superseded by 028) | 2026-08-11 |
 | [025](025-publish-and-deploy-wait-for-a-green-ci-run.md) | The publish and the deploy start from a green CI run of the same commit | 2026-08-14 |
 | [026](026-the-email-address-is-the-identity-and-everybody-is-an-admin.md) | The email address is the identity; everybody is an admin; a deleted account keeps its row | 2026-08-19 |
-| [027](027-staging-runs-on-bunny-magic-containers.md) | Staging runs on Bunny Magic Containers; Fly stays as recovery | 2026-10-17 |
+| [027](027-staging-runs-on-bunny-magic-containers.md) | Staging runs on Bunny Magic Containers; Fly stays as recovery (Fly part superseded by 029) | 2026-10-17 |
 | [028](028-the-version-comes-from-the-git-tag-and-a-label.md) | The version comes from the Git tag, counted up by a label | 2026-10-23 |
+| [029](029-the-fly-configuration-is-gone.md) | The Fly configuration is gone; Bunny is the only host the repository knows | 2026-10-28 |

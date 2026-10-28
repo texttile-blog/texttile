@@ -1,7 +1,8 @@
 # ADR-027: Staging runs on Bunny Magic Containers; Fly stays as a manual recovery configuration
 
 ## Status
-Accepted
+Accepted. The Fly recovery part is superseded by ADR-029 (the Fly
+configuration is gone).
 
 ## Date
 2026-10-17
