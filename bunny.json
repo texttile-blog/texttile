@@ -11,6 +11,7 @@
     "PORT": "4000",
     "DATABASE_PATH": "/data/db/texttile.db",
     "UPLOADS_PATH": "/data/uploads",
-    "CLIENT_IP_HEADER": "x-real-ip"
+    "CLIENT_IP_HEADER": "x-real-ip",
+    "ERL_FLAGS": "+S 2:2"
   }
 }

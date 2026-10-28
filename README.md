@@ -698,6 +698,12 @@ One 4 GB volume holds `/data/db/texttile.db` and `/data/uploads`.
 
 Keep both replica limits at one. Do not add another region.
 
+`bunny.json` sets `ERL_FLAGS=+S 2:2` for this small installation. Erlang uses
+two normal scheduler threads and two dirty CPU scheduler threads. This reduces
+thread and allocator overhead. It also limits Erlang CPU parallelism to two
+schedulers, so measure response times before using this setting for a busy site.
+Other installations keep Erlang's automatic scheduler count.
+
 The image publication workflow deploys staging after it publishes a tested commit.
 It uses that commit's immutable image tag. Deployments finish before the next
 one starts. GitHub Actions uses the `BUNNYNET_API_KEY` repository secret.
