@@ -431,7 +431,10 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> click_button("New entry")
-      |> assert_has(".mdbar")
+      # The picker is in the markup before the editor's chunk has
+      # loaded, and a file picked before that is lost in silence. The
+      # surface and the picker's listener come up in the same step.
+      |> assert_has(".ed-cm .cm-content")
       |> upload("Put pictures and videos in the text", huge)
       |> assert_has("#toast", text: "over the 10 MB roof")
       |> refute_has(".cm-content", text: "Uploading")
