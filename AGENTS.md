@@ -179,6 +179,9 @@ list and say which entries applied.
   same pull request as any change to environment variables, ports, Docker,
   deployment or Make targets. `IMPORT.md` is the bundle format contract.
   `PHOENIX.md` is the framework guide. This file holds the permanent rules.
+  `docs/decisions/` holds one record per decision that is expensive to
+  reverse: write one in the pull request that makes such a decision, and
+  read the existing ones before you re-decide something.
 
 ## Dev servers
 
