@@ -15,9 +15,11 @@ different mail provider, and the image is built once for all of them.
 `MAIL_ADAPTER` selects the Swoosh adapter at boot: `resend`, `postmark`,
 `brevo`, `smtp` or `ses`. Each adapter loads exactly the credentials it
 needs, and nothing else is read. Without the variable, mail goes to the local
-preview mailbox at `/dev/mailbox`, which is for development only. Mail is
-sent from a supervised task, so a click in the admin area never waits for
-another server.
+preview mailbox at `/dev/mailbox`, which is for development only. Mail that
+goes to many people or follows a reader's action (the subscriber mail, the
+comment mails) leaves from a supervised task, so a click never waits for
+another server. An invitation or password link is sent in the request, so
+the screen can say when it did not go out.
 
 While no account has a password, the server also writes every link it mails
 into its own log. That is the way into a fresh installation whose mail does
@@ -28,9 +30,10 @@ not work yet (see ADR-026).
 ### One fixed provider
 - Rejected: the blog owner picks the provider; the image must not
 
-### Sending mail inline in the request
-- Cons: a slow mail server makes a publish or a sign-up wait
-- Rejected: mail leaves in a task, and the click answers at once
+### Sending every mail inline in the request
+- Cons: a slow mail server makes a publish or a comment wait
+- Rejected for bulk and reader mail: it leaves in a task, and the click
+  answers at once
 
 ## Consequences
 - Adding a provider is one adapter clause in `config/runtime.exs` and one row

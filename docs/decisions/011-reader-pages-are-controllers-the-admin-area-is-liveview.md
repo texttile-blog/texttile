@@ -35,8 +35,9 @@ editor (ADR-007).
 - Weigh every kilobyte added to the public bundle. Continuously repainting
   animations are out on both faces.
 - A reader-facing feature is a controller, a template and at most a small
-  script. Stats reporting, the lightbox and the video player are such
-  scripts.
+  script. The public bundle (`assets/js/public.js`) is the view counter,
+  the search jump and the reader lightbox, and every page works without
+  it.
 - Phone first: a UI change is judged on the phone screenshot before the
   desktop one.
 

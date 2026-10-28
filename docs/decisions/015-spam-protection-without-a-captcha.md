@@ -21,8 +21,9 @@ from the difference.
 The rate limiter (`Texttile.RateLimiter`) is a sliding window per key in one
 ETS table, pruned as it is read and swept once a minute. Comments and
 newsletter requests share one bucket. A second, wider bucket stands in front
-of the view counter (ADR-020), and a third in front of the backup endpoints
-(ADR-023). Nothing is kept but timestamps that expire within the minute.
+of the view counter (ADR-020). Further buckets guard the sign-in and the
+link doors and the backup endpoints (ADR-023). Nothing is kept but
+timestamps that expire within the minute.
 
 Behind a proxy the caller's address comes from `CLIENT_IP_HEADER`, set only
 when the proxy writes that header itself; of a list, the last entry counts.
@@ -44,7 +45,8 @@ when the proxy writes that header itself; of a list, the last entry counts.
 - Spam protection is always on and has no setting.
 - A proxy that passes `X-Forwarded-For` through instead of appending lets the
   caller choose their address. The README says when to set the header.
-- The honeypot and the time trap live in one component the forms share.
+- The honeypot and the time trap live in one module both forms share,
+  `TexttileWeb.HumanCheck`.
 
 ## Sources
 - #15, #18 "The subscribe form wears the same spam protection"

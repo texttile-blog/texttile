@@ -38,8 +38,9 @@ plan, and `run/3` carries out the same plan.
 ## Consequences
 - The subscriber mail takes the live version through `Articles.as_read/1`,
   never the working copy (ADR-022).
-- The scheduler (`Texttile.Articles.Scheduler`) is the one place a scheduled
-  entry goes live and mails, so there is one path for the mail.
+- `Newsletter.notify_published/2` is the one path for the mail, from a
+  click and from the scheduler alike. Setting `notified_on` from empty to
+  today in one update is the lock that keeps it to one mail.
 - The subscribe form carries the filters of ADR-015.
 
 ## Sources
