@@ -22,9 +22,9 @@ defmodule TexttileWeb.ClientIPTest do
   end
 
   test "a named header the proxy sets carries the reader" do
-    Application.put_env(:texttile, :client_ip_header, "fly-client-ip")
+    Application.put_env(:texttile, :client_ip_header, "x-real-ip")
 
-    assert ClientIP.of(conn_with("fly-client-ip", "203.0.113.9")) == "203.0.113.9"
+    assert ClientIP.of(conn_with("x-real-ip", "203.0.113.9")) == "203.0.113.9"
   end
 
   test "of a list, the entry the proxy appended is the reader" do

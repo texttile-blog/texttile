@@ -38,6 +38,7 @@ copy of `/data`. Texttile uses the [MIT License](LICENSE).
 
 - [Get it running](#get-it-running)
 - [Which tag to run](#which-tag-to-run)
+- [One machine, never two](#one-machine-never-two)
 - [Configuration](#configuration)
 - [The site readers get](#the-site-readers-get)
 - [Writing](#writing)
@@ -51,7 +52,6 @@ copy of `/data`. Texttile uses the [MIT License](LICENSE).
 - [Export one entry](#export-one-entry)
 - [Backup](#backup)
 - [Deploy staging on Bunny](#deploy-staging-on-bunny)
-- [Deploy on Fly.io](#deploy-on-flyio)
 - [Development](#development)
 
 ## Get it running
@@ -115,6 +115,38 @@ Each published build also gets a GitHub release. The release stands on the
 `v<version>` tag, shows the pull command, and lists the pull requests since the
 release before.
 
+### One machine, never two
+
+The whole installation is one SQLite file on one volume. SQLite takes one writer,
+and a volume mounts on one machine. A second machine gets a volume of its own: it
+would answer readers out of a second, older database and take entries, comments
+and uploads that the first machine never sees. Both sites work, and each one is
+missing half the blog.
+
+So never scale to a second instance, never clone the machine, and never deploy
+with a standby. A deploy replaces the one machine in place, which costs a few
+seconds of downtime. Every host runs Texttile the same way: one process, one
+`/data`.
+
+### How big the machine must be
+
+The video conversion decides this, and nothing else does. A blog of words and
+pictures runs on one shared CPU and 512 MB of memory.
+
+Videos want more. Give the machine four shared CPUs and 1 GB before you upload
+the first one. ffmpeg runs on one thread at the lowest priority, so the other
+three keep the site quick while a video converts, and the gigabyte is what the
+conversion itself needs. Videos also need room on the volume: the original and
+the converted file live side by side. A machine that stops mid-conversion loses
+nothing; the queue picks up every unfinished video when the app starts again.
+
+### Which version runs
+
+Settings > Version names the version of the running build, and every release
+raises that number. The page is behind the sign-in and the number stands nowhere
+else: a public version number tells an attacker which holes to try. Name it when
+you report a problem.
+
 ## Configuration
 
 Texttile reads its configuration from environment variables at start. A missing
@@ -130,7 +162,7 @@ variable stops the app at boot with a message that names it.
 | `PORT`             | no               | `4000`                      | HTTP port                                           |
 | `MAIL_ADAPTER`     | no               | local preview mailbox       | `resend`, `postmark`, `brevo`, `smtp`, or `ses`     |
 | `MAIL_FROM`        | no               | `texttile@PHX_HOST`         | sender address for outgoing mail                    |
-| `CLIENT_IP_HEADER` | no               | none, the socket address    | header a trusted proxy writes, e.g. `fly-client-ip` |
+| `CLIENT_IP_HEADER` | no               | none, the socket address    | header a trusted proxy writes, e.g. `x-real-ip`     |
 
 ### Mail
 
@@ -664,8 +696,7 @@ it.
 region, volume size, and volume instance ID. One container runs in Germany (`DE`).
 One 4 GB volume holds `/data/db/texttile.db` and `/data/uploads`.
 
-Fly allocated 3 GiB. Bunny allocates decimal GB, so 4 GB preserves at least the
-previous capacity. Keep both replica limits at one. Do not add another region.
+Keep both replica limits at one. Do not add another region.
 
 The image publication workflow deploys staging after it publishes a tested commit.
 It uses that commit's immutable image tag. Deployments finish before the next
@@ -700,7 +731,7 @@ Bunny does not guarantee volume reattachment after scaling down.
 Bunny volumes have no automatic backups. Use the [backup client](#backup) for
 recurring backups outside this volume.
 
-`make db-pull` now reads the installation's backup API instead of Fly SSH.
+`make db-pull` reads the installation's backup API.
 Enable **Settings > Backup**, then export its token as `TEXTTILE_TOKEN`.
 `TEXTTILE_URL` defaults to `https://staging.texttile.blog`.
 The command verifies SQLite integrity before replacing `texttile-snapshot.db`.
@@ -709,63 +740,6 @@ Set `DB_LOCAL` to change that destination.
 ```sh
 make db-pull
 ```
-
-The migration retained the stopped Fly machine and its 3 GiB volume for recovery.
-The former Fly deploy workflow is disabled. `fly.toml` remains a manual recovery
-configuration. Do not deploy it while Bunny serves staging.
-
-## Deploy on Fly.io
-
-For a separate Fly installation, `fly.toml` deploys from source with one volume for
-the database and the uploads. Its header documents the one-time setup (app, volume, secrets,
-certificate).
-
-Change the app name and domain before you use this file for a separate installation.
-This repository no longer deploys to Fly automatically.
-
-### One machine, never two
-
-The whole installation is one SQLite file on one volume. SQLite takes one writer,
-and a volume mounts on one machine. A second machine gets a volume of its own: it
-would answer readers out of a second, older database and take entries, comments
-and uploads that the first machine never sees. Both sites work, and each one is
-missing half the blog.
-
-So never `fly scale count 2`, never `fly machine clone`, and never deploy with a
-standby. `fly status` must show exactly one machine. A deploy replaces that
-machine in place, which costs a few seconds of downtime.
-
-This is not a Fly rule. Any host runs Texttile the same way: one process, one
-`/data`.
-
-### How big the machine must be
-
-The video conversion decides this, and nothing else does. A blog of words and
-pictures runs on one shared CPU and 512 MB of memory (`shared-cpu-1x`, the
-`[[vm]]` section of `fly.toml` as it stands).
-
-Videos want more. Give the machine four shared CPUs and 1 GB (`shared-cpu-4x`)
-before you upload the first one:
-
-```toml
-[[vm]]
-  cpu_kind = "shared"
-  cpus = 4
-  memory = "1gb"
-```
-
-ffmpeg runs on one thread at the lowest priority, so the other three keep the
-site quick while a video converts, and the gigabyte is what the conversion itself
-needs. Videos also need room on the volume: the original and the converted file
-live side by side. A machine that stops mid-conversion loses nothing; the queue
-picks up every unfinished video when the app starts again.
-
-### Which version runs
-
-Settings > Version names the version of the running build, and every release
-raises that number. The page is behind the sign-in and the number stands nowhere
-else: a public version number tells an attacker which holes to try. Name it when
-you report a problem.
 
 ## Development
 

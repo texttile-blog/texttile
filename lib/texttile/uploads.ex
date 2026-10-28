@@ -2,7 +2,7 @@ defmodule Texttile.Uploads do
   @moduledoc """
   The uploaded files on disk. Everything lives below one root from the
   install config (`UPLOADS_PATH`), so one volume carries it all: the
-  same layout on a laptop, in a container and on Fly.
+  same layout on a laptop and in a container.
 
       site/    the logo and the favicon
       images/  the originals of every picture (comes with the editor)
