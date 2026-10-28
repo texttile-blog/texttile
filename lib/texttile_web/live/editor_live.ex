@@ -1784,8 +1784,9 @@ defmodule TexttileWeb.EditorLive do
                 <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
                   <span class="text-[13px] font-semibold">
                     {gettext("Pictures and videos in the text")}
-                    <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                   </span>
+                  <span class="sp"></span>
+                  <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                 </div>
                 <div id="inlineImgs">
                   <p :if={Body.refs(@article.body) == []} class="note pt-[10px]">
