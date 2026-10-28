@@ -739,7 +739,7 @@ export class Gallery {
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
            data-nav="-1" aria-label="${esc(t("Previous tile"))}">&#8249;</button>
         <div class="relative flex-1 h-full min-w-0 flex items-center justify-center">
-          <div id="lbImg" class="w-full h-full"></div>
+          <div id="lbImg" class="w-full h-full flex items-center justify-center"></div>
           <div id="lbState" class="absolute inset-0 grid place-items-center text-white/80 text-[13px] text-center px-6" hidden></div>
         </div>
         <button type="button" class="lb-nav text-white/70 hover:text-white text-[30px] leading-none px-3 py-6 flex-none"
