@@ -36,6 +36,7 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("already here"),
     gettext_noop("not uploaded"),
     gettext_noop("Not uploaded yet: %{names}."),
+    gettext_noop("%{count} uploads did not arrive"),
     gettext_noop("%{count} on the way"),
     gettext_noop("Retry"),
     gettext_noop("Remove"),

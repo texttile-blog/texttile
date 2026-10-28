@@ -165,6 +165,35 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       assert [_] = Gallery.list(article.id)
     end
 
+    # A phone that dropped the page leaves a row of tiles behind, and
+    # one button sends them all instead of a Retry per tile. One tile
+    # has its own Retry, so the button waits for a second one.
+    test "several go again with one button", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> refute_has("#tileResume")
+      |> evaluate(@broken_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileLocal .tile.failed", count: 1)
+      |> refute_has("#tileResume")
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:02 12:00:00"))
+      |> assert_has("#tileLocal .tile.failed", count: 2)
+      |> evaluate(@kept_files, [arg: 2, is_function: true], &assert(&1 == 2))
+      |> open_editor(article.id)
+      |> assert_has("#tileLocal .tile.failed", text: "not uploaded", count: 2)
+      |> assert_has("#tileResume", text: "2 uploads did not arrive")
+      |> click_button("#tileResume button", "Resume all")
+      |> assert_has("#tileServer [data-id]", count: 2)
+      |> refute_has("#tileLocal .tile")
+      |> refute_has("#tileResume")
+      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+
+      assert [_, _] = Gallery.list(article.id)
+    end
+
     test "leaves for good when it is removed", %{conn: conn, kb: kb} do
       article = draft!(kb)
 
