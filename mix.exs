@@ -93,8 +93,19 @@ defmodule Texttile.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       # Assets are built so browser e2e tests load real CSS/JS (LiveView needs app.js).
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "assets.build", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind texttile", "esbuild texttile", "esbuild public"],
+      "assets.setup": [
+        "tailwind.install --if-missing",
+        &sign_tailwind/1,
+        "esbuild.install --if-missing"
+      ],
+      # The setup runs first, so a fresh worktree never runs an unsigned Tailwind.
+      "assets.build": [
+        "compile",
+        "assets.setup",
+        "tailwind texttile",
+        "esbuild texttile",
+        "esbuild public"
+      ],
       "assets.deploy": [
         "tailwind texttile --minify",
         "esbuild texttile --minify",
@@ -110,5 +121,18 @@ defmodule Texttile.MixProject do
         "test"
       ]
     ]
+  end
+
+  # The macOS Tailwind binary ships with a broken signature, and macOS kills it
+  # at start (exit 137). An ad hoc signature on this machine repairs it.
+  defp sign_tailwind(_args) do
+    with {:unix, :darwin} <- :os.type(),
+         path = Tailwind.bin_path(),
+         {_, status} when status != 0 <-
+           System.cmd("codesign", ["--verify", path], stderr_to_stdout: true),
+         {output, status} when status != 0 <-
+           System.cmd("codesign", ["--force", "--sign", "-", path], stderr_to_stdout: true) do
+      Mix.raise("Could not sign #{path}: #{output}")
+    end
   end
 end
