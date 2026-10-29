@@ -689,22 +689,19 @@
     border-radius: 0;
     box-shadow: var(--edb-sh);
     padding: 6px 6px 7px; padding-left: var(--edb-pl);
-    resize: none; min-height: 100px;
-    field-sizing: content;
+    min-height: 100px;
     transition: box-shadow .15s ease;
   }
-  .ed-body:hover { background-image: none; background-color: transparent; }
-  .ed-body:focus, .ed-cm:focus-within {
+  .ed-cm:focus-within {
     outline: none; border: 0;
     background-image: none; background-color: transparent;
     box-shadow: var(--edb-shf);
   }
-  .ed-title::placeholder, .ed-body::placeholder { font-style: italic; color: var(--tt-faint); }
+  .ed-title::placeholder { font-style: italic; color: var(--tt-faint); }
   /* while the other admin holds the text both fields are read-only and
      say so by staying quiet, with a pointer that offers the takeover */
-  .ed-title[readonly], .ed-body[readonly] { cursor: pointer; }
-  .ed-title[readonly]:hover, .ed-title[readonly]:focus,
-  .ed-body[readonly]:hover, .ed-body[readonly]:focus {
+  .ed-title[readonly] { cursor: pointer; }
+  .ed-title[readonly]:hover, .ed-title[readonly]:focus {
     background: var(--tt-juliatint); border-bottom-color: var(--tt-julialine); box-shadow: none;
   }
   #bodyWrap.is-readonly .ed-cm,
@@ -733,8 +730,7 @@
 
   .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
   .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
-  #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag,
-  #bodyWrap:has(textarea.ed-body:focus:not([readonly])) .ed-foot .flag { display: inline-flex; }
+  #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag { display: inline-flex; }
 
   /* the confirmation line under the bar. On a wide screen the quiet
      text in the bar says it and this line is only for a screen reader;
@@ -1759,10 +1755,21 @@
 .ed-cm { cursor: text; }
 .ed-cm .cm-editor { background: transparent; }
 .ed-cm .cm-editor.cm-focused { outline: none; }
-.ed-cm .cm-scroller {
+.ed-cm .cm-scroller, .ed-cm > textarea {
   font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
   overflow: visible;   /* the column scrolls, never the editor */
 }
+/* the server's textarea, until the chunk replaces it: the same words
+   in the same place on the host's surface, with no field of its own.
+   As a field it drew a second line beside the host's and stood its
+   words elsewhere, so every load flashed two lines and a jump. */
+.ed-cm > textarea {
+  display: block; width: 100%; min-height: 96px; margin: 0; padding: 0;
+  color: inherit; cursor: inherit;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none; outline: none;
+  resize: none; field-sizing: content;
+}
+.ed-cm > textarea::placeholder { font-style: italic; color: var(--tt-faint); }
 .ed-cm .cm-content { padding: 0; caret-color: var(--tt-ink); min-height: 96px; }
 .ed-cm .cm-line { padding: 0; }
 .ed-cm .cm-cursor { border-left: 1.5px solid var(--tt-ink); }

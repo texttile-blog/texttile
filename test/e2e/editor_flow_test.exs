@@ -405,6 +405,62 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       end)
     end
 
+    # Until the editor's chunk arrives, the server's textarea is the
+    # surface. It drew a hairline of its own beside the host's and
+    # stood its words elsewhere, so every load flashed two lines and a
+    # jump. This puts the server's markup back in place of the editor
+    # and measures both: one element draws a line, and the words stand
+    # where the editor's words stood.
+    @seed_surface """
+    async (host) => {
+      const live = document.querySelector(host)
+      const content = live.querySelector(".cm-content")
+      const cs = getComputedStyle(content)
+      const r = content.getBoundingClientRect()
+      const editor = [r.left + parseFloat(cs.paddingLeft), r.top + parseFloat(cs.paddingTop)]
+
+      const html = await (await fetch(location.href)).text()
+      const seed = new DOMParser().parseFromString(html, "text/html").querySelector(host)
+      live.replaceWith(document.importNode(seed, true))
+
+      const el = document.querySelector(host)
+      const drawn = [el, ...el.querySelectorAll("*")].filter(n => {
+        const s = getComputedStyle(n)
+        return s.boxShadow !== "none" || parseFloat(s.borderLeftWidth) > 0
+      })
+      const ta = el.querySelector("textarea")
+      const ts = getComputedStyle(ta)
+      const t = ta.getBoundingClientRect()
+      const words = [
+        t.left + parseFloat(ts.borderLeftWidth) + parseFloat(ts.paddingLeft),
+        t.top + parseFloat(ts.borderTopWidth) + parseFloat(ts.paddingTop)
+      ]
+      return {lines: drawn.length, shift: words.map((v, i) => Math.abs(v - editor[i]))}
+    }
+    """
+
+    for {surface, path, host} <- [
+          {"the body", :editor, "#edBodyHost"},
+          {"About", "/admin/settings", "#setting-about_markdown"}
+        ] do
+      test "#{surface} shows one line and no jump while the editor loads", %{conn: conn, kb: kb} do
+        conn = sign_in(conn)
+
+        conn =
+          case unquote(path) do
+            :editor -> open_editor(conn, draft!(kb).id)
+            path -> open(conn, path)
+          end
+
+        conn
+        |> assert_has("#{unquote(host)} .cm-content")
+        |> evaluate(@seed_surface, [arg: unquote(host), is_function: true], fn result ->
+          assert result["lines"] == 1
+          assert Enum.all?(result["shift"], &(&1 < 1))
+        end)
+      end
+    end
+
     # The surface takes Tab as a character, so without a key that lets
     # go the body is a room with only a mouse for a door.
     test "Escape leaves the body", %{conn: conn} do
