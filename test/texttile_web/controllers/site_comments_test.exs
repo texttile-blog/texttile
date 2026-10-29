@@ -63,6 +63,25 @@ defmodule TexttileWeb.SiteCommentsTest do
       assert first_at < second_at
     end
 
+    test "an imported comment keeps the wall clock of its bundle", %{conn: conn} do
+      article = published_post()
+      here = send_and_confirm(article, "Written here", "here@example.org")
+      imported = send_and_confirm(article, "From a bundle", "bundle@example.org")
+
+      imported
+      |> Ecto.Changeset.change(imported_at: DateTime.utc_now(:second))
+      |> Texttile.Repo.update!()
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+
+      # the browser writes a comment of this site in the reader's zone,
+      # and an imported one in UTC, where the bundle's local time is kept
+      [here_time] = Regex.run(~r/id="comment-#{here.id}".*?<time[^>]*>/s, html)
+      [imported_time] = Regex.run(~r/id="comment-#{imported.id}".*?<time[^>]*>/s, html)
+      refute here_time =~ "data-zone"
+      assert imported_time =~ ~s(data-zone="UTC")
+    end
+
     test "an empty block is only the form, with nothing said about it", %{conn: conn} do
       article = published_post()
       html = conn |> get(Articles.public_path(article)) |> html_response(200)
