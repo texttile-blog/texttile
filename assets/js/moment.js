@@ -3,8 +3,8 @@
    zone, so it writes the day alone and this adds the hour.
 
    English asks for the British shape, day before month, because that
-   is how the reader pages write every other date. The zone is only
-   passed in by the tests; a browser uses its own. */
+   is how the reader pages write every other date. Without a zone the
+   browser's own is used; an imported comment passes "UTC". */
 
 export function commentMoment(at, lang, now = new Date(), timeZone) {
   const locale = lang === "en" ? "en-GB" : lang

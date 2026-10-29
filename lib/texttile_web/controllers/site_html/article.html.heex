@@ -185,6 +185,7 @@
               :if={kind == :shown}
               datetime={DateTime.to_iso8601(comment.inserted_at)}
               data-comment-moment
+              data-zone={comment.imported_at && "UTC"}
               class="font-normal text-dim text-[12.5px]"
             >
               {comment_when(comment.inserted_at)}

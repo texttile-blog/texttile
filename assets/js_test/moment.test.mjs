@@ -19,3 +19,8 @@ test("a comment of another year carries the year", () => {
   const at = new Date("2025-07-02T08:00:00Z")
   assert.equal(commentMoment(at, "de", now, "Europe/Berlin"), "2. Juli 2025 um 10:00")
 })
+
+test("an imported comment keeps the wall clock it was stored with", () => {
+  const at = new Date("2026-07-30T22:14:00Z")
+  assert.equal(commentMoment(at, "de", now, "UTC"), "30. Juli um 22:14")
+})

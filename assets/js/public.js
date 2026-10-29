@@ -31,9 +31,16 @@ if (document.body.dataset.count) {
   }).catch(() => {});
 }
 
-// The day under each comment gets its hour, in the reader's zone.
+// The day under each comment gets its hour, in the reader's zone. An
+// imported comment says data-zone="UTC": its bundle gave a local wall
+// clock, and the import kept that as if it were UTC.
 document.querySelectorAll("time[data-comment-moment]").forEach((el) => {
-  el.textContent = commentMoment(new Date(el.dateTime), document.documentElement.lang);
+  el.textContent = commentMoment(
+    new Date(el.dateTime),
+    document.documentElement.lang,
+    new Date(),
+    el.dataset.zone,
+  );
 });
 
 // The search field of the text list. An empty field means the whole
