@@ -105,9 +105,9 @@ defmodule TexttileWeb.SiteHTMLTest do
       assert html =~ ~s(src="/renditions/1320/images/pier.jpg")
       refute html =~ ~s(src="/uploads/)
 
-      # and offer the lightbox its two sizes
+      # Offer the lightbox the default reader size.
       assert html =~
-               ~s(data-srcset="/renditions/1320/images/pier.jpg 1320w, /renditions/max/images/pier.jpg 2560w")
+               ~s(data-srcset="/renditions/max/images/pier.jpg 1320w")
     end
   end
 

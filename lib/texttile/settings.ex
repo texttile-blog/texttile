@@ -29,7 +29,7 @@ defmodule Texttile.Settings do
     comments_require_confirmation: {:boolean, true},
     notify_on_comment: {:boolean, true},
     posts_per_page: {:integer, 12},
-    image_max_edge: {:integer, 2560},
+    image_max_edge: {:integer, 1320},
     video_max_edge: {:integer, 1280},
     max_upload_mb: {:integer, 512},
     logo: {:file, nil},
