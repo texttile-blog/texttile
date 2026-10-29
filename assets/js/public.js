@@ -6,6 +6,7 @@
 // page stands whole without a script; the behaviour on it is the one
 // lightbox every surface shares.
 import {wrapIndex, attachSwipe, mediaNode, trapTab, quiet} from "./lightbox.js";
+import {commentMoment} from "./moment.js";
 
 // The view counter. One line to this server and nowhere else, once per
 // page, and the page never waits for the answer. It carries the
@@ -29,6 +30,11 @@ if (document.body.dataset.count) {
     }),
   }).catch(() => {});
 }
+
+// The day under each comment gets its hour, in the reader's zone.
+document.querySelectorAll("time[data-comment-moment]").forEach((el) => {
+  el.textContent = commentMoment(new Date(el.dateTime), document.documentElement.lang);
+});
 
 // The search field of the text list. An empty field means the whole
 // list, whichever way it was emptied.

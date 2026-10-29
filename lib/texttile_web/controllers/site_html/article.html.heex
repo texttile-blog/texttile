@@ -181,9 +181,14 @@
             <span :if={kind == :own} class="wait">
               {gettext("waiting for your confirmation")}
             </span>
-            <span :if={kind == :shown} class="font-normal text-dim text-[12.5px]">
+            <time
+              :if={kind == :shown}
+              datetime={DateTime.to_iso8601(comment.inserted_at)}
+              data-comment-moment
+              class="font-normal text-dim text-[12.5px]"
+            >
               {comment_when(comment.inserted_at)}
-            </span>
+            </time>
           </div>
           <p
             class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"

@@ -342,7 +342,9 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc """
   The day a comment arrived, the way the example blog writes it: bare
-  within the year, with the year once it is another one.
+  within the year, with the year once it is another one. The server
+  knows no time zone, so the hour is left to `public.js`, which writes
+  the whole moment again in the reader's own zone.
   """
   def comment_when(%DateTime{} = at) do
     date = DateTime.to_date(at)

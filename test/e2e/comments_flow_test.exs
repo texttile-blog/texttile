@@ -32,6 +32,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> visit(link)
     |> assert_has("#comments h2", text: "1 comment")
     |> assert_has("#comments", text: "More of the dog, please.")
+    # the server writes the day, the browser adds the hour in its zone
+    |> assert_has("#comments time", text: " at ")
     |> refute_has("#comments .wait")
 
     # The admin area: the overview carries it, its jump opens the
