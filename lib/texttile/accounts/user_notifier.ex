@@ -1,7 +1,8 @@
 defmodule Texttile.Accounts.UserNotifier do
   @moduledoc """
   Account mail: the confirmation of a fresh account and the link that
-  sets a new password. Nothing in here ever contains a password.
+  sets a new password, each as HTML (`TexttileWeb.MailHTML`) and as
+  plain text. Nothing in here ever contains a password.
 
   Mail leaves in the language of the site, like every other word the
   blog says. Nothing here asks for that language: it writes in the
@@ -15,6 +16,7 @@ defmodule Texttile.Accounts.UserNotifier do
 
   alias Texttile.Mailer
   alias Texttile.Settings
+  alias TexttileWeb.MailHTML
 
   @doc """
   Mails the link that sets a password. The account that never had one
@@ -38,6 +40,8 @@ defmodule Texttile.Accounts.UserNotifier do
   stop as part of it.
   """
   def deliver_invitation(user, url, site) do
+    blog = TexttileWeb.Endpoint.url()
+
     deliver(
       user,
       gettext("Your admin account on %{site}", site: site),
@@ -56,8 +60,20 @@ defmodule Texttile.Accounts.UserNotifier do
         The link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed.
         """,
         url: url,
-        blog: TexttileWeb.Endpoint.url()
-      )
+        blog: blog
+      ),
+      heading: gettext("Your admin account"),
+      lines: [
+        gettext(
+          "You have an admin account on %{blog}. Your email address is what you sign in with.",
+          blog: URI.parse(blog).host
+        )
+      ],
+      button: {gettext("Choose your password"), url},
+      small:
+        gettext(
+          "The link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed."
+        )
     )
   end
 
@@ -66,6 +82,8 @@ defmodule Texttile.Accounts.UserNotifier do
   themselves.
   """
   def deliver_password_reset(user, url, site) do
+    name = Texttile.Accounts.display_name(user)
+
     deliver(
       user,
       gettext("Set a new password on %{site}", site: site),
@@ -80,22 +98,37 @@ defmodule Texttile.Accounts.UserNotifier do
 
         The link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail.
         """,
-        name: Texttile.Accounts.display_name(user),
+        name: name,
         site: site,
         url: url
-      )
+      ),
+      heading: gettext("Hello %{name},", name: name),
+      lines: [
+        gettext("Somebody asked for a password reset for your account on %{site}.", site: site)
+      ],
+      button: {gettext("Set a new password"), url},
+      small:
+        gettext(
+          "The link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail."
+        )
     )
   end
 
   # The reader knows the site by its title, not by the product it runs
-  # on, so the title is the sender name.
-  defp deliver(user, subject, body) do
+  # on, so the title is the sender name. `html` is what the layout
+  # needs beyond the site, the colours and the subject.
+  defp deliver(user, subject, body, html) do
+    site = Settings.site_title()
+
     email =
       new()
       |> to({Texttile.Accounts.display_name(user), user.email})
-      |> from({Settings.site_title(), Application.fetch_env!(:texttile, :mail_from)})
+      |> from({site, Application.fetch_env!(:texttile, :mail_from)})
       |> subject(subject)
       |> text_body(body)
+      |> html_body(
+        MailHTML.render([site: site, colors: Settings.button_colors(), subject: subject] ++ html)
+      )
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}

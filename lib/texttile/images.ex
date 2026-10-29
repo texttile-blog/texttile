@@ -233,6 +233,30 @@ defmodule Texttile.Images do
     :ok
   end
 
+  # The edge of the square in a mail: one and a half times the 480px
+  # column, sharp enough on a phone and small enough for a slow line.
+  @mail_edge 720
+
+  @doc """
+  The picture a mail carries: a square JPEG cut from the middle of a
+  stored picture, the way the reader page crops its hero square, as
+  bytes to attach. Never scaled up. Made for the one mail and not
+  cached: a publish asks once, and every mail of it shares the bytes.
+  """
+  def mail_square(relative) do
+    path = Uploads.absolute(relative)
+
+    with {:ok, image} <- Vips.Image.new_from_file(path),
+         edge = Enum.min([@mail_edge, Vips.Image.width(image), Vips.Image.height(image)]),
+         {:ok, square} <-
+           Vips.Operation.thumbnail(path, edge, height: edge, crop: :VIPS_INTERESTING_CENTRE),
+         {:ok, plain} <- without_gain_map(square),
+         {:ok, colour} <- Vips.Operation.colourspace(plain, :VIPS_INTERPRETATION_sRGB),
+         {:ok, opaque} <- flattened(colour, [255.0, 255.0, 255.0]) do
+      Vips.Operation.jpegsave_buffer(opaque, interlace: true)
+    end
+  end
+
   @doc """
   Writes a copy of `source` at `destination` with the longer edge within
   `max_edge`, never scaled up. For files outside the rendition cache,

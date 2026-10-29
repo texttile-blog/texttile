@@ -177,6 +177,9 @@ mail goes to a preview mailbox (`/dev/mailbox`, development only).
 | `smtp`         | `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_PORT` (default 587, STARTTLS) |
 | `ses`          | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`                         |
 
+The mail of a new entry carries its preview picture inside the mail. Brevo's
+API cannot do that, so with `brevo` that mail goes out without the picture.
+
 ### Behind a proxy
 
 Set `CLIENT_IP_HEADER` only when a proxy stands in front of Texttile and writes

@@ -1,4 +1,4 @@
-# ADR-016: The newsletter is double opt-in and sends one plain mail per entry
+# ADR-016: The newsletter is double opt-in and sends one mail per entry
 
 ## Status
 Accepted
@@ -19,8 +19,14 @@ admin can add an address by hand, and that address is confirmed at once:
 the admin vouches for it. Every mail carries the way off the list.
 
 When a post goes live with "Email subscribers" checked, every confirmed
-address gets one plain email: the title and the address the entry lives at.
-If the blog sits behind the shared password, the mail includes it. The mail
+address gets one email: the preview picture as a square, the title, who
+wrote it and when, the lead, and a button to the entry. If the blog sits
+behind the shared password, the mail includes it. The mail is HTML with a
+plain-text part, in the layout every mail of the blog shares
+(`TexttileWeb.MailHTML`), and its button wears the theme's solid colour.
+The square travels inside the mail as an inline attachment (a content id),
+so it shows behind the blog password and opening the mail asks this server
+for nothing. The mail
 goes out once per entry (`notified_on`); publishing again, or publishing
 changes to a live entry, never sends it again. Publishing never mails by
 itself: `Publishing.plan/3` says what a click means, the dialog draws the
@@ -32,8 +38,15 @@ plan, and `run/3` carries out the same plan.
 - Rejected: the list would leave the server, and the reader's address with it
 
 ### A mail with the whole entry
-- Rejected: the mail names the entry and its address; readers read on the
-  site, and a correction after publishing reaches them there
+- Rejected: the mail gives a taste, the lead; readers read on the site,
+  and a correction after publishing reaches them there
+
+### The picture as a link to this server
+- Cons: pictures sit behind the blog password, so the link would need a
+  signed address that opens the gate for one file, and every opened mail
+  would ask this server for it
+- Rejected: the square travels inside the mail instead. Brevo's API takes
+  no content id, so with Brevo the mail goes without the picture
 
 ## Consequences
 - The subscriber mail takes the live version through `Articles.as_read/1`,
@@ -46,4 +59,6 @@ plan, and `run/3` carries out the same plan.
 ## Sources
 - #18 "Newsletter: subscribers, double opt-in, the go-live email"
 - #86, #91 the mails shortened, the lead paragraph dropped
+- feature/html-mails: every mail in one HTML layout, the lead and the
+  square back in the entry mail
 - `lib/texttile/newsletter.ex`, `lib/texttile/articles/publishing.ex`

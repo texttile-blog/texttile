@@ -1,6 +1,7 @@
 defmodule Texttile.Comments.Notifier do
   @moduledoc """
-  The two mails a comment sends.
+  The two mails a comment sends, each as HTML (`TexttileWeb.MailHTML`)
+  and as plain text.
 
   The reader gets the link that confirms the address. One link per
   address; the mail may travel again with a later comment, but it
@@ -27,17 +28,22 @@ defmodule Texttile.Comments.Notifier do
   alias Texttile.Articles
   alias Texttile.Mailer
   alias Texttile.Settings
+  alias TexttileWeb.MailHTML
 
-  @doc "Mails the confirmation link for the comment's address."
+  @doc """
+  Mails the confirmation link for the comment's address. The comment
+  stands in the mail as a quote, so the reader knows which one waits.
+  """
   def deliver_confirmation(comment, url) do
     site = Settings.site_title()
     title = Texttile.Articles.display_title(comment.article)
+    subject = gettext("Confirm your email on %{site}", site: site)
 
     email =
       new()
       |> to({comment.name, comment.address.email})
       |> from({site, Application.fetch_env!(:texttile, :mail_from)})
-      |> subject(gettext("Confirm your email on %{site}", site: site))
+      |> subject(subject)
       |> text_body(
         gettext(
           """
@@ -56,6 +62,22 @@ defmodule Texttile.Comments.Notifier do
           site: site
         )
       )
+      |> html_body(
+        MailHTML.render(
+          site: site,
+          colors: Settings.button_colors(),
+          subject: subject,
+          heading: gettext("Hello %{name},", name: comment.name),
+          lines: [gettext("You wrote a comment on \"%{title}\":", title: title)],
+          quote: comment.body,
+          button: {gettext("Publish my comment"), url},
+          small:
+            gettext(
+              "You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.",
+              site: site
+            )
+        )
+      )
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
@@ -70,24 +92,27 @@ defmodule Texttile.Comments.Notifier do
   def deliver_to_admins(comment) do
     site = Settings.site_title()
     title = Articles.display_title(comment.article)
-    body = admin_body(comment, site, title)
+    subject = gettext("New comment on %{title}", title: title)
+    text = admin_body(comment, site, title)
+    html = admin_html(comment, site, title, subject)
 
     Accounts.list_users()
     |> Enum.reject(&(&1.id == comment.user_id))
-    |> Enum.each(&deliver_one(&1, site, gettext("New comment on %{title}", title: title), body))
+    |> Enum.each(&deliver_one(&1, site, subject, text, html))
   end
 
   # A refused mail is nothing this can repair, and nothing the reader
   # who wrote the comment may ever hear about. The least it owes the
   # person running the site is a line in the log, the way the
   # newsletter writes one.
-  defp deliver_one(user, site, subject, body) do
+  defp deliver_one(user, site, subject, text, html) do
     email =
       new()
       |> to({Accounts.display_name(user), user.email})
       |> from({site, Application.fetch_env!(:texttile, :mail_from)})
       |> subject(subject)
-      |> text_body(body)
+      |> text_body(text)
+      |> html_body(html)
 
     case Mailer.deliver(email) do
       {:ok, _metadata} -> :ok
@@ -121,13 +146,42 @@ defmodule Texttile.Comments.Notifier do
     )
   end
 
+  # The same mail in HTML. The entry is a second, quieter way on; an
+  # entry that went off the site says so instead.
+  defp admin_html(comment, site, title, subject) do
+    {link, lines} =
+      case Articles.public_path(comment.article) do
+        nil -> {nil, [out_of_sight()]}
+        path -> {{gettext("Go to the entry"), TexttileWeb.Endpoint.url() <> path}, []}
+      end
+
+    MailHTML.render(
+      site: site,
+      colors: Settings.button_colors(),
+      subject: subject,
+      heading: gettext("%{name} wrote on \"%{title}\"", name: comment.name, title: title),
+      quote: comment.body,
+      lines: lines,
+      button: {gettext("All comments"), TexttileWeb.Endpoint.url() <> "/admin/comments"},
+      link: link,
+      foot:
+        {gettext(
+           "%{site} sends this mail because \"Mail me every new comment\" stands in its settings.",
+           site: site
+         ), gettext("Settings"), TexttileWeb.Endpoint.url() <> "/admin/settings"}
+    )
+  end
+
   # A text that went off the site between the comment and the mail has
   # no address any more, and the mail says so instead of pointing
   # nowhere.
   defp where_it_stands(article) do
     case Articles.public_path(article) do
-      nil -> gettext("It is out of sight for now: the entry itself is not on the site.")
+      nil -> out_of_sight()
       path -> gettext("The entry:") <> "\n" <> TexttileWeb.Endpoint.url() <> path
     end
   end
+
+  defp out_of_sight,
+    do: gettext("It is out of sight for now: the entry itself is not on the site.")
 end

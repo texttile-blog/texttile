@@ -29,6 +29,7 @@ defmodule Texttile.NewsletterTest do
         assert mail.subject == "Confirm your email on Texttile"
         # the link stands on the line right after its sentence
         assert mail.text_body =~ "list:\nhttp://test/newsletter/confirm/#{subscriber.token}\n"
+        assert mail.html_body =~ ~s(href="http://test/newsletter/confirm/#{subscriber.token}")
       end)
     end
 
@@ -176,14 +177,25 @@ defmodule Texttile.NewsletterTest do
       assert Enum.sort(Enum.map([first, second], &elem(hd(&1.to), 1))) ==
                ["one@example.org", "two@example.org"]
 
-      assert first.subject =~ "Harbor mornings"
+      # the sender is the site, so the subject is the title alone
+      assert first.subject == "Harbor mornings"
       # every link stands on the line right after its sentence
       assert first.text_body =~
                "Texttile:\n#{TexttileWeb.Endpoint.url()}#{Articles.public_path(article)}\n\n"
 
-      # the mail says where the entry is, not what it says: no lead, no excerpt
-      refute first.text_body =~ "Fog over the pier."
       assert first.text_body =~ ~r"link:\nhttp://\S+/newsletter/unsubscribe/\S+\n$"
+
+      # the HTML part gives the lead as a taste, and the button leads to the rest
+      assert first.html_body =~ "Fog over the pier."
+
+      assert first.html_body =~
+               ~s(href="#{TexttileWeb.Endpoint.url()}#{Articles.public_path(article)}")
+
+      assert first.html_body =~ "background:#4b2a83"
+      assert first.html_body =~ ~r"href=\"http://\S+/newsletter/unsubscribe/\S+\""
+      # without a picture there is nothing to carry
+      assert first.attachments == []
+      refute first.html_body =~ "cid:"
 
       # the same way off, where the mail program reads it
       assert %{"List-Unsubscribe" => header} = first.headers
@@ -285,6 +297,31 @@ defmodule Texttile.NewsletterTest do
       assert_receive {:email, mail}, 1000
       # under the link, before the blank line
       assert mail.text_body =~ "#{Articles.public_path(article)}\nPassword: sesame\n\n"
+      assert mail.html_body =~ "Password: sesame"
+    end
+
+    test "the mail carries the preview square inside it, and counts the gallery" do
+      user = Texttile.AccountsFixtures.user_fixture()
+      article = draft_post(user: user, title: "Harbor mornings")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
+      {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "boats.jpg")
+
+      {:ok, article} = Articles.set_publish_date(article, user, Date.utc_today())
+      {:ok, _} = Articles.publish(article, user, today: Date.utc_today())
+
+      assert_receive {:email, mail}, 1000
+
+      assert [
+               %Swoosh.Attachment{type: :inline, cid: "preview", content_type: "image/jpeg"} =
+                 square
+             ] =
+               mail.attachments
+
+      {:ok, image} = Vix.Vips.Image.new_from_buffer(square.data)
+      assert Vix.Vips.Image.width(image) == Vix.Vips.Image.height(image)
+
+      assert mail.html_body =~ ~s(src="cid:preview")
+      assert mail.html_body =~ "2 pictures"
     end
 
     test "an open blog's mail carries no access word" do

@@ -72,6 +72,9 @@ defmodule Texttile.CommentsTest do
         assert mail.to == [{"Grandma Christel", "christel@example.org"}]
         # the link stands on the line right after its sentence
         assert mail.text_body =~ ~r"entry:\nhttp://test/comments/confirm/\S+\n\n"
+        # the HTML part quotes the comment, so the reader knows which one waits
+        assert mail.html_body =~ "More of the dog, please."
+        assert mail.html_body =~ ~r"href=\"http://test/comments/confirm/\S+\""
       end)
     end
 
@@ -286,6 +289,26 @@ defmodule Texttile.CommentsTest do
       refute mail.text_body =~ "stands under the entry"
       # the address of the reader is nowhere in it
       refute mail.text_body =~ "christel@example.org"
+      refute mail.html_body =~ "christel@example.org"
+
+      # the HTML part: the button to all comments, the entry as a second way on
+      assert mail.html_body =~ ~s(href="#{url}/admin/comments")
+      assert mail.html_body =~ ~s(href="#{url}#{Articles.public_path(article)}")
+    end
+
+    # The comment is what a stranger typed. In the HTML part it is text,
+    # and its line breaks stay breaks.
+    test "the HTML part escapes the comment and keeps its lines" do
+      kb = Texttile.AccountsFixtures.user_fixture(%{username: "kb"})
+      article = published_post(user: kb)
+
+      comment = post!(article, %{@attrs | "body" => "<b>Hi</b>\nsecond line"})
+      {:ok, _article} = Comments.confirm(comment.address.token)
+
+      assert mail = admin_mail()
+      assert mail.html_body =~ "&lt;b&gt;Hi&lt;/b&gt;"
+      refute mail.html_body =~ "<b>Hi</b>"
+      assert mail.html_body =~ ~r"Hi&lt;/b&gt;\s*<br/?>\s*second line"
     end
 
     # Until the reader has followed the link, nobody has proved the

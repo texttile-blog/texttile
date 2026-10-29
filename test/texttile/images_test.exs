@@ -211,6 +211,31 @@ defmodule Texttile.ImagesTest do
     end
   end
 
+  describe "mail_square/1" do
+    defp jpeg_size(jpeg) do
+      {:ok, image} = Vix.Vips.Image.new_from_buffer(jpeg)
+      {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
+    end
+
+    test "cuts a square JPEG out of the middle of a wide picture" do
+      rel = original("images/wide.png", 2000, 1000)
+
+      assert {:ok, <<0xFF, 0xD8, _::binary>> = jpeg} = Images.mail_square(rel)
+      assert jpeg_size(jpeg) == {720, 720}
+    end
+
+    test "never scales a small picture up" do
+      rel = original("images/small.png", 300, 200)
+
+      assert {:ok, jpeg} = Images.mail_square(rel)
+      assert jpeg_size(jpeg) == {200, 200}
+    end
+
+    test "a file that is not a picture answers an error" do
+      assert {:error, _} = Images.mail_square("images/missing.jpg")
+    end
+  end
+
   describe "srcset/1" do
     test "offers the reading size and the reader size, each by its longer edge" do
       {:ok, _} = Settings.put(:image_max_edge, 2560)

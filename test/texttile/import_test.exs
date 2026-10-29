@@ -403,7 +403,7 @@ defmodule Texttile.ImportTest do
 
       [gone_live] = Articles.go_live_due(soon.publish_date)
       assert gone_live.id == soon.id
-      assert_receive {:email, %Swoosh.Email{subject: "New on Texttile: Soon"}}, 1000
+      assert_receive {:email, %Swoosh.Email{subject: "Soon"}}, 1000
     end
 
     test "a second import of a live text mails nobody either", %{dir: dir, user: user} do
