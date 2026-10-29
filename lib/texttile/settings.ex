@@ -119,6 +119,27 @@ defmodule Texttile.Settings do
     end
   end
 
+  @solid_token ~r/--tt-solid\s*:\s*([^;}]+)/
+  @onsolid_token ~r/--tt-onsolid\s*:\s*([^;}]+)/
+
+  @doc """
+  The colours of the blog's solid buttons, for the buttons in a mail. A
+  mail cannot read the theme's stylesheet, so it gets the two values
+  themselves, as plain hex: the ground and the text on it. A theme that
+  answers neither token falls back to the iris buttons.
+  """
+  def button_colors do
+    css = theme_css()
+    page = color(css, @page_token) || {250, 249, 247, 1.0}
+    iris = default_theme_css()
+
+    pick = fn token ->
+      (color(css, token) || color(iris, token)) |> over(page)
+    end
+
+    %{solid: pick.(@solid_token), onsolid: pick.(@onsolid_token)}
+  end
+
   # The last declaration wins, the way the browser reads it.
   defp color(css, token) do
     token

@@ -99,6 +99,7 @@ defmodule Texttile.AccountsLinksTest do
         assert email.subject =~ "password"
         # the link stands on the line right after its sentence
         assert email.text_body =~ ~r"password:\nhttp://\S+/link/\S+\n\n"
+        assert email.html_body =~ ~r"href=\"http://\S+/link/\S+\""
         true
       end)
 
@@ -124,6 +125,7 @@ defmodule Texttile.AccountsLinksTest do
         assert email.text_body =~ "blog:\n#{TexttileWeb.Endpoint.url()}\n\n"
         # the link, too, on the line right after its sentence
         assert email.text_body =~ ~r"password:\nhttp://\S+/link/\S+\n\n"
+        assert email.html_body =~ ~r"href=\"http://\S+/link/\S+\""
         true
       end)
     end

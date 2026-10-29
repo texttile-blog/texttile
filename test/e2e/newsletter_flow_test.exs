@@ -69,8 +69,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
 
     mails =
       for _ <- 1..2 do
-        assert_receive {:email,
-                        %Swoosh.Email{subject: "New on Texttile: Harbor mornings"} = mail},
+        assert_receive {:email, %Swoosh.Email{subject: "Harbor mornings"} = mail},
                        2000
 
         mail

@@ -20,10 +20,12 @@ defmodule Texttile.Newsletter do
   alias Texttile.Articles.Reading
   alias Texttile.Articles.Visibility
   alias Texttile.Confirmation
+  alias Texttile.Gallery
   alias Texttile.Newsletter.Notifier
   alias Texttile.Newsletter.Subscriber
   alias Texttile.Repo
   alias Texttile.Settings
+  alias Texttile.Videos
 
   @topic "newsletter"
 
@@ -234,19 +236,20 @@ defmodule Texttile.Newsletter do
         :ok
 
       subscribers ->
-        site = Settings.site_title()
-        password = access_word()
         # Read here, where this process owns its database connection.
         # The task below owns none: nobody waits for it, so it may
         # outlive whoever started it.
+        entry = entry(article)
         locale = Texttile.I18n.site_locale()
 
         {:ok, _pid} =
           Task.Supervisor.start_child(Texttile.Newsletter.TaskSupervisor, fn ->
             Texttile.I18n.put_locale(locale)
+            # Cut here, so the publish click never waits for the square.
+            entry = Map.put(entry, :picture, square(entry.still))
 
             Enum.each(subscribers, fn subscriber ->
-              deliver_one(subscriber, article, site, password)
+              deliver_one(subscriber, article, entry)
               # One pause after each address. Every mail provider counts
               # requests per second, and a list of 200 sent as fast as
               # the loop runs comes back as refusals for most of them.
@@ -263,8 +266,8 @@ defmodule Texttile.Newsletter do
   # it owes the person running the site is a line in the log. The
   # subscriber stands there as a number: a log travels further than a
   # database, and a reader's address has no business in it.
-  defp deliver_one(subscriber, article, site, password) do
-    case Notifier.deliver_new_text(subscriber, article, site, password) do
+  defp deliver_one(subscriber, article, entry) do
+    case Notifier.deliver_new_text(subscriber, article, entry) do
       {:ok, _email} ->
         :ok
 
@@ -273,6 +276,39 @@ defmodule Texttile.Newsletter do
           "newsletter: #{Articles.display_title(article)} did not reach " <>
             "subscriber #{subscriber.id}: #{inspect(other)}"
         )
+    end
+  end
+
+  # Everything the mail of one entry needs from the database, read once
+  # for the whole list. `still` is the picture the square is cut from.
+  defp entry(article) do
+    tiles = Gallery.list(article.id)
+    videos = Enum.count(tiles, &Videos.video?(&1.path))
+
+    %{
+      site: Settings.site_title(),
+      password: access_word(),
+      colors: Settings.button_colors(),
+      author: Articles.author_name(article),
+      pictures: length(tiles) - videos,
+      videos: videos,
+      still: Gallery.preview_still(article, Enum.map(tiles, & &1.path))
+    }
+  end
+
+  # The square, cut once for the whole list: every mail carries the same
+  # bytes. Brevo's API takes no content id, so there the square would
+  # arrive as a loose attachment beside a broken picture. It stays out
+  # instead, and so does a picture vips cannot read.
+  defp square(nil), do: nil
+
+  defp square(still) do
+    with false <-
+           Application.get_env(:texttile, Texttile.Mailer)[:adapter] == Swoosh.Adapters.Brevo,
+         {:ok, jpeg} <- Texttile.Images.mail_square(still) do
+      jpeg
+    else
+      _ -> nil
     end
   end
 
