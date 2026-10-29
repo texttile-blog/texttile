@@ -1731,7 +1731,6 @@ defmodule TexttileWeb.EditorLive do
                     data-placeholder={gettext("Write with Markdown.")}
                   >
                     <textarea
-                      class="ed-body"
                       aria-label={gettext("Body, Markdown")}
                       spellcheck="false"
                       placeholder={gettext("Write with Markdown.")}
