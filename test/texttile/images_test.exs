@@ -213,6 +213,8 @@ defmodule Texttile.ImagesTest do
 
   describe "srcset/1" do
     test "offers the reading size and the reader size, each by its longer edge" do
+      {:ok, _} = Settings.put(:image_max_edge, 2560)
+
       assert Images.srcset("images/a.jpg") ==
                "/renditions/1320/images/a.jpg 1320w, /renditions/max/images/a.jpg 2560w"
     end

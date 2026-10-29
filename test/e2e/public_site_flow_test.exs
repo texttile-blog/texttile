@@ -326,6 +326,11 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
   # The lightbox offers two sizes and the browser takes the smallest
   # that fills its screen: a phone a third of the bytes of a desktop.
   describe "the lightbox sizes" do
+    setup do
+      {:ok, _} = Settings.put(:image_max_edge, 2560)
+      :ok
+    end
+
     @tag browser_context_opts: [viewport: %{width: 390, height: 844}, device_scale_factor: 3.0]
     test "a phone gets the reading size", %{conn: conn} do
       article = published_post(title: "Phone", slug: "phone", body: "Pictures below.")

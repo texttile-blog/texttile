@@ -49,6 +49,7 @@ defmodule TexttileWeb.E2E.GalleryDeliveryTest do
     conn: conn,
     kb: kb
   } do
+    {:ok, _} = Texttile.Settings.put(:image_max_edge, 2560)
     article = draft!(kb)
     [first | _] = pictures!(article)
 
@@ -73,6 +74,7 @@ defmodule TexttileWeb.E2E.GalleryDeliveryTest do
 
   @tag browser_context_opts: [viewport: %{width: 1440, height: 900}, device_scale_factor: 2.0]
   test "a sharp desktop fetches the large picture", %{conn: conn, kb: kb} do
+    {:ok, _} = Texttile.Settings.put(:image_max_edge, 2560)
     article = draft!(kb)
     [first | _] = pictures!(article)
 

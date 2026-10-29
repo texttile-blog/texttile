@@ -12,7 +12,7 @@ defmodule Texttile.SettingsTest do
       assert Settings.get(:front_page) == "latest"
       assert Settings.get(:theme_css) == ""
       assert Settings.get(:comments_require_confirmation) == true
-      assert Settings.get(:image_max_edge) == 2560
+      assert Settings.get(:image_max_edge) == 1320
       assert Settings.get(:video_max_edge) == 1280
       assert Settings.get(:logo) == nil
       assert Settings.get(:favicon) == nil
@@ -31,7 +31,7 @@ defmodule Texttile.SettingsTest do
     test "all/0 carries every key" do
       all = Settings.all()
       assert all.site_title == "Texttile"
-      assert all.image_max_edge == 2560
+      assert all.image_max_edge == 1320
     end
   end
 
@@ -199,7 +199,7 @@ defmodule Texttile.SettingsTest do
       assert {:error, _} = Settings.put(:image_max_edge, "10080")
       assert {:error, _} = Settings.put(:image_max_edge, "huge")
       assert {:error, _} = Settings.put(:image_max_edge, "")
-      assert Settings.get(:image_max_edge) == 2560
+      assert Settings.get(:image_max_edge) == 1320
     end
 
     test "refuses a video edge outside 480..3840 or not a number" do

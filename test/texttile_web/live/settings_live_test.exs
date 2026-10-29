@@ -152,7 +152,7 @@ defmodule TexttileWeb.SettingsLiveTest do
         |> render_change(%{"_target" => ["settings", "image_max_edge"]})
 
       assert html =~ "at least 800"
-      assert Settings.get(:image_max_edge) == 2560
+      assert Settings.get(:image_max_edge) == 1320
     end
 
     test "the video edge saves, and a number nobody can use says no", %{conn: conn} do
