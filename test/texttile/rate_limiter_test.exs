@@ -30,6 +30,16 @@ defmodule Texttile.RateLimiterTest do
     refute RateLimiter.allow?("1.2.3.4", narrow)
   end
 
+  test "a limiter can stretch its window over a day" do
+    name = :"rate_limiter_#{System.unique_integer([:positive])}"
+    start_supervised!({RateLimiter, name: name, limit: 2, window_ms: :timer.hours(24)})
+
+    assert RateLimiter.allow?("1.2.3.4", name)
+    assert RateLimiter.allow?("1.2.3.4", name)
+    refute RateLimiter.allow?("1.2.3.4", name)
+    assert RateLimiter.over?("1.2.3.4", name)
+  end
+
   test "reset forgets every window" do
     name = :"rate_limiter_#{System.unique_integer([:positive])}"
     start_supervised!({RateLimiter, name: name})

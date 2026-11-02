@@ -156,9 +156,10 @@ defmodule TexttileWeb.SiteController do
 
   @doc """
   A reader's comment arrives. The invisible filters answer first: a
-  filled honeypot, a form younger than a person's typing or a caller
-  over the rate limit is dropped without a trace - the sender is told
-  that it worked, and nothing is stored.
+  filled honeypot, a form without a stamp or younger than a person's
+  typing, a caller over the minute's or the day's rate limit, or an
+  entry past its day's cap of unconfirmed comments is dropped without a
+  trace - the sender is told that it worked, and nothing is stored.
 
   Somebody signed in passes all of them. They came through the sign-in,
   so they are no stranger, and their name and their address come from
@@ -210,10 +211,10 @@ defmodule TexttileWeb.SiteController do
         |> assign(:comment_token, to_string(params["t"]))
         |> render_text(article)
 
-      # The limit is spent on storable comments only, so a reader who
-      # corrects a form mistake never loses a slot to the mistake. It is
-      # a limit on strangers: an account is not one.
-      is_nil(author) and not RateLimiter.allow?(client_ip(conn)) ->
+      # The limits are spent on storable comments only, so a reader who
+      # corrects a form mistake never loses a slot to the mistake. They
+      # are limits on strangers: an account is not one.
+      is_nil(author) and not within_limits?(client_ip(conn)) ->
         conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
 
       true ->
@@ -227,9 +228,33 @@ defmodule TexttileWeb.SiteController do
             |> comment_sent(comment)
             |> redirect(to: comments_anchor(article))
 
+          # The entry or the site is past its cap of confirmation mails:
+          # a wave, not a reader. Told it worked, like the honeypot.
+          {:error, :flooded} ->
+            conn |> comment_sent(nil) |> redirect(to: comments_anchor(article))
+
           {:error, _} ->
             not_found(conn)
         end
+    end
+  end
+
+  # The minute's knock and the day's knock, in that order: a caller the
+  # minute refuses spends nothing of the day.
+  defp within_limits?(ip) do
+    RateLimiter.allow?(ip) and RateLimiter.allow?(ip, Comments.day_limiter())
+  end
+
+  @doc """
+  The stamp of the comment form, as text. The page's script asks for
+  it when the reader starts to write, and the form sends it back with
+  the comment. Signing is all this does: whether the entry takes a
+  comment is judged when the comment arrives.
+  """
+  def comment_stamp(conn, %{"article_id" => id}) do
+    case Integer.parse(to_string(id)) do
+      {id, ""} -> text(conn, HumanCheck.stamp({:comment, id}))
+      _ -> not_found(conn)
     end
   end
 
@@ -659,7 +684,10 @@ defmodule TexttileWeb.SiteController do
       comments: rows,
       comment_count: Enum.count(rows, &match?({:shown, _}, &1)) + earlier,
       comment_earlier: earlier,
-      comment_token: conn.assigns[:comment_token] || HumanCheck.stamp({:comment, article.id}),
+      # A fresh form carries no stamp: the page's script draws one when
+      # the reader starts to write. A form that came back with a mistake
+      # keeps the one it had.
+      comment_token: conn.assigns[:comment_token],
       comment_note: Phoenix.Flash.get(conn.assigns.flash, :comment_note),
       comment_rule: comment_rule(signed_in_user(conn), require?),
       # A form that came back with a mistake keeps what was typed; a
@@ -680,7 +708,8 @@ defmodule TexttileWeb.SiteController do
   # address, so there is no link to follow and nothing to confirm.
   defp comment_rule(nil, true) do
     gettext(
-      "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it."
+      "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it. The link works for %{days} days.",
+      days: Comments.waiting_days()
     )
   end
 

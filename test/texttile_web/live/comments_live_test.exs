@@ -127,13 +127,7 @@ defmodule TexttileWeb.CommentsLiveTest do
   end
 
   describe "many comments at once" do
-    defp wave(count) do
-      article = published_post()
-
-      for n <- 1..count do
-        post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
-      end
-    end
+    defp wave(count), do: Texttile.CommentsFixtures.wave!(published_post(), count)
 
     defp tick(view, comment) do
       view |> element("#comment-#{comment.id} input[type=checkbox]") |> render_click()
@@ -298,14 +292,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
   describe "the pager" do
     setup do
-      article = published_post()
-
-      comments =
-        for n <- 1..26 do
-          post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
-        end
-
-      %{comments: comments}
+      %{comments: Texttile.CommentsFixtures.wave!(published_post(), 26)}
     end
 
     test "walks every comment of the status", %{conn: conn, comments: comments} do
@@ -464,8 +451,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       article = published_post()
 
       comments =
-        for n <- 1..26 do
-          comment = post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+        for comment <- Texttile.CommentsFixtures.wave!(article, 26) do
           {:ok, _} = Comments.delete_comment(comment)
           comment
         end
@@ -611,6 +597,7 @@ defmodule TexttileWeb.CommentsLiveTest do
   test "the rule follows the setting as it changes", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
     assert has_element?(view, "#commentsRule", "Readers confirm their email first")
+    assert has_element?(view, "#commentsRule", "within 3 days goes for good")
 
     {:ok, _} = Settings.put(:comments_require_confirmation, false)
     assert has_element?(view, "#commentsRule", "nobody confirms anything")

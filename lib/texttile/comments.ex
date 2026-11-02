@@ -9,6 +9,10 @@ defmodule Texttile.Comments do
   address remembers it was followed, and every later comment from it
   appears at once.
 
+  A comment waits three days at most. A reader who never follows the
+  link wrote nothing, as far as the blog is concerned: the sweeper takes
+  the comment and its address for good.
+
   This is still not an approval queue: nothing waits for an admin, and
   no comment needs one to appear. What an admin can do is make an
   exception - `release_comment/1` puts a single comment under the text
@@ -33,6 +37,37 @@ defmodule Texttile.Comments do
   alias Texttile.Settings
 
   @topic "comments"
+
+  # How long a comment waits for its reader's link before it goes.
+  @waiting_days 3
+
+  # The two caps on the confirmation mail, the one thing a stranger can
+  # make this server send. A real blog never meets them: ten strangers
+  # on one entry in a day, thirty links across the site in an hour. A
+  # script does, and past them its comment is dropped before any row
+  # or mail. Beyond that, each address gets one link an hour, see
+  # `Texttile.Confirmation`.
+  @entry_cap_per_day 10
+  @site_cap_per_hour 30
+
+  @doc "How many days a comment waits for its reader's confirmation."
+  def waiting_days, do: @waiting_days
+
+  @doc "How many unconfirmed comments one entry takes from strangers a day."
+  def entry_cap_per_day, do: @entry_cap_per_day
+
+  @doc "How many confirmation links the site mails an hour, at most."
+  def site_cap_per_hour, do: @site_cap_per_hour
+
+  # The comment form's second rate limiter: a day for a window, so a
+  # script that paces itself under the minute's limit still runs out.
+  @day_limit 10
+
+  @doc "The name of the limiter that counts a stranger's comments by the day."
+  def day_limiter, do: Texttile.Comments.DayLimiter
+
+  @doc "How many comments one caller (in practice: one IP) may send a day."
+  def day_limit, do: @day_limit
 
   ## PubSub
 
@@ -67,8 +102,11 @@ defmodule Texttile.Comments do
   once: the address is confirmed here, the way the mailed link would
   have confirmed it.
 
-  `now:` names the moment the one link an hour is measured from. It
-  defaults to this one.
+  A stranger's comment that would want a confirmation mail past one of
+  the two caps answers `{:error, :flooded}`, and nothing is stored.
+
+  `now:` names the moment the one link an hour and the caps are
+  measured from. It defaults to this one.
   """
   def post(%Article{} = article, attrs, opts) do
     confirm_url = Keyword.fetch!(opts, :confirm_url)
@@ -76,7 +114,8 @@ defmodule Texttile.Comments do
     now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:second) end)
 
     with :ok <- open_for_comments(article),
-         {:ok, attrs} <- validate(attrs) do
+         {:ok, attrs} <- validate(attrs),
+         :ok <- under_caps(article, attrs, user, now) do
       address = ensure_address(attrs)
       address = if user, do: Confirmation.confirm(address, now), else: address
 
@@ -135,6 +174,49 @@ defmodule Texttile.Comments do
 
   defp open_for_comments(%Article{} = article) do
     if Visibility.open_for_comments?(article), do: :ok, else: {:error, :closed}
+  end
+
+  # The caps hold only where a mail would go: while the setting asks
+  # for confirmation, for an address that has not given it. An account
+  # and a confirmed address pass, however full the day is.
+  defp under_caps(_article, _attrs, user, _now) when not is_nil(user), do: :ok
+
+  defp under_caps(%Article{id: article_id}, attrs, nil, now) do
+    cond do
+      not Settings.get(:comments_require_confirmation) ->
+        :ok
+
+      confirmed_address?(attrs) ->
+        :ok
+
+      unconfirmed_on_entry_since(article_id, DateTime.add(now, -1, :day)) >= @entry_cap_per_day ->
+        {:error, :flooded}
+
+      links_mailed_since(DateTime.add(now, -1, :hour)) >= @site_cap_per_hour ->
+        {:error, :flooded}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp confirmed_address?(attrs) do
+    email = attrs |> Map.get("email") |> Confirmation.normalize()
+
+    Repo.exists?(from a in Address, where: a.email == ^email and not is_nil(a.confirmed_at))
+  end
+
+  defp unconfirmed_on_entry_since(article_id, since) do
+    from(c in standing(),
+      join: a in assoc(c, :address),
+      where: c.article_id == ^article_id and c.inserted_at >= ^since,
+      where: is_nil(a.confirmed_at) and is_nil(c.user_id)
+    )
+    |> Repo.aggregate(:count)
+  end
+
+  defp links_mailed_since(since) do
+    Repo.aggregate(from(a in Address, where: a.confirmation_mailed_at >= ^since), :count)
   end
 
   defp validate(attrs) do
@@ -649,17 +731,36 @@ defmodule Texttile.Comments do
 
   @doc """
   Makes the deletions final whose #{@trash_days} days have run out at
-  `now`, which defaults to this moment, and answers how many comments
-  went. Runs on boot and on a clock of its own, see
+  `now`, which defaults to this moment, takes the comments that waited
+  #{@waiting_days} days for a confirmation that never came, and answers
+  how many comments went. Runs on boot and on a clock of its own, see
   `Texttile.Comments.Sweeper`.
+
+  A comment nobody confirmed skips the trash: nobody decided anything
+  about it, and the reader was told in the mail how long the link
+  works. While the setting is off nothing waits, so nothing expires.
 
   For good means for good: an address whose last comment goes here has
   nothing left on this site, so its row goes too, and the reader's
   email leaves the database with the words it was attached to.
   """
   def sweep_due(now \\ DateTime.utc_now(:second)) do
-    {count, _} = Repo.delete_all(from c in in_trash(), where: c.delete_after <= ^now)
+    {trashed, _} = Repo.delete_all(from c in in_trash(), where: c.delete_after <= ^now)
 
+    stale =
+      if Settings.get(:comments_require_confirmation) do
+        from(c in in_status("waiting"),
+          where: c.inserted_at < ^DateTime.add(now, -@waiting_days, :day),
+          select: c.id
+        )
+        |> Repo.all()
+      else
+        []
+      end
+
+    {expired, _} = Repo.delete_all(from c in Comment, where: c.id in ^stale)
+
+    count = trashed + expired
     if count > 0, do: sweep_addresses(now)
     count
   end

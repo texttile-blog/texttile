@@ -1,6 +1,7 @@
 defmodule Texttile.CommentsTest do
   use Texttile.DataCase, async: false
 
+  import Ecto.Query, only: [from: 2]
   import Swoosh.TestAssertions
   import Texttile.ArticlesFixtures
 
@@ -423,6 +424,140 @@ defmodule Texttile.CommentsTest do
     end
   end
 
+  describe "a comment nobody confirmed" do
+    # Backdates the comment and its address, the way a comment that
+    # arrived days ago reads.
+    defp arrived(comment, days_ago) do
+      at = DateTime.add(DateTime.utc_now(:second), -days_ago, :day)
+
+      Texttile.Repo.update_all(
+        from(c in Comments.Comment, where: c.id == ^comment.id),
+        set: [inserted_at: at]
+      )
+
+      Texttile.Repo.update_all(
+        from(a in Comments.Address, where: a.id == ^comment.address.id),
+        set: [inserted_at: at]
+      )
+
+      comment
+    end
+
+    test "goes for good with its address after the waiting days, the rest stays" do
+      article = published_post()
+      stale = post!(article) |> arrived(Comments.waiting_days() + 1)
+      young = post!(article, %{@attrs | "email" => "jens@example.org"}) |> arrived(1)
+
+      released =
+        post!(article, %{@attrs | "email" => "ole@example.org"})
+        |> arrived(Comments.waiting_days() + 1)
+
+      {:ok, _} = Comments.release_comment(released.id)
+
+      confirmed =
+        post!(article, %{@attrs | "email" => "ida@example.org"})
+        |> arrived(Comments.waiting_days() + 1)
+
+      {:ok, _} = Comments.confirm(confirmed.address.token)
+
+      assert Comments.sweep_due() == 1
+      assert Texttile.Repo.get(Comments.Comment, stale.id) == nil
+      assert Texttile.Repo.get(Comments.Address, stale.address.id) == nil
+
+      for comment <- [young, released, confirmed] do
+        assert Texttile.Repo.get(Comments.Comment, comment.id)
+      end
+    end
+
+    test "with confirmation off, nothing waits and nothing expires" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      article = published_post()
+      old = post!(article) |> arrived(Comments.waiting_days() + 1)
+
+      assert Comments.sweep_due() == 0
+      assert Texttile.Repo.get(Comments.Comment, old.id)
+    end
+  end
+
+  describe "the mail caps" do
+    setup do
+      {:ok, _} = Settings.put(:notify_on_comment, false)
+      :ok
+    end
+
+    test "one entry takes only so many unconfirmed comments a day" do
+      article = published_post()
+      other = published_post(%{title: "Other"})
+
+      for n <- 1..Comments.entry_cap_per_day() do
+        post!(article, %{@attrs | "email" => "reader#{n}@example.org"})
+      end
+
+      assert {:error, :flooded} =
+               Comments.post(article, %{@attrs | "email" => "late@example.org"},
+                 confirm_url: &"http://test/#{&1}"
+               )
+
+      refute_email_sent(to: [{"Grandma Christel", "late@example.org"}])
+
+      # another entry is another day's budget
+      post!(other, %{@attrs | "email" => "late@example.org"})
+
+      # a confirmed address and an account are no strangers
+      known = post!(other, %{@attrs | "email" => "known@example.org"})
+      {:ok, _} = Comments.confirm(known.address.token)
+      post!(article, %{@attrs | "email" => "known@example.org"})
+      post!(article, @attrs, user: Texttile.AccountsFixtures.user_fixture())
+    end
+
+    test "the day runs out, and the entry takes comments again" do
+      article = published_post()
+      now = DateTime.utc_now(:second)
+      yesterday = DateTime.add(now, -25, :hour)
+
+      for n <- 1..Comments.entry_cap_per_day() do
+        comment = post!(article, %{@attrs | "email" => "reader#{n}@example.org"})
+
+        Texttile.Repo.update_all(
+          from(c in Comments.Comment, where: c.id == ^comment.id),
+          set: [inserted_at: yesterday]
+        )
+      end
+
+      post!(article, %{@attrs | "email" => "today@example.org"})
+    end
+
+    test "the site mails only so many confirmation links an hour" do
+      article = published_post()
+      other = published_post(%{title: "Other"})
+      entries = Stream.cycle([article, other, published_post(), published_post()])
+
+      # spread over entries, so the entry's own cap stays out of the way
+      for {entry, n} <- entries |> Enum.take(Comments.site_cap_per_hour()) |> Enum.with_index() do
+        post!(entry, %{@attrs | "email" => "reader#{n}@example.org"})
+      end
+
+      assert {:error, :flooded} =
+               Comments.post(article, %{@attrs | "email" => "late@example.org"},
+                 confirm_url: &"http://test/#{&1}"
+               )
+
+      # an hour later the budget is back
+      post!(other, %{@attrs | "email" => "late@example.org"},
+        now: DateTime.add(DateTime.utc_now(:second), 61, :minute)
+      )
+    end
+
+    test "with confirmation off no mail goes, so nothing is capped" do
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+      article = published_post()
+
+      for n <- 1..(Comments.entry_cap_per_day() + 1) do
+        post!(article, %{@attrs | "email" => "reader#{n}@example.org"})
+      end
+    end
+  end
+
   describe "delete_comment/1" do
     test "removes the comment and announces it" do
       article = published_post()
@@ -713,7 +848,7 @@ defmodule Texttile.CommentsTest do
 
     test "ids/1 answers every comment of a status, across every page" do
       article = published_post()
-      ids = for n <- 1..26, do: post!(article, %{@attrs | "email" => "r#{n}@example.org"}).id
+      ids = Enum.map(Texttile.CommentsFixtures.wave!(article, 26), & &1.id)
 
       assert Enum.sort(Comments.ids("waiting")) == ids
       assert Comments.ids("trash") == []
@@ -829,7 +964,7 @@ defmodule Texttile.CommentsTest do
 
     test "pages walk every comment once, and a page past the end is the last" do
       article = published_post()
-      ids = for n <- 1..26, do: reader!(article, "reader#{n}").id
+      ids = Enum.map(Texttile.CommentsFixtures.wave!(article, 26), & &1.id)
 
       first = Comments.overview("waiting", 1)
       second = Comments.overview("waiting", 2)

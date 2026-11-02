@@ -259,6 +259,10 @@ defmodule TexttileWeb.Router do
 
     # A reader sends a comment. Behind the gate like the text it is on.
     post "/comments/:article_id", SiteController, :post_comment
+    # The stamp the comment form carries, drawn by the page's script
+    # when the reader starts to write. A form without a script has
+    # none, and a comment without one is dropped.
+    get "/comments/:article_id/stamp", SiteController, :comment_stamp
 
     # A reader asks for the newsletter. Behind the gate like the
     # footer form the request comes from.

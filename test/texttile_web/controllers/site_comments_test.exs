@@ -247,6 +247,59 @@ defmodule TexttileWeb.SiteCommentsTest do
       assert [_] = Comments.for_article(article.id)
     end
 
+    test "the form is drawn without a stamp, and the page asks for one", %{conn: conn} do
+      article = published_post()
+
+      html = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert html =~ ~s(<input type="hidden" name="t">)
+      assert html =~ ~s(data-stamp="/comments/#{article.id}/stamp")
+
+      stamp = build_conn() |> get(~p"/comments/#{article.id}/stamp") |> text_response(200)
+
+      assert TexttileWeb.HumanCheck.human?({:comment, article}, %{"t" => stamp, "url" => ""},
+               now: System.system_time(:second) + 10
+             )
+    end
+
+    test "a stranger past the day's budget is told it worked, and nothing is stored", %{conn: _} do
+      article = published_post()
+      ip = fresh_ip()
+
+      for n <- 1..Comments.day_limit() do
+        # the minute's limit is the other filter; this test is about the day
+        if rem(n, 3) == 1, do: Texttile.RateLimiter.reset()
+        build_conn() |> send_comment(article, %{"ip" => ip, "email" => "reader#{n}@example.org"})
+      end
+
+      Texttile.RateLimiter.reset()
+      assert length(Comments.for_article(article.id)) == Comments.day_limit()
+
+      conn = build_conn() |> send_comment(article, %{"ip" => ip, "email" => "late@example.org"})
+      assert redirected_to(conn) == Articles.public_path(article) <> "#comments"
+      assert Phoenix.Flash.get(conn.assigns.flash, :comment_note) =~ "Sent."
+      assert length(Comments.for_article(article.id)) == Comments.day_limit()
+
+      # another caller is free; on another entry, so the entry's own
+      # cap stays out of this
+      other = published_post()
+      build_conn() |> send_comment(other, %{"email" => "other@example.org"})
+      assert [_] = Comments.for_article(other.id)
+    end
+
+    test "an entry past its day's cap tells the stranger it worked, and stores nothing",
+         %{conn: _} do
+      article = published_post()
+
+      for n <- 1..Comments.entry_cap_per_day() do
+        build_conn() |> send_comment(article, %{"email" => "reader#{n}@example.org"})
+      end
+
+      conn = build_conn() |> send_comment(article, %{"email" => "late@example.org"})
+      assert redirected_to(conn) == Articles.public_path(article) <> "#comments"
+      assert Phoenix.Flash.get(conn.assigns.flash, :comment_note) =~ "Sent."
+      assert length(Comments.for_article(article.id)) == Comments.entry_cap_per_day()
+    end
+
     test "a spoofed forwarding header does not rotate the bucket", %{conn: _conn} do
       spoofed = published_post()
       trusted = published_post()
