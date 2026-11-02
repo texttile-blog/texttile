@@ -381,8 +381,16 @@ switched off in Settings > Comments. The mail leaves when the comment stands
 under the entry, so a comment that still waits for its reader mails nobody. The
 address of the reader is never in it.
 
-Spam protection is built in and always on: a honeypot field, a time trap, and a
-rate limit per caller. No captcha, no Google, no third parties.
+A comment nobody confirms within 3 days is removed from the database for good,
+with its address. The Not confirmed yet filter shows what still waits.
+
+Spam protection is built in and always on, and nothing is configured. A honeypot
+field, a time trap, and a rate limit per caller: 3 comments a minute and 10 a
+day. The confirmation mail is capped as well, 10 unconfirmed comments per entry
+and day and 30 links across the site per hour; past a cap the comment is dropped
+and nothing is mailed. The comment form gets its stamp from a small script when
+the reader starts to write, so a browser without JavaScript cannot post a
+comment. No captcha, no Google, no third parties.
 
 ## Newsletter
 
@@ -399,7 +407,8 @@ shared password, the mail includes it. Every mail carries the way off the list.
 The email goes out once per entry; publishing the same entry again does not send
 it again.
 
-The subscribe form wears the same spam protection as the comment form.
+The subscribe form wears the honeypot, the time trap and the rate limit per
+minute of the comment form, and works without JavaScript.
 
 ## Stats
 

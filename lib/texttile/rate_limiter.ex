@@ -10,6 +10,11 @@ defmodule Texttile.RateLimiter do
   A second one of these stands in front of the view counter, with a
   wider limit: a reader turns pages faster than they write comments,
   and what it has to stop is a caller writing rows all day.
+
+  The window is a minute unless `window_ms:` says otherwise. The
+  comment form wears a second limiter with a day for a window: a
+  script that posts every twenty minutes never fills a minute, and
+  does fill a day.
   """
 
   use GenServer
@@ -20,12 +25,14 @@ defmodule Texttile.RateLimiter do
 
   @doc """
   Starts a limiter. `name:` gives it one of its own, `limit:` how many
-  knocks a caller has in the minute.
+  knocks a caller has in the window, `window_ms:` how long the window
+  is.
   """
   def start_link(opts) do
     name = Keyword.get(opts, :name, __MODULE__)
     limit = Keyword.get(opts, :limit, @limit)
-    GenServer.start_link(__MODULE__, {name, limit}, name: name)
+    window_ms = Keyword.get(opts, :window_ms, @window_ms)
+    GenServer.start_link(__MODULE__, {name, limit, window_ms}, name: name)
   end
 
   @doc "A child spec per name, so two limiters can stand side by side."
@@ -64,22 +71,22 @@ defmodule Texttile.RateLimiter do
   end
 
   @impl true
-  def init({name, limit}) do
+  def init({name, limit, window_ms}) do
     table = :ets.new(name, [:set, :private])
     :timer.send_interval(@sweep_ms, :sweep)
-    {:ok, %{table: table, limit: limit}}
+    {:ok, %{table: table, limit: limit, window_ms: window_ms}}
   end
 
   # A key nobody asks about again would sit here forever, and the keys
   # come from the outside: without this sweep the table is a place a
   # caller can make grow. Every window that has run out goes.
   @impl true
-  def handle_info(:sweep, %{table: table} = state) do
+  def handle_info(:sweep, %{table: table, window_ms: window_ms} = state) do
     now = System.monotonic_time(:millisecond)
 
     :ets.foldl(
       fn {key, stamps}, acc ->
-        if Enum.any?(stamps, &(now - &1 < @window_ms)), do: acc, else: [key | acc]
+        if Enum.any?(stamps, &(now - &1 < window_ms)), do: acc, else: [key | acc]
       end,
       [],
       table
@@ -100,7 +107,7 @@ defmodule Texttile.RateLimiter do
 
   def handle_call({:allow?, key}, _from, %{table: table, limit: limit} = state) do
     now = System.monotonic_time(:millisecond)
-    recent = recent(table, key, now)
+    recent = recent(table, key, now, state.window_ms)
 
     if length(recent) < limit do
       :ets.insert(table, {key, [now | recent]})
@@ -112,14 +119,14 @@ defmodule Texttile.RateLimiter do
 
   def handle_call({:over?, key}, _from, %{table: table, limit: limit} = state) do
     now = System.monotonic_time(:millisecond)
-    {:reply, length(recent(table, key, now)) >= limit, state}
+    {:reply, length(recent(table, key, now, state.window_ms)) >= limit, state}
   end
 
   # The stamps of the key that still count. An unknown key and a
   # window that has run out read the same: nothing.
-  defp recent(table, key, now) do
+  defp recent(table, key, now, window_ms) do
     case :ets.lookup(table, key) do
-      [{^key, stamps}] -> Enum.filter(stamps, &(now - &1 < @window_ms))
+      [{^key, stamps}] -> Enum.filter(stamps, &(now - &1 < window_ms))
       [] -> []
     end
   end

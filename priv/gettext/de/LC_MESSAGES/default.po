@@ -348,17 +348,17 @@ msgid_plural "%{count} views"
 msgstr[0] "1 Aufruf"
 msgstr[1] "%{count} Aufrufe"
 
-#: lib/texttile_web/components/comment_components.ex:240
+#: lib/texttile_web/components/comment_components.ex:241
 #, elixir-autogen, elixir-format
 msgid "A comment appears under the entry the moment a reader sends it, and nobody confirms anything. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever."
 msgstr "Ein Kommentar steht unter dem Eintrag, sobald er abgeschickt wird, und niemand bestätigt etwas. Löschen legt einen Kommentar für %{days} Tage in den Papierkorb, stillschweigend, danach ist er weg. Spam wird über Honeypot, Zeitfalle und Ratenbegrenzung gefiltert. Kein Captcha, nie."
 
-#: lib/texttile_web/components/comment_components.ex:275
+#: lib/texttile_web/components/comment_components.ex:276
 #, elixir-autogen, elixir-format
 msgid "A comment holds %{count} characters at most. Nothing was saved."
 msgstr "Ein Kommentar fasst höchstens %{count} Zeichen. Es wurde nichts gespeichert."
 
-#: lib/texttile_web/components/comment_components.ex:279
+#: lib/texttile_web/components/comment_components.ex:280
 #, elixir-autogen, elixir-format
 msgid "A comment needs some words. Nothing was saved."
 msgstr "Ein Kommentar braucht ein paar Worte. Es wurde nichts gespeichert."
@@ -619,7 +619,7 @@ msgstr "Deinen angezeigten Namen, deine Adresse und dein Passwort änderst du in
 msgid "Choose a password"
 msgstr "Wähle ein Passwort"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:335
+#: lib/texttile_web/controllers/site_html/article.html.heex:351
 #: lib/texttile_web/js_strings.ex:46
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -631,7 +631,7 @@ msgstr "Schließen"
 msgid "Code"
 msgstr "Code"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:218
+#: lib/texttile_web/controllers/site_html/article.html.heex:234
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr "Kommentar"
@@ -666,7 +666,7 @@ msgstr "Bestätige einmal das aktuelle Passwort, um es zu ändern. Mindestens 12
 msgid "Confirm your email on %{site}"
 msgstr "Bestätige deine Adresse auf %{site}"
 
-#: lib/texttile_web/controllers/site_controller.ex:245
+#: lib/texttile_web/controllers/site_controller.ex:270
 #, elixir-autogen, elixir-format
 msgid "Confirmed. Your comment is under the entry now."
 msgstr "Bestätigt. Dein Kommentar steht jetzt unter dem Eintrag."
@@ -744,12 +744,12 @@ msgstr "Konto löschen"
 msgid "Delete the account of %{name}?"
 msgstr "Das Konto von %{name} löschen?"
 
-#: lib/texttile_web/components/comment_components.ex:261
+#: lib/texttile_web/components/comment_components.ex:262
 #, elixir-autogen, elixir-format
 msgid "Delete the comment"
 msgstr "Kommentar löschen"
 
-#: lib/texttile_web/components/comment_components.ex:253
+#: lib/texttile_web/components/comment_components.ex:254
 #, elixir-autogen, elixir-format
 msgid "Delete the comment of %{name}?"
 msgstr "Den Kommentar von %{name} löschen?"
@@ -833,7 +833,7 @@ msgstr "Bearbeiten"
 msgid "Editing"
 msgstr "Bearbeiten"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:242
+#: lib/texttile_web/controllers/site_html/article.html.heex:258
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:33
 #: lib/texttile_web/live/editor_live.ex:2626
 #: lib/texttile_web/live/newsletter_live.ex:101
@@ -959,7 +959,7 @@ msgstr "Frei änderbar, solange der Eintrag ein Entwurf ist."
 msgid "Front page"
 msgstr "Startseite"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:329
+#: lib/texttile_web/controllers/site_html/article.html.heex:345
 #: lib/texttile_web/js_strings.ex:45
 #, elixir-autogen, elixir-format
 msgid "Full size"
@@ -1033,12 +1033,12 @@ msgstr "%{entries} importieren"
 msgid "Imported: %{name}"
 msgstr "Importiert: %{name}"
 
-#: lib/texttile/comments/notifier.ex:186
+#: lib/texttile/comments/notifier.ex:188
 #, elixir-autogen, elixir-format
 msgid "It is out of sight for now: the entry itself is not on the site."
 msgstr "Er ist vorerst nicht zu sehen: der Eintrag selbst steht nicht auf der Site."
 
-#: lib/texttile_web/components/comment_components.ex:255
+#: lib/texttile_web/components/comment_components.ex:256
 #, elixir-autogen, elixir-format
 msgid "It removes the comment from the entry at once, and the reader is not told."
 msgstr "Der Kommentar verschwindet sofort aus dem Eintrag, und die schreibende Person erfährt nichts davon."
@@ -1199,13 +1199,13 @@ msgstr "Mai"
 msgid "More entries"
 msgstr "Weitere Einträge"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:227
+#: lib/texttile_web/controllers/site_html/article.html.heex:243
 #: lib/texttile_web/live/tags_live.ex:178
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Name"
 
-#: lib/texttile/comments/notifier.ex:95
+#: lib/texttile/comments/notifier.ex:97
 #, elixir-autogen, elixir-format
 msgid "New comment on %{title}"
 msgstr "Neuer Kommentar zu %{title}"
@@ -1235,7 +1235,7 @@ msgid "Newer"
 msgstr "Neuere"
 
 #: lib/texttile_web/components/layouts.ex:69
-#: lib/texttile_web/controllers/site_controller.ex:429
+#: lib/texttile_web/controllers/site_controller.ex:454
 #: lib/texttile_web/live/newsletter_live.ex:24
 #: lib/texttile_web/live/newsletter_live.ex:86
 #: lib/texttile_web/live/newsletter_live.ex:94
@@ -1249,7 +1249,7 @@ msgstr "Newsletter"
 msgid "Next"
 msgstr "Weiter"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:355
+#: lib/texttile_web/controllers/site_html/article.html.heex:371
 #: lib/texttile_web/js_strings.ex:50
 #, elixir-autogen, elixir-format
 msgid "Next tile"
@@ -1320,7 +1320,7 @@ msgstr "Noch steht niemand auf der Liste. Wer sich auf der Site einträgt, tauch
 msgid "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
 msgstr "Noch nichts in diesem Eintrag. Füge ein Bild oder ein Video in den Text ein, oder lass eines darauf fallen."
 
-#: lib/texttile_web/controllers/site_controller.ex:735
+#: lib/texttile_web/controllers/site_controller.ex:764
 #, elixir-autogen, elixir-format
 msgid "Not found"
 msgstr "Nicht gefunden"
@@ -1547,7 +1547,7 @@ msgstr "Bilder und Videos im Text"
 msgid "Post a comment"
 msgstr "Einen Kommentar schreiben"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:308
+#: lib/texttile_web/controllers/site_html/article.html.heex:324
 #, elixir-autogen, elixir-format
 msgid "Post comment"
 msgstr "Kommentar abschicken"
@@ -1574,7 +1574,7 @@ msgstr "Vorschaubild"
 msgid "Previous"
 msgstr "Zurück"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:351
+#: lib/texttile_web/controllers/site_html/article.html.heex:367
 #: lib/texttile_web/js_strings.ex:49
 #, elixir-autogen, elixir-format
 msgid "Previous tile"
@@ -1651,11 +1651,6 @@ msgstr "Zitat"
 #, elixir-autogen, elixir-format
 msgid "Readers confirm their email before the comment appears"
 msgstr "Lesende bestätigen ihre Adresse, bevor der Kommentar erscheint"
-
-#: lib/texttile_web/components/comment_components.ex:233
-#, elixir-autogen, elixir-format
-msgid "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever."
-msgstr "Lesende bestätigen zuerst ihre Adresse. Ein Kommentar bleibt aus dem Eintrag heraus, bis die schreibende Person dem Link in der Mail folgt. Bis dahin siehst nur du ihn, mit dem Vermerk \"noch nicht bestätigt\", und Freigeben stellt genau diesen einen Kommentar ohne Warten unter den Eintrag. Löschen legt einen Kommentar für %{days} Tage in den Papierkorb, stillschweigend, danach ist er weg. Spam wird über Honeypot, Zeitfalle und Ratenbegrenzung gefiltert. Kein Captcha, nie."
 
 #: lib/texttile_web/live/settings_live.ex:514
 #, elixir-autogen, elixir-format
@@ -1785,12 +1780,12 @@ msgstr "Bereiche"
 msgid "Send the link"
 msgstr "Link schicken"
 
-#: lib/texttile_web/controllers/site_controller.ex:356
+#: lib/texttile_web/controllers/site_controller.ex:381
 #, elixir-autogen, elixir-format
 msgid "Sent. Follow the link in your mail and your comment appears under the entry."
 msgstr "Abgeschickt. Folge dem Link in deiner Mail, dann erscheint dein Kommentar unter dem Eintrag."
 
-#: lib/texttile_web/controllers/site_controller.ex:358
+#: lib/texttile_web/controllers/site_controller.ex:383
 #, elixir-autogen, elixir-format
 msgid "Sent. Your comment is under the entry now."
 msgstr "Abgeschickt. Dein Kommentar steht jetzt unter dem Eintrag."
@@ -1820,7 +1815,7 @@ msgstr "Neues Passwort auf %{site} setzen"
 msgid "Set the password and sign in"
 msgstr "Passwort setzen und anmelden"
 
-#: lib/texttile/comments/notifier.ex:171
+#: lib/texttile/comments/notifier.ex:173
 #: lib/texttile_web/components/layouts.ex:77
 #: lib/texttile_web/live/settings_live.ex:39
 #: lib/texttile_web/live/settings_live.ex:612
@@ -2217,7 +2212,7 @@ msgstr "Das Theme ist wieder die Iris-Vorgabe"
 msgid "The title and the body are read-only right now."
 msgstr "Titel und Text sind gerade nur lesbar."
 
-#: lib/texttile_web/components/comment_components.ex:256
+#: lib/texttile_web/components/comment_components.ex:257
 #, elixir-autogen, elixir-format
 msgid "The trash on the Comments screen keeps it for %{days} days. Restore puts it back where it stood; after that it is gone for good."
 msgstr "Der Papierkorb auf der Seite Kommentare behält ihn %{days} Tage. Wiederherstellen setzt ihn zurück, wo er stand. Danach ist er endgültig weg."
@@ -2355,7 +2350,7 @@ msgstr "Diese Seite wird die Eingangstür. Die Blogliste bleibt so oder so unter
 msgid "This screen never says whether an address has an account. The link works one time, and for 24 hours. No mail arrives for an address without an account."
 msgstr "Diese Seite sagt nie, ob zu einer Adresse ein Konto gehört. Der Link gilt einmal und 24 Stunden lang. Für eine Adresse ohne Konto kommt keine Mail an."
 
-#: lib/texttile_web/components/comment_components.ex:283
+#: lib/texttile_web/components/comment_components.ex:284
 #, elixir-autogen, elixir-format
 msgid "Those words were not saved."
 msgstr "Diese Worte wurden nicht gespeichert."
@@ -2544,7 +2539,7 @@ msgstr "Du stehst auf der Liste."
 msgid "You are signed in as"
 msgstr "Du bist angemeldet als"
 
-#: lib/texttile_web/controllers/site_controller.ex:692
+#: lib/texttile_web/controllers/site_controller.ex:721
 #, elixir-autogen, elixir-format
 msgid "You are signed in, so your name and your address come from your account. Your address is never published, and your comment appears under the entry at once."
 msgstr "Du bist angemeldet, also kommen dein Name und deine Adresse aus deinem Konto. Deine Adresse wird nie veröffentlicht, und dein Kommentar erscheint sofort unter dem Eintrag."
@@ -2564,12 +2559,7 @@ msgstr "Du hast den Eintrag"
 msgid "You have the entry · %{name} was told"
 msgstr "Du hast den Eintrag · %{name} wurde benachrichtigt"
 
-#: lib/texttile_web/controllers/site_controller.ex:682
-#, elixir-autogen, elixir-format
-msgid "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it."
-msgstr "Deine Adresse wird nie veröffentlicht. Du bekommst einen Link per Mail, und dein Kommentar erscheint unter dem Eintrag, sobald du ihm folgst."
-
-#: lib/texttile_web/controllers/site_controller.ex:688
+#: lib/texttile_web/controllers/site_controller.ex:717
 #, elixir-autogen, elixir-format
 msgid "Your address is never published. Your comment appears under the entry at once."
 msgstr "Deine Adresse wird nie veröffentlicht. Dein Kommentar erscheint sofort unter dem Eintrag."
@@ -3174,12 +3164,12 @@ msgstr "Diese Installation"
 msgid "Version"
 msgstr "Version"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:303
+#: lib/texttile_web/controllers/site_html/article.html.heex:319
 #, elixir-autogen, elixir-format
 msgid "A comment needs a name, an email address and some words, and a website has to read like example.org. Check the form and send it again."
 msgstr "Ein Kommentar braucht einen Namen, eine E-Mail-Adresse und ein paar Worte, und eine Website muss wie example.org aussehen. Prüfe das Formular und schicke es noch einmal ab."
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:259
+#: lib/texttile_web/controllers/site_html/article.html.heex:275
 #, elixir-autogen, elixir-format
 msgid "Website"
 msgstr "Website"
@@ -3324,17 +3314,17 @@ msgstr "Der Sicherungs-Token"
 msgid "Now press the copy key"
 msgstr "Jetzt die Kopiertaste drücken"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:290
+#: lib/texttile_web/controllers/site_html/article.html.heex:306
 #, elixir-autogen, elixir-format
 msgid "Remember me on this device, so the next comment is one line and a button."
 msgstr "Auf diesem Gerät merken, damit der nächste Kommentar eine Zeile und ein Knopf ist."
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:242
+#: lib/texttile_web/controllers/site_html/article.html.heex:258
 #, elixir-autogen, elixir-format
 msgid "never published"
 msgstr "wird nie veröffentlicht"
 
-#: lib/texttile_web/controllers/site_html/article.html.heex:259
+#: lib/texttile_web/controllers/site_html/article.html.heex:275
 #, elixir-autogen, elixir-format
 msgid "optional"
 msgstr "freiwillig"
@@ -3880,11 +3870,6 @@ msgstr "\"%{title}\" steht jetzt auf %{site}:\n%{url}\n%{password}\nDu bekommst 
 msgid "Hello %{name},\n\nSomebody asked for a password reset for your account on %{site}.\n\nOpen this link and set a new password:\n%{url}\n\nThe link works once and for 24 hours. The old password works until you set the new one. If you did not ask for this, you can ignore this mail.\n"
 msgstr "Hallo %{name},\n\njemand hat für dein Konto auf %{site} ein neues Passwort angefordert.\n\nÖffne diesen Link und setze ein neues Passwort:\n%{url}\n\nDer Link gilt einmal und 24 Stunden lang. Das alte Passwort gilt, bis du das neue gesetzt hast. Wenn du das nicht angefordert hast, kannst du diese Mail einfach liegen lassen.\n"
 
-#: lib/texttile/comments/notifier.ex:48
-#, elixir-autogen, elixir-format
-msgid "Hello %{name},\n\nYou wrote a comment on \"%{title}\".\n\nOpen this link, and your comment appears under the entry:\n%{url}\n\nYou confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.\n"
-msgstr "Hallo %{name},\n\ndu hast einen Kommentar zu \"%{title}\" geschrieben.\n\nÖffne diesen Link, dann erscheint dein Kommentar unter dem Eintrag:\n%{url}\n\nDu bestätigst diese Adresse einmal. Jeder Kommentar, den du danach schreibst, erscheint sofort. Wenn du auf %{site} keinen Kommentar geschrieben hast, lass diese Mail einfach liegen.\n"
-
 #: lib/texttile/accounts/user_notifier.ex:48
 #, elixir-autogen, elixir-format
 msgid "Hello,\n\nYou have an admin account on this blog:\n%{blog}\n\nYour email address is what you sign in with.\n\nOpen this link and choose your password:\n%{url}\n\nThe link works once, and for a week. Nobody else sets your password, and no mail from this site ever contains one. If you did not expect this, you can ignore this mail: without the link the account stays closed.\n"
@@ -3970,12 +3955,12 @@ msgstr "Dieser Tag wurde während deiner Bearbeitung geändert."
 msgid "This tag no longer exists."
 msgstr "Dieser Tag existiert nicht mehr."
 
-#: lib/texttile/comments/notifier.ex:126
+#: lib/texttile/comments/notifier.ex:128
 #, elixir-autogen, elixir-format
 msgid "%{name} wrote on \"%{title}\":\n\n%{body}\n\n---\n%{where}\n\nAll comments:\n%{url}\n\n%{site} sends this mail because \"Mail me every new comment\" stands in its settings.\n"
 msgstr "%{name} schrieb zu \"%{title}\":\n\n%{body}\n\n---\n%{where}\n\nAlle Kommentare:\n%{url}\n\n%{site} schickt diese Mail, weil in den Einstellungen \"Mir jeden neuen Kommentar mailen\" steht.\n"
 
-#: lib/texttile/comments/notifier.ex:181
+#: lib/texttile/comments/notifier.ex:183
 #, elixir-autogen, elixir-format
 msgid "The entry:"
 msgstr "Der Eintrag:"
@@ -4007,12 +3992,12 @@ msgstr "Alle fortsetzen"
 msgid "The files are still in this browser."
 msgstr "Die Dateien sind noch in diesem Browser."
 
-#: lib/texttile/comments/notifier.ex:162
+#: lib/texttile/comments/notifier.ex:164
 #, elixir-autogen, elixir-format
 msgid "%{name} wrote on \"%{title}\""
 msgstr "%{name} schrieb zu „%{title}“"
 
-#: lib/texttile/comments/notifier.ex:168
+#: lib/texttile/comments/notifier.ex:170
 #, elixir-autogen, elixir-format
 msgid "%{site} sends this mail because \"Mail me every new comment\" stands in its settings."
 msgstr "%{site} schickt diese Mail, weil in den Einstellungen „Mir jeden neuen Kommentar mailen“ steht."
@@ -4031,7 +4016,7 @@ msgid_plural "%{count} videos"
 msgstr[0] "1 Video"
 msgstr[1] "%{count} Videos"
 
-#: lib/texttile/comments/notifier.ex:165
+#: lib/texttile/comments/notifier.ex:167
 #, elixir-autogen, elixir-format
 msgid "All comments"
 msgstr "Alle Kommentare"
@@ -4046,13 +4031,13 @@ msgstr "Passwort wählen"
 msgid "Confirm your email"
 msgstr "Bestätige deine Adresse"
 
-#: lib/texttile/comments/notifier.ex:155
+#: lib/texttile/comments/notifier.ex:157
 #, elixir-autogen, elixir-format
 msgid "Go to the entry"
 msgstr "Zum Eintrag"
 
 #: lib/texttile/accounts/user_notifier.ex:105
-#: lib/texttile/comments/notifier.ex:70
+#: lib/texttile/comments/notifier.ex:71
 #, elixir-autogen, elixir-format
 msgid "Hello %{name},"
 msgstr "Hallo %{name},"
@@ -4062,7 +4047,7 @@ msgstr "Hallo %{name},"
 msgid "Join the list"
 msgstr "Auf die Liste"
 
-#: lib/texttile/comments/notifier.ex:73
+#: lib/texttile/comments/notifier.ex:74
 #, elixir-autogen, elixir-format
 msgid "Publish my comment"
 msgstr "Kommentar freischalten"
@@ -4102,11 +4087,6 @@ msgstr "Diese Adresse hat die neuen Einträge von %{site} per Mail angefordert."
 msgid "Unsubscribe"
 msgstr "Abmelden"
 
-#: lib/texttile/comments/notifier.ex:75
-#, elixir-autogen, elixir-format
-msgid "You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail."
-msgstr "Du bestätigst diese Adresse einmal. Jeder Kommentar, den du danach schreibst, erscheint sofort. Wenn du auf %{site} keinen Kommentar geschrieben hast, lass diese Mail einfach liegen."
-
 #: lib/texttile/newsletter/notifier.ex:69
 #, elixir-autogen, elixir-format
 msgid "You confirm this address once. If you did not ask for this, ignore this mail. Without the link, the address gets nothing."
@@ -4122,7 +4102,7 @@ msgstr "Du bekommst diese Mail, weil diese Adresse auf der Liste von %{site} ste
 msgid "You have an admin account on %{blog}. Your email address is what you sign in with."
 msgstr "Du hast ein Admin-Konto auf %{blog}. Mit deiner E-Mail-Adresse meldest du dich an."
 
-#: lib/texttile/comments/notifier.ex:71
+#: lib/texttile/comments/notifier.ex:72
 #, elixir-autogen, elixir-format
 msgid "You wrote a comment on \"%{title}\":"
 msgstr "du hast einen Kommentar zu „%{title}“ geschrieben:"
@@ -4153,6 +4133,7 @@ msgid "Not confirmed yet"
 msgstr "Noch nicht bestätigt"
 
 #: lib/texttile_web/live/comments_live.ex:298
+#, elixir-autogen, elixir-format
 msgid "%{count} selected"
 msgstr "%{count} ausgewählt"
 
@@ -4162,16 +4143,19 @@ msgid "Delete %{count}"
 msgstr "%{count} löschen"
 
 #: lib/texttile_web/live/comments_live.ex:330
+#, elixir-autogen, elixir-format
 msgid "Delete 1 comment?"
 msgid_plural "Delete %{count} comments?"
 msgstr[0] "1 Kommentar löschen?"
 msgstr[1] "%{count} Kommentare löschen?"
 
 #: lib/texttile_web/live/comments_live.ex:302
+#, elixir-autogen, elixir-format
 msgid "Delete all %{count}"
 msgstr "Alle %{count} löschen"
 
 #: lib/texttile_web/live/comments_live.ex:301
+#, elixir-autogen, elixir-format
 msgid "Release %{count}"
 msgstr "%{count} freigeben"
 
@@ -4188,6 +4172,7 @@ msgid "Release all %{count}"
 msgstr "Alle %{count} freigeben"
 
 #: lib/texttile_web/live/comments_live.ex:305
+#, elixir-autogen, elixir-format
 msgid "Restore %{count}"
 msgstr "%{count} wiederherstellen"
 
@@ -4214,6 +4199,7 @@ msgid "Select every comment of this filter"
 msgstr "Jeden Kommentar dieses Filters auswählen"
 
 #: lib/texttile_web/components/comment_components.ex:160
+#, elixir-autogen, elixir-format
 msgid "Select the comment of %{name}"
 msgstr "Den Kommentar von %{name} auswählen"
 
@@ -4241,3 +4227,28 @@ msgstr "Sie verschwinden sofort aus ihren Einträgen, und die Leser erfahren nic
 #, elixir-autogen, elixir-format
 msgid "They stand under their entries at once. Their addresses stay unconfirmed, and nobody is mailed."
 msgstr "Sie stehen sofort unter ihren Einträgen. Ihre Adressen bleiben unbestätigt, und niemand bekommt eine Mail."
+
+#: lib/texttile/comments/notifier.ex:48
+#, elixir-autogen, elixir-format
+msgid "Hello %{name},\n\nYou wrote a comment on \"%{title}\".\n\nOpen this link, and your comment appears under the entry:\n%{url}\n\nThe link works for %{days} days. You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.\n"
+msgstr "Hallo %{name},\n\ndu hast einen Kommentar zu \"%{title}\" geschrieben.\n\nÖffne diesen Link, dann erscheint dein Kommentar unter dem Eintrag:\n%{url}\n\nDer Link gilt %{days} Tage. Du bestätigst diese Adresse einmal. Jeder Kommentar, den du danach schreibst, erscheint sofort. Wenn du auf %{site} keinen Kommentar geschrieben hast, lass diese Mail einfach liegen.\n"
+
+#: lib/texttile_web/controllers/site_html/article.html.heex:229
+#, elixir-autogen, elixir-format
+msgid "Posting a comment needs JavaScript. Without it, the comment is not stored."
+msgstr "Kommentieren braucht JavaScript. Ohne JavaScript wird der Kommentar nicht gespeichert."
+
+#: lib/texttile_web/components/comment_components.ex:233
+#, elixir-autogen, elixir-format
+msgid "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. A comment nobody confirms within %{waiting} days goes for good. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing, rate limit and mail cap checks. No captcha, ever."
+msgstr "Lesende bestätigen zuerst ihre Adresse. Ein Kommentar bleibt aus dem Eintrag heraus, bis die schreibende Person dem Link in der Mail folgt. Bis dahin siehst nur du ihn, mit dem Vermerk \"noch nicht bestätigt\", und Freigeben stellt genau diesen einen Kommentar ohne Warten unter den Eintrag. Ein Kommentar, den innerhalb von %{waiting} Tagen niemand bestätigt, ist endgültig weg. Löschen legt einen Kommentar für %{days} Tage in den Papierkorb, stillschweigend, danach ist er weg. Spam wird über Honeypot, Zeitfalle, Ratenbegrenzung und Mail-Deckel gefiltert. Kein Captcha, nie."
+
+#: lib/texttile/comments/notifier.ex:76
+#, elixir-autogen, elixir-format
+msgid "The link works for %{days} days. You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail."
+msgstr "Der Link gilt %{days} Tage. Du bestätigst diese Adresse einmal. Jeder Kommentar, den du danach schreibst, erscheint sofort. Wenn du auf %{site} keinen Kommentar geschrieben hast, lass diese Mail einfach liegen."
+
+#: lib/texttile_web/controllers/site_controller.ex:710
+#, elixir-autogen, elixir-format
+msgid "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it. The link works for %{days} days."
+msgstr "Deine Adresse wird nie veröffentlicht. Du bekommst einen Link per Mail, und dein Kommentar erscheint unter dem Eintrag, sobald du ihm folgst. Der Link gilt %{days} Tage."

@@ -54,11 +54,12 @@ defmodule Texttile.Comments.Notifier do
           Open this link, and your comment appears under the entry:
           %{url}
 
-          You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.
+          The link works for %{days} days. You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.
           """,
           name: comment.name,
           title: title,
           url: url,
+          days: Texttile.Comments.waiting_days(),
           site: site
         )
       )
@@ -73,7 +74,8 @@ defmodule Texttile.Comments.Notifier do
           button: {gettext("Publish my comment"), url},
           small:
             gettext(
-              "You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.",
+              "The link works for %{days} days. You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail.",
+              days: Texttile.Comments.waiting_days(),
               site: site
             )
         )

@@ -38,6 +38,13 @@ defmodule Texttile.Application do
       # The invisible spam filter of the public forms: a few knocks
       # per caller per minute.
       Texttile.RateLimiter,
+      # The same filter on the comment form again, with a day for a
+      # window: a script that paces itself under the minute's limit
+      # still runs out of day.
+      {Texttile.RateLimiter,
+       name: Texttile.Comments.day_limiter(),
+       limit: Texttile.Comments.day_limit(),
+       window_ms: :timer.hours(24)},
       # The same filter in front of the view counter, wider: a reader
       # turns pages faster than they write comments.
       {Texttile.RateLimiter,

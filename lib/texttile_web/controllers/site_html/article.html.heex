@@ -208,11 +208,27 @@
            placeholder: a placeholder is gone the moment you type, and a
            field that is a line under the text would have nothing left to
            say what the line was for. --%>
-      <form id="comment-form" class="cform" action={~p"/comments/#{@article.id}"} method="post">
+      <%!-- the stamp is empty when the form is drawn: public.js asks
+           data-stamp for one when the reader starts to write, and holds
+           the send until the stamp is old enough for the time trap. A
+           script that only reads the form finds no stamp, and a form
+           that came back with a mistake keeps the one it had. --%>
+      <form
+        id="comment-form"
+        class="cform"
+        action={~p"/comments/#{@article.id}"}
+        method="post"
+        data-stamp={~p"/comments/#{@article.id}/stamp"}
+      >
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
 
         <p class="cf-lead f-note">{@comment_rule}</p>
+        <noscript>
+          <p class="cf-lead f-note">
+            {gettext("Posting a comment needs JavaScript. Without it, the comment is not stored.")}
+          </p>
+        </noscript>
 
         <span class="cf-body cfld">
           <label class="cf-lab" for="comment-body">{gettext("Comment")}</label>

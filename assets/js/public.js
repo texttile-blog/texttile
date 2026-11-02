@@ -31,6 +31,52 @@ if (document.body.dataset.count) {
   }).catch(() => {});
 }
 
+// The comment form's stamp. The form is drawn without one; this asks
+// the server for it the moment the reader starts to write, so a script
+// that only reads the form and posts it back has nothing to send. The
+// server's time trap wants the stamp a few seconds old, so a send that
+// comes sooner waits the rest out here instead of being dropped there.
+// A form that came back with a mistake keeps the stamp it had.
+(function () {
+  const form = document.getElementById("comment-form");
+  if (!form || !form.dataset.stamp) return;
+  const field = form.elements.t;
+  // the moment the stamp arrived, or null while the field was filled
+  // by the server and the stamp is as old as the page
+  let drawnAt = null;
+  let drawing = null;
+
+  function draw() {
+    if (field.value) return Promise.resolve();
+    if (drawing) return drawing;
+    drawing = fetch(form.dataset.stamp)
+      .then((r) => (r.ok ? r.text() : ""))
+      .then((stamp) => {
+        if (stamp) {
+          field.value = stamp;
+          drawnAt = Date.now();
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        drawing = null;
+      });
+    return drawing;
+  }
+
+  const ready = () => field.value && (drawnAt === null || Date.now() - drawnAt >= 3500);
+
+  form.addEventListener("focusin", draw);
+  form.addEventListener("submit", (event) => {
+    if (ready()) return;
+    event.preventDefault();
+    draw().then(() => {
+      const wait = drawnAt === null ? 0 : Math.max(0, 3500 - (Date.now() - drawnAt));
+      setTimeout(() => form.submit(), wait);
+    });
+  });
+})();
+
 // The day under each comment gets its hour, in the reader's zone. An
 // imported comment says data-zone="UTC": its bundle gave a local wall
 // clock, and the import kept that as if it were UTC.

@@ -16,11 +16,11 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> fill_in("Name", with: "Grandma Christel")
     |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
     |> fill_in("Comment", with: "More of the dog, please.")
-    # the test types faster than a person; the time trap must not read
-    # that as a script
-    |> age_form({:comment, article.id})
+    # no age_form here: this one send goes the way a reader's does, the
+    # page's script draws the stamp and holds the send until the time
+    # trap is satisfied
     |> click_button("Post comment")
-    |> assert_has("#comment-note", text: "Sent. Follow the link in your mail")
+    |> assert_has("#comment-note", text: "Sent. Follow the link in your mail", timeout: 8000)
     |> assert_has("#comments", text: "waiting for your confirmation")
 
     # The mailed link publishes the comment for everybody.
@@ -135,14 +135,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     article = published_post()
 
     # two full pages: a short second one would pull the scroll up by itself
-    for n <- 1..50 do
-      {:ok, _} =
-        Texttile.Comments.post(
-          article,
-          %{"name" => "Reader #{n}", "email" => "reader#{n}@example.org", "body" => "Words #{n}"},
-          confirm_url: &"http://test/#{&1}"
-        )
-    end
+    Texttile.CommentsFixtures.wave!(article, 50)
 
     conn
     |> sign_in()
@@ -160,14 +153,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
   test "an admin ticks some, then clears a whole wave into the trash", %{conn: conn} do
     article = published_post()
 
-    for n <- 1..30 do
-      {:ok, _} =
-        Texttile.Comments.post(
-          article,
-          %{"name" => "Reader #{n}", "email" => "reader#{n}@example.org", "body" => "Words #{n}"},
-          confirm_url: &"http://test/#{&1}"
-        )
-    end
+    Texttile.CommentsFixtures.wave!(article, 30)
 
     conn
     |> sign_in()
