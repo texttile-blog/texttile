@@ -363,8 +363,9 @@ address, so no confirmation mail goes out. The comment counts show under each
 card, on `/blog` and on `/admin`.
 
 Admins see all comments at `/admin/comments` and on the Comments tab of each
-text. The overview filters by status and shows 25 comments on a page. There they
-can do three things to a comment:
+text. The overview filters by status and shows 25 comments on a page. Boxes on
+the rows and the line over the list act on many comments at once, up to every
+comment of the filter. There they can do three things to a comment:
 
 - **Release** a comment whose reader has not confirmed the address. It puts that
   one comment under the entry. The address itself stays unconfirmed, so the next

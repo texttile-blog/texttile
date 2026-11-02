@@ -1169,6 +1169,11 @@ defmodule TexttileWeb.EditorLive do
     {:noreply, maybe_reload_comments(socket, id)}
   end
 
+  def handle_info({:comments_changed, article_ids}, socket) do
+    id = socket.assigns.article.id
+    {:noreply, if(id in article_ids, do: maybe_reload_comments(socket, id), else: socket)}
+  end
+
   def handle_info({:comments_confirmed, _address_id}, socket) do
     {:noreply, maybe_reload_comments(socket, socket.assigns.article.id)}
   end

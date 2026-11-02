@@ -10,12 +10,13 @@ defmodule Texttile.Comments do
   appears at once.
 
   This is still not an approval queue: nothing waits for an admin, and
-  no comment needs one to appear. What an admin can do is make one
-  exception at a time - `release_comment/1` puts a single comment under
-  the text while its address stays unconfirmed, so the next comment from
-  that address waits like every other. An admin can also rewrite the
-  words of a comment, and a delete goes into a trash that keeps the
-  comment for 30 days before the row goes for good.
+  no comment needs one to appear. What an admin can do is make an
+  exception - `release_comment/1` puts a single comment under the text
+  while its address stays unconfirmed, so the next comment from that
+  address waits like every other. An admin can also rewrite the words of
+  a comment, and a delete goes into a trash that keeps the comment for
+  30 days before the row goes for good. Release, delete and restore also
+  take a whole list, for the day a spam wave arrives.
 
   Every change is announced on the comments topic.
   """
@@ -37,7 +38,8 @@ defmodule Texttile.Comments do
 
   @doc """
   Subscribes the caller to `{:comment_posted, comment}`,
-  `{:comment_deleted, comment}`, `{:comments_confirmed, address_id}`
+  `{:comment_deleted, comment}`, `{:comment_changed, comment}`,
+  `{:comments_changed, article_ids}`, `{:comments_confirmed, address_id}`
   and `{:comments_imported, article_id}`.
   """
   def subscribe do
@@ -424,6 +426,11 @@ defmodule Texttile.Comments do
     Map.new(@statuses, &{&1, Repo.aggregate(in_status(&1), :count)})
   end
 
+  @doc "The id of every comment of a status, across every page."
+  def ids(status) when status in @statuses do
+    Repo.all(from c in in_status(status), select: c.id)
+  end
+
   # Waiting, confirmed and released split what stands into three, and a
   # comment an admin let through stays released when its address is
   # confirmed later. "all" is what stands, so it leaves the trash out.
@@ -596,6 +603,49 @@ defmodule Texttile.Comments do
   end
 
   defp in_trash, do: from(c in Comment, where: not is_nil(c.delete_after))
+
+  ## What an admin does to many comments
+
+  @doc """
+  `release_comment/1` for a whole list. Takes only the comments that
+  wait; the others in the list stay as they are. Answers how many it
+  released.
+  """
+  def release_comments(ids) do
+    write_many(in_status("waiting"), ids, released_at: DateTime.utc_now(:second))
+  end
+
+  @doc """
+  `delete_comment/2` for a whole list: into the trash for
+  #{@trash_days} days, silently. Answers how many it deleted.
+  """
+  def delete_comments(ids) do
+    delete_after = DateTime.add(DateTime.utc_now(:second), @trash_days, :day)
+    write_many(standing(), ids, delete_after: delete_after)
+  end
+
+  @doc """
+  `restore_comment/1` for a whole list, so a wave deleted by mistake
+  comes back the way it went. Answers how many it restored.
+  """
+  def restore_comments(ids), do: write_many(in_trash(), ids, delete_after: nil)
+
+  # The rows still in the state the list was made for, then one update
+  # and one message: a wave of a thousand comments must not wake every
+  # open screen a thousand times. The update names ids because `query`
+  # can carry a join, and an update takes none.
+  defp write_many(query, ids, changes) do
+    {found, articles} =
+      from(c in query, where: c.id in ^ids, select: {c.id, c.article_id})
+      |> Repo.all()
+      |> Enum.unzip()
+
+    changes = Keyword.put(changes, :updated_at, DateTime.utc_now(:second))
+    {count, _} = Repo.update_all(from(c in Comment, where: c.id in ^found), set: changes)
+
+    if count > 0, do: broadcast({:comments_changed, Enum.uniq(articles)})
+    count
+  end
 
   @doc """
   Makes the deletions final whose #{@trash_days} days have run out at

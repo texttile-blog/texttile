@@ -695,6 +695,95 @@ defmodule Texttile.CommentsTest do
     end
   end
 
+  describe "many comments at once" do
+    # The confirmation mails of the comments a test has just posted.
+    defp flush_mail do
+      receive do
+        {:email, _mail} -> flush_mail()
+      after
+        0 -> :ok
+      end
+    end
+
+    defp three(article) do
+      for name <- ~w(one two three) do
+        post!(article, %{@attrs | "email" => "#{name}@example.org", "body" => name})
+      end
+    end
+
+    test "ids/1 answers every comment of a status, across every page" do
+      article = published_post()
+      ids = for n <- 1..26, do: post!(article, %{@attrs | "email" => "r#{n}@example.org"}).id
+
+      assert Enum.sort(Comments.ids("waiting")) == ids
+      assert Comments.ids("trash") == []
+    end
+
+    test "release_comments/1 lets through what waits and leaves the rest alone" do
+      article = published_post()
+      [waiting, confirmed, trashed] = three(article)
+      {:ok, _} = Comments.confirm(confirmed.address.token)
+      {:ok, _} = Comments.delete_comment(trashed)
+      Comments.subscribe()
+      flush_mail()
+
+      assert Comments.release_comments([waiting.id, confirmed.id, trashed.id]) == 1
+
+      assert Comments.released?(Comments.get_comment!(waiting.id))
+      refute Comments.released?(Comments.get_comment!(confirmed.id))
+      assert Comments.get_comment(trashed.id) == nil
+
+      # the address proved nothing, so the next one waits again
+      assert Comments.get_comment!(waiting.id).address.confirmed_at == nil
+
+      assert_receive {:comments_changed, [article_id]}
+      assert article_id == article.id
+      refute_received {:comment_changed, _}
+      assert_no_email_sent()
+    end
+
+    test "delete_comments/1 and restore_comments/1 are each other's way back" do
+      article = published_post()
+      comments = three(article)
+      ids = Enum.map(comments, & &1.id)
+
+      assert Comments.delete_comments(ids) == 3
+      assert Comments.status_counts()["trash"] == 3
+      assert Comments.status_counts()["all"] == 0
+
+      # a second delete finds nothing left to delete
+      assert Comments.delete_comments(ids) == 0
+
+      assert Comments.restore_comments(ids) == 3
+      assert Comments.status_counts()["trash"] == 0
+      assert Enum.sort(Comments.ids("waiting")) == ids
+    end
+
+    test "nothing to change announces nothing" do
+      Comments.subscribe()
+
+      assert Comments.release_comments([]) == 0
+      assert Comments.delete_comments([]) == 0
+      assert Comments.restore_comments([]) == 0
+
+      refute_received {:comments_changed, _}
+    end
+
+    test "one wave across two texts names both of them, once" do
+      a = published_post()
+      b = published_post()
+      one = post!(a)
+      two = post!(b, %{@attrs | "email" => "jens@example.org"})
+      Comments.subscribe()
+
+      Comments.delete_comments([one.id, two.id])
+
+      assert_receive {:comments_changed, articles}
+      assert Enum.sort(articles) == Enum.sort([a.id, b.id])
+      refute_received {:comments_changed, _}
+    end
+  end
+
   describe "the overview by status" do
     defp reader!(article, name) do
       post!(article, %{@attrs | "email" => "#{name}@example.org", "body" => name})

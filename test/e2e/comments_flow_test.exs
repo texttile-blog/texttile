@@ -108,7 +108,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       session
       |> open("/admin/comments")
-      |> click_button("Delete")
+      |> click_button("#commentsList button", "Delete")
       |> click_button("Delete the comment")
       |> refute_has("#commentsList", text: "Less of the dog, please.")
       |> open_page(Articles.public_path(article))
@@ -120,7 +120,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> click_link("#commentFilter a[data-f='trash']", "Trash")
     |> assert_has("#commentsList", text: "Less of the dog, please.")
     |> assert_has("#commentsList", text: "goes for good")
-    |> click_button("Restore")
+    |> click_button("#commentsList button", "Restore")
     |> assert_has("#commentsList", text: "No comments here.")
     |> open_page(Articles.public_path(article))
     |> assert_has("#comment-count", text: "1 comment")
@@ -155,6 +155,48 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       [is_function: true],
       &assert(&1 == true)
     )
+  end
+
+  test "an admin ticks some, then clears a whole wave into the trash", %{conn: conn} do
+    article = published_post()
+
+    for n <- 1..30 do
+      {:ok, _} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "Reader #{n}", "email" => "reader#{n}@example.org", "body" => "Words #{n}"},
+          confirm_url: &"http://test/#{&1}"
+        )
+    end
+
+    conn
+    |> sign_in()
+    |> open("/admin/comments?status=waiting")
+    |> assert_has("#commentTools", text: "Select all 30")
+    |> click("#selectAll")
+    |> assert_has("#commentTools", text: "30 selected")
+    |> assert_has("#commentsList .cmt.on", count: 25)
+    # a box the browser ticked and the server took back shows as empty
+    |> click("#commentsList .cmt:first-child input[type=checkbox]")
+    |> assert_has("#commentTools", text: "29 selected")
+    |> assert_has("#commentsList .cmt.on", count: 24)
+    |> evaluate(
+      "() => document.querySelector('#commentsList .cmt:first-child input').checked",
+      [is_function: true],
+      &assert(&1 == false)
+    )
+    |> evaluate(
+      "() => document.querySelector('#selectAll').checked",
+      [is_function: true],
+      &assert(&1 == false)
+    )
+    |> click_button("Delete 29")
+    |> assert_has("#dialog", text: "Delete 29 comments?")
+    |> click_button("#dialog-ok", "Delete")
+    |> assert_has("#commentFilter a[data-f='trash']", text: "29")
+    |> assert_has("#commentTools", text: "Select all 1")
+
+    assert Texttile.Comments.status_counts()["trash"] == 29
   end
 
   test "an admin comments under their own name, and the list counts it", %{conn: conn, kb: kb} do

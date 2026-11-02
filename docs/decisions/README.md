@@ -53,3 +53,4 @@ sources describe it.
 | [027](027-staging-runs-on-bunny-magic-containers.md) | Staging runs on Bunny Magic Containers; Fly stays as recovery (Fly part superseded by 029) | 2026-10-17 |
 | [028](028-the-version-comes-from-the-git-tag-and-a-label.md) | The version comes from the Git tag, counted up by a label | 2026-10-23 |
 | [029](029-the-fly-configuration-is-gone.md) | The Fly configuration is gone; Bunny is the only host the repository knows | 2026-10-28 |
+| [030](030-an-admin-can-act-on-a-whole-wave-of-comments.md) | An admin can act on a whole wave of comments at once | 2026-11-02 |
