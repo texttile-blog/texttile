@@ -70,22 +70,281 @@ defmodule TexttileWeb.CommentsLiveTest do
              ~s(#comment-#{waiting.id} a.cmt-ent[href="/admin/texts/#{a.id}?tab=comments"]),
              "Harbor mornings"
            )
-
-    assert has_element?(view, "#commentsSub", "1 not confirmed yet")
   end
 
-  test "a ninth comment moves the oldest behind the overflow line", %{conn: conn} do
-    article = published_post()
+  describe "the status filter" do
+    test "narrows the list, and each status says how many it holds", %{conn: conn} do
+      article = published_post()
+      waiting = post!(article)
+      confirmed = post!(article, %{"email" => "jens@example.org", "body" => "Good set."})
+      {:ok, _} = Comments.confirm(confirmed.address.token)
 
-    for n <- 1..9 do
-      post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+      {:ok, view, _html} = live(conn, ~p"/admin/comments")
+
+      assert has_element?(view, ~s(#commentFilter a[data-f="all"].on), "2")
+      assert has_element?(view, ~s(#commentFilter a[data-f="waiting"]), "1")
+      assert has_element?(view, ~s(#commentFilter a[data-f="confirmed"]), "1")
+
+      view |> element(~s(#commentFilter a[data-f="waiting"])) |> render_click()
+
+      assert_patch(view, ~p"/admin/comments?status=waiting")
+      assert has_element?(view, ~s(#commentFilter a[data-f="waiting"].on))
+      assert has_element?(view, "#comment-#{waiting.id}")
+      refute has_element?(view, "#comment-#{confirmed.id}")
     end
 
-    {:ok, view, _html} = live(conn, ~p"/admin/comments")
+    test "a released comment leaves the waiting filter and finds its own", %{conn: conn} do
+      comment = post!(published_post())
 
-    assert has_element?(view, "#commentsList", "Words 9")
-    refute has_element?(view, "#commentsList", "Words 1")
-    assert has_element?(view, "#commentsList", "and 1 more on their entries.")
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+      view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+
+      refute has_element?(view, "#comment-#{comment.id}")
+      assert has_element?(view, "#commentsList", "No comments here.")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=released")
+      assert has_element?(view, "#comment-#{comment.id}", "let through")
+    end
+
+    test "the statuses of the confirmation go with the setting", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      {:ok, _} = Settings.put(:comments_require_confirmation, false)
+
+      refute has_element?(view, ~s(#commentFilter a[data-f="waiting"]))
+      refute has_element?(view, ~s(#commentFilter a[data-f="confirmed"]))
+      assert has_element?(view, ~s(#commentFilter a[data-f="all"].on))
+    end
+
+    test "an address that means nothing is the first page of everything", %{conn: conn} do
+      comment = post!(published_post())
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=nonsense&page=nonsense")
+
+      assert has_element?(view, ~s(#commentFilter a[data-f="all"].on))
+      assert has_element?(view, "#comment-#{comment.id}")
+    end
+  end
+
+  describe "many comments at once" do
+    defp wave(count) do
+      article = published_post()
+
+      for n <- 1..count do
+        post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+      end
+    end
+
+    defp tick(view, comment) do
+      view |> element("#comment-#{comment.id} input[type=checkbox]") |> render_click()
+    end
+
+    test "Release all takes every comment of the filter, across the pages", %{conn: conn} do
+      comments = wave(26)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      assert has_element?(view, "#commentTools", "Select all 26")
+      view |> element("#bulk-release", "Release all 26") |> render_click()
+      assert has_element?(view, "#dialog", "Release 26 comments?")
+      assert has_element?(view, "#dialog", "no way back except Delete")
+      assert Comments.status_counts()["waiting"] == 26
+
+      view |> element("#dialog-ok") |> render_click()
+
+      refute has_element?(view, "#dialog")
+      assert Comments.status_counts()["waiting"] == 0
+      assert Comments.status_counts()["released"] == 26
+      assert has_element?(view, "#commentsList", "No comments here.")
+      assert Enum.all?(comments, &Comments.released?(Comments.get_comment!(&1.id)))
+    end
+
+    test "the row boxes narrow the action to what they name", %{conn: conn} do
+      [one, two, three] = wave(3)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      tick(view, one)
+      tick(view, two)
+      tick(view, three)
+      tick(view, three)
+
+      assert has_element?(view, "#commentTools", "2 selected")
+      assert has_element?(view, "#comment-#{one.id}.on input[checked]")
+      refute has_element?(view, "#comment-#{three.id}.on")
+
+      view |> element("#bulk-delete", "Delete 2") |> render_click()
+      assert has_element?(view, "#dialog", "Delete 2 comments?")
+      view |> element("#dialog-ok") |> render_click()
+
+      assert Comments.ids("waiting") == [three.id]
+      assert has_element?(view, "#commentTools", "Select all 1")
+    end
+
+    test "Select all ticks the whole filter and takes it back", %{conn: conn} do
+      wave(26)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      view |> element("#selectAll") |> render_click()
+      assert has_element?(view, "#commentTools", "26 selected")
+      assert has_element?(view, "#selectAll[checked]")
+      assert has_element?(view, "#bulk-delete", "Delete 26")
+
+      view |> element("#selectAll") |> render_click()
+      assert has_element?(view, "#commentTools", "Select all 26")
+      refute has_element?(view, "#selectAll[checked]")
+    end
+
+    test "the selection stays over the pages and goes with the filter", %{conn: conn} do
+      comments = wave(26)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      tick(view, List.last(comments))
+      view |> element("#next-page") |> render_click()
+      assert has_element?(view, "#commentTools", "1 selected")
+
+      view |> element(~s(#commentFilter a[data-f="all"])) |> render_click()
+      assert has_element?(view, "#commentTools", "Select all 26")
+    end
+
+    test "the dialog acts on what it named, not on what came after it", %{conn: conn} do
+      [only] = wave(1)
+      article = Texttile.Articles.get_article!(only.article_id)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+      view |> element("#bulk-release") |> render_click()
+
+      late = post!(article, %{"email" => "late@example.org"})
+      view |> element("#dialog-ok") |> render_click()
+
+      assert Comments.ids("waiting") == [late.id]
+    end
+
+    test "a comment another admin took leaves the selection", %{conn: conn} do
+      [one, two] = wave(2)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+      tick(view, one)
+      tick(view, two)
+
+      {:ok, _} = Comments.delete_comment(two)
+
+      assert has_element?(view, "#commentTools", "1 selected")
+    end
+
+    test "each filter offers what its comments can do", %{conn: conn} do
+      [waiting, confirmed, released] = wave(3)
+      {:ok, _} = Comments.confirm(confirmed.address.token)
+      {:ok, _} = Comments.release_comment(released.id)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments")
+      refute has_element?(view, "#bulk-release")
+      assert has_element?(view, "#bulk-delete", "Delete all 3")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=confirmed")
+      refute has_element?(view, "#bulk-release")
+      assert has_element?(view, "#bulk-delete", "Delete all 1")
+
+      {:ok, _} = Comments.delete_comment(waiting)
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=trash")
+      refute has_element?(view, "#bulk-delete")
+      assert has_element?(view, "#bulk-restore", "Restore all 1")
+    end
+
+    test "an empty filter has nothing to act on", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/comments")
+      refute has_element?(view, "#commentTools")
+    end
+
+    test "Restore brings a whole wave back out of the trash", %{conn: conn} do
+      comments = wave(3)
+      Comments.delete_comments(Enum.map(comments, & &1.id))
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=trash")
+
+      view |> element("#trash-#{hd(comments).id} input[type=checkbox]") |> render_click()
+      view |> element("#bulk-restore", "Restore 1") |> render_click()
+      view |> element("#dialog-ok") |> render_click()
+
+      assert Comments.status_counts()["trash"] == 2
+      assert Comments.ids("waiting") == [hd(comments).id]
+    end
+
+    test "a cancelled question changes nothing", %{conn: conn} do
+      wave(2)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+      view |> element("#bulk-delete") |> render_click()
+      view |> element("#dialog-cancel") |> render_click()
+
+      refute has_element?(view, "#dialog")
+      assert Comments.status_counts()["waiting"] == 2
+    end
+
+    test "the other admin's screen follows", %{conn: conn} do
+      [comment] = wave(1)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+      {:ok, other, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      view |> element("#bulk-delete") |> render_click()
+      view |> element("#dialog-ok") |> render_click()
+
+      refute has_element?(other, "#comment-#{comment.id}")
+    end
+  end
+
+  describe "the pager" do
+    setup do
+      article = published_post()
+
+      comments =
+        for n <- 1..26 do
+          post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+        end
+
+      %{comments: comments}
+    end
+
+    test "walks every comment of the status", %{conn: conn, comments: comments} do
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
+
+      assert has_element?(view, "#comment-#{List.last(comments).id}")
+      refute has_element?(view, "#comment-#{hd(comments).id}")
+      assert has_element?(view, "#pager", "Page 1 of 2")
+      refute has_element?(view, "#prev-page")
+
+      view |> element("#next-page") |> render_click()
+
+      assert_patch(view, ~p"/admin/comments?page=2&status=waiting")
+      assert has_element?(view, "#comment-#{hd(comments).id}")
+      refute has_element?(view, "#comment-#{List.last(comments).id}")
+      refute has_element?(view, "#next-page")
+    end
+
+    test "changing the status starts on its first page", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?page=2")
+
+      view |> element(~s(#commentFilter a[data-f="waiting"])) |> render_click()
+
+      assert_patch(view, ~p"/admin/comments?status=waiting")
+      assert has_element?(view, "#pager", "Page 1 of 2")
+    end
+
+    test "deleting the last row of the last page lands on the page before", %{
+      conn: conn,
+      comments: comments
+    } do
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?page=2")
+
+      view |> element("#comment-#{hd(comments).id} button", "Delete") |> render_click()
+      view |> element("#dialog-ok") |> render_click()
+
+      assert has_element?(view, "#comment-#{Enum.at(comments, 1).id}")
+      refute has_element?(view, "#pager")
+    end
   end
 
   test "delete asks first, and the words stay while the question stands", %{conn: conn} do
@@ -99,12 +358,12 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#dialog", "Delete the comment of Grandma Christel?")
     assert has_element?(view, "#dialog", "keeps it for 30 days")
     assert has_element?(view, "#comment-#{comment.id}")
-    assert Comments.total_count() == 1
+    assert Comments.status_counts()["all"] == 1
 
     view |> element("#dialog-cancel") |> render_click()
 
     refute has_element?(view, "#dialog")
-    assert Comments.total_count() == 1
+    assert Comments.status_counts()["all"] == 1
   end
 
   test "delete removes the comment silently, live for everybody", %{conn: conn} do
@@ -137,7 +396,7 @@ defmodule TexttileWeb.CommentsLiveTest do
     render_click(two, "confirm_delete_comment", %{"id" => comment.id})
 
     refute has_element?(two, "#comment-#{comment.id}")
-    assert Comments.total_count() == 0
+    assert Comments.status_counts()["all"] == 0
   end
 
   test "the words keep the line breaks the reader typed", %{conn: conn} do
@@ -165,20 +424,23 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(article)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      refute has_element?(view, "#commentsTrash")
 
       view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
       view |> element("#dialog-ok") |> render_click()
 
       refute has_element?(view, "#comment-#{comment.id}")
-      assert has_element?(view, "#commentsTrash #trash-#{comment.id}", "More of the dog")
-      assert has_element?(view, "#commentsTrash", "Harbor mornings")
-      assert has_element?(view, "#commentsTrash", "goes for good")
+      assert has_element?(view, ~s(#commentFilter a[data-f="trash"]), "1")
+
+      view |> element(~s(#commentFilter a[data-f="trash"])) |> render_click()
+
+      assert has_element?(view, "#trash-#{comment.id}", "More of the dog")
+      assert has_element?(view, "#trash-#{comment.id}", "Harbor mornings")
+      assert has_element?(view, "#trash-#{comment.id}", "goes for good")
 
       view |> element("#trash-#{comment.id} button", "Restore") |> render_click()
 
-      refute has_element?(view, "#commentsTrash")
-      assert has_element?(view, "#comment-#{comment.id}")
+      refute has_element?(view, "#trash-#{comment.id}")
+      assert has_element?(view, "#commentsList", "No comments here.")
       assert Enum.map(Comments.for_article(article.id), & &1.id) == [comment.id]
     end
 
@@ -187,31 +449,35 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(article)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      {:ok, other, _html} = live(conn, ~p"/admin/comments")
+      {:ok, other, _html} = live(conn, ~p"/admin/comments?status=trash")
 
       view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
       view |> element("#dialog-ok") |> render_click()
       assert has_element?(other, "#trash-#{comment.id}")
 
-      view |> element("#trash-#{comment.id} button", "Restore") |> render_click()
+      other |> element("#trash-#{comment.id} button", "Restore") |> render_click()
       refute has_element?(other, "#trash-#{comment.id}")
-      assert has_element?(other, "#comment-#{comment.id}")
+      assert has_element?(view, "#comment-#{comment.id}")
     end
 
-    test "the trash carries the newest deleted and counts the rest", %{conn: conn} do
+    test "the trash shows every deleted comment, page by page", %{conn: conn} do
       article = published_post()
 
-      for n <- 1..9 do
-        comment = post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
-        {:ok, _} = Comments.delete_comment(comment)
-      end
+      comments =
+        for n <- 1..26 do
+          comment = post!(article, %{"email" => "reader#{n}@example.org", "body" => "Words #{n}"})
+          {:ok, _} = Comments.delete_comment(comment)
+          comment
+        end
 
-      {:ok, view, _html} = live(conn, ~p"/admin/comments")
+      {:ok, view, _html} = live(conn, ~p"/admin/comments?status=trash")
 
-      assert has_element?(view, "#commentsTrash", "Words 9")
-      refute has_element?(view, "#commentsTrash", "Words 1")
-      assert has_element?(view, "#commentsTrash", "and 1 deleted earlier")
-      assert has_element?(view, "#commentsTrash", "9 deleted comments wait here")
+      assert has_element?(view, "#commentsList", "26 deleted comments wait here")
+      assert has_element?(view, "#trash-#{List.last(comments).id}")
+      refute has_element?(view, "#trash-#{hd(comments).id}")
+
+      view |> element("#next-page") |> render_click()
+      assert has_element?(view, "#trash-#{hd(comments).id}")
     end
 
     test "a comment another admin restored first is no crash", %{conn: conn} do
@@ -315,8 +581,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       refute has_element?(view, "#comment-#{comment.id} .wait")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
-      # nothing waits any more, so the line under the heading goes
-      refute has_element?(view, "#commentsSub")
+      assert has_element?(view, ~s(#commentFilter a[data-f="waiting"]), "0")
       assert Comments.shown_to_readers?(Comments.get_comment!(comment.id))
 
       # the next comment from the same address waits like every other

@@ -120,7 +120,30 @@ defmodule TexttileWeb.EditorCommentsTest do
     view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
     view |> element("#dialog-ok") |> render_click()
     refute has_element?(view, "#tp-comments", "Restore")
-    assert Comments.trashed_count() == 1
+    assert Comments.status_counts()["trash"] == 1
+  end
+
+  test "a whole wave handled on the Comments screen leaves the open tab", %{conn: conn} do
+    article = published_post()
+    comment = post!(article)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}")
+    view |> element("nav .tab", "Comments") |> render_click()
+    assert has_element?(view, "#tp-comments #comment-#{comment.id}")
+
+    Comments.delete_comments([comment.id])
+
+    refute has_element?(view, "#tp-comments #comment-#{comment.id}")
+  end
+
+  test "the tab carries no boxes: a whole wave is the Comments screen's", %{conn: conn} do
+    article = published_post()
+    post!(article)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}")
+    view |> element("nav .tab", "Comments") |> render_click()
+
+    refute has_element?(view, "#tp-comments .cmt input[type=checkbox]")
   end
 
   test "a comment of another text is never edited or released from here", %{conn: conn} do

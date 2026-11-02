@@ -1,7 +1,7 @@
 # ADR-014: A comment waits for its reader's confirmation, never for an admin
 
 ## Status
-Accepted
+Accepted, amended by ADR-030: an admin can also release many comments at once
 
 ## Date
 2026-08-07

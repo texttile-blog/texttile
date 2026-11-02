@@ -41,7 +41,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments")
-    |> refute_has("#commentsSub")
+    |> assert_has("#commentFilter a[data-f='waiting']", text: "0")
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")
@@ -50,7 +50,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> click_button("Delete the comment")
     |> assert_has("#tp-comments", text: "No comments yet.")
 
-    assert Texttile.Comments.total_count() == 0
+    assert Texttile.Comments.status_counts()["all"] == 0
   end
 
   test "an admin releases one comment, rewrites it, trashes it and takes it back", %{conn: conn} do
@@ -108,25 +108,95 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       session
       |> open("/admin/comments")
-      |> click_button("Delete")
+      |> click_button("#commentsList button", "Delete")
       |> click_button("Delete the comment")
-      |> assert_has("#commentsTrash", text: "Less of the dog, please.")
-      |> assert_has("#commentsTrash", text: "goes for good")
+      |> refute_has("#commentsList", text: "Less of the dog, please.")
       |> open_page(Articles.public_path(article))
       |> refute_has("#comments", text: "Less of the dog, please.")
 
     # And the way back puts it exactly where it stood.
     session
     |> open("/admin/comments")
-    |> click_button("Restore")
-    |> refute_has("#commentsTrash")
+    |> click_link("#commentFilter a[data-f='trash']", "Trash")
     |> assert_has("#commentsList", text: "Less of the dog, please.")
+    |> assert_has("#commentsList", text: "goes for good")
+    |> click_button("#commentsList button", "Restore")
+    |> assert_has("#commentsList", text: "No comments here.")
     |> open_page(Articles.public_path(article))
     |> assert_has("#comment-count", text: "1 comment")
     |> assert_has("#comments", text: "Less of the dog, please.")
 
-    assert Texttile.Comments.total_count() == 1
-    assert Texttile.Comments.trashed_count() == 0
+    assert Texttile.Comments.status_counts()["all"] == 1
+    assert Texttile.Comments.status_counts()["trash"] == 0
+  end
+
+  @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+  test "a step of the pager lands on the top of the next comments", %{conn: conn} do
+    article = published_post()
+
+    # two full pages: a short second one would pull the scroll up by itself
+    for n <- 1..50 do
+      {:ok, _} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "Reader #{n}", "email" => "reader#{n}@example.org", "body" => "Words #{n}"},
+          confirm_url: &"http://test/#{&1}"
+        )
+    end
+
+    conn
+    |> sign_in()
+    |> open("/admin/comments?status=waiting")
+    |> evaluate("() => window.scrollTo(0, document.body.scrollHeight)", is_function: true)
+    |> click_link("#next-page", "Older")
+    |> assert_has("#commentsList", text: "Words 25")
+    |> evaluate(
+      "() => document.querySelector('#commentFilter').getBoundingClientRect().top >= 0",
+      [is_function: true],
+      &assert(&1 == true)
+    )
+  end
+
+  test "an admin ticks some, then clears a whole wave into the trash", %{conn: conn} do
+    article = published_post()
+
+    for n <- 1..30 do
+      {:ok, _} =
+        Texttile.Comments.post(
+          article,
+          %{"name" => "Reader #{n}", "email" => "reader#{n}@example.org", "body" => "Words #{n}"},
+          confirm_url: &"http://test/#{&1}"
+        )
+    end
+
+    conn
+    |> sign_in()
+    |> open("/admin/comments?status=waiting")
+    |> assert_has("#commentTools", text: "Select all 30")
+    |> click("#selectAll")
+    |> assert_has("#commentTools", text: "30 selected")
+    |> assert_has("#commentsList .cmt.on", count: 25)
+    # a box the browser ticked and the server took back shows as empty
+    |> click("#commentsList .cmt:first-child input[type=checkbox]")
+    |> assert_has("#commentTools", text: "29 selected")
+    |> assert_has("#commentsList .cmt.on", count: 24)
+    |> evaluate(
+      "() => document.querySelector('#commentsList .cmt:first-child input').checked",
+      [is_function: true],
+      &assert(&1 == false)
+    )
+    |> evaluate(
+      "() => document.querySelector('#selectAll').checked",
+      [is_function: true],
+      &assert(&1 == false)
+    )
+    |> click_button("Delete 29")
+    |> assert_has("#dialog", text: "Delete 29 comments?")
+    |> click_button("#dialog-ok", "Delete")
+    |> assert_has("#commentFilter a[data-f='trash']", text: "29")
+    |> assert_has("#commentTools", text: "Select all 1")
+
+    assert Texttile.Comments.status_counts()["trash"] == 29
   end
 
   test "an admin comments under their own name, and the list counts it", %{conn: conn, kb: kb} do

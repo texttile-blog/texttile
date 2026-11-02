@@ -10,12 +10,13 @@ defmodule Texttile.Comments do
   appears at once.
 
   This is still not an approval queue: nothing waits for an admin, and
-  no comment needs one to appear. What an admin can do is make one
-  exception at a time - `release_comment/1` puts a single comment under
-  the text while its address stays unconfirmed, so the next comment from
-  that address waits like every other. An admin can also rewrite the
-  words of a comment, and a delete goes into a trash that keeps the
-  comment for 30 days before the row goes for good.
+  no comment needs one to appear. What an admin can do is make an
+  exception - `release_comment/1` puts a single comment under the text
+  while its address stays unconfirmed, so the next comment from that
+  address waits like every other. An admin can also rewrite the words of
+  a comment, and a delete goes into a trash that keeps the comment for
+  30 days before the row goes for good. Release, delete and restore also
+  take a whole list, for the day a spam wave arrives.
 
   Every change is announced on the comments topic.
   """
@@ -37,7 +38,8 @@ defmodule Texttile.Comments do
 
   @doc """
   Subscribes the caller to `{:comment_posted, comment}`,
-  `{:comment_deleted, comment}`, `{:comments_confirmed, address_id}`
+  `{:comment_deleted, comment}`, `{:comment_changed, comment}`,
+  `{:comments_changed, article_ids}`, `{:comments_confirmed, address_id}`
   and `{:comments_imported, article_id}`.
   """
   def subscribe do
@@ -384,35 +386,76 @@ defmodule Texttile.Comments do
     Repo.aggregate(from(c in standing(), where: c.article_id == ^article_id), :count)
   end
 
-  @doc "The latest comments across all texts, newest first, texts along."
-  def recent(limit) do
-    from(c in standing(),
-      order_by: [desc: c.id],
-      limit: ^limit,
-      preload: [:address, :article]
-    )
-    |> Repo.all()
-  end
+  # How many comments one page of the overview carries.
+  @per_page 25
 
-  @doc "How many comments the site holds, waiting ones included."
-  def total_count, do: Repo.aggregate(standing(), :count)
+  @statuses ~w(all waiting confirmed released trash)
 
   @doc """
-  How many comments wait for their reader's confirmation - zero by
-  definition while the setting does not ask for one, and a comment an
-  admin released waits for nobody.
+  The statuses the overview filters by. While nobody confirms anything,
+  the two that speak of the confirmation mean nothing and stay out.
   """
-  def waiting_count do
-    if Settings.get(:comments_require_confirmation) do
-      from(c in standing(),
-        join: a in assoc(c, :address),
-        where: is_nil(a.confirmed_at) and is_nil(c.released_at)
+  def statuses(true = _require_confirmation?), do: @statuses
+  def statuses(false), do: @statuses -- ~w(waiting confirmed)
+
+  @doc """
+  One page of a status across all texts, newest first, addresses and
+  texts along; the trash has the one deleted last on top. A page past
+  the end lands on the last one, because a delete can take a page away
+  while somebody stands on it. Answers `%{rows, page, pages}`.
+  """
+  def overview(status, page) when status in @statuses and is_integer(page) do
+    query = in_status(status)
+    pages = max(div(Repo.aggregate(query, :count) - 1, @per_page) + 1, 1)
+    page = page |> max(1) |> min(pages)
+
+    rows =
+      from(c in query,
+        order_by: ^newest_first(status),
+        limit: ^@per_page,
+        offset: ^((page - 1) * @per_page),
+        preload: [:address, :article]
       )
-      |> Repo.aggregate(:count)
-    else
-      0
-    end
+      |> Repo.all()
+
+    %{rows: rows, page: page, pages: pages}
   end
+
+  @doc "How many comments each status holds, one map keyed by status."
+  def status_counts do
+    Map.new(@statuses, &{&1, Repo.aggregate(in_status(&1), :count)})
+  end
+
+  @doc "The id of every comment of a status, across every page."
+  def ids(status) when status in @statuses do
+    Repo.all(from c in in_status(status), select: c.id)
+  end
+
+  # Waiting, confirmed and released split what stands into three, and a
+  # comment an admin let through stays released when its address is
+  # confirmed later. "all" is what stands, so it leaves the trash out.
+  # "waiting" asks only the address: while nobody confirms anything the
+  # status is hidden, see `statuses/1`.
+  defp in_status("all"), do: standing()
+  defp in_status("trash"), do: in_trash()
+  defp in_status("released"), do: from(c in standing(), where: not is_nil(c.released_at))
+
+  defp in_status("waiting") do
+    from(c in standing(),
+      join: a in assoc(c, :address),
+      where: is_nil(a.confirmed_at) and is_nil(c.released_at)
+    )
+  end
+
+  defp in_status("confirmed") do
+    from(c in standing(),
+      join: a in assoc(c, :address),
+      where: not is_nil(a.confirmed_at) and is_nil(c.released_at)
+    )
+  end
+
+  defp newest_first("trash"), do: [desc: :delete_after, desc: :id]
+  defp newest_first(_status), do: [desc: :id]
 
   @doc "Comment counts per text, one map, texts without comments absent."
   def count_map do
@@ -561,31 +604,48 @@ defmodule Texttile.Comments do
 
   defp in_trash, do: from(c in Comment, where: not is_nil(c.delete_after))
 
-  # How many of the trash one screen carries. The rest is a line, the
-  # way the recent list does it: the trash holds a spam wave for thirty
-  # days, and the page has to stay a page.
-  @trash_shown 8
+  ## What an admin does to many comments
 
   @doc """
-  What waits in the trash, the one deleted last on top, the newest
-  #{@trash_shown} at most: the rows and how many older ones stayed out.
+  `release_comment/1` for a whole list. Takes only the comments that
+  wait; the others in the list stay as they are. Answers how many it
+  released.
   """
-  def trashed do
-    rows =
-      from(c in in_trash(),
-        order_by: [desc: c.delete_after, desc: c.id],
-        limit: ^@trash_shown,
-        preload: [:address, :article]
-      )
-      |> Repo.all()
-
-    earlier = if length(rows) < @trash_shown, do: 0, else: trashed_count() - length(rows)
-
-    {rows, earlier}
+  def release_comments(ids) do
+    write_many(in_status("waiting"), ids, released_at: DateTime.utc_now(:second))
   end
 
-  @doc "How many comments the trash holds."
-  def trashed_count, do: Repo.aggregate(in_trash(), :count)
+  @doc """
+  `delete_comment/2` for a whole list: into the trash for
+  #{@trash_days} days, silently. Answers how many it deleted.
+  """
+  def delete_comments(ids) do
+    delete_after = DateTime.add(DateTime.utc_now(:second), @trash_days, :day)
+    write_many(standing(), ids, delete_after: delete_after)
+  end
+
+  @doc """
+  `restore_comment/1` for a whole list, so a wave deleted by mistake
+  comes back the way it went. Answers how many it restored.
+  """
+  def restore_comments(ids), do: write_many(in_trash(), ids, delete_after: nil)
+
+  # The rows still in the state the list was made for, then one update
+  # and one message: a wave of a thousand comments must not wake every
+  # open screen a thousand times. The update names ids because `query`
+  # can carry a join, and an update takes none.
+  defp write_many(query, ids, changes) do
+    {found, articles} =
+      from(c in query, where: c.id in ^ids, select: {c.id, c.article_id})
+      |> Repo.all()
+      |> Enum.unzip()
+
+    changes = Keyword.put(changes, :updated_at, DateTime.utc_now(:second))
+    {count, _} = Repo.update_all(from(c in Comment, where: c.id in ^found), set: changes)
+
+    if count > 0, do: broadcast({:comments_changed, Enum.uniq(articles)})
+    count
+  end
 
   @doc """
   Makes the deletions final whose #{@trash_days} days have run out at

@@ -21,17 +21,20 @@ defmodule TexttileWeb.CommentComponents do
   waits, Delete. `article` set draws the entry line, the jump of the
   overview; the editor is on the entry already and leaves it out.
   `editing` puts the words in a field instead, `error` says why the
-  last save did not take.
+  last save did not take. `selected` draws the box of the overview,
+  true or false; the editor leaves it out and gets no box.
   """
   attr :comment, :any, required: true
   attr :waiting, :boolean, required: true
   attr :article, :any, default: nil
   attr :editing, :boolean, default: false
   attr :error, :string, default: nil
+  attr :selected, :any, default: nil
 
   def comment_item(assigns) do
     ~H"""
-    <div class="cmt" id={"comment-#{@comment.id}"}>
+    <div class={row_class(@selected)} id={"comment-#{@comment.id}"}>
+      <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
@@ -140,6 +143,26 @@ defmodule TexttileWeb.CommentComponents do
     """
   end
 
+  defp row_class(selected), do: ["cmt", is_boolean(selected) && "sel", selected == true && "on"]
+
+  # The label is the touch target: a box alone is too small for a thumb.
+  attr :comment, :any, required: true
+  attr :selected, :boolean, required: true
+
+  defp pick(assigns) do
+    ~H"""
+    <label class="cmt-pick">
+      <input
+        type="checkbox"
+        checked={@selected}
+        phx-click="toggle_comment"
+        phx-value-id={@comment.id}
+        aria-label={gettext("Select the comment of %{name}", name: @comment.name)}
+      />
+    </label>
+    """
+  end
+
   # The moment a comment arrived, and the marks it earned since: let
   # through by an admin, rewritten by one. Commas between them.
   defp moment_line(comment) do
@@ -166,13 +189,16 @@ defmodule TexttileWeb.CommentComponents do
 
   @doc """
   One comment in the trash: the same block, dimmed, with the day it
-  goes for good beside the moment, and the way back.
+  goes for good beside the moment, and the way back. `selected` draws
+  the box, as on `comment_item/1`.
   """
   attr :comment, :any, required: true
+  attr :selected, :any, default: nil
 
   def trashed_item(assigns) do
     ~H"""
-    <div class="cmt" id={"trash-#{@comment.id}"}>
+    <div class={row_class(@selected)} id={"trash-#{@comment.id}"}>
+      <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
@@ -200,8 +226,8 @@ defmodule TexttileWeb.CommentComponents do
 
   @doc """
   The one rule, in the one wording. Nothing here is an approval queue:
-  nothing waits for an admin. An admin can make one exception at a
-  time, and can take a deleted comment back out of the trash.
+  nothing waits for an admin. An admin can make an exception, and can
+  take a deleted comment back out of the trash.
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
