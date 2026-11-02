@@ -1,11 +1,11 @@
 defmodule TexttileWeb.CommentsLive do
   @moduledoc """
-  The Comments overview: the latest comments across all texts, newest
-  first, each with the jump to its text, an Edit, a Release while it
-  waits, and a Delete. The trash stands under them while it holds
-  anything, and it is the only place that shows a deleted comment. The
-  lead line carries the counts; the note at the foot carries the rule.
-  Round-13's Comments screen.
+  The Comments overview: every comment across all texts, newest first,
+  one status at a time and one page at a time, each with the jump to its
+  text, an Edit, a Release while it waits, and a Delete. The trash is
+  one of the statuses, and it is the only place that shows a deleted
+  comment. The filter carries the counts; the note at the foot carries
+  the rule. Round-13's Comments screen.
   """
 
   use TexttileWeb, :live_view
@@ -14,8 +14,6 @@ defmodule TexttileWeb.CommentsLive do
 
   alias Texttile.Comments
   alias Texttile.Settings
-
-  @shown 8
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -27,21 +25,45 @@ defmodule TexttileWeb.CommentsLive do
      socket
      |> assign(:page_title, gettext("Comments"))
      |> assign(:dialog, nil)
-     |> TexttileWeb.CommentModeration.attach(reload: &load/1)
+     |> TexttileWeb.CommentModeration.attach(reload: &load/1)}
+  end
+
+  # The address holds the status and the page, so the way back from an
+  # entry lands on the same comments.
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     socket
+     |> assign(:status, params["status"])
+     |> assign(:page, page_number(params["page"]))
      |> load()}
   end
 
+  # A status the setting took away, or one nobody ever wrote, reads as
+  # all of them.
   defp load(socket) do
-    {trashed, trashed_earlier} = Comments.trashed()
+    require? = Settings.get(:comments_require_confirmation)
+    statuses = Comments.statuses(require?)
+    status = if socket.assigns.status in statuses, do: socket.assigns.status, else: "all"
+    list = Comments.overview(status, socket.assigns.page)
 
     socket
-    |> assign(:recent, Comments.recent(@shown))
-    |> assign(:total, Comments.total_count())
-    |> assign(:waiting, Comments.waiting_count())
-    |> assign(:trashed, trashed)
-    |> assign(:trashed_earlier, trashed_earlier)
-    |> assign(:require?, Settings.get(:comments_require_confirmation))
+    |> assign(:status, status)
+    |> assign(:statuses, statuses)
+    |> assign(:counts, Comments.status_counts())
+    |> assign(:comments, list.rows)
+    |> assign(:page, list.page)
+    |> assign(:pages, list.pages)
+    |> assign(:require?, require?)
   end
+
+  defp page_number(page) when is_binary(page) do
+    case Integer.parse(page) do
+      {page, ""} when page > 0 -> page
+      _ -> 1
+    end
+  end
+
+  defp page_number(_page), do: 1
 
   # The six moderation events are answered by CommentModeration; only
   # what is of this screen alone stays here. The trash lives on this
@@ -82,50 +104,75 @@ defmodule TexttileWeb.CommentsLive do
         <Layouts.view_site />
       </:bar>
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <%!-- the heading carries the one piece of news: how many wait for
-             a confirmed address, in the words of the mark each of them
-             wears. Beside the heading like the count of the Entries
-             grid, and gone while nothing waits. --%>
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-[18px]">
-          <h1 class="page-h">{gettext("Comments")}</h1>
-          <span :if={@waiting > 0} class="note num" id="commentsSub">
-            {ngettext("1 not confirmed yet", "%{count} not confirmed yet", @waiting)}
-          </span>
-        </div>
+        <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
+        <nav
+          class="flex gap-[3px] flex-wrap py-3 mt-[14px] mb-[18px] border-y border-rule"
+          id="commentFilter"
+          aria-label={gettext("Filter by status")}
+        >
+          <.link
+            :for={status <- @statuses}
+            patch={comments_path(status, 1)}
+            class={["seg-b", @status == status && "on"]}
+            data-f={status}
+          >
+            {status_name(status)} <span class="num opacity-60">{@counts[status]}</span>
+          </.link>
+        </nav>
         <div id="commentsList">
-          <p :if={@recent == []} class="note">
-            {gettext("No comments yet, anywhere. Every comment a reader sends shows up here.")}
+          <p :if={@comments == []} class="note">{empty_line(@status)}</p>
+          <p :if={@status == "trash" and @comments != []} class="note mb-[13px]">
+            {trash_line(@counts["trash"])}
           </p>
-          <%!-- the address behind a comment is loaded with it, so the
-               name can be the way to write back --%>
-          <.comment_item
-            :for={comment <- @recent}
-            comment={comment}
-            waiting={Comments.waiting?(comment, @require?)}
-            article={comment.article}
-            editing={@editing_comment == to_string(comment.id)}
-            error={@comment_error}
-          />
-          <div :if={@total > length(@recent)} class="pt-[4px] text-[12.5px] text-faint">
-            {gettext("and %{count} more on their entries.", count: @total - length(@recent))}
-          </div>
+          <%= if @status == "trash" do %>
+            <.trashed_item :for={comment <- @comments} comment={comment} />
+          <% else %>
+            <%!-- the address behind a comment is loaded with it, so the
+                 name can be the way to write back --%>
+            <.comment_item
+              :for={comment <- @comments}
+              comment={comment}
+              waiting={Comments.waiting?(comment, @require?)}
+              article={comment.article}
+              editing={@editing_comment == to_string(comment.id)}
+              error={@comment_error}
+            />
+          <% end %>
         </div>
+        <%!-- the three cells of the Entries pager. A step lands on the
+             top of the list: the pager stands at its foot, and a patch
+             alone would leave the admin down there. --%>
+        <nav
+          :if={@pages > 1}
+          class="f-pager mt-[18px] pt-4 border-t border-rule"
+          id="pager"
+          aria-label={gettext("Pages")}
+        >
+          <span>
+            <.link
+              :if={@page > 1}
+              class="btn sm"
+              id="prev-page"
+              patch={comments_path(@status, @page - 1) <> "#commentsTop"}
+            >
+              {gettext("Newer")}
+            </.link>
+          </span>
+          <span class="note num">
+            {gettext("Page %{page} of %{pages}", page: @page, pages: @pages)}
+          </span>
+          <span>
+            <.link
+              :if={@page < @pages}
+              class="btn sm"
+              id="next-page"
+              patch={comments_path(@status, @page + 1) <> "#commentsTop"}
+            >
+              {gettext("Older")}
+            </.link>
+          </span>
+        </nav>
         <p class="note mt-[22px]" id="commentsRule">{comment_rule(@require?)}</p>
-
-        <section :if={@trashed != []} id="commentsTrash">
-          <h2 class="set-h">{gettext("Trash")}</h2>
-          <p class="note mb-[13px]">
-            {trash_line(length(@trashed) + @trashed_earlier)}
-          </p>
-          <.trashed_item :for={comment <- @trashed} comment={comment} />
-          <div :if={@trashed_earlier > 0} class="pt-[4px] text-[12.5px] text-faint">
-            {ngettext(
-              "and %{count} deleted earlier, closer to the day it goes for good.",
-              "and %{count} deleted earlier, closer to the day they go for good.",
-              @trashed_earlier
-            )}
-          </div>
-        </section>
       </div>
 
       <.ask
@@ -140,6 +187,27 @@ defmodule TexttileWeb.CommentsLive do
     </Layouts.app>
     """
   end
+
+  # The first page of everything stays the bare address, the one the
+  # mails and the menu link to.
+  defp comments_path(status, page) do
+    params =
+      for {key, value} <- [status: status, page: page], value not in ["all", 1], do: {key, value}
+
+    ~p"/admin/comments?#{params}"
+  end
+
+  defp status_name("all"), do: gettext("All")
+  defp status_name("waiting"), do: gettext("Not confirmed yet")
+  defp status_name("confirmed"), do: gettext("Confirmed")
+  defp status_name("released"), do: gettext("Let through")
+  defp status_name("trash"), do: gettext("Trash")
+
+  defp empty_line("all") do
+    gettext("No comments yet, anywhere. Every comment a reader sends shows up here.")
+  end
+
+  defp empty_line(_status), do: gettext("No comments here.")
 
   # The line over the trash: what stands there, and for how much longer.
   defp trash_line(count) do

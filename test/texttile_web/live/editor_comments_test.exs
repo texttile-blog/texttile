@@ -120,7 +120,7 @@ defmodule TexttileWeb.EditorCommentsTest do
     view |> element("#comment-#{comment.id} button", "Delete") |> render_click()
     view |> element("#dialog-ok") |> render_click()
     refute has_element?(view, "#tp-comments", "Restore")
-    assert Comments.trashed_count() == 1
+    assert Comments.status_counts()["trash"] == 1
   end
 
   test "a comment of another text is never edited or released from here", %{conn: conn} do

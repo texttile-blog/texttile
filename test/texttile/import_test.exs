@@ -752,7 +752,7 @@ defmodule Texttile.ImportTest do
       # readers meet them at once, whatever the confirmation setting says
       {:ok, _} = Texttile.Settings.put(:comments_require_confirmation, true)
       assert Enum.all?(comments, &Texttile.Comments.shown_to_readers?/1)
-      assert Texttile.Comments.waiting_count() == 0
+      assert Texttile.Comments.status_counts()["waiting"] == 0
     end
 
     test "an import mails nobody about them", %{dir: dir, user: user} do

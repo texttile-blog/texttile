@@ -384,35 +384,71 @@ defmodule Texttile.Comments do
     Repo.aggregate(from(c in standing(), where: c.article_id == ^article_id), :count)
   end
 
-  @doc "The latest comments across all texts, newest first, texts along."
-  def recent(limit) do
-    from(c in standing(),
-      order_by: [desc: c.id],
-      limit: ^limit,
-      preload: [:address, :article]
-    )
-    |> Repo.all()
-  end
+  # How many comments one page of the overview carries.
+  @per_page 25
 
-  @doc "How many comments the site holds, waiting ones included."
-  def total_count, do: Repo.aggregate(standing(), :count)
+  @statuses ~w(all waiting confirmed released trash)
 
   @doc """
-  How many comments wait for their reader's confirmation - zero by
-  definition while the setting does not ask for one, and a comment an
-  admin released waits for nobody.
+  The statuses the overview filters by. While nobody confirms anything,
+  the two that speak of the confirmation mean nothing and stay out.
   """
-  def waiting_count do
-    if Settings.get(:comments_require_confirmation) do
-      from(c in standing(),
-        join: a in assoc(c, :address),
-        where: is_nil(a.confirmed_at) and is_nil(c.released_at)
+  def statuses(true = _require_confirmation?), do: @statuses
+  def statuses(false), do: @statuses -- ~w(waiting confirmed)
+
+  @doc """
+  One page of a status across all texts, newest first, addresses and
+  texts along; the trash has the one deleted last on top. A page past
+  the end lands on the last one, because a delete can take a page away
+  while somebody stands on it. Answers `%{rows, page, pages}`.
+  """
+  def overview(status, page) when status in @statuses and is_integer(page) do
+    query = in_status(status)
+    pages = max(div(Repo.aggregate(query, :count) - 1, @per_page) + 1, 1)
+    page = page |> max(1) |> min(pages)
+
+    rows =
+      from(c in query,
+        order_by: ^newest_first(status),
+        limit: ^@per_page,
+        offset: ^((page - 1) * @per_page),
+        preload: [:address, :article]
       )
-      |> Repo.aggregate(:count)
-    else
-      0
-    end
+      |> Repo.all()
+
+    %{rows: rows, page: page, pages: pages}
   end
+
+  @doc "How many comments each status holds, one map keyed by status."
+  def status_counts do
+    Map.new(@statuses, &{&1, Repo.aggregate(in_status(&1), :count)})
+  end
+
+  # Waiting, confirmed and released split what stands into three, and a
+  # comment an admin let through stays released when its address is
+  # confirmed later. "all" is what stands, so it leaves the trash out.
+  # "waiting" asks only the address: while nobody confirms anything the
+  # status is hidden, see `statuses/1`.
+  defp in_status("all"), do: standing()
+  defp in_status("trash"), do: in_trash()
+  defp in_status("released"), do: from(c in standing(), where: not is_nil(c.released_at))
+
+  defp in_status("waiting") do
+    from(c in standing(),
+      join: a in assoc(c, :address),
+      where: is_nil(a.confirmed_at) and is_nil(c.released_at)
+    )
+  end
+
+  defp in_status("confirmed") do
+    from(c in standing(),
+      join: a in assoc(c, :address),
+      where: not is_nil(a.confirmed_at) and is_nil(c.released_at)
+    )
+  end
+
+  defp newest_first("trash"), do: [desc: :delete_after, desc: :id]
+  defp newest_first(_status), do: [desc: :id]
 
   @doc "Comment counts per text, one map, texts without comments absent."
   def count_map do
@@ -560,32 +596,6 @@ defmodule Texttile.Comments do
   end
 
   defp in_trash, do: from(c in Comment, where: not is_nil(c.delete_after))
-
-  # How many of the trash one screen carries. The rest is a line, the
-  # way the recent list does it: the trash holds a spam wave for thirty
-  # days, and the page has to stay a page.
-  @trash_shown 8
-
-  @doc """
-  What waits in the trash, the one deleted last on top, the newest
-  #{@trash_shown} at most: the rows and how many older ones stayed out.
-  """
-  def trashed do
-    rows =
-      from(c in in_trash(),
-        order_by: [desc: c.delete_after, desc: c.id],
-        limit: ^@trash_shown,
-        preload: [:address, :article]
-      )
-      |> Repo.all()
-
-    earlier = if length(rows) < @trash_shown, do: 0, else: trashed_count() - length(rows)
-
-    {rows, earlier}
-  end
-
-  @doc "How many comments the trash holds."
-  def trashed_count, do: Repo.aggregate(in_trash(), :count)
 
   @doc """
   Makes the deletions final whose #{@trash_days} days have run out at

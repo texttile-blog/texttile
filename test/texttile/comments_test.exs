@@ -402,7 +402,7 @@ defmodule Texttile.CommentsTest do
       assert Comments.count_for(article.id) == 3
     end
 
-    test "for_article/1 answers newest first, recent/1 spans all texts" do
+    test "for_article/1 answers newest first, overview/2 spans all texts" do
       a = published_post(%{title: "A"})
       b = published_post(%{title: "B"})
       first = post!(a)
@@ -410,13 +410,16 @@ defmodule Texttile.CommentsTest do
       third = post!(a, %{@attrs | "body" => "Third"})
 
       assert Enum.map(Comments.for_article(a.id), & &1.id) == [third.id, first.id]
-      assert Enum.map(Comments.recent(2), & &1.id) == [third.id, second.id]
-      assert Comments.total_count() == 3
+
+      assert Enum.map(Comments.overview("all", 1).rows, & &1.id) ==
+               [third.id, second.id, first.id]
+
+      assert Comments.status_counts()["all"] == 3
       assert Comments.count_map() == %{a.id => 2, b.id => 1}
-      assert Comments.waiting_count() == 3
+      assert Comments.status_counts()["waiting"] == 3
 
       {:ok, _} = Comments.confirm(first.address.token)
-      assert Comments.waiting_count() == 0
+      assert Comments.status_counts()["waiting"] == 0
     end
   end
 
@@ -468,11 +471,11 @@ defmodule Texttile.CommentsTest do
       {:ok, _} = Comments.delete_comment(gone)
 
       assert Enum.map(Comments.for_article(article.id), & &1.id) == [kept.id]
-      assert Enum.map(Comments.recent(10), & &1.id) == [kept.id]
-      assert Comments.total_count() == 1
+      assert Enum.map(Comments.overview("all", 1).rows, & &1.id) == [kept.id]
+      assert Comments.status_counts()["all"] == 1
       assert Comments.count_for(article.id) == 1
       assert Comments.count_map() == %{article.id => 1}
-      assert Comments.waiting_count() == 1
+      assert Comments.status_counts()["waiting"] == 1
       assert {[%{id: id}], 0} = Comments.for_readers(article.id)
       assert id == kept.id
       assert Comments.get_comment(gone.id) == nil
@@ -483,16 +486,16 @@ defmodule Texttile.CommentsTest do
       comment = post!(article)
       {:ok, _} = Comments.delete_comment(comment)
 
-      assert {[trashed], 0} = Comments.trashed()
+      assert %{rows: [trashed]} = Comments.overview("trash", 1)
       assert trashed.id == comment.id
       assert trashed.article.title == "Harbor mornings"
       assert trashed.address.email == "christel@example.org"
-      assert Comments.trashed_count() == 1
+      assert Comments.status_counts()["trash"] == 1
 
       Comments.subscribe()
       assert {:ok, restored} = Comments.restore_comment(comment.id)
       assert restored.delete_after == nil
-      assert Comments.trashed() == {[], 0}
+      assert Comments.overview("trash", 1).rows == []
       assert Enum.map(Comments.for_article(article.id), & &1.id) == [comment.id]
       assert_receive {:comment_changed, %Comments.Comment{}}
     end
@@ -598,16 +601,16 @@ defmodule Texttile.CommentsTest do
       later = post!(article, %{@attrs | "body" => "And another thing"})
       refute Comments.shown_to_readers?(later)
       refute Comments.released?(later)
-      assert Comments.waiting_count() == 1
+      assert Comments.status_counts()["waiting"] == 1
     end
 
     test "a released comment no longer waits" do
       article = published_post()
       comment = post!(article)
-      assert Comments.waiting_count() == 1
+      assert Comments.status_counts()["waiting"] == 1
 
       {:ok, _} = Comments.release_comment(comment.id)
-      assert Comments.waiting_count() == 0
+      assert Comments.status_counts()["waiting"] == 0
     end
 
     test "releasing mails nobody: the admin did it" do
@@ -649,7 +652,7 @@ defmodule Texttile.CommentsTest do
     {:ok, _} = Articles.delete_article(Articles.get_article!(article.id))
 
     assert Comments.for_article(article.id) == []
-    assert Comments.trashed() == {[], 0}
+    assert Comments.overview("trash", 1).rows == []
     assert_raise Ecto.NoResultsError, fn -> Comments.get_comment!(comment.id) end
   end
 
@@ -692,28 +695,78 @@ defmodule Texttile.CommentsTest do
     end
   end
 
-  describe "the trash on one screen" do
-    test "the newest deleted are the ones it carries, and it says how many are left" do
+  describe "the overview by status" do
+    defp reader!(article, name) do
+      post!(article, %{@attrs | "email" => "#{name}@example.org", "body" => name})
+    end
+
+    defp bodies(status) do
+      status |> Comments.overview(1) |> Map.fetch!(:rows) |> Enum.map(& &1.body)
+    end
+
+    test "every comment has exactly one status" do
+      article = published_post()
+      _waiting = reader!(article, "waiting")
+      confirmed = reader!(article, "confirmed")
+      released = reader!(article, "released")
+      released_then_confirmed = reader!(article, "both")
+      trashed = reader!(article, "trashed")
+
+      {:ok, _} = Comments.confirm(confirmed.address.token)
+      {:ok, _} = Comments.release_comment(released.id)
+      {:ok, _} = Comments.release_comment(released_then_confirmed.id)
+      {:ok, _} = Comments.confirm(released_then_confirmed.address.token)
+      {:ok, _} = Comments.delete_comment(trashed)
+
+      assert bodies("waiting") == ["waiting"]
+      assert bodies("confirmed") == ["confirmed"]
+      assert bodies("released") == ["both", "released"]
+      assert bodies("trash") == ["trashed"]
+      assert bodies("all") == ["both", "released", "confirmed", "waiting"]
+
+      assert Comments.status_counts() == %{
+               "all" => 4,
+               "waiting" => 1,
+               "confirmed" => 1,
+               "released" => 2,
+               "trash" => 1
+             }
+    end
+
+    test "the two statuses of the confirmation go when nobody confirms" do
+      assert Comments.statuses(true) == ~w(all waiting confirmed released trash)
+      assert Comments.statuses(false) == ~w(all released trash)
+    end
+
+    test "pages walk every comment once, and a page past the end is the last" do
+      article = published_post()
+      ids = for n <- 1..26, do: reader!(article, "reader#{n}").id
+
+      first = Comments.overview("waiting", 1)
+      second = Comments.overview("waiting", 2)
+
+      assert {first.page, first.pages} == {1, 2}
+      assert {second.page, second.pages} == {2, 2}
+      assert Enum.map(first.rows ++ second.rows, & &1.id) == Enum.reverse(ids)
+      assert Comments.overview("waiting", 99).page == 2
+    end
+
+    test "an empty status is one empty page" do
+      assert %{rows: [], page: 1, pages: 1} = Comments.overview("trash", 3)
+    end
+
+    test "the trash shows the one deleted last on top, whatever second they share" do
       article = published_post()
 
-      comments =
-        for n <- 1..10 do
-          comment =
-            post!(article, %{@attrs | "email" => "reader#{n}@example.org", "body" => "Words #{n}"})
-
+      ids =
+        for n <- 1..3 do
+          comment = reader!(article, "reader#{n}")
           {:ok, comment} = Comments.delete_comment(comment)
-          comment
+          comment.id
         end
 
-      {rows, earlier} = Comments.trashed()
-
-      assert length(rows) == 8
-      assert earlier == 2
-      assert Comments.trashed_count() == 10
-
-      # the ones deleted last stand on top, whatever second they share
-      assert Enum.map(rows, & &1.id) ==
-               comments |> Enum.map(& &1.id) |> Enum.reverse() |> Enum.take(8)
+      assert Enum.map(Comments.overview("trash", 1).rows, & &1.id) == Enum.reverse(ids)
+      assert Comments.status_counts()["trash"] == 3
     end
   end
 
@@ -787,7 +840,7 @@ defmodule Texttile.CommentsTest do
       {[comment], 0} = Comments.for_readers(article.id)
       assert Comments.shown_to_readers?(comment)
       assert comment.address.email == "christiane@example.org"
-      assert Comments.waiting_count() == 0
+      assert Comments.status_counts()["waiting"] == 0
     end
 
     test "a comment without an email needs no address of its own", %{article: article} do
