@@ -84,6 +84,7 @@ defmodule TexttileWeb.NewsletterLive do
       flash={@flash}
       current_scope={@current_scope}
       crumb={gettext("Newsletter")}
+      count={@confirmed}
       active="newsletter"
       others={@others}
     >
@@ -93,7 +94,9 @@ defmodule TexttileWeb.NewsletterLive do
       <div class="admin-col">
         <div class="mb-4 sm:mb-6">
           <h1 class="page-h">{gettext("Newsletter")}</h1>
-          <p class="lead !mb-0 num" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
+          <p class="lead !mb-0 num max-md:hidden" id="newsletterSub">
+            {sub_line(@subscribers, @confirmed)}
+          </p>
         </div>
         <div>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">

@@ -167,6 +167,10 @@ defmodule TexttileWeb.Layouts do
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
 
+  attr :count, :any,
+    default: nil,
+    doc: "how many the screen lists: a phone, which names the screen in its bar, says it there"
+
   attr :wide, :boolean,
     default: false,
     doc: """
@@ -338,6 +342,7 @@ defmodule TexttileWeb.Layouts do
           <span :if={!crumb_in_nav?(@crumb, @active)} class="bn on truncate" id="crumb" title={@crumb}>
             {@crumb}
           </span>
+          <span :if={@count} class="bn-count num md:hidden" id="barCount">{@count}</span>
           {render_slot(@lead)}
         <% end %>
       </span>

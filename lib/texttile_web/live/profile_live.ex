@@ -182,7 +182,7 @@ defmodule TexttileWeb.ProfileLive do
       </:bar>
       <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Your profile")}</h1>
-        <p class="lead">
+        <p class="lead max-md:hidden">
           {gettext("You are signed in as")}
           <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
         </p>

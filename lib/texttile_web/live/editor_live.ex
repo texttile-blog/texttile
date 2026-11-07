@@ -2129,7 +2129,7 @@ defmodule TexttileWeb.EditorLive do
             data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
-              <span class="text-[16px] font-semibold">
+              <span class="font-serif text-[18px] font-semibold">
                 {gettext("Gallery")}
                 <span class="note num font-normal" id="tileCount">{tile_count(@gallery)}</span>
                 <span class="note num font-normal" id="tileOnWay" phx-update="ignore"></span>
@@ -2245,7 +2245,7 @@ defmodule TexttileWeb.EditorLive do
             phx-auto-recover="recover_settings"
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
-              <span class="text-[16px] font-semibold">{gettext("Entry settings")}</span>
+              <span class="font-serif text-[18px] font-semibold">{gettext("Entry settings")}</span>
               <span class="sp max-sm:hidden"></span>
               <span class="note max-sm:basis-full">{gettext("Every change saves itself.")}</span>
             </div>

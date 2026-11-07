@@ -24,7 +24,7 @@ defmodule TexttileWeb.CommentsLiveTest do
     comment
   end
 
-  test "Write answers the writer by mail, and the website stands after the moment", %{
+  test "Reply answers the writer by mail, and the website stands after the moment", %{
     conn: conn
   } do
     article = published_post(title: "Harbor mornings")

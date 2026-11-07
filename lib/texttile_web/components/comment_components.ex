@@ -36,26 +36,6 @@ defmodule TexttileWeb.CommentComponents do
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
-        <%!-- the actions stand at the end of the meta line, quiet like
-               the Restore of a version. Write answers by mail, in words:
-               an icon after the name said nothing about what it does. --%>
-        <div :if={!@editing} class="cmt-acts">
-          <.write_link comment={@comment} />
-          <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
-            {gettext("Edit")}
-          </button>
-          <button
-            :if={@waiting}
-            class="btn quiet sm"
-            phx-click="release_comment"
-            phx-value-id={@comment.id}
-          >
-            {gettext("Release")}
-          </button>
-          <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
-            {gettext("Delete")}
-          </button>
-        </div>
       </div>
       <%!-- where and when, on a line of their own under the name: the
            entry is the jump of the overview, a link like every other --%>
@@ -111,16 +91,37 @@ defmodule TexttileWeb.CommentComponents do
         class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
         phx-no-format
       >{@comment.body}</p>
+      <%!-- the actions, quiet like the Restore of a version: at the
+         right of the name line on a desk, on a line of their own under
+         the words on a phone, so a long name never meets them. Reply
+         answers by mail, in words: an icon said nothing. --%>
+      <div :if={!@editing} class="cmt-acts">
+        <.write_link comment={@comment} />
+        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
+          {gettext("Edit")}
+        </button>
+        <button
+          :if={@waiting}
+          class="btn quiet sm"
+          phx-click="release_comment"
+          phx-value-id={@comment.id}
+        >
+          {gettext("Release")}
+        </button>
+        <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
+          {gettext("Delete")}
+        </button>
+      </div>
     </div>
     """
   end
 
   @doc """
-  The way to answer the writer of a comment: Write, a quiet action that
+  The way to answer the writer of a comment: Reply, a quiet action that
   opens the mail client on the address they left. Only the admin area
   ever draws this, and the address goes no further than that mail
   client: readers never see it anywhere. A comment whose address row
-  is gone, or whose author left none, gets no Write.
+  is gone, or whose author left none, gets no Reply.
   """
   attr :comment, :any, required: true
 
@@ -134,7 +135,7 @@ defmodule TexttileWeb.CommentComponents do
       href={"mailto:#{@email}"}
       title={gettext("Write to %{email}", email: @email)}
     >
-      {gettext("Write")}
+      {gettext("Reply")}
     </a>
     """
   end

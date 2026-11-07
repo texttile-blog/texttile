@@ -164,7 +164,7 @@ defmodule TexttileWeb.TextsLive do
               phx-click="filter"
               phx-value-filter={value}
             >
-              {label} <span class="num opacity-60">{@counts[value]}</span>
+              {label} <span class="num text-faint">{@counts[value]}</span>
             </button>
           </span>
           <div class="flex items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0">

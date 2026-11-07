@@ -40,13 +40,13 @@ defmodule TexttileWeb.StatsComponents do
         "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
       )}
     </p>
-    <div :if={@max > 0} class="relative isolate pr-[44px]">
+    <div :if={@max > 0} class="relative isolate pr-[52px]">
       <%!-- the scale: a hairline at the height of the busiest bar and
            one at half of it, behind the bars, their counts in a gutter
            of their own at the right, so a bar's height reads as a
            number and no label sits on a bar --%>
       <span
-        class="absolute left-0 right-[44px] top-[18px] border-t border-hair -z-10 pointer-events-none"
+        class="absolute left-0 right-[52px] top-[18px] border-t border-hair -z-10 pointer-events-none"
         aria-hidden="true"
       >
       </span>
@@ -58,7 +58,7 @@ defmodule TexttileWeb.StatsComponents do
       </span>
       <span
         :if={@max > 1}
-        class="absolute left-0 right-[44px] top-[84px] border-t border-hair -z-10 pointer-events-none"
+        class="absolute left-0 right-[52px] top-[84px] border-t border-hair -z-10 pointer-events-none"
         aria-hidden="true"
       >
       </span>

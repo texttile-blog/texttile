@@ -136,7 +136,6 @@ defmodule TexttileWeb.StatsLiveTest do
 
     assert has_element?(view, "#win-90.on")
     assert has_element?(view, "#figViews", "1")
-    assert render(view) =~ "Views, last 90 days"
 
     # Ninety days are thirteen or fourteen weeks, not ninety bars.
     bars = view |> element("#dayChart") |> render() |> String.split("<button ") |> length()
@@ -158,17 +157,17 @@ defmodule TexttileWeb.StatsLiveTest do
     seed_views(1, day: Date.add(Date.utc_today(), -45))
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=90")
-    assert render(view) =~ "Views, last 90 days, by week"
+    assert render(view) =~ "Views, by week"
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=365")
-    assert render(view) =~ "Views, last 365 days, by month"
+    assert render(view) =~ "Views, by month"
 
     assert view |> element("#dayChart + div") |> render() =~
              Integer.to_string(Date.utc_today().year)
 
     # A fresh blog with one month of views is a month bar too.
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")
-    assert render(view) =~ "Views, all time, by month"
+    assert render(view) =~ "Views, by month"
 
     assert view |> element("#dayChart + div") |> render() =~
              Integer.to_string(Date.utc_today().year)

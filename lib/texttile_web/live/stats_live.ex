@@ -150,10 +150,13 @@ defmodule TexttileWeb.StatsLive do
           </div>
         </div>
 
-        <h2 class="sec-h">{window_label(gettext("Views"), @days)}{step_label(@step)}</h2>
+        <h2 class="sec-h">{gettext("Views")}{step_label(@step)}</h2>
         <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
         <p :if={@summary.busiest} class="hint" id="chartKey">
-          {gettext("The dark bar is the busiest day. Open a bar for its entries and sources.")}
+          <%!-- what the dark bar means, and what a click does: two facts,
+               two lines --%>
+          <span class="block">{gettext("The dark bar is the busiest day.")}</span>
+          <span class="block">{gettext("Open a bar for its entries and sources.")}</span>
         </p>
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">
@@ -208,7 +211,7 @@ defmodule TexttileWeb.StatsLive do
           </div>
         </div>
 
-        <h2 class="sec-h">{window_label(gettext("Top entries"), @days)}</h2>
+        <h2 class="sec-h">{gettext("Top entries")}</h2>
         <p :if={@top == []} class="note" id="topEmpty">
           {gettext(
             "No entry has been read in these days. The first reader who opens one puts it here."
@@ -219,7 +222,7 @@ defmodule TexttileWeb.StatsLive do
             <thead>
               <tr>
                 <th>{gettext("Entry")}</th>
-                <th class="text-right num hidden sm:table-cell">{gettext("Published")}</th>
+                <th class="num hidden sm:table-cell">{gettext("Published")}</th>
                 <th class="text-right num">{gettext("Views")}</th>
                 <th class="text-right num">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell">{gettext("Comments")}</th>
@@ -233,7 +236,7 @@ defmodule TexttileWeb.StatsLive do
                     {Articles.display_title(row.article)}
                   </.link>
                 </td>
-                <td class="text-right num hidden sm:table-cell">
+                <td class="num hidden sm:table-cell">
                   <.published_cell article={row.article} />
                 </td>
                 <td class="text-right num">{number(row.views)}</td>
@@ -246,7 +249,7 @@ defmodule TexttileWeb.StatsLive do
           </table>
         </div>
 
-        <h2 class="sec-h">{window_label(gettext("Referrers"), @days)}</h2>
+        <h2 class="sec-h">{gettext("Referrers")}</h2>
         <p :if={@referrers == []} class="note" id="referrersEmpty">
           {gettext("Nothing counted yet, so there is nowhere readers came from.")}
         </p>
@@ -258,7 +261,7 @@ defmodule TexttileWeb.StatsLive do
           )}
         </p>
 
-        <h2 :if={@pages != []} class="sec-h">{window_label(gettext("Other addresses"), @days)}</h2>
+        <h2 :if={@pages != []} class="sec-h">{gettext("Other addresses")}</h2>
         <div :if={@pages != []} class="overflow-x-auto">
           <table id="otherPages">
             <thead>
@@ -297,11 +300,7 @@ defmodule TexttileWeb.StatsLive do
   defp window_name(365), do: gettext("Year")
   defp window_name(:all), do: gettext("All time")
 
-  # "views, last 30 days" and "Views, last 30 days": the noun comes in
-  # with the case the line wants.
-  defp window_label(noun, :all), do: gettext("%{noun}, all time", noun: noun)
-  defp window_label(noun, days), do: gettext("%{noun}, last %{days} days", noun: noun, days: days)
-
+  # The headings say what, the switch over the figures says how long.
   # A bar that is no day says so next to the heading.
   defp step_label(:day), do: nil
   defp step_label(:week), do: gettext(", by week")

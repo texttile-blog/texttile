@@ -127,15 +127,16 @@ defmodule TexttileWeb.TagsLive do
       current_scope={@current_scope}
       crumb={gettext("Tags")}
       active="tags"
+      count={length(@tags)}
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
       <div class="admin-col">
         <%!-- the count stands under the heading, where every screen
-             puts its line --%>
+             puts its line; a phone says it in its bar instead --%>
         <div class="mb-4 sm:mb-6">
           <h1 class="page-h">{gettext("Tags")}</h1>
-          <p class="lead !mb-0 num" id="tagsCount">
+          <p class="lead !mb-0 num max-md:hidden" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </p>
         </div>

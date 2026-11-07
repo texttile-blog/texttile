@@ -189,7 +189,7 @@ defmodule TexttileWeb.CommentsLive do
               class={["seg-b", @status == status && "on"]}
               data-f={status}
             >
-              {status_name(status)} <span class="num opacity-60">{@counts[status]}</span>
+              {status_name(status)} <span class="num text-faint">{@counts[status]}</span>
             </.link>
           </nav>
         </div>
