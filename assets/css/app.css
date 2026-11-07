@@ -1255,7 +1255,7 @@
     grid-column: 1 / -1; height: 44px; display: grid; place-items: center;
     color: var(--tt-dim); font-size: 13px; font-weight: 500;
     border-radius: var(--tt-radius);
-    border: 1px dashed var(--tt-rule);
+    border: 1px solid var(--tt-rule); background: var(--tt-paper);
     transition: border-color .15s, color .15s, background-color .15s;
   }
   .tile-add:hover {
@@ -2216,12 +2216,19 @@ body.site .card-wrap .cm { font-size: 14px; }
 /* the signed-in person at the right of a desk bar, quiet, a hairline
    between them and the save state, as between Saved and View site */
 .bar-me {
-  align-items: center; font-size: 12.5px; color: var(--tt-dim); white-space: nowrap;
-  padding-right: 12px; margin-right: 4px; border-right: 1px solid var(--tt-hair);
-  text-decoration: none;
+  align-self: stretch; align-items: center; font-size: 12.5px; color: var(--tt-dim);
+  white-space: nowrap; padding: 0 12px 0 0; margin-right: 4px; text-decoration: none;
+  position: relative;
+}
+/* the hairline after the name, a short tick like the one after Saved
+   once was, so the open state's rule can run along the bar's foot */
+.bar-me::after {
+  content: ""; position: absolute; right: 0; top: 50%; height: 14px; margin-top: -7px;
+  border-right: 1px solid var(--tt-hair);
 }
 .bar-me:hover { color: var(--tt-accent); }
-.bar-me.on { color: var(--tt-ink); font-weight: 600; }
+/* open, the name wears the violet rule every open item of the bar wears */
+.bar-me.on { color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tt-accent); }
 
 /* a phone comment row: the words, the actions close under them, then
    the rule; a wave of spam fits more to the screen */
@@ -2263,4 +2270,17 @@ body.site .card-wrap .cm { font-size: 14px; }
   .note { font-size: 14px; color: var(--tt-dim); }
   .cmt-sub, .cmt-when, .cmt-ent, .cmt-web { font-size: 13.5px; }
   section.foot-band p, section.foot-band .about-md { font-size: 14px; }
+}
+
+/* Stats: the figures and the chart they sum up stand closer than two
+   separate sections */
+#statsFigures + .sec-h { margin-top: 32px; }
+@media (min-width: 768px) { #statsFigures + .sec-h { margin-top: 40px; } }
+
+/* the archive's tags on a phone: one row that scrolls sideways, its
+   rule under it, so it reads as tabs and not as a heap of links */
+@media (max-width: 639px) {
+  #tagbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+  #tagbar::-webkit-scrollbar { display: none; }
+  #tagbar .ctag { flex: none; }
 }
