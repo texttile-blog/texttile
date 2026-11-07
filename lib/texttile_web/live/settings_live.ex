@@ -857,7 +857,7 @@ defmodule TexttileWeb.SettingsLive do
           </label>
           <div
             :if={resolved_front_page(@settings, @pages) != nil}
-            class="py-3 max-w-[240px]"
+            class="py-3 sm:max-w-[240px]"
             id="front-page-choice"
           >
             <%!-- its own name: with the radios' name, its value would
@@ -879,7 +879,7 @@ defmodule TexttileWeb.SettingsLive do
               <select
                 id="setting-posts_per_page"
                 name="settings[posts_per_page]"
-                class="max-w-[240px]"
+                class="sm:max-w-[240px]"
               >
                 <option
                   :for={size <- page_sizes(@settings.posts_per_page)}
@@ -954,7 +954,7 @@ defmodule TexttileWeb.SettingsLive do
               value={@settings_form[:site_password].value}
               placeholder={gettext("Choose a password")}
               phx-debounce="300"
-              class="max-w-[240px]"
+              class="sm:max-w-[240px]"
             />
             <div class="hint">
               {gettext("Every entry mail carries it, so subscribers have it too.")}
@@ -1108,7 +1108,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings_form[:image_max_edge].value}
                   min="800"
                   step="80"
-                  class="max-w-[240px]"
+                  class="sm:max-w-[240px]"
                   phx-debounce="400"
                 />
                 <span class="pre">px</span>
@@ -1138,7 +1138,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings_form[:video_max_edge].value}
                   min="480"
                   step="80"
-                  class="max-w-[240px]"
+                  class="sm:max-w-[240px]"
                   phx-debounce="400"
                 />
                 <span class="pre">px</span>
@@ -1170,7 +1170,7 @@ defmodule TexttileWeb.SettingsLive do
                   max="2048"
                   step="1"
                   phx-debounce="500"
-                  class="max-w-[240px]"
+                  class="sm:max-w-[240px]"
                 />
                 <span class="note">{gettext("MB")}</span>
               </span>
@@ -1412,7 +1412,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings.backup_allowed_ips}
                   placeholder={gettext("Any address")}
                   phx-debounce="500"
-                  class="max-w-[240px]"
+                  class="sm:max-w-[240px]"
                 />
                 <p :if={@errors[:backup_allowed_ips]} class="text-julia text-[13px] mt-[6px]">
                   {@errors[:backup_allowed_ips]}

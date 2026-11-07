@@ -13,8 +13,9 @@ defmodule TexttileWeb.StatsComponents do
 
   @doc """
   One bar per step of the series, oldest left, with the two dates that
-  bound it under the row. The busiest bar carries the accent, so the
-  shape of the month reads without reading a number.
+  bound it under the row. The bars are grey and the busiest one is ink,
+  so the shape of the month reads without reading a number; the bar an
+  admin opened wears the accent, the one selected state.
 
   `step` says what a bar is (`Texttile.Stats.step/1`): a series in
   months carries the year on its axis. With `pick`, every bar is a
@@ -92,7 +93,7 @@ defmodule TexttileWeb.StatsComponents do
               class={[
                 "block w-full min-h-[2px] rounded-t-[2px]",
                 bar_colour(bar.views, @max),
-                @open && @open.from == bar.from && "!bg-ink"
+                @open && @open.from == bar.from && "!bg-accent"
               ]}
               style={"height:#{height(bar.views, @max)}%"}
             >
@@ -170,7 +171,7 @@ defmodule TexttileWeb.StatsComponents do
           <tr :for={row <- @rows}>
             <td>{row.host || gettext("direct")}</td>
             <td class="align-middle">
-              <span class="track"><i style={"width:#{row.share}%"}></i></span>
+              <span class="track share"><i style={"width:#{row.share}%"}></i></span>
             </td>
             <td class="text-right num">{row.share}</td>
           </tr>
@@ -195,7 +196,7 @@ defmodule TexttileWeb.StatsComponents do
   @doc "A day as the charts write it: 30 Jun."
   defdelegate day_label(day), to: Texttile.I18n, as: :format_short_day
 
-  defp bar_colour(views, max) when views == max and views > 0, do: "bg-accent"
+  defp bar_colour(views, max) when views == max and views > 0, do: "bg-ink"
   defp bar_colour(_views, _max), do: "barc"
 
   defp height(_views, 0), do: 0

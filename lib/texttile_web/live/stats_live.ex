@@ -120,7 +120,7 @@ defmodule TexttileWeb.StatsLive do
         </div>
 
         <div id="statsFigures" class="grid grid-cols-3 border-y border-hair">
-          <div class="fig py-4 pr-3 md:pr-5">
+          <div class="fig py-4 px-3 md:px-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;
                  the change against the window before stands on a line
@@ -138,13 +138,7 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
-              <%!-- the key to the one bar of the chart that wears the
-                   accent itself --%>
-              <i
-                :if={@summary.busiest}
-                class="inline-block w-[8px] h-[8px] rounded-[2px] bg-accent mr-[6px] align-[1px]"
-                aria-hidden="true"
-              ></i>{gettext("busiest day")}<span
+              {gettext("busiest day")}<span
                 :if={@summary.busiest}
                 class="block"
                 id="figBusiestDay"

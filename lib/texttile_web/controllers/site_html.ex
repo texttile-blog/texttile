@@ -77,11 +77,15 @@ defmodule TexttileWeb.SiteHTML do
   where `navigator.share` exists.
   """
   attr :current_scope, :any, default: nil
+  attr :narrow, :boolean, default: false, doc: "true under one entry, on its reading column"
 
   def site_foot(assigns) do
     ~H"""
     <footer class="foot-band">
-      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
+      <div class={[
+        "wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4",
+        @narrow && "narrow"
+      ]}>
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
@@ -95,7 +99,8 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc """
   The band that ends every reader page: About on the left, Subscribe on
-  the right, both in small type on a ground of their own.
+  the right, both in small type on a ground of their own. Under one
+  entry the band keeps the entry's reading column and the two stack.
 
   It is the second zone of round 3. Everything over it belongs to the
   text - the neighbours, the comments, the form - and everything on it
@@ -108,6 +113,10 @@ defmodule TexttileWeb.SiteHTML do
   """
   attr :about_html, :any, default: nil
 
+  attr :narrow, :boolean,
+    default: false,
+    doc: "true under one entry: the band keeps the reading column and stacks"
+
   def site_band(assigns) do
     assigns =
       assign(
@@ -118,7 +127,7 @@ defmodule TexttileWeb.SiteHTML do
 
     ~H"""
     <section class="foot-band" id="foot-band" aria-label={gettext("About this blog")}>
-      <div class="wrap cols">
+      <div class={["wrap cols", @narrow && "narrow"]}>
         <div :if={@about_html} id="about" aria-label={gettext("About")}>
           <p class="f-eyebrow">{gettext("About")}</p>
           <div class="about-md">{Phoenix.HTML.raw(@about_html)}</div>

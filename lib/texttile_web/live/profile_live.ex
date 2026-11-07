@@ -204,6 +204,7 @@ defmodule TexttileWeb.ProfileLive do
                 name={@profile_form[:display_name].name}
                 value={@profile_form[:display_name].value}
                 phx-debounce="300"
+                class="sm:max-w-[424px]"
               />
               <div class="hint">
                 {gettext("What others see. Empty shows the part of your address in front of the @.")}
@@ -219,7 +220,7 @@ defmodule TexttileWeb.ProfileLive do
         <.form for={@email_form} id="email-form" phx-submit="set_email">
           <div class="drow">
             <span class="val">
-              <span class="pairrow addr-first">
+              <span class="pairrow">
                 <span class="min-w-0">
                   <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}

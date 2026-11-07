@@ -144,9 +144,9 @@ defmodule TexttileWeb.TagsLive do
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[8px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
+            class="py-[8px] sm:py-[11px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
           >
-            <b class="text-[14.5px] break-words min-w-0">#{tag}</b>
+            <b class="text-[14.5px] sm:text-[15px] break-words min-w-0">#{tag}</b>
             <span class="note num flex-1 max-sm:order-3 max-sm:basis-full max-sm:-mt-1">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>

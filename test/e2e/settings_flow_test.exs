@@ -130,7 +130,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
     end
 
     # Access is one question with two answers, and the password belongs
-    # to the second answer. The rules between the rows made it three
+    # to the second answer: it shows once that answer is picked. The rules between the rows made it three
     # unrelated things, and the field began at the left edge, under the
     # radio instead of under the word.
     @access_shape """
@@ -149,6 +149,8 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
+      |> refute_has("#pwRow")
+      |> click("#access-form input[value=protected]")
       |> assert_has("#pwRow")
       |> evaluate(@access_shape, [is_function: true], fn [ruled, off] ->
         assert ruled == 0

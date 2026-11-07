@@ -1427,6 +1427,9 @@ defmodule TexttileWeb.EditorLive do
           </span>
         </span>
 
+        <%!-- A phone bar has room for the save state or for Save version,
+             not both: it keeps the state, and Save version waits in the
+             menu of the button at the end. --%>
         <%!-- The save state, and no longer a link with a bare arrow on
              it: the way to the reader's side is the button at the end
              of this bar, or a row of its menu, and it carries a word.
@@ -1455,7 +1458,7 @@ defmodule TexttileWeb.EditorLive do
         <button
           :if={@holds_lock}
           type="button"
-          class="btn sm"
+          class="btn sm max-md:hidden"
           id="barSaveVersion"
           phx-click="save_version"
           data-flush-body
