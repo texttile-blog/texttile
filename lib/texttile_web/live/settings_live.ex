@@ -724,7 +724,7 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair pl-[58px]">
           {gettext("Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP.")}
         </p>
         <div class="flex items-center gap-[14px] pt-[14px]">
@@ -766,7 +766,7 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair pl-[58px]">
           {gettext("The icon in the browser tab. A square SVG, PNG, JPG or WebP.")}
         </p>
 
@@ -909,7 +909,7 @@ defmodule TexttileWeb.SettingsLive do
              a size of their own, so that indent is one number and not
              a browser's idea of a radio. --%>
         <.form for={@settings_form} id="access-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
+          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
@@ -924,7 +924,7 @@ defmodule TexttileWeb.SettingsLive do
               <span class="text-[12.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
           </label>
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
+          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"

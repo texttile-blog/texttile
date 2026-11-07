@@ -120,7 +120,7 @@ defmodule TexttileWeb.StatsLive do
         </div>
 
         <div id="statsFigures" class="grid grid-cols-3 border-y border-hair">
-          <div class="fig py-4 px-3 md:px-5">
+          <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;
                  the change against the window before stands on a line
@@ -223,7 +223,7 @@ defmodule TexttileWeb.StatsLive do
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
                 <td>
-                  <.link class="rowlink" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
+                  <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
                     {Articles.display_title(row.article)}
                   </.link>
                 </td>

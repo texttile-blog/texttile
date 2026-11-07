@@ -77,15 +77,11 @@ defmodule TexttileWeb.SiteHTML do
   where `navigator.share` exists.
   """
   attr :current_scope, :any, default: nil
-  attr :narrow, :boolean, default: false, doc: "true under one entry, on its reading column"
 
   def site_foot(assigns) do
     ~H"""
     <footer class="foot-band">
-      <div class={[
-        "wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4",
-        @narrow && "narrow"
-      ]}>
+      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
         <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
@@ -99,8 +95,8 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc """
   The band that ends every reader page: About on the left, Subscribe on
-  the right, both in small type on a ground of their own. Under one
-  entry the band keeps the entry's reading column and the two stack.
+  the right, both in small type on a ground of their own. It stands on
+  the header's grid on every page, so the frame never moves.
 
   It is the second zone of round 3. Everything over it belongs to the
   text - the neighbours, the comments, the form - and everything on it
@@ -113,10 +109,6 @@ defmodule TexttileWeb.SiteHTML do
   """
   attr :about_html, :any, default: nil
 
-  attr :narrow, :boolean,
-    default: false,
-    doc: "true under one entry: the band keeps the reading column and stacks"
-
   def site_band(assigns) do
     assigns =
       assign(
@@ -127,7 +119,7 @@ defmodule TexttileWeb.SiteHTML do
 
     ~H"""
     <section class="foot-band" id="foot-band" aria-label={gettext("About this blog")}>
-      <div class={["wrap cols", @narrow && "narrow"]}>
+      <div class="wrap cols">
         <div :if={@about_html} id="about" aria-label={gettext("About")}>
           <p class="f-eyebrow">{gettext("About")}</p>
           <div class="about-md">{Phoenix.HTML.raw(@about_html)}</div>
@@ -186,16 +178,12 @@ defmodule TexttileWeb.SiteHTML do
     ~H"""
     <div class="card-wrap">
       <a class="card" id={"text-#{@article.id}"} href={Articles.public_path(@article)}>
-        <%!-- every card wears a square, so the grid keeps its rows: the
-             picture when there is one. An entry of words alone shows
-             its opening words there instead, set like a page, and the
-             lead under the title steps aside so they are not said
-             twice. With no words either, the quiet mark stands in. --%>
+        <%!-- the picture when there is one. An entry of words alone
+             is a text and shows as one: the title, the line under it,
+             then a longer lead, in the order every card reads. With no
+             words either, the quiet mark stands in for the picture. --%>
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
-        </span>
-        <span :if={!@preview && lead(@article) != ""} class="cimg words" aria-hidden="true">
-          <span class="cx">{lead(@article, 240)}</span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
@@ -217,6 +205,7 @@ defmodule TexttileWeb.SiteHTML do
         </span>
       </p>
       <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article)}</p>
+      <p :if={!@preview && lead(@article) != ""} class="clead long">{lead(@article, 480)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
         <a
           :for={tag <- Articles.tag_list(@article)}

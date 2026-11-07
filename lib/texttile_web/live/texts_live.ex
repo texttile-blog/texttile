@@ -119,7 +119,7 @@ defmodule TexttileWeb.TextsLive do
           <span class="sp"></span>
           <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
-        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-[8px] sm:mt-[18px] mb-3 sm:mb-6">
+        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-[8px] sm:mt-6 mb-3 sm:mb-6">
           <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
             <button
               :for={

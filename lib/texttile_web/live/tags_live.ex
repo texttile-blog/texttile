@@ -131,9 +131,9 @@ defmodule TexttileWeb.TagsLive do
     >
       <:bar><Layouts.view_site /></:bar>
       <div class="admin-col">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-4">
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-4 sm:mb-6">
           <h1 class="page-h">{gettext("Tags")}</h1>
-          <span class="note num" id="tagsCount">
+          <span class="note num max-sm:hidden" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </span>
         </div>

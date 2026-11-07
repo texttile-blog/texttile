@@ -91,9 +91,11 @@ defmodule TexttileWeb.NewsletterLive do
         <Layouts.view_site />
       </:bar>
       <div class="admin-col">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-4">
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-4 sm:mb-6">
           <h1 class="page-h">{gettext("Newsletter")}</h1>
-          <span class="note num" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</span>
+          <span class="note num max-sm:hidden" id="newsletterSub">
+            {sub_line(@subscribers, @confirmed)}
+          </span>
         </div>
         <div>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">

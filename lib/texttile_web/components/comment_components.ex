@@ -59,8 +59,7 @@ defmodule TexttileWeb.CommentComponents do
         </div>
       </div>
       <%!-- where and when, on a line of their own under the name: the
-           entry is the jump of the overview, quiet until the pointer
-           finds it --%>
+           entry is the jump of the overview, a link like every other --%>
       <div class="cmt-sub">
         <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent">
           {Texttile.Articles.display_title(@article)}

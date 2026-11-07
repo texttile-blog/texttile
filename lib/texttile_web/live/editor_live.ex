@@ -2114,7 +2114,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:px-6 pt-[22px] lg:pt-[39px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:pl-[33px] lg:pr-6 pt-[22px] lg:pt-[39px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -2132,11 +2132,18 @@ defmodule TexttileWeb.EditorLive do
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">
                 {gettext("Gallery")}
-                <span class="note num" id="tileCount">{tile_count(@gallery)}</span>
-                <span class="note num" id="tileOnWay" phx-update="ignore"></span>
+                <span class="note num font-normal" id="tileCount">{tile_count(@gallery)}</span>
+                <span class="note num font-normal" id="tileOnWay" phx-update="ignore"></span>
               </span>
-              <span class="sp"></span>
-              <span class="note">{gettext("Grab a tile to sort it.")}</span>
+              <span class="sp max-sm:hidden"></span>
+              <%!-- a finger holds, a pointer grabs: the hint says the one
+                   the screen has, and a phone sets it under the heading --%>
+              <span class="note max-sm:basis-full on-pointer">
+                {gettext("Grab a tile to sort it.")}
+              </span>
+              <span class="note max-sm:basis-full on-touch">
+                {gettext("Hold a tile, then drag.")}
+              </span>
             </div>
             <div class="grid gap-[6px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3" id="tileGrid">
               <div class="contents" id="tileServer">
@@ -2240,8 +2247,8 @@ defmodule TexttileWeb.EditorLive do
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">{gettext("Entry settings")}</span>
-              <span class="sp"></span>
-              <span class="note">{gettext("Every change saves itself.")}</span>
+              <span class="sp max-sm:hidden"></span>
+              <span class="note max-sm:basis-full">{gettext("Every change saves itself.")}</span>
             </div>
 
             <div class="drow pt-0.5">
