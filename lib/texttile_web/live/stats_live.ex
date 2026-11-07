@@ -234,8 +234,8 @@ defmodule TexttileWeb.StatsLive do
                      edge, and the day takes what is left --%>
                 <th class="sm:w-1/3">{gettext("Entry")}</th>
                 <th class="num hidden sm:table-cell">{gettext("Published")}</th>
-                <th class="text-right num w-[44px] sm:w-[88px] pl-2 sm:pl-4">{gettext("Views")}</th>
-                <th class="text-right num w-[44px] sm:w-[88px] pl-2 sm:pl-4">{gettext("People")}</th>
+                <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("Views")}</th>
+                <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">
                   {gettext("Comments")}
                 </th>

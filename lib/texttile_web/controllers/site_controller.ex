@@ -136,6 +136,9 @@ defmodule TexttileWeb.SiteController do
         |> Enum.flat_map(&Articles.tag_list/1)
         |> Enum.uniq_by(&String.downcase/1)
         |> Enum.map(fn t -> {t, Enum.count(posts, &Articles.has_tag?(&1, t))} end)
+        # the order of the admin's Tags screen: the most used first, then
+        # by name
+        |> Enum.sort_by(fn {t, count} -> {-count, String.downcase(t)} end)
 
       {tag, _count} = Enum.find(tags, fn {name, _} -> String.downcase(name) == tag end)
 

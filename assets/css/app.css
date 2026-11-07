@@ -456,7 +456,7 @@
   @media (max-width: 639px) { .cmt.sel .comment-body, .cmt.sel .cmt-sub { margin-left: -28px; } }
   .cmt.sel.on { background: var(--tt-accentwash); }
   .cmt-pick {
-    position: absolute; left: 0; top: 4px; width: 16px; height: 44px;
+    position: absolute; left: 0; top: 1px; width: 16px; height: 44px;
     display: grid; place-items: center; cursor: pointer;
   }
   .cmt-pick input, .cmt-tools input { width: 16px; height: 16px; margin: 0; accent-color: var(--tt-accent); }
@@ -1645,10 +1645,15 @@
      and a clamp would cut it again in the middle of one */
   @media (max-width: 639px) { .card-wrap .clead.long { display: block; } }
   .card-wrap .ctags { margin-top: 7px; }
+  /* a small link of the reader's pages takes the deeper violet of the
+     buttons, so it stays quiet beside the warm type */
   .ctag {
     display: inline-block; margin-right: 8px; font-size: 13px;
-    color: var(--tt-accent); text-decoration: none;
+    color: var(--tt-solidhover); text-decoration: none;
   }
+  /* the open tag of the archive: ink with the violet rule, as every
+     open item of the product */
+  #tagbar .ctag.on { color: var(--tt-ink); box-shadow: inset 0 -2px 0 var(--tt-accent); }
   .ctag:hover { text-decoration: underline; text-underline-offset: 2px; }
   /* the archive's row of tags: each name and its count one target,
      a finger tall */
@@ -1966,8 +1971,8 @@
 /* the first glyph, not its button, stands on the text's left edge: the
    bar steps out by the button's inner space (36px buttons hold a glyph
    13px in, the 40px touch buttons 15px) */
-.mdbar { margin-left: -19px; }
-@media (pointer: coarse), (max-width: 639px) { .mdbar { margin-left: -21px; } }
+.mdbar { margin-left: -22px; }
+@media (pointer: coarse), (max-width: 639px) { .mdbar { margin-left: -24px; } }
 /* a finger needs room: on a touch screen every button is 40px square
    and the row scrolls sideways instead of shrinking them. A phone
    drops the two rare buttons, so the groups fit inside the gutter. */
@@ -1979,7 +1984,7 @@
 @media (max-width: 639px) {
   .mdb.rare, .mdsep.rare { display: none; }
   /* the buttons that are left share the row's width evenly */
-  .mdbar { justify-content: space-between; margin-right: -18px; }
+  .mdbar { justify-content: space-between; margin-right: -21px; }
 }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2187,7 +2192,7 @@ input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-colo
    rule on the gutters, like every other rule */
 @media (max-width: 1023px) {
   .sidecol { position: relative; }
-  .sidecol::before { content: ""; position: absolute; top: 0; left: 16px; right: 16px; border-top: 1px solid var(--tt-hair); }
+  .sidecol::before { content: none; }
 }
 
 /* a picture card's lead is short enough for three lines, and its tags
@@ -2231,4 +2236,13 @@ body.site .card-wrap .cm { font-size: 14px; }
 .ed-cm { margin-top: 10px; }
 
 /* the tags of an entry's line keep the middot rhythm of the line */
-#meta .mtag + .mtag::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+#meta .mtag + .mtag { margin-left: 8px; }
+
+/* a row of Tags answers the pointer, so the eye follows it to its
+   actions across the column */
+#tagsList > div:hover { background: rgb(var(--tt-shadow) / .03); }
+/* the About field's tools keep room inside their frame on a phone */
+@media (pointer: coarse), (max-width: 639px) { #aboutBar { padding: 3px 10px; } }
+/* the first section of a phone form stands one step under the bar, the
+   distance every list keeps */
+@media (max-width: 767px) { .admin-col > h2.set-h:first-of-type { margin-top: 6px; } }

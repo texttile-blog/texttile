@@ -27,7 +27,7 @@ defmodule TexttileWeb.ProfileLiveTest do
     |> render_change(%{"_target" => ["user", "display_name"]})
 
     assert has_element?(view, "#wmMe", "Klaus")
-    assert has_element?(view, "#profileWho", "Klaus")
+    assert has_element?(view, "#barMe", "Klaus")
     assert Accounts.get_user!(user.id).display_name == "Klaus"
   end
 

@@ -196,10 +196,6 @@ defmodule TexttileWeb.ProfileLive do
       </:bar>
       <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Your profile")}</h1>
-        <p class="lead max-md:hidden">
-          {gettext("You are signed in as")}
-          <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
-        </p>
 
         <h2 class="set-h">{gettext("Name")}</h2>
         <%!-- fields to type into, so they look like fields; the same
@@ -315,7 +311,7 @@ defmodule TexttileWeb.ProfileLive do
         </.form>
 
         <h2 class="set-h">{gettext("Your sessions")}</h2>
-        <div id="sessions">
+        <div id="sessions" class="sm:border-t sm:border-hair">
           <div
             :for={session <- @sessions}
             class="flex items-center gap-3 py-[13px] border-b border-hair text-[13.5px]"

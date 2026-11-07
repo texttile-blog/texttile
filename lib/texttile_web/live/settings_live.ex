@@ -1104,7 +1104,7 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Images")}</.section>
         <.form for={@settings_form} id="images-form" phx-change="save_setting">
           <div class="drow">
-            <label class="lab" for="setting-image_max_edge">{gettext("Max longer edge")}</label>
+            <label class="lab" for="setting-image_max_edge">{gettext("Longest edge")}</label>
             <span class="val">
               <span class="addr">
                 <input
@@ -1134,7 +1134,7 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Videos")}</.section>
         <.form for={@settings_form} id="videos-form" phx-change="save_setting">
           <div class="drow">
-            <label class="lab" for="setting-video_max_edge">{gettext("Max longer edge")}</label>
+            <label class="lab" for="setting-video_max_edge">{gettext("Longest edge")}</label>
             <span class="val">
               <span class="addr">
                 <input

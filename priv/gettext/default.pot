@@ -171,7 +171,7 @@ msgid_plural "should have at most %{count} item(s)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/profile_live.ex:324
+#: lib/texttile_web/live/profile_live.ex:320
 #, elixir-autogen, elixir-format
 msgid "%{browser} · signed in %{when}"
 msgstr ""
@@ -405,7 +405,7 @@ msgid "Add pictures and videos to the gallery"
 msgstr ""
 
 #: lib/texttile_web/live/editor_live.ex:2253
-#: lib/texttile_web/live/profile_live.ex:238
+#: lib/texttile_web/live/profile_live.ex:234
 #: lib/texttile_web/live/stats_live.ex:282
 #, elixir-autogen, elixir-format
 msgid "Address"
@@ -439,7 +439,7 @@ msgstr ""
 msgid "An import is running; let it finish first"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:369
+#: lib/texttile_web/live/profile_live.ex:365
 #, elixir-autogen, elixir-format
 msgid "Another browser"
 msgstr ""
@@ -594,7 +594,7 @@ msgstr ""
 msgid "Confirm your email on %{site}"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:270
+#: lib/texttile_web/controllers/site_controller.ex:273
 #, elixir-autogen, elixir-format
 msgid "Confirmed. Your comment is under the entry now."
 msgstr ""
@@ -616,8 +616,8 @@ msgstr ""
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party. The whole blog is on the"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:253
-#: lib/texttile_web/live/profile_live.ex:285
+#: lib/texttile_web/live/profile_live.ex:249
+#: lib/texttile_web/live/profile_live.ex:281
 #, elixir-autogen, elixir-format
 msgid "Current password"
 msgstr ""
@@ -715,7 +715,7 @@ msgid "Discard"
 msgstr ""
 
 #: lib/texttile_web/controllers/link_html.ex:41
-#: lib/texttile_web/live/profile_live.ex:212
+#: lib/texttile_web/live/profile_live.ex:208
 #, elixir-autogen, elixir-format
 msgid "Displayed name"
 msgstr ""
@@ -764,7 +764,7 @@ msgstr ""
 #: lib/texttile_web/live/editor_live.ex:2723
 #: lib/texttile_web/live/newsletter_live.ex:106
 #: lib/texttile_web/live/newsletter_live.ex:107
-#: lib/texttile_web/live/profile_live.ex:232
+#: lib/texttile_web/live/profile_live.ex:228
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr ""
@@ -1073,12 +1073,6 @@ msgstr ""
 msgid "March"
 msgstr ""
 
-#: lib/texttile_web/live/settings_live.ex:1107
-#: lib/texttile_web/live/settings_live.ex:1137
-#, elixir-autogen, elixir-format
-msgid "Max longer edge"
-msgstr ""
-
 #: lib/texttile/i18n.ex:178
 #, elixir-autogen, elixir-format
 msgid "May"
@@ -1090,7 +1084,7 @@ msgid "More entries"
 msgstr ""
 
 #: lib/texttile_web/controllers/site_html/article.html.heex:229
-#: lib/texttile_web/live/profile_live.ex:204
+#: lib/texttile_web/live/profile_live.ex:200
 #: lib/texttile_web/live/tags_live.ex:191
 #, elixir-autogen, elixir-format
 msgid "Name"
@@ -1114,7 +1108,7 @@ msgid "New on %{site}: "
 msgstr ""
 
 #: lib/texttile_web/controllers/link_html.ex:58
-#: lib/texttile_web/live/profile_live.ex:296
+#: lib/texttile_web/live/profile_live.ex:292
 #, elixir-autogen, elixir-format
 msgid "New password"
 msgstr ""
@@ -1127,7 +1121,7 @@ msgid "Newer"
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:69
-#: lib/texttile_web/controllers/site_controller.ex:454
+#: lib/texttile_web/controllers/site_controller.ex:457
 #: lib/texttile_web/live/newsletter_live.ex:24
 #: lib/texttile_web/live/newsletter_live.ex:86
 #: lib/texttile_web/live/newsletter_live.ex:96
@@ -1202,7 +1196,7 @@ msgstr ""
 msgid "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:765
+#: lib/texttile_web/controllers/site_controller.ex:768
 #, elixir-autogen, elixir-format
 msgid "Not found"
 msgstr ""
@@ -1373,7 +1367,7 @@ msgstr ""
 
 #: lib/texttile_web/controllers/session_html.ex:37
 #: lib/texttile_web/controllers/site_html/unlock.html.heex:20
-#: lib/texttile_web/live/profile_live.ex:278
+#: lib/texttile_web/live/profile_live.ex:274
 #, elixir-autogen, elixir-format
 msgid "Password"
 msgstr ""
@@ -1626,12 +1620,12 @@ msgstr ""
 msgid "Send the link"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:381
+#: lib/texttile_web/controllers/site_controller.ex:384
 #, elixir-autogen, elixir-format
 msgid "Sent. Follow the link in your mail and your comment appears under the entry."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:383
+#: lib/texttile_web/controllers/site_controller.ex:386
 #, elixir-autogen, elixir-format
 msgid "Sent. Your comment is under the entry now."
 msgstr ""
@@ -1692,22 +1686,22 @@ msgid "Sign in"
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:310
-#: lib/texttile_web/live/profile_live.ex:337
+#: lib/texttile_web/live/profile_live.ex:333
 #, elixir-autogen, elixir-format
 msgid "Sign out"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:332
+#: lib/texttile_web/live/profile_live.ex:328
 #, elixir-autogen, elixir-format
 msgid "Sign out ends this session only."
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:346
+#: lib/texttile_web/live/profile_live.ex:342
 #, elixir-autogen, elixir-format
 msgid "Sign out everywhere"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:333
+#: lib/texttile_web/live/profile_live.ex:329
 #, elixir-autogen, elixir-format
 msgid "Sign out everywhere ends all of them, in every browser."
 msgstr ""
@@ -2104,7 +2098,7 @@ msgstr ""
 msgid "This blog asks for its password."
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:368
+#: lib/texttile_web/live/profile_live.ex:364
 #, elixir-autogen, elixir-format
 msgid "This browser"
 msgstr ""
@@ -2315,12 +2309,7 @@ msgstr ""
 msgid "You are on the list."
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:200
-#, elixir-autogen, elixir-format
-msgid "You are signed in as"
-msgstr ""
-
-#: lib/texttile_web/controllers/site_controller.ex:722
+#: lib/texttile_web/controllers/site_controller.ex:725
 #, elixir-autogen, elixir-format
 msgid "You are signed in, so your name and your address come from your account. Your address is never published, and your comment appears under the entry at once."
 msgstr ""
@@ -2340,7 +2329,7 @@ msgstr ""
 msgid "You have the entry · %{name} was told"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:718
+#: lib/texttile_web/controllers/site_controller.ex:721
 #, elixir-autogen, elixir-format
 msgid "Your address is never published. Your comment appears under the entry at once."
 msgstr ""
@@ -2368,7 +2357,7 @@ msgstr ""
 msgid "Your profile"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:317
+#: lib/texttile_web/live/profile_live.ex:313
 #, elixir-autogen, elixir-format
 msgid "Your sessions"
 msgstr ""
@@ -2499,7 +2488,7 @@ msgstr ""
 msgid "the conversion failed: %{reason}"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:376
+#: lib/texttile_web/live/profile_live.ex:372
 #, elixir-autogen, elixir-format
 msgid "today"
 msgstr ""
@@ -2552,7 +2541,7 @@ msgstr ""
 msgid "will not import"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:377
+#: lib/texttile_web/live/profile_live.ex:373
 #, elixir-autogen, elixir-format
 msgid "yesterday"
 msgstr ""
@@ -3864,7 +3853,7 @@ msgstr ""
 msgid "The link works for %{days} days. You confirm this address once. Every comment you write after that appears at once. If you did not write a comment on %{site}, ignore this mail."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_controller.ex:711
+#: lib/texttile_web/controllers/site_controller.ex:714
 #, elixir-autogen, elixir-format
 msgid "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it. The link works for %{days} days."
 msgstr ""
@@ -3885,7 +3874,7 @@ msgstr ""
 msgid "A reader is a new number each day, made with a secret the server forgets every night, so nothing links two days. A page counts once per reader every half hour. Bots and prefetches do not count."
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:309
+#: lib/texttile_web/live/profile_live.ex:305
 #, elixir-autogen, elixir-format
 msgid "At least 12 characters. Confirm your current password to change it."
 msgstr ""
@@ -3920,7 +3909,7 @@ msgstr ""
 msgid "There is no public sign-up. An admin invites the next one from Settings."
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:268
+#: lib/texttile_web/live/profile_live.ex:264
 #, elixir-autogen, elixir-format
 msgid "You sign in with this address, and password links go to it. Readers never see it."
 msgstr ""
@@ -3935,12 +3924,12 @@ msgstr ""
 msgid "Saved %{time}"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:263
+#: lib/texttile_web/live/profile_live.ex:259
 #, elixir-autogen, elixir-format
 msgid "Change email"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:305
+#: lib/texttile_web/live/profile_live.ex:301
 #, elixir-autogen, elixir-format
 msgid "Change password"
 msgstr ""
@@ -4117,7 +4106,7 @@ msgstr ""
 msgid "Email new comments"
 msgstr ""
 
-#: lib/texttile_web/live/profile_live.ex:223
+#: lib/texttile_web/live/profile_live.ex:219
 #, elixir-autogen, elixir-format
 msgid "Shown beside your entries and comments."
 msgstr ""
@@ -4130,4 +4119,10 @@ msgstr ""
 #: lib/texttile_web/live/newsletter_live.ex:205
 #, elixir-autogen, elixir-format
 msgid "since %{day}"
+msgstr ""
+
+#: lib/texttile_web/live/settings_live.ex:1107
+#: lib/texttile_web/live/settings_live.ex:1137
+#, elixir-autogen, elixir-format
+msgid "Longest edge"
 msgstr ""

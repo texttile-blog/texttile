@@ -162,7 +162,7 @@ defmodule TexttileWeb.TextsLive do
             {entry_count(@shown, @total)}
           </span>
         </div>
-        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-2 sm:mt-6 mb-3 sm:mb-6">
+        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
           <span
             class="flex gap-[3px] max-sm:gap-[6px] flex-none"
             role="group"

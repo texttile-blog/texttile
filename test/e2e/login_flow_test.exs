@@ -149,7 +149,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> assert_has("#sessions", text: "This browser")
       |> refute_has("#sessions", text: "Another browser")
       |> fill_in("Displayed name", with: "Klaus")
-      |> assert_has("#profileWho", text: "Klaus")
+      |> assert_has("#barMe", text: "Klaus")
       |> click("#wmBtn")
       |> assert_has("#wmMe", text: "Klaus")
     end

@@ -15,7 +15,7 @@
          not link, the others are the way into the next archive --%>
     <p class="mt-4 pb-2 border-b border-hair flex flex-wrap gap-x-4" id="tagbar">
       <%= for {tag, count} <- @tags do %>
-        <span :if={tag == @tag} class="ctag" style="color:var(--tt-ink);font-weight:600">
+        <span :if={tag == @tag} class="ctag on" aria-current="page">
           #{tag} <span class="cnt">{count}</span>
         </span>
         <a :if={tag != @tag} class="ctag" href={~p"/tags/#{String.downcase(tag)}"}>

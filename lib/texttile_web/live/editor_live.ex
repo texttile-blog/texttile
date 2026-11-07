@@ -2109,7 +2109,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-[18px] lg:pt-[33px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-12 lg:pt-[33px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
