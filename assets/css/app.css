@@ -590,7 +590,7 @@
   /* An entry of words alone, in the admin grid: its opening words in a
      framed square, from the top like a page. They are a picture of the
      entry, not the text to read, so the square cuts them off with an
-     ellipsis. (The reader's grid shows such an entry as a text.) */
+     ellipsis. The reader's grid sets them larger, below. */
   .card .cimg.empty:has(.cx) {
     display: block; overflow: hidden;
     background: var(--tt-field); padding: 18px 18px 0;
@@ -1637,12 +1637,14 @@
   /* the excerpt reads in the serif of the entry, like the words on a
      text-only square: every excerpt in the grid in one face */
   .card-wrap .clead { font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.55; color: var(--tt-inksoft); margin-top: 8px; }
-  /* the lead of an entry without a picture stands where the picture
-     would and runs longer, to the height of the cards beside it */
-  .card-wrap .clead.long { display: -webkit-box; -webkit-line-clamp: 11; -webkit-box-orient: vertical; overflow: hidden; }
-  /* a phone shows a lead whole: the server already ends it at a word,
-     and a clamp would cut it again in the middle of one */
-  @media (max-width: 639px) { .card-wrap .clead.long { display: block; } }
+  /* the words of a text-only square, in the reader's grid: the serif
+     of the excerpts a step larger, as many lines as the square holds
+     (9 fit the narrowest 260px column, 10 the phone's) */
+  body.site .card .cimg.empty:has(.cx) { padding: 22px 22px 0; }
+  body.site .card .cimg .cx {
+    font-size: 17px; line-height: 1.5; color: var(--tt-inksoft); -webkit-line-clamp: 9;
+  }
+  @media (max-width: 560px) { body.site .card .cimg .cx { -webkit-line-clamp: 10; } }
   .card-wrap .ctags { margin-top: 7px; }
   /* a small link of the reader's pages takes the deeper violet of the
      buttons, so it stays quiet beside the warm type */
@@ -2161,11 +2163,6 @@
   box-shadow: inset 0 0 0 1.5px var(--tt-ink);
 }
 .mk.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
-
-/* a text without a picture opens on a hairline of its own, so its
-   title starts an entry and is never read as a caption to the picture
-   beside it */
-.card-wrap:not(:has(.cimg)) { border-top: 1px solid var(--tt-rule); padding-top: 12px; }
 
 /* one style for the primary word of a list row (a tag, an address, a
    name): 15px at a medium weight in ink, a tag the same in violet. The

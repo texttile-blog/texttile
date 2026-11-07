@@ -68,15 +68,16 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ "cimg blank"
     end
 
-    test "a text without a picture shows as a text, its lead longer", %{conn: conn} do
+    test "a text without a picture shows its opening words in its square", %{conn: conn} do
       published_post(title: "Without a picture", body: "Only words here.")
       published_post(title: "Nothing at all", body: "")
 
       html = conn |> get(~p"/blog") |> html_response(200)
 
-      # no square of words: the lead stands under the title, said once
-      refute html =~ ~s(class="cx")
-      assert html =~ ~s(<p class="clead long">Only words here.</p>)
+      # every card keeps the square, so the grid never looks like a
+      # picture went missing; the words stand once, inside it
+      assert html =~ ~s(<span class="cx">Only words here.</span>)
+      refute html =~ ~s(class="clead">Only words here.)
       # an entry without words either keeps the quiet mark
       assert html =~ "cimg blank"
       refute html =~ "/renditions/640/"

@@ -190,11 +190,14 @@ defmodule TexttileWeb.SiteHTML do
     <div class="card-wrap">
       <a class="card" id={"text-#{@article.id}"} href={Articles.public_path(@article)}>
         <%!-- the picture when there is one. An entry of words alone
-             is a text and shows as one: the title, the line under it,
-             then a longer lead, in the order every card reads. With no
-             words either, the quiet mark stands in for the picture. --%>
+             shows its opening words in the square, as the admin grid
+             does, so every card keeps the same shape. With no words
+             either, the quiet mark stands in for the picture. --%>
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
+        </span>
+        <span :if={!@preview && lead(@article) != ""} class="cimg empty">
+          <span class="cx">{lead(@article, 320)}</span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
@@ -216,7 +219,6 @@ defmodule TexttileWeb.SiteHTML do
         </span>
       </p>
       <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article, 110)}</p>
-      <p :if={!@preview && lead(@article) != ""} class="clead long">{lead(@article, 320)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
         <a
           :for={tag <- Articles.tag_list(@article)}
