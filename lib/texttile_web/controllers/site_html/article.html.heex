@@ -53,27 +53,6 @@
         </a>
       </p>
 
-      <%!-- the chosen preview once more, under the title: the cover
-           of the post, as wide as the words. It links the file the tile
-           links, and the script turns the click into the lightbox, on
-           that tile. The card size serves a phone, the reading size a
-           dense desk screen. --%>
-      <a
-        :if={@hero}
-        id="preview"
-        class="hero"
-        href={Images.url(@hero.link, :original)}
-        aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
-      >
-        <img
-          src={Images.url(@hero.still, :card)}
-          srcset={"#{Images.url(@hero.still, :card)} 640w, #{Images.url(@hero.still, :reading)} 1320w"}
-          sizes="(max-width: 700px) 100vw, 620px"
-          alt=""
-        />
-        <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
-      </a>
-
       <div class="prose" id="body">{body_html(@article)}</div>
     </div>
 
@@ -170,7 +149,7 @@
           class={["py-[14px] border-b border-hair", kind == :own && "opacity-70"]}
           id={"comment-#{comment.id}"}
         >
-          <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
+          <div class="flex flex-wrap gap-[10px] items-baseline text-[14.5px] font-semibold">
             <%!-- the address the author gave for themselves, from the
                  form or out of a bundle. The words are somebody else's,
                  and so is where they lead: the link says as much to a
@@ -193,7 +172,7 @@
               datetime={DateTime.to_iso8601(comment.inserted_at)}
               data-comment-moment
               data-zone={comment.imported_at && "UTC"}
-              class="font-normal text-dim text-[12.5px]"
+              class="font-normal text-dim text-[13px]"
             >
               {comment_when(comment.inserted_at)}
             </time>

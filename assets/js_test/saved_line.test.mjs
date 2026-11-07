@@ -36,8 +36,8 @@ test("a fresh save reads as just now, an old one as the clock time", () => {
 })
 
 test("a phone bar has room for the stamp, not for the sentence", () => {
-  assert.equal(line({wide: false, now: at + 5000}).text, "saved")
-  assert.equal(line({wide: false, now: at + 60_000}).text, "saved 12:34")
+  assert.equal(line({wide: false, now: at + 5000}).text, "Saved")
+  assert.equal(line({wide: false, now: at + 60_000}).text, "Saved 12:34")
 })
 
 test("the clock pads its digits", () => {

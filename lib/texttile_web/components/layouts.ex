@@ -298,22 +298,43 @@ defmodule TexttileWeb.Layouts do
         </p>
       </nav>
 
-      <%!-- Two zones. This is the left one: what this screen is. The
-           crumb is the one flexible thing in it, so the open section
-           stays readable on a phone, and whatever the screen puts in
-           :lead stands beside it as part of the same fact. --%>
+      <%!-- Two zones. This is the left one: where you are. On a column
+           screen it is the row of sections, the open one marked, and the
+           open one is the crumb as well; a phone keeps only that one. A
+           screen that is no section (the profile, the import) adds its
+           own name. The editor, whose crumb is the entry, keeps the
+           crumb alone, and whatever it puts in :lead stands beside it. --%>
       <span class="flex items-center gap-[6px] md:gap-2 min-w-0 text-[13.5px] text-dim">
-        <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
-          /
-        </span>
-        <span
-          class="font-serif text-[15px] md:text-[16px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
-          id="crumb"
-          title={@crumb}
-        >
-          {@crumb}
-        </span>
-        {render_slot(@lead)}
+        <%= if @wide do %>
+          <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
+            /
+          </span>
+          <span
+            class="text-[14px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
+            id="crumb"
+            title={@crumb}
+          >
+            {@crumb}
+          </span>
+          {render_slot(@lead)}
+        <% else %>
+          <nav class={["barnav", !crumb_in_nav?(@crumb, @active) && "has-extra"]}>
+            <.link
+              :for={section <- screens()}
+              navigate={section.to}
+              id={crumb_in_nav?(@crumb, @active) && @active == section.active && "crumb"}
+              class={["bn", @active == section.active && "on"]}
+              aria-current={@active == section.active && "page"}
+            >
+              {section.label}
+            </.link>
+          </nav>
+          <span :if={!crumb_in_nav?(@crumb, @active)} class="bn-sep" aria-hidden="true">/</span>
+          <span :if={!crumb_in_nav?(@crumb, @active)} class="bn on truncate" id="crumb" title={@crumb}>
+            {@crumb}
+          </span>
+          {render_slot(@lead)}
+        <% end %>
       </span>
       <%!-- the gap between the zones, and the only thing in the bar
            that gives way --%>
@@ -328,6 +349,14 @@ defmodule TexttileWeb.Layouts do
     <.flash_group flash={@flash} />
     """
   end
+
+  # The sections the bar shows as a row: the screens of the menu.
+  defp screens, do: Enum.filter(sections(), &(&1.kind == :screen))
+
+  # Whether the crumb is the name of the open section, so the marked
+  # link of the row can carry it.
+  defp crumb_in_nav?(crumb, active),
+    do: Enum.any?(screens(), &(&1.active == active and &1.label == crumb))
 
   @doc """
   The door to the blog itself, at the end of the admin bar. Every screen

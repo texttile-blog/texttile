@@ -130,7 +130,7 @@ defmodule TexttileWeb.TagsLive do
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
-      <div class="admin-col narrow">
+      <div class="admin-col">
         <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
           <h1 class="page-h">{gettext("Tags")}</h1>
           <span class="note num" id="tagsCount">
@@ -144,7 +144,7 @@ defmodule TexttileWeb.TagsLive do
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[14px] border-b border-hair flex items-center gap-[10px] flex-wrap"
+            class="py-[9px] border-b border-hair flex items-center gap-[10px] flex-wrap"
           >
             <b class="text-[14.5px] break-words min-w-0 flex-1">{tag}</b>
             <span class="note num w-[88px] text-right">

@@ -90,7 +90,7 @@ defmodule TexttileWeb.NewsletterLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col narrow">
+      <div class="admin-col">
         <h1 class="page-h">{gettext("Newsletter")}</h1>
         <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
 

@@ -17,7 +17,7 @@
 
     <%!-- every tag of the blog; the one being read is marked and does
          not link, the others are the way into the next archive --%>
-    <p class="mt-7 pb-3 border-b border-rule" id="tagbar">
+    <p class="mt-7 pb-3 border-b border-hair flex flex-wrap gap-x-5" id="tagbar">
       <%= for {tag, count} <- @tags do %>
         <span :if={tag == @tag} class="ctag" style="color:var(--tt-ink);font-weight:600">
           #{tag} <span class="cnt">{count}</span>

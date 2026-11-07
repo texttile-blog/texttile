@@ -168,7 +168,7 @@ defmodule TexttileWeb.CommentsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col narrow">
+      <div class="admin-col">
         <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
         <nav
           class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"

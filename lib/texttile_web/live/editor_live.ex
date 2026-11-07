@@ -1679,7 +1679,7 @@ defmodule TexttileWeb.EditorLive do
            them, one screen tall, with a bar of their own that is always
            drawn (.sidecol), so the column never looks like it ends
            where the window does. --%>
-      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_380px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px]">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
             <nav

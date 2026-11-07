@@ -180,7 +180,7 @@ defmodule TexttileWeb.ProfileLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col narrow">
+      <div class="admin-col split">
         <h1 class="page-h">{gettext("Your profile")}</h1>
         <p class="lead">
           {gettext("You are signed in as")}
@@ -221,7 +221,7 @@ defmodule TexttileWeb.ProfileLive do
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                <span class="flex-1 min-w-[180px]">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}
                   </label>
@@ -235,7 +235,7 @@ defmodule TexttileWeb.ProfileLive do
                     autocapitalize="off"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                <span class="flex-1 min-w-[180px]">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-current">
                     {gettext("Your password")}
                   </label>
@@ -265,7 +265,7 @@ defmodule TexttileWeb.ProfileLive do
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                <span class="flex-1 min-w-[180px]">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-current">
                     {gettext("Current password")}
                   </label>
@@ -276,7 +276,7 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                <span class="flex-1 min-w-[180px]">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-new">
                     {gettext("New password")}
                   </label>

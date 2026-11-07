@@ -12,7 +12,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
         # the menu opens in the browser: wait for it, or the next click
         # races the script on a slow machine
         |> assert_has("#navMenu", text: "Settings")
-        |> click_link("Settings")
+        |> click_link("#navMenu a", "Settings")
         |> assert_has("#crumb", text: "Settings")
         |> assert_has("#savedSettings", text: "Last saved")
         |> fill_in("Site title", with: "Two of us")

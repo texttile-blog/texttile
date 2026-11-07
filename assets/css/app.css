@@ -109,7 +109,7 @@
      the violet of the main action */
   .btn.danger { color: var(--tt-julia); }
   .btn.danger:hover { color: var(--tt-julia); }
-  .btn.quiet.danger { color: var(--tt-dim); }
+  .btn.quiet.danger { color: var(--tt-julia); }
   .btn.quiet.danger:hover { color: var(--tt-julia); background-color: var(--tt-juliatint); }
   /* the small badge on a comment whose reader has not confirmed the
      address yet - worn in the admin area and on the reader's own
@@ -119,17 +119,21 @@
     padding: 1px 6px; border-radius: var(--tt-radius-img);
     box-shadow: inset 0 0 0 1px var(--tt-rule);
   }
+  /* one link: the accent, underlined under the pointer. Links inside
+     the words of an entry keep their underline (see .prose a). */
   .link {
-    color: var(--tt-accent); text-decoration-line: underline;
+    color: var(--tt-accent); text-decoration-line: none;
     text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft);
   }
+  .link:hover { text-decoration-line: underline; }
   /* a row's own title as its way in: the ink of the row, the accent
      under the pointer */
   .rowlink { color: inherit; text-decoration: none; }
   .rowlink:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
   /* the tags in the line under a title: words in the accent, not a
      row of underlines */
-  #meta .link { text-decoration: none; }
+  #meta { font-size: 15px; }
+  #meta .link { text-decoration: none; margin-left: 2px; margin-right: 4px; }
   #meta .link:hover { text-decoration: underline; }
 
   /* THE SAVED STAMP · the quiet half of a screen without a Save
@@ -205,16 +209,30 @@
     .phx-late .st { display: none; }
   }
 
-  /* THE ADMIN COLUMN · every screen of the admin area starts at the
-     same left edge, so moving between them never makes the page jump.
-     Entries and Stats use the whole width; the lists and forms keep a
-     reading measure inside it, from the same edge. */
+  /* THE ADMIN COLUMN · every screen of the admin area stands in the
+     same column under the same bar, so moving between them never makes
+     the page jump or narrow. */
   .admin-col {
     width: 100%; max-width: 1060px; margin: 0 auto;
     padding: 22px 16px 90px;
   }
   @media (min-width: 768px) { .admin-col { padding: 34px 24px 110px; } }
-  .admin-col.narrow > * { max-width: 720px; }
+  /* A screen of settings on a wide window: the name of each section in
+     a column of its own on the left, its fields on the right, so the
+     whole width is used and the eye runs down the names. The page
+     heading spans both. A heading and the first block after it stand
+     in one row on the same top margin, so they start on one line. */
+  @media (min-width: 1000px) {
+    .admin-col.split {
+      display: grid; grid-template-columns: 200px minmax(0, 640px);
+      column-gap: 56px; align-items: start;
+    }
+    .admin-col.split > * { grid-column: 2; min-width: 0; }
+    .admin-col.split > .page-h, .admin-col.split > .lead { grid-column: 1 / -1; }
+    .admin-col.split > .set-h { grid-column: 1; }
+    .admin-col.split > .set-h, .admin-col.split > .set-h + * { margin-top: 44px; }
+    .admin-col.split > .set-h { padding-top: 2px; }
+  }
 
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.018em; }
@@ -348,6 +366,8 @@
      A field is as wide as what it holds: a title or a description can
      run, a choice out of three words cannot. */
   select { max-width: 280px; }
+  /* the editor's column is one field wide: every field fills it */
+  .sidecol select { max-width: none; }
   textarea, select.wide { max-width: none; }
 
   /* A COMMENT IN THE ADMIN AREA · a block of paper on the page, the
@@ -412,6 +432,9 @@
      grows to what it holds. */
   /* the lines to pass on: addresses you read, so they read at the size
      the address field reads at, on the same rule */
+  /* a one-line text that may run long: it wraps and grows instead of
+     hiding its end, and it is never dragged bigger */
+  .grow-line { resize: none; field-sizing: content; line-height: 22px; min-height: 38px; }
   .sharelines {
     display: block; resize: none; overflow: hidden;
     field-sizing: content; overflow-wrap: anywhere;
@@ -522,7 +545,11 @@
   .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
   .card .cm .st.published { background: var(--tt-accent); }
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
-  .card .cm .st.scheduled { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-accent); }
+  /* scheduled: half on its way, the left half filled */
+  .card .cm .st.scheduled {
+    background: linear-gradient(90deg, var(--tt-accent) 50%, transparent 50%);
+    box-shadow: inset 0 0 0 1.5px var(--tt-accent);
+  }
 
   /* the way to the zip, laid over the corner of the picture. The card
      under it is one link, so this one cannot stand inside it. It waits
@@ -570,9 +597,14 @@
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }
     #cards .card:hover .cimg { transform: none; box-shadow: none; }
-    #cards .card-get { top: 50%; right: -6px; transform: translateY(-50%); color: var(--tt-dim); opacity: 1; }
-    #cards .card-get::before { background: transparent; backdrop-filter: none; }
-    #cards .card-get:hover::before { background: var(--tt-field); }
+    /* the export lives in the editor's menu as well; a phone row keeps
+       to the entry itself */
+    #cards .card-get { display: none; }
+    #cards .card { padding-right: 0; }
+    /* who it is by joins the line instead of floating in the row */
+    #cards .card .cm { column-gap: 0; }
+    #cards .card .cm .by { margin-left: 0; }
+    #cards .card .cm .by::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
   }
 
   /* the split button: the primary action and the state actions in one
@@ -925,6 +957,26 @@
       padding-right: max(24px, calc((100% - 1060px) / 2 + 24px));
     }
   }
+  /* THE ROW OF SECTIONS · every screen of the admin area in one line
+     of words, the open one in ink with a rule under it at the foot of
+     the bar. A phone has room for one word, so it keeps the open one
+     and the menu behind the wordmark carries the rest. */
+  .barnav { display: flex; align-items: stretch; gap: 2px; height: 52px; margin-left: 6px; }
+  .bn {
+    display: inline-flex; align-items: center; padding: 0 9px;
+    font-size: 13.5px; font-weight: 500; color: var(--tt-dim); text-decoration: none;
+    white-space: nowrap; box-shadow: inset 0 -2px 0 transparent;
+    transition: color .15s ease, box-shadow .15s ease;
+  }
+  .bn:hover { color: var(--tt-ink); }
+  .bn.on { color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tt-accent); }
+  .bn-sep { color: var(--tt-slash); }
+  span.bn.on { box-shadow: none; padding-left: 0; }
+  @media (max-width: 767px) {
+    .barnav { margin-left: 0; }
+    .barnav .bn:not(.on), .barnav.has-extra .bn, .bn-sep { display: none; }
+    .barnav .bn.on { box-shadow: none; padding-left: 2px; }
+  }
   #topbar {
     background: var(--tt-bar);
     border-bottom: 1px solid var(--tt-hair);
@@ -1028,7 +1080,7 @@
   .tile:hover .tile-del, .tile:focus-within .tile-del { opacity: 1; }
   .tile .tile-del:hover { background: rgb(var(--tt-overlay, 25 23 32) / .9); }
   @media (hover: none) {
-    .tile .tile-del { opacity: 1; }
+    .tile .tile-del { opacity: .65; }
   }
   @media (pointer: coarse) {
     .tile .tile-del::after {
@@ -1462,6 +1514,9 @@
     color: var(--tt-accent); text-decoration: none;
   }
   .ctag:hover { text-decoration: underline; text-underline-offset: 2px; }
+  /* the archive's row of tags: each name and its count one target,
+     a finger tall */
+  #tagbar .ctag { margin: 0; padding: 9px 0; line-height: 22px; }
 
   /* the strip over an entry that is not live yet. Only an admin who is
      signed in is ever served one, so it stands quietly on the accent
@@ -1476,7 +1531,7 @@
   .notlive b { font-weight: 600; }
   .notlive a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 
-  /* the way through the archive, under the list: the field, the year
+  /* the way through the archive, over the list: the field, the year
      and the month as choices, and the count, all on one line. On a
      phone the field takes a line of its own and the choices stand under
      it, so the placeholder is never cut short by the count. */
@@ -1654,7 +1709,7 @@
   .prose ul, .prose ol { margin-bottom: 19px; padding-left: 24px; }
   .prose ul { list-style: disc; }
   .prose ol { list-style: decimal; }
-  .prose li { margin-bottom: 5px; }
+  .prose li { margin-bottom: 7px; line-height: 1.55; }
   .prose a { color: var(--tt-accent); text-decoration-line: underline; text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft); }
   .prose blockquote { margin: 0 0 19px; padding-left: 14px; border-left: 2px solid var(--tt-rule); color: var(--tt-dim); }
   .prose code { font-family: var(--tt-font-mono); font-size: .88em; background: var(--tt-field); padding: 1px 4px; border-radius: 3px; }
@@ -1674,17 +1729,6 @@
   }
   /* a video the server has not converted yet: the file itself, named */
   .prose a.videofile { text-decoration: underline; text-underline-offset: 2px; }
-
-  /* the square at the head of a post: the chosen preview once more,
-     the size of a tile of the wide grid on a desk (a quarter of 1060
-     less the gutters and the gaps) and half the column on a phone */
-  .hero {
-    display: block; width: 100%; aspect-ratio: 3 / 2; overflow: hidden;
-    margin-top: 30px; border-radius: var(--tt-radius-img, 4px); background: var(--tt-field);
-    position: relative;
-  }
-  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .hero .play-badge { --play: 44px; }
 
   /* the reader gallery: the tile grid, and the lightbox behind it */
   .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }

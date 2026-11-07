@@ -628,7 +628,7 @@ defmodule TexttileWeb.SettingsLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col narrow">
+      <div class="admin-col split">
         <h1 class="page-h">{gettext("Settings")}</h1>
         <p class="lead">
           {gettext("Every change saves itself the moment you make it.")}
@@ -653,13 +653,15 @@ defmodule TexttileWeb.SettingsLive do
           <div class="drow">
             <label class="lab" for="setting-site_description">{gettext("Description")}</label>
             <span class="val">
-              <input
-                type="text"
+              <%!-- a sentence, not a word: the field grows to show all of
+                   it, so the line the readers get can be read back whole --%>
+              <textarea
                 id="setting-site_description"
                 name="settings[site_description]"
-                value={@settings_form[:site_description].value}
+                rows="1"
                 phx-debounce="300"
-              />
+                class="grow-line"
+              >{@settings_form[:site_description].value}</textarea>
             </span>
           </div>
           <div class="drow">
@@ -870,7 +872,7 @@ defmodule TexttileWeb.SettingsLive do
               <select
                 id="setting-posts_per_page"
                 name="settings[posts_per_page]"
-                class="max-w-[110px]"
+                class="max-w-[120px]"
               >
                 <option
                   :for={size <- page_sizes(@settings.posts_per_page)}
@@ -1206,7 +1208,7 @@ defmodule TexttileWeb.SettingsLive do
                   max="2048"
                   step="1"
                   phx-debounce="500"
-                  class="max-w-[110px]"
+                  class="max-w-[120px]"
                 />
                 <span class="note">{gettext("MB")}</span>
               </span>

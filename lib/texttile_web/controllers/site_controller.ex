@@ -595,10 +595,6 @@ defmodule TexttileWeb.SiteController do
 
     metadata = entry_metadata(article, gallery, home?)
 
-    # The chosen preview stands once more at the head of a post. A page
-    # is a place and not a story, so it keeps its title first.
-    hero = if article.type == "post", do: Gallery.hero(article, Enum.map(gallery, & &1.path))
-
     # A video tile has nothing to show before ffmpeg is through, so the
     # reader's gallery waits for it instead of holding an empty square.
     gallery = Gallery.tiles(gallery)
@@ -613,7 +609,6 @@ defmodule TexttileWeb.SiteController do
     |> merge_assigns(comment_assigns(conn, article))
     |> render(:article,
       article: article,
-      hero: hero,
       gallery: gallery,
       older: older,
       newer: newer,

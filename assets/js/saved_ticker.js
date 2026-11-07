@@ -32,7 +32,7 @@ export function savedLine({at, now, wide}, say = t) {
 
   // a phone bar has room for the stamp, not for the sentence
   if (!wide) {
-    return {text: fresh ? say("saved") : say("saved %{time}", {time: clock}), title}
+    return {text: fresh ? say("Saved") : say("Saved %{time}", {time: clock}), title}
   }
 
   return {

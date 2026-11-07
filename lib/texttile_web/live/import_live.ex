@@ -110,7 +110,7 @@ defmodule TexttileWeb.ImportLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col narrow">
+      <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
         <p class="lead">
           {gettext(
