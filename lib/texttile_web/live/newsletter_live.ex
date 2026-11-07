@@ -128,7 +128,7 @@ defmodule TexttileWeb.NewsletterLive do
             <div
               :for={subscriber <- @subscribers}
               id={"sub-#{subscriber.id}"}
-              class="flex items-center gap-x-3 py-[9px] sm:py-[12px] border-b border-hair"
+              class="flex items-start sm:items-center gap-x-3 py-[9px] sm:py-[12px] border-b border-hair"
             >
               <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
                 <span class="rowp truncate max-w-full">
@@ -147,7 +147,7 @@ defmodule TexttileWeb.NewsletterLive do
                 {since(subscriber)}
               </span>
               <button
-                class="btn quiet sm danger flex-none -mr-[10px]"
+                class="btn quiet sm danger flex-none -mr-[10px] max-sm:-mt-[5px]"
                 type="button"
                 id={"remove-#{subscriber.id}"}
                 phx-click="ask_remove"

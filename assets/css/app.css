@@ -263,7 +263,7 @@
   /* a phone starts a form screen as close under the bar as a list: the
      first section has no air over it, and the rest stand a little closer */
   @media (max-width: 767px) {
-    .set-h { margin-top: 24px; margin-bottom: 10px; }
+    .set-h { margin-top: 20px; margin-bottom: 10px; }
     .admin-col > h2.set-h:first-of-type { margin-top: 0; }
   }
   /* the section heading on Stats: quieter than .set-h, because the
@@ -429,7 +429,7 @@
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
-  .cmt-acts { display: flex; gap: 4px; margin: 4px 0 -8px -10px; }
+  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -11px; }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
     /* on the line of the entry and the moment, inside the row's
@@ -1754,7 +1754,7 @@
     .textnav .nx .lab::after { content: none; }
     .textnav .nx .lab::before { content: "\2192\00a0"; color: var(--tt-dim); }
     .textnav .t {
-      font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 2;
+      font-size: 17px; display: -webkit-box; -webkit-line-clamp: 2;
       -webkit-box-orient: vertical; overflow: hidden;
     }
   }
@@ -1997,7 +1997,7 @@
 .mdb.on { background: var(--tt-accentwash); color: var(--tt-accent); }
 .mdb svg { width: 16px; height: 16px; }
 .mdb .g { pointer-events: none; }
-.mdsep { width: 1px; height: 15px; background: var(--tt-rule); margin: 0 5px; flex: none; }
+.mdsep { width: 1px; height: 15px; background: var(--tt-slash); margin: 0 5px; flex: none; }
 /* while the other admin holds the text the bar stays, faded; a click
    on any button asks for the takeover instead of formatting */
 .mdbar.is-readonly .mdb { color: var(--tt-slash); }
@@ -2237,7 +2237,7 @@ body.site .card-wrap .cm { font-size: 14px; }
    after it, and set apart before the account and View site */
 .saved { border-right: 0; padding-right: 0; margin-right: 24px; color: var(--tt-dim); }
 /* a state, said with a small tick, so it is never read as a link */
-.saved:not(.warn)::before { content: "\2713\00a0"; color: var(--tt-slash); }
+.saved:not(.warn)::before { content: "\2713\00a0"; color: var(--tt-faint); }
 .bar-me, #bar-view-site { order: 2; }
 
 /* the editor's body stands a clear step under its formatting bar */
@@ -2379,4 +2379,23 @@ section.foot-band .about-md { max-width: 600px; }
   .admin-col.twocol > #logoRow, .admin-col.twocol > #usersList { margin-top: 46px; }
   .admin-col.twocol > .set-h:has(+ #logoRow) { padding-top: 40px; }
   .admin-col.twocol > .set-h:has(+ #usersList) { padding-top: 27px; }
+}
+
+/* a textarea ends where its box ends, so a stack of fields keeps one
+   step (an inline box would leave a baseline gap under it) */
+textarea, .ed-cm { display: block; vertical-align: top; }
+
+/* the band's one line beside Subscribe, on the two columns About
+   would take */
+@media (min-width: 860px) { section.foot-band .cols #bandDesc { grid-column: 1 / 3; } }
+
+/* a filter row's tabs stand as tall as the controls beside them, so
+   the open one's rule closes the row on one line */
+.seg-b { min-height: 38px; }
+
+/* the About bar's outer glyphs on its text's edges, on a phone */
+@media (pointer: coarse), (max-width: 639px) {
+  #aboutBar { padding-left: 0; padding-right: 0; }
+  #aboutBar .mdb:first-child { margin-left: -3px; }
+  #aboutBar .mdb:last-of-type { margin-right: -3px; }
 }

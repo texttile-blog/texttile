@@ -234,8 +234,8 @@ defmodule TexttileWeb.StatsLive do
                      the data of a row reads as one line --%>
                 <th>{gettext("Entry")}</th>
                 <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Date")}</th>
-                <th class="text-right num w-[44px] sm:w-[88px] pl-3 sm:pl-4">{gettext("Views")}</th>
-                <th class="text-right num w-[44px] sm:w-[88px] pl-3 sm:pl-4">{gettext("People")}</th>
+                <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("Views")}</th>
+                <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">
                   {gettext("Comments")}
                 </th>
@@ -244,7 +244,7 @@ defmodule TexttileWeb.StatsLive do
             <tbody>
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
-                <td class="pr-5">
+                <td class="pr-4">
                   <%!-- the mark of the state before the title, once per row;
                        a phone, which has no Date and Comments columns, says
                        them on a line under the title --%>

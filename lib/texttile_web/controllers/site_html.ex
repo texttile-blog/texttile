@@ -124,6 +124,16 @@ defmodule TexttileWeb.SiteHTML do
           <p class="f-eyebrow">{gettext("About")}</p>
           <div class="about-md">{Phoenix.HTML.raw(@about_html)}</div>
         </div>
+        <%!-- a page that leaves About out (the About page itself) keeps the
+             band full with the blog's one line, so Subscribe never stands
+             over two empty columns --%>
+        <div
+          :if={!@about_html and String.trim(Texttile.Settings.get(:site_description)) != ""}
+          id="bandDesc"
+        >
+          <p class="f-eyebrow">{site_title()}</p>
+          <p>{String.trim(Texttile.Settings.get(:site_description))}</p>
+        </div>
         <div id="subscribe" aria-label={gettext("Subscribe")}>
           <p class="f-eyebrow">{gettext("Subscribe")}</p>
           <p>
