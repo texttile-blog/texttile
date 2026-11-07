@@ -105,7 +105,7 @@
          edge, so the eye takes it for the end of the text and not for
          the first block under it. It stands first because "keep
          reading" is what most readers want next. --%>
-    <div :if={@older || @newer} class="wrap narrow mt-[48px]">
+    <div :if={@older || @newer} class="wrap narrow mt-[40px]">
       <nav class="textnav" aria-label={gettext("More entries")}>
         <div class="pv">
           <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
@@ -127,7 +127,7 @@
          posting is a plain form round trip. --%>
     <section
       :if={@comments}
-      class="wrap narrow mt-[54px]"
+      class="wrap narrow mt-[40px]"
       id="comments"
       aria-label={gettext("Comments")}
     >
@@ -178,7 +178,7 @@
             </time>
           </div>
           <p
-            class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
+            class="comment-body mt-[5px] font-serif text-[16px] leading-[1.6]"
             phx-no-format
           >{comment.body}</p>
           <p :if={kind == :own} class="f-note mt-[6px]">

@@ -1450,6 +1450,19 @@ defmodule TexttileWeb.EditorLive do
           {gettext("Not saved · offline")}
         </span>
 
+        <%!-- the deliberate save beside the automatic one, on a window
+             wide enough to hold both; a phone has it under the words --%>
+        <button
+          :if={@holds_lock}
+          type="button"
+          class="btn sm quiet hidden md:inline-flex"
+          id="barSaveVersion"
+          phx-click="save_version"
+          data-flush-body
+        >
+          {gettext("Save version")}
+        </button>
+
         <%!-- On a narrow screen the tiles and the settings follow the
              words. The bar stays in reach while the words scroll, so the
              short way down to them stands in it. --%>
@@ -2210,23 +2223,35 @@ defmodule TexttileWeb.EditorLive do
               <span class="lab">{gettext("Preview image")}</span>
               <span class="val">
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
-                  <%= if @preview_candidates == [] do %>
-                    <span class="note">
-                      {gettext(
-                        "No pictures yet. Once the entry or the gallery has one, pick it here."
-                      )}
-                    </span>
-                  <% else %>
-                    <button
-                      :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
-                      type="button"
-                      class={["cover-opt", @effective_preview == path && "on"]}
-                      style={tile_bg((@media[path] && @media[path].still) || path)}
-                      phx-click="set_preview"
-                      phx-value-path={path}
-                      aria-label={gettext("Use image %{index} as the preview image", index: index)}
-                    >
-                    </button>
+                  <%!-- With only tiles to choose from, the tiles above are
+                       the picker: the one marked preview is the choice,
+                       and the lightbox of any other one changes it. The
+                       strip is for pictures in the words, which have no
+                       tile of their own. --%>
+                  <%= cond do %>
+                    <% @preview_candidates == [] -> %>
+                      <span class="note">
+                        {gettext(
+                          "No pictures yet. Once the entry or the gallery has one, pick it here."
+                        )}
+                      </span>
+                    <% Enum.all?(@preview_candidates, &(&1 in Enum.map(@gallery, fn image -> image.path end))) -> %>
+                      <span class="note" id="previewByTile">
+                        {gettext(
+                          "The tile marked preview. To choose another, open it and tick Preview image."
+                        )}
+                      </span>
+                    <% true -> %>
+                      <button
+                        :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
+                        type="button"
+                        class={["cover-opt", @effective_preview == path && "on"]}
+                        style={tile_bg((@media[path] && @media[path].still) || path)}
+                        phx-click="set_preview"
+                        phx-value-path={path}
+                        aria-label={gettext("Use image %{index} as the preview image", index: index)}
+                      >
+                      </button>
                   <% end %>
                 </div>
                 <div class="hint">

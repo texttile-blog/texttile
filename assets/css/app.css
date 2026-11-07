@@ -109,7 +109,7 @@
      the violet of the main action */
   .btn.danger { color: var(--tt-julia); }
   .btn.danger:hover { color: var(--tt-julia); }
-  .btn.quiet.danger { color: var(--tt-julia); }
+  .btn.quiet.danger { color: var(--tt-dim); }
   .btn.quiet.danger:hover { color: var(--tt-julia); background-color: var(--tt-juliatint); }
   /* the small badge on a comment whose reader has not confirmed the
      address yet - worn in the admin area and on the reader's own
@@ -222,16 +222,35 @@
      whole width is used and the eye runs down the names. The page
      heading spans both. A heading and the first block after it stand
      in one row on the same top margin, so they start on one line. */
+  /* A list on a wide window: the screen's name and its filters in the
+     rail on the left, the list beside it at a measure a row can be read
+     at. The same two columns as Settings, so every screen that manages
+     something has one shape. */
   @media (min-width: 1000px) {
-    .admin-col.split {
+    .admin-col.rail {
+      display: grid; grid-template-columns: 200px minmax(0, 1fr);
+      column-gap: 56px; align-items: start;
+    }
+    .admin-col.rail > .rail-side { position: sticky; top: 86px; margin-bottom: 0; }
+    .admin-col.rail > .rail-main { min-width: 0; padding-top: 4px; }
+    /* the filters of the rail stand as a column, the open one ruled on
+       the side the list is on */
+    .rail-side nav { flex-direction: column; align-items: flex-start; gap: 0; margin-top: 22px; }
+    .rail-side .seg-b, .rail-side .seg-b:first-child { padding: 0 0 0 12px; min-height: 32px; box-shadow: inset 2px 0 0 var(--tt-hair); }
+    .rail-side .seg-b.on { box-shadow: inset 2px 0 0 var(--tt-accent); }
+    .rail-side .lead { margin-bottom: 0; }
+    .rail-side .cmt-tools { top: 52px; }
+  }
+  @media (min-width: 1000px) {
+    .admin-col.twocol {
       display: grid; grid-template-columns: 200px minmax(0, 640px);
       column-gap: 56px; align-items: start;
     }
-    .admin-col.split > * { grid-column: 2; min-width: 0; }
-    .admin-col.split > .page-h, .admin-col.split > .lead { grid-column: 1 / -1; }
-    .admin-col.split > .set-h { grid-column: 1; }
-    .admin-col.split > .set-h, .admin-col.split > .set-h + * { margin-top: 44px; }
-    .admin-col.split > .set-h { padding-top: 2px; }
+    .admin-col.twocol > * { grid-column: 2; min-width: 0; }
+    .admin-col.twocol > .page-h, .admin-col.twocol > .lead { grid-column: 1 / -1; }
+    .admin-col.twocol > .set-h { grid-column: 1; }
+    .admin-col.twocol > .set-h, .admin-col.twocol > .set-h + * { margin-top: 44px; }
+    .admin-col.twocol > .set-h { padding-top: 2px; }
   }
 
   /* type roles */
@@ -381,7 +400,10 @@
     display: flex; flex-wrap: wrap; align-items: baseline;
     column-gap: 7px; row-gap: 3px; font-size: 13.5px;
   }
-  .cmt-when { margin-left: auto; font-size: 12.5px; color: var(--tt-faint); }
+  /* the moment follows the entry on the same line, so the eye reads
+     who, where and when in one run */
+  .cmt-when { font-size: 12.5px; color: var(--tt-faint); }
+  .cmt-when::before { content: "\00b7\00a0"; color: var(--tt-slash); }
   .cmt-when .num { white-space: nowrap; }
   .cmt-ico { color: var(--tt-faint); align-self: center; display: inline-flex; }
   .cmt-ico:hover { color: var(--tt-accent); }
@@ -399,11 +421,6 @@
     display: grid; place-items: center; cursor: pointer;
   }
   .cmt-pick input, .cmt-tools input { width: 16px; height: 16px; margin: 0; accent-color: var(--tt-accent); }
-  /* the box takes room from the first line of a row, so on a phone the
-     moment always has its own line instead of falling there by length */
-  @media (max-width: 767px) {
-    .cmt.sel .cmt-when { flex-basis: 100%; margin-left: 0; }
-  }
   /* what the admin does to many comments. It stays under the topbar, so
      a box ticked far down the list is one tap from its button. */
   .cmt-tools {
@@ -432,6 +449,15 @@
      grows to what it holds. */
   /* the lines to pass on: addresses you read, so they read at the size
      the address field reads at, on the same rule */
+  /* two fields and their button in one row, on one grid for every
+     row of a screen, so the right edges line up down the page; a
+     single field spans the two field columns */
+  .pairrow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: end; }
+  @media (min-width: 640px) {
+    .pairrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 96px; }
+    .pairrow .btn { width: 100%; }
+    .pairwide { max-width: calc(100% - 106px); }
+  }
   /* a one-line text that may run long: it wraps and grows instead of
      hiding its end, and it is never dragged bigger */
   .grow-line { resize: none; field-sizing: content; line-height: 22px; min-height: 38px; }
@@ -455,13 +481,18 @@
   .oldaddr .p:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
 
   /* segmented filter, e.g. the status filter over the texts grid */
+  /* ONE SELECTED STATE · a filter, a tab, a year and a section all say
+     "this one" the same way: the ink of the words and a violet rule
+     under them. Everything that is not chosen stands in the quiet ink. */
   .seg-b {
-    font-size: 13px; font-weight: 500; color: var(--tt-dim); padding: 5px 12px;
-    border-radius: var(--tt-radius);
-    transition: background-color .15s ease, color .15s ease;
+    display: inline-flex; align-items: center; gap: 5px; min-height: 34px;
+    font-size: 13.5px; font-weight: 500; color: var(--tt-dim); padding: 0 10px;
+    box-shadow: inset 0 -2px 0 transparent;
+    transition: color .15s ease, box-shadow .15s ease;
   }
-  .seg-b:hover { background-color: var(--tt-field); color: var(--tt-ink); }
-  .seg-b.on { background-color: var(--tt-paper); color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--tt-rule), 0 1px 1px rgb(var(--tt-shadow) / .05); }
+  .seg-b:first-child { padding-left: 0; }
+  .seg-b:hover { color: var(--tt-ink); }
+  .seg-b.on { color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tt-accent); }
 
   /* what the tag field offers while you type. It hangs on the body and
      is placed by the hook, so no scroll container can cut it off. */
@@ -538,9 +569,14 @@
     display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px;
     font-size: 13px; color: var(--tt-dim); margin-top: 5px;
   }
-  /* who it is by, at the far end of the line, and at the right edge
-     of its own line when the card is too narrow for both */
-  .card .cm .by { margin-left: auto; white-space: nowrap; }
+  /* who it is by follows the day on the same line, so the facts of a
+     card read as one run */
+  .card .cm { column-gap: 0; }
+  .card .cm .by { white-space: nowrap; }
+  .card .cm .by::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  /* a grid row of cards keeps one height for its titles, so the lines
+     under them stand level across the row */
+  @media (min-width: 640px) { #cards .card .ct { min-height: 2.5em; } }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
   .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
   .card .cm .st.published { background: var(--tt-accent); }
@@ -602,9 +638,7 @@
     #cards .card-get { display: none; }
     #cards .card { padding-right: 0; }
     /* who it is by joins the line instead of floating in the row */
-    #cards .card .cm { column-gap: 0; }
-    #cards .card .cm .by { margin-left: 0; }
-    #cards .card .cm .by::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+
   }
 
   /* the split button: the primary action and the state actions in one
@@ -1571,20 +1605,21 @@
      over it, the count quiet beside it. Both dim, they read as one
      long number and the row goes to grey soup. */
   .per {
-    font-size: 13px; line-height: 1.5; color: var(--tt-ink); font-weight: 600;
+    font-size: 13px; line-height: 1.5; color: var(--tt-dim); font-weight: 500;
     text-decoration: none; font-variant-numeric: tabular-nums; white-space: nowrap;
   }
   /* The count keeps its own quiet ink whatever the year beside it does,
      and inline-block keeps the rule of the open one off it: the mark
      belongs to the year, not to how many entries it holds. */
   .per .cnt { display: inline-block; margin-left: 5px; font-weight: 400; color: var(--tt-dim); }
-  a.per:hover, button.per:hover { color: var(--tt-accent); }
+  a.per:hover, button.per:hover { color: var(--tt-ink); }
   /* the open one: weight says "year" for every word in the row, so the
      one the reader stands in says it with the accent and a rule under
      it instead */
   .per.on {
-    color: var(--tt-accent);
-    text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px;
+    color: var(--tt-ink); font-weight: 600;
+    text-decoration: underline; text-decoration-color: var(--tt-accent);
+    text-decoration-thickness: 2px; text-underline-offset: 6px;
   }
 
   /* the pager under the list, and the way from one text to the next
@@ -1621,7 +1656,7 @@
      column. Nothing else on the page has that left edge, so the eye
      takes it for the end of the text. */
   .textnav {
-    display: grid; gap: 20px; padding: 21px 0 23px;
+    display: grid; gap: 16px; padding: 16px 0 18px;
     border-top: 1px solid var(--tt-rule);
     border-bottom: 1px solid var(--tt-rule);
   }
@@ -1889,6 +1924,7 @@
 .ed-cm .cm-mdcblast { border-radius: 0 0 var(--tt-radius) var(--tt-radius); padding-bottom: 5px; }
 .ed-cm .cm-mdtable { font-family: var(--tt-font-mono); font-size: 13px; line-height: 1.6; }
 .ed-cm .cm-mdbullet { color: var(--tt-dim); }
+.ed-cm .cm-line.cm-mdli { padding-left: 1.15em; text-indent: -1.15em; }
 .ed-cm .cm-mdnum { color: var(--tt-dim); font-variant-numeric: tabular-nums; }
 .ed-cm .cm-mdcheck {
   width: 15px; height: 15px; margin: 0 4px 0 0; vertical-align: -2px;

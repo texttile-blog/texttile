@@ -205,6 +205,9 @@ function buildDeco(view, resolveImage) {
         return
       }
       if (name === "ListMark") {
+        /* a list line hangs: its wrapped lines start under the words,
+           not under the bullet. Only the drawing changes. */
+        lineCls(n.from, "cm-mdli")
         const txt = doc.sliceString(n.from, n.to)
         if (/^\d/.test(txt)) { deco.push(Decoration.mark({class: "cm-mdnum"}).range(n.from, n.to)); return }
         const item = n.node.parent

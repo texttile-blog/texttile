@@ -180,7 +180,7 @@ defmodule TexttileWeb.ProfileLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col split">
+      <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Your profile")}</h1>
         <p class="lead">
           {gettext("You are signed in as")}
@@ -204,7 +204,7 @@ defmodule TexttileWeb.ProfileLive do
                 name={@profile_form[:display_name].name}
                 value={@profile_form[:display_name].value}
                 phx-debounce="300"
-                class="max-w-[530px]"
+                class="pairwide"
               />
               <div class="hint">
                 {gettext("What others see. Empty shows the part of your address in front of the @.")}
@@ -220,8 +220,8 @@ defmodule TexttileWeb.ProfileLive do
         <.form for={@email_form} id="email-form" phx-submit="set_email">
           <div class="drow">
             <span class="val">
-              <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px]">
+              <span class="pairrow">
+                <span class="min-w-0">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}
                   </label>
@@ -235,7 +235,7 @@ defmodule TexttileWeb.ProfileLive do
                     autocapitalize="off"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px]">
+                <span class="min-w-0">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-current">
                     {gettext("Your password")}
                   </label>
@@ -264,8 +264,8 @@ defmodule TexttileWeb.ProfileLive do
         <.form for={@pw_form} id="password-form" phx-submit="set_password">
           <div class="drow">
             <span class="val">
-              <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px]">
+              <span class="pairrow">
+                <span class="min-w-0">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-current">
                     {gettext("Current password")}
                   </label>
@@ -276,7 +276,7 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px]">
+                <span class="min-w-0">
                   <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-new">
                     {gettext("New password")}
                   </label>

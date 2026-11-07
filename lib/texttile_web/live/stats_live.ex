@@ -108,7 +108,7 @@ defmodule TexttileWeb.StatsLive do
           {gettext("Counted by this server alone. No cookie, no fingerprint, no third party.")}
         </p>
 
-        <div id="statsWindows" class="flex flex-wrap gap-1 mb-4 -ml-3">
+        <div id="statsWindows" class="flex flex-wrap gap-1 mb-5">
           <.link
             :for={days <- windows()}
             id={"win-#{days}"}
@@ -224,7 +224,9 @@ defmodule TexttileWeb.StatsLive do
                   </.link>
                 </td>
                 <td class="text-right num hidden sm:table-cell">
-                  {Texttile.I18n.format_short_date(row.article.publish_date)}
+                  {(row.article.publish_date &&
+                      Texttile.I18n.format_short_date(row.article.publish_date)) ||
+                    gettext("draft")}
                 </td>
                 <td class="text-right num">{number(row.views)}</td>
                 <td class="text-right num people">{number(row.people)}</td>

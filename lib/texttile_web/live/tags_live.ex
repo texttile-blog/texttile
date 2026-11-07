@@ -130,23 +130,25 @@ defmodule TexttileWeb.TagsLive do
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
-      <div class="admin-col">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
+      <div class="admin-col rail">
+        <%!-- the rail: what this screen is and how it is narrowed; the
+             list stands beside it on a wide window, under it on a phone --%>
+        <div class="rail-side flex items-baseline gap-[14px] flex-wrap mb-5">
           <h1 class="page-h">{gettext("Tags")}</h1>
           <span class="note num" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </span>
         </div>
-        <div id="tagsList">
+        <div id="tagsList" class="rail-main">
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[9px] border-b border-hair flex items-center gap-[10px] flex-wrap"
+            class="py-[9px] border-b border-hair flex items-baseline gap-[10px] flex-wrap"
           >
-            <b class="text-[14.5px] break-words min-w-0 flex-1">{tag}</b>
+            <b class="text-[14.5px] break-words min-w-0 flex-1">#{tag}</b>
             <span class="note num w-[88px] text-right">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>

@@ -25,7 +25,7 @@
          the choices follow the search, so a year that holds nothing
          for the term says so instead of lying about it. --%>
     <form
-      class="searchrow mt-7"
+      class="searchrow mt-5"
       id="archive"
       action={@list_path}
       method="get"
@@ -62,7 +62,7 @@
       <span class="cnt" id="count">{entry_count(@found, @total)}</span>
     </form>
 
-    <div class="cards mt-10" id="texts">
+    <div class="cards mt-8" id="texts">
       <.card
         :for={article <- @articles}
         article={article}

@@ -628,7 +628,7 @@ defmodule TexttileWeb.SettingsLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col split">
+      <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Settings")}</h1>
         <p class="lead">
           {gettext("Every change saves itself the moment you make it.")}

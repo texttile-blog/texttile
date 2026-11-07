@@ -19,8 +19,8 @@ defmodule TexttileWeb.SiteHTML do
   The header every reader page wears: the mark and the site name, the
   site description as it stands in Settings, then the menu the app
   builds out of its pages - Home when a fixed page is the front door,
-  Blog for the list, then every published page by publish date, and
-  Sign in at the end, the same door the foot holds.
+  Blog for the list, then every published page by publish date. The
+  way into the admin area is the foot's, once per page.
   """
   attr :active, :any, default: nil
   attr :current_scope, :any, default: nil
@@ -60,9 +60,6 @@ defmodule TexttileWeb.SiteHTML do
           aria-current={@active == page.id && "page"}
         >
           {Articles.display_title(page)}
-        </a>
-        <a id="menu-signin" href={if @current_scope, do: ~p"/admin", else: ~p"/login"}>
-          {gettext("Sign in")}
         </a>
       </nav>
     </header>
