@@ -77,6 +77,15 @@ defmodule TexttileWeb.TextsLive do
     })
   end
 
+  defp initial(article) do
+    article
+    |> Articles.display_title()
+    |> String.trim()
+    |> String.first()
+    |> to_string()
+    |> String.upcase()
+  end
+
   # The status filters in their order. Scheduled stands only while an
   # entry waits for its day (or while it is the open filter).
   defp filters(counts, open) do
@@ -233,6 +242,10 @@ defmodule TexttileWeb.TextsLive do
                   <span :if={Articles.lead(article) != ""} class="cx">
                     {Articles.lead(article, 240)}
                   </span>
+                  <%!-- the small square of the phone list holds the first
+                       letter of the title, set large: words at that size
+                       could not be read --%>
+                  <span class="ci" aria-hidden="true">{initial(article)}</span>
                   <span :if={Articles.lead(article) == ""} class="cn">
                     {gettext("no images yet")}
                   </span>

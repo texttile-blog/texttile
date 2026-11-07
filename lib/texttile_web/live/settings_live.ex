@@ -702,9 +702,6 @@ defmodule TexttileWeb.SettingsLive do
           </span>
           <span class="flex flex-col flex-1 min-w-0">
             <b>{gettext("Logo")}</b>
-            <span class="note" id="name-logo">
-              {@settings.logo_name || gettext("Default: the Texttile mark")}
-            </span>
           </span>
           <button
             :if={@settings.logo}
@@ -726,8 +723,11 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
+        <%!-- what is in use now and what the field is for, as one line --%>
         <p class="note pt-[8px] pb-[14px] border-b border-hair pl-[58px]">
-          {gettext("Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP.")}
+          <span id="name-logo" class="text-ink">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+            "Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP."
+          )}
         </p>
         <div class="flex items-center gap-[14px] pt-[14px]">
           <span
@@ -744,9 +744,6 @@ defmodule TexttileWeb.SettingsLive do
           </span>
           <span class="flex flex-col flex-1 min-w-0">
             <b>{gettext("Favicon")}</b>
-            <span class="note" id="name-favicon">
-              {@settings.favicon_name || gettext("Default: the Texttile mark")}
-            </span>
           </span>
           <button
             :if={@settings.favicon}
@@ -769,7 +766,9 @@ defmodule TexttileWeb.SettingsLive do
           </form>
         </div>
         <p class="note pt-[8px] pb-[14px] border-b border-hair pl-[58px]">
-          {gettext("The icon in the browser tab. A square SVG, PNG, JPG or WebP.")}
+          <span id="name-favicon" class="text-ink">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+            "The icon in the browser tab. A square SVG, PNG, JPG or WebP."
+          )}
         </p>
 
         <.section>{gettext("About")}</.section>
@@ -1004,10 +1003,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Users")}</.section>
-        <p class="note mb-1 leading-[1.6]">
-          {gettext("Everybody on this list is an admin.")}
-        </p>
-        <div id="usersList">
+        <div id="usersList" class="border-t border-hair">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
             <div class="flex items-center gap-[10px] flex-wrap">
               <b class="text-[14.5px]">{Accounts.display_name(user)}</b>
@@ -1059,6 +1055,8 @@ defmodule TexttileWeb.SettingsLive do
             </p>
           </div>
         </div>
+        <%!-- the rule of the list stands at its foot, as on Comments --%>
+        <p class="note mt-[10px]">{gettext("Everybody on this list is an admin.")}</p>
 
         <%!-- The next admin, by address. Nothing is handed over by
              hand: the link goes to the inbox, and whoever opens that

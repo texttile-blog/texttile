@@ -243,7 +243,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.35"
           stroke-linecap="round"
         >
           <path d="M6.5 9.5 9.5 6.5" />
@@ -361,7 +361,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.35"
           stroke-linecap="round"
           stroke-linejoin="round"
         >

@@ -60,6 +60,15 @@ defmodule TexttileWeb.StatsLiveTest do
     assert chart |> String.split("<button ") |> length() == 31
   end
 
+  test "the scale stands on round numbers over the busiest bar", %{conn: conn} do
+    seed_views(7)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+
+    assert has_element?(view, "#dayChartMax", "8")
+    assert view |> element("#dayChart") |> render() =~ "height:88%"
+  end
+
   test "the top table names the entries and jumps into their Stats tab", %{conn: conn} do
     article = published_post(%{title: "Concrete flowers"})
     seed_views(4, article_id: article.id)

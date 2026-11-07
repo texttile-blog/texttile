@@ -122,7 +122,9 @@ defmodule TexttileWeb.StatsLive do
           </.link>
         </div>
 
-        <div id="statsFigures" class="grid grid-cols-3 border-y border-hair">
+        <%!-- no rule over the figures: the window switch above them is a row
+             of tabs like every other, its line under the open one alone --%>
+        <div id="statsFigures" class="grid grid-cols-3 border-b border-hair">
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;
@@ -141,13 +143,13 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
-              <%!-- one line on a desk, so the three figures end together; a
-                   phone's narrow third gives the day a line of its own --%>
+              <%!-- one line, so the three figures end together: a phone's
+                   narrow third leaves the day out, and the chart marks it --%>
               {gettext("busiest day")}<span
                 :if={@summary.busiest}
                 id="figBusiestDay"
-                class="whitespace-nowrap max-sm:block"
-              ><span class="max-sm:hidden">, </span>{busiest_day(@summary.busiest)}</span>
+                class="whitespace-nowrap max-sm:hidden"
+              >, {busiest_day(@summary.busiest)}</span>
             </div>
           </div>
         </div>
@@ -233,7 +235,7 @@ defmodule TexttileWeb.StatsLive do
             <tbody>
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
-                <td>
+                <td class="pr-4">
                   <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
                     {Articles.display_title(row.article)}
                   </.link>

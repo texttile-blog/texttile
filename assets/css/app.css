@@ -580,6 +580,7 @@
     box-shadow: inset 0 0 0 1px var(--tt-rule);
   }
   .card:hover .cimg.empty:has(.cx) { box-shadow: inset 0 0 0 1px var(--tt-rule), 0 8px 20px rgb(var(--tt-shadow) / .16); }
+  .card .cimg .ci { display: none; }
   .card .cimg .cx {
     font-family: var(--tt-font-serif); font-size: 15.5px; line-height: 1.45;
     color: var(--tt-inksoft); text-align: left;
@@ -659,12 +660,15 @@
       align-items: center; padding: 9px 44px 9px 0;
     }
     #cards .card .cimg { grid-row: span 2; width: 52px; }
-    /* without a picture the square keeps its place, framed, with the
-       first words of the entry in small serif, so every title in the
+    /* without a picture the square keeps its place, framed, and holds
+       the first letter of the title in the serif, so every title in the
        list starts on the same edge, as on the desk */
-    #cards .card .cimg.empty:has(.cx) { padding: 6px 5px; }
-    #cards .card .cimg .cx { font-size: 8.5px; line-height: 1.25; -webkit-line-clamp: 4; }
-    #cards .card .cimg .cn { display: none; }
+    #cards .card .cimg.empty { display: grid; place-items: center; padding: 0; }
+    #cards .card .cimg .cx, #cards .card .cimg .cn { display: none; }
+    #cards .card .cimg .ci {
+      display: block; font-family: var(--tt-font-serif); font-size: 24px;
+      font-weight: 600; line-height: 1; color: var(--tt-dim);
+    }
 
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }

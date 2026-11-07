@@ -1679,7 +1679,7 @@ defmodule TexttileWeb.EditorLive do
            where the window does. --%>
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] xl:max-w-[1108px] xl:mx-auto">
         <div class="min-w-0" id="textCol">
-          <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
+          <div class="max-w-[680px] mx-auto px-4 lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
             <%!-- A phone has the gallery and the settings under the words,
                  so its row is the three places a writer goes: the words,
                  the gallery, the settings. The record of the entry
@@ -1822,14 +1822,10 @@ defmodule TexttileWeb.EditorLive do
                       )}
                     </span>
                     <span id="edFootText">
-                      <%!-- plain words: Save version is a button in the bar,
-                           and a second one here would be the loudest thing
-                           under the text --%>
-                      <%= if @holds_lock do %>
-                        {gettext(
-                          "The draft saves as you type. A version is a snapshot you can go back to."
-                        )}
-                      <% else %>
+                      <%!-- only the watcher is told something here: for the
+                           writer the Saved in the bar says it all, and a
+                           standing sentence under the text was noise --%>
+                      <%= if not @holds_lock do %>
                         {gettext(
                           "The title and the body are read-only right now. Save version and the Versions tab still work."
                         )}
@@ -2113,7 +2109,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:pl-[33px] lg:pr-6 pt-[22px] lg:pt-[33px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-[22px] lg:pt-[33px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
