@@ -201,6 +201,7 @@ defmodule TexttileWeb.NewsletterLive do
   end
 
   defp since(subscriber) do
-    subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_short_date()
+    day = subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_short_date()
+    gettext("since %{day}", day: day)
   end
 end

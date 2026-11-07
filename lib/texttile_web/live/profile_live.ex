@@ -206,7 +206,9 @@ defmodule TexttileWeb.ProfileLive do
              treatment the Site block of Settings wears --%>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
           <div class="drow">
-            <label class="lab" for={@profile_form[:display_name].id}>
+            <%!-- the section names the one field; the label is for a screen
+                 reader --%>
+            <label class="sr" for={@profile_form[:display_name].id}>
               {gettext("Displayed name")}
             </label>
             <span class="val">
@@ -233,9 +235,7 @@ defmodule TexttileWeb.ProfileLive do
             <span class="val">
               <span class="pairrow">
                 <span class="min-w-0">
-                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-address">
-                    {gettext("Address")}
-                  </label>
+                  <label class="sr" for="em-address">{gettext("Address")}</label>
                   <input
                     type="email"
                     id="em-address"

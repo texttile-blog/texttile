@@ -1679,7 +1679,7 @@ defmodule TexttileWeb.EditorLive do
            where the window does. --%>
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] xl:max-w-[1108px] xl:mx-auto">
         <div class="min-w-0" id="textCol">
-          <div class="max-w-[680px] mx-auto px-4 lg:px-[30px] pt-[22px] lg:pt-[30px] pb-6 lg:pb-[110px]">
+          <div class="max-w-[680px] mx-auto px-4 lg:px-[30px] pt-[22px] lg:pt-[30px] pb-2 lg:pb-[110px]">
             <%!-- A phone has the gallery and the settings under the words,
                  so its row is the three places a writer goes: the words,
                  the gallery, the settings. The record of the entry
@@ -2109,7 +2109,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-[22px] lg:pt-[33px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-[18px] lg:pt-[33px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -2132,14 +2132,6 @@ defmodule TexttileWeb.EditorLive do
                 </span>
                 <span class="note num font-normal font-sans" id="tileOnWay" phx-update="ignore">
                 </span>
-              </span>
-              <%!-- a finger holds, a pointer grabs: the hint says the one
-                   the screen has, under the heading as every explanation --%>
-              <span class="note basis-full on-pointer">
-                {gettext("Grab a tile to sort it.")}
-              </span>
-              <span class="note basis-full on-touch">
-                {gettext("Hold a tile, then drag.")}
               </span>
             </div>
             <div
@@ -2203,6 +2195,13 @@ defmodule TexttileWeb.EditorLive do
                 {gettext("+ Add")}
               </button>
             </div>
+            <%!-- a finger holds, a pointer grabs: the hint says the one the
+                 screen has, under the tiles it is about, so both headings of
+                 the column stand on their rule alike --%>
+            <p class="note mt-[8px]">
+              <span class="on-pointer">{gettext("Grab a tile to sort it.")}</span>
+              <span class="on-touch">{gettext("Hold a tile, then drag.")}</span>
+            </p>
             <%!-- the hook shows it under the tiles it sends, while two
                  or more wait for a Retry: after a reload, or when the
                  line dropped. It writes the count into the b. --%>

@@ -160,7 +160,7 @@ defmodule TexttileWeb.StatsLive do
           <%!-- what the dark bar means, and what a click does: two facts,
                two lines --%>
           <span class="block">{gettext("The dark bar is the busiest day.")}</span>
-          <span class="block">{gettext("Open a bar for its entries and sources.")}</span>
+          <span class="block">{gettext("Open a day for its entries and sources.")}</span>
         </p>
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">

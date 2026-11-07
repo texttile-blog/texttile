@@ -687,7 +687,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-[14px] pt-[14px]">
+        <div class="flex items-center gap-[14px] pt-[14px] border-t border-hair">
           <span
             class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-logo"
@@ -765,7 +765,7 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair">
+        <p class="note pt-[8px] pb-[6px]">
           <span id="name-favicon">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
             "A square SVG, PNG, JPG or WebP."
           )}

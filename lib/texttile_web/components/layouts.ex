@@ -236,6 +236,9 @@ defmodule TexttileWeb.Layouts do
                has no room for the row of sections, so there the name of
                the screen stands in the button, its count beside it, and
                the chevron after them says the name opens the others. --%>
+          <span :if={@wide} class="sm:hidden text-[15px] font-semibold text-ink -ml-[2px]">
+            {gettext("Entry")}
+          </span>
           <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
             {@crumb}<span :if={@count} class="bn-count">{@count}</span>
           </span>
@@ -344,10 +347,18 @@ defmodule TexttileWeb.Layouts do
               {section.label}
             </.link>
           </nav>
-          <span :if={!crumb_in_nav?(@crumb, @active)} class="bn-sep" aria-hidden="true">/</span>
+          <%!-- the profile is named by the person's own name at the right
+               of a desk bar, so it needs no crumb of its own there --%>
+          <span
+            :if={!crumb_in_nav?(@crumb, @active) and @active != "profile"}
+            class="bn-sep"
+            aria-hidden="true"
+          >
+            /
+          </span>
           <span
             :if={!crumb_in_nav?(@crumb, @active)}
-            class="bn on truncate max-md:hidden"
+            class={["bn on truncate max-md:hidden", @active == "profile" && "md:hidden"]}
             id="crumb"
             title={@crumb}
           >
@@ -359,6 +370,17 @@ defmodule TexttileWeb.Layouts do
       <%!-- the gap between the zones, and the only thing in the bar
            that gives way --%>
       <span class="flex-1 min-w-[6px]" aria-hidden="true"></span>
+      <%!-- who is signed in, on a desk: the way to the profile and the
+           sign-out, in words instead of a chevron alone --%>
+      <.link
+        :if={!@wide && @current_scope}
+        navigate={~p"/admin/profile"}
+        id="barMe"
+        class={["bar-me hidden md:inline-flex", @active == "profile" && "on"]}
+        aria-current={@active == "profile" && "page"}
+      >
+        {Texttile.Accounts.display_name(@current_scope.user)}
+      </.link>
       {render_slot(@bar)}
     </header>
 

@@ -236,7 +236,10 @@
     .admin-col.twocol > .page-h, .admin-col.twocol > .lead { grid-column: 1 / -1; }
     .admin-col.twocol > .set-h { grid-column: 1; }
     .admin-col.twocol > .set-h, .admin-col.twocol > .set-h + * { margin-top: 32px; }
-    .admin-col.twocol > .set-h { padding-top: 2px; }
+    /* the heading's first line stands on the baseline of the first label
+       beside it; a list that opens on a rule puts its first row lower */
+    .admin-col.twocol > .set-h { padding-top: 5px; }
+    .admin-col.twocol > .set-h:has(+ #usersList) { padding-top: 13px; }
   }
 
   /* type roles */
@@ -589,15 +592,13 @@
      ellipsis. (The reader's grid shows such an entry as a text.) */
   .card .cimg.empty:has(.cx) {
     display: block; overflow: hidden;
-    background: var(--tt-field); padding: 20px;
-    box-shadow: inset 0 0 0 1px var(--tt-rule);
+    background: var(--tt-field); padding: 18px 18px 0;
   }
-  .card:hover .cimg.empty:has(.cx) { box-shadow: inset 0 0 0 1px var(--tt-rule), 0 8px 20px rgb(var(--tt-shadow) / .16); }
   .card .cimg .ci { display: none; }
   .card .cimg .cx {
-    font-family: var(--tt-font-serif); font-size: 15.5px; line-height: 1.45;
-    color: var(--tt-inksoft); text-align: left;
-    display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+    font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.4;
+    color: var(--tt-ink); text-align: left;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
 
   .card .ct {
@@ -1018,7 +1019,7 @@
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
   .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
   /* a share is a measure, not a control: ink, thinned */
-  .track.share i { background: rgb(var(--tt-shadow) / .7); }
+  .track.share i { background: var(--tt-slash); }
 
   /* THE FILES IN THE TEXT · one row per reference in the words: the
      thumbnail, the name, and the markdown that stands for it.
@@ -2206,3 +2207,13 @@ body.site .card-wrap .cm { font-size: 14px; }
 /* on a desk the help lines come up a step, so a long form stays calm
    without going faint */
 @media (min-width: 1024px) { .hint, .drow .hint { font-size: 14px; } }
+
+/* the signed-in person at the right of a desk bar, quiet, a hairline
+   between them and the save state, as between Saved and View site */
+.bar-me {
+  align-items: center; font-size: 12.5px; color: var(--tt-dim); white-space: nowrap;
+  padding-right: 12px; margin-right: 4px; border-right: 1px solid var(--tt-hair);
+  text-decoration: none;
+}
+.bar-me:hover { color: var(--tt-accent); }
+.bar-me.on { color: var(--tt-ink); font-weight: 600; }

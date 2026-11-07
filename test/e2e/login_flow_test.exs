@@ -145,7 +145,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       # races the script on a slow machine
       |> assert_has("#navMenu", text: "Your profile")
       |> click_link("Your profile")
-      |> assert_has("#crumb", text: "Your profile")
+      |> assert_has("#barMe[aria-current=page]")
       |> assert_has("#sessions", text: "This browser")
       |> refute_has("#sessions", text: "Another browser")
       |> fill_in("Displayed name", with: "Klaus")
