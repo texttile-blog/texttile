@@ -20,7 +20,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "Settings"
-      assert html =~ "Last saved"
+      assert html =~ ~s(id="savedSettings")
 
       for section <- ~w(Site About Theme Comments Users Images Storage) do
         assert has_element?(view, "h2", section)
@@ -176,7 +176,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the page size is a row of sizes, and picking one saves it", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "Pagination"
+      assert html =~ "Entries per page"
 
       # every size divides by two, three and four, so a page of cards
       # ends with a full row whatever the window is
@@ -202,7 +202,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "the comments toggle rewrites its own explanation", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
-      assert html =~ "confirmation link"
+      assert html =~ "follows the link in a mail"
 
       html =
         view
@@ -215,7 +215,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "the mail-me-every-comment switch saves and explains itself", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
-      assert html =~ "Mail me every new comment"
+      assert html =~ "Email new comments"
 
       html =
         view
@@ -390,18 +390,19 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
 
     test "your own row cannot be deleted", %{conn: conn, user: user} do
-      _other = user_fixture(%{display_name: "julia"})
+      other = user_fixture(%{display_name: "julia"})
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "This one is you"
-      assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
+      # the row says "you" once and offers no Delete at all
+      refute html =~ ~s(id="delete-user-#{user.id}")
+      assert html =~ ~s(id="delete-user-#{other.id}")
     end
 
     test "the lone account explains why it cannot go", %{conn: conn, user: user} do
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "The only account left"
-      assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
+      refute html =~ ~s(id="delete-user-#{user.id}")
     end
   end
 

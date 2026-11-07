@@ -7,17 +7,13 @@
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1" id="title">#{@tag}</h1>
-    <p class="f-lead mt-3" id="sub">
-      {ngettext(
-        "One entry has this tag.",
-        "%{count} entries have this tag.",
-        length(@articles)
-      )}
+    <p class="f-note mt-2" id="sub">
+      {ngettext("1 entry", "%{count} entries", length(@articles))}
     </p>
 
     <%!-- every tag of the blog; the one being read is marked and does
          not link, the others are the way into the next archive --%>
-    <p class="mt-7 pb-3 border-b border-rule" id="tagbar">
+    <p class="mt-4 pb-2 border-b border-hair flex flex-wrap gap-x-4" id="tagbar">
       <%= for {tag, count} <- @tags do %>
         <span :if={tag == @tag} class="ctag" style="color:var(--tt-ink);font-weight:600">
           #{tag} <span class="cnt">{count}</span>
@@ -28,7 +24,7 @@
       <% end %>
     </p>
 
-    <div class="cards mt-8" id="texts">
+    <div class="cards mt-7" id="texts">
       <.card
         :for={article <- @articles}
         article={article}

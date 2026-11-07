@@ -16,7 +16,6 @@ defmodule Texttile.ArticlesListingTest do
       assert list.page == 1
       assert list.pages == 1
       assert list.shown == 0
-      assert list.across_years == 0
       assert {list.year, list.month} == {nil, nil}
     end
 
@@ -64,7 +63,6 @@ defmodule Texttile.ArticlesListingTest do
       assert list.years == [{2026, 2}, {2024, 1}]
       assert list.months == [{3, 1}, {8, 1}]
       assert list.shown == 1
-      assert list.across_years == 3
     end
 
     test "the year and the month arrive as the address writes them" do

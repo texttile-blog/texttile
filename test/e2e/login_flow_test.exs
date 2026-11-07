@@ -25,7 +25,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
       |> assert_has("h1", text: "Entries")
-      |> click_button("#wmBtn", "Texttile")
+      |> click("#wmBtn")
       |> assert_has("#wmMe", text: "KB")
     end
 
@@ -128,7 +128,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "the wordmark menu opens with sections and presence", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("#wmBtn", "Texttile")
+      |> click("#wmBtn")
       |> assert_has("#navMenu", text: "New entry")
       |> assert_has("#navMenu", text: "Here now")
       |> assert_has("#navMenu", text: "No one else right now.")
@@ -140,17 +140,17 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "edits save instantly and follow into the menu", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("#wmBtn", "Texttile")
+      |> click("#wmBtn")
       # the menu opens in the browser: wait for it, or the next click
       # races the script on a slow machine
       |> assert_has("#navMenu", text: "Your profile")
       |> click_link("Your profile")
       |> assert_has("#crumb", text: "Your profile")
       |> assert_has("#sessions", text: "This browser")
-      |> assert_has("#sessions", text: "the only one open")
+      |> refute_has("#sessions", text: "Another browser")
       |> fill_in("Displayed name", with: "Klaus")
       |> assert_has("#profileWho", text: "Klaus")
-      |> click_button("#wmBtn", "Texttile")
+      |> click("#wmBtn")
       |> assert_has("#wmMe", text: "Klaus")
     end
   end

@@ -1,112 +1,80 @@
-/* ====================================================================
-   THEME · IRIS · the one theme of the admin area
-   Round-13's iris. A warm sand surface: sand page, espresso ink, warm
-   hairlines. The accent is a violet, deep enough to hold AA on sand:
-   rings, links, active tabs and checkboxes are violet, solid buttons
-   are deep violet going lighter violet on hover, and the selection and
-   the focus wash carry the faintest lavender cast. julia keeps her
-   rust, far enough from the violet that the two never trade places.
-
-   Every colour, wash and radius of the app is one of these --tt-*
-   tokens; nothing else owns a colour. Tokens for screens that do not
-   exist yet return with their features.
-   ==================================================================== */
+/* Texttile theme: iris.
+   Every colour, line and corner of the blog and the admin area is one
+   of these tokens. Change a value here and both faces follow. */
 :root {
   color-scheme: light;
 
-  /* surfaces · one step apart, so a zone says what it is before it is
-     read. The page used to be five per cent off white: the bar, the
-     white card and the page all landed on the same tone, and the whole
-     screen read as one flat sheet. Sand now, white over it. */
-  --tt-page:        #f6f3ee;
+  /* surfaces */
+  --tt-page:        #f7f5f1;
   --tt-paper:       #ffffff;
-  --tt-field:       #eae6df;
-  --tt-fieldhover:  #e4dff0;
-  --tt-bar:         rgba(255, 255, 255, .93);
-  /* the ground of the admin bar: the solid violet the buttons are made
-     of, so the admin area and the blog can never be confused */
-  --tt-barsolid:    #4b2a83;
+  --tt-field:       #efebe5;
+  --tt-fieldhover:  #e9e4f3;
+  --tt-bar:         rgba(247, 245, 241, .92);
 
-  /* ink · 14.7 / 9.4 / 7.4 / 5.7 against the page. The two quiet roles
-     carry dates, leads and notes: they are read, so they went a step
-     down with the surfaces instead of following them up. */
-  --tt-ink:         #23201b;
-  --tt-inksoft:     #443f37;
-  --tt-dim:         #554e45;
-  --tt-faint:      #665f55;
-  --tt-slash:       #b0aaa1;
+  /* ink, strongest to quietest */
+  --tt-ink:         #1f1c18;
+  --tt-inksoft:     #3b3732;
+  --tt-dim:         #5a554d;
+  --tt-faint:       #645e55;
+  --tt-slash:       #b9b2a8;
 
-  /* lines · warm gray, and a line only works when it is seen: 1.6 and
-     1.3 against the page, from 1.4 and 1.1 */
-  --tt-rule:        #c9c3ba;
-  --tt-hair:        #ddd8d0;
+  /* lines */
+  --tt-rule:        #d8d2c9;
+  --tt-hair:        #e6e1d9;
 
-  /* accent · violet: focus, links, active tab, checkboxes · 5.9 on the
-     page, 6.5 on white, 5.5 on a field */
-  --tt-accent:      #6d35de;
-  --tt-accentloud:  #6d35de;
-  --tt-accentsoft:  #a992e0;
-  --tt-accentwash:  #ece7f7;
-  --tt-accentline:  #d0c3ea;
+  /* accent: links, focus, the selected state */
+  --tt-accent:      #5a37c2;
+  --tt-accentloud:  #5a37c2;
+  --tt-accentsoft:  #b2a2e4;
+  --tt-accentwash:  #efebfa;
+  --tt-accentline:  #d8cff2;
 
-  /* solid controls: deep violet, lighter violet on hover */
-  --tt-solid:       #4b2a83;
-  --tt-solidhover:  #6a3fb5;
-  --tt-onsolid:    #ffffff;
+  /* solid buttons */
+  --tt-solid:       #5a37c2;
+  --tt-solidhover:  #4a2aa6;
+  --tt-onsolid:     #ffffff;
   --tt-solidline:   rgba(255, 255, 255, .32);
 
-  /* julia · rust, and nothing else · 5.3 on the page */
-  --tt-julia:       #a34a26;
-  --tt-juliatint:   #fbeade;
-  --tt-julialine:   #e8c7ae;
-  --tt-livetint:    #ece7f7;
-  --tt-liveline:    #d0c3ea;
-  --tt-livetext:    #6d35de;
+  /* the other person */
+  --tt-julia:       #a3471f;
+  --tt-juliatint:   #fbece2;
+  --tt-julialine:   #ecccb6;
+  --tt-livetint:    #efebfa;
+  --tt-liveline:    #d8cff2;
+  --tt-livetext:    #5a37c2;
 
-  /* depth. The two washes that used to tint the writing surface went
-     with round 19: the surface carries no ground now, so there is
-     nothing to tint. */
-  --tt-shadow:      35 30 24;
+  /* depth */
+  --tt-shadow:      31 28 24;
   --tt-scrim:       rgba(24, 21, 17, .34);
   --tt-overlay:     25 23 32;
-  --tt-lightbox:    rgba(24, 21, 17, .96);
+  --tt-lightbox:    rgba(20, 18, 15, .96);
 
-  /* shape · paper's */
-  --tt-radius:      4px;
-  --tt-radius-pop:  7px;
+  /* corners */
+  --tt-radius:      6px;
+  --tt-radius-pop:  10px;
   --tt-radius-pill: 999px;
-  --tt-radius-img:  3px;
+  --tt-radius-img:  4px;
   --tt-tabw:        2px;
 
-  /* THE FIELD IS A LINE (round 19)
-     No ground, no border, no corner. One rule under the text, ink on
-     hover, violet and a second pixel on focus. The second pixel is a
-     shadow and not a thicker border, so nothing moves when a field
-     takes the caret.
-
-     Twelve values say all of it, so a later change to how a field
-     looks is a change to twelve numbers and to no selector. A screen
-     that wants another field redeclares them on itself, the way the
-     reader's two forms do. */
-  --fld-bg:     transparent;
-  --fld-bd:     1px solid transparent;
+  /* fields: a white box with a hairline, violet on focus */
+  --fld-bg:     var(--tt-paper);
+  --fld-bd:     1px solid var(--tt-rule);
   --fld-bb:     1px solid var(--tt-rule);
-  --fld-r:      0px;
-  --fld-p:      7px 1px;
+  --fld-r:      6px;
+  --fld-p:      7px 12px;
   --fld-sh:     none;
 
-  --fld-bg-h:   var(--fld-bg);
-  --fld-bb-h:   1px solid var(--tt-inksoft);
+  --fld-bg-h:   var(--tt-paper);
+  --fld-bb-h:   1px solid #b8b1a7;
 
-  --fld-bg-f:   var(--fld-bg);
-  --fld-bd-f:   var(--fld-bd);
+  --fld-bg-f:   var(--tt-paper);
+  --fld-bd-f:   1px solid var(--tt-accent);
   --fld-bb-f:   1px solid var(--tt-accent);
-  --fld-sh-f:   0 1px 0 0 var(--tt-accent);
+  --fld-sh-f:   0 0 0 3px var(--tt-accentwash);
 
-  /* the writing surface: the title on its rule, the body on a rule of
-     its own at the left */
-  --edt-bb:     2px solid var(--tt-inksoft);
-  --edb-sh:     inset 2px 0 0 0 var(--tt-hair);
-  --edb-shf:    inset 2px 0 0 0 var(--tt-accent);
-  --edb-pl:     16px;
+  /* the writing surface */
+  --edt-bb:     1px solid transparent;
+  --edb-sh:     none;
+  --edb-shf:    none;
+  --edb-pl:     6px;
 }

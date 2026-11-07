@@ -36,9 +36,9 @@ defmodule TexttileWeb.Layouts do
   The sections of the wordmark menu, in the order they stand there, and
   the digit each one answers to from anywhere in the admin area.
 
-  One list, two readers: the menu draws itself from it, and the key hint
-  under the entries grid names the same digits, so the two can never
-  drift apart.
+  One list, two readers: the menu draws itself from it, each row with
+  its digit, and the bar's row of sections takes its screens from it,
+  so the two can never drift apart.
   """
   def sections do
     [
@@ -114,22 +114,37 @@ defmodule TexttileWeb.Layouts do
   end
 
   @doc """
-  The column the sign-in family shares: the mark, the name, one quiet
-  subtitle, then whatever the screen has to say.
+  The column the sign-in family shares: the blog's own logo (or the
+  Texttile mark) and its name, one quiet subtitle, then whatever the
+  screen has to say.
   """
   attr :subtitle, :string, required: true
   slot :inner_block, required: true
 
   def auth(assigns) do
+    assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
+
     ~H"""
-    <main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[13vh] pb-10">
+    <main class="min-h-[100dvh] flex items-start justify-center px-4 pt-[7vh] md:pt-[13vh] pb-10">
       <div class="w-[min(374px,100%)]">
         <div class="flex items-center gap-[11px]">
-          <.mark size={28} ink="var(--tt-ink)" />
-          <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">Texttile</h1>
+          <img
+            :if={@brand.logo}
+            src={Texttile.Images.url(@brand.logo, :original)}
+            alt=""
+            class="h-[28px] w-auto max-w-[112px] object-contain"
+          />
+          <.mark :if={!@brand.logo} size={28} ink="var(--tt-ink)" />
+          <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">{@brand.title}</h1>
         </div>
         <p class="text-faint text-[13px] mt-[6px]">{@subtitle}</p>
         {render_slot(@inner_block)}
+        <%!-- the way back for whoever came here from the blog --%>
+        <p class="mt-[30px] pt-4 border-t border-hair text-[13px]">
+          <a class="rowlink text-dim" href={~p"/"} id="back-to-blog">
+            ← {gettext("Back to %{site}", site: @brand.title)}
+          </a>
+        </p>
       </div>
     </main>
     """
@@ -151,6 +166,18 @@ defmodule TexttileWeb.Layouts do
   attr :crumb, :string, default: nil, doc: "what the breadcrumb says"
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
+
+  attr :count, :any,
+    default: nil,
+    doc: "how many the screen lists: a phone, which names the screen in its bar, says it there"
+
+  attr :wide, :boolean,
+    default: false,
+    doc: """
+    the screen is about one thing, as the editor is about its entry: the
+    bar names it in the crumb instead of showing the row of sections.
+    Every bar stands on the same grid either way.
+    """
 
   slot :lead,
     doc: """
@@ -176,7 +203,11 @@ defmodule TexttileWeb.Layouts do
          over; above it they hang free, as a menu should. --%>
     <header
       id="topbar"
-      class="sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] px-[10px] md:px-4 border-b border-rule backdrop-blur-[8px] backdrop-saturate-150"
+      class={[
+        "sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] border-b border-hair backdrop-blur-[8px] backdrop-saturate-150",
+        "bar-col",
+        @wide && "wide"
+      ]}
       role="banner"
     >
       <span class="relative flex-none">
@@ -199,7 +230,15 @@ defmodule TexttileWeb.Layouts do
             <.mark :if={!@brand.logo} size={21} />
             <span class="wmdot" id="wmDot" hidden={@others == []}></span>
           </span>
-          <span class="hidden sm:inline">{@brand.title}</span>
+          <%!-- the mark alone stands for the blog on every screen: the
+               bar spends its width on the sections, or on the entry;
+               the button's label names it for a screen reader. A phone
+               has no room for the row of sections, so there the name of
+               the screen stands in the button, its count beside it, and
+               the chevron after them says the name opens the others. --%>
+          <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
+            {@crumb}<span :if={@count} class="bn-count">{@count}</span>
+          </span>
           <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
@@ -244,7 +283,7 @@ defmodule TexttileWeb.Layouts do
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>
         <div id="liveBlock">
-          <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]">
+          <p class="px-[10px] pt-[3px] pb-[2px] text-[12.5px] text-faint leading-[1.45]">
             {gettext("Here now")}
           </p>
           <%= for person <- @others do %>
@@ -259,7 +298,7 @@ defmodule TexttileWeb.Layouts do
           </p>
         </div>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
-        <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]" id="wmMe">
+        <p class="px-[10px] pt-[3px] pb-[2px] text-[12.5px] text-faint leading-[1.45]" id="wmMe">
           {@current_scope && Texttile.Accounts.display_name(@current_scope.user)}
         </p>
         <.link navigate={~p"/admin/profile"} class={["row", @active == "profile" && "on"]}>
@@ -267,27 +306,55 @@ defmodule TexttileWeb.Layouts do
         </.link>
         <.link href={~p"/logout"} method="delete" class="row">{gettext("Sign out")}</.link>
         <%!-- which build runs, in every menu and nowhere a reader gets --%>
-        <p class="px-[10px] pt-[6px] pb-[2px] text-[11.5px] text-faint tabular-nums" id="wmVersion">
+        <p class="px-[10px] pt-[6px] pb-[2px] text-[12.5px] text-faint tabular-nums" id="wmVersion">
           Texttile {Texttile.version()}
         </p>
       </nav>
 
-      <%!-- Two zones. This is the left one: what this screen is. The
-           crumb is the one flexible thing in it, so the open section
-           stays readable on a phone, and whatever the screen puts in
-           :lead stands beside it as part of the same fact. --%>
+      <%!-- Two zones. This is the left one: where you are. On a column
+           screen it is the row of sections, the open one marked, and the
+           open one is the crumb as well; a phone keeps only that one. A
+           screen that is no section (the profile, the import) adds its
+           own name. The editor, whose crumb is the entry, keeps the
+           crumb alone, and whatever it puts in :lead stands beside it. --%>
       <span class="flex items-center gap-[6px] md:gap-2 min-w-0 text-[13.5px] text-dim">
-        <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
-          /
-        </span>
-        <span
-          class="font-serif text-[15px] md:text-[16px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
-          id="crumb"
-          title={@crumb}
-        >
-          {@crumb}
-        </span>
-        {render_slot(@lead)}
+        <%= if @wide do %>
+          <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
+            /
+          </span>
+          <%!-- a phone has the title in the field right under the bar,
+               so the bar keeps the state and leaves the name out --%>
+          <span
+            class="hidden sm:block text-[14px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
+            id="crumb"
+            title={@crumb}
+          >
+            {@crumb}
+          </span>
+          {render_slot(@lead)}
+        <% else %>
+          <nav class={["barnav", !crumb_in_nav?(@crumb, @active) && "has-extra"]}>
+            <.link
+              :for={section <- screens()}
+              navigate={section.to}
+              id={crumb_in_nav?(@crumb, @active) && @active == section.active && "crumb"}
+              class={["bn", @active == section.active && "on"]}
+              aria-current={@active == section.active && "page"}
+            >
+              {section.label}
+            </.link>
+          </nav>
+          <span :if={!crumb_in_nav?(@crumb, @active)} class="bn-sep" aria-hidden="true">/</span>
+          <span
+            :if={!crumb_in_nav?(@crumb, @active)}
+            class="bn on truncate max-md:hidden"
+            id="crumb"
+            title={@crumb}
+          >
+            {@crumb}
+          </span>
+          {render_slot(@lead)}
+        <% end %>
       </span>
       <%!-- the gap between the zones, and the only thing in the bar
            that gives way --%>
@@ -302,6 +369,14 @@ defmodule TexttileWeb.Layouts do
     <.flash_group flash={@flash} />
     """
   end
+
+  # The sections the bar shows as a row: the screens of the menu.
+  defp screens, do: Enum.filter(sections(), &(&1.kind == :screen))
+
+  # Whether the crumb is the name of the open section, so the marked
+  # link of the row can carry it.
+  defp crumb_in_nav?(crumb, active),
+    do: Enum.any?(screens(), &(&1.active == active and &1.label == crumb))
 
   @doc """
   The door to the blog itself, at the end of the admin bar. Every screen

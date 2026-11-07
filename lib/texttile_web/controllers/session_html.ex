@@ -7,7 +7,7 @@ defmodule TexttileWeb.SessionHTML do
 
   def new(assigns) do
     ~H"""
-    <Layouts.auth subtitle={gettext("Admin sign-in · %{host}", host: @conn.host)}>
+    <Layouts.auth subtitle={gettext("Admin sign-in")}>
       <.form
         :let={_f}
         for={%{}}
@@ -17,7 +17,9 @@ defmodule TexttileWeb.SessionHTML do
         class="mt-[26px]"
       >
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-email">{gettext("Email address")}</label>
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-email">
+            {gettext("Email address")}
+          </label>
           <input
             type="email"
             id="login-email"
@@ -31,7 +33,9 @@ defmodule TexttileWeb.SessionHTML do
           />
         </div>
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-password">{gettext("Password")}</label>
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-password">
+            {gettext("Password")}
+          </label>
           <input
             type="password"
             id="login-password"
@@ -41,7 +45,7 @@ defmodule TexttileWeb.SessionHTML do
         </div>
         <%!-- The sign-in lasts two days. This makes it fourteen, on
              this browser only. --%>
-        <label class="opt">
+        <label class="opt text-[13px]">
           <input
             type="checkbox"
             id="login-remember"
@@ -78,9 +82,7 @@ defmodule TexttileWeb.SessionHTML do
         )}
       </p>
       <p :if={not @nobody_can_sign_in} class="note mt-[22px] leading-[1.6]">
-        {gettext(
-          "This page is for admins, and there is no public registration. You sign in with the address your account was invited to, and readers never see it. An admin who is already in invites the next one from Settings."
-        )}
+        {gettext("There is no public sign-up. An admin invites the next one from Settings.")}
       </p>
     </Layouts.auth>
     """

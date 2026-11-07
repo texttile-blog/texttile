@@ -16,11 +16,11 @@ defmodule TexttileWeb.SiteHTML do
   embed_templates "site_html/*"
 
   @doc """
-  The header every reader page wears: the mark and the site name, the
-  site description as it stands in Settings, then the menu the app
+  The header every reader page wears: the mark and the site name, then
+  the menu the app
   builds out of its pages - Home when a fixed page is the front door,
-  Blog for the list, then every published page by publish date, and
-  Sign in at the end, the same door the foot holds.
+  Blog for the list, then every published page by publish date. The
+  way into the admin area is the foot's, once per page.
   """
   attr :active, :any, default: nil
   attr :current_scope, :any, default: nil
@@ -31,7 +31,6 @@ defmodule TexttileWeb.SiteHTML do
     assigns =
       assigns
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
-      |> assign(:desc, String.trim(Texttile.Settings.get(:site_description)))
 
     ~H"""
     <header class="site-head">
@@ -45,7 +44,6 @@ defmodule TexttileWeb.SiteHTML do
         <Layouts.mark :if={!@brand.logo} size={21} />
         <span class="site-name">{@brand.title}</span>
       </a>
-      <span :if={@desc != ""} class="site-desc">{@desc}</span>
       <nav class="site-nav" aria-label={gettext("Site")}>
         <a :if={@home_page} id="menu-home" href={~p"/"} aria-current={@active == :home && "page"}>
           {gettext("Home")}
@@ -60,9 +58,6 @@ defmodule TexttileWeb.SiteHTML do
           aria-current={@active == page.id && "page"}
         >
           {Articles.display_title(page)}
-        </a>
-        <a id="menu-signin" href={if @current_scope, do: ~p"/admin", else: ~p"/login"}>
-          {gettext("Sign in")}
         </a>
       </nav>
     </header>
@@ -100,7 +95,8 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc """
   The band that ends every reader page: About on the left, Subscribe on
-  the right, both in small type on a ground of their own.
+  the right, both in small type on a ground of their own. It stands on
+  the header's grid on every page, so the frame never moves.
 
   It is the second zone of round 3. Everything over it belongs to the
   text - the neighbours, the comments, the form - and everything on it
@@ -182,12 +178,14 @@ defmodule TexttileWeb.SiteHTML do
     ~H"""
     <div class="card-wrap">
       <a class="card" id={"text-#{@article.id}"} href={Articles.public_path(@article)}>
-        <%!-- every card wears a square, so the grid keeps its rows: the
-             picture when there is one, the quiet mark when there is none --%>
+        <%!-- the picture when there is one. An entry of words alone
+             is a text and shows as one: the title, the line under it,
+             then a longer lead, in the order every card reads. With no
+             words either, the quiet mark stands in for the picture. --%>
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
-        <span :if={!@preview} class="cimg blank" aria-hidden="true">
+        <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
         </span>
         <span class="ct">{Articles.display_title(@article)}</span>
@@ -206,7 +204,8 @@ defmodule TexttileWeb.SiteHTML do
           </a>
         </span>
       </p>
-      <p :if={lead(@article) != ""} class="clead">{lead(@article)}</p>
+      <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article, 110)}</p>
+      <p :if={!@preview && lead(@article) != ""} class="clead long">{lead(@article, 320)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
         <a
           :for={tag <- Articles.tag_list(@article)}
@@ -284,29 +283,35 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  How wide the pictures under a text stand.
-
-  Three or fewer are not a gallery. They belong to the text, so they
-  keep the reading column: one fills it, two halve it, three third it.
-  The wide grid, which leaves the column on both sides, begins at four
-  - that is where a block of tiles reads as a set of its own.
+  The shape of the pictures under a text. They keep the reading column
+  at every count: one fills it, two halve it, and from three on they
+  stand in the one grid, two to a row on a phone and three on a desk.
   """
-  def gallery_wrap(gallery) when length(gallery) < 4, do: "wrap narrow"
-  def gallery_wrap(_gallery), do: "wrap"
-
-  @doc "The shape of the tile grid, see `gallery_wrap/1`."
-  def gallery_shape(gallery) when length(gallery) < 4, do: "gal-#{length(gallery)}"
+  def gallery_shape([_one]), do: "gal-1"
+  def gallery_shape([_one, _two]), do: "gal-2"
   def gallery_shape(_gallery), do: nil
 
-  @doc "Which use a tile fetches its picture at, see `gallery_wrap/1`."
+  @doc "Which use a tile fetches its picture at: a picture alone fills the column."
   def gallery_size([_one]), do: :reading
   def gallery_size(_gallery), do: :card
+
+  @doc """
+  The heading over the reader's list: the site description from
+  Settings, which is the blog's own opening line, or the plain name of
+  the list when there is none.
+  """
+  def list_heading do
+    case String.trim(Texttile.Settings.get(:site_description)) do
+      "" -> gettext("Entries")
+      description -> description
+    end
+  end
 
   @doc "A date the way the example blog writes one: 2 July 2026."
   defdelegate format_date(date), to: Texttile.I18n
 
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
-  defdelegate lead(article), to: Articles
+  defdelegate lead(article, max \\ 160), to: Articles
 
   @doc """
   Why the list is shorter than the blog: the term, the year, the month,

@@ -96,6 +96,15 @@ defmodule Texttile.I18nTest do
     end
   end
 
+  describe "the short shapes the admin lists write" do
+    test "a day and a moment carry the short month" do
+      assert I18n.format_short_date(~D[2026-08-09]) == "9 Aug 2026"
+      assert I18n.format_short_moment(~U[2026-08-09 14:30:45Z]) == "9 Aug 2026, 14:30"
+      assert I18n.format_short_date(nil) == ""
+      assert I18n.format_short_moment(nil) == ""
+    end
+  end
+
   describe "the plain shapes of a moment" do
     @moment ~U[2026-08-09 14:30:45Z]
 

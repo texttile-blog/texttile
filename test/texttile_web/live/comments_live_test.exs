@@ -24,7 +24,9 @@ defmodule TexttileWeb.CommentsLiveTest do
     comment
   end
 
-  test "the icons after a name are the ways to answer its writer", %{conn: conn} do
+  test "Reply answers the writer by mail, and the website stands after the moment", %{
+    conn: conn
+  } do
     article = published_post(title: "Harbor mornings")
     comment = post!(article, %{"website" => "https://christel.example.org/garden"})
 
@@ -34,12 +36,12 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a.cmt-ico[href="mailto:christel@example.org"][title="Write to christel@example.org"])
+             ~s(#comment-#{comment.id} .cmt-acts a[href="mailto:christel@example.org"][title="Write to christel@example.org"])
            )
 
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a.cmt-ico[href="https://christel.example.org/garden"][title="christel.example.org"][rel~="nofollow"])
+             ~s(#comment-#{comment.id} .cmt-sub a.cmt-web[href="https://christel.example.org/garden"][rel~="nofollow"])
            )
   end
 
@@ -591,6 +593,8 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      # an empty Released filter has nothing left to fill it
+      refute has_element?(view, "#commentFilter [data-f=released]")
     end
   end
 
@@ -600,6 +604,6 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#commentsRule", "within 3 days goes for good")
 
     {:ok, _} = Settings.put(:comments_require_confirmation, false)
-    assert has_element?(view, "#commentsRule", "nobody confirms anything")
+    assert has_element?(view, "#commentsRule", "Comments appear the moment a reader sends them")
   end
 end

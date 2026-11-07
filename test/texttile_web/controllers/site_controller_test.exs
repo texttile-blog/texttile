@@ -68,11 +68,16 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ "cimg blank"
     end
 
-    test "a text without a picture keeps the square, so the grid holds", %{conn: conn} do
-      published_post(title: "Without a picture")
+    test "a text without a picture shows as a text, its lead longer", %{conn: conn} do
+      published_post(title: "Without a picture", body: "Only words here.")
+      published_post(title: "Nothing at all", body: "")
 
       html = conn |> get(~p"/blog") |> html_response(200)
 
+      # no square of words: the lead stands under the title, said once
+      refute html =~ ~s(class="cx")
+      assert html =~ ~s(<p class="clead long">Only words here.</p>)
+      # an entry without words either keeps the quiet mark
       assert html =~ "cimg blank"
       refute html =~ "/renditions/640/"
     end
@@ -190,29 +195,6 @@ defmodule TexttileWeb.SiteControllerTest do
     # The chosen preview stands once more at the head of the post, as
     # a square the size of a tile, and its link is the tile's link, so
     # the lightbox can open on that tile.
-    test "shows the chosen preview as a square above the title", %{conn: conn} do
-      article = published_post(title: "Square", slug: "square", publish_date: ~D[2026-03-01])
-      {:ok, _first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
-      {:ok, chosen} = Texttile.Gallery.add_file(article, jpg_fixture(), "gull.jpg")
-      {:ok, _} = Texttile.Articles.update_settings(article, %{preview_path: chosen.path})
-
-      html = conn |> get(~p"/2026/03/01/square") |> html_response(200)
-
-      assert attribute(html, "#preview", "href") == ["/uploads/#{chosen.path}"]
-      assert attribute(html, "#preview img", "src") == ["/renditions/640/#{chosen.path}"]
-      # the square comes before the title
-      assert :binary.match(html, ~s(id="preview")) < :binary.match(html, ~s(class="f-h1"))
-    end
-
-    test "a post without a picture and a page with one get no square", %{conn: conn} do
-      published_post(title: "Bare", slug: "bare", publish_date: ~D[2026-03-01])
-      page = published_page(title: "About", slug: "about-me", publish_date: ~D[2026-03-01])
-      {:ok, _} = Texttile.Gallery.add_file(page, jpg_fixture(), "pier.jpg")
-
-      refute conn |> get(~p"/2026/03/01/bare") |> html_response(200) =~ ~s(id="preview")
-      refute conn |> get(~p"/about-me") |> html_response(200) =~ ~s(id="preview")
-    end
-
     test "a tile of the wide grid fetches the card size", %{conn: conn} do
       article = published_post(title: "Grid", slug: "grid", publish_date: ~D[2026-03-01])
 
@@ -230,29 +212,22 @@ defmodule TexttileWeb.SiteControllerTest do
     # the reading column and share its width, so the eye reads them as
     # part of the text. The gallery proper, wider than the column,
     # begins at four.
-    test "one, two and three pictures keep the width of the text", %{conn: conn} do
+    test "the pictures keep the width of the text at every count", %{conn: conn} do
       article = published_post(title: "Few", slug: "few", publish_date: ~D[2026-03-01])
 
-      for count <- 1..3 do
+      # one fills the column, two halve it, three and more share the grid
+      for {count, shape} <- [
+            {1, ["gal", "gal-1"]},
+            {2, ["gal", "gal-2"]},
+            {3, ["gal"]},
+            {4, ["gal"]}
+          ] do
         {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{count}.jpg")
         html = conn |> get(~p"/2026/03/01/few") |> html_response(200)
 
         assert "narrow" in classes(html, "#gallery")
-        assert "gal-#{count}" in classes(html, "#gal")
+        assert classes(html, "#gal") == shape
       end
-    end
-
-    test "the fourth picture turns the pictures into the wide gallery", %{conn: conn} do
-      article = published_post(title: "Many", slug: "many", publish_date: ~D[2026-03-01])
-
-      for index <- 1..4 do
-        {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{index}.jpg")
-      end
-
-      html = conn |> get(~p"/2026/03/01/many") |> html_response(200)
-
-      refute "narrow" in classes(html, "#gallery")
-      assert classes(html, "#gal") == ["gal"]
     end
 
     test "a picture in the text links its original and opens in the lightbox", %{conn: conn} do
@@ -467,7 +442,7 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/tags/sea") |> html_response(200)
 
       assert html =~ "#Sea"
-      assert html =~ "entry has this tag."
+      assert html =~ "1 entry"
       assert html =~ ~s(id="text-#{sea.id}")
       refute html =~ "Desert nights"
 
@@ -549,15 +524,16 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(id="menu-texts" href="/blog")
     end
 
-    test "Sign in closes the menu: to the login for a reader, to the admin area once signed in",
+    test "Sign in stands once, in the foot: the login for a reader, the admin area once signed in",
          %{conn: conn} do
       published_post(title: "A post")
 
       html = conn |> get(~p"/blog") |> html_response(200)
-      assert html =~ ~s(id="menu-signin" href="/login")
+      refute html =~ ~s(id="menu-signin")
+      assert html =~ ~s(id="foot-signin" href="/login")
 
       html = conn |> log_in_user(user_fixture()) |> get(~p"/blog") |> html_response(200)
-      assert html =~ ~s(id="menu-signin" href="/admin")
+      assert html =~ ~s(id="foot-admin" href="/admin")
     end
 
     test "a fixed front page that disappears sends the door to the list", %{conn: conn} do

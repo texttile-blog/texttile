@@ -194,7 +194,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> said_quiet()
       # nobody reloads and nobody clicks: the page takes the dead line
       # down and builds it again, and says so when it stands.
-      |> assert_has("#state", text: "Last saved", timeout: 10_000)
+      |> assert_has("#state", text: "Saved", timeout: 10_000)
       |> refute_has("html.phx-late")
       # the record names an answer, not a hopeful class: the new line
       # was asked and it replied.
@@ -224,7 +224,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> evaluate(@cut, [is_function: true], &assert(&1 == true))
       |> type(".ed-cm .cm-content", " and after it went")
       |> said_quiet()
-      |> assert_has("#state", text: "Last saved", timeout: 10_000)
+      |> assert_has("#state", text: "Saved", timeout: 10_000)
       |> assert_has(".ed-cm", text: "Before the line went and after it went")
       # one more keystroke on the line that stands, and the words that
       # were written into the quiet are on the server too
@@ -273,7 +273,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # crumb only changes when the server answered.
       |> fill_in("Title", with: "A tab that came back")
       |> assert_has("#crumb", text: "A tab that came back", timeout: 10_000)
-      |> assert_has("#state", text: "Last saved", timeout: 10_000)
+      |> assert_has("#state", text: "Saved", timeout: 10_000)
     end
   end
 end

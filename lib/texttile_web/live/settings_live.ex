@@ -567,7 +567,7 @@ defmodule TexttileWeb.SettingsLive do
   defp delete_block(user, users, me) do
     case Accounts.delete_user_block(user, me, length(users)) do
       :last -> gettext("The only account left: deleting it would leave nobody who can sign in.")
-      :yourself -> gettext("This one is you")
+      :yourself -> nil
       nil -> nil
     end
   end
@@ -582,20 +582,16 @@ defmodule TexttileWeb.SettingsLive do
 
   defp comments_note(true) do
     gettext(
-      "The reader gets one confirmation link per address. The comment stays hidden from readers until the reader follows it, and it carries the mark \"not confirmed yet\" here. Turn this off and every comment appears at once. Spam is filtered by honeypot, timing and rate limit checks either way."
+      "A comment stays hidden until its reader follows the link in a mail. Until then it is marked \"not confirmed yet\" here."
     )
   end
 
   defp comments_note(false) do
-    gettext(
-      "Every comment appears under the entry at once, and nobody confirms anything. Turn this on and a comment waits for the reader to follow a confirmation link. Spam is filtered by honeypot, timing and rate limit checks either way."
-    )
+    gettext("Comments appear at once. Spam is filtered either way.")
   end
 
   defp notify_note(true) do
-    gettext(
-      "Everybody with an account here and an address gets one mail per comment: who wrote it, what it says, and the way to it. The mail leaves when the comment stands under the entry, so a comment that still waits for its reader mails nobody. The address of the reader is never in it."
-    )
+    gettext("One mail per new comment, to every admin. The reader's address is never in it.")
   end
 
   defp notify_note(false) do
@@ -624,14 +620,16 @@ defmodule TexttileWeb.SettingsLive do
           data-note={@saved_note}
           data-note-until={@saved_note_until}
         >
-          {gettext("Last saved · just now")}
+          {gettext("Saved")}
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Settings")}</h1>
-        <p class="lead">
-          {gettext("Nothing here has a Save button: every change applies the moment you make it.")}
+        <%!-- a phone has the save state in its bar, so the line that
+             explains it stays on the desk --%>
+        <p class="lead max-sm:hidden">
+          {gettext("Every change saves itself the moment you make it.")}
         </p>
 
         <.section>{gettext("Site")}</.section>
@@ -653,13 +651,15 @@ defmodule TexttileWeb.SettingsLive do
           <div class="drow">
             <label class="lab" for="setting-site_description">{gettext("Description")}</label>
             <span class="val">
-              <input
-                type="text"
+              <%!-- a sentence, not a word: the field grows to show all of
+                   it, so the line the readers get can be read back whole --%>
+              <textarea
                 id="setting-site_description"
                 name="settings[site_description]"
-                value={@settings_form[:site_description].value}
+                rows="1"
                 phx-debounce="300"
-              />
+                class="grow-line"
+              >{@settings_form[:site_description].value}</textarea>
             </span>
           </div>
           <div class="drow">
@@ -679,7 +679,7 @@ defmodule TexttileWeb.SettingsLive do
               </select>
               <div class="hint">
                 {gettext(
-                  "The whole blog speaks it: the reader pages, this admin area, the dates and the mails. What you write yourself stays as you wrote it."
+                  "For the reader pages, this admin area, the dates and the mails. Your own words stay as you wrote them."
                 )}
               </div>
             </span>
@@ -687,9 +687,9 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-3 py-[11px] border-b border-hair">
+        <div class="flex items-center gap-[14px] pt-[14px]">
           <span
-            class="w-[42px] h-[42px] flex-none grid place-items-center bg-field rounded"
+            class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-logo"
           >
             <img
@@ -700,19 +700,9 @@ defmodule TexttileWeb.SettingsLive do
             />
             <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
           </span>
-          <span class="flex flex-col">
+          <span class="flex flex-col flex-1 min-w-0">
             <b>{gettext("Logo")}</b>
-            <span class="note" id="name-logo">
-              {@settings.logo_name || gettext("Default: the Texttile mark")}
-            </span>
-            <span class="note">
-              {gettext(
-                "The bar here and the public site use it. SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge.",
-                px: Uploads.mark_max_edge()
-              )}
-            </span>
           </span>
-          <span class="sp"></span>
           <button
             :if={@settings.logo}
             class="link"
@@ -723,7 +713,7 @@ defmodule TexttileWeb.SettingsLive do
             {gettext("Use default")}
           </button>
           <form id="logo-form" phx-change="validate_upload">
-            <label class="btn sm cursor-pointer relative overflow-hidden">
+            <label class="btn cursor-pointer relative overflow-hidden">
               {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.logo}
@@ -733,9 +723,15 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <div class="flex items-center gap-3 py-[11px] border-b border-hair">
+        <%!-- what is in use now and what the field is for, as one line --%>
+        <p class="note pt-[8px] pb-[14px] border-b border-hair">
+          <span id="name-logo">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+            "SVG, PNG, JPG or WebP."
+          )}
+        </p>
+        <div class="flex items-center gap-[14px] pt-[14px]">
           <span
-            class="w-[42px] h-[42px] flex-none grid place-items-center bg-field rounded"
+            class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-favicon"
           >
             <img
@@ -746,19 +742,9 @@ defmodule TexttileWeb.SettingsLive do
             />
             <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
           </span>
-          <span class="flex flex-col">
+          <span class="flex flex-col flex-1 min-w-0">
             <b>{gettext("Favicon")}</b>
-            <span class="note" id="name-favicon">
-              {@settings.favicon_name || gettext("Default: the Texttile mark")}
-            </span>
-            <span class="note">
-              {gettext(
-                "The browser-tab icon. Square SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge.",
-                px: Uploads.mark_max_edge()
-              )}
-            </span>
           </span>
-          <span class="sp"></span>
           <button
             :if={@settings.favicon}
             class="link"
@@ -766,10 +752,10 @@ defmodule TexttileWeb.SettingsLive do
             phx-click="reset_mark"
             phx-value-mark="favicon"
           >
-            Use default
+            {gettext("Use default")}
           </button>
           <form id="favicon-form" phx-change="validate_upload">
-            <label class="btn sm cursor-pointer relative overflow-hidden">
+            <label class="btn cursor-pointer relative overflow-hidden">
               {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.favicon}
@@ -779,38 +765,61 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
+        <p class="note pt-[8px] pb-[14px] border-b border-hair">
+          <span id="name-favicon">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+            "A square SVG, PNG, JPG or WebP."
+          )}
+        </p>
 
         <.section>{gettext("About")}</.section>
-        <label class="lab block mb-[6px]" for="setting-about_markdown">
-          {gettext("About this blog")}
-        </label>
         <%!-- the editor of an entry, with the pictures taken out: About
              stands in the band under every page and carries words, not
-             a gallery. One hook, one behaviour, one set of keys. --%>
-        <.md_bar id="aboutBar" files={false} />
-        <div
-          id="setting-about_markdown"
-          class="ed-body ed-cm boxed-cm"
-          phx-hook="BodyEd"
-          phx-update="ignore"
-          data-event="about_changed"
-          data-bar="#aboutBar"
-          data-files="false"
-          data-label={gettext("About this blog, Markdown")}
-          data-placeholder={
-            gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
-          }
-        >
-          <textarea>{@settings.about_markdown}</textarea>
+             a gallery. One hook, one behaviour, one set of keys. The bar
+             follows the heading straight, so the two share a top. --%>
+        <%!-- one item of the section's grid: the bar and the box are one
+             frame --%>
+        <div>
+          <.md_bar id="aboutBar" files={false} />
+          <%!-- the section names the one field, so its label is for a
+             screen reader only --%>
+          <label class="sr" for="setting-about_markdown">
+            {gettext("About this blog")}
+          </label>
+          <div
+            id="setting-about_markdown"
+            class="ed-body ed-cm boxed-cm"
+            phx-hook="BodyEd"
+            phx-update="ignore"
+            data-event="about_changed"
+            data-bar="#aboutBar"
+            data-files="false"
+            data-label={gettext("About this blog, Markdown")}
+            data-placeholder={
+              gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
+            }
+          >
+            <textarea>{@settings.about_markdown}</textarea>
+          </div>
         </div>
-        <div class="lab mt-[14px]">{gettext("Preview")}</div>
-        <div class="md-preview text-[13.5px] mt-[10px] pt-3 border-t border-hair" id="aboutPreview">
+        <%!-- the rendered words, on demand: JS.toggle keeps them open
+             across every redraw the saving sends --%>
+        <p class="mt-[10px]">
+          <button
+            type="button"
+            class="link text-[13px]"
+            id="toggle-about-preview"
+            phx-click={JS.toggle(to: "#aboutPreview")}
+          >
+            {gettext("Preview")}
+          </button>
+        </p>
+        <div class="md-preview mt-[8px] pt-3 border-t border-hair hidden" id="aboutPreview">
           {Phoenix.HTML.raw(@about_html)}
         </div>
 
         <.section>{gettext("Front page")}</.section>
         <.form for={@settings_form} id="front-page-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
             <input
               type="radio"
               name="settings[front_page]"
@@ -820,17 +829,15 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("Latest entries")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("Latest entries")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">
-                {gettext(
-                  "The front door sends the reader to /blog: published entries, newest first, each with its preview tile."
-                )}
+              <span class="text-[12.5px] text-faint">
+                {gettext("Published entries, newest first.")}
               </span>
             </span>
           </label>
           <label class={[
-            "flex gap-[10px] items-start py-3 border-b border-hair",
+            "flex gap-[10px] items-start py-2",
             @pages == [] && "opacity-60"
           ]}>
             <input
@@ -843,22 +850,22 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("A fixed page")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("A fixed page")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">
+              <span class="text-[12.5px] text-faint">
                 <%= if @pages == [] do %>
                   {gettext(
                     "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
                   )}
                 <% else %>
-                  {gettext("This page becomes the front door. The blog list keeps /blog either way.")}
+                  {gettext("A page you choose. The list of entries stays at /blog.")}
                 <% end %>
               </span>
             </span>
           </label>
           <div
             :if={resolved_front_page(@settings, @pages) != nil}
-            class="py-3 max-w-[280px]"
+            class="py-3 sm:max-w-[240px]"
             id="front-page-choice"
           >
             <%!-- its own name: with the radios' name, its value would
@@ -875,12 +882,12 @@ defmodule TexttileWeb.SettingsLive do
             </select>
           </div>
           <div class="drow gtop">
-            <label class="lab" for="setting-posts_per_page">{gettext("Pagination")}</label>
+            <label class="lab" for="setting-posts_per_page">{gettext("Entries per page")}</label>
             <span class="val">
               <select
                 id="setting-posts_per_page"
                 name="settings[posts_per_page]"
-                class="max-w-[110px]"
+                class="sm:max-w-[240px]"
               >
                 <option
                   :for={size <- page_sizes(@settings.posts_per_page)}
@@ -890,56 +897,12 @@ defmodule TexttileWeb.SettingsLive do
                   {size}
                 </option>
               </select>
-              <div class="hint">
-                {gettext(
-                  "How many entries a page holds, on /blog and in Entries. Every size fills whole rows. The default is 12."
-                )}
-              </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
                 {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}
               </p>
             </span>
           </div>
         </.form>
-
-        <.section>{gettext("Theme")}</.section>
-        <p class="note mb-[10px]">
-          {gettext("Theming is exactly one CSS file, used for the admin area and the public site.")}
-        </p>
-        <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
-          <span class="labrow">
-            <label class="lab" for="setting-theme_css">theme.css</label>
-            <%!-- emptying a twelve-row field by hand to get the default
-                 back is no way to ask for it --%>
-            <button
-              :if={@settings.theme_css != ""}
-              type="button"
-              class="link"
-              id="reset-theme"
-              phx-click="reset_theme"
-            >
-              {gettext("Reset")}
-            </button>
-          </span>
-          <textarea
-            id="setting-theme_css"
-            name="settings[theme_css]"
-            rows="12"
-            spellcheck="false"
-            class="font-mono text-[12.5px] leading-[1.65]"
-            phx-debounce="300"
-          >{@settings_form[:theme_css].value}</textarea>
-        </.form>
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
-          export default {
-            mounted() {
-              this.handleEvent("theme_saved", () => {
-                const link = document.querySelector('link[href^="/theme.css"]')
-                if (link) link.href = "/theme.css?v=" + Date.now()
-              })
-            }
-          }
-        </script>
 
         <.section>{gettext("Access")}</.section>
         <%!-- Two choices and the field that belongs to the second one.
@@ -951,43 +914,41 @@ defmodule TexttileWeb.SettingsLive do
              a size of their own, so that indent is one number and not
              a browser's idea of a radio. --%>
         <.form for={@settings_form} id="access-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
+          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
               value="public"
               checked={@settings.site_visibility == "public"}
-              class="w-[13px] h-[13px] flex-none mt-[3px]"
+              class="w-4 h-4 flex-none mt-[2px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("Public")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("Public")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
+              <span class="text-[12.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
           </label>
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer">
+          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
             <input
               type="radio"
               name="settings[site_visibility]"
               value="protected"
               checked={@settings.site_visibility == "protected"}
-              class="w-[13px] h-[13px] flex-none mt-[3px]"
+              class="w-4 h-4 flex-none mt-[2px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("Password-protected")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("Password-protected")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">
-                {gettext(
-                  "One password for the whole blog. Readers enter it once and are remembered. Search engines see nothing."
-                )}
+              <span class="text-[12.5px] text-faint">
+                {gettext("One password for the whole blog. Search engines see nothing.")}
               </span>
             </span>
           </label>
           <%!-- the field is short, the sentence under it is not: the
                hint keeps the width of the column --%>
-          <div class="pl-[23px] pb-3" id="pwRow">
+          <div class="pl-[26px] pb-3" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">
               {gettext("Blog password")}
             </label>
@@ -998,19 +959,17 @@ defmodule TexttileWeb.SettingsLive do
               value={@settings_form[:site_password].value}
               placeholder={gettext("Choose a password")}
               phx-debounce="300"
-              class="max-w-[280px]"
+              class="sm:max-w-[240px]"
             />
             <div class="hint">
-              {gettext(
-                "A shared access word, not a login: it goes into every entry mail, so everybody on the newsletter list gets it, and you pass it on. It is stored as it is written. It is the password of the whole blog; without one nothing is protected."
-              )}
+              {gettext("Every entry mail carries it, so subscribers have it too.")}
             </div>
           </div>
         </.form>
 
         <.section>{gettext("Comments")}</.section>
         <.form for={@settings_form} id="comments-form" phx-change="save_setting">
-          <label class="opt">
+          <label class="opt py-2">
             <input type="hidden" name="settings[comments_require_confirmation]" value="false" />
             <input
               type="checkbox"
@@ -1020,13 +979,13 @@ defmodule TexttileWeb.SettingsLive do
               checked={@settings.comments_require_confirmation}
             />
             <span>
-              {gettext("Readers confirm their email before the comment appears")}
+              {gettext("Confirm comments by email")}
               <span class="note" id="setCmtNote">
                 {comments_note(@settings.comments_require_confirmation)}
               </span>
             </span>
           </label>
-          <label class="opt">
+          <label class="opt py-2">
             <input type="hidden" name="settings[notify_on_comment]" value="false" />
             <input
               type="checkbox"
@@ -1036,7 +995,7 @@ defmodule TexttileWeb.SettingsLive do
               checked={@settings.notify_on_comment}
             />
             <span>
-              {gettext("Mail me every new comment")}
+              {gettext("Email new comments")}
               <span class="note" id="setNotifyNote">
                 {notify_note(@settings.notify_on_comment)}
               </span>
@@ -1045,15 +1004,12 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Users")}</.section>
-        <p class="note mb-1 leading-[1.6]">
-          {gettext(
-            "There is no registration: this list is everybody who may sign in. You invite the next one by address, and the link that gives the account its password goes to that inbox. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
-          )}
-        </p>
-        <div id="usersList">
+        <div id="usersList" class="border-t border-hair">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
-            <div class="flex items-center gap-[10px] flex-wrap">
-              <b class="text-[14.5px]">{Accounts.display_name(user)}</b>
+            <%!-- the name line keeps the height of its buttons in every
+                 row, so name and address stand at one rhythm --%>
+            <div class="flex items-center gap-[10px] flex-wrap min-h-[30px]">
+              <span class="rowp">{Accounts.display_name(user)}</span>
               <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
               <span
                 :if={
@@ -1065,31 +1021,38 @@ defmodule TexttileWeb.SettingsLive do
                 <span class="dot live"></span>{gettext("here now")}
               </span>
               <span class="sp"></span>
-              <button
-                :if={Accounts.pending?(user)}
-                class="btn sm"
-                id={"invite-again-#{user.id}"}
-                phx-click="invite_again"
-                phx-value-id={user.id}
-              >
-                {gettext("Send the link again")}
-              </button>
-              <button
-                class="btn sm"
-                id={"delete-user-#{user.id}"}
-                phx-click="ask_delete"
-                phx-value-id={user.id}
-                disabled={delete_block(user, @users, @current_scope.user) != nil}
-              >
-                {gettext("Delete")}
-              </button>
+              <%!-- a quiet button carries its padding as a gutter, so the
+                   pair steps out by it and the words end on the column
+                   edge like every other row action --%>
+              <span class="flex gap-1 -mr-[10px]">
+                <button
+                  :if={Accounts.pending?(user)}
+                  class="btn quiet sm"
+                  id={"invite-again-#{user.id}"}
+                  phx-click="invite_again"
+                  phx-value-id={user.id}
+                >
+                  {gettext("Send the link again")}
+                </button>
+                <%!-- your own row has no Delete: another admin removes it --%>
+                <button
+                  :if={user.id != @current_scope.user.id}
+                  class="btn quiet sm danger"
+                  id={"delete-user-#{user.id}"}
+                  phx-click="ask_delete"
+                  phx-value-id={user.id}
+                  disabled={delete_block(user, @users, @current_scope.user) != nil}
+                >
+                  {gettext("Delete")}
+                </button>
+              </span>
             </div>
             <%!-- why the Delete is off, if it is. It is the one thing
                  on the row that is not a fact about the account, so it
                  carries the colour that means "read this". --%>
             <p class="note mt-[3px]">
               {user_meta(user)}
-              <span :if={delete_block(user, @users, @current_scope.user)} class="text-julia">
+              <span :if={delete_block(user, @users, @current_scope.user)} class="text-faint">
                 · {delete_block(user, @users, @current_scope.user)}
               </span>
             </p>
@@ -1103,8 +1066,10 @@ defmodule TexttileWeb.SettingsLive do
           <div class="drow">
             <label class="lab" for="invite-email">{gettext("Invite an admin")}</label>
             <span class="val">
-              <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] max-w-[280px]">
+              <%!-- an address and its button, the way Newsletter adds one:
+                   the field takes the column, the button closes it --%>
+              <span class="flex items-center gap-2">
+                <span class="flex-1 min-w-0">
                   <input
                     type="email"
                     id="invite-email"
@@ -1116,14 +1081,12 @@ defmodule TexttileWeb.SettingsLive do
                     placeholder={gettext("name@example.org")}
                   />
                 </span>
-                <button class="btn" type="submit" id="invite-send">
+                <button class="btn solid flex-none" type="submit" id="invite-send">
                   {gettext("Send the link")}
                 </button>
               </span>
               <div class="hint">
-                {gettext(
-                  "The address gets an account at once and a link that sets its password. The link works one time and for a week. Until it is used, the account cannot sign in, and you can delete it from the list above."
-                )}
+                {gettext("The link sets the first password. It works once, for a week.")}
               </div>
               <%!-- What went wrong wears the colour that means "read
                    this"; what worked stays quiet. --%>
@@ -1138,11 +1101,6 @@ defmodule TexttileWeb.SettingsLive do
           </div>
         </.form>
 
-        <p class="note mt-3">
-          {gettext("Change your own displayed name, address and password on")}
-          <.link navigate={~p"/admin/profile"} class="link">{gettext("your profile")}</.link>.
-        </p>
-
         <.section>{gettext("Images")}</.section>
         <.form for={@settings_form} id="images-form" phx-change="save_setting">
           <div class="drow">
@@ -1156,7 +1114,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings_form[:image_max_edge].value}
                   min="800"
                   step="80"
-                  class="max-w-[120px]"
+                  class="sm:max-w-[240px]"
                   phx-debounce="400"
                 />
                 <span class="pre">px</span>
@@ -1166,7 +1124,7 @@ defmodule TexttileWeb.SettingsLive do
               </p>
               <div class="hint">
                 {gettext(
-                  "Uploads are scaled down so the longer edge stays within this; nothing is ever scaled up. Originals are kept on disk. Display sizes are made on the fly when a page first needs them; changing this value drops the old cached sizes so nothing stale survives."
+                  "The longest edge a picture is shown at. Originals stay on disk, and nothing is scaled up."
                 )}
               </div>
             </span>
@@ -1186,7 +1144,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings_form[:video_max_edge].value}
                   min="480"
                   step="80"
-                  class="max-w-[120px]"
+                  class="sm:max-w-[240px]"
                   phx-debounce="400"
                 />
                 <span class="pre">px</span>
@@ -1196,7 +1154,7 @@ defmodule TexttileWeb.SettingsLive do
               </p>
               <div class="hint">
                 {gettext(
-                  "An uploaded video is converted once, to one MP4 every browser plays, with the longer edge within this; nothing is ever scaled up. The original is kept on disk. ffmpeg does the work on one thread at the lowest priority, one video at a time, so the site stays quick while it runs. A new value applies to what is converted after the change; a video already converted keeps the file it has."
+                  "Videos are converted once to an MP4 with at most this edge, gently in the background. A new value applies to the next conversion."
                 )}
               </div>
             </span>
@@ -1208,7 +1166,7 @@ defmodule TexttileWeb.SettingsLive do
           <div class="drow">
             <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
             <span class="val">
-              <span class="flex items-baseline gap-[7px]">
+              <span class="addr">
                 <input
                   type="number"
                   id="setting-max_upload_mb"
@@ -1218,9 +1176,9 @@ defmodule TexttileWeb.SettingsLive do
                   max="2048"
                   step="1"
                   phx-debounce="500"
-                  class="max-w-[110px]"
+                  class="sm:max-w-[240px]"
                 />
-                <span class="note">{gettext("MB")}</span>
+                <span class="pre">{gettext("MB")}</span>
               </span>
               <p :if={@errors[:max_upload_mb]} class="text-julia text-[13px] mt-[6px]">
                 {gettext("The value must be %{rule}.", rule: @errors[:max_upload_mb])}
@@ -1228,7 +1186,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <div class="hint">
               {gettext(
-                "One roof for a picture, for a video and for an import zip. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB, and a zip that carries its pictures weighs more."
+                "The largest picture, video or import zip the site takes. A few minutes of phone video weigh a few hundred MB."
               )}
             </div>
           </div>
@@ -1286,14 +1244,74 @@ defmodule TexttileWeb.SettingsLive do
               db: @db_path
             )}
             {gettext(
-              "Both paths come from the install config and cannot change while the site runs. The volume is the whole installation; a copy of it is a copy of the site."
+              "Both paths come from the install config. The volume is the whole installation: a copy of it is a copy of the site."
             )}
           </div>
         </div>
         <p class="mt-3">
-          <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
+          <button class="btn" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>
         </p>
+
+        <.section>{gettext("Theme")}</.section>
+        <p class="note mb-[10px]">
+          {gettext("One CSS file styles the blog and this admin area.")}
+        </p>
+        <%!-- the theme is code, and most visits never touch it: the
+             field opens on demand, and JS.toggle keeps it open across
+             every redraw the saving sends --%>
+        <p>
+          <button
+            type="button"
+            class="btn"
+            id="open-theme"
+            phx-click={JS.toggle(to: "#themeBox")}
+          >
+            {gettext("Edit theme.css")}
+          </button>
+        </p>
+        <div id="themeBox" class="hidden mt-3">
+          <.form
+            for={@settings_form}
+            id="theme-form"
+            phx-change="save_setting"
+            phx-hook=".ThemeRefresh"
+          >
+            <span class="labrow">
+              <label class="lab" for="setting-theme_css">theme.css</label>
+              <%!-- emptying a twelve-row field by hand to get the default
+                 back is no way to ask for it --%>
+              <button
+                :if={@settings.theme_css != ""}
+                type="button"
+                class="link"
+                id="reset-theme"
+                phx-click="reset_theme"
+              >
+                {gettext("Reset")}
+              </button>
+            </span>
+            <textarea
+              wrap="off"
+              id="setting-theme_css"
+              name="settings[theme_css]"
+              rows="12"
+              spellcheck="false"
+              class="font-mono text-[12.5px] leading-[1.65]"
+              phx-debounce="300"
+            >{@settings_form[:theme_css].value}</textarea>
+          </.form>
+        </div>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
+          export default {
+            mounted() {
+              this.handleEvent("theme_saved", () => {
+                const link = document.querySelector('link[href^="/theme.css"]')
+                if (link) link.href = "/theme.css?v=" + Date.now()
+              })
+            }
+          }
+        </script>
 
         <.section>{gettext("Backup")}</.section>
         <div id="backupSection">
@@ -1363,7 +1381,7 @@ defmodule TexttileWeb.SettingsLive do
                 <button
                   :if={@settings.backup_token_hash == ""}
                   type="button"
-                  class="btn sm"
+                  class="btn"
                   id="makeBackupToken"
                   phx-click="make_backup_token"
                 >
@@ -1372,7 +1390,7 @@ defmodule TexttileWeb.SettingsLive do
                 <button
                   :if={@settings.backup_token_hash != ""}
                   type="button"
-                  class="btn sm"
+                  class="btn"
                   id="replaceBackupToken"
                   phx-click="ask_replace_token"
                 >
@@ -1400,7 +1418,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings.backup_allowed_ips}
                   placeholder={gettext("Any address")}
                   phx-debounce="500"
-                  class="max-w-[280px]"
+                  class="sm:max-w-[240px]"
                 />
                 <p :if={@errors[:backup_allowed_ips]} class="text-julia text-[13px] mt-[6px]">
                   {@errors[:backup_allowed_ips]}
@@ -1434,7 +1452,7 @@ defmodule TexttileWeb.SettingsLive do
           {gettext("in the repository is the format contract.")}
         </p>
         <p>
-          <.link navigate={~p"/admin/settings/import"} class="btn sm" id="open-import">
+          <.link navigate={~p"/admin/settings/import"} class="btn" id="open-import">
             {gettext("Open the import")}
           </.link>
         </p>

@@ -127,31 +127,44 @@ defmodule TexttileWeb.TagsLive do
       current_scope={@current_scope}
       crumb={gettext("Tags")}
       active="tags"
+      count={length(@tags)}
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
+      <div class="admin-col">
+        <%!-- the count stands under the heading, where every screen
+             puts its line; a phone says it in its bar instead --%>
+        <div class="mb-1 md:mb-6">
           <h1 class="page-h">{gettext("Tags")}</h1>
-          <span class="note num" id="tagsCount">
+          <p class="lead !mb-0 num max-md:hidden" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
-          </span>
+          </p>
         </div>
-        <div id="tagsList">
+        <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[14px] border-b border-hair flex items-center gap-[10px] flex-wrap"
+            class="py-[8px] sm:py-[11px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
           >
-            <b class="text-[14.5px] break-words min-w-0 max-w-full">{tag}</b>
-            <span class="note">{ngettext("1 entry", "%{count} entries", count)}</span>
-            <div :if={@editing != tag} class="ml-auto flex gap-2">
+            <%!-- the tag is the way to its archive on the site, a link like every
+                 other tag in the product --%>
+            <a
+              href={~p"/tags/#{String.downcase(tag)}"}
+              target="_blank"
+              class="link rowp break-words min-w-[92px]"
+            >
+              #{tag}
+            </a>
+            <span class="note num flex-1">
+              {ngettext("1 entry", "%{count} entries", count)}
+            </span>
+            <div :if={@editing != tag} class="flex gap-1 -mr-[10px] max-sm:ml-auto">
               <button
                 type="button"
-                class="btn sm"
+                class="btn quiet sm"
                 id={"edit-tag-#{tag_id(tag)}"}
                 phx-click="edit_tag"
                 phx-value-tag={tag}
@@ -160,7 +173,7 @@ defmodule TexttileWeb.TagsLive do
               </button>
               <button
                 type="button"
-                class="btn sm"
+                class="btn quiet sm danger"
                 id={"delete-tag-#{tag_id(tag)}"}
                 phx-click="ask_delete_tag"
                 phx-value-tag={tag}

@@ -103,6 +103,30 @@ defmodule Texttile.I18n do
     )
   end
 
+  @doc """
+  A date the way the admin lists write one: 2 Jul 2026. The short
+  month keeps a column of dates narrow and still reads as a day.
+  """
+  def format_short_date(nil), do: ""
+
+  def format_short_date(date) do
+    gettext("%{day} %{month} %{year}",
+      day: date.day,
+      month: short_month_name(date.month),
+      year: date.year
+    )
+  end
+
+  @doc "A moment the way the admin lists write one: 2 Jul 2026, 14:30."
+  def format_short_moment(nil), do: ""
+
+  def format_short_moment(datetime) do
+    gettext("%{date}, %{time}",
+      date: format_short_date(DateTime.to_date(datetime)),
+      time: Calendar.strftime(datetime, "%H:%M")
+    )
+  end
+
   @doc "The same date without the year, for a day inside the current one."
   def format_day_and_month(date) do
     gettext("%{day} %{month}", day: date.day, month: month_name(date.month))

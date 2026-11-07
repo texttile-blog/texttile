@@ -40,7 +40,13 @@ defmodule TexttileWeb.StatsLiveTest do
     assert has_element?(view, "#figViews", "8")
     assert has_element?(view, "#figPeople", "8")
     assert has_element?(view, "#figBusiest", "5")
-    assert render(view) =~ "busiest day,"
+    assert render(view) =~ "busiest day"
+
+    assert has_element?(
+             view,
+             "#figBusiestDay",
+             Texttile.I18n.format_short_day(Date.add(Date.utc_today(), -1))
+           )
   end
 
   test "the chart holds one bar per day of the window", %{conn: conn} do
@@ -52,6 +58,15 @@ defmodule TexttileWeb.StatsLiveTest do
 
     assert chart =~ "height:100%"
     assert chart |> String.split("<button ") |> length() == 31
+  end
+
+  test "the scale stands on round numbers over the busiest bar", %{conn: conn} do
+    seed_views(7)
+
+    {:ok, view, _html} = live(conn, ~p"/admin/stats")
+
+    assert has_element?(view, "#dayChartMax", "8")
+    assert view |> element("#dayChart") |> render() =~ "height:88%"
   end
 
   test "the top table names the entries and jumps into their Stats tab", %{conn: conn} do
@@ -130,7 +145,6 @@ defmodule TexttileWeb.StatsLiveTest do
 
     assert has_element?(view, "#win-90.on")
     assert has_element?(view, "#figViews", "1")
-    assert render(view) =~ "views, last 90 days"
 
     # Ninety days are thirteen or fourteen weeks, not ninety bars.
     bars = view |> element("#dayChart") |> render() |> String.split("<button ") |> length()
@@ -152,17 +166,17 @@ defmodule TexttileWeb.StatsLiveTest do
     seed_views(1, day: Date.add(Date.utc_today(), -45))
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=90")
-    assert render(view) =~ "Views, last 90 days, by week"
+    assert render(view) =~ "Views, by week"
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=365")
-    assert render(view) =~ "Views, last 365 days, by month"
+    assert render(view) =~ "Views, by month"
 
     assert view |> element("#dayChart + div") |> render() =~
              Integer.to_string(Date.utc_today().year)
 
     # A fresh blog with one month of views is a month bar too.
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")
-    assert render(view) =~ "Views, all time, by month"
+    assert render(view) =~ "Views, by month"
 
     assert view |> element("#dayChart + div") |> render() =~
              Integer.to_string(Date.utc_today().year)

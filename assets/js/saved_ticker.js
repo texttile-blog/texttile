@@ -30,15 +30,11 @@ export function savedLine({at, now, wide}, say = t) {
 
   const fresh = (now - at) / 1000 < 20
 
-  // a phone bar has room for the stamp, not for the sentence
-  if (!wide) {
-    return {text: fresh ? say("saved") : say("saved %{time}", {time: clock}), title}
-  }
-
-  return {
-    text: fresh ? say("Last saved · just now") : say("Last saved %{time}", {time: clock}),
-    title,
-  }
+  // "Saved", then the clock of the save. A phone bar is full with the
+  // state, the logo and the button, so there the word stands alone and
+  // the clock waits in the tooltip.
+  if (!wide) return {text: say("Saved"), title}
+  return {text: fresh ? say("Saved") : say("Saved %{time}", {time: clock}), title}
 }
 
 /* What the toast says for one save, and for how long: the note while

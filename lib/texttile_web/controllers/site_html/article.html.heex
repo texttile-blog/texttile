@@ -25,20 +25,6 @@
   </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
-      <%!-- the chosen preview once more, at the head of the post: a
-           square the size of a tile, so the page opens the way its card
-           in the list does. It links the file the tile links, and the
-           script turns the click into the lightbox, on that tile. --%>
-      <a
-        :if={@hero}
-        id="preview"
-        class="hero"
-        href={Images.url(@hero.link, :original)}
-        aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
-      >
-        <img src={Images.url(@hero.still, :card)} alt="" />
-        <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
-      </a>
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
       <%!-- the line under the title: the day, the tags, and for the
            admin who is signed in the way straight into the admin area.
@@ -82,7 +68,7 @@
          and answers the picture, or the film, itself. A video tile is
          its poster with a play mark; the lightbox plays the film from
          data-video. --%>
-    <figure :if={@gallery != []} class={[gallery_wrap(@gallery), "mt-[38px]"]} id="gallery">
+    <figure :if={@gallery != []} class="wrap narrow mt-[36px]" id="gallery">
       <div class={["gal", gallery_shape(@gallery)]} id="gal">
         <a
           :for={tile <- @gallery}
@@ -119,7 +105,7 @@
          edge, so the eye takes it for the end of the text and not for
          the first block under it. It stands first because "keep
          reading" is what most readers want next. --%>
-    <div :if={@older || @newer} class="wrap mt-[44px]">
+    <div :if={@older || @newer} class="wrap narrow mt-[40px]">
       <nav class="textnav" aria-label={gettext("More entries")}>
         <div class="pv">
           <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">
@@ -141,7 +127,7 @@
          posting is a plain form round trip. --%>
     <section
       :if={@comments}
-      class="wrap narrow mt-[54px]"
+      class="wrap narrow mt-[40px]"
       id="comments"
       aria-label={gettext("Comments")}
     >
@@ -163,7 +149,7 @@
           class={["py-[14px] border-b border-hair", kind == :own && "opacity-70"]}
           id={"comment-#{comment.id}"}
         >
-          <div class="flex flex-wrap gap-[9px] items-baseline text-[13.5px] font-semibold">
+          <div class="flex flex-wrap gap-[10px] items-baseline text-[14.5px] font-semibold">
             <%!-- the address the author gave for themselves, from the
                  form or out of a bundle. The words are somebody else's,
                  and so is where they lead: the link says as much to a
@@ -186,13 +172,13 @@
               datetime={DateTime.to_iso8601(comment.inserted_at)}
               data-comment-moment
               data-zone={comment.imported_at && "UTC"}
-              class="font-normal text-dim text-[12.5px]"
+              class="font-normal text-dim text-[14px]"
             >
               {comment_when(comment.inserted_at)}
             </time>
           </div>
           <p
-            class="comment-body mt-[5px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
+            class="comment-body mt-[6px] font-serif text-[16px] md:text-[17px] leading-[1.6]"
             phx-no-format
           >{comment.body}</p>
           <p :if={kind == :own} class="f-note mt-[6px]">
@@ -255,7 +241,7 @@
 
         <span class="cf-mail cfld">
           <label class="cf-lab" for="comment-email">
-            {gettext("Email")} <span class="cf-opt">{gettext("never published")}</span>
+            {gettext("Email")}
           </label>
           <input
             type="email"
@@ -329,7 +315,10 @@
   </article>
 
   <%!-- the second zone: what belongs to the blog and not to the text --%>
-  <.site_band about_html={assigns[:about_html]} />
+  <%!-- a page is the blog speaking for itself (an About page above
+       all), so its foot leaves the About block out and keeps the
+       invitation to subscribe --%>
+  <.site_band about_html={@article.type == "post" && assigns[:about_html]} />
 </main>
 <.site_foot current_scope={@current_scope} />
 

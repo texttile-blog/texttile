@@ -13,8 +13,9 @@ defmodule TexttileWeb.StatsComponents do
 
   @doc """
   One bar per step of the series, oldest left, with the two dates that
-  bound it under the row. The busiest bar carries the accent, so the
-  shape of the month reads without reading a number.
+  bound it under the row. The bars are grey and the busiest one is ink,
+  so the shape of the month reads without reading a number; the bar an
+  admin opened wears the accent, the one selected state.
 
   `step` says what a bar is (`Texttile.Stats.step/1`): a series in
   months carries the year on its axis. With `pick`, every bar is a
@@ -31,7 +32,8 @@ defmodule TexttileWeb.StatsComponents do
   attr :open, :map, default: nil
 
   def day_chart(assigns) do
-    assigns = assign(assigns, :max, Enum.max(Enum.map(assigns.series, & &1.views), fn -> 0 end))
+    max = Enum.max(Enum.map(assigns.series, & &1.views), fn -> 0 end)
+    assigns = assigns |> assign(:max, max) |> assign(:top, scale_top(max))
 
     ~H"""
     <p :if={@max == 0} class="note" id={"#{@id}Empty"}>
@@ -39,8 +41,42 @@ defmodule TexttileWeb.StatsComponents do
         "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
       )}
     </p>
-    <div :if={@max > 0}>
-      <div id={@id} class="flex items-end gap-[3px] h-[132px] pt-[18px] pb-[6px]">
+    <div :if={@max > 0} class="relative isolate pr-[52px]">
+      <%!-- the scale: a hairline at a round number just over the
+           busiest bar and one at half of it, behind the bars and on into
+           the gutter at the right, where their counts stand, so every
+           label points at its line and no label sits on a bar --%>
+      <span
+        class="absolute left-0 right-[42px] top-[18px] border-t border-rule -z-10 pointer-events-none"
+        aria-hidden="true"
+      >
+      </span>
+      <span
+        class="absolute right-0 top-[10px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        id={"#{@id}Max"}
+      >
+        {number(@top)}
+      </span>
+      <span
+        :if={@top > 1}
+        class="absolute left-0 right-[42px] top-[84px] border-t border-rule -z-10 pointer-events-none"
+        aria-hidden="true"
+      >
+      </span>
+      <span
+        :if={@top > 1}
+        class="absolute right-0 top-[76px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        aria-hidden="true"
+      >
+        {number(div(@top, 2))}
+      </span>
+      <span
+        class="absolute right-0 top-[142px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        aria-hidden="true"
+      >
+        0
+      </span>
+      <div id={@id} class="flex items-end gap-[3px] h-[150px] pt-[18px] pb-0">
         <%= for bar <- @series do %>
           <button
             :if={@pick}
@@ -58,23 +94,26 @@ defmodule TexttileWeb.StatsComponents do
               class={[
                 "block w-full min-h-[2px] rounded-t-[2px]",
                 bar_colour(bar.views, @max),
-                @open && @open.from == bar.from && "!bg-ink"
+                @open && @open.from == bar.from && "!bg-accent"
               ]}
-              style={"height:#{height(bar.views, @max)}%"}
+              style={"height:#{height(bar.views, @top)}%"}
             >
             </i>
           </button>
           <i
             :if={is_nil(@pick)}
             class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(bar.views, @max)]}
-            style={"height:#{height(bar.views, @max)}%"}
+            style={"height:#{height(bar.views, @top)}%"}
             title={bar_title(bar)}
           >
           </i>
         <% end %>
       </div>
-      <div class="flex justify-between text-[12px] text-faint pb-2 border-b border-hair">
+      <div class="flex justify-between text-[12px] text-faint pt-[7px] pb-2 border-t border-faint">
         <span>{axis_label(List.first(@series).from, @step)}</span>
+        <span :if={length(@series) > 4}>
+          {axis_label(Enum.at(@series, div(length(@series), 2)).from, @step)}
+        </span>
         <span>{axis_label(List.last(@series).to, @step)}</span>
       </div>
     </div>
@@ -125,14 +164,16 @@ defmodule TexttileWeb.StatsComponents do
         <thead>
           <tr>
             <th>{gettext("Source")}</th>
-            <th class="w-[45%]">{gettext("Share")}</th>
-            <th class="text-right num">%</th>
+            <th class="w-[34%] sm:w-[220px] pl-3"><span class="sr">{gettext("Share")}</span></th>
+            <th class="text-right num w-[44px]">%</th>
           </tr>
         </thead>
         <tbody>
           <tr :for={row <- @rows}>
             <td>{row.host || gettext("direct")}</td>
-            <td><span class="track"><i style={"width:#{row.share}%"}></i></span></td>
+            <td class="align-middle pl-3">
+              <span class="track share"><i style={"width:#{row.share}%"}></i></span>
+            </td>
             <td class="text-right num">{row.share}</td>
           </tr>
         </tbody>
@@ -156,9 +197,19 @@ defmodule TexttileWeb.StatsComponents do
   @doc "A day as the charts write it: 30 Jun."
   defdelegate day_label(day), to: Texttile.I18n, as: :format_short_day
 
-  defp bar_colour(views, max) when views == max and views > 0, do: "bg-accent"
-  defp bar_colour(_views, _max), do: "bg-accentsoft"
+  defp bar_colour(views, max) when views == max and views > 0, do: "bg-ink"
+  defp bar_colour(_views, _max), do: "barc"
 
   defp height(_views, 0), do: 0
   defp height(views, max), do: max(round(views / max * 100), 1)
+
+  # The top of the scale: the busiest count rounded up to its leading
+  # digit (79 to 80, 226 to 300), and to an even number under ten, so
+  # the half line under it is a round number too.
+  defp scale_top(max) when max < 10, do: max + rem(max, 2)
+
+  defp scale_top(max) do
+    unit = Integer.pow(10, length(Integer.digits(max)) - 1)
+    div(max + unit - 1, unit) * unit
+  end
 end

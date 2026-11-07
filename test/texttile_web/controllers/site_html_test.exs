@@ -51,6 +51,19 @@ defmodule TexttileWeb.SiteHTMLTest do
       refute lead =~ "letter…"
     end
 
+    test "a cut after a comma leaves the comma out of the ellipsis" do
+      body = String.duplicate("flour, ", 40)
+      lead = SiteHTML.lead(%{body: body})
+
+      assert String.ends_with?(lead, "flour…")
+    end
+
+    test "a cut after a sentence ends in the ellipsis alone" do
+      body = String.duplicate("Well. ", 40)
+
+      assert SiteHTML.lead(%{body: body}) |> String.ends_with?("Well. Well…")
+    end
+
     test "an umlaut lead under the limit keeps its last word" do
       body = String.duplicate("über ", 30) |> String.trim()
       assert String.length(body) == 149
@@ -111,22 +124,15 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
   end
 
-  describe "gallery_wrap/1, gallery_shape/1 and gallery_size/1" do
-    # a tile carries more than this, but the width only counts them
+  describe "gallery_shape/1 and gallery_size/1" do
+    # a tile carries more than this, but the shape only counts them
     defp tiles(count), do: for(index <- 1..count//1, do: %{id: index})
 
-    test "three or fewer keep the reading column, one to a picture" do
-      for count <- 1..3 do
-        assert SiteHTML.gallery_wrap(tiles(count)) == "wrap narrow"
-        assert SiteHTML.gallery_shape(tiles(count)) == "gal-#{count}"
-      end
-    end
+    test "one fills the column, two halve it, three and more share the one grid" do
+      assert SiteHTML.gallery_shape(tiles(1)) == "gal-1"
+      assert SiteHTML.gallery_shape(tiles(2)) == "gal-2"
 
-    test "four and more leave the column on both sides, in the one grid" do
-      for count <- 4..6 do
-        assert SiteHTML.gallery_wrap(tiles(count)) == "wrap"
-        assert SiteHTML.gallery_shape(tiles(count)) == nil
-      end
+      for count <- 3..6, do: assert(SiteHTML.gallery_shape(tiles(count)) == nil)
     end
 
     test "a picture alone fills the column, so it comes at the reading size" do

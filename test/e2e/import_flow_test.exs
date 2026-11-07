@@ -11,11 +11,11 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
 
     conn
     |> sign_in()
-    |> click_button("#wmBtn", "Texttile")
+    |> click("#wmBtn")
     # the menu opens in the browser: wait for it, or the next click
     # races the script on a slow machine
     |> assert_has("#navMenu", text: "Settings")
-    |> click_link("Settings")
+    |> click_link("#navMenu a", "Settings")
     |> click_link("#open-import", "Open the import")
     |> assert_has("#crumb", text: "Import")
     |> upload("#import-upload input[type=file]", "Upload the zip", zip, exact: false)
@@ -76,7 +76,7 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     |> assert_has("#import-report", text: "The report")
     |> click_button("#import-run", "Import 1 entry")
     |> assert_has("#import-summary", text: "1 updated")
-    |> click_button("#wmBtn", "Texttile")
+    |> click("#wmBtn")
     |> assert_has("#navMenu", text: "Sign out")
     |> click_link("Sign out")
     |> open_page(Texttile.Articles.public_path(article))

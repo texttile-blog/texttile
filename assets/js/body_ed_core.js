@@ -205,6 +205,9 @@ function buildDeco(view, resolveImage) {
         return
       }
       if (name === "ListMark") {
+        /* a list line hangs: its wrapped lines start under the words,
+           not under the bullet. Only the drawing changes. */
+        lineCls(n.from, "cm-mdli")
         const txt = doc.sliceString(n.from, n.to)
         if (/^\d/.test(txt)) { deco.push(Decoration.mark({class: "cm-mdnum"}).range(n.from, n.to)); return }
         const item = n.node.parent
@@ -213,7 +216,14 @@ function buildDeco(view, resolveImage) {
           if (!showRaw(n.from, n.to)) hide(n.from, Math.min(n.to + 1, doc.lineAt(n.from).to))
           return
         }
-        if (!showRaw(n.from, n.to)) deco.push(Decoration.replace({widget: new BulletW()}).range(n.from, n.to))
+        /* the marker and its space become one bullet the width of the
+           reader's list indent, so the line and its wrap meet the words
+           where the published entry puts them */
+        if (!showRaw(n.from, n.to)) {
+          const end = doc.sliceString(n.to, n.to + 1) === " " ? n.to + 1 : n.to
+          lineCls(n.from, "cm-mdul")
+          deco.push(Decoration.replace({widget: new BulletW()}).range(n.from, end))
+        }
         return
       }
       if (name === "TaskMarker") {

@@ -15,6 +15,7 @@ import Gallery from "./gallery"
 import {SavedTicker} from "./saved_ticker"
 import {PlacePop} from "./place"
 import {initNavMenu} from "./nav_menu"
+import {LocalMoment} from "./moment"
 import {FALLBACK_MS, forgetLongpollFallback, watchLiveness} from "./connection"
 
 forgetLongpollFallback()
@@ -23,7 +24,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: FALLBACK_MS,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd, CopyOut, Gallery},
+  hooks: {...colocatedHooks, SavedTicker, PlacePop, BodyEd, CopyOut, Gallery, LocalMoment},
 })
 
 // Show progress bar on live navigation and form submits

@@ -55,10 +55,16 @@ defmodule TexttileWeb.CommentsLive do
   defp selected_for(_socket, _status), do: MapSet.new()
 
   # A status the setting took away, or one nobody ever wrote, reads as
-  # all of them.
+  # all of them. Without the confirmation nothing gets released any
+  # more, so that filter stays only while it still holds a comment.
   defp load(socket) do
     require? = Settings.get(:comments_require_confirmation)
-    statuses = Comments.statuses(require?)
+    counts = Comments.status_counts()
+
+    statuses =
+      Comments.statuses(require?)
+      |> Enum.reject(&(&1 == "released" and not require? and counts["released"] == 0))
+
     status = if socket.assigns.status in statuses, do: socket.assigns.status, else: "all"
     list = Comments.overview(status, socket.assigns.page)
 
@@ -66,7 +72,7 @@ defmodule TexttileWeb.CommentsLive do
     |> assign(:status, status)
     |> assign(:statuses, statuses)
     |> assign(:selected, still_there(socket.assigns.selected, status))
-    |> assign(:counts, Comments.status_counts())
+    |> assign(:counts, counts)
     |> assign(:comments, list.rows)
     |> assign(:page, list.page)
     |> assign(:pages, list.pages)
@@ -168,103 +174,112 @@ defmodule TexttileWeb.CommentsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
-        <nav
-          class="flex gap-[3px] flex-wrap py-3 mt-[14px] border-y border-rule"
-          id="commentFilter"
-          aria-label={gettext("Filter by status")}
-        >
-          <.link
-            :for={status <- @statuses}
-            patch={comments_path(status, 1)}
-            class={["seg-b", @status == status && "on"]}
-            data-f={status}
+      <div class="admin-col">
+        <div>
+          <%!-- no count beside the heading: the All filter carries it --%>
+          <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
+          <nav
+            class="flex gap-[3px] flex-wrap mt-0 sm:mt-6 mb-[8px]"
+            id="commentFilter"
+            aria-label={gettext("Filter by status")}
           >
-            {status_name(status)} <span class="num opacity-60">{@counts[status]}</span>
-          </.link>
-        </nav>
-        <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">
-          <label>
-            <input
-              type="checkbox"
-              id="selectAll"
-              checked={MapSet.size(@selected) == @counts[@status]}
-              phx-click="select_all"
-              aria-label={gettext("Select every comment of this filter")}
-            />
-            <span class="num">{selection_line(MapSet.size(@selected), @counts[@status])}</span>
-          </label>
-          <span class="sp"></span>
-          <button
-            :for={action <- bulk_actions(@status)}
-            class="btn sm"
-            id={"bulk-#{action}"}
-            phx-click="bulk"
-            phx-value-action={action}
-          >
-            {bulk_label(action, MapSet.size(@selected), @counts[@status])}
-          </button>
+            <.link
+              :for={status <- @statuses}
+              patch={comments_path(status, 1)}
+              class={["seg-b", @status == status && "on"]}
+              data-f={status}
+            >
+              {status_name(status)} <span class="num text-faint">{@counts[status]}</span>
+            </.link>
+          </nav>
         </div>
-        <div id="commentsList" class={@counts[@status] == 0 && "pt-[18px]"}>
-          <p :if={@comments == []} class="note">{empty_line(@status)}</p>
-          <p :if={@status == "trash" and @comments != []} class="note mb-[13px]">
-            {trash_line(@counts["trash"])}
-          </p>
-          <%= if @status == "trash" do %>
-            <.trashed_item
-              :for={comment <- @comments}
-              comment={comment}
-              selected={MapSet.member?(@selected, comment.id)}
-            />
-          <% else %>
-            <%!-- the address behind a comment is loaded with it, so the
+        <div>
+          <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">
+            <label>
+              <input
+                type="checkbox"
+                id="selectAll"
+                checked={MapSet.size(@selected) == @counts[@status]}
+                phx-click="select_all"
+                aria-label={gettext("Select every comment of this filter")}
+              />
+              <span class="num">{selection_line(MapSet.size(@selected), @counts[@status])}</span>
+            </label>
+            <span class="sp"></span>
+            <button
+              :for={action <- bulk_actions(@status)}
+              class={[
+                "btn sm",
+                MapSet.size(@selected) == 0 && "quiet",
+                action == "delete" && "danger"
+              ]}
+              id={"bulk-#{action}"}
+              phx-click="bulk"
+              phx-value-action={action}
+            >
+              {bulk_label(action, MapSet.size(@selected), @counts[@status])}
+            </button>
+          </div>
+          <div id="commentsList" class={@counts[@status] == 0 && "pt-[18px]"}>
+            <p :if={@comments == []} class="note">{empty_line(@status)}</p>
+            <p :if={@status == "trash" and @comments != []} class="note mb-[13px]">
+              {trash_line(@counts["trash"])}
+            </p>
+            <%= if @status == "trash" do %>
+              <.trashed_item
+                :for={comment <- @comments}
+                comment={comment}
+                selected={MapSet.member?(@selected, comment.id)}
+              />
+            <% else %>
+              <%!-- the address behind a comment is loaded with it, so the
                  name can be the way to write back --%>
-            <.comment_item
-              :for={comment <- @comments}
-              comment={comment}
-              waiting={Comments.waiting?(comment, @require?)}
-              article={comment.article}
-              editing={@editing_comment == to_string(comment.id)}
-              error={@comment_error}
-              selected={MapSet.member?(@selected, comment.id)}
-            />
-          <% end %>
-        </div>
-        <%!-- the three cells of the Entries pager. A step lands on the
+              <.comment_item
+                :for={comment <- @comments}
+                comment={comment}
+                waiting={Comments.waiting?(comment, @require?)}
+                article={comment.article}
+                editing={@editing_comment == to_string(comment.id)}
+                error={@comment_error}
+                selected={MapSet.member?(@selected, comment.id)}
+              />
+            <% end %>
+          </div>
+          <%!-- the three cells of the Entries pager. A step lands on the
              top of the list: the pager stands at its foot, and a patch
              alone would leave the admin down there. --%>
-        <nav
-          :if={@pages > 1}
-          class="f-pager mt-[18px] pt-4 border-t border-rule"
-          id="pager"
-          aria-label={gettext("Pages")}
-        >
-          <span>
-            <.link
-              :if={@page > 1}
-              class="btn sm"
-              id="prev-page"
-              patch={comments_path(@status, @page - 1) <> "#commentsTop"}
-            >
-              {gettext("Newer")}
-            </.link>
-          </span>
-          <span class="note num">
-            {gettext("Page %{page} of %{pages}", page: @page, pages: @pages)}
-          </span>
-          <span>
-            <.link
-              :if={@page < @pages}
-              class="btn sm"
-              id="next-page"
-              patch={comments_path(@status, @page + 1) <> "#commentsTop"}
-            >
-              {gettext("Older")}
-            </.link>
-          </span>
-        </nav>
-        <p class="note mt-[22px]" id="commentsRule">{comment_rule(@require?)}</p>
+          <nav
+            :if={@pages > 1}
+            class="f-pager mt-[18px] pt-4 border-t border-rule"
+            id="pager"
+            aria-label={gettext("Pages")}
+          >
+            <span>
+              <.link
+                :if={@page > 1}
+                class="btn sm"
+                id="prev-page"
+                patch={comments_path(@status, @page - 1) <> "#commentsTop"}
+              >
+                {gettext("Newer")}
+              </.link>
+            </span>
+            <span class="note num">
+              {gettext("Page %{page} of %{pages}", page: @page, pages: @pages)}
+            </span>
+            <span>
+              <.link
+                :if={@page < @pages}
+                class="btn sm"
+                id="next-page"
+                patch={comments_path(@status, @page + 1) <> "#commentsTop"}
+              >
+                {gettext("Older")}
+              </.link>
+            </span>
+          </nav>
+          <p class="note mt-[22px]" id="commentsRule">{comment_rule(@require?)}</p>
+        </div>
       </div>
 
       <.ask
@@ -356,7 +371,7 @@ defmodule TexttileWeb.CommentsLive do
   defp status_name("all"), do: gettext("All")
   defp status_name("waiting"), do: gettext("Not confirmed yet")
   defp status_name("confirmed"), do: gettext("Confirmed")
-  defp status_name("released"), do: gettext("Let through")
+  defp status_name("released"), do: gettext("Released")
   defp status_name("trash"), do: gettext("Trash")
 
   defp empty_line("all") do

@@ -66,6 +66,18 @@ defmodule TexttileWeb.ProfileLive do
   # The address is the identity here, so moving it is not a field that
   # saves itself: it asks for the password first. A stolen session must
   # not be able to point the next password link at another inbox.
+  # The password and the button belong to a change, so they appear the
+  # moment the address differs from the saved one, and go again when it
+  # is typed back.
+  def handle_event("email_draft", %{"em" => %{"email" => email}}, socket) do
+    saved = socket.assigns.current_scope.user.email
+
+    {:noreply,
+     socket
+     |> assign(:email_form, to_form(%{"email" => email}, as: :em))
+     |> assign(:email_moved, String.trim(email) != saved)}
+  end
+
   def handle_event("set_email", %{"em" => em_params}, socket) do
     user = socket.assigns.current_scope.user
 
@@ -90,6 +102,7 @@ defmodule TexttileWeb.ProfileLive do
         {:noreply,
          socket
          |> assign(:email_note, nil)
+         |> assign(:email_moved, true)
          |> assign(:email_form, to_form(changeset, as: :em, action: :validate))}
     end
   end
@@ -146,6 +159,7 @@ defmodule TexttileWeb.ProfileLive do
     socket
     |> assign(:profile_form, to_form(%{"display_name" => user.display_name}, as: :user))
     |> assign(:email_form, to_form(%{"email" => user.email}, as: :em))
+    |> assign(:email_moved, false)
     |> assign_new(:pw_form, fn -> to_form(%{}, as: :pw) end)
   end
 
@@ -169,27 +183,25 @@ defmodule TexttileWeb.ProfileLive do
     >
       <:bar>
         <span
-          class="text-[12.5px] text-faint num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
+          class="saved num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
           id="savedProfile"
           phx-hook="SavedTicker"
           data-at={@saved_at}
           data-note={@saved_note}
           data-note-until={@saved_note_until}
         >
-          {gettext("Last saved · just now")}
+          {gettext("Saved")}
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Your profile")}</h1>
-        <p class="lead">
+        <p class="lead max-md:hidden">
           {gettext("You are signed in as")}
-          <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>. {gettext(
-            "Change here your name, your address, your password and your open sessions. Your address and your password need your password once, because whoever holds them holds the account."
-          )}
+          <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
         </p>
 
-        <h2 class="set-h">{gettext("You")}</h2>
+        <h2 class="set-h">{gettext("Name")}</h2>
         <%!-- fields to type into, so they look like fields; the same
              treatment the Site block of Settings wears --%>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
@@ -206,7 +218,7 @@ defmodule TexttileWeb.ProfileLive do
                 phx-debounce="300"
               />
               <div class="hint">
-                {gettext("What others see. Empty shows the part of your address in front of the @.")}
+                {gettext("Shown beside your entries and comments.")}
               </div>
             </span>
           </div>
@@ -216,12 +228,12 @@ defmodule TexttileWeb.ProfileLive do
              The address is the identity, so it asks for the password
              the way the password itself does. --%>
         <h2 class="set-h">{gettext("Email")}</h2>
-        <.form for={@email_form} id="email-form" phx-submit="set_email">
+        <.form for={@email_form} id="email-form" phx-change="email_draft" phx-submit="set_email">
           <div class="drow">
             <span class="val">
-              <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="em-address">
+              <span class="pairrow">
+                <span class="min-w-0">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}
                   </label>
                   <input
@@ -234,9 +246,11 @@ defmodule TexttileWeb.ProfileLive do
                     autocapitalize="off"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="em-current">
-                    {gettext("Your password")}
+                <%!-- until the address differs from the saved one there is
+                     nothing to confirm: the field and its button wait --%>
+                <span :if={@email_moved} class="min-w-0">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-current">
+                    {gettext("Current password")}
                   </label>
                   <input
                     type="password"
@@ -245,15 +259,17 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <button class="btn" type="submit" id="em-set">{gettext("Change")}</button>
+                <button :if={@email_moved} class="btn" type="submit" id="em-set">
+                  {gettext("Change email")}
+                </button>
+                <.field_errors field={@email_form[:current_password]} />
+                <.field_errors field={@email_form[:email]} />
+                <div class="hint pairhint">
+                  {gettext(
+                    "You sign in with this address, and password links go to it. Readers never see it."
+                  )}
+                </div>
               </span>
-              <.field_errors field={@email_form[:current_password]} />
-              <.field_errors field={@email_form[:email]} />
-              <div class="hint">
-                {gettext(
-                  "This is what you sign in with, and where password links go. Readers never see it. Changing it needs your password, because whoever holds the address holds the account."
-                )}
-              </div>
               <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
             </span>
           </div>
@@ -263,9 +279,9 @@ defmodule TexttileWeb.ProfileLive do
         <.form for={@pw_form} id="password-form" phx-submit="set_password">
           <div class="drow">
             <span class="val">
-              <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="pw-current">
+              <span class="pairrow">
+                <span class="min-w-0">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="pw-current">
                     {gettext("Current password")}
                   </label>
                   <input
@@ -275,8 +291,8 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="pw-new">
+                <span class="min-w-0">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="pw-new">
                     {gettext("New password")}
                   </label>
                   <input
@@ -286,15 +302,13 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="new-password"
                   />
                 </span>
-                <button class="btn" type="submit">{gettext("Set")}</button>
+                <button class="btn" type="submit" id="pw-set">{gettext("Change password")}</button>
+                <.field_errors field={@pw_form[:current_password]} />
+                <.field_errors field={@pw_form[:password]} />
+                <div class="hint pairhint">
+                  {gettext("At least 12 characters. Confirm your current password to change it.")}
+                </div>
               </span>
-              <.field_errors field={@pw_form[:current_password]} />
-              <.field_errors field={@pw_form[:password]} />
-              <div class="hint">
-                {gettext(
-                  "Confirm the current password once to change it. Needs to be at least 12 characters."
-                )}
-              </div>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
             </span>
           </div>
@@ -312,7 +326,6 @@ defmodule TexttileWeb.ProfileLive do
                 when: signed_in_on(session)
               )}
             </span>
-            <span :if={length(@sessions) == 1} class="note">{gettext("the only one open")}</span>
           </div>
         </div>
         <p class="note mt-3">
