@@ -153,7 +153,7 @@
       <div :if={@comments != []} class="mt-[6px]">
         <div
           :for={{kind, comment} <- @comments}
-          class={["py-[14px] border-b border-hair last:border-b-0", kind == :own && "opacity-70"]}
+          class={["py-[14px] border-b border-rule last:border-b-0", kind == :own && "opacity-70"]}
           id={"comment-#{comment.id}"}
         >
           <div class="flex flex-wrap gap-[10px] items-baseline text-[15px] font-medium">

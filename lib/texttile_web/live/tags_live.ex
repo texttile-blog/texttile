@@ -161,7 +161,7 @@ defmodule TexttileWeb.TagsLive do
             <span class="note num flex-1">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>
-            <div :if={@editing != tag} class="flex gap-1 max-sm:gap-3 -mr-[10px] max-sm:ml-auto">
+            <div :if={@editing != tag} class="flex gap-1 max-sm:gap-3 -mr-[11px] max-sm:ml-auto">
               <button
                 type="button"
                 class="btn quiet sm"

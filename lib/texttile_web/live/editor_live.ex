@@ -1404,10 +1404,9 @@ defmodule TexttileWeb.EditorLive do
           class={
             [
               "st",
-              if(@pending, do: "pending", else: state_tone(@article.status)),
-              # a phone bar has room for the state only when it is news:
-              # a live entry says so in its settings below
-              (@article.status == "published" and not @pending) && "max-sm:hidden"
+              # the state and the save state stand together at the left
+              # on every width
+              if(@pending, do: "pending", else: state_tone(@article.status))
             ]
           }
           id="stateWord"

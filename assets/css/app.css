@@ -429,7 +429,7 @@
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
-  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -11px; }
+  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -12px; }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
     /* on the line of the entry and the moment, inside the row's
@@ -1737,8 +1737,8 @@
      takes it for the end of the text. */
   .textnav {
     display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 16px 0 18px;
-    border-top: 1px solid var(--tt-hair);
-    border-bottom: 1px solid var(--tt-hair);
+    border-top: 1px solid var(--tt-rule);
+    border-bottom: 1px solid var(--tt-rule);
   }
   .textnav .nx { text-align: right; }
   @media (max-width: 619px) {
@@ -1746,7 +1746,7 @@
     /* two destinations, two rows: each its own padding, a hairline
        between them */
     .textnav > * { padding: 11px 0 12px; }
-    .textnav > :has(a) + :has(a) { border-top: 1px solid var(--tt-hair); }
+    .textnav > :has(a) + :has(a) { border-top: 1px solid var(--tt-rule); }
     .textnav > :not(:has(a)) { display: none; }
     /* stacked, both rows start at the left edge: no zigzag across the
        phone, the arrow before the word says which way */
@@ -1972,7 +1972,7 @@
 /* the first glyph, not its button, stands on the text's left edge: the
    bar steps out by the button's inner space (36px buttons hold a glyph
    13px in, the 40px touch buttons 15px) */
-.mdbar { margin-left: -22px; }
+.mdbar { margin-left: -19px; }
 @media (pointer: coarse), (max-width: 639px) { .mdbar { margin-left: -20px; } }
 /* a finger needs room: on a touch screen every button is 40px square
    and the row scrolls sideways instead of shrinking them. A phone
@@ -2408,3 +2408,13 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 
 /* a phone's comment actions: the same quiet words, a finger tall */
 @media (max-width: 639px) { .cmt-acts .btn { height: 40px; margin-top: -5px; margin-bottom: -5px; } }
+
+/* a field group's help line one step under its last field: the grid's
+   own gap is that step */
+.pairrow > .pairhint { margin-top: -2px; }
+
+/* the last column of a Stats table ends on the gutter */
+.admin-col table th:last-child, .admin-col table td:last-child { padding-right: 0; }
+
+/* Description is the same two-line field on both widths */
+#setting-site_description { min-height: 60px; }

@@ -147,7 +147,7 @@ defmodule TexttileWeb.NewsletterLive do
                 {since(subscriber)}
               </span>
               <button
-                class="btn quiet sm danger flex-none -mr-[10px] max-sm:-mt-[5px]"
+                class="btn quiet sm danger flex-none -mr-[11px] max-sm:-mt-[5px]"
                 type="button"
                 id={"remove-#{subscriber.id}"}
                 phx-click="ask_remove"

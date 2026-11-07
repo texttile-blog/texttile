@@ -131,7 +131,7 @@ defmodule TexttileWeb.SiteHTML do
           :if={!@about_html and String.trim(Texttile.Settings.get(:site_description)) != ""}
           id="bandDesc"
         >
-          <p class="f-eyebrow">{gettext("About")}</p>
+          <p class="f-eyebrow">{site_title()}</p>
           <p>{String.trim(Texttile.Settings.get(:site_description))}</p>
         </div>
         <div id="subscribe" aria-label={gettext("Subscribe")}>
