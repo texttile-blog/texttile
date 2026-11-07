@@ -311,7 +311,7 @@ defmodule TexttileWeb.ProfileLive do
         </.form>
 
         <h2 class="set-h">{gettext("Your sessions")}</h2>
-        <div id="sessions" class="sm:border-t sm:border-hair">
+        <div id="sessions" class="border-t border-hair">
           <div
             :for={session <- @sessions}
             class="flex items-center gap-3 py-[13px] border-b border-hair text-[13.5px]"

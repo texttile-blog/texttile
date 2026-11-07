@@ -52,7 +52,7 @@ defmodule TexttileWeb.StatsComponents do
       >
       </span>
       <span
-        class="absolute right-0 top-[10px] w-[38px] text-right text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[10px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
         id={"#{@id}Max"}
       >
         {number(@top)}
@@ -65,13 +65,13 @@ defmodule TexttileWeb.StatsComponents do
       </span>
       <span
         :if={@top > 1}
-        class="absolute right-0 top-[76px] w-[38px] text-right text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[76px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
         aria-hidden="true"
       >
         {number(div(@top, 2))}
       </span>
       <span
-        class="absolute right-0 top-[142px] w-[38px] text-right text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[142px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
         aria-hidden="true"
       >
         0
@@ -109,7 +109,7 @@ defmodule TexttileWeb.StatsComponents do
           </i>
         <% end %>
       </div>
-      <div class="flex justify-between text-[12px] text-faint pt-[7px] pb-2 border-t border-faint">
+      <div class="flex justify-between text-[12px] text-dim pt-[7px] pb-2 border-t border-faint">
         <span>{axis_label(List.first(@series).from, @step)}</span>
         <span :if={length(@series) > 4}>
           {axis_label(Enum.at(@series, div(length(@series), 2)).from, @step)}
@@ -163,15 +163,15 @@ defmodule TexttileWeb.StatsComponents do
       <table id={@id}>
         <thead>
           <tr>
-            <th class="sm:w-[240px]">{gettext("Source")}</th>
-            <th class="w-[34%] sm:w-auto pl-3"><span class="sr">{gettext("Share")}</span></th>
+            <th class="sm:w-[366px]">{gettext("Source")}</th>
+            <th class="w-[34%] sm:w-auto pl-3 sm:pl-0"><span class="sr">{gettext("Share")}</span></th>
             <th class="text-right num w-[44px]">%</th>
           </tr>
         </thead>
         <tbody>
           <tr :for={row <- @rows}>
             <td>{row.host || gettext("direct")}</td>
-            <td class="align-middle pl-3">
+            <td class="align-middle pl-3 sm:pl-0">
               <span class="track share"><i style={"width:#{row.share}%"}></i></span>
             </td>
             <td class="text-right num">{row.share}</td>

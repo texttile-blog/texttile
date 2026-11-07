@@ -263,7 +263,7 @@
   /* a phone starts a form screen as close under the bar as a list: the
      first section has no air over it, and the rest stand a little closer */
   @media (max-width: 767px) {
-    .set-h { margin-top: 32px; margin-bottom: 12px; }
+    .set-h { margin-top: 24px; margin-bottom: 10px; }
     .admin-col > h2.set-h:first-of-type { margin-top: 0; }
   }
   /* the section heading on Stats: quieter than .set-h, because the
@@ -1512,8 +1512,8 @@
 
   /* type roles */
   .f-h1 {
-    font-family: var(--tt-font-serif); font-weight: 600;
-    font-size: clamp(33px, 6.2vw, 47px); line-height: 1.06; letter-spacing: -.025em;
+    font-family: var(--tt-font-serif); font-weight: 500;
+    font-size: clamp(33px, 6.2vw, 47px); line-height: 1.04; letter-spacing: -.025em;
   }
   /* the heading over a list is the door to it, not a title: a step
      quieter than the title of an entry */
@@ -2205,6 +2205,7 @@ input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-colo
 /* the reader's cards: the name of an entry carries the card next to its
    picture, and its line is read, not squinted at */
 body.site .card .ct { font-size: 20px; line-height: 1.22; }
+@media (min-width: 768px) { body.site .card .ct { font-size: 22px; } }
 body.site .card-wrap .cm { font-size: 14px; }
 
 /* a bar of the chart is a button: the pointer finds it darker */
@@ -2217,7 +2218,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 /* the signed-in person at the right of a desk bar, quiet, a hairline
    between them and the save state, as between Saved and View site */
 .bar-me {
-  align-self: stretch; align-items: center; font-size: 12.5px; color: var(--tt-dim);
+  align-self: stretch; align-items: center; font-size: 14px; color: var(--tt-dim);
   white-space: nowrap; padding: 0 12px 0 0; margin-right: 4px; text-decoration: none;
   position: relative;
 }
@@ -2234,7 +2235,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 
 /* the save state is a state, not a link: the quietest grey, no rule
    after it, and set apart before the account and View site */
-.saved { border-right: 0; padding-right: 0; margin-right: 24px; }
+.saved { border-right: 0; padding-right: 0; margin-right: 24px; color: var(--tt-dim); }
 /* a state, said with a small tick, so it is never read as a link */
 .saved:not(.warn)::before { content: "\2713\00a0"; color: var(--tt-slash); }
 .bar-me, #bar-view-site { order: 2; }
@@ -2290,7 +2291,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 
 /* the sign-in form at the reader's size: 16px words in 44px fields */
 @media (min-width: 768px) {
-  .auth-main input:not([type=checkbox]) { font-size: 16px; height: 44px; }
+  .auth-main input:not([type=checkbox]) { font-size: 16px; }
   .auth-main label, .auth-main .lab { font-size: 14px; }
 }
 
@@ -2340,3 +2341,19 @@ span.bn.on { background: none; }
 
 /* a band with Subscribe alone is as tall as Subscribe */
 section.foot-band .cols:not(:has(#about)) { padding-top: calc(var(--tt-sec) * .45); padding-bottom: calc(var(--tt-sec) * .45); }
+
+/* the right of a desk bar at the size of the row of sections */
+@media (min-width: 768px) { #bar-view-site { font-size: 14px; } }
+
+/* About in the band reads in the reading serif, wide enough to show
+   why it spans two columns */
+section.foot-band .about-md { font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.6; max-width: 600px; }
+
+/* Your sessions opens on a rule: its heading stands on the first row */
+@media (min-width: 1000px) { .admin-col.twocol > .set-h:has(+ #sessions) { padding-top: 15px; } }
+
+/* the editor's title sits a little closer over its formatting bar */
+.ed-title { line-height: 1.08; }
+
+/* a bar of the chart answers the keyboard too */
+#dayChart button:focus-visible { outline: 2px solid var(--tt-accent); outline-offset: 1px; }
