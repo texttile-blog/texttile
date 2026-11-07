@@ -131,11 +131,13 @@ defmodule TexttileWeb.TagsLive do
     >
       <:bar><Layouts.view_site /></:bar>
       <div class="admin-col">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-4 sm:mb-6">
+        <%!-- the count stands under the heading, where every screen
+             puts its line --%>
+        <div class="mb-4 sm:mb-6">
           <h1 class="page-h">{gettext("Tags")}</h1>
-          <span class="note num" id="tagsCount">
+          <p class="lead !mb-0 num" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
-          </span>
+          </p>
         </div>
         <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
           <p :if={@tags == []} class="note">

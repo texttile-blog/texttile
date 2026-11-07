@@ -163,8 +163,8 @@ defmodule TexttileWeb.StatsComponents do
         <thead>
           <tr>
             <th>{gettext("Source")}</th>
-            <th class="w-[220px]">{gettext("Share")}</th>
-            <th class="text-right num">%</th>
+            <th class="w-[34%] sm:w-[220px] pl-3">{gettext("Share")}</th>
+            <th class="text-right num w-[44px]">%</th>
           </tr>
         </thead>
         <tbody>

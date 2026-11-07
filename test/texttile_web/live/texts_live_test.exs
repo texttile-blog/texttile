@@ -127,6 +127,18 @@ defmodule TexttileWeb.TextsLiveTest do
     end
   end
 
+  test "a scheduled entry gets a filter of its own, so the counts add up", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/texts")
+    refute has_element?(view, "[data-f=scheduled]")
+
+    scheduled_post(title: "Winter plans")
+    {:ok, view, _html} = live(conn, ~p"/admin/texts")
+    assert has_element?(view, "[data-f=scheduled] .num", "1")
+
+    view |> element("[data-f=scheduled]") |> render_click()
+    assert has_element?(view, "#cards .card", "Winter plans")
+  end
+
   describe "the pager" do
     setup %{user: user} do
       for day <- 1..5 do

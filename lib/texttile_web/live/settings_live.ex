@@ -626,7 +626,9 @@ defmodule TexttileWeb.SettingsLive do
       </:bar>
       <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Settings")}</h1>
-        <p class="lead">
+        <%!-- a phone has the save state in its bar, so the line that
+             explains it stays on the desk --%>
+        <p class="lead max-sm:hidden">
           {gettext("Every change saves itself the moment you make it.")}
         </p>
 
@@ -714,7 +716,7 @@ defmodule TexttileWeb.SettingsLive do
             {gettext("Use default")}
           </button>
           <form id="logo-form" phx-change="validate_upload">
-            <label class="btn sm cursor-pointer relative overflow-hidden">
+            <label class="btn cursor-pointer relative overflow-hidden">
               {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.logo}
@@ -756,7 +758,7 @@ defmodule TexttileWeb.SettingsLive do
             {gettext("Use default")}
           </button>
           <form id="favicon-form" phx-change="validate_upload">
-            <label class="btn sm cursor-pointer relative overflow-hidden">
+            <label class="btn cursor-pointer relative overflow-hidden">
               {gettext("Upload")}
               <.live_file_input
                 upload={@uploads.favicon}
@@ -771,15 +773,16 @@ defmodule TexttileWeb.SettingsLive do
         </p>
 
         <.section>{gettext("About")}</.section>
+        <%!-- the editor of an entry, with the pictures taken out: About
+             stands in the band under every page and carries words, not
+             a gallery. One hook, one behaviour, one set of keys. The bar
+             follows the heading straight, so the two share a top. --%>
+        <.md_bar id="aboutBar" files={false} />
         <%!-- the section names the one field, so its label is for a
              screen reader only --%>
         <label class="sr" for="setting-about_markdown">
           {gettext("About this blog")}
         </label>
-        <%!-- the editor of an entry, with the pictures taken out: About
-             stands in the band under every page and carries words, not
-             a gallery. One hook, one behaviour, one set of keys. --%>
-        <.md_bar id="aboutBar" files={false} class="!mt-0" />
         <div
           id="setting-about_markdown"
           class="ed-body ed-cm boxed-cm"
@@ -966,7 +969,7 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>{gettext("Comments")}</.section>
         <.form for={@settings_form} id="comments-form" phx-change="save_setting">
-          <label class="opt">
+          <label class="opt py-2">
             <input type="hidden" name="settings[comments_require_confirmation]" value="false" />
             <input
               type="checkbox"
@@ -982,7 +985,7 @@ defmodule TexttileWeb.SettingsLive do
               </span>
             </span>
           </label>
-          <label class="opt">
+          <label class="opt py-2">
             <input type="hidden" name="settings[notify_on_comment]" value="false" />
             <input
               type="checkbox"
@@ -1064,8 +1067,10 @@ defmodule TexttileWeb.SettingsLive do
           <div class="drow">
             <label class="lab" for="invite-email">{gettext("Invite an admin")}</label>
             <span class="val">
-              <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] max-w-[280px]">
+              <%!-- an address and its button, the way Newsletter adds one:
+                   the field takes the column, the button closes it --%>
+              <span class="flex items-center gap-2">
+                <span class="flex-1 min-w-0">
                   <input
                     type="email"
                     id="invite-email"
@@ -1077,7 +1082,7 @@ defmodule TexttileWeb.SettingsLive do
                     placeholder={gettext("name@example.org")}
                   />
                 </span>
-                <button class="btn" type="submit" id="invite-send">
+                <button class="btn solid flex-none" type="submit" id="invite-send">
                   {gettext("Send the link")}
                 </button>
               </span>
@@ -1250,7 +1255,7 @@ defmodule TexttileWeb.SettingsLive do
           </div>
         </div>
         <p class="mt-3">
-          <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
+          <button class="btn" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>
         </p>
 
@@ -1264,7 +1269,7 @@ defmodule TexttileWeb.SettingsLive do
         <p>
           <button
             type="button"
-            class="btn sm"
+            class="btn"
             id="open-theme"
             phx-click={JS.toggle(to: "#themeBox")}
           >
@@ -1382,7 +1387,7 @@ defmodule TexttileWeb.SettingsLive do
                 <button
                   :if={@settings.backup_token_hash == ""}
                   type="button"
-                  class="btn sm"
+                  class="btn"
                   id="makeBackupToken"
                   phx-click="make_backup_token"
                 >
@@ -1391,7 +1396,7 @@ defmodule TexttileWeb.SettingsLive do
                 <button
                   :if={@settings.backup_token_hash != ""}
                   type="button"
-                  class="btn sm"
+                  class="btn"
                   id="replaceBackupToken"
                   phx-click="ask_replace_token"
                 >
@@ -1453,7 +1458,7 @@ defmodule TexttileWeb.SettingsLive do
           {gettext("in the repository is the format contract.")}
         </p>
         <p>
-          <.link navigate={~p"/admin/settings/import"} class="btn sm" id="open-import">
+          <.link navigate={~p"/admin/settings/import"} class="btn" id="open-import">
             {gettext("Open the import")}
           </.link>
         </p>

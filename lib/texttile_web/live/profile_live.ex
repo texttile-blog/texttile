@@ -184,9 +184,7 @@ defmodule TexttileWeb.ProfileLive do
         <h1 class="page-h">{gettext("Your profile")}</h1>
         <p class="lead">
           {gettext("You are signed in as")}
-          <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>. {gettext(
-            "Changing your address or your password asks for your current password."
-          )}
+          <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
         </p>
 
         <h2 class="set-h">{gettext("You")}</h2>

@@ -104,7 +104,10 @@ defmodule TexttileWeb.StatsLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Stats")}</h1>
-        <p class="lead" id="statsSub">
+        <%!-- a phone leaves the line out: with the heading in the bar it
+             would open the screen as a stray subtitle, and the note at
+             the foot says how a reader is counted --%>
+        <p class="lead max-sm:hidden" id="statsSub">
           {gettext("Counted by this server alone. No cookie, no fingerprint, no third party.")}
         </p>
 
@@ -325,12 +328,14 @@ defmodule TexttileWeb.StatsLive do
 
   # The day an entry went out, behind the mark the Entries grid gives
   # its state: filled once it is live, half while it waits for its day.
-  # A draft has no day yet, so it says so in grey and nothing else.
+  # A draft has no day yet: its grey ring and the word.
   attr :article, :any, required: true
 
   defp published_cell(%{article: %{status: "draft"}} = assigns) do
     ~H"""
-    <span class="text-faint">{gettext("Draft")}</span>
+    <span class="whitespace-nowrap text-faint">
+      <i class="mk draft" aria-hidden="true"></i>{gettext("Draft")}
+    </span>
     """
   end
 

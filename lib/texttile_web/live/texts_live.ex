@@ -72,8 +72,23 @@ defmodule TexttileWeb.TextsLive do
     |> assign(:counts, %{
       "all" => length(all),
       "published" => count.("published"),
+      "scheduled" => count.("scheduled"),
       "draft" => count.("draft")
     })
+  end
+
+  # The status filters in their order. Scheduled stands only while an
+  # entry waits for its day (or while it is the open filter).
+  defp filters(counts, open) do
+    [
+      {"all", gettext("All")},
+      {"published", gettext("Live")},
+      {"scheduled", gettext("Scheduled")},
+      {"draft", gettext("Drafts")}
+    ]
+    |> Enum.filter(fn {value, _} ->
+      value != "scheduled" or counts["scheduled"] > 0 or open == "scheduled"
+    end)
   end
 
   def handle_event("filter", %{"filter" => filter}, socket) do
@@ -140,14 +155,10 @@ defmodule TexttileWeb.TextsLive do
         </div>
         <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
           <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
+            <%!-- Scheduled has a tab only while an entry waits for its
+                 day, so the parts always add up to All --%>
             <button
-              :for={
-                {value, label} <- [
-                  {"all", gettext("All")},
-                  {"published", gettext("Live")},
-                  {"draft", gettext("Drafts")}
-                ]
-              }
+              :for={{value, label} <- filters(@counts, @filter)}
               class={["seg-b", @filter == value && "on"]}
               data-f={value}
               phx-click="filter"
@@ -156,18 +167,13 @@ defmodule TexttileWeb.TextsLive do
               {label} <span class="num opacity-60">{@counts[value]}</span>
             </button>
           </span>
-          <%!-- the one primary action ends the row of filters, on a phone
-               as on a desk, so it never needs a row of its own --%>
-          <button class="btn solid ml-auto sm:order-last" id="new-text" phx-click="new_text">
-            {gettext("New entry")}
-          </button>
-          <div class="flex items-center gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0">
+          <div class="flex items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0">
             <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
               <input
                 type="search"
                 name="q"
                 value={@q}
-                placeholder={gettext("Search title, tags, text")}
+                placeholder={gettext("Search")}
                 aria-label={gettext("Search entries")}
                 autocomplete="off"
                 phx-debounce="200"
@@ -195,6 +201,11 @@ defmodule TexttileWeb.TextsLive do
                 </select>
               </span>
             </form>
+            <%!-- the one primary action ends the row of tools, on a phone
+                 as on a desk, so it never needs a row of its own --%>
+            <button class="btn solid flex-none" id="new-text" phx-click="new_text">
+              {gettext("New entry")}
+            </button>
           </div>
         </div>
         <div

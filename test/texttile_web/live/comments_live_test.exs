@@ -24,7 +24,9 @@ defmodule TexttileWeb.CommentsLiveTest do
     comment
   end
 
-  test "the icons after a name are the ways to answer its writer", %{conn: conn} do
+  test "Write answers the writer by mail, and the website stands after the moment", %{
+    conn: conn
+  } do
     article = published_post(title: "Harbor mornings")
     comment = post!(article, %{"website" => "https://christel.example.org/garden"})
 
@@ -34,12 +36,12 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a.cmt-ico[href="mailto:christel@example.org"][title="Write to christel@example.org"])
+             ~s(#comment-#{comment.id} .cmt-acts a[href="mailto:christel@example.org"][title="Write to christel@example.org"])
            )
 
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a.cmt-ico[href="https://christel.example.org/garden"][title="christel.example.org"][rel~="nofollow"])
+             ~s(#comment-#{comment.id} .cmt-sub a.cmt-web[href="https://christel.example.org/garden"][rel~="nofollow"])
            )
   end
 

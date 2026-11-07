@@ -8,8 +8,6 @@ defmodule TexttileWeb.CommentComponents do
   use Phoenix.Component
   use Gettext, backend: TexttileWeb.Gettext
 
-  import TexttileWeb.CoreComponents, only: [icon: 1]
-
   alias Texttile.Comments
   alias Texttile.I18n
 
@@ -37,11 +35,12 @@ defmodule TexttileWeb.CommentComponents do
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
-        <.writer_links comment={@comment} />
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
         <%!-- the actions stand at the end of the meta line, quiet like
-               the Restore of a version: three on every row would shout --%>
+               the Restore of a version. Write answers by mail, in words:
+               an icon after the name said nothing about what it does. --%>
         <div :if={!@editing} class="cmt-acts">
+          <.write_link comment={@comment} />
           <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
             {gettext("Edit")}
           </button>
@@ -73,6 +72,7 @@ defmodule TexttileWeb.CommentComponents do
             phx-hook="LocalMoment"
           >{I18n.format_short_moment(@comment.inserted_at)}</time>{moment_tail(@comment)}
         </span>
+        <.website comment={@comment} />
       </div>
 
       <form
@@ -116,41 +116,47 @@ defmodule TexttileWeb.CommentComponents do
   end
 
   @doc """
-  The ways to reach the writer of a comment, as two quiet icons after
-  the name: the mail they left, and the website they gave. Only the
-  admin area ever draws this, and the address goes no further than the
-  mail client it opens: readers never see it anywhere. The website is
-  the writer's own, so the link carries the marks of a link a reader
-  put there.
-
-  A comment whose address row is gone, or whose author left none, gets
-  no mail icon.
+  The way to answer the writer of a comment: Write, a quiet action that
+  opens the mail client on the address they left. Only the admin area
+  ever draws this, and the address goes no further than that mail
+  client: readers never see it anywhere. A comment whose address row
+  is gone, or whose author left none, gets no Write.
   """
   attr :comment, :any, required: true
 
-  def writer_links(assigns) do
+  def write_link(assigns) do
     assigns = assign(assigns, :email, email_of(assigns.comment))
 
     ~H"""
     <a
       :if={@email}
-      class="cmt-ico"
+      class="btn quiet sm"
       href={"mailto:#{@email}"}
       title={gettext("Write to %{email}", email: @email)}
-      aria-label={gettext("Write to %{email}", email: @email)}
     >
-      <.icon name="hero-envelope" class="size-[15px]" />
+      {gettext("Write")}
     </a>
+    """
+  end
+
+  @doc """
+  The website a writer gave, as its host after the moment. It is the
+  writer's own, so the link carries the marks of a link a reader put
+  there.
+  """
+  attr :comment, :any, required: true
+
+  def website(assigns) do
+    ~H"""
     <a
       :if={@comment.website}
-      class="cmt-ico"
+      class="cmt-web"
       href={@comment.website}
-      title={host_of(@comment.website)}
-      aria-label={host_of(@comment.website)}
+      title={@comment.website}
       rel="nofollow noopener ugc"
       target="_blank"
     >
-      <.icon name="hero-globe-alt" class="size-[15px]" />
+      {host_of(@comment.website)}
     </a>
     """
   end
@@ -213,7 +219,6 @@ defmodule TexttileWeb.CommentComponents do
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
-        <.writer_links comment={@comment} />
       </div>
       <div class="cmt-sub">
         <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent">
