@@ -218,7 +218,7 @@ defmodule TexttileWeb.ProfileLive do
                 phx-debounce="300"
               />
               <div class="hint">
-                {gettext("What others see. Empty shows the part of your address in front of the @.")}
+                {gettext("Shown beside your entries and comments.")}
               </div>
             </span>
           </div>

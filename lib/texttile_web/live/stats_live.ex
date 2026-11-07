@@ -244,7 +244,7 @@ defmodule TexttileWeb.StatsLive do
             <tbody>
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
-                <td class="pr-4">
+                <td class="pr-5">
                   <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
                     {Articles.display_title(row.article)}
                   </.link>

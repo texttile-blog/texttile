@@ -269,7 +269,7 @@
     letter-spacing: -.01em; color: var(--tt-ink); margin-top: 40px; margin-bottom: 12px;
   }
   /* one number and what it counts */
-  .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+  .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; line-height: 1.1; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
   @media (min-width: 768px) { .fig .n { font-size: 28px; } .set-h { margin-top: 32px; } }
   /* a bar of the chart: a warm mid grey that holds up on the page, a
      step under the busiest bar, which is ink. Violet stays for the bar
@@ -428,9 +428,11 @@
   .cmt-acts { display: flex; gap: 4px; margin: 10px 0 -6px -10px; }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
-    .cmt-acts { position: absolute; top: 8px; right: -10px; margin: 0; gap: 10px; }
+    /* on the line of the entry and the moment, inside the row's
+       reading path */
+    .cmt-acts { position: absolute; top: 30px; right: -10px; margin: 0; gap: 10px; }
     .cmt.sel .cmt-acts { margin-left: 0; }
-    .cmt-top { padding-right: 230px; }
+    .cmt-sub { padding-right: 230px; }
   }
   .cmt-when .num { white-space: nowrap; }
   /* the writer's website, after the moment: a link like any other */
@@ -683,11 +685,7 @@
 
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }
-    /* the state on a line of its own, the day and the author under it:
-       a long name or a translation never runs out of the row */
-    #cards .card .cm .bits { display: contents; }
-    #cards .card .cm .bits .bit:first-child { flex-basis: 100%; }
-    #cards .card .cm .bits .bit:nth-child(2)::before { content: none; }
+
     #cards .card:hover .cimg { transform: none; box-shadow: none; }
     /* the export lives in the editor's menu as well; a phone row keeps
        to the entry itself */
@@ -921,7 +919,7 @@
     line-height: 1.15; letter-spacing: -.025em;
     background-color: transparent; background-image: none; border: 0;
     border-radius: 0;
-    padding: 4px 0 12px;
+    padding: 4px 0 6px;
     border-bottom: var(--edt-bb);
     box-shadow: none;
     transition: border-color .15s ease, box-shadow .15s ease;
@@ -1020,7 +1018,7 @@
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
   .track i { display: block; height: 100%; background: var(--tt-accentsoft); }
   /* a share is a measure, not a control: ink, thinned */
-  .track.share i { background: rgb(var(--tt-shadow) / .35); }
+  .track.share i { background: rgb(var(--tt-shadow) / .7); }
 
   /* THE FILES IN THE TEXT · one row per reference in the words: the
      thumbnail, the name, and the markdown that stands for it.
@@ -1835,9 +1833,15 @@
     font-family: var(--tt-font-serif); font-weight: 600; letter-spacing: -.01em;
     margin: 32px 0 8px;
   }
-  .prose h1 { font-size: 22px; }
-  .prose h2 { font-size: 20px; }
-  .prose h3 { font-size: 18px; }
+  /* the steps of the page: title, section, sub-section, body */
+  .prose h1 { font-size: 24px; line-height: 1.25; }
+  .prose h2 { font-size: 22px; line-height: 1.25; }
+  .prose h3 { font-size: 19px; line-height: 1.3; }
+  @media (min-width: 768px) {
+    .prose h1 { font-size: 27px; }
+    .prose h2 { font-size: 24px; margin: 32px 0 12px; }
+    .prose h3 { font-size: 20px; }
+  }
   /* the preflight strips list markers; the reader wants them back */
   .prose ul, .prose ol { margin-bottom: 19px; padding-left: 24px; }
   .prose ul { list-style: disc; }
@@ -1954,7 +1958,7 @@
 .mdbar {
   position: sticky; top: 52px; z-index: 30;
   display: flex; align-items: center; gap: 2px;
-  margin: 14px -6px 0; padding: 4px 6px 4px;
+  margin: 10px -6px 0; padding: 4px 6px 4px;
   background: var(--tt-page);
 }
 @media (min-width: 1024px) { .mdbar { top: 0; } }
@@ -2027,9 +2031,15 @@
 
 /* what the live preview draws, all of it from the theme's tokens */
 .ed-cm .cm-mdh { font-weight: 600; }
-.ed-cm .cm-mdh1 { font-size: 22px; line-height: 1.4; }
-.ed-cm .cm-mdh2 { font-size: 20px; line-height: 1.45; }
-.ed-cm .cm-mdh3 { font-size: 18px; }
+/* the reader's heading sizes (.prose h1 to h3) */
+.ed-cm .cm-mdh1 { font-size: 24px; line-height: 1.4; }
+.ed-cm .cm-mdh2 { font-size: 22px; line-height: 1.45; }
+.ed-cm .cm-mdh3 { font-size: 19px; }
+@media (min-width: 768px) {
+  .ed-cm .cm-mdh1 { font-size: 27px; }
+  .ed-cm .cm-mdh2 { font-size: 24px; }
+  .ed-cm .cm-mdh3 { font-size: 20px; }
+}
 .ed-cm .cm-mdh4, .ed-cm .cm-mdh5, .ed-cm .cm-mdh6 { font-size: 15.5px; }
 /* An empty line is the gap between two blocks, not a line of text:
    it stands at about the height of the reader's paragraph gap, so the
@@ -2182,3 +2192,8 @@ input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-colo
 /* picture cards keep four lines for their lead, so the tags of a row
    stand on one line */
 @media (min-width: 640px) { .card-wrap .clead:not(.long) { min-height: calc(1.55em * 4); } }
+
+/* the reader's cards: the name of an entry carries the card next to its
+   picture, and its line is read, not squinted at */
+body.site .card .ct { font-size: 20px; line-height: 1.22; }
+body.site .card-wrap .cm { font-size: 14px; }

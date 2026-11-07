@@ -362,7 +362,7 @@ defmodule TexttileWeb.TextsLive do
     bits =
       [
         state,
-        article.type == "page" && gettext("page"),
+        article.type == "page" && gettext("Page"),
         day || gettext("no date yet"),
         pending? && gettext("edited since publishing")
       ]

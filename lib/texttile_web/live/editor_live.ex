@@ -1458,7 +1458,7 @@ defmodule TexttileWeb.EditorLive do
         <button
           :if={@holds_lock}
           type="button"
-          class="btn sm max-md:hidden"
+          class="btn quiet sm max-md:hidden"
           id="barSaveVersion"
           phx-click="save_version"
           data-flush-body
@@ -2143,7 +2143,10 @@ defmodule TexttileWeb.EditorLive do
                 {gettext("Hold a tile, then drag.")}
               </span>
             </div>
-            <div class="grid gap-[6px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3" id="tileGrid">
+            <div
+              class="grid gap-[6px] grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
+              id="tileGrid"
+            >
               <div class="contents" id="tileServer">
                 <div
                   :for={{image, index} <- Enum.with_index(@gallery, 1)}

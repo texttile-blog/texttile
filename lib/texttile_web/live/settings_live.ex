@@ -724,7 +724,7 @@ defmodule TexttileWeb.SettingsLive do
           </form>
         </div>
         <%!-- what is in use now and what the field is for, as one line --%>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair">
           <span id="name-logo">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
             "SVG, PNG, JPG or WebP."
           )}
@@ -765,7 +765,7 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair">
           <span id="name-favicon">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
             "A square SVG, PNG, JPG or WebP."
           )}
