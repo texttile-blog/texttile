@@ -248,7 +248,7 @@ defmodule TexttileWeb.TextsLive do
                 <span class="cimg empty">
                   <span
                     :if={Articles.lead(article) != ""}
-                    class={["cx", String.length(Articles.lead(article, 140)) < 70 && "short"]}
+                    class="cx"
                   >
                     {Articles.lead(article, 140)}
                   </span>

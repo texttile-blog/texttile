@@ -2341,8 +2341,10 @@ defmodule TexttileWeb.EditorLive do
                      offers the one word for it. On a live entry it is
                      the same statement as Unpublish, and the hint under
                      the field says so. --%>
+                <%!-- a live entry keeps its day: emptying it would make it a
+                     draft again, which Unpublish does in words --%>
                 <button
-                  :if={@article.publish_date}
+                  :if={@article.publish_date && @article.status != "published"}
                   type="button"
                   class="link"
                   id="edDateReset"

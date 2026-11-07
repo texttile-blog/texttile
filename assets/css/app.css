@@ -1763,7 +1763,7 @@
   /* the label stands over the title, so a long title has the whole
      column to wrap in */
   .textnav .lab, .textnav .t { display: block; }
-  .textnav .lab { font-size: 13px; color: var(--tt-dim); }
+  .textnav .lab { font-size: 14px; color: var(--tt-dim); }
   .textnav .t {
     margin-top: 3px; font-family: var(--tt-font-serif); font-size: 18px;
     font-weight: 600; line-height: 1.28; letter-spacing: -.012em; color: var(--tt-ink);
@@ -2235,7 +2235,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 
 /* the save state is a state, not a link: the quietest grey, no rule
    after it, and set apart before the account and View site */
-.saved { border-right: 0; padding-right: 0; margin-right: 24px; color: var(--tt-dim); }
+.saved { border-right: 0; padding-right: 0; margin-right: 32px; color: var(--tt-faint); }
 /* a state, said with a small tick, so it is never read as a link */
 .saved:not(.warn)::before { content: "\2713\00a0"; color: var(--tt-faint); }
 .bar-me, #bar-view-site { order: 2; }
@@ -2419,18 +2419,20 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 /* Description is the same two-line field on both widths */
 #setting-site_description { min-height: 60px; }
 
-/* a short opening is set larger, so its square looks set, not empty */
-@media (min-width: 640px) { #cards .card .cimg .cx.short { font-size: 20px; line-height: 1.4; } }
-/* an admin card's title keeps to one line on a desk, so a row's meta
-   lines stand on one line; the full title is the card's own words */
-@media (min-width: 640px) { #cards .card .ct { -webkit-line-clamp: 1; } }
+
 
 /* a quotation reads in ink; its rule says it is a quotation */
 .prose blockquote { color: var(--tt-ink); }
-.ed-cm .cm-line.cm-mdquote { color: var(--tt-ink); }
+/* the editor's quotation as the reader's: ink, a 2px rule, 16px in */
+.ed-cm .cm-line.cm-mdquote, .ed-cm .cm-line.cm-mdquote * { color: var(--tt-ink) !important; }
+.ed-cm .cm-mdquote { border-left-width: 2px !important; padding-left: 14px !important; }
 
 /* numbers stand on the first line of their row */
 .admin-col table td { vertical-align: baseline; }
 
 /* the phone formatting bar's dividers a step quieter */
 @media (max-width: 639px) { .mdsep { background: var(--tt-rule); } }
+
+/* a phone's hero fills its column: balancing a short column leaves a
+   ragged gap beside a large line */
+@media (max-width: 480px) { .f-h1.list-h { text-wrap: wrap; max-width: none; } }

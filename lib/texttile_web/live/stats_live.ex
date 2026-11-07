@@ -124,7 +124,7 @@ defmodule TexttileWeb.StatsLive do
 
         <%!-- no rule over the figures: the window switch above them is a row
              of tabs like every other, its line under the open one alone --%>
-        <div id="statsFigures" class="grid grid-cols-[1fr_1fr_1.3fr] sm:grid-cols-3">
+        <div id="statsFigures" class="grid grid-cols-[1fr_1fr_1.3fr] sm:grid-cols-[366px_130px_1fr]">
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;
@@ -234,8 +234,8 @@ defmodule TexttileWeb.StatsLive do
                      the data of a row reads as one line --%>
                 <th>{gettext("Entry")}</th>
                 <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Date")}</th>
-                <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("Views")}</th>
-                <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("People")}</th>
+                <th class="text-right num w-[48px] sm:w-[88px] pl-3 sm:pl-4">{gettext("Views")}</th>
+                <th class="text-right num w-[48px] sm:w-[88px] pl-3 sm:pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">
                   {gettext("Comments")}
                 </th>
