@@ -8,11 +8,7 @@
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1" id="title">#{@tag}</h1>
     <p class="f-note mt-2" id="sub">
-      {ngettext(
-        "One entry has this tag.",
-        "%{count} entries have this tag.",
-        length(@articles)
-      )}
+      {ngettext("1 entry", "%{count} entries", length(@articles))}
     </p>
 
     <%!-- every tag of the blog; the one being read is marked and does

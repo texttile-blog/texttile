@@ -725,7 +725,7 @@ defmodule TexttileWeb.SettingsLive do
         </div>
         <%!-- what is in use now and what the field is for, as one line --%>
         <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
-          <span id="name-logo" class="text-ink">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+          <span id="name-logo">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
             "SVG, PNG, JPG or WebP."
           )}
         </p>
@@ -766,7 +766,7 @@ defmodule TexttileWeb.SettingsLive do
           </form>
         </div>
         <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
-          <span id="name-favicon" class="text-ink">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+          <span id="name-favicon">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
             "A square SVG, PNG, JPG or WebP."
           )}
         </p>
@@ -776,26 +776,30 @@ defmodule TexttileWeb.SettingsLive do
              stands in the band under every page and carries words, not
              a gallery. One hook, one behaviour, one set of keys. The bar
              follows the heading straight, so the two share a top. --%>
-        <.md_bar id="aboutBar" files={false} />
-        <%!-- the section names the one field, so its label is for a
+        <%!-- one item of the section's grid: the bar and the box are one
+             frame --%>
+        <div>
+          <.md_bar id="aboutBar" files={false} />
+          <%!-- the section names the one field, so its label is for a
              screen reader only --%>
-        <label class="sr" for="setting-about_markdown">
-          {gettext("About this blog")}
-        </label>
-        <div
-          id="setting-about_markdown"
-          class="ed-body ed-cm boxed-cm"
-          phx-hook="BodyEd"
-          phx-update="ignore"
-          data-event="about_changed"
-          data-bar="#aboutBar"
-          data-files="false"
-          data-label={gettext("About this blog, Markdown")}
-          data-placeholder={
-            gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
-          }
-        >
-          <textarea>{@settings.about_markdown}</textarea>
+          <label class="sr" for="setting-about_markdown">
+            {gettext("About this blog")}
+          </label>
+          <div
+            id="setting-about_markdown"
+            class="ed-body ed-cm boxed-cm"
+            phx-hook="BodyEd"
+            phx-update="ignore"
+            data-event="about_changed"
+            data-bar="#aboutBar"
+            data-files="false"
+            data-label={gettext("About this blog, Markdown")}
+            data-placeholder={
+              gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
+            }
+          >
+            <textarea>{@settings.about_markdown}</textarea>
+          </div>
         </div>
         <%!-- the rendered words, on demand: JS.toggle keeps them open
              across every redraw the saving sends --%>
@@ -916,7 +920,7 @@ defmodule TexttileWeb.SettingsLive do
               name="settings[site_visibility]"
               value="public"
               checked={@settings.site_visibility == "public"}
-              class="w-[13px] h-[13px] flex-none mt-[3px]"
+              class="w-4 h-4 flex-none mt-[2px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
@@ -931,7 +935,7 @@ defmodule TexttileWeb.SettingsLive do
               name="settings[site_visibility]"
               value="protected"
               checked={@settings.site_visibility == "protected"}
-              class="w-[13px] h-[13px] flex-none mt-[3px]"
+              class="w-4 h-4 flex-none mt-[2px]"
               style="accent-color:var(--tt-accent)"
             />
             <span>
@@ -944,7 +948,7 @@ defmodule TexttileWeb.SettingsLive do
           </label>
           <%!-- the field is short, the sentence under it is not: the
                hint keeps the width of the column --%>
-          <div class="pl-[23px] pb-3" id="pwRow">
+          <div class="pl-[26px] pb-3" id="pwRow">
             <label class="lab block mb-[5px]" for="setting-site_password">
               {gettext("Blog password")}
             </label>
@@ -975,7 +979,7 @@ defmodule TexttileWeb.SettingsLive do
               checked={@settings.comments_require_confirmation}
             />
             <span>
-              {gettext("Readers confirm their email before the comment appears")}
+              {gettext("Confirm comments by email")}
               <span class="note" id="setCmtNote">
                 {comments_note(@settings.comments_require_confirmation)}
               </span>
@@ -991,7 +995,7 @@ defmodule TexttileWeb.SettingsLive do
               checked={@settings.notify_on_comment}
             />
             <span>
-              {gettext("Mail me every new comment")}
+              {gettext("Email new comments")}
               <span class="note" id="setNotifyNote">
                 {notify_note(@settings.notify_on_comment)}
               </span>
@@ -1003,7 +1007,7 @@ defmodule TexttileWeb.SettingsLive do
         <div id="usersList" class="border-t border-hair">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
             <div class="flex items-center gap-[10px] flex-wrap">
-              <b class="text-[14.5px]">{Accounts.display_name(user)}</b>
+              <span class="rowp">{Accounts.display_name(user)}</span>
               <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
               <span
                 :if={

@@ -43,11 +43,11 @@ defmodule TexttileWeb.StatsComponents do
     </p>
     <div :if={@max > 0} class="relative isolate pr-[52px]">
       <%!-- the scale: a hairline at a round number just over the
-           busiest bar and one at half of it, behind the bars, their
-           counts in a gutter of their own at the right, so a bar's
-           height reads as a number and no label sits on a bar --%>
+           busiest bar and one at half of it, behind the bars and on into
+           the gutter at the right, where their counts stand, so every
+           label points at its line and no label sits on a bar --%>
       <span
-        class="absolute left-0 right-[52px] top-[18px] border-t border-hair -z-10 pointer-events-none"
+        class="absolute left-0 right-[42px] top-[18px] border-t border-rule -z-10 pointer-events-none"
         aria-hidden="true"
       >
       </span>
@@ -59,7 +59,7 @@ defmodule TexttileWeb.StatsComponents do
       </span>
       <span
         :if={@top > 1}
-        class="absolute left-0 right-[52px] top-[84px] border-t border-hair -z-10 pointer-events-none"
+        class="absolute left-0 right-[42px] top-[84px] border-t border-rule -z-10 pointer-events-none"
         aria-hidden="true"
       >
       </span>

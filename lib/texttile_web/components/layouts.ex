@@ -236,7 +236,7 @@ defmodule TexttileWeb.Layouts do
                has no room for the row of sections, so there the name of
                the screen stands in the button, its count beside it, and
                the chevron after them says the name opens the others. --%>
-          <span :if={!@wide && @crumb} class="md:hidden text-[14px] font-semibold text-ink -ml-[2px]">
+          <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
             {@crumb}<span :if={@count} class="bn-count">{@count}</span>
           </span>
           <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>

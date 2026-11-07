@@ -140,7 +140,7 @@ defmodule TexttileWeb.TagsLive do
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </p>
         </div>
-        <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
+        <div id="tagsList" class={@tags != [] && "sm:border-t sm:border-hair"}>
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>
@@ -154,7 +154,7 @@ defmodule TexttileWeb.TagsLive do
             <a
               href={~p"/tags/#{String.downcase(tag)}"}
               target="_blank"
-              class="link font-semibold text-[14.5px] sm:text-[15px] break-words min-w-[92px]"
+              class="link rowp break-words min-w-[92px]"
             >
               #{tag}
             </a>

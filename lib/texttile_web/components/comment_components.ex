@@ -34,7 +34,7 @@ defmodule TexttileWeb.CommentComponents do
     <div class={row_class(@selected)} id={"comment-#{@comment.id}"}>
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
-        <span class="font-semibold">{@comment.name}</span>
+        <span class="rowp">{@comment.name}</span>
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
       </div>
       <%!-- where and when, on a line of their own under the name: the
@@ -219,7 +219,7 @@ defmodule TexttileWeb.CommentComponents do
     <div class={row_class(@selected)} id={"trash-#{@comment.id}"}>
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
-        <span class="font-semibold">{@comment.name}</span>
+        <span class="rowp">{@comment.name}</span>
       </div>
       <div class="cmt-sub">
         <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent">

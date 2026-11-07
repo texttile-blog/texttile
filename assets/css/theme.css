@@ -73,7 +73,7 @@
   --fld-sh-f:   0 0 0 3px var(--tt-accentwash);
 
   /* the writing surface */
-  --edt-bb:     1px solid var(--tt-rule);
+  --edt-bb:     1px solid transparent;
   --edb-sh:     none;
   --edb-shf:    none;
   --edb-pl:     6px;

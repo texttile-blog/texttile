@@ -131,7 +131,7 @@ defmodule TexttileWeb.NewsletterLive do
               class="flex items-center gap-x-3 py-[9px] sm:py-[12px] border-b border-hair"
             >
               <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
-                <span class="text-[14px] sm:text-[15px] font-semibold truncate max-w-full">
+                <span class="rowp truncate max-w-full">
                   {subscriber.email}
                 </span>
                 <span :if={!Subscriber.confirmed?(subscriber)} class="wait">

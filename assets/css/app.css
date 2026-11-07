@@ -683,6 +683,11 @@
 
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }
+    /* the state on a line of its own, the day and the author under it:
+       a long name or a translation never runs out of the row */
+    #cards .card .cm .bits { display: contents; }
+    #cards .card .cm .bits .bit:first-child { flex-basis: 100%; }
+    #cards .card .cm .bits .bit:nth-child(2)::before { content: none; }
     #cards .card:hover .cimg { transform: none; box-shadow: none; }
     /* the export lives in the editor's menu as well; a phone row keeps
        to the entry itself */
@@ -2145,3 +2150,35 @@
    title starts an entry and is never read as a caption to the picture
    beside it */
 .card-wrap:not(:has(.cimg)) { border-top: 1px solid var(--tt-rule); padding-top: 12px; }
+
+/* one style for the primary word of a list row (a tag, an address, a
+   name): 15px at a medium weight in ink, a tag the same in violet. The
+   serif stays for the titles of entries. */
+.rowp { font-size: 15px; font-weight: 500; line-height: 1.35; color: var(--tt-ink); }
+a.rowp { color: var(--tt-accent); }
+
+/* a box and a circle at one size everywhere, centred on the first line
+   of their label, in the accent when on */
+input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-color: var(--tt-accent); }
+.opt input { margin-top: 2px; }
+
+/* About: the formatting bar is the top of its box, one frame with a
+   hairline between the tools and the words */
+#aboutBar {
+  position: static; margin-left: 0; margin-right: 0; padding: 3px 4px;
+  border: 1px solid var(--tt-rule); border-bottom-color: var(--tt-hair);
+  border-radius: 6px 6px 0 0; background: var(--fld-bg);
+}
+@media (pointer: coarse), (max-width: 639px) { #aboutBar { margin-left: 0; margin-right: 0; } }
+#setting-about_markdown.boxed-cm { margin-top: 0; border-top: 0; border-radius: 0 0 6px 6px; }
+
+/* on a phone the gallery and the settings follow the words under a
+   rule on the gutters, like every other rule */
+@media (max-width: 1023px) {
+  .sidecol { position: relative; }
+  .sidecol::before { content: ""; position: absolute; top: 0; left: 16px; right: 16px; border-top: 1px solid var(--tt-hair); }
+}
+
+/* picture cards keep four lines for their lead, so the tags of a row
+   stand on one line */
+@media (min-width: 640px) { .card-wrap .clead:not(.long) { min-height: calc(1.55em * 4); } }

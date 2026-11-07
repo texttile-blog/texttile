@@ -215,7 +215,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "the mail-me-every-comment switch saves and explains itself", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
-      assert html =~ "Mail me every new comment"
+      assert html =~ "Email new comments"
 
       html =
         view
