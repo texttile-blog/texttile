@@ -89,22 +89,22 @@
   /* buttons: quiet / outlined / solid, with life */
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
-    gap: 7px; height: 30px; padding-left: 13px; padding-right: 13px;
+    gap: 7px; height: 32px; padding-left: 14px; padding-right: 14px;
     font-size: 13px; font-weight: 500; white-space: nowrap;
-    color: var(--tt-ink); background-color: transparent;
+    color: var(--tt-ink); background-color: var(--tt-paper);
     border-radius: var(--tt-radius);
-    box-shadow: inset 0 0 0 1px var(--tt-rule);
+    box-shadow: inset 0 0 0 1px var(--tt-rule), 0 1px 1px rgb(var(--tt-shadow) / .04);
     transition: box-shadow .15s ease, background-color .15s ease, color .15s ease, transform .08s ease;
   }
-  .btn:hover { background-color: var(--tt-paper); box-shadow: inset 0 0 0 1px var(--tt-ink); }
+  .btn:hover { background-color: var(--tt-paper); box-shadow: inset 0 0 0 1px #b8b1a7, 0 1px 2px rgb(var(--tt-shadow) / .08); }
   .btn:active { transform: translateY(1px); }
   .btn.solid { background-color: var(--tt-solid); color: var(--tt-onsolid); box-shadow: none; }
   .btn.solid:hover { background-color: var(--tt-solidhover); color: var(--tt-onsolid); box-shadow: none; }
-  .btn.quiet { color: var(--tt-dim); padding-left: 10px; padding-right: 10px; box-shadow: none; }
+  .btn.quiet { color: var(--tt-dim); padding-left: 10px; padding-right: 10px; background-color: transparent; box-shadow: none; }
   .btn.quiet:hover { color: var(--tt-ink); background-color: var(--tt-field); box-shadow: none; }
   .btn:disabled { opacity: .5; cursor: default; transform: translateY(0); }
-  .btn:disabled:hover { background-color: transparent; box-shadow: inset 0 0 0 1px var(--tt-rule); }
-  .btn.sm { height: 25px; padding-left: 9px; padding-right: 9px; font-size: 12px; }
+  .btn:disabled:hover { background-color: var(--tt-paper); box-shadow: inset 0 0 0 1px var(--tt-rule); }
+  .btn.sm { height: 28px; padding-left: 10px; padding-right: 10px; font-size: 12.5px; }
   /* the small badge on a comment whose reader has not confirmed the
      address yet - worn in the admin area and on the reader's own
      pending row */
@@ -192,8 +192,8 @@
   }
 
   /* type roles */
-  .page-h { font-family: var(--tt-font-serif); font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -.015em; }
-  .lead { color: var(--tt-dim); font-size: 13.5px; margin-top: 7px; margin-bottom: 26px; }
+  .page-h { font-family: var(--tt-font-serif); font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.018em; }
+  .lead { color: var(--tt-dim); font-size: 14px; line-height: 1.55; max-width: 62ch; margin-top: 6px; margin-bottom: 28px; }
   /* the section heading on Settings: the serif carries the hierarchy,
      so the screen needs no rule under the heading. A rule there reads
      as one more field underline and cuts the section in two. Much air
@@ -207,7 +207,8 @@
      blocks under it are rows of numbers, not fields to fill in */
   .sec-h { font-size: 13px; font-weight: 600; color: var(--tt-dim); margin-top: 32px; margin-bottom: 10px; }
   /* one number and what it counts */
-  .fig .n { font-family: var(--tt-font-serif); font-size: 26px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+  .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+  @media (min-width: 768px) { .fig .n { font-size: 28px; } }
   .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; }
   .lab { font-size: 12.5px; color: var(--tt-dim); }
   .note { font-size: 12.5px; color: var(--tt-faint); }
@@ -329,23 +330,27 @@
      the ways to reach its writer as quiet icons, the waiting mark, and
      the moment pushed to the right; the entry stands alone under it. */
   .cmt {
-    background: var(--tt-paper); border: 1px solid var(--tt-hair);
-    border-radius: var(--tt-radius); padding: 11px 14px 9px; margin-bottom: 10px;
+    padding: 16px 0 12px; border-bottom: 1px solid var(--tt-hair);
   }
   .cmt-top {
     display: flex; flex-wrap: wrap; align-items: baseline;
-    column-gap: 8px; row-gap: 3px; font-size: 13.5px;
+    column-gap: 7px; row-gap: 3px; font-size: 13.5px;
   }
   .cmt-when { margin-left: auto; font-size: 12.5px; color: var(--tt-faint); }
   .cmt-when .num { white-space: nowrap; }
   .cmt-ico { color: var(--tt-faint); align-self: center; display: inline-flex; }
   .cmt-ico:hover { color: var(--tt-accent); }
-  .cmt-ent { display: block; width: fit-content; margin-top: 2px; font-size: 12.5px; }
+  .cmt-sep { color: var(--tt-slash); }
+  .cmt-ent {
+    min-width: 0; font-size: 13px; color: var(--tt-dim); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch;
+  }
+  .cmt-ent:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
   /* a row of the overview with its box in a gutter of its own */
-  .cmt.sel { position: relative; padding-left: 38px; }
-  .cmt.sel.on { background: var(--tt-accentwash); border-color: var(--tt-accentsoft); }
+  .cmt.sel { position: relative; padding-left: 34px; }
+  .cmt.sel.on { background: var(--tt-accentwash); }
   .cmt-pick {
-    position: absolute; left: 0; top: 0; width: 38px; height: 44px;
+    position: absolute; left: 0; top: 4px; width: 34px; height: 44px;
     display: grid; place-items: center; cursor: pointer;
   }
   .cmt-pick input, .cmt-tools input { width: 16px; height: 16px; margin: 0; accent-color: var(--tt-accent); }
@@ -359,8 +364,8 @@
   .cmt-tools {
     position: sticky; top: 52px; z-index: 20;
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-    padding: 9px 0; margin-bottom: 14px;
-    background: var(--tt-page); border-bottom: 1px solid var(--tt-hair);
+    padding: 9px 0; margin-bottom: 0;
+    background: var(--tt-page); border-bottom: 1px solid var(--tt-rule);
     font-size: 13px; color: var(--tt-dim);
   }
   .cmt-tools label { display: flex; align-items: center; gap: 9px; min-height: 28px; padding-left: 12px; cursor: pointer; }
@@ -403,12 +408,12 @@
 
   /* segmented filter, e.g. the status filter over the texts grid */
   .seg-b {
-    font-size: 12.5px; color: var(--tt-dim); padding: 5px 12px;
-    border-radius: var(--tt-radius-pill);
+    font-size: 13px; font-weight: 500; color: var(--tt-dim); padding: 5px 12px;
+    border-radius: var(--tt-radius);
     transition: background-color .15s ease, color .15s ease;
   }
   .seg-b:hover { background-color: var(--tt-field); color: var(--tt-ink); }
-  .seg-b.on { background-color: var(--tt-solid); color: var(--tt-onsolid); }
+  .seg-b.on { background-color: var(--tt-paper); color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--tt-rule), 0 1px 1px rgb(var(--tt-shadow) / .05); }
 
   /* what the tag field offers while you type. It hangs on the body and
      is placed by the hook, so no scroll container can cut it off. */
@@ -460,23 +465,41 @@
   }
   .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
   .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
+  /* An entry of words alone: its opening words, set like the top of a
+     page on paper. They are a picture of the entry, not a text to read,
+     so they fade out at the foot instead of ending in a cut. */
+  .card .cimg.empty:has(.cx), .card .cimg.words {
+    display: block; position: relative; overflow: hidden;
+    background: var(--tt-paper); box-shadow: inset 0 0 0 1px var(--tt-hair);
+    padding: 9% 10%;
+  }
+  .card .cimg .cx {
+    display: block; font-family: var(--tt-font-serif); font-size: 15px; line-height: 1.6;
+    color: var(--tt-inksoft); text-align: left;
+  }
+  .card .cimg.empty:has(.cx)::after, .card .cimg.words::after {
+    content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 42%;
+    background: linear-gradient(rgb(255 255 255 / 0), var(--tt-paper) 85%);
+    border-radius: 0 0 var(--tt-radius-img) var(--tt-radius-img);
+  }
   .card .ct {
     display: block; font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
-    line-height: 1.25; letter-spacing: -.01em; margin-top: 11px; overflow: hidden;
-    min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    line-height: 1.25; letter-spacing: -.01em; margin-top: 12px; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
   .card:hover .ct { text-decoration-line: underline; text-underline-offset: 3px; }
   .card .cm {
     display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px;
-    font-size: 12.5px; color: var(--tt-faint); margin-top: 4px;
+    font-size: 12.5px; color: var(--tt-dim); margin-top: 5px;
   }
   /* who it is by, at the far end of the line, and at the right edge
      of its own line when the card is too narrow for both */
   .card .cm .by { margin-left: auto; white-space: nowrap; }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
   .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
+  .card .cm .st.published { background: var(--tt-accent); }
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
-  .card .cm .st.scheduled { background: var(--tt-accentsoft); }
+  .card .cm .st.scheduled { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-accent); }
 
   /* the way to the zip, laid over the corner of the picture. The card
      under it is one link, so this one cannot stand inside it. It waits
@@ -502,6 +525,30 @@
      each wearing a loud badge is a grid of badges, so it stands as
      quietly as it can and still be seen. */
   @media (hover: none) { .card-get { opacity: .5; } }
+
+  /* ENTRIES ON A PHONE · a list, not a grid. Two columns of squares
+     left a title two words wide and pushed the author onto a line of
+     its own; one row per entry keeps the title, the state and the day
+     together beside a small square. The export leaves the picture and
+     stands at the end of the row, in the ink of the words. */
+  @media (max-width: 639px) {
+    #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
+    #cards .card-slot:first-child { border-top: 1px solid var(--tt-hair); }
+    #cards .card {
+      display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 14px;
+      align-items: center; padding: 12px 44px 12px 0;
+    }
+    #cards .card .cimg { grid-row: span 2; width: 60px; }
+    #cards .card .cimg.empty:has(.cx) { padding: 7px; }
+    #cards .card .cimg .cx { font-size: 5.5px; line-height: 1.55; }
+    #cards .card .cimg .cn { font-size: 0; }
+    #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
+    #cards .card .cm { align-self: start; margin-top: 3px; }
+    #cards .card:hover .cimg { transform: none; box-shadow: none; }
+    #cards .card-get { top: 50%; right: -6px; transform: translateY(-50%); color: var(--tt-dim); opacity: 1; }
+    #cards .card-get::before { background: transparent; backdrop-filter: none; }
+    #cards .card-get:hover::before { background: var(--tt-field); }
+  }
 
   /* the split button: the primary action and the state actions in one
      shell, one radius, one hairline between them. Solid while the text
@@ -660,7 +707,7 @@
 
   /* the editor's tab row */
   .tab {
-    padding: 9px 13px; font-size: 13.5px; color: var(--tt-dim);
+    padding: 9px 13px; font-size: 13.5px; color: var(--tt-dim); white-space: nowrap; flex: none;
     border-bottom: var(--tt-tabw) solid transparent; margin-bottom: -1px;
     transition: color .15s ease;
   }
@@ -816,75 +863,14 @@
     .inrow .act { justify-content: flex-start; }
   }
 
-  /* THE BAR OF THE ADMIN AREA IS VIOLET
-
-     The bar and the header of the blog used to be the same white over
-     the same sand, and nothing said which side of the sign-in you were
-     on. The bar takes the solid violet the buttons are made of.
-
-     Nothing in it is restyled. The bar redeclares the theme tokens on
-     itself, and the wordmark, the crumb, the state dot, the saved
-     mark, julia and the split button all follow. Because the ground is
-     now the brand, the one loud control on it turns over: Publish is
-     white on violet, a pair that exists nowhere else in the product. */
+  /* THE BAR OF THE ADMIN AREA
+     A white band over the sand page with one hairline under it. It
+     wears the page's own tokens, so every control on it (the crumb,
+     the state dot, the saved mark, the split button) looks the way it
+     does everywhere else. */
   #topbar {
-    --tt-ink: #fff;
-    --tt-inksoft: #ece5fa;
-    --tt-dim: #c3b3e4;
-    --tt-faint: #ad9bd6;
-    --tt-slash: #7d63b0;
-    --tt-rule: #5f3ba0;
-    --tt-hair: #5f3ba0;
-    --tt-paper: #3d2170;
-    --tt-field: rgba(255, 255, 255, .14);
-    --tt-fieldhover: rgba(255, 255, 255, .22);
-    --tt-accent: #e2d5ff;
-    --tt-accentloud: #fff;
-    --tt-accentsoft: #b9a2ea;
-    --tt-accentwash: rgba(255, 255, 255, .16);
-    --tt-accentline: rgba(255, 255, 255, .4);
-    --tt-solid: #fff;
-    --tt-solidhover: #ece5fa;
-    --tt-onsolid: #3d2170;
-    --tt-solidline: rgba(61, 33, 112, .24);
-    --tt-julia: #ffbe9b;
-    --tt-juliatint: rgba(255, 190, 155, .2);
-    --tt-julialine: rgba(255, 190, 155, .5);
-    --tt-livetint: rgba(255, 255, 255, .16);
-    --tt-liveline: rgba(255, 255, 255, .4);
-    --tt-livetext: #fff;
-
-    background: var(--tt-barsolid, #4b2a83);
-    border-bottom: 1px solid var(--tt-barsolid, #4b2a83);
-    color: var(--tt-ink);
-  }
-
-  /* A menu is a sheet over the page, not part of the band, so it takes
-     the page's tokens back. The sections menu hangs inside the bar in
-     the markup. */
-  #topbar .pop {
-    --tt-ink: #23201b;
-    --tt-inksoft: #443f37;
-    --tt-dim: #554e45;
-    --tt-faint: #665f55;
-    --tt-slash: #b0aaa1;
-    --tt-rule: #c9c3ba;
-    --tt-hair: #ddd8d0;
-    --tt-page: #f6f3ee;
-    --tt-paper: #fff;
-    --tt-field: #eae6df;
-    --tt-fieldhover: #e4dff0;
-    --tt-accent: #6d35de;
-    --tt-accentloud: #6d35de;
-    --tt-accentsoft: #a992e0;
-    --tt-accentwash: #ece7f7;
-    --tt-accentline: #d0c3ea;
-    --tt-solid: #4b2a83;
-    --tt-solidhover: #6a3fb5;
-    --tt-onsolid: #fff;
-    --tt-julia: #a34a26;
-    --tt-juliatint: #fbeade;
-    --tt-julialine: #e8c7ae;
+    background: var(--tt-paper);
+    border-bottom: 1px solid var(--tt-hair);
     color: var(--tt-ink);
   }
 
@@ -1411,28 +1397,29 @@
      One preview image, a title clamped to two lines, the date, a lead
      line and the tags. Same proportions, same hover. */
   .cards {
-    display: grid; gap: 30px 20px;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    display: grid; gap: 44px 28px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     align-items: start;
   }
-  @media (max-width: 560px) { .cards { grid-template-columns: 1fr; gap: 34px; } }
+  @media (max-width: 560px) { .cards { grid-template-columns: 1fr; gap: 40px; } }
   /* the card itself is the admin area's .card (same proportions, same
      two-line title, same hover); the reader only adds the link reset
      and the img child inside the square, so the two grids never drift */
   body.site .card { text-decoration: none; color: inherit; }
+  body.site .card .ct { font-size: 20px; line-height: 1.22; letter-spacing: -.014em; margin-top: 14px; }
   body.site .card .cimg { overflow: hidden; }
   body.site .card .cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* the placeholder square: a text without a picture holds the same
      footprint, with the mark standing quietly in the middle */
   body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
   body.site .card .cimg.blank svg { width: clamp(34px, 19%, 78px); height: auto; opacity: .22; }
-  .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 3px; }
+  .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 6px; }
   /* how many comments stand under the text, beside its date. It is a
      way in, not a badge: the same quiet ink as the date, and the
      pointer is what tells it apart. */
   .card-wrap .cm .clink { color: inherit; text-decoration: none; }
   .card-wrap .cm .clink:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
-  .card-wrap .clead { font-size: 13.5px; line-height: 1.5; color: var(--tt-dim); margin-top: 6px; }
+  .card-wrap .clead { font-size: 14px; line-height: 1.55; color: var(--tt-inksoft); margin-top: 8px; }
   .card-wrap .ctags { margin-top: 7px; }
   .ctag {
     display: inline-block; margin-right: 6px; font-size: 12.5px;
@@ -1485,7 +1472,7 @@
      of the year that is open. Words in a row, no chips and no boxes, so
      ten years of writing stay one line and the whole control is never
      taller than two. The months are only the ones that carry entries. */
-  .periods { margin-bottom: 30px; padding-bottom: 13px; border-bottom: 1px solid var(--tt-rule); }
+  .periods { margin-bottom: 26px; padding-bottom: 14px; border-bottom: 1px solid var(--tt-hair); }
   .prow { display: flex; flex-wrap: wrap; gap: 4px 15px; }
   .prow + .prow { margin-top: 9px; }
   /* A year and its count are one word and one number, and they have to
@@ -1575,7 +1562,7 @@
      does - a hint of the accent and no more than that - and it is
      mixed out of theme tokens, so a theme swap carries it. */
   body.site {
-    --b-bg: color-mix(in srgb, var(--tt-accentwash) 72%, var(--tt-field));
+    --b-bg: color-mix(in srgb, var(--tt-field) 62%, var(--tt-page));
     --b-rule: color-mix(in srgb, var(--tt-ink) 12%, transparent);
   }
   .foot-band { background: var(--b-bg); border-top: 1px solid var(--b-rule); }
@@ -1656,12 +1643,11 @@
      the size of a tile of the wide grid on a desk (a quarter of 1060
      less the gutters and the gaps) and half the column on a phone */
   .hero {
-    display: block; width: 246px; max-width: 50%; aspect-ratio: 1; overflow: hidden;
-    margin-bottom: 22px; border-radius: var(--tt-radius-img, 3px); background: var(--tt-field);
-    position: relative; transition: transform .18s ease, box-shadow .18s ease;
+    display: block; width: 100%; aspect-ratio: 3 / 2; overflow: hidden;
+    margin-top: 30px; border-radius: var(--tt-radius-img, 4px); background: var(--tt-field);
+    position: relative;
   }
   .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .hero:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
   .hero .play-badge { --play: 44px; }
 
   /* the reader gallery: the tile grid, and the lightbox behind it */

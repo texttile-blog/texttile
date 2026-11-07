@@ -113,7 +113,7 @@ defmodule TexttileWeb.TextsLive do
           <span class="sp"></span>
           <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
-        <div class="flex items-center gap-3 flex-wrap py-3 mt-[14px] mb-6 border-y border-rule">
+        <div class="flex items-center gap-3 flex-wrap mt-[18px] mb-6">
           <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
             <button
               :for={
@@ -187,7 +187,7 @@ defmodule TexttileWeb.TextsLive do
           </p>
         </nav>
         <div
-          class="grid items-start gap-y-[22px] gap-x-3 md:gap-y-7 md:gap-x-5 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
+          class="grid items-start gap-y-0 sm:gap-y-[26px] gap-x-4 md:gap-y-8 md:gap-x-5 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"
         >
           <%!-- The card is one link to the editor, so the way to the
@@ -200,7 +200,14 @@ defmodule TexttileWeb.TextsLive do
               <%= if cover = @covers[article.id] do %>
                 <span class="cimg" style={cover_bg(cover)}></span>
               <% else %>
-                <span class="cimg empty">{gettext("no images yet")}</span>
+                <%!-- an entry of words alone shows its opening words,
+                     set like a page; an empty one says what is missing --%>
+                <span class="cimg empty">
+                  <span :if={Articles.lead(article) != ""} class="cx">{Articles.lead(article)}</span>
+                  <span :if={Articles.lead(article) == ""} class="cn">
+                    {gettext("no images yet")}
+                  </span>
+                </span>
               <% end %>
               <span class="ct">{Articles.display_title(article)}</span>
               <%!-- the state and its day on the left, who it is by on the

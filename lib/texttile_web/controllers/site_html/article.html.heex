@@ -25,20 +25,6 @@
   </p>
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
-      <%!-- the chosen preview once more, at the head of the post: a
-           square the size of a tile, so the page opens the way its card
-           in the list does. It links the file the tile links, and the
-           script turns the click into the lightbox, on that tile. --%>
-      <a
-        :if={@hero}
-        id="preview"
-        class="hero"
-        href={Images.url(@hero.link, :original)}
-        aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
-      >
-        <img src={Images.url(@hero.still, :card)} alt="" />
-        <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
-      </a>
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
       <%!-- the line under the title: the day, the tags, and for the
            admin who is signed in the way straight into the admin area.
@@ -66,6 +52,27 @@
           {gettext("Edit")}
         </a>
       </p>
+
+      <%!-- the chosen preview once more, under the title: the cover
+           of the post, as wide as the words. It links the file the tile
+           links, and the script turns the click into the lightbox, on
+           that tile. The card size serves a phone, the reading size a
+           dense desk screen. --%>
+      <a
+        :if={@hero}
+        id="preview"
+        class="hero"
+        href={Images.url(@hero.link, :original)}
+        aria-label={if @hero.film, do: gettext("Open video"), else: gettext("Open image")}
+      >
+        <img
+          src={Images.url(@hero.still, :card)}
+          srcset={"#{Images.url(@hero.still, :card)} 640w, #{Images.url(@hero.still, :reading)} 1320w"}
+          sizes="(max-width: 700px) 100vw, 620px"
+          alt=""
+        />
+        <span :if={@hero.film} class="play-badge" aria-hidden="true"></span>
+      </a>
 
       <div class="prose" id="body">{body_html(@article)}</div>
     </div>

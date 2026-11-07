@@ -119,14 +119,14 @@ defmodule TexttileWeb.StatsLive do
           </.link>
         </div>
 
-        <div id="statsFigures" class="grid grid-cols-1 md:grid-cols-3 border-y border-rule">
-          <div class="fig py-4 md:pr-5">
+        <div id="statsFigures" class="grid grid-cols-3 border-y border-hair">
+          <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <div class="l">
               {window_label(gettext("views"), @days)}{moved(@summary.views, @summary.before, :views)}
             </div>
           </div>
-          <div class="fig py-4 md:px-5 border-t border-hair md:border-t-0 md:border-l md:border-l-hair">
+          <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
               {window_label(gettext("people"), @days)}{moved(
@@ -136,7 +136,7 @@ defmodule TexttileWeb.StatsLive do
               )}
             </div>
           </div>
-          <div class="fig py-4 md:px-5 border-t border-hair md:border-t-0 md:border-l md:border-l-hair">
+          <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">{busiest_label(@summary.busiest)}</div>
           </div>

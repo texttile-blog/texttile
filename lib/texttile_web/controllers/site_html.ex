@@ -183,11 +183,17 @@ defmodule TexttileWeb.SiteHTML do
     <div class="card-wrap">
       <a class="card" id={"text-#{@article.id}"} href={Articles.public_path(@article)}>
         <%!-- every card wears a square, so the grid keeps its rows: the
-             picture when there is one, the quiet mark when there is none --%>
+             picture when there is one. An entry of words alone shows
+             its opening words there instead, set like a page, and the
+             lead under the title steps aside so they are not said
+             twice. With no words either, the quiet mark stands in. --%>
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
-        <span :if={!@preview} class="cimg blank" aria-hidden="true">
+        <span :if={!@preview && lead(@article) != ""} class="cimg words" aria-hidden="true">
+          <span class="cx">{lead(@article)}</span>
+        </span>
+        <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
         </span>
         <span class="ct">{Articles.display_title(@article)}</span>
@@ -206,7 +212,7 @@ defmodule TexttileWeb.SiteHTML do
           </a>
         </span>
       </p>
-      <p :if={lead(@article) != ""} class="clead">{lead(@article)}</p>
+      <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
         <a
           :for={tag <- Articles.tag_list(@article)}

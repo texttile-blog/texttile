@@ -122,7 +122,7 @@ defmodule TexttileWeb.Layouts do
 
   def auth(assigns) do
     ~H"""
-    <main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[13vh] pb-10">
+    <main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[7vh] md:pt-[13vh] pb-10">
       <div class="w-[min(374px,100%)]">
         <div class="flex items-center gap-[11px]">
           <.mark size={28} ink="var(--tt-ink)" />

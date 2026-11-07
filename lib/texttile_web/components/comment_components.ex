@@ -38,12 +38,15 @@ defmodule TexttileWeb.CommentComponents do
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
+        <%!-- the entry the comment stands under, on the same line: the
+             jump of the overview, quiet until the pointer finds it --%>
+        <span :if={@article} class="cmt-sep" aria-hidden="true">·</span>
+        <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent">
+          {Texttile.Articles.display_title(@article)}
+        </.link>
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
         <span class="cmt-when num">{moment_line(@comment)}</span>
       </div>
-      <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent link">
-        {Texttile.Articles.display_title(@article)}
-      </.link>
 
       <form
         :if={@editing}
@@ -202,15 +205,16 @@ defmodule TexttileWeb.CommentComponents do
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
+        <span class="cmt-sep" aria-hidden="true">·</span>
+        <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent">
+          {Texttile.Articles.display_title(@comment.article)}
+        </.link>
         <span class="cmt-when num">
           {I18n.format_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_plain_day(
             @comment.delete_after
           )}
         </span>
       </div>
-      <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent link">
-        {Texttile.Articles.display_title(@comment.article)}
-      </.link>
       <p
         class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim"
         phx-no-format

@@ -171,7 +171,7 @@ defmodule TexttileWeb.CommentsLive do
       <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
         <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
         <nav
-          class="flex gap-[3px] flex-wrap py-3 mt-[14px] border-y border-rule"
+          class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"
           id="commentFilter"
           aria-label={gettext("Filter by status")}
         >

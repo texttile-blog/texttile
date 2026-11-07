@@ -69,10 +69,15 @@ defmodule TexttileWeb.SiteControllerTest do
     end
 
     test "a text without a picture keeps the square, so the grid holds", %{conn: conn} do
-      published_post(title: "Without a picture")
+      published_post(title: "Without a picture", body: "Only words here.")
+      published_post(title: "Nothing at all", body: "")
 
       html = conn |> get(~p"/blog") |> html_response(200)
 
+      # the opening words fill the square, and are not said twice
+      assert html =~ ~s(<span class="cx">Only words here.</span>)
+      refute html =~ ~s(class="clead">Only words here.)
+      # an entry without words either keeps the quiet mark
       assert html =~ "cimg blank"
       refute html =~ "/renditions/640/"
     end
@@ -190,7 +195,7 @@ defmodule TexttileWeb.SiteControllerTest do
     # The chosen preview stands once more at the head of the post, as
     # a square the size of a tile, and its link is the tile's link, so
     # the lightbox can open on that tile.
-    test "shows the chosen preview as a square above the title", %{conn: conn} do
+    test "shows the chosen preview as the cover under the title", %{conn: conn} do
       article = published_post(title: "Square", slug: "square", publish_date: ~D[2026-03-01])
       {:ok, _first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
       {:ok, chosen} = Texttile.Gallery.add_file(article, jpg_fixture(), "gull.jpg")
@@ -200,8 +205,15 @@ defmodule TexttileWeb.SiteControllerTest do
 
       assert attribute(html, "#preview", "href") == ["/uploads/#{chosen.path}"]
       assert attribute(html, "#preview img", "src") == ["/renditions/640/#{chosen.path}"]
-      # the square comes before the title
-      assert :binary.match(html, ~s(id="preview")) < :binary.match(html, ~s(class="f-h1"))
+
+      assert attribute(html, "#preview img", "srcset") ==
+               ["/renditions/640/#{chosen.path} 640w, /renditions/1320/#{chosen.path} 1320w"]
+
+      # the title comes first, the cover between it and the words
+      title = :binary.match(html, ~s(class="f-h1"))
+      cover = :binary.match(html, ~s(id="preview"))
+      body = :binary.match(html, ~s(id="body"))
+      assert title < cover and cover < body
     end
 
     test "a post without a picture and a page with one get no square", %{conn: conn} do
