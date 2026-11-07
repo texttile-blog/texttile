@@ -1401,7 +1401,15 @@ defmodule TexttileWeb.EditorLive do
            so "Draft" and "Publish" stop saying the same thing. --%>
       <:lead>
         <span
-          class={["st", if(@pending, do: "pending", else: state_tone(@article.status))]}
+          class={
+            [
+              "st",
+              if(@pending, do: "pending", else: state_tone(@article.status)),
+              # a phone bar has room for the state only when it is news:
+              # a live entry says so in its settings below
+              (@article.status == "published" and not @pending) && "max-sm:hidden"
+            ]
+          }
           id="stateWord"
         >
           <i aria-hidden="true"></i>

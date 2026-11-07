@@ -125,7 +125,7 @@ defmodule TexttileWeb.Layouts do
     assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
-    <main class="min-h-[100dvh] flex items-start justify-center px-4 pt-[7vh] md:pt-[13vh] pb-10">
+    <main class="auth-main min-h-[100dvh] flex items-start justify-center px-4 pt-[7vh] md:pt-[22vh] pb-10">
       <div class="w-[min(374px,100%)]">
         <div class="flex items-center gap-[11px]">
           <img

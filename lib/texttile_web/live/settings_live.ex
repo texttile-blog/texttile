@@ -689,7 +689,7 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Logo & favicon")}</.section>
         <div class="flex items-center gap-[14px] pt-[14px] sm:border-t sm:border-hair">
           <span
-            class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
+            class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
             id="prev-logo"
           >
             <img
@@ -731,7 +731,7 @@ defmodule TexttileWeb.SettingsLive do
         </p>
         <div class="flex items-center gap-[14px] pt-[14px]">
           <span
-            class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
+            class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
             id="prev-favicon"
           >
             <img

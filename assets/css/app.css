@@ -278,7 +278,7 @@
      step under the busiest bar, which is ink. Violet stays for the bar
      an admin opened. */
   .barc { background: var(--tt-slash); }
-  .fig .l { font-size: 13.5px; color: var(--tt-dim); margin-top: 2px; min-height: 2.9em; }
+  .fig .l { font-size: 13.5px; color: var(--tt-dim); margin-top: 2px; }
   /* a phone's third of the row holds "busiest day, 7 Nov" at this size */
   @media (max-width: 639px) { .fig .l { font-size: 12px; letter-spacing: -.005em; } }
   .lab { font-size: 13px; color: var(--tt-dim); }
@@ -424,7 +424,7 @@
     margin-top: 2px; font-size: 13px; color: var(--tt-faint);
   }
   .cmt-when { font-size: 13px; color: var(--tt-faint); white-space: nowrap; }
-  .cmt-ent + .cmt-when::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  .cmt-ent + .cmt-when::before { content: "\00b7"; margin: 0 6px; color: var(--tt-slash); }
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
@@ -441,7 +441,7 @@
   /* the writer's website, after the moment: a link like any other */
   .cmt-web { font-size: 13px; color: var(--tt-accent); text-decoration: none; white-space: nowrap; }
   .cmt-web:hover { text-decoration: underline; text-underline-offset: 2px; }
-  .cmt-when + .cmt-web::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  .cmt-when + .cmt-web::before { content: "\00b7"; margin: 0 6px; color: var(--tt-slash); }
   .cmt-sep { color: var(--tt-slash); }
   .cmt-ent {
     min-width: 0; font-size: 13px; color: var(--tt-accent); text-decoration: none;
@@ -2238,7 +2238,7 @@ body.site .card-wrap .cm { font-size: 14px; }
    after it, and set apart before the account and View site */
 .saved { border-right: 0; padding-right: 0; margin-right: 24px; }
 /* a state, said with a small tick, so it is never read as a link */
-.saved.save-on::before { content: "\2713\00a0"; color: var(--tt-slash); }
+.saved:not(.warn)::before { content: "\2713\00a0"; color: var(--tt-slash); }
 .bar-me, #bar-view-site { order: 2; }
 
 /* the editor's body stands a clear step under its formatting bar */
@@ -2258,7 +2258,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 
 /* the boxed About bar starts its tools on the text's own edge and lets
    the row end where its buttons end */
-@media (pointer: coarse), (max-width: 639px) { #aboutBar { justify-content: flex-start; padding-left: 0; } }
+@media (pointer: coarse), (max-width: 639px) { #aboutBar { padding-left: 10px; padding-right: 10px; } }
 #aboutBar { padding-left: 0; }
 
 /* Stats: one distance between every section, no rule standing alone */
@@ -2280,7 +2280,21 @@ body.site .card-wrap .cm { font-size: 14px; }
 /* the archive's tags on a phone: one row that scrolls sideways, its
    rule under it, so it reads as tabs and not as a heap of links */
 @media (max-width: 639px) {
-  #tagbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+  /* it runs out to the glass, so the cut reads as more to come */
+  #tagbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+    margin-right: -16px; padding-right: 16px; }
   #tagbar::-webkit-scrollbar { display: none; }
   #tagbar .ctag { flex: none; }
+}
+
+/* the figures' row ends on its numbers: the chart under it is theirs */
+#statsFigures .fig { padding-bottom: 0; }
+
+/* a share is a measure on a pale track */
+.track.share { background: rgb(var(--tt-shadow) / .06); }
+
+/* the sign-in form at the reader's size: 16px words in 44px fields */
+@media (min-width: 768px) {
+  .auth-main input:not([type=checkbox]) { font-size: 16px; height: 44px; }
+  .auth-main label, .auth-main .lab { font-size: 14px; }
 }
