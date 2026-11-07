@@ -310,7 +310,6 @@ defmodule TexttileWeb.ProfileLive do
                 when: signed_in_on(session)
               )}
             </span>
-            <span :if={length(@sessions) == 1} class="note">{gettext("the only one open")}</span>
           </div>
         </div>
         <p class="note mt-3">

@@ -83,7 +83,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Published")
+        |> assert_has("#stateWord", text: "Live", exact: true)
         |> assert_has("#slugHint[data-live]")
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
@@ -111,7 +111,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click("#stateChev")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Published")
+        |> assert_has("#stateWord", text: "Live", exact: true)
 
       address =
         "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
@@ -562,7 +562,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
     # The word for the state used to blink, because the rule that makes
     # a presence dot pulse was written for the bare class the state word
-    # also wears. A word that reads "Published" and then fades out reads
+    # also wears. A word that reads "Live" and then fades out reads
     # as a warning, and it is a fact. The dot still pulses: the probe
     # says so, so a rule that got deleted instead of narrowed is seen.
     @state_motion """
@@ -583,7 +583,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#stateWord", text: "Published")
+      |> assert_has("#stateWord", text: "Live", exact: true)
       |> evaluate(@state_motion, [is_function: true], fn [word, dot] ->
         assert word == "none"
         assert dot == "pulse"

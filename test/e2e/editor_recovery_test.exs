@@ -51,7 +51,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
     conn =
       conn
       |> assert_has("#edSlug[value='doors']")
-      |> assert_has("#stateWord", text: "Published")
+      |> assert_has("#stateWord", text: "Live", exact: true)
 
     # A deliberate edit on the restored connection still saves normally.
     conn

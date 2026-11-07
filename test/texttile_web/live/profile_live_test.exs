@@ -136,7 +136,7 @@ defmodule TexttileWeb.ProfileLiveTest do
     assert html =~ "Every other session is signed out"
     assert Accounts.get_user_by_session_token(other_token) == nil
     assert [_only_this_browser] = Accounts.list_sessions(user)
-    assert has_element?(view, "#sessions", "the only one open")
+    refute has_element?(view, "#sessions", "Another browser")
   end
 
   test "lists the open sessions with this browser first", %{conn: conn, user: user} do
@@ -146,13 +146,12 @@ defmodule TexttileWeb.ProfileLiveTest do
 
     assert has_element?(view, "#sessions", "This browser")
     assert has_element?(view, "#sessions", "Another browser")
-    refute has_element?(view, "#sessions", "the only one open")
   end
 
-  test "a single session is the only one open", %{conn: conn} do
+  test "a single session lists this browser alone", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
     assert has_element?(view, "#sessions", "This browser")
-    assert has_element?(view, "#sessions", "the only one open")
+    refute has_element?(view, "#sessions", "Another browser")
   end
 
   test "offers sign out", %{conn: conn} do

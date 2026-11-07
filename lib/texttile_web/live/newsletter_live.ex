@@ -184,26 +184,16 @@ defmodule TexttileWeb.NewsletterLive do
     """
   end
 
-  # The lead line: how many addresses get the entries, and who still waits.
-  defp sub_line([], _confirmed) do
-    gettext("Everybody who gets a mail when a new entry goes live.")
-  end
-
+  # The count beside the heading: a short noun, the way every admin
+  # list counts, and who still waits after it.
   defp sub_line(subscribers, confirmed) do
     waiting = length(subscribers) - confirmed
-
-    line = ngettext("1 email gets updates.", "%{count} emails get updates.", confirmed)
+    line = ngettext("1 subscriber", "%{count} subscribers", confirmed)
 
     if waiting == 0 do
       line
     else
-      line <>
-        " " <>
-        ngettext(
-          "1 more waits for their confirmation.",
-          "%{count} more wait for their confirmation.",
-          waiting
-        )
+      line <> " · " <> ngettext("1 waiting", "%{count} waiting", waiting)
     end
   end
 

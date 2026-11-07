@@ -226,9 +226,9 @@ defmodule TexttileWeb.Layouts do
             <.mark :if={!@brand.logo} size={21} />
             <span class="wmdot" id="wmDot" hidden={@others == []}></span>
           </span>
-          <%!-- a column screen's bar spends its width on the row of
-               sections, so the mark alone stands for the blog there --%>
-          <span class={["hidden", @wide && "sm:inline"]}>{@brand.title}</span>
+          <%!-- the mark alone stands for the blog on every screen: the
+               bar spends its width on the sections, or on the entry;
+               the button's label names it for a screen reader --%>
           <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>

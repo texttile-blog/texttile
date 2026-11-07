@@ -179,7 +179,7 @@ defmodule TexttileWeb.CommentsLive do
           <%!-- no count beside the heading: the All filter carries it --%>
           <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
           <nav
-            class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"
+            class="flex gap-[3px] flex-wrap mt-0 sm:mt-[18px] mb-[8px]"
             id="commentFilter"
             aria-label={gettext("Filter by status")}
           >

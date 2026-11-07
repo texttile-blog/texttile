@@ -35,7 +35,7 @@ defmodule TexttileWeb.NewsletterLiveTest do
     refute has_element?(view, "#sub-#{confirmed.id}", "waits")
     assert has_element?(view, "#sub-#{waiting.id}", "two@example.org")
     assert has_element?(view, "#sub-#{waiting.id}", "waits")
-    assert has_element?(view, "#newsletterSub", "1 email gets updates")
+    assert has_element?(view, "#newsletterSub", "1 subscriber")
   end
 
   test "adding an address puts it on the list confirmed, live for everybody", %{conn: conn} do

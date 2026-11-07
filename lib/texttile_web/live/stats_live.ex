@@ -138,7 +138,17 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
-              {gettext("busiest day")}<span :if={@summary.busiest} class="block" id="figBusiestDay">{busiest_day(@summary.busiest)}</span>
+              <%!-- the key to the one bar of the chart that wears the
+                   accent itself --%>
+              <i
+                :if={@summary.busiest}
+                class="inline-block w-[8px] h-[8px] rounded-[2px] bg-accent mr-[6px] align-[1px]"
+                aria-hidden="true"
+              ></i>{gettext("busiest day")}<span
+                :if={@summary.busiest}
+                class="block"
+                id="figBusiestDay"
+              >{busiest_day(@summary.busiest)}</span>
             </div>
           </div>
         </div>

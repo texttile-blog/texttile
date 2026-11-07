@@ -327,7 +327,8 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M5.2 8.2l2 2 3.6-4" />
         </svg>
       </button>
-      <span class="mdsep" aria-hidden="true"></span>
+      <%!-- without the image, a phone has nothing after this rule --%>
+      <span class={["mdsep", !@files && "rare"]} aria-hidden="true"></span>
       <button
         type="button"
         class="mdb rare"
@@ -499,7 +500,7 @@ defmodule TexttileWeb.CoreComponents do
   """
   def status_word("draft"), do: gettext("Draft")
   def status_word("scheduled"), do: gettext("Scheduled")
-  def status_word("published"), do: gettext("Published")
+  def status_word("published"), do: gettext("Live")
   def status_word(other), do: String.capitalize(other)
 
   @doc """

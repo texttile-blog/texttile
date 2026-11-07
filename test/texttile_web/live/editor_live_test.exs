@@ -83,9 +83,9 @@ defmodule TexttileWeb.EditorLiveTest do
       assert article.slug == "doors"
 
       # the state is said once, beside the title, and never in a button
-      assert has_element?(view, "#stateWord", "Published")
+      assert has_element?(view, "#stateWord", "Live")
       assert has_element?(view, "#stateBtn .main", "View")
-      refute has_element?(view, "#stateBtn .main", "Published")
+      refute has_element?(view, "#stateBtn .main", "Live")
     end
 
     test "a future date makes the click a scheduling", %{conn: conn, user: user} do

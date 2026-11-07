@@ -20,7 +20,7 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> assert_has("#stateWord", text: "Published")
+        |> assert_has("#stateWord", text: "Live", exact: true)
         |> assert_has("#stateMain", text: "View")
         |> fill_in("Title", with: "Harbor evenings")
         |> assert_has("#stateWord", text: "Live · draft")
@@ -31,7 +31,7 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
 
       session
       |> click_button("#stateMain", "Publish changes")
-      |> assert_has("#stateWord", text: "Published")
+      |> assert_has("#stateWord", text: "Live", exact: true)
       |> assert_has("#stateMain", text: "View")
 
       assert Articles.as_read(Articles.get_article!(article.id)).title == "Harbor evenings"
@@ -49,7 +49,7 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       |> click_button("#discardChangesRow", "Discard the changes")
       |> click_button("Discard the changes")
       |> assert_has("#edTitle[value='Harbor mornings']")
-      |> assert_has("#stateWord", text: "Published")
+      |> assert_has("#stateWord", text: "Live", exact: true)
     end
 
     test "the Versions tab says which version the readers have", %{conn: conn, kb: kb} do
