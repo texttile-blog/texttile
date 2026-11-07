@@ -113,7 +113,7 @@ defmodule TexttileWeb.TextsLive do
           <span class="sp"></span>
           <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
-        <div class="flex items-center gap-3 flex-wrap mt-[18px] mb-6">
+        <div class="flex items-center gap-3 flex-wrap mt-[14px] sm:mt-[18px] mb-4 sm:mb-6">
           <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
             <button
               :for={
@@ -202,15 +202,13 @@ defmodule TexttileWeb.TextsLive do
               <% else %>
                 <%!-- an entry of words alone shows its opening words, and
                      an empty one says what is missing. The small square
-                     of the phone list carries the first letter instead. --%>
+                     of the phone list carries the mark of a paragraph. --%>
                 <span class="cimg empty">
                   <span :if={Articles.lead(article) != ""} class="cx">{Articles.lead(article)}</span>
                   <span :if={Articles.lead(article) == ""} class="cn">
                     {gettext("no images yet")}
                   </span>
-                  <span class="ci" aria-hidden="true">
-                    {String.first(Articles.display_title(article))}
-                  </span>
+                  <span class="ci" aria-hidden="true">¶</span>
                 </span>
               <% end %>
               <span class="ct">{Articles.display_title(article)}</span>

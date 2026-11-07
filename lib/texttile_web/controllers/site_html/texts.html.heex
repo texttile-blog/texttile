@@ -6,7 +6,12 @@
 />
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
-    <h1 class="f-h1 list-h">{gettext("Blog Entries")}</h1>
+    <%!-- the count stands with the heading, as it does over the admin
+         grid; the search under them narrows it --%>
+    <div class="flex items-baseline gap-[14px] flex-wrap">
+      <h1 class="f-h1 list-h">{gettext("Blog Entries")}</h1>
+      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
+    </div>
 
     <%!-- the list is narrowed from under it, so a reader who lands on
          a year or a term reads here why the list is shorter than the
@@ -59,7 +64,6 @@
           </option>
         </select>
       </span>
-      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
     </form>
 
     <div class="cards mt-8" id="texts">

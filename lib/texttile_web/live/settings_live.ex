@@ -775,13 +775,13 @@ defmodule TexttileWeb.SettingsLive do
         </p>
 
         <.section>{gettext("About")}</.section>
-        <label class="lab block mb-[6px]" for="setting-about_markdown">
+        <label class="block text-[13px] font-semibold text-ink mb-[2px]" for="setting-about_markdown">
           {gettext("About this blog")}
         </label>
         <%!-- the editor of an entry, with the pictures taken out: About
              stands in the band under every page and carries words, not
              a gallery. One hook, one behaviour, one set of keys. --%>
-        <.md_bar id="aboutBar" files={false} />
+        <.md_bar id="aboutBar" files={false} class="!mt-0" />
         <div
           id="setting-about_markdown"
           class="ed-body ed-cm boxed-cm"

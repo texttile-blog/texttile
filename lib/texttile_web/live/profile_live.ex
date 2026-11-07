@@ -246,14 +246,14 @@ defmodule TexttileWeb.ProfileLive do
                   />
                 </span>
                 <button class="btn" type="submit" id="em-set">{gettext("Change email")}</button>
+                <.field_errors field={@email_form[:current_password]} />
+                <.field_errors field={@email_form[:email]} />
+                <div class="hint pairhint">
+                  {gettext(
+                    "You sign in with this address, and password links go to it. Readers never see it."
+                  )}
+                </div>
               </span>
-              <.field_errors field={@email_form[:current_password]} />
-              <.field_errors field={@email_form[:email]} />
-              <div class="hint">
-                {gettext(
-                  "You sign in with this address, and password links go to it. Readers never see it."
-                )}
-              </div>
               <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
             </span>
           </div>
@@ -287,12 +287,12 @@ defmodule TexttileWeb.ProfileLive do
                   />
                 </span>
                 <button class="btn" type="submit" id="pw-set">{gettext("Change password")}</button>
+                <.field_errors field={@pw_form[:current_password]} />
+                <.field_errors field={@pw_form[:password]} />
+                <div class="hint pairhint">
+                  {gettext("At least 12 characters. Confirm your current password to change it.")}
+                </div>
               </span>
-              <.field_errors field={@pw_form[:current_password]} />
-              <.field_errors field={@pw_form[:password]} />
-              <div class="hint">
-                {gettext("At least 12 characters. Confirm your current password to change it.")}
-              </div>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
             </span>
           </div>

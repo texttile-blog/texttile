@@ -68,6 +68,12 @@ defmodule TexttileWeb.StatsComponents do
       >
         {number(div(@max, 2))}
       </span>
+      <span
+        class="absolute right-0 top-[142px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        aria-hidden="true"
+      >
+        0
+      </span>
       <div id={@id} class="flex items-end gap-[3px] h-[150px] pt-[18px] pb-0">
         <%= for bar <- @series do %>
           <button
@@ -101,7 +107,7 @@ defmodule TexttileWeb.StatsComponents do
           </i>
         <% end %>
       </div>
-      <div class="flex justify-between text-[12px] text-faint pt-[7px] pb-2 border-t border-rule">
+      <div class="flex justify-between text-[12px] text-faint pt-[7px] pb-2 border-t border-faint">
         <span>{axis_label(List.first(@series).from, @step)}</span>
         <span>{axis_label(List.last(@series).to, @step)}</span>
       </div>
@@ -153,7 +159,7 @@ defmodule TexttileWeb.StatsComponents do
         <thead>
           <tr>
             <th>{gettext("Source")}</th>
-            <th class="w-[45%]">{gettext("Share")}</th>
+            <th class="w-[220px]">{gettext("Share")}</th>
             <th class="text-right num">%</th>
           </tr>
         </thead>

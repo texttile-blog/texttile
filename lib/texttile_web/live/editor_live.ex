@@ -1450,17 +1450,19 @@ defmodule TexttileWeb.EditorLive do
           {gettext("Not saved · offline")}
         </span>
 
-        <%!-- the deliberate save beside the automatic one, on a window
-             wide enough to hold both; a phone has it under the words --%>
+        <%!-- the deliberate save beside the automatic one, at every
+             width: it is the one action a writer takes on purpose --%>
         <button
           :if={@holds_lock}
           type="button"
-          class="btn sm quiet hidden md:inline-flex"
+          class="btn sm quiet"
           id="barSaveVersion"
           phx-click="save_version"
           data-flush-body
         >
-          {gettext("Save version")}
+          <%!-- a phone has room for the verb alone --%>
+          <span class="sm:hidden">{gettext("Save")}</span>
+          <span class="hidden sm:inline">{gettext("Save version")}</span>
         </button>
 
         <%!-- On a narrow screen the tiles and the settings follow the
@@ -1822,8 +1824,8 @@ defmodule TexttileWeb.EditorLive do
                    a list of its own. An upload that is still running
                    holds its place with a token, and the token becomes
                    the reference when the upload finishes. --%>
-              <%!-- with nothing in the words the block is one quiet line;
-                   its heading and count arrive with the first file --%>
+              <%!-- with nothing in the words the block stands empty; its
+                   heading and count arrive with the first file --%>
               <div class="mt-[28px]">
                 <div
                   :if={Body.refs(@article.body) != []}
@@ -1836,11 +1838,6 @@ defmodule TexttileWeb.EditorLive do
                   <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                 </div>
                 <div id="inlineImgs">
-                  <p :if={Body.refs(@article.body) == []} class="note">
-                    {gettext(
-                      "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
-                    )}
-                  </p>
                   <%= for ref <- Body.refs(@article.body) do %>
                     <% media = ref_media(@media, ref.url) %>
                     <%!-- a picture, or a video ffmpeg is through with:

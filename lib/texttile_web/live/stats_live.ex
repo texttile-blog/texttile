@@ -286,8 +286,8 @@ defmodule TexttileWeb.StatsLive do
   defp window_name(7), do: gettext("7 days")
   defp window_name(30), do: gettext("30 days")
   defp window_name(90), do: gettext("90 days")
-  defp window_name(365), do: gettext("year")
-  defp window_name(:all), do: gettext("all time")
+  defp window_name(365), do: gettext("Year")
+  defp window_name(:all), do: gettext("All time")
 
   # "views, last 30 days" and "Views, last 30 days": the noun comes in
   # with the case the line wants.
