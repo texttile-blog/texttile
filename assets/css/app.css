@@ -1765,7 +1765,7 @@
   .textnav .lab, .textnav .t { display: block; }
   .textnav .lab { font-size: 13px; color: var(--tt-dim); }
   .textnav .t {
-    margin-top: 3px; font-family: var(--tt-font-serif); font-size: 17px;
+    margin-top: 3px; font-family: var(--tt-font-serif); font-size: 18px;
     font-weight: 600; line-height: 1.28; letter-spacing: -.012em; color: var(--tt-ink);
   }
   .textnav a:hover .t { text-decoration: underline; text-underline-offset: 3px; }
@@ -2399,3 +2399,12 @@ textarea, .ed-cm { display: block; vertical-align: top; }
   #aboutBar .mdb:first-child { margin-left: -3px; }
   #aboutBar .mdb:last-of-type { margin-right: -3px; }
 }
+
+/* the save state beside the entry's state in the editor bar */
+#stateWord + #state, #stateWord ~ #state { margin-left: 10px; margin-right: 0; }
+
+/* the help line under a field, one step under it */
+.drow .hint { margin-top: 8px; }
+
+/* a phone's comment actions: the same quiet words, a finger tall */
+@media (max-width: 639px) { .cmt-acts .btn { height: 40px; margin-top: -5px; margin-bottom: -5px; } }

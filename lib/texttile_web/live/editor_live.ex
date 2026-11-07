@@ -1420,24 +1420,8 @@ defmodule TexttileWeb.EditorLive do
             {if @pending, do: gettext("Live · draft"), else: status_word(@article.status)}
           </b>
         </span>
-      </:lead>
-
-      <:bar>
-        <%!-- Somebody else is in this text. The offer that used to
-             stand beside this is gone: clicking into the title or the
-             body already asks for the takeover. --%>
-        <span :if={@holder} class="pres" id="barPres">
-          <i aria-hidden="true"></i>
-          <span class="w">
-            {if own_tab?(@holder, @current_scope),
-              do: gettext("another tab of yours is writing"),
-              else: gettext("%{name} is writing", name: holder_name(@holder))}
-          </span>
-        </span>
-
-        <%!-- A phone bar has room for the save state or for Save version,
-             not both: it keeps the state, and Save version waits in the
-             menu of the button at the end. --%>
+        <%!-- The save state stands with the entry's state at the left:
+             the right of the bar is for actions alone. --%>
         <%!-- The save state, and no longer a link with a bare arrow on
              it: the way to the reader's side is the button at the end
              of this bar, or a row of its menu, and it carries a word.
@@ -1459,6 +1443,20 @@ defmodule TexttileWeb.EditorLive do
              drops, so no event and no timer is needed. --%>
         <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
           {gettext("Not saved · offline")}
+        </span>
+      </:lead>
+
+      <:bar>
+        <%!-- Somebody else is in this text. The offer that used to
+             stand beside this is gone: clicking into the title or the
+             body already asks for the takeover. --%>
+        <span :if={@holder} class="pres" id="barPres">
+          <i aria-hidden="true"></i>
+          <span class="w">
+            {if own_tab?(@holder, @current_scope),
+              do: gettext("another tab of yours is writing"),
+              else: gettext("%{name} is writing", name: holder_name(@holder))}
+          </span>
         </span>
 
         <%!-- the deliberate save beside the automatic one, at every
@@ -2283,7 +2281,7 @@ defmodule TexttileWeb.EditorLive do
                   id="slugHint"
                   data-live={@article.status != "draft" && Articles.public_path(@article)}
                 >
-                  <span class="block break-all mb-[4px]" id="slugPrefix">
+                  <span class="block break-all mb-[4px] text-ink" id="slugPrefix">
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
                   </span>
                   {slug_hint(@article)}

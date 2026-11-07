@@ -802,8 +802,9 @@ defmodule TexttileWeb.SettingsLive do
           </div>
         </div>
         <%!-- the rendered words, on demand: JS.toggle keeps them open
-             across every redraw the saving sends --%>
-        <p class="mt-[10px]">
+             across every redraw the saving sends. Close under the field
+             it belongs to. --%>
+        <p class="mt-[8px] mb-[8px]">
           <button
             type="button"
             class="link text-[13px]"

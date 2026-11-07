@@ -124,7 +124,7 @@ defmodule TexttileWeb.StatsLive do
 
         <%!-- no rule over the figures: the window switch above them is a row
              of tabs like every other, its line under the open one alone --%>
-        <div id="statsFigures" class="grid grid-cols-3">
+        <div id="statsFigures" class="grid grid-cols-[1fr_1fr_1.3fr] sm:grid-cols-3">
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;
@@ -159,8 +159,8 @@ defmodule TexttileWeb.StatsLive do
         <p :if={@summary.busiest} class="hint" id="chartKey">
           <%!-- what the dark bar means, and what a click does: two facts,
                two lines --%>
-          <span class="block">{gettext("The dark bar is the busiest day.")}</span>
-          <span class="block">{gettext("Open a day for its entries and sources.")}</span>
+          <span class="max-sm:block">{gettext("The dark bar is the busiest day.")}</span>
+          <span class="max-sm:block">{gettext("Open a day for its entries and sources.")}</span>
         </p>
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">
