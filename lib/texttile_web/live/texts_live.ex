@@ -162,7 +162,7 @@ defmodule TexttileWeb.TextsLive do
             {entry_count(@shown, @total)}
           </span>
         </div>
-        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
+        <div class="flex items-center gap-x-3 gap-y-5 sm:gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
           <span
             class="flex gap-[3px] max-sm:gap-[6px] flex-none"
             role="group"
@@ -268,7 +268,10 @@ defmodule TexttileWeb.TextsLive do
                      between two bits and refuse to break there --%>
                 <span class="bits">
                   <%= for {bit, i} <- card_meta(article, article.id in @pending) do %>
-                    <span class="whitespace-nowrap bit" phx-no-format><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
+                    <span
+                      class={["whitespace-nowrap bit", bit == gettext("Page") && "max-sm:hidden"]}
+                      phx-no-format
+                    ><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
                   <% end %>
                 </span>
                 <span :if={article.user} class="by">{admin_name(article.user)}</span>

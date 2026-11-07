@@ -2143,7 +2143,7 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
             <div
-              class="grid gap-[6px] grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
+              class="grid gap-[10px] grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
               id="tileGrid"
             >
               <div class="contents" id="tileServer">

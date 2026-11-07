@@ -233,7 +233,7 @@ defmodule TexttileWeb.StatsLive do
                      are columns of fixed width packed to the right edge, so
                      the data of a row reads as one line --%>
                 <th>{gettext("Entry")}</th>
-                <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Published")}</th>
+                <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Date")}</th>
                 <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("Views")}</th>
                 <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">

@@ -2222,10 +2222,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 }
 /* the hairline after the name, a short tick like the one after Saved
    once was, so the open state's rule can run along the bar's foot */
-.bar-me::after {
-  content: ""; position: absolute; right: 0; top: 50%; height: 14px; margin-top: -7px;
-  border-right: 1px solid var(--tt-hair);
-}
+.bar-me::after { content: none; }
 .bar-me:hover { color: var(--tt-accent); }
 /* open, the name wears the violet rule every open item of the bar wears */
 .bar-me.on { color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tt-accent); }
@@ -2245,7 +2242,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 .ed-cm { margin-top: 0; }
 
 /* the tags of an entry's line keep the middot rhythm of the line */
-#meta .mtag + .mtag { margin-left: 4px; }
+#meta .mtags { display: inline-flex; flex-wrap: wrap; gap: 0 8px; }
 
 /* a row of Tags answers the pointer, so the eye follows it to its
    actions across the column */
@@ -2304,3 +2301,17 @@ body.site .card-wrap .cm { font-size: 14px; }
 @media (min-width: 640px) { .cform > .cf-url { max-width: calc(50% - 8px); } }
 /* the formatting glyphs at the size of the words they sit over */
 .mdb svg { width: 17px; height: 17px; }
+
+/* the last item of the reader's menu ends its words on the grid's edge,
+   as the cards and the footer do; its rule keeps the padded width */
+.site-nav a:last-child { margin-right: -9px; }
+
+/* Stats on a phone: a referrer's bar takes a line of its own under the
+   source, across the column, so the shares can be compared */
+@media (max-width: 639px) {
+  #referrers thead { display: none; }
+  #referrers tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--tt-hair); }
+  #referrers td { border: 0; padding: 0; }
+  #referrers td.align-middle { grid-column: 1 / -1; grid-row: 2; padding: 6px 0 0; }
+  #referrers .track { height: 4px; }
+}

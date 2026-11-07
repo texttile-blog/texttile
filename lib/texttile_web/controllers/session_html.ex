@@ -80,7 +80,7 @@ defmodule TexttileWeb.SessionHTML do
           "No account here has a password yet. The addresses in ADMIN_USERS have been mailed a link that sets one. While nobody can sign in, the server writes that link into its own log as well, so an installation whose mail does not leave still lets its first admin in."
         )}
       </p>
-      <p :if={not @nobody_can_sign_in} class="note mt-[22px] leading-[1.6]">
+      <p :if={not @nobody_can_sign_in} class="note text-[12.5px] mt-4 leading-[1.5]">
         {gettext("There is no public sign-up. An admin invites the next one from Settings.")}
       </p>
     </Layouts.auth>

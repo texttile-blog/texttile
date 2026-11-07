@@ -259,7 +259,9 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Quote")}
         aria-label={gettext("Quote")}
       >
-        <span class="g font-serif font-bold text-[17px] leading-none pt-[5px]">&rdquo;</span>
+        <svg class="g" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M3 9.6C3 7 4.3 5.1 6.6 4.2l.5.9C5.7 5.8 5 6.8 4.9 8h1.6c.6 0 1 .4 1 1v2.4c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1V9.6Zm6 0c0-2.6 1.3-4.5 3.6-5.4l.5.9c-1.4.7-2.1 1.7-2.2 2.9h1.6c.6 0 1 .4 1 1v2.4c0 .6-.4 1-1 1H10c-.6 0-1-.4-1-1V9.6Z" />
+        </svg>
       </button>
       <button
         type="button"
