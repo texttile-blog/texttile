@@ -35,11 +35,10 @@ test("a fresh save reads as Saved, an old one with its clock time", () => {
   assert.equal(line({now: at + 21_000}).text, "Saved 12:34")
 })
 
-test("a phone bar and a desk bar say the same stamp", () => {
-  for (const wide of [true, false]) {
-    assert.equal(line({wide, now: at + 5000}).text, "Saved")
-    assert.equal(line({wide, now: at + 60_000}).text, "Saved 12:34")
-  }
+test("a phone bar says the word alone, the clock stays in the tooltip", () => {
+  assert.equal(line({wide: false, now: at + 60_000}).text, "Saved")
+  assert.equal(line({wide: false, now: at + 60_000}).title, "The last save was at 12:34:56.")
+  assert.equal(line({wide: true, now: at + 60_000}).text, "Saved 12:34")
 })
 
 test("the clock pads its digits", () => {

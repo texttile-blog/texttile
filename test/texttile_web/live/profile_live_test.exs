@@ -42,8 +42,25 @@ defmodule TexttileWeb.ProfileLiveTest do
     refute render(view) =~ ~r/wmMe[^>]*>[^<]*@/
   end
 
+  test "asks for the password only once the address differs", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
+    refute has_element?(view, "#em-current")
+    refute has_element?(view, "#em-set")
+
+    view |> form("#email-form", %{"em" => %{"email" => "new@example.org"}}) |> render_change()
+    assert has_element?(view, "#em-current")
+    assert has_element?(view, "#em-set")
+
+    view |> form("#email-form", %{"em" => %{"email" => user.email}}) |> render_change()
+    refute has_element?(view, "#em-current")
+  end
+
   test "changes the address against the password", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
+
+    view
+    |> form("#email-form", %{"em" => %{"email" => "new@example.org"}})
+    |> render_change()
 
     html =
       view
@@ -62,6 +79,10 @@ defmodule TexttileWeb.ProfileLiveTest do
   test "refuses the address change without the current password", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
+    view
+    |> form("#email-form", %{"em" => %{"email" => "thief@example.org"}})
+    |> render_change()
+
     html =
       view
       |> form("#email-form", %{
@@ -77,6 +98,10 @@ defmodule TexttileWeb.ProfileLiveTest do
     user_fixture(%{email: "taken@example.org"})
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
+    view
+    |> form("#email-form", %{"em" => %{"email" => "broken"}})
+    |> render_change()
+
     html =
       view
       |> form("#email-form", %{
@@ -85,6 +110,10 @@ defmodule TexttileWeb.ProfileLiveTest do
       |> render_submit()
 
     assert html =~ "must be an email address"
+
+    view
+    |> form("#email-form", %{"em" => %{"email" => "taken@example.org"}})
+    |> render_change()
 
     html =
       view

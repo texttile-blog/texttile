@@ -90,7 +90,7 @@ defmodule TexttileWeb.CommentComponents do
         :if={!@editing}
         class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
         phx-no-format
-      >{@comment.body}</p>
+      >{String.trim(@comment.body)}</p>
       <%!-- the actions, quiet like the Restore of a version: at the
          right of the name line on a desk, on a line of their own under
          the words on a phone, so a long name never meets them. Reply

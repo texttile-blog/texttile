@@ -141,11 +141,13 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
+              <%!-- one line on a desk, so the three figures end together; a
+                   phone's narrow third gives the day a line of its own --%>
               {gettext("busiest day")}<span
                 :if={@summary.busiest}
-                class="block"
                 id="figBusiestDay"
-              >{busiest_day(@summary.busiest)}</span>
+                class="whitespace-nowrap max-sm:block"
+              ><span class="max-sm:hidden">, </span>{busiest_day(@summary.busiest)}</span>
             </div>
           </div>
         </div>
@@ -185,8 +187,8 @@ defmodule TexttileWeb.StatsLive do
                 <thead>
                   <tr>
                     <th>{gettext("Read")}</th>
-                    <th class="text-right num">{gettext("Views")}</th>
-                    <th class="text-right num">{gettext("People")}</th>
+                    <th class="text-right num w-[64px] pl-4">{gettext("Views")}</th>
+                    <th class="text-right num w-[64px] pl-4">{gettext("People")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -223,8 +225,8 @@ defmodule TexttileWeb.StatsLive do
               <tr>
                 <th>{gettext("Entry")}</th>
                 <th class="num hidden sm:table-cell">{gettext("Published")}</th>
-                <th class="text-right num">{gettext("Views")}</th>
-                <th class="text-right num">{gettext("People")}</th>
+                <th class="text-right num w-[64px] pl-4">{gettext("Views")}</th>
+                <th class="text-right num w-[64px] pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell">{gettext("Comments")}</th>
               </tr>
             </thead>

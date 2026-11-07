@@ -154,7 +154,11 @@ defmodule TexttileWeb.TextsLive do
           </span>
         </div>
         <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
-          <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
+          <span
+            class="flex gap-[3px] max-sm:gap-[6px] flex-none"
+            role="group"
+            aria-label={gettext("Filter by status")}
+          >
             <%!-- Scheduled has a tab only while an entry waits for its
                  day, so the parts always add up to All --%>
             <button

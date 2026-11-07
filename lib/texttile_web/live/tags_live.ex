@@ -140,7 +140,7 @@ defmodule TexttileWeb.TagsLive do
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </p>
         </div>
-        <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
+        <div id="tagsList" class={@tags != [] && "sm:border-t sm:border-hair"}>
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>
@@ -150,7 +150,7 @@ defmodule TexttileWeb.TagsLive do
             class="py-[8px] sm:py-[11px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
           >
             <b class="text-[14.5px] sm:text-[15px] break-words min-w-0">#{tag}</b>
-            <span class="note num flex-1 max-sm:order-3 max-sm:basis-full max-sm:-mt-1">
+            <span class="note num flex-1">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>
             <div :if={@editing != tag} class="flex gap-1 -mr-[10px] max-sm:ml-auto">

@@ -2113,7 +2113,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:pl-[33px] lg:pr-6 pt-[22px] lg:pt-[39px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:pl-[33px] lg:pr-6 pt-[22px] lg:pt-[33px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -2131,8 +2131,11 @@ defmodule TexttileWeb.EditorLive do
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="font-serif text-[18px] font-semibold">
                 {gettext("Gallery")}
-                <span class="note num font-normal" id="tileCount">{tile_count(@gallery)}</span>
-                <span class="note num font-normal" id="tileOnWay" phx-update="ignore"></span>
+                <span class="note num font-normal font-sans" id="tileCount">
+                  {tile_count(@gallery)}
+                </span>
+                <span class="note num font-normal font-sans" id="tileOnWay" phx-update="ignore">
+                </span>
               </span>
               <span class="sp max-sm:hidden"></span>
               <%!-- a finger holds, a pointer grabs: the hint says the one

@@ -346,6 +346,7 @@
 
   /* the field row: a semibold ink group name over its value */
   .drow { display: block; padding-top: 7px; padding-bottom: 7px; }
+  @media (max-width: 639px) { .drow { padding-top: 5px; padding-bottom: 5px; } }
   .drow > .lab { display: block; padding-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--tt-ink); }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
   .drow .hint { margin-top: 6px; font-size: 13px; line-height: 1.45; }
@@ -413,7 +414,7 @@
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
-  .cmt-acts { display: flex; gap: 4px; margin: 6px 0 -6px -10px; }
+  .cmt-acts { display: flex; gap: 4px; margin: 10px 0 -6px -10px; }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
     .cmt-acts { position: absolute; top: 8px; right: -10px; margin: 0; gap: 10px; }
@@ -658,10 +659,12 @@
       align-items: center; padding: 9px 44px 9px 0;
     }
     #cards .card .cimg { grid-row: span 2; width: 52px; }
-    /* without a picture there is nothing to show in the square, so the
-       words take the whole row */
-    #cards .card:has(.cimg.empty) { grid-template-columns: minmax(0, 1fr); }
-    #cards .card .cimg.empty { display: none; }
+    /* without a picture the square keeps its place, framed, with the
+       first words of the entry in small serif, so every title in the
+       list starts on the same edge, as on the desk */
+    #cards .card .cimg.empty:has(.cx) { padding: 6px 5px; }
+    #cards .card .cimg .cx { font-size: 8.5px; line-height: 1.25; -webkit-line-clamp: 4; }
+    #cards .card .cimg .cn { display: none; }
 
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }
@@ -1076,7 +1079,9 @@
   .bn-sep { color: var(--tt-slash); }
   /* the count after the screen's name in a phone bar, in the grey the
      numbers of the filters wear */
-  .bn-count { align-self: center; font-size: 14px; color: var(--tt-faint); margin-left: 2px; }
+  /* 6px after the name, as a tab's count sits after its label: the
+     name's own inner space is taken back */
+  .bn-count { align-self: center; font-size: 14px; font-weight: 500; color: var(--tt-faint); margin-left: -9px; }
   span.bn.on { box-shadow: none; padding-left: 0; }
   @media (max-width: 767px) {
     .barnav { margin-left: 0; }
@@ -1653,9 +1658,11 @@
      phone the field takes a line of its own and the choices stand under
      it, so the placeholder is never cut short by the count. */
   .searchrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 16px; }
-  /* the search is a tool beside the list, not its headline: it stops
-     short of the introduction's measure */
-  .searchrow input { flex: 1; min-width: 0; max-width: 480px; }
+  /* the search is a tool beside the list, not its headline: with the
+     year beside it, it ends on the right edge of the grid's second
+     column */
+  @media (min-width: 861px) { .searchrow { max-width: calc((100% - 56px) / 3 * 2 + 28px); } }
+  .searchrow input { flex: 1; min-width: 0; }
 
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   /* the count is a note on the search, so it stands under it at every
@@ -1709,8 +1716,8 @@
      takes it for the end of the text. */
   .textnav {
     display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 16px 0 18px;
-    border-top: 1px solid var(--tt-rule);
-    border-bottom: 1px solid var(--tt-rule);
+    border-top: 1px solid var(--tt-hair);
+    border-bottom: 1px solid var(--tt-hair);
   }
   .textnav .nx { text-align: right; }
   @media (max-width: 619px) {

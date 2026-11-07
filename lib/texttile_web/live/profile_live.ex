@@ -66,6 +66,18 @@ defmodule TexttileWeb.ProfileLive do
   # The address is the identity here, so moving it is not a field that
   # saves itself: it asks for the password first. A stolen session must
   # not be able to point the next password link at another inbox.
+  # The password and the button belong to a change, so they appear the
+  # moment the address differs from the saved one, and go again when it
+  # is typed back.
+  def handle_event("email_draft", %{"em" => %{"email" => email}}, socket) do
+    saved = socket.assigns.current_scope.user.email
+
+    {:noreply,
+     socket
+     |> assign(:email_form, to_form(%{"email" => email}, as: :em))
+     |> assign(:email_moved, String.trim(email) != saved)}
+  end
+
   def handle_event("set_email", %{"em" => em_params}, socket) do
     user = socket.assigns.current_scope.user
 
@@ -90,6 +102,7 @@ defmodule TexttileWeb.ProfileLive do
         {:noreply,
          socket
          |> assign(:email_note, nil)
+         |> assign(:email_moved, true)
          |> assign(:email_form, to_form(changeset, as: :em, action: :validate))}
     end
   end
@@ -146,6 +159,7 @@ defmodule TexttileWeb.ProfileLive do
     socket
     |> assign(:profile_form, to_form(%{"display_name" => user.display_name}, as: :user))
     |> assign(:email_form, to_form(%{"email" => user.email}, as: :em))
+    |> assign(:email_moved, false)
     |> assign_new(:pw_form, fn -> to_form(%{}, as: :pw) end)
   end
 
@@ -214,7 +228,7 @@ defmodule TexttileWeb.ProfileLive do
              The address is the identity, so it asks for the password
              the way the password itself does. --%>
         <h2 class="set-h">{gettext("Email")}</h2>
-        <.form for={@email_form} id="email-form" phx-submit="set_email">
+        <.form for={@email_form} id="email-form" phx-change="email_draft" phx-submit="set_email">
           <div class="drow">
             <span class="val">
               <span class="pairrow">
@@ -232,7 +246,9 @@ defmodule TexttileWeb.ProfileLive do
                     autocapitalize="off"
                   />
                 </span>
-                <span class="min-w-0">
+                <%!-- until the address differs from the saved one there is
+                     nothing to confirm: the field and its button wait --%>
+                <span :if={@email_moved} class="min-w-0">
                   <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-current">
                     {gettext("Current password")}
                   </label>
@@ -243,7 +259,9 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <button class="btn" type="submit" id="em-set">{gettext("Change email")}</button>
+                <button :if={@email_moved} class="btn" type="submit" id="em-set">
+                  {gettext("Change email")}
+                </button>
                 <.field_errors field={@email_form[:current_password]} />
                 <.field_errors field={@email_form[:email]} />
                 <div class="hint pairhint">

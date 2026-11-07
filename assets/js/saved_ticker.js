@@ -30,9 +30,10 @@ export function savedLine({at, now, wide}, say = t) {
 
   const fresh = (now - at) / 1000 < 20
 
-  // one stamp at every width: "Saved", then the clock of the save.
-  // `wide` is still read by callers; the words no longer depend on it.
-  void wide
+  // "Saved", then the clock of the save. A phone bar is full with the
+  // state, the logo and the button, so there the word stands alone and
+  // the clock waits in the tooltip.
+  if (!wide) return {text: say("Saved"), title}
   return {text: fresh ? say("Saved") : say("Saved %{time}", {time: clock}), title}
 }
 
