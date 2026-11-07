@@ -228,7 +228,7 @@
      in one row on the same top margin, so they start on one line. */
   @media (min-width: 1000px) {
     .admin-col.twocol {
-      display: grid; grid-template-columns: 128px minmax(0, 1fr);
+      display: grid; grid-template-columns: 152px minmax(0, 1fr);
       column-gap: 24px; align-items: start;
     }
     .admin-col.twocol > * { grid-column: 2; min-width: 0; }
@@ -267,7 +267,7 @@
   /* a bar of the chart: the accent mixed into the page, a step under
      the busiest bar, which wears the accent itself */
   .barc { background: color-mix(in srgb, var(--tt-accent) 38%, var(--tt-page)); }
-  .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; min-height: 2.9em; }
+  .fig .l { font-size: 13.5px; color: var(--tt-dim); margin-top: 2px; min-height: 2.9em; }
   .lab { font-size: 13px; color: var(--tt-dim); }
   .note { font-size: 13.5px; line-height: 1.5; color: var(--tt-faint); }
   .hint { font-size: 13px; line-height: 1.45; color: var(--tt-dim); margin-top: 6px; }
@@ -325,7 +325,7 @@
     padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
     font-size: 13px;
   }
-  .addr:has(> input[type=number]) { display: inline-flex; width: 150px; }
+  .addr:has(> input[type=number]) { display: inline-flex; width: 240px; max-width: 100%; }
   .addr > input:hover, .addr > input:focus {
     border: 0; background: none; box-shadow: none;
   }
@@ -382,7 +382,7 @@
 
      A field is as wide as what it holds: a title or a description can
      run, a choice out of three words cannot. */
-  select { max-width: 280px; }
+  select { max-width: 240px; }
   /* the editor's column is one field wide: every field fills it */
   .sidecol select { max-width: none; }
   textarea, select.wide { max-width: none; }
@@ -565,7 +565,7 @@
      entry, not the text to read, so a long opening ends in an ellipsis. */
   .card .cimg.empty:has(.cx), .card .cimg.words {
     display: block; overflow: hidden;
-    background: var(--tt-field); padding: 10% 11%;
+    background: var(--tt-field); padding: 8% 9%;
   }
   .card .cimg .cx {
     font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.5;
@@ -838,8 +838,8 @@
   }
   .ptab::-webkit-details-marker { display: none; }
   .ptab.on { color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent); }
-  /* a way down the page, not a tab: the accent of a link, no rule */
-  .ptab.jump { color: var(--tt-accent); }
+  /* a way down the page, not a tab: the tabs' quiet ink, and the arrow
+     says it jumps */
   .ptab-more { position: relative; margin-left: auto; }
   .ptab-more > .ptab { margin-right: 0; padding-right: 0; }
   .ptab-menu {
@@ -974,7 +974,7 @@
   }
 
   /* the second group start inside a settings block */
-  .drow.gtop { margin-top: 14px; padding-top: 9px; }
+  .drow.gtop { margin-top: 18px; padding-top: 0; }
 
   /* the thin progress bar of a running upload */
   .track { display: block; height: 6px; background: var(--tt-hair); border-radius: 3px; overflow: hidden; min-width: 80px; }
@@ -1033,9 +1033,11 @@
       padding-left: max(18px, calc((100% - 808px) / 2 + 18px));
       padding-right: max(24px, calc((100% - 808px) / 2 + 24px));
     }
+    /* the editor's words start 34px into its grid and its gallery ends
+       35px before the grid's edge, past the column's scrollbar lane */
     .bar-col.wide {
-      padding-left: max(18px, calc((100% - 1108px) / 2 + 18px));
-      padding-right: max(24px, calc((100% - 1108px) / 2 + 24px));
+      padding-left: max(18px, calc((100% - 1108px) / 2 + 28px));
+      padding-right: max(24px, calc((100% - 1108px) / 2 + 35px));
     }
   }
   /* THE ROW OF SECTIONS · every screen of the admin area in one line
@@ -1187,9 +1189,9 @@
   /* the "preview" flag on the chosen tile, bottom-right */
   .tile .cov {
     position: absolute; right: 5px; bottom: 5px;
-    font-size: 10.5px; font-weight: 600; color: var(--tt-onsolid); padding: 1px 7px;
-    border-radius: 999px;
-    background: var(--tt-solid);
+    font-size: 10.5px; font-weight: 600; color: #fff; padding: 1px 6px;
+    border-radius: var(--tt-radius-img);
+    background: rgb(var(--tt-overlay, 25 23 32) / .72);
   }
   /* the chosen tile wears the accent around it, the way a chosen
      filter wears it under its word */
@@ -1611,8 +1613,8 @@
   .ctag:hover { text-decoration: underline; text-underline-offset: 2px; }
   /* the archive's row of tags: each name and its count one target,
      a finger tall */
-  #tagbar .ctag { margin: 0; padding: 9px 0; line-height: 22px; }
-  #tagbar .ctag .cnt { margin-left: 3px; }
+  #tagbar .ctag { margin: 0; padding: 6px 0; line-height: 22px; }
+  #tagbar .ctag .cnt { margin-left: 6px; }
 
   /* the strip over an entry that is not live yet. Only an admin who is
      signed in is ever served one, so it stands quietly on the accent
@@ -1642,7 +1644,7 @@
   .pick { position: relative; flex: none; }
   .pick select {
     appearance: none; -webkit-appearance: none; width: auto; max-width: none;
-    font-weight: 600; color: var(--tt-ink); cursor: pointer;
+    font-weight: 400; color: var(--tt-ink); cursor: pointer;
     font-variant-numeric: tabular-nums;
   }
   /* the field size base.css gives a phone stays: iOS zooms on a smaller
@@ -1690,7 +1692,10 @@
   }
   .textnav .nx { text-align: right; }
   @media (max-width: 619px) {
-    .textnav { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .textnav { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 0 14px; }
+    .textnav .nx { text-align: left; }
+    .textnav .nx .lab::after { content: none; }
+    .textnav .nx .lab::before { content: "\2192\00a0"; color: var(--tt-dim); }
     .textnav .t {
       font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 2;
       -webkit-box-orient: vertical; overflow: hidden;
@@ -1911,6 +1916,7 @@
   .mdbar { overflow-x: auto; scrollbar-width: none; }
   .mdbar::-webkit-scrollbar { display: none; }
   .mdb { width: 40px; height: 40px; }
+  .mdsep { display: none; }
 }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2038,6 +2044,7 @@
 /* About stands in the foot of every page in the sans of the band, so
    its editor writes in that face, like its preview. Outside the layers,
    like every rule that has to outweigh CodeMirror's own. */
+#aboutBar { margin-left: 0; padding-left: 6px; }
 #setting-about_markdown .cm-scroller, #setting-about_markdown > textarea {
   font-family: var(--tt-font-sans); font-size: 15px; line-height: 1.6;
 }

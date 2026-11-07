@@ -390,18 +390,19 @@ defmodule TexttileWeb.SettingsLiveTest do
     end
 
     test "your own row cannot be deleted", %{conn: conn, user: user} do
-      _other = user_fixture(%{display_name: "julia"})
+      other = user_fixture(%{display_name: "julia"})
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "This one is you"
-      assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
+      # the row says "you" once and offers no Delete at all
+      refute html =~ ~s(id="delete-user-#{user.id}")
+      assert html =~ ~s(id="delete-user-#{other.id}")
     end
 
     test "the lone account explains why it cannot go", %{conn: conn, user: user} do
       {:ok, _view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "The only account left"
-      assert html =~ ~r/<button[^>]*id="delete-user-#{user.id}"[^>]*disabled/
+      refute html =~ ~s(id="delete-user-#{user.id}")
     end
   end
 

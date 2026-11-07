@@ -567,7 +567,7 @@ defmodule TexttileWeb.SettingsLive do
   defp delete_block(user, users, me) do
     case Accounts.delete_user_block(user, me, length(users)) do
       :last -> gettext("The only account left: deleting it would leave nobody who can sign in.")
-      :yourself -> gettext("This one is you")
+      :yourself -> nil
       nil -> nil
     end
   end
@@ -861,7 +861,7 @@ defmodule TexttileWeb.SettingsLive do
           </label>
           <div
             :if={resolved_front_page(@settings, @pages) != nil}
-            class="py-3 max-w-[280px]"
+            class="py-3 max-w-[240px]"
             id="front-page-choice"
           >
             <%!-- its own name: with the radios' name, its value would
@@ -883,7 +883,7 @@ defmodule TexttileWeb.SettingsLive do
               <select
                 id="setting-posts_per_page"
                 name="settings[posts_per_page]"
-                class="max-w-[120px]"
+                class="max-w-[240px]"
               >
                 <option
                   :for={size <- page_sizes(@settings.posts_per_page)}
@@ -960,7 +960,7 @@ defmodule TexttileWeb.SettingsLive do
               value={@settings_form[:site_password].value}
               placeholder={gettext("Choose a password")}
               phx-debounce="300"
-              class="max-w-[280px]"
+              class="max-w-[240px]"
             />
             <div class="hint">
               {gettext(
@@ -1029,14 +1029,16 @@ defmodule TexttileWeb.SettingsLive do
               <span class="sp"></span>
               <button
                 :if={Accounts.pending?(user)}
-                class="btn sm"
+                class="btn quiet sm"
                 id={"invite-again-#{user.id}"}
                 phx-click="invite_again"
                 phx-value-id={user.id}
               >
                 {gettext("Send the link again")}
               </button>
+              <%!-- your own row has no Delete: another admin removes it --%>
               <button
+                :if={user.id != @current_scope.user.id}
                 class="btn quiet sm danger"
                 id={"delete-user-#{user.id}"}
                 phx-click="ask_delete"
@@ -1118,7 +1120,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings_form[:image_max_edge].value}
                   min="800"
                   step="80"
-                  class="max-w-[120px]"
+                  class="max-w-[240px]"
                   phx-debounce="400"
                 />
                 <span class="pre">px</span>
@@ -1128,7 +1130,7 @@ defmodule TexttileWeb.SettingsLive do
               </p>
               <div class="hint">
                 {gettext(
-                  "Uploads are scaled down so the longer edge stays within this; nothing is ever scaled up. Originals are kept on disk. Display sizes are made on the fly when a page first needs them; changing this value drops the old cached sizes so nothing stale survives."
+                  "The longest edge a picture is shown at. Originals stay on disk, and nothing is scaled up."
                 )}
               </div>
             </span>
@@ -1148,7 +1150,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings_form[:video_max_edge].value}
                   min="480"
                   step="80"
-                  class="max-w-[120px]"
+                  class="max-w-[240px]"
                   phx-debounce="400"
                 />
                 <span class="pre">px</span>
@@ -1158,7 +1160,7 @@ defmodule TexttileWeb.SettingsLive do
               </p>
               <div class="hint">
                 {gettext(
-                  "An uploaded video is converted once, to one MP4 every browser plays, with the longer edge within this; nothing is ever scaled up. The original is kept on disk. ffmpeg does the work on one thread at the lowest priority, one video at a time, so the site stays quick while it runs. A new value applies to what is converted after the change; a video already converted keeps the file it has."
+                  "Videos are converted once to an MP4 with at most this edge, gently in the background. A new value applies to the next conversion."
                 )}
               </div>
             </span>
@@ -1180,7 +1182,7 @@ defmodule TexttileWeb.SettingsLive do
                   max="2048"
                   step="1"
                   phx-debounce="500"
-                  class="max-w-[120px]"
+                  class="max-w-[240px]"
                 />
                 <span class="note">{gettext("MB")}</span>
               </span>
@@ -1190,7 +1192,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <div class="hint">
               {gettext(
-                "One roof for a picture, for a video and for an import zip. The browser turns a bigger file away before it is uploaded, and the server stops reading one that arrives anyway. A phone film of a few minutes weighs a few hundred MB, and a zip that carries its pictures weighs more."
+                "The largest picture, video or import zip the site takes. A few minutes of phone video weigh a few hundred MB."
               )}
             </div>
           </div>
@@ -1248,7 +1250,7 @@ defmodule TexttileWeb.SettingsLive do
               db: @db_path
             )}
             {gettext(
-              "Both paths come from the install config and cannot change while the site runs. The volume is the whole installation; a copy of it is a copy of the site."
+              "Both paths come from the install config. The volume is the whole installation: a copy of it is a copy of the site."
             )}
           </div>
         </div>
@@ -1422,7 +1424,7 @@ defmodule TexttileWeb.SettingsLive do
                   value={@settings.backup_allowed_ips}
                   placeholder={gettext("Any address")}
                   phx-debounce="500"
-                  class="max-w-[280px]"
+                  class="max-w-[240px]"
                 />
                 <p :if={@errors[:backup_allowed_ips]} class="text-julia text-[13px] mt-[6px]">
                   {@errors[:backup_allowed_ips]}

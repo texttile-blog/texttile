@@ -101,7 +101,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> open("/admin/settings")
       |> assert_has("#user-#{julia.id}", text: "you")
-      |> assert_has("#delete-user-#{julia.id}[disabled]")
+      |> refute_has("#delete-user-#{julia.id}")
       |> click_button("#delete-user-#{kb.id}", "Delete")
       |> assert_has("h2", text: "Delete the account of kb?")
       |> click_button("#dialog-ok", "Delete the account")

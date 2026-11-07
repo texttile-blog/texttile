@@ -91,9 +91,9 @@ defmodule TexttileWeb.NewsletterLive do
         <Layouts.view_site />
       </:bar>
       <div class="admin-col">
-        <div>
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
           <h1 class="page-h">{gettext("Newsletter")}</h1>
-          <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
+          <span class="note num" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</span>
         </div>
         <div>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
@@ -150,10 +150,8 @@ defmodule TexttileWeb.NewsletterLive do
             </div>
           </div>
 
-          <p class="note mt-[22px]" id="newsletterRule">
-            {gettext(
-              "A reader who subscribes on the site confirms by mail first. An address you add here is confirmed at once. When an entry goes live with the subscriber mail on, every confirmed address gets it."
-            )}
+          <p class="hint mt-[16px]" id="newsletterRule">
+            {gettext("Readers confirm by mail first; an address added here is confirmed at once.")}
             <span :if={@protected?}>
               {gettext(
                 "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."

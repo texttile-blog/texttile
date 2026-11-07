@@ -170,7 +170,12 @@ defmodule TexttileWeb.CommentsLive do
       </:bar>
       <div class="admin-col">
         <div>
-          <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
+          <div class="flex items-baseline gap-[14px] flex-wrap">
+            <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
+            <span class="note num" id="commentsCount">
+              {ngettext("1 comment", "%{count} comments", @counts["all"])}
+            </span>
+          </div>
           <nav
             class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"
             id="commentFilter"
