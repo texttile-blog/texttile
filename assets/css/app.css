@@ -262,7 +262,7 @@
   /* a phone starts a form screen as close under the bar as a list: the
      first section has no air over it, and the rest stand a little closer */
   @media (max-width: 767px) {
-    .set-h { margin-top: 32px; margin-bottom: 8px; }
+    .set-h { margin-top: 40px; margin-bottom: 12px; }
     .admin-col > h2.set-h:first-of-type { margin-top: 0; }
   }
   /* the section heading on Stats: quieter than .set-h, because the
@@ -428,7 +428,7 @@
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
-  .cmt-acts { display: flex; gap: 4px; margin: 10px 0 -6px -10px; }
+  .cmt-acts { display: flex; gap: 4px; margin: 4px 0 -8px -10px; }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
     /* on the line of the entry and the moment, inside the row's
@@ -1959,7 +1959,7 @@
 .mdbar {
   position: sticky; top: 52px; z-index: 30;
   display: flex; align-items: center; gap: 2px;
-  margin: 10px -6px 0; padding: 4px 6px 4px;
+  margin: 18px -6px 0; padding: 4px 6px 4px;
   background: var(--tt-page);
 }
 @media (min-width: 1024px) { .mdbar { top: 0; } }
@@ -2217,3 +2217,18 @@ body.site .card-wrap .cm { font-size: 14px; }
 }
 .bar-me:hover { color: var(--tt-accent); }
 .bar-me.on { color: var(--tt-ink); font-weight: 600; }
+
+/* a phone comment row: the words, the actions close under them, then
+   the rule; a wave of spam fits more to the screen */
+@media (max-width: 639px) { .cmt { padding-top: 12px; padding-bottom: 12px; } }
+
+/* the save state is a state, not a link: the quietest grey, no rule
+   after it, and set apart before the account and View site */
+.saved { border-right: 0; padding-right: 0; margin-right: 14px; }
+.bar-me, #bar-view-site { order: 2; }
+
+/* the editor's body stands a clear step under its formatting bar */
+.ed-cm { margin-top: 10px; }
+
+/* the tags of an entry's line keep the middot rhythm of the line */
+#meta .mtag + .mtag::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }

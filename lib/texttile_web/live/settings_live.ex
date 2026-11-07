@@ -687,7 +687,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-[14px] pt-[14px] border-t border-hair">
+        <div class="flex items-center gap-[14px] pt-[14px] sm:border-t sm:border-hair">
           <span
             class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-logo"
@@ -701,7 +701,7 @@ defmodule TexttileWeb.SettingsLive do
             <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
           </span>
           <span class="flex flex-col flex-1 min-w-0">
-            <b>{gettext("Logo")}</b>
+            <span class="rowp">{gettext("Logo")}</span>
           </span>
           <button
             :if={@settings.logo}
@@ -743,7 +743,7 @@ defmodule TexttileWeb.SettingsLive do
             <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
           </span>
           <span class="flex flex-col flex-1 min-w-0">
-            <b>{gettext("Favicon")}</b>
+            <span class="rowp">{gettext("Favicon")}</span>
           </span>
           <button
             :if={@settings.favicon}
@@ -1004,7 +1004,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Users")}</.section>
-        <div id="usersList" class="border-t border-hair">
+        <div id="usersList" class="sm:border-t sm:border-hair">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
             <%!-- the name line keeps the height of its buttons in every
                  row, so name and address stand at one rhythm --%>

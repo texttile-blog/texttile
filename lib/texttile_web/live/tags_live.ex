@@ -134,7 +134,7 @@ defmodule TexttileWeb.TagsLive do
       <div class="admin-col">
         <%!-- the count stands under the heading, where every screen
              puts its line; a phone says it in its bar instead --%>
-        <div class="mb-1 md:mb-6">
+        <div class="mb-[9px] md:mb-6">
           <h1 class="page-h">{gettext("Tags")}</h1>
           <p class="lead !mb-0 num max-md:hidden" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}

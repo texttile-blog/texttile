@@ -52,7 +52,7 @@ defmodule TexttileWeb.StatsComponents do
       >
       </span>
       <span
-        class="absolute right-0 top-[10px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[10px] w-[38px] text-right text-[12px] leading-[16px] text-faint tabular-nums"
         id={"#{@id}Max"}
       >
         {number(@top)}
@@ -65,13 +65,13 @@ defmodule TexttileWeb.StatsComponents do
       </span>
       <span
         :if={@top > 1}
-        class="absolute right-0 top-[76px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[76px] w-[38px] text-right text-[12px] leading-[16px] text-faint tabular-nums"
         aria-hidden="true"
       >
         {number(div(@top, 2))}
       </span>
       <span
-        class="absolute right-0 top-[142px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[142px] w-[38px] text-right text-[12px] leading-[16px] text-faint tabular-nums"
         aria-hidden="true"
       >
         0

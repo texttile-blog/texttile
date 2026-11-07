@@ -39,7 +39,7 @@
             · {Articles.author_name(@article)}
           </span>
           <span :if={Articles.tag_list(@article) != []}>·</span>
-          <span :for={tag <- Articles.tag_list(@article)}>
+          <span :for={tag <- Articles.tag_list(@article)} class="mtag">
             <a href={~p"/tags/#{String.downcase(tag)}"} class="link">#{tag}</a>
           </span>
         <% end %>
