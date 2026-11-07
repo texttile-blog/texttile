@@ -284,7 +284,7 @@ msgstr[1] ""
 #: lib/texttile_web/controllers/site_html.ex:349
 #: lib/texttile_web/controllers/site_html.ex:357
 #: lib/texttile_web/live/import_live.ex:198
-#: lib/texttile_web/live/stats_live.ex:261
+#: lib/texttile_web/live/stats_live.ex:260
 #, elixir-autogen, elixir-format
 msgid "1 comment"
 msgid_plural "%{count} comments"
@@ -406,7 +406,7 @@ msgstr ""
 
 #: lib/texttile_web/live/editor_live.ex:2260
 #: lib/texttile_web/live/profile_live.ex:234
-#: lib/texttile_web/live/stats_live.ex:301
+#: lib/texttile_web/live/stats_live.ex:300
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -736,7 +736,7 @@ msgid "Downloads from: %{hosts}. Check this list for hosts you do not expect."
 msgstr ""
 
 #: lib/texttile_web/components/core_components.ex:500
-#: lib/texttile_web/live/stats_live.ex:367
+#: lib/texttile_web/live/stats_live.ex:366
 #: lib/texttile_web/live/texts_live.ex:363
 #, elixir-autogen, elixir-format
 msgid "Draft"
@@ -1202,7 +1202,7 @@ msgid "Nothing counted in these days yet. The first reader who opens a page draw
 msgstr ""
 
 #: lib/texttile_web/live/editor_live.ex:2006
-#: lib/texttile_web/live/stats_live.ex:286
+#: lib/texttile_web/live/stats_live.ex:285
 #, elixir-autogen, elixir-format
 msgid "Nothing counted yet, so there is nowhere readers came from."
 msgstr ""
@@ -1868,12 +1868,12 @@ msgstr ""
 msgid "The %{mark} is the Texttile mark again"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:290
+#: lib/texttile_web/live/stats_live.ex:289
 #, elixir-autogen, elixir-format
 msgid "The %{rows} biggest sources. What the shares leave short of a hundred came from the others."
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:314
+#: lib/texttile_web/live/stats_live.ex:313
 #, elixir-autogen, elixir-format
 msgid "The %{rows} most read addresses."
 msgstr ""
@@ -2254,7 +2254,7 @@ msgstr ""
 #: lib/texttile_web/live/stats_live.ex:157
 #: lib/texttile_web/live/stats_live.ex:193
 #: lib/texttile_web/live/stats_live.ex:237
-#: lib/texttile_web/live/stats_live.ex:302
+#: lib/texttile_web/live/stats_live.ex:301
 #, elixir-autogen, elixir-format
 msgid "Views"
 msgstr ""
@@ -2713,7 +2713,7 @@ msgstr ""
 msgid "Size"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:78
+#: lib/texttile_web/js_strings.ex:77
 #, elixir-autogen, elixir-format
 msgid "The last save was at %{time}."
 msgstr ""
@@ -3286,17 +3286,17 @@ msgid_plural "%{count} people"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/live/stats_live.ex:330
+#: lib/texttile_web/live/stats_live.ex:329
 #, elixir-autogen, elixir-format
 msgid "30 days"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:329
+#: lib/texttile_web/live/stats_live.ex:328
 #, elixir-autogen, elixir-format
 msgid "7 days"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:331
+#: lib/texttile_web/live/stats_live.ex:330
 #, elixir-autogen, elixir-format
 msgid "90 days"
 msgstr ""
@@ -3306,7 +3306,7 @@ msgstr ""
 msgid "No entry has been read in these days. The first reader who opens one puts it here."
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:296
+#: lib/texttile_web/live/stats_live.ex:295
 #, elixir-autogen, elixir-format
 msgid "Other addresses"
 msgstr ""
@@ -3322,7 +3322,7 @@ msgstr ""
 msgid "Read"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:284
+#: lib/texttile_web/live/stats_live.ex:283
 #, elixir-autogen, elixir-format
 msgid "Referrers"
 msgstr ""
@@ -3337,12 +3337,12 @@ msgstr ""
 msgid "people"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:339
+#: lib/texttile_web/live/stats_live.ex:338
 #, elixir-autogen, elixir-format
 msgid ", by month"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:338
+#: lib/texttile_web/live/stats_live.ex:337
 #, elixir-autogen, elixir-format
 msgid ", by week"
 msgstr ""
@@ -3420,7 +3420,7 @@ msgid "Month"
 msgstr ""
 
 #: lib/texttile_web/controllers/site_html/texts.html.heex:46
-#: lib/texttile_web/live/stats_live.ex:332
+#: lib/texttile_web/live/stats_live.ex:331
 #: lib/texttile_web/live/texts_live.ex:204
 #, elixir-autogen, elixir-format
 msgid "Year"
@@ -3844,7 +3844,7 @@ msgstr ""
 msgid "A page you choose. The list of entries stays at /blog."
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:318
+#: lib/texttile_web/live/stats_live.ex:317
 #, elixir-autogen, elixir-format
 msgid "A reader is a new number each day, made with a secret the server forgets every night, so nothing links two days. A page counts once per reader every half hour. Bots and prefetches do not count."
 msgstr ""
@@ -3894,11 +3894,6 @@ msgstr ""
 msgid "%{date}, %{time}"
 msgstr ""
 
-#: lib/texttile_web/js_strings.ex:77
-#, elixir-autogen, elixir-format
-msgid "Saved %{time}"
-msgstr ""
-
 #: lib/texttile_web/live/profile_live.ex:259
 #, elixir-autogen, elixir-format
 msgid "Change email"
@@ -3920,7 +3915,7 @@ msgstr ""
 msgid "Gallery"
 msgstr ""
 
-#: lib/texttile_web/live/stats_live.ex:333
+#: lib/texttile_web/live/stats_live.ex:332
 #, elixir-autogen, elixir-format
 msgid "All time"
 msgstr ""

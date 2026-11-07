@@ -255,10 +255,9 @@ defmodule TexttileWeb.StatsLive do
                         {Articles.display_title(row.article)}
                       </.link>
                       <span class="sm:hidden block text-[12.5px] text-faint num">
-                        <.published_cell article={row.article} /><span :if={
-                          Map.get(@comment_counts, row.article.id, 0) > 0
-                        }>
-                           ·  {ngettext(
+                        <.published_cell article={row.article} />
+                        <span :if={Map.get(@comment_counts, row.article.id, 0) > 0}>
+                          · {ngettext(
                             "1 comment",
                             "%{count} comments",
                             Map.get(@comment_counts, row.article.id, 0)

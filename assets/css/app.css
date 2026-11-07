@@ -1613,11 +1613,9 @@
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     align-items: start;
   }
+  /* one card to a row on a phone, the picture square as on a desk */
   @media (max-width: 560px) {
     .cards { grid-template-columns: 1fr; gap: 32px; }
-    /* one card to a row: a landscape picture, so the title arrives
-       before the thumb has scrolled a whole screen */
-    body.site .card .cimg { aspect-ratio: 16 / 10; }
   }
   /* the card itself is the admin area's .card (same proportions, same
      two-line title, same hover); the reader only adds the link reset

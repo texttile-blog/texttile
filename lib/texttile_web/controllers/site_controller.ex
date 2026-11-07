@@ -606,8 +606,6 @@ defmodule TexttileWeb.SiteController do
 
     conn
     |> assign(:page_title, if(home?, do: nil, else: Articles.display_title(article)))
-    # a post stands in the blog, so Blog stays open in the menu; a
-    # page is a place of its own
     |> assign(:active, active_for(article, home?))
     |> merge_assigns(metadata)
     |> assign(:count_entry, countable_entry(conn, article))
@@ -646,12 +644,14 @@ defmodule TexttileWeb.SiteController do
     end
   end
 
-  # The entry the beacon names, if this page counts at all and the
-  # entry is one a reader can read.
+  # What the menu marks as open: a post stands in the blog, so Blog
+  # stays open; a page is a place of its own.
   defp active_for(_article, true), do: :home
   defp active_for(%{type: "post"}, _home?), do: :texts
   defp active_for(article, _home?), do: article.id
 
+  # The entry the beacon names, if this page counts at all and the
+  # entry is one a reader can read.
   defp countable_entry(conn, %Article{id: id} = article) do
     if Visibility.live?(article) and conn.assigns[:count_view], do: id
   end
