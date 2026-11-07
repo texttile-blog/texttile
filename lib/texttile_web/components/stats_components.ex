@@ -170,7 +170,7 @@ defmodule TexttileWeb.StatsComponents do
         <tbody>
           <tr :for={row <- @rows}>
             <td>{row.host || gettext("direct")}</td>
-            <td class="align-middle">
+            <td class="align-middle pl-3">
               <span class="track share"><i style={"width:#{row.share}%"}></i></span>
             </td>
             <td class="text-right num">{row.share}</td>

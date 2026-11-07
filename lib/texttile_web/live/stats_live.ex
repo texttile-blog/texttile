@@ -129,13 +129,13 @@ defmodule TexttileWeb.StatsLive do
               {gettext("views")}<span class="block">{moved(@summary.views, @summary.before, :views)}</span>
             </div>
           </div>
-          <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
+          <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
               {gettext("people")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
             </div>
           </div>
-          <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
+          <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
               {gettext("busiest day")}<span
@@ -149,6 +149,9 @@ defmodule TexttileWeb.StatsLive do
 
         <h2 class="sec-h">{window_label(gettext("Views"), @days)}{step_label(@step)}</h2>
         <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
+        <p :if={@summary.busiest} class="hint" id="chartKey">
+          {gettext("The dark bar is the busiest day. Open a bar for its entries and sources.")}
+        </p>
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">
           <p class="text-[15px] font-semibold" id="barTitle">
@@ -228,7 +231,7 @@ defmodule TexttileWeb.StatsLive do
                   </.link>
                 </td>
                 <td class="text-right num hidden sm:table-cell">
-                  {published_cell(row.article)}
+                  <.published_cell article={row.article} />
                 </td>
                 <td class="text-right num">{number(row.views)}</td>
                 <td class="text-right num people">{number(row.people)}</td>
@@ -320,12 +323,26 @@ defmodule TexttileWeb.StatsLive do
 
   defp busiest_day({day, _views}), do: day_label(day)
 
-  # The Published cell speaks the entries grid's words for a state.
-  defp published_cell(%{status: "draft"}), do: gettext("Draft")
+  # The day an entry went out, behind the mark the Entries grid gives
+  # its state: filled once it is live, half while it waits for its day.
+  # A draft has no day yet, so it says so in grey and nothing else.
+  attr :article, :any, required: true
 
-  defp published_cell(%{status: "scheduled", publish_date: day}) when not is_nil(day),
-    do: gettext("Scheduled") <> " · " <> Texttile.I18n.format_short_date(day)
+  defp published_cell(%{article: %{status: "draft"}} = assigns) do
+    ~H"""
+    <span class="text-faint">{gettext("Draft")}</span>
+    """
+  end
 
-  defp published_cell(%{publish_date: nil}), do: ""
-  defp published_cell(%{publish_date: day}), do: Texttile.I18n.format_short_date(day)
+  defp published_cell(%{article: %{publish_date: nil}} = assigns), do: ~H""
+
+  defp published_cell(assigns) do
+    ~H"""
+    <span class="whitespace-nowrap">
+      <i class={["mk", @article.status]} aria-hidden="true"></i>{Texttile.I18n.format_short_date(
+        @article.publish_date
+      )}
+    </span>
+    """
+  end
 end

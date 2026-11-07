@@ -771,7 +771,9 @@ defmodule TexttileWeb.SettingsLive do
         </p>
 
         <.section>{gettext("About")}</.section>
-        <label class="block text-[13px] font-medium text-ink mb-[2px]" for="setting-about_markdown">
+        <%!-- the section names the one field, so its label is for a
+             screen reader only --%>
+        <label class="sr" for="setting-about_markdown">
           {gettext("About this blog")}
         </label>
         <%!-- the editor of an entry, with the pictures taken out: About
@@ -1017,26 +1019,31 @@ defmodule TexttileWeb.SettingsLive do
                 <span class="dot live"></span>{gettext("here now")}
               </span>
               <span class="sp"></span>
-              <button
-                :if={Accounts.pending?(user)}
-                class="btn quiet sm"
-                id={"invite-again-#{user.id}"}
-                phx-click="invite_again"
-                phx-value-id={user.id}
-              >
-                {gettext("Send the link again")}
-              </button>
-              <%!-- your own row has no Delete: another admin removes it --%>
-              <button
-                :if={user.id != @current_scope.user.id}
-                class="btn quiet sm danger"
-                id={"delete-user-#{user.id}"}
-                phx-click="ask_delete"
-                phx-value-id={user.id}
-                disabled={delete_block(user, @users, @current_scope.user) != nil}
-              >
-                {gettext("Delete")}
-              </button>
+              <%!-- a quiet button carries its padding as a gutter, so the
+                   pair steps out by it and the words end on the column
+                   edge like every other row action --%>
+              <span class="flex gap-1 -mr-[10px]">
+                <button
+                  :if={Accounts.pending?(user)}
+                  class="btn quiet sm"
+                  id={"invite-again-#{user.id}"}
+                  phx-click="invite_again"
+                  phx-value-id={user.id}
+                >
+                  {gettext("Send the link again")}
+                </button>
+                <%!-- your own row has no Delete: another admin removes it --%>
+                <button
+                  :if={user.id != @current_scope.user.id}
+                  class="btn quiet sm danger"
+                  id={"delete-user-#{user.id}"}
+                  phx-click="ask_delete"
+                  phx-value-id={user.id}
+                  disabled={delete_block(user, @users, @current_scope.user) != nil}
+                >
+                  {gettext("Delete")}
+                </button>
+              </span>
             </div>
             <%!-- why the Delete is off, if it is. It is the one thing
                  on the row that is not a fact about the account, so it
@@ -1160,7 +1167,7 @@ defmodule TexttileWeb.SettingsLive do
           <div class="drow">
             <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
             <span class="val">
-              <span class="flex items-baseline gap-[7px]">
+              <span class="addr">
                 <input
                   type="number"
                   id="setting-max_upload_mb"
@@ -1172,7 +1179,7 @@ defmodule TexttileWeb.SettingsLive do
                   phx-debounce="500"
                   class="sm:max-w-[240px]"
                 />
-                <span class="note">{gettext("MB")}</span>
+                <span class="pre">{gettext("MB")}</span>
               </span>
               <p :if={@errors[:max_upload_mb]} class="text-julia text-[13px] mt-[6px]">
                 {gettext("The value must be %{rule}.", rule: @errors[:max_upload_mb])}

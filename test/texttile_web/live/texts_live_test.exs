@@ -56,7 +56,9 @@ defmodule TexttileWeb.TextsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
       assert has_element?(view, "#cards .card", "Fourteen doors")
-      assert has_element?(view, "#gridCount", "1 entry")
+      # the count stands in its filter, and no line says it again
+      assert has_element?(view, "[data-f=all] .num", "1")
+      refute has_element?(view, "#gridCount")
 
       # the state with its day, and who it is by apart from them
       assert has_element?(view, "#cards .card .cm .bit", "Draft")
@@ -120,6 +122,8 @@ defmodule TexttileWeb.TextsLiveTest do
       view |> element("#grid-search") |> render_change(%{q: "wooden"})
       assert has_element?(view, "#cards .card", "Doors")
       refute has_element?(view, "#cards .card", "Trains")
+      # a narrowed grid says how much of all it shows
+      assert has_element?(view, "#gridCount", "1 of 2")
     end
   end
 
@@ -144,7 +148,7 @@ defmodule TexttileWeb.TextsLiveTest do
       assert has_element?(view, "#cards .card", "Text 5")
       assert has_element?(view, "#cards .card", "Text 4")
       refute has_element?(view, "#cards .card", "Text 3")
-      assert has_element?(view, "#gridCount", "5 entries")
+      assert has_element?(view, "[data-f=all] .num", "5")
       assert has_element?(view, "#pager", "Page 1 of 3")
 
       view |> element("#next-page") |> render_click()

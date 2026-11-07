@@ -194,7 +194,6 @@ defmodule TexttileWeb.CoreComponents do
   attr :id, :string, required: true
   attr :files, :boolean, default: true
   attr :readonly, :boolean, default: false
-  attr :note, :string, default: nil
   attr :class, :any, default: nil
 
   def md_bar(assigns) do
@@ -371,8 +370,6 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M2.6 11.4 6.5 8l3 2.6 1.9-1.6 2.2 2" />
         </svg>
       </button>
-      <span class="sp"></span>
-      <span :if={@note} class="note hidden sm:inline self-center">{@note}</span>
     </div>
     """
   end

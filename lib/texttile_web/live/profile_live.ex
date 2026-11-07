@@ -236,7 +236,7 @@ defmodule TexttileWeb.ProfileLive do
                 </span>
                 <span class="min-w-0">
                   <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-current">
-                    {gettext("Your password")}
+                    {gettext("Current password")}
                   </label>
                   <input
                     type="password"

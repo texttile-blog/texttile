@@ -57,7 +57,23 @@ defmodule TexttileWeb.TextsLive do
     # the whole grid: the bodies of every entry are far too much to
     # carry here a second time just to compare them.
     |> assign(:pending, Articles.entries_with_unpublished_changes())
-    |> assign(:total, length(Articles.list_articles()))
+    |> assign_counts()
+  end
+
+  # What each filter holds, written into its tab the way the Comments
+  # filters carry theirs; the search and the period narrow the grid,
+  # not these.
+  defp assign_counts(socket) do
+    all = Articles.list_articles()
+    count = fn status -> Enum.count(all, &(&1.status == status)) end
+
+    socket
+    |> assign(:total, length(all))
+    |> assign(:counts, %{
+      "all" => length(all),
+      "published" => count.("published"),
+      "draft" => count.("draft")
+    })
   end
 
   def handle_event("filter", %{"filter" => filter}, socket) do
@@ -113,13 +129,16 @@ defmodule TexttileWeb.TextsLive do
         <Layouts.view_site />
       </:bar>
       <div class="admin-col">
+        <%!-- the counts live in the filters, as on Comments; a line of
+             its own speaks only while a search or a period narrows the
+             grid --%>
         <div class="flex items-baseline gap-[14px] flex-wrap">
           <h1 class="page-h">{gettext("Entries")}</h1>
-          <span class="note num" id="gridCount">{entry_count(@shown, @total)}</span>
-          <span class="sp"></span>
-          <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
+          <span :if={@q != "" or @year} class="note num" id="gridCount">
+            {entry_count(@shown, @total)}
+          </span>
         </div>
-        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-[8px] sm:mt-6 mb-3 sm:mb-6">
+        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
           <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
             <button
               :for={
@@ -134,42 +153,49 @@ defmodule TexttileWeb.TextsLive do
               phx-click="filter"
               phx-value-filter={value}
             >
-              {label}
+              {label} <span class="num opacity-60">{@counts[value]}</span>
             </button>
           </span>
-          <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
-            <input
-              type="search"
-              name="q"
-              value={@q}
-              placeholder={gettext("Search title, tags, text")}
-              aria-label={gettext("Search entries")}
-              autocomplete="off"
-              phx-debounce="200"
-              class="max-sm:order-2 max-sm:basis-full w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
-            />
-          </form>
-          <%!-- the archive, the way the reader's list offers it: a year,
-               then the months of that year that carry entries, each with
-               its count; the counts follow the search and the filter --%>
-          <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
-            <span class="pick">
-              <select name="year" id="years" aria-label={gettext("Year")}>
-                <option value="">{gettext("All years")}</option>
-                <option :for={{year, count} <- @years} value={year} selected={@year == year}>
-                  {year} ({count})
-                </option>
-              </select>
-            </span>
-            <span :if={@months != []} class="pick">
-              <select name="month" id="months" aria-label={gettext("Month")}>
-                <option value="">{gettext("All months")}</option>
-                <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
-                  {Texttile.I18n.month_name(month)}
-                </option>
-              </select>
-            </span>
-          </form>
+          <%!-- the one primary action ends the row of filters, on a phone
+               as on a desk, so it never needs a row of its own --%>
+          <button class="btn solid ml-auto sm:order-last" id="new-text" phx-click="new_text">
+            {gettext("New entry")}
+          </button>
+          <div class="flex items-center gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0">
+            <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
+              <input
+                type="search"
+                name="q"
+                value={@q}
+                placeholder={gettext("Search title, tags, text")}
+                aria-label={gettext("Search entries")}
+                autocomplete="off"
+                phx-debounce="200"
+                class="w-auto grow shrink basis-[160px] min-w-0"
+              />
+            </form>
+            <%!-- the archive, the way the reader's list offers it: a year,
+                 then the months of that year that carry entries, each with
+                 its count; the counts follow the search and the filter --%>
+            <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
+              <span class="pick">
+                <select name="year" id="years" aria-label={gettext("Year")}>
+                  <option value="">{gettext("All years")}</option>
+                  <option :for={{year, count} <- @years} value={year} selected={@year == year}>
+                    {year} ({count})
+                  </option>
+                </select>
+              </span>
+              <span :if={@months != []} class="pick">
+                <select name="month" id="months" aria-label={gettext("Month")}>
+                  <option value="">{gettext("All months")}</option>
+                  <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
+                    {Texttile.I18n.month_name(month)}
+                  </option>
+                </select>
+              </span>
+            </form>
+          </div>
         </div>
         <div
           class="grid items-start gap-y-0 sm:gap-y-[26px] gap-x-4 md:gap-y-8 md:gap-x-5 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
