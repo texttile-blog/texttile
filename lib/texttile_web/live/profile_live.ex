@@ -197,7 +197,7 @@ defmodule TexttileWeb.ProfileLive do
       <div class="admin-col twocol">
         <h1 class="page-h">{gettext("Your profile")}</h1>
 
-        <h2 class="set-h">{gettext("Name")}</h2>
+        <h2 class="set-h on-field">{gettext("Name")}</h2>
         <%!-- fields to type into, so they look like fields; the same
              treatment the Site block of Settings wears --%>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
@@ -225,7 +225,7 @@ defmodule TexttileWeb.ProfileLive do
         <%!-- The one field on this screen that does not save itself.
              The address is the identity, so it asks for the password
              the way the password itself does. --%>
-        <h2 class="set-h">{gettext("Email")}</h2>
+        <h2 class="set-h on-field">{gettext("Email")}</h2>
         <.form for={@email_form} id="email-form" phx-change="email_draft" phx-submit="set_email">
           <div class="drow">
             <span class="val">

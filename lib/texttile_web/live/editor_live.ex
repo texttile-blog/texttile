@@ -2262,11 +2262,8 @@ defmodule TexttileWeb.EditorLive do
             <div class="drow pt-0.5">
               <span class="lab">{gettext("Address")}</span>
               <span class="val">
-                <%!-- the fixed part of the address on a quiet line of its
-                     own, so the field holds only what can be edited --%>
-                <span class="block text-[12.5px] text-faint mb-[4px] break-all" id="slugPrefix">
-                  {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}
-                </span>
+                <%!-- the field holds only what can be edited; the whole
+                     address stands in the line under it --%>
                 <span class="addr">
                   <input
                     type="text"
@@ -2286,6 +2283,9 @@ defmodule TexttileWeb.EditorLive do
                   id="slugHint"
                   data-live={@article.status != "draft" && Articles.public_path(@article)}
                 >
+                  <span class="block break-all" id="slugPrefix">
+                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
+                  </span>
                   {slug_hint(@article)}
                 </div>
                 <%!-- every address this entry used to answer at. They

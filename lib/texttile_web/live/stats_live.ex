@@ -245,15 +245,24 @@ defmodule TexttileWeb.StatsLive do
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
                 <td class="pr-5">
-                  <%!-- a phone has no Date column: the mark of the state goes
-                       before the title, so a draft is never read as live --%>
+                  <%!-- the mark of the state before the title, once per row;
+                       a phone, which has no Date and Comments columns, says
+                       them on a line under the title --%>
                   <span class="flex items-baseline">
-                    <i class={["mk sm:hidden flex-none", row.article.status]} aria-hidden="true"></i><.link
-                      class="link min-w-0"
-                      navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}
-                    >
-                      {Articles.display_title(row.article)}
-                    </.link>
+                    <i class={["mk flex-none", row.article.status]} aria-hidden="true"></i>
+                    <span class="min-w-0">
+                      <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
+                        {Articles.display_title(row.article)}
+                      </.link>
+                      <span class="sm:hidden block text-[12.5px] text-faint num">
+                        <.published_cell article={row.article} />
+                        · {ngettext(
+                          "1 comment",
+                          "%{count} comments",
+                          Map.get(@comment_counts, row.article.id, 0)
+                        )}
+                      </span>
+                    </span>
                   </span>
                 </td>
                 <td class="num hidden sm:table-cell">
@@ -345,15 +354,14 @@ defmodule TexttileWeb.StatsLive do
 
   defp busiest_day({day, _views}), do: day_label(day)
 
-  # The day an entry went out, behind the mark the Entries grid gives
-  # its state: filled once it is live, half while it waits for its day.
-  # A draft has no day yet: its grey ring and the word.
+  # The day an entry went out, or the word Draft in grey while it has
+  # none; the mark of the state stands before the title.
   attr :article, :any, required: true
 
   defp published_cell(%{article: %{status: "draft"}} = assigns) do
     ~H"""
     <span class="whitespace-nowrap text-faint">
-      <i class="mk draft" aria-hidden="true"></i>{gettext("Draft")}
+      {gettext("Draft")}
     </span>
     """
   end
@@ -363,9 +371,7 @@ defmodule TexttileWeb.StatsLive do
   defp published_cell(assigns) do
     ~H"""
     <span class="whitespace-nowrap">
-      <i class={["mk", @article.status]} aria-hidden="true"></i>{Texttile.I18n.format_short_date(
-        @article.publish_date
-      )}
+      {Texttile.I18n.format_short_date(@article.publish_date)}
     </span>
     """
   end
