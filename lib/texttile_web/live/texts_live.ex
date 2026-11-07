@@ -106,7 +106,7 @@ defmodule TexttileWeb.TextsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col">
         <div class="flex items-baseline gap-[14px] flex-wrap">
           <h1 class="page-h">{gettext("Entries")}</h1>
           <span class="note num" id="gridCount">{entry_count(@shown, @total)}</span>
@@ -200,12 +200,16 @@ defmodule TexttileWeb.TextsLive do
               <%= if cover = @covers[article.id] do %>
                 <span class="cimg" style={cover_bg(cover)}></span>
               <% else %>
-                <%!-- an entry of words alone shows its opening words,
-                     set like a page; an empty one says what is missing --%>
+                <%!-- an entry of words alone shows its opening words, and
+                     an empty one says what is missing. The small square
+                     of the phone list carries the first letter instead. --%>
                 <span class="cimg empty">
                   <span :if={Articles.lead(article) != ""} class="cx">{Articles.lead(article)}</span>
                   <span :if={Articles.lead(article) == ""} class="cn">
                     {gettext("no images yet")}
+                  </span>
+                  <span class="ci" aria-hidden="true">
+                    {String.first(Articles.display_title(article))}
                   </span>
                 </span>
               <% end %>
@@ -305,12 +309,18 @@ defmodule TexttileWeb.TextsLive do
     bits =
       case article.status do
         "draft" ->
-          [gettext("draft"), Texttile.I18n.format_plain_day(article.updated_at)]
+          [
+            gettext("draft"),
+            Texttile.I18n.format_short_date(DateTime.to_date(article.updated_at))
+          ]
 
         "scheduled" ->
           [
             if(article.publish_date,
-              do: gettext("goes live %{date}", date: article.publish_date),
+              do:
+                gettext("goes live %{date}",
+                  date: Texttile.I18n.format_short_date(article.publish_date)
+                ),
               else: gettext("scheduled, no date yet")
             )
           ]
@@ -320,8 +330,11 @@ defmodule TexttileWeb.TextsLive do
           # this grid is the one place that shows every entry at once
           # and is where somebody looks for what is still open.
           if pending?,
-            do: [to_string(article.publish_date), gettext("edited since publishing")],
-            else: [to_string(article.publish_date)]
+            do: [
+              Texttile.I18n.format_short_date(article.publish_date),
+              gettext("edited since publishing")
+            ],
+            else: [Texttile.I18n.format_short_date(article.publish_date)]
       end
 
     bits = if article.type == "page", do: [gettext("page") | bits], else: bits

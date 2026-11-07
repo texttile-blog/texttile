@@ -600,6 +600,6 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#commentsRule", "within 3 days goes for good")
 
     {:ok, _} = Settings.put(:comments_require_confirmation, false)
-    assert has_element?(view, "#commentsRule", "nobody confirms anything")
+    assert has_element?(view, "#commentsRule", "Comments appear the moment a reader sends them")
   end
 end

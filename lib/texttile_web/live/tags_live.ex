@@ -130,7 +130,7 @@ defmodule TexttileWeb.TagsLive do
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col narrow">
         <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
           <h1 class="page-h">{gettext("Tags")}</h1>
           <span class="note num" id="tagsCount">
@@ -146,12 +146,14 @@ defmodule TexttileWeb.TagsLive do
             id={"tagrow-#{tag_id(tag)}"}
             class="py-[14px] border-b border-hair flex items-center gap-[10px] flex-wrap"
           >
-            <b class="text-[14.5px] break-words min-w-0 max-w-full">{tag}</b>
-            <span class="note">{ngettext("1 entry", "%{count} entries", count)}</span>
-            <div :if={@editing != tag} class="ml-auto flex gap-2">
+            <b class="text-[14.5px] break-words min-w-0 flex-1">{tag}</b>
+            <span class="note num w-[88px] text-right">
+              {ngettext("1 entry", "%{count} entries", count)}
+            </span>
+            <div :if={@editing != tag} class="flex gap-1 -mr-[10px]">
               <button
                 type="button"
-                class="btn sm"
+                class="btn quiet sm"
                 id={"edit-tag-#{tag_id(tag)}"}
                 phx-click="edit_tag"
                 phx-value-tag={tag}
@@ -160,7 +162,7 @@ defmodule TexttileWeb.TagsLive do
               </button>
               <button
                 type="button"
-                class="btn sm"
+                class="btn quiet sm danger"
                 id={"delete-tag-#{tag_id(tag)}"}
                 phx-click="ask_delete_tag"
                 phx-value-tag={tag}

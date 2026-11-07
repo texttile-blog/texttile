@@ -125,8 +125,8 @@ defmodule Texttile.SettingsTest do
 
   describe "theme_color/0" do
     test "answers the bar of the iris theme, laid over the page" do
-      # --tt-bar is rgba(255, 255, 255, .94) over the #f7f5f1 page
-      assert Settings.theme_color() == "#fffefe"
+      # --tt-bar is rgba(247, 245, 241, .92) over the #f7f5f1 page
+      assert Settings.theme_color() == "#f7f5f1"
     end
 
     test "reads the bar out of a stored theme" do
@@ -156,36 +156,6 @@ defmodule Texttile.SettingsTest do
     test "a bar nobody can read falls back to the page" do
       {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #123456; --tt-bar: chartreuse; }")
       assert Settings.theme_color() == "#123456"
-    end
-  end
-
-  # The bar of the admin area is the paper of the theme, and the chrome
-  # on a phone sits against it.
-  describe "admin_theme_color/0" do
-    test "answers the paper of the iris theme" do
-      assert Settings.admin_theme_color() == "#ffffff"
-    end
-
-    test "reads the paper out of a stored theme" do
-      {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #101010; --tt-paper: #204080; }")
-      assert Settings.admin_theme_color() == "#204080"
-    end
-
-    test "a theme without paper answers white" do
-      {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #f6f3ee; --tt-bar: #eeeeee; }")
-
-      assert Settings.admin_theme_color() == "#ffffff"
-      assert Settings.theme_color() == "#eeeeee"
-    end
-
-    test "a translucent paper is laid over the page colour" do
-      {:ok, _} =
-        Settings.put(
-          :theme_css,
-          ":root { --tt-page: #000000; --tt-paper: rgba(255,255,255,.5); }"
-        )
-
-      assert Settings.admin_theme_color() == "#808080"
     end
   end
 

@@ -290,21 +290,15 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  How wide the pictures under a text stand.
-
-  Three or fewer are not a gallery. They belong to the text, so they
-  keep the reading column: one fills it, two halve it, three third it.
-  The wide grid, which leaves the column on both sides, begins at four
-  - that is where a block of tiles reads as a set of its own.
+  The shape of the pictures under a text. They keep the reading column
+  at every count: one fills it, two halve it, and from three on they
+  stand in the one grid, two to a row on a phone and three on a desk.
   """
-  def gallery_wrap(gallery) when length(gallery) < 4, do: "wrap narrow"
-  def gallery_wrap(_gallery), do: "wrap"
-
-  @doc "The shape of the tile grid, see `gallery_wrap/1`."
-  def gallery_shape(gallery) when length(gallery) < 4, do: "gal-#{length(gallery)}"
+  def gallery_shape([_one]), do: "gal-1"
+  def gallery_shape([_one, _two]), do: "gal-2"
   def gallery_shape(_gallery), do: nil
 
-  @doc "Which use a tile fetches its picture at, see `gallery_wrap/1`."
+  @doc "Which use a tile fetches its picture at: a picture alone fills the column."
   def gallery_size([_one]), do: :reading
   def gallery_size(_gallery), do: :card
 

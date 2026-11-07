@@ -409,8 +409,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     # surface. It drew a hairline of its own beside the host's and
     # stood its words elsewhere, so every load flashed two lines and a
     # jump. This puts the server's markup back in place of the editor
-    # and measures both: one element draws a line, and the words stand
-    # where the editor's words stood.
+    # and measures both: no more lines are drawn than the editor draws
+    # (none around the body, the field's own box around About), and
+    # the words stand where the editor's words stood.
     @seed_surface """
     async (host) => {
       const live = document.querySelector(host)
@@ -439,11 +440,14 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     }
     """
 
-    for {surface, path, host} <- [
-          {"the body", :editor, "#edBodyHost"},
-          {"About", "/admin/settings", "#setting-about_markdown"}
+    for {surface, path, host, lines} <- [
+          {"the body", :editor, "#edBodyHost", 0},
+          {"About", "/admin/settings", "#setting-about_markdown", 1}
         ] do
-      test "#{surface} shows one line and no jump while the editor loads", %{conn: conn, kb: kb} do
+      test "#{surface} draws no second line and no jump while the editor loads", %{
+        conn: conn,
+        kb: kb
+      } do
         conn = sign_in(conn)
 
         conn =
@@ -455,7 +459,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         conn
         |> assert_has("#{unquote(host)} .cm-content")
         |> evaluate(@seed_surface, [arg: unquote(host), is_function: true], fn result ->
-          assert result["lines"] == 1
+          assert result["lines"] == unquote(lines)
           assert Enum.all?(result["shift"], &(&1 < 1))
         end)
       end

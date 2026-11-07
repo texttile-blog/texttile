@@ -90,7 +90,7 @@ defmodule TexttileWeb.NewsletterLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col narrow">
         <h1 class="page-h">{gettext("Newsletter")}</h1>
         <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
 
@@ -132,7 +132,7 @@ defmodule TexttileWeb.NewsletterLive do
               {since(subscriber)}
             </span>
             <button
-              class="btn ghost flex-none"
+              class="btn quiet sm danger flex-none -mr-[10px]"
               type="button"
               id={"remove-#{subscriber.id}"}
               phx-click="ask_remove"
@@ -145,7 +145,7 @@ defmodule TexttileWeb.NewsletterLive do
 
         <p class="note mt-[22px]" id="newsletterRule">
           {gettext(
-            "A reader who subscribes on the site confirms the address by mail first; until then it gets no updates. An address you add here is directly confirmed. When an entry goes live with Email subscribers checked, it goes to every confirmed address."
+            "A reader who subscribes on the site confirms by mail first. An address you add here is confirmed at once. When an entry goes live with the subscriber mail on, every confirmed address gets it."
           )}
           <span :if={@protected?}>
             {gettext(
@@ -202,6 +202,6 @@ defmodule TexttileWeb.NewsletterLive do
   end
 
   defp since(subscriber) do
-    subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_date()
+    subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_short_date()
   end
 end

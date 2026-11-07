@@ -82,7 +82,6 @@ defmodule Texttile.Settings do
   # once instead of per call.
   @page_token ~r/--tt-page\s*:\s*([^;}]+)/
   @bar_token ~r/--tt-bar\s*:\s*([^;}]+)/
-  @paper_token ~r/--tt-paper\s*:\s*([^;}]+)/
 
   def theme_color do
     css = theme_css()
@@ -91,21 +90,6 @@ defmodule Texttile.Settings do
     css
     |> color(@bar_token)
     |> Kernel.||(page)
-    |> over(page)
-  end
-
-  @doc """
-  The same, for the admin area. Its bar is the white paper of the
-  theme, laid over the page in case a theme makes the paper translucent.
-  A theme that names no paper answers white.
-  """
-  def admin_theme_color do
-    css = theme_css()
-    page = color(css, @page_token) || {250, 249, 247, 1.0}
-
-    css
-    |> color(@paper_token)
-    |> Kernel.||({255, 255, 255, 1.0})
     |> over(page)
   end
 

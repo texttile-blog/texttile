@@ -111,22 +111,15 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
   end
 
-  describe "gallery_wrap/1, gallery_shape/1 and gallery_size/1" do
-    # a tile carries more than this, but the width only counts them
+  describe "gallery_shape/1 and gallery_size/1" do
+    # a tile carries more than this, but the shape only counts them
     defp tiles(count), do: for(index <- 1..count//1, do: %{id: index})
 
-    test "three or fewer keep the reading column, one to a picture" do
-      for count <- 1..3 do
-        assert SiteHTML.gallery_wrap(tiles(count)) == "wrap narrow"
-        assert SiteHTML.gallery_shape(tiles(count)) == "gal-#{count}"
-      end
-    end
+    test "one fills the column, two halve it, three and more share the one grid" do
+      assert SiteHTML.gallery_shape(tiles(1)) == "gal-1"
+      assert SiteHTML.gallery_shape(tiles(2)) == "gal-2"
 
-    test "four and more leave the column on both sides, in the one grid" do
-      for count <- 4..6 do
-        assert SiteHTML.gallery_wrap(tiles(count)) == "wrap"
-        assert SiteHTML.gallery_shape(tiles(count)) == nil
-      end
+      for count <- 3..6, do: assert(SiteHTML.gallery_shape(tiles(count)) == nil)
     end
 
     test "a picture alone fills the column, so it comes at the reading size" do

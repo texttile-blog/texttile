@@ -588,13 +588,13 @@ defmodule TexttileWeb.SettingsLive do
 
   defp comments_note(false) do
     gettext(
-      "Every comment appears under the entry at once, and nobody confirms anything. Turn this on and a comment waits for the reader to follow a confirmation link. Spam is filtered by honeypot, timing and rate limit checks either way."
+      "Comments appear at once. Turn this on and a comment waits until its reader follows a confirmation link. The spam filters work either way."
     )
   end
 
   defp notify_note(true) do
     gettext(
-      "Everybody with an account here and an address gets one mail per comment: who wrote it, what it says, and the way to it. The mail leaves when the comment stands under the entry, so a comment that still waits for its reader mails nobody. The address of the reader is never in it."
+      "Every admin gets one mail per comment that appears under an entry. The reader's address is never in it."
     )
   end
 
@@ -628,10 +628,10 @@ defmodule TexttileWeb.SettingsLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col narrow">
         <h1 class="page-h">{gettext("Settings")}</h1>
         <p class="lead">
-          {gettext("Nothing here has a Save button: every change applies the moment you make it.")}
+          {gettext("Every change saves itself the moment you make it.")}
         </p>
 
         <.section>{gettext("Site")}</.section>
@@ -679,7 +679,7 @@ defmodule TexttileWeb.SettingsLive do
               </select>
               <div class="hint">
                 {gettext(
-                  "The whole blog speaks it: the reader pages, this admin area, the dates and the mails. What you write yourself stays as you wrote it."
+                  "For the reader pages, this admin area, the dates and the mails. Your own words stay as you wrote them."
                 )}
               </div>
             </span>
@@ -687,9 +687,9 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-3 py-[11px] border-b border-hair">
+        <div class="flex items-center gap-[14px] py-[14px] border-b border-hair">
           <span
-            class="w-[42px] h-[42px] flex-none grid place-items-center bg-field rounded"
+            class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-logo"
           >
             <img
@@ -700,19 +700,15 @@ defmodule TexttileWeb.SettingsLive do
             />
             <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
           </span>
-          <span class="flex flex-col">
+          <span class="flex flex-col flex-1 min-w-0">
             <b>{gettext("Logo")}</b>
             <span class="note" id="name-logo">
               {@settings.logo_name || gettext("Default: the Texttile mark")}
             </span>
             <span class="note">
-              {gettext(
-                "The bar here and the public site use it. SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge.",
-                px: Uploads.mark_max_edge()
-              )}
+              {gettext("Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP.")}
             </span>
           </span>
-          <span class="sp"></span>
           <button
             :if={@settings.logo}
             class="link"
@@ -733,9 +729,9 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <div class="flex items-center gap-3 py-[11px] border-b border-hair">
+        <div class="flex items-center gap-[14px] py-[14px] border-b border-hair">
           <span
-            class="w-[42px] h-[42px] flex-none grid place-items-center bg-field rounded"
+            class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-favicon"
           >
             <img
@@ -746,19 +742,15 @@ defmodule TexttileWeb.SettingsLive do
             />
             <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
           </span>
-          <span class="flex flex-col">
+          <span class="flex flex-col flex-1 min-w-0">
             <b>{gettext("Favicon")}</b>
             <span class="note" id="name-favicon">
               {@settings.favicon_name || gettext("Default: the Texttile mark")}
             </span>
             <span class="note">
-              {gettext(
-                "The browser-tab icon. Square SVG, PNG, JPG or WebP; a raster file is scaled down on arrival to %{px} px on the longer edge.",
-                px: Uploads.mark_max_edge()
-              )}
+              {gettext("The icon in the browser tab. A square SVG, PNG, JPG or WebP.")}
             </span>
           </span>
-          <span class="sp"></span>
           <button
             :if={@settings.favicon}
             class="link"
@@ -766,7 +758,7 @@ defmodule TexttileWeb.SettingsLive do
             phx-click="reset_mark"
             phx-value-mark="favicon"
           >
-            Use default
+            {gettext("Use default")}
           </button>
           <form id="favicon-form" phx-change="validate_upload">
             <label class="btn sm cursor-pointer relative overflow-hidden">
@@ -822,10 +814,8 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-semibold">{gettext("Latest entries")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">
-                {gettext(
-                  "The front door sends the reader to /blog: published entries, newest first, each with its preview tile."
-                )}
+              <span class="text-[12.5px] text-faint">
+                {gettext("Published entries, newest first.")}
               </span>
             </span>
           </label>
@@ -845,13 +835,13 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-semibold">{gettext("A fixed page")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">
+              <span class="text-[12.5px] text-faint">
                 <%= if @pages == [] do %>
                   {gettext(
                     "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
                   )}
                 <% else %>
-                  {gettext("This page becomes the front door. The blog list keeps /blog either way.")}
+                  {gettext("A page you choose. The list of entries stays at /blog.")}
                 <% end %>
               </span>
             </span>
@@ -891,9 +881,7 @@ defmodule TexttileWeb.SettingsLive do
                 </option>
               </select>
               <div class="hint">
-                {gettext(
-                  "How many entries a page holds, on /blog and in Entries. Every size fills whole rows. The default is 12."
-                )}
+                {gettext("Entries per page, on /blog and in Entries.")}
               </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
                 {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}
@@ -904,7 +892,7 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>{gettext("Theme")}</.section>
         <p class="note mb-[10px]">
-          {gettext("Theming is exactly one CSS file, used for the admin area and the public site.")}
+          {gettext("One CSS file styles the blog and this admin area.")}
         </p>
         <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
           <span class="labrow">
@@ -963,7 +951,7 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-semibold">{gettext("Public")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
+              <span class="text-[12.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
           </label>
           <label class="flex gap-[10px] items-start py-3 cursor-pointer">
@@ -978,7 +966,7 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-semibold">{gettext("Password-protected")}</span>
               <br />
-              <span class="text-[11.5px] text-faint">
+              <span class="text-[12.5px] text-faint">
                 {gettext(
                   "One password for the whole blog. Readers enter it once and are remembered. Search engines see nothing."
                 )}
@@ -1002,7 +990,7 @@ defmodule TexttileWeb.SettingsLive do
             />
             <div class="hint">
               {gettext(
-                "A shared access word, not a login: it goes into every entry mail, so everybody on the newsletter list gets it, and you pass it on. It is stored as it is written. It is the password of the whole blog; without one nothing is protected."
+                "One word for all readers, not a login. Every entry mail carries it, so everybody on the newsletter list has it."
               )}
             </div>
           </div>
@@ -1047,7 +1035,7 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Users")}</.section>
         <p class="note mb-1 leading-[1.6]">
           {gettext(
-            "There is no registration: this list is everybody who may sign in. You invite the next one by address, and the link that gives the account its password goes to that inbox. Everybody with an account here is an admin, and all admins are equal: no roles, no permissions."
+            "Everybody on this list can sign in, and everybody is an admin. Invite the next one by address: the link for the first password goes to that inbox."
           )}
         </p>
         <div id="usersList">
@@ -1075,7 +1063,7 @@ defmodule TexttileWeb.SettingsLive do
                 {gettext("Send the link again")}
               </button>
               <button
-                class="btn sm"
+                class="btn quiet sm danger"
                 id={"delete-user-#{user.id}"}
                 phx-click="ask_delete"
                 phx-value-id={user.id}

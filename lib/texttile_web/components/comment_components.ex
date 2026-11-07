@@ -98,7 +98,7 @@ defmodule TexttileWeb.CommentComponents do
         >
           {gettext("Release")}
         </button>
-        <button class="btn quiet sm" phx-click="delete_comment" phx-value-id={@comment.id}>
+        <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
           {gettext("Delete")}
         </button>
       </div>
@@ -170,7 +170,7 @@ defmodule TexttileWeb.CommentComponents do
   # through by an admin, rewritten by one. Commas between them.
   defp moment_line(comment) do
     [
-      I18n.format_moment(comment.inserted_at),
+      I18n.format_short_moment(comment.inserted_at),
       Comments.released?(comment) && gettext("let through"),
       Comments.edited?(comment) && gettext("edited")
     ]
@@ -210,8 +210,8 @@ defmodule TexttileWeb.CommentComponents do
           {Texttile.Articles.display_title(@comment.article)}
         </.link>
         <span class="cmt-when num">
-          {I18n.format_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_plain_day(
-            @comment.delete_after
+          {I18n.format_short_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_short_date(
+            DateTime.to_date(@comment.delete_after)
           )}
         </span>
       </div>
@@ -243,7 +243,7 @@ defmodule TexttileWeb.CommentComponents do
 
   def comment_rule(false) do
     gettext(
-      "A comment appears under the entry the moment a reader sends it, and nobody confirms anything. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever.",
+      "Comments appear the moment a reader sends them. Delete keeps a comment in the trash for %{days} days, then it is gone. Spam is filtered without a captcha.",
       days: Comments.trash_days()
     )
   end

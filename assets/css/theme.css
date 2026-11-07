@@ -9,13 +9,13 @@
   --tt-paper:       #ffffff;
   --tt-field:       #efebe5;
   --tt-fieldhover:  #e9e4f3;
-  --tt-bar:         rgba(255, 255, 255, .94);
+  --tt-bar:         rgba(247, 245, 241, .92);
 
   /* ink, strongest to quietest */
   --tt-ink:         #1f1c18;
   --tt-inksoft:     #3b3732;
   --tt-dim:         #5a554d;
-  --tt-faint:       #6b655c;
+  --tt-faint:       #645e55;
   --tt-slash:       #b9b2a8;
 
   /* lines */
@@ -61,7 +61,7 @@
   --fld-bd:     1px solid var(--tt-rule);
   --fld-bb:     1px solid var(--tt-rule);
   --fld-r:      6px;
-  --fld-p:      7px 11px;
+  --fld-p:      7px 12px;
   --fld-sh:     none;
 
   --fld-bg-h:   var(--tt-paper);

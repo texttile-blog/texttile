@@ -39,8 +39,21 @@ defmodule TexttileWeb.StatsComponents do
         "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
       )}
     </p>
-    <div :if={@max > 0}>
-      <div id={@id} class="flex items-end gap-[3px] h-[132px] pt-[18px] pb-[6px]">
+    <div :if={@max > 0} class="relative">
+      <%!-- the scale: one hairline at the height of the busiest bar,
+           with its count, so a bar's height reads as a number --%>
+      <span
+        class="absolute left-0 right-0 top-[18px] border-t border-dashed border-rule pointer-events-none"
+        aria-hidden="true"
+      >
+      </span>
+      <span
+        class="absolute right-0 top-0 text-[12px] leading-[16px] text-faint tabular-nums"
+        id={"#{@id}Max"}
+      >
+        {ngettext("1 view", "%{count} views", @max)}
+      </span>
+      <div id={@id} class="flex items-end gap-[3px] h-[150px] pt-[18px] pb-0">
         <%= for bar <- @series do %>
           <button
             :if={@pick}
@@ -73,7 +86,7 @@ defmodule TexttileWeb.StatsComponents do
           </i>
         <% end %>
       </div>
-      <div class="flex justify-between text-[12px] text-faint pb-2 border-b border-hair">
+      <div class="flex justify-between text-[12px] text-faint pt-[7px] pb-2 border-t border-rule">
         <span>{axis_label(List.first(@series).from, @step)}</span>
         <span>{axis_label(List.last(@series).to, @step)}</span>
       </div>

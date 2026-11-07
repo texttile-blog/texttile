@@ -242,29 +242,22 @@ defmodule TexttileWeb.SiteControllerTest do
     # the reading column and share its width, so the eye reads them as
     # part of the text. The gallery proper, wider than the column,
     # begins at four.
-    test "one, two and three pictures keep the width of the text", %{conn: conn} do
+    test "the pictures keep the width of the text at every count", %{conn: conn} do
       article = published_post(title: "Few", slug: "few", publish_date: ~D[2026-03-01])
 
-      for count <- 1..3 do
+      # one fills the column, two halve it, three and more share the grid
+      for {count, shape} <- [
+            {1, ["gal", "gal-1"]},
+            {2, ["gal", "gal-2"]},
+            {3, ["gal"]},
+            {4, ["gal"]}
+          ] do
         {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{count}.jpg")
         html = conn |> get(~p"/2026/03/01/few") |> html_response(200)
 
         assert "narrow" in classes(html, "#gallery")
-        assert "gal-#{count}" in classes(html, "#gal")
+        assert classes(html, "#gal") == shape
       end
-    end
-
-    test "the fourth picture turns the pictures into the wide gallery", %{conn: conn} do
-      article = published_post(title: "Many", slug: "many", publish_date: ~D[2026-03-01])
-
-      for index <- 1..4 do
-        {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier-#{index}.jpg")
-      end
-
-      html = conn |> get(~p"/2026/03/01/many") |> html_response(200)
-
-      refute "narrow" in classes(html, "#gallery")
-      assert classes(html, "#gal") == ["gal"]
     end
 
     test "a picture in the text links its original and opens in the lightbox", %{conn: conn} do

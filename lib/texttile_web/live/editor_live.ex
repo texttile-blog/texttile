@@ -1393,6 +1393,7 @@ defmodule TexttileWeb.EditorLive do
       crumb={Articles.display_title(@article)}
       active="texts"
       others={@others}
+      wide
     >
       <%!-- The state, said once and in one place. It used to be said
            twice, and three times on a live entry: a pill, a chip and a
@@ -1448,6 +1449,24 @@ defmodule TexttileWeb.EditorLive do
         <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
           {gettext("Not saved · offline")}
         </span>
+
+        <%!-- On a narrow screen the tiles and the settings follow the
+             words. The bar stays in reach while the words scroll, so the
+             short way down to them stands in it. --%>
+        <a
+          href="#sideCol"
+          class="bar-ico lg:hidden"
+          id="jumpSide"
+          title={gettext("Tiles & settings")}
+          aria-label={gettext("Tiles & settings")}
+        >
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" />
+            <rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" />
+            <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" />
+            <rect x="9" y="9" width="5.5" height="5.5" rx="1.2" />
+          </svg>
+        </a>
 
         <%!-- One control, one shape at the right edge in every state.
              A live entry gets View, because looking at it is what you
@@ -1749,13 +1768,30 @@ defmodule TexttileWeb.EditorLive do
                       )}
                     </span>
                     <span id="edFootText">
+                      <%!-- the words that name the action are the action --%>
                       <%= if @holds_lock do %>
                         {gettext("The draft saves as you type.")}
-                        <b>{gettext("Save version")}</b>
+                        <button
+                          type="button"
+                          class="foot-act"
+                          id="footSaveVersion"
+                          phx-click="save_version"
+                          data-flush-body
+                        >
+                          {gettext("Save version")}
+                        </button>
                         {gettext("takes a snapshot that you can go back to.")}
                       <% else %>
                         {gettext("The title and the body are read-only right now.")}
-                        <b>{gettext("Save version")}</b>
+                        <button
+                          type="button"
+                          class="foot-act"
+                          id="footSaveVersion"
+                          phx-click="save_version"
+                          data-flush-body
+                        >
+                          {gettext("Save version")}
+                        </button>
                         {gettext("and the Versions tab still work.")}
                       <% end %>
                     </span>
@@ -1768,7 +1804,7 @@ defmodule TexttileWeb.EditorLive do
                   id="mdBar"
                   class="order-first"
                   readonly={!@holds_lock}
-                  note={gettext("Markdown Editor")}
+                  note={gettext("Markdown")}
                 />
               </div>
               <input
@@ -1785,7 +1821,10 @@ defmodule TexttileWeb.EditorLive do
                    holds its place with a token, and the token becomes
                    the reference when the upload finishes. --%>
               <div class="mt-[34px]">
-                <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
+                <div class={[
+                  "flex items-baseline gap-[10px] flex-wrap",
+                  Body.refs(@article.body) != [] && "pb-[10px] border-b border-rule"
+                ]}>
                   <span class="text-[13px] font-semibold">
                     {gettext("Pictures and videos in the text")}
                   </span>
@@ -1793,7 +1832,7 @@ defmodule TexttileWeb.EditorLive do
                   <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                 </div>
                 <div id="inlineImgs">
-                  <p :if={Body.refs(@article.body) == []} class="note pt-[10px]">
+                  <p :if={Body.refs(@article.body) == []} class="note pt-[4px]">
                     {gettext(
                       "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
                     )}
@@ -2037,8 +2076,8 @@ defmodule TexttileWeb.EditorLive do
 
         <aside
           id="sideCol"
-          aria-label={gettext("Article settings")}
-          class="sidecol min-w-0 bg-paper border-t lg:border-t-0 lg:border-l border-rule px-[14px] lg:px-6 pt-[22px] pb-[50px] lg:pb-[55px]"
+          aria-label={gettext("Entry settings")}
+          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:px-6 pt-[22px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -2162,7 +2201,7 @@ defmodule TexttileWeb.EditorLive do
             phx-auto-recover="recover_settings"
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
-              <span class="text-[13px] font-semibold">{gettext("Article settings")}</span>
+              <span class="text-[13px] font-semibold">{gettext("Entry settings")}</span>
               <span class="sp"></span>
               <span class="note">{gettext("Every change saves itself.")}</span>
             </div>
@@ -3020,7 +3059,7 @@ defmodule TexttileWeb.EditorLive do
       do:
         gettext(
           "Live since %{date}. A future date changes it to unpublished until the date.",
-          date: article.publish_date
+          date: Texttile.I18n.format_date(article.publish_date)
         ),
       else: gettext("Pick the day it went live. An empty field makes the entry a draft again.")
   end

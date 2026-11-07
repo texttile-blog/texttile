@@ -48,7 +48,7 @@
   input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)),
   textarea, select {
     width: 100%; font: inherit; font-family: var(--tt-font-sans); font-size: 16px;
-    color: var(--tt-ink);
+    line-height: 22px; color: var(--tt-ink);
     background-color: var(--fld-bg); background-image: none;
     border: var(--fld-bd); border-bottom: var(--fld-bb);
     border-radius: var(--fld-r); padding: var(--fld-p);
@@ -83,6 +83,9 @@
     box-shadow: var(--fld-sh-f);
   }
   input:disabled { color: var(--tt-faint); }
+  /* one height for every control: a field is 22px of line, 7px of air
+     over and under it and a hairline, 38px in all, the height of a
+     button beside it */
   textarea { line-height: 1.6; resize: vertical; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }

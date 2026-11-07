@@ -40,7 +40,13 @@ defmodule TexttileWeb.StatsLiveTest do
     assert has_element?(view, "#figViews", "8")
     assert has_element?(view, "#figPeople", "8")
     assert has_element?(view, "#figBusiest", "5")
-    assert render(view) =~ "busiest day,"
+    assert render(view) =~ "busiest day"
+
+    assert has_element?(
+             view,
+             "#figBusiestDay",
+             Texttile.I18n.format_short_day(Date.add(Date.utc_today(), -1))
+           )
   end
 
   test "the chart holds one bar per day of the window", %{conn: conn} do
@@ -130,7 +136,7 @@ defmodule TexttileWeb.StatsLiveTest do
 
     assert has_element?(view, "#win-90.on")
     assert has_element?(view, "#figViews", "1")
-    assert render(view) =~ "views, last 90 days"
+    assert render(view) =~ "Views, last 90 days"
 
     # Ninety days are thirteen or fourteen weeks, not ninety bars.
     bars = view |> element("#dayChart") |> render() |> String.split("<button ") |> length()

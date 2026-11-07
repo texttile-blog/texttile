@@ -89,7 +89,7 @@
   /* buttons: quiet / outlined / solid, with life */
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
-    gap: 7px; height: 32px; padding-left: 14px; padding-right: 14px;
+    gap: 7px; height: 38px; padding-left: 15px; padding-right: 15px;
     font-size: 13px; font-weight: 500; white-space: nowrap;
     color: var(--tt-ink); background-color: var(--tt-paper);
     border-radius: var(--tt-radius);
@@ -104,7 +104,13 @@
   .btn.quiet:hover { color: var(--tt-ink); background-color: var(--tt-field); box-shadow: none; }
   .btn:disabled { opacity: .5; cursor: default; transform: translateY(0); }
   .btn:disabled:hover { background-color: var(--tt-paper); box-shadow: inset 0 0 0 1px var(--tt-rule); }
-  .btn.sm { height: 28px; padding-left: 10px; padding-right: 10px; font-size: 12.5px; }
+  .btn.sm { height: 30px; padding-left: 11px; padding-right: 11px; font-size: 12.5px; }
+  /* the move that takes something away: the rust of a warning, never
+     the violet of the main action */
+  .btn.danger { color: var(--tt-julia); }
+  .btn.danger:hover { color: var(--tt-julia); }
+  .btn.quiet.danger { color: var(--tt-dim); }
+  .btn.quiet.danger:hover { color: var(--tt-julia); background-color: var(--tt-juliatint); }
   /* the small badge on a comment whose reader has not confirmed the
      address yet - worn in the admin area and on the reader's own
      pending row */
@@ -117,6 +123,14 @@
     color: var(--tt-accent); text-decoration-line: underline;
     text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft);
   }
+  /* a row's own title as its way in: the ink of the row, the accent
+     under the pointer */
+  .rowlink { color: inherit; text-decoration: none; }
+  .rowlink:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
+  /* the tags in the line under a title: words in the accent, not a
+     row of underlines */
+  #meta .link { text-decoration: none; }
+  #meta .link:hover { text-decoration: underline; }
 
   /* THE SAVED STAMP · the quiet half of a screen without a Save
      button. The bar keeps the clock time of the last save and nothing
@@ -191,6 +205,17 @@
     .phx-late .st { display: none; }
   }
 
+  /* THE ADMIN COLUMN · every screen of the admin area starts at the
+     same left edge, so moving between them never makes the page jump.
+     Entries and Stats use the whole width; the lists and forms keep a
+     reading measure inside it, from the same edge. */
+  .admin-col {
+    width: 100%; max-width: 1060px; margin: 0 auto;
+    padding: 22px 16px 90px;
+  }
+  @media (min-width: 768px) { .admin-col { padding: 34px 24px 110px; } }
+  .admin-col.narrow > * { max-width: 720px; }
+
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.018em; }
   .lead { color: var(--tt-dim); font-size: 14px; line-height: 1.55; max-width: 62ch; margin-top: 6px; margin-bottom: 28px; }
@@ -210,9 +235,9 @@
   .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
   @media (min-width: 768px) { .fig .n { font-size: 28px; } }
   .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; }
-  .lab { font-size: 12.5px; color: var(--tt-dim); }
-  .note { font-size: 12.5px; color: var(--tt-faint); }
-  .hint { font-size: 12px; color: var(--tt-faint); margin-top: 5px; }
+  .lab { font-size: 13px; color: var(--tt-dim); }
+  .note { font-size: 13px; line-height: 1.5; color: var(--tt-faint); }
+  .hint { font-size: 12.5px; line-height: 1.5; color: var(--tt-faint); margin-top: 6px; }
 
   /* TOUCH · a finger needs 40px, a pointer does not. The small
      controls keep their drawn size and grow an invisible hit box
@@ -229,7 +254,7 @@
   /* the option row: a checkbox or radio and its explanation */
   .opt { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; color: var(--tt-ink); cursor: pointer; padding-top: 4px; padding-bottom: 4px; }
   .opt input { width: auto; flex: none; margin-top: 3px; accent-color: var(--tt-accent); }
-  .opt .note { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.45; }
+  .opt .note { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.45; }
 
   /* THE ADDRESS IS ONE FIELD
      Round 16 put the domain and the day in plain text and the slug in
@@ -284,9 +309,9 @@
 
   /* the field row: a semibold ink group name over its value */
   .drow { display: block; padding-top: 7px; padding-bottom: 7px; }
-  .drow > .lab { display: block; padding-bottom: 3px; font-size: 12.5px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
+  .drow > .lab { display: block; padding-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
-  .drow .hint { margin-top: 4px; font-size: 11.5px; line-height: 1.45; }
+  .drow .hint { margin-top: 6px; font-size: 12.5px; line-height: 1.5; }
   /* What lies on the volume: a folder, a count and a weight. Numbers
      are read against each other, so they sit at the right edge in the
      tabular figures, and the sum stands off behind a rule. */
@@ -307,12 +332,12 @@
 
   /* a group name with one quiet word at the right edge of its row: the
      Reset of the publish date, the Reset of the theme */
-  .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 3px; }
+  .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 6px; }
   .labrow > .lab {
     flex: 1; min-width: 0; padding-bottom: 0;
     font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em;
   }
-  .labrow > .link { flex: none; font-size: 11.5px; }
+  .labrow > .link { flex: none; font-size: 12.5px; }
 
   /* `.quiet-fields`, `.boxed-in` and `textarea.boxed` are gone. Round
      19 made every field a line, so the container that used to write
@@ -465,23 +490,21 @@
   }
   .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
   .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
-  /* An entry of words alone: its opening words, set like the top of a
-     page on paper. They are a picture of the entry, not a text to read,
-     so they fade out at the foot instead of ending in a cut. */
+  /* An entry of words alone: its opening words on a quiet ground, set
+     large and centred like a pull quote. They are a picture of the
+     entry, not the text to read, so a long opening ends in an ellipsis. */
   .card .cimg.empty:has(.cx), .card .cimg.words {
-    display: block; position: relative; overflow: hidden;
-    background: var(--tt-paper); box-shadow: inset 0 0 0 1px var(--tt-hair);
-    padding: 9% 10%;
+    display: flex; align-items: center; overflow: hidden;
+    background: var(--tt-field); padding: 0 11%;
   }
   .card .cimg .cx {
-    display: block; font-family: var(--tt-font-serif); font-size: 15px; line-height: 1.6;
+    font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.5;
     color: var(--tt-inksoft); text-align: left;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .card .cimg.empty:has(.cx)::after, .card .cimg.words::after {
-    content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 42%;
-    background: linear-gradient(rgb(255 255 255 / 0), var(--tt-paper) 85%);
-    border-radius: 0 0 var(--tt-radius-img) var(--tt-radius-img);
-  }
+  body.site .card .cimg .cx { font-size: 19px; line-height: 1.48; }
+  /* the first letter of the title, for a square too small for words */
+  .card .cimg .ci { display: none; }
   .card .ct {
     display: block; font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
     line-height: 1.25; letter-spacing: -.01em; margin-top: 12px; overflow: hidden;
@@ -490,7 +513,7 @@
   .card:hover .ct { text-decoration-line: underline; text-underline-offset: 3px; }
   .card .cm {
     display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px;
-    font-size: 12.5px; color: var(--tt-dim); margin-top: 5px;
+    font-size: 13px; color: var(--tt-dim); margin-top: 5px;
   }
   /* who it is by, at the far end of the line, and at the right edge
      of its own line when the card is too narrow for both */
@@ -533,15 +556,17 @@
      stands at the end of the row, in the ink of the words. */
   @media (max-width: 639px) {
     #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
-    #cards .card-slot:first-child { border-top: 1px solid var(--tt-hair); }
     #cards .card {
       display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 14px;
       align-items: center; padding: 12px 44px 12px 0;
     }
     #cards .card .cimg { grid-row: span 2; width: 60px; }
-    #cards .card .cimg.empty:has(.cx) { padding: 7px; }
-    #cards .card .cimg .cx { font-size: 5.5px; line-height: 1.55; }
-    #cards .card .cimg .cn { font-size: 0; }
+    #cards .card .cimg.empty, #cards .card .cimg.empty:has(.cx) { display: grid; place-items: center; padding: 0; background: var(--tt-field); }
+    #cards .card .cimg .cx, #cards .card .cimg .cn { display: none; }
+    #cards .card .cimg .ci {
+      display: block; font-family: var(--tt-font-serif); font-size: 26px; font-weight: 600;
+      line-height: 1; color: var(--tt-dim);
+    }
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }
     #cards .card:hover .cimg { transform: none; box-shadow: none; }
@@ -688,6 +713,13 @@
   @keyframes tt-pulse { 50% { opacity: .35; } }
   /* on a phone the dot alone says it; the name is in the wordmark menu */
   @media (max-width: 639px) { .pres .w { display: none; } }
+  /* On a phone the bar holds the title, the dot of the state and the
+     one control; the word of the state gives way, the dot says it. The
+     word stays in the accessibility tree. */
+  @media (max-width: 639px) { #topbar .st { font-size: 0; gap: 0; } }
+  /* the side column is the target of the jump down on a narrow
+     screen; it lands under the sticky bar, not behind it */
+  #sideCol { scroll-margin-top: 60px; }
 
   /* a link that opens a tab of its own: the arrow leaving its box, in
      the ink of the words it follows */
@@ -712,6 +744,7 @@
     transition: color .15s ease;
   }
   .tab:first-child { padding-left: 0; }
+  @media (max-width: 639px) { .tab { padding-left: 10px; padding-right: 10px; } }
   .tab:hover { color: var(--tt-ink); }
   .tab.on { color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent); }
   .tab .cnt { color: var(--tt-faint); font-weight: 400; margin-left: 5px; }
@@ -732,17 +765,17 @@
      rule; the body carries a hairline at the left, which turns violet
      when it has the caret. The field ends where the text ends. */
   .ed-title {
-    width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
-    font-family: var(--tt-font-serif); font-size: 25px; font-weight: 600;
-    line-height: 1.15; letter-spacing: -.02em;
+    width: 100%; margin: 0;
+    font-family: var(--tt-font-serif); font-size: 26px; font-weight: 600;
+    line-height: 1.2; letter-spacing: -.02em;
     background-color: transparent; background-image: none; border: 0;
     border-radius: 0;
-    padding: 6px 6px 9px;
+    padding: 4px 0 12px;
     border-bottom: var(--edt-bb);
     box-shadow: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  @media (min-width: 768px) { .ed-title { font-size: 30px; } }
+  @media (min-width: 768px) { .ed-title { font-size: 32px; } }
   .ed-title:hover {
     background-image: none; background-color: transparent;
     border-bottom: 2px solid var(--tt-ink);
@@ -753,13 +786,13 @@
     border: 0; border-bottom: 2px solid var(--tt-accent); box-shadow: none;
   }
   .ed-body {
-    display: block; width: calc(100% + 12px); margin-left: -6px; margin-right: -6px;
-    margin-top: 3px; font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
+    display: block; width: 100%; margin: 3px 0 0;
+    font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.7;
     color: var(--tt-ink);
     background-color: transparent; background-image: none; border: 0;
     border-radius: 0;
     box-shadow: var(--edb-sh);
-    padding: 6px 6px 7px; padding-left: var(--edb-pl);
+    padding: 6px 0 7px;
     min-height: 100px;
     transition: box-shadow .15s ease;
   }
@@ -799,7 +832,20 @@
     box-shadow: var(--edb-shf);
   }
 
-  .ed-foot { font-size: 12px; color: var(--tt-faint); margin-top: 10px; }
+  .ed-foot { font-size: 12.5px; color: var(--tt-faint); margin-top: 12px; }
+  /* the action named in the line, as a word of it */
+  .foot-act {
+    display: inline; font-weight: 600; color: var(--tt-accent);
+    text-decoration: underline; text-decoration-color: var(--tt-accentsoft);
+    text-underline-offset: 2px;
+  }
+  .foot-act:hover { text-decoration-color: var(--tt-accent); }
+  /* a square icon in the bar, the height of the control beside it */
+  .bar-ico {
+    display: inline-grid; place-items: center; flex: none;
+    width: 32px; height: 30px; border-radius: var(--tt-radius); color: var(--tt-dim);
+  }
+  .bar-ico:hover { background: var(--tt-field); color: var(--tt-ink); }
   .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
   #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag { display: inline-flex; }
 
@@ -864,12 +910,23 @@
   }
 
   /* THE BAR OF THE ADMIN AREA
-     A white band over the sand page with one hairline under it. It
-     wears the page's own tokens, so every control on it (the crumb,
-     the state dot, the saved mark, the split button) looks the way it
-     does everywhere else. */
+     The reader's bar: the page itself, a touch translucent, with one
+     hairline under it. It wears the page's own tokens, so every control
+     on it (the crumb, the state dot, the saved mark, the split button)
+     looks the way it does everywhere else. */
+  /* The bar of a column screen hangs off the column's edges: the
+     wordmark stands over the page title and the last control over the
+     right edge of the content. The wordmark button carries 6px of air
+     of its own, which the edge gives back. */
+  .bar-col { padding-left: 10px; padding-right: 16px; }
+  @media (min-width: 768px) {
+    .bar-col {
+      padding-left: max(18px, calc((100% - 1060px) / 2 + 18px));
+      padding-right: max(24px, calc((100% - 1060px) / 2 + 24px));
+    }
+  }
   #topbar {
-    background: var(--tt-paper);
+    background: var(--tt-bar);
     border-bottom: 1px solid var(--tt-hair);
     color: var(--tt-ink);
   }
@@ -951,12 +1008,13 @@
     border-radius: var(--tt-radius-img); touch-action: pan-y;
   }
   .tile .n {
-    position: absolute; left: 5px; top: 5px;
+    position: absolute; left: 5px; top: 5px; opacity: 0; transition: opacity .15s ease;
     font-size: 10.5px; font-weight: 600; line-height: 1.5; color: #fff;
     padding: 1px 6px; border-radius: var(--tt-radius-img);
     font-variant-numeric: tabular-nums;
     background: rgb(var(--tt-overlay, 25 23 32) / .72);
   }
+  .tile:hover .n, .tile.lift .n, .grid-sorting .tile .n { opacity: 1; }
   /* delete, on the picture itself: quiet until the tile is under the
      pointer, always there for a finger (the imaedge tile toolbar) */
   .tile .tile-del {
@@ -1011,15 +1069,14 @@
   }
 
   .tile-add {
-    aspect-ratio: 1 / 1; display: grid; place-items: center;
-    color: var(--tt-dim); font-size: 12.5px;
-    border-radius: var(--tt-radius-img);
-    box-shadow: inset 0 0 0 1px var(--tt-rule);
-    transition: box-shadow .15s, color .15s, background-color .15s;
+    grid-column: 1 / -1; height: 44px; display: grid; place-items: center;
+    color: var(--tt-dim); font-size: 13px; font-weight: 500;
+    border-radius: var(--tt-radius);
+    border: 1px dashed var(--tt-rule);
+    transition: border-color .15s, color .15s, background-color .15s;
   }
   .tile-add:hover {
-    color: var(--tt-ink); background: var(--tt-paper);
-    box-shadow: inset 0 0 0 1px var(--tt-ink);
+    color: var(--tt-ink); background: var(--tt-paper); border-color: var(--tt-inksoft);
   }
 
   /* while a tile travels: lifted under the hand, a dashed slot where
@@ -1213,8 +1270,10 @@
   .site-head {
     position: sticky; top: 0; z-index: 40;
     display: flex; align-items: center; gap: 14px;
-    height: var(--tt-headh); padding: 0 var(--tt-gut);
-    background: var(--tt-bar); border-bottom: 1px solid var(--tt-rule);
+    height: var(--tt-headh);
+    /* the bar's ends stand on the edges of the page column under it */
+    padding: 0 max(var(--tt-gut), calc((100% - 1060px) / 2 + var(--tt-gut)));
+    background: var(--tt-bar); border-bottom: 1px solid var(--tt-hair);
     backdrop-filter: blur(8px) saturate(1.5); -webkit-backdrop-filter: blur(8px) saturate(1.5);
   }
   /* the bar carries the name of the blog, so it is read before the
@@ -1236,8 +1295,8 @@
      skimmed past, so it carries reading ink like the name does: the
      note ink it wore made a header of quiet grey. */
   .site-desc {
-    color: var(--tt-ink); font-size: 14px; white-space: nowrap;
-    padding-left: 14px; border-left: 1px solid var(--tt-rule);
+    color: var(--tt-dim); font-size: 14px; white-space: nowrap;
+    padding-left: 6px;
     min-width: 0; overflow: hidden; text-overflow: ellipsis;
   }
   .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: none; }
@@ -1286,7 +1345,7 @@
   .f-body { font-size: 14.5px; line-height: 1.62; max-width: var(--tt-measure); }
   /* the quiet role sits on dim, not faint: it carries dates and the
      notes under the forms, which have to be comfortable to read */
-  .f-note { font-size: 12.5px; line-height: 1.55; color: var(--tt-dim); }
+  .f-note { font-size: 13.5px; line-height: 1.55; color: var(--tt-dim); }
 
   /* the way into the admin area, in the line under the title. Only an admin
      who is signed in is ever served it, so it stays small and quiet
@@ -1349,42 +1408,14 @@
 
   /* a field is a label over an input */
   .cfld { display: block; min-width: 0; }
-  .cf-lab { display: block; padding-bottom: 4px; font-size: 12.5px; color: var(--tt-dim); }
+  .cf-lab { display: block; padding-bottom: 6px; font-size: 13.5px; font-weight: 500; color: var(--tt-inksoft); }
   /* said once, on the one field it is true of */
-  .cf-opt { margin-left: 5px; font-size: 11.5px; color: var(--tt-faint); }
+  .cf-opt { margin-left: 6px; font-size: 12.5px; font-weight: 400; color: var(--tt-faint); }
   /* the checkbox is a note about the next visit, not a field */
   .cf-remem .opt {
-    align-items: baseline; padding: 0; font-size: 12.5px; color: var(--tt-dim);
+    align-items: baseline; padding: 0; font-size: 13.5px; color: var(--tt-dim);
   }
 
-  /* THE EXCEPTION · THE READER'S TWO FORMS
-
-     The line is right on the admin screens, where a page is a list of
-     settings and every row already says what it is. On an entry it
-     asked too much: the message is a wide empty rectangle with a rule
-     at the bottom and a word far above it, and the two stopped reading
-     as one thing.
-
-     So these two forms, and only these two, put the field on paper:
-     white on the sand page, the lightest ground that is still a shape.
-     Nothing else changes. The rule stays under it, the corner stays
-     square, and focus is the same paper with the violet rule, so
-     nothing moves. --tt-paper is the theme's own white, so this brings
-     no new colour.
-
-     The search over the reader's list keeps the line: it is a field
-     you use once, not a form you fill in. */
-  #comment-form,
-  #newsletter-form {
-    --fld-bg:   var(--tt-paper);
-    --fld-bg-h: var(--tt-paper);
-    --fld-bg-f: var(--tt-paper);
-    /* a field with a ground needs room inside it; a line does not */
-    --fld-p:    9px 11px;
-  }
-  /* The button beside it is part of the same row, so it takes the
-     field's height instead of the 30px every other button wears. */
-  body.site #newsletter-form .btn { height: auto; }
   /* Signed in, the name and the address are facts the account carries,
      not questions. Dimmer ink and the plain cursor say the two take no
      typing. */
@@ -1401,7 +1432,12 @@
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     align-items: start;
   }
-  @media (max-width: 560px) { .cards { grid-template-columns: 1fr; gap: 40px; } }
+  @media (max-width: 560px) {
+    .cards { grid-template-columns: 1fr; gap: 40px; }
+    /* one card to a row: a landscape picture, so the title arrives
+       before the thumb has scrolled a whole screen */
+    body.site .card .cimg { aspect-ratio: 3 / 2; }
+  }
   /* the card itself is the admin area's .card (same proportions, same
      two-line title, same hover); the reader only adds the link reset
      and the img child inside the square, so the two grids never drift */
@@ -1413,7 +1449,7 @@
      footprint, with the mark standing quietly in the middle */
   body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
   body.site .card .cimg.blank svg { width: clamp(34px, 19%, 78px); height: auto; opacity: .22; }
-  .card-wrap .cm { font-size: 12.5px; color: var(--tt-dim); margin-top: 6px; }
+  .card-wrap .cm { font-size: 13.5px; color: var(--tt-dim); margin-top: 6px; }
   /* how many comments stand under the text, beside its date. It is a
      way in, not a badge: the same quiet ink as the date, and the
      pointer is what tells it apart. */
@@ -1422,7 +1458,7 @@
   .card-wrap .clead { font-size: 14px; line-height: 1.55; color: var(--tt-inksoft); margin-top: 8px; }
   .card-wrap .ctags { margin-top: 7px; }
   .ctag {
-    display: inline-block; margin-right: 6px; font-size: 12.5px;
+    display: inline-block; margin-right: 8px; font-size: 13px;
     color: var(--tt-accent); text-decoration: none;
   }
   .ctag:hover { text-decoration: underline; text-underline-offset: 2px; }
@@ -1466,7 +1502,7 @@
     border-right: 1.5px solid var(--tt-dim); border-bottom: 1.5px solid var(--tt-dim);
     transform: translateY(-70%) rotate(45deg); pointer-events: none;
   }
-  .cnt { color: var(--tt-dim); font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 400; flex: none; }
+  .cnt { color: var(--tt-dim); font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 400; flex: none; }
 
   /* the archive over a list: one line of years, and under it the months
      of the year that is open. Words in a row, no chips and no boxes, so
@@ -1542,7 +1578,7 @@
   /* the label stands over the title, so a long title has the whole
      column to wrap in */
   .textnav .lab, .textnav .t { display: block; }
-  .textnav .lab { font-size: 12.5px; color: var(--tt-dim); }
+  .textnav .lab { font-size: 13px; color: var(--tt-dim); }
   .textnav .t {
     margin-top: 3px; font-family: var(--tt-font-serif); font-size: 17px;
     font-weight: 600; line-height: 1.28; letter-spacing: -.012em; color: var(--tt-ink);
@@ -1651,14 +1687,12 @@
   .hero .play-badge { --play: 44px; }
 
   /* the reader gallery: the tile grid, and the lightbox behind it */
-  .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  @media (min-width: 900px) { .gal { grid-template-columns: repeat(4, 1fr); } }
-  /* Three or fewer stand in the reading column and share it out, one
-     to a column, at every width. Two classes beat the grid above, so
-     the count decides and the window does not. */
+  .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 620px) { .gal { grid-template-columns: repeat(3, 1fr); } }
+  /* One fills the column and two halve it, at every width. Two classes
+     beat the grid above, so the count decides and the window does not. */
   .gal.gal-1 { grid-template-columns: 1fr; }
   .gal.gal-2 { grid-template-columns: repeat(2, 1fr); }
-  .gal.gal-3 { grid-template-columns: repeat(3, 1fr); }
   /* the one picture is a picture, not a tile: it keeps its own shape,
      the way a picture in the text does */
   .gal.gal-1 a { aspect-ratio: auto; }
@@ -1792,10 +1826,15 @@
 
 /* what the live preview draws, all of it from the theme's tokens */
 .ed-cm .cm-mdh { font-weight: 600; }
-.ed-cm .cm-mdh1 { font-size: 24px; line-height: 1.35; padding-top: 8px; }
-.ed-cm .cm-mdh2 { font-size: 20px; line-height: 1.4; padding-top: 7px; }
-.ed-cm .cm-mdh3 { font-size: 17.5px; padding-top: 5px; }
-.ed-cm .cm-mdh4, .ed-cm .cm-mdh5, .ed-cm .cm-mdh6 { font-size: 15.5px; padding-top: 4px; }
+.ed-cm .cm-mdh1 { font-size: 24px; line-height: 1.4; }
+.ed-cm .cm-mdh2 { font-size: 20px; line-height: 1.45; }
+.ed-cm .cm-mdh3 { font-size: 17.5px; }
+.ed-cm .cm-mdh4, .ed-cm .cm-mdh5, .ed-cm .cm-mdh6 { font-size: 15.5px; }
+/* An empty line is the gap between two blocks, not a line of text:
+   it stands at about the height of the reader's paragraph gap, so the
+   writer sees the rhythm the reader gets. Only the height changes; the
+   stored text keeps every line break. */
+.ed-cm .cm-line:has(> br:only-child) { line-height: 1.05; }
 .ed-cm .cm-mdquote { border-left: 3px solid var(--tt-rule); padding-left: 13px; }
 .ed-cm .cm-mdcodespan { background: var(--tt-field); border-radius: 3px; padding: 1px 3px; }
 .ed-cm .cm-mdcodeblock {

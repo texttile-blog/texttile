@@ -89,7 +89,7 @@
          and answers the picture, or the film, itself. A video tile is
          its poster with a play mark; the lightbox plays the film from
          data-video. --%>
-    <figure :if={@gallery != []} class={[gallery_wrap(@gallery), "mt-[38px]"]} id="gallery">
+    <figure :if={@gallery != []} class="wrap narrow mt-[36px]" id="gallery">
       <div class={["gal", gallery_shape(@gallery)]} id="gal">
         <a
           :for={tile <- @gallery}
@@ -126,7 +126,7 @@
          edge, so the eye takes it for the end of the text and not for
          the first block under it. It stands first because "keep
          reading" is what most readers want next. --%>
-    <div :if={@older || @newer} class="wrap mt-[44px]">
+    <div :if={@older || @newer} class="wrap narrow mt-[48px]">
       <nav class="textnav" aria-label={gettext("More entries")}>
         <div class="pv">
           <a :if={@older} id="prev-post" href={Articles.public_path(@older)} rel="prev">

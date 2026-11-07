@@ -168,7 +168,7 @@ defmodule TexttileWeb.CommentsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col narrow">
         <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
         <nav
           class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"
@@ -198,7 +198,7 @@ defmodule TexttileWeb.CommentsLive do
           <span class="sp"></span>
           <button
             :for={action <- bulk_actions(@status)}
-            class="btn sm"
+            class={["btn sm", action == "delete" && MapSet.size(@selected) > 0 && "danger"]}
             id={"bulk-#{action}"}
             phx-click="bulk"
             phx-value-action={action}

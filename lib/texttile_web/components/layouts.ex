@@ -114,22 +114,37 @@ defmodule TexttileWeb.Layouts do
   end
 
   @doc """
-  The column the sign-in family shares: the mark, the name, one quiet
-  subtitle, then whatever the screen has to say.
+  The column the sign-in family shares: the blog's own logo (or the
+  Texttile mark) and its name, one quiet subtitle, then whatever the
+  screen has to say.
   """
   attr :subtitle, :string, required: true
   slot :inner_block, required: true
 
   def auth(assigns) do
+    assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
+
     ~H"""
     <main class="min-h-[100dvh] flex items-start justify-center px-5 pt-[7vh] md:pt-[13vh] pb-10">
       <div class="w-[min(374px,100%)]">
         <div class="flex items-center gap-[11px]">
-          <.mark size={28} ink="var(--tt-ink)" />
-          <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">Texttile</h1>
+          <img
+            :if={@brand.logo}
+            src={Texttile.Images.url(@brand.logo, :original)}
+            alt=""
+            class="h-[28px] w-auto max-w-[112px] object-contain"
+          />
+          <.mark :if={!@brand.logo} size={28} ink="var(--tt-ink)" />
+          <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">{@brand.title}</h1>
         </div>
         <p class="text-faint text-[13px] mt-[6px]">{@subtitle}</p>
         {render_slot(@inner_block)}
+        <%!-- the way back for whoever came here from the blog --%>
+        <p class="mt-[30px] pt-4 border-t border-hair text-[13px]">
+          <a class="rowlink text-dim" href={~p"/"} id="back-to-blog">
+            ← {gettext("Back to %{site}", site: @brand.title)}
+          </a>
+        </p>
       </div>
     </main>
     """
@@ -151,6 +166,14 @@ defmodule TexttileWeb.Layouts do
   attr :crumb, :string, default: nil, doc: "what the breadcrumb says"
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
+
+  attr :wide, :boolean,
+    default: false,
+    doc: """
+    the screen uses the whole window, as the editor does with its two
+    columns. Every other screen hangs its bar off the edges of the
+    admin column, so the wordmark stands over the page title.
+    """
 
   slot :lead,
     doc: """
@@ -176,7 +199,10 @@ defmodule TexttileWeb.Layouts do
          over; above it they hang free, as a menu should. --%>
     <header
       id="topbar"
-      class="sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] px-[10px] md:px-4 border-b border-rule backdrop-blur-[8px] backdrop-saturate-150"
+      class={[
+        "sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] border-b border-hair backdrop-blur-[8px] backdrop-saturate-150",
+        if(@wide, do: "px-[10px] md:px-4", else: "bar-col")
+      ]}
       role="banner"
     >
       <span class="relative flex-none">
@@ -244,7 +270,7 @@ defmodule TexttileWeb.Layouts do
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
         <%!-- who is here: one block per person, every open tab a jump --%>
         <div id="liveBlock">
-          <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]">
+          <p class="px-[10px] pt-[3px] pb-[2px] text-[12.5px] text-faint leading-[1.45]">
             {gettext("Here now")}
           </p>
           <%= for person <- @others do %>
@@ -259,7 +285,7 @@ defmodule TexttileWeb.Layouts do
           </p>
         </div>
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>
-        <p class="px-[10px] pt-[3px] pb-[2px] text-[11.5px] text-faint leading-[1.45]" id="wmMe">
+        <p class="px-[10px] pt-[3px] pb-[2px] text-[12.5px] text-faint leading-[1.45]" id="wmMe">
           {@current_scope && Texttile.Accounts.display_name(@current_scope.user)}
         </p>
         <.link navigate={~p"/admin/profile"} class={["row", @active == "profile" && "on"]}>
@@ -267,7 +293,7 @@ defmodule TexttileWeb.Layouts do
         </.link>
         <.link href={~p"/logout"} method="delete" class="row">{gettext("Sign out")}</.link>
         <%!-- which build runs, in every menu and nowhere a reader gets --%>
-        <p class="px-[10px] pt-[6px] pb-[2px] text-[11.5px] text-faint tabular-nums" id="wmVersion">
+        <p class="px-[10px] pt-[6px] pb-[2px] text-[12.5px] text-faint tabular-nums" id="wmVersion">
           Texttile {Texttile.version()}
         </p>
       </nav>

@@ -102,7 +102,7 @@ defmodule TexttileWeb.StatsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col">
         <h1 class="page-h">{gettext("Stats")}</h1>
         <p class="lead" id="statsSub">
           {gettext("Counted by this server alone. No cookie, no fingerprint, no third party.")}
@@ -122,23 +122,24 @@ defmodule TexttileWeb.StatsLive do
         <div id="statsFigures" class="grid grid-cols-3 border-y border-hair">
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
+            <%!-- the window is named once, by the switch over the figures;
+                 the change against the window before stands on a line
+                 of its own, so a phone never breaks a label in two --%>
             <div class="l">
-              {window_label(gettext("views"), @days)}{moved(@summary.views, @summary.before, :views)}
+              {gettext("views")}<span class="block">{moved(@summary.views, @summary.before, :views)}</span>
             </div>
           </div>
           <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
-              {window_label(gettext("people"), @days)}{moved(
-                @summary.people,
-                @summary.before,
-                :people
-              )}
+              {gettext("people")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
             </div>
           </div>
           <div class="fig py-4 px-3 md:px-5 border-l border-l-hair">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
-            <div class="l">{busiest_label(@summary.busiest)}</div>
+            <div class="l">
+              {gettext("busiest day")}<span :if={@summary.busiest} class="block" id="figBusiestDay">{busiest_day(@summary.busiest)}</span>
+            </div>
           </div>
         </div>
 
@@ -212,22 +213,23 @@ defmodule TexttileWeb.StatsLive do
                 <th class="text-right num">{gettext("Views")}</th>
                 <th class="text-right num">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell">{gettext("Comments")}</th>
-                <th class="text-right"><span class="sr">{gettext("Details")}</span></th>
               </tr>
             </thead>
             <tbody>
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
-                <td>{Articles.display_title(row.article)}</td>
-                <td class="text-right num hidden sm:table-cell">{row.article.publish_date}</td>
+                <%!-- the title is the way to the entry's own numbers --%>
+                <td>
+                  <.link class="rowlink" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
+                    {Articles.display_title(row.article)}
+                  </.link>
+                </td>
+                <td class="text-right num hidden sm:table-cell">
+                  {Texttile.I18n.format_short_date(row.article.publish_date)}
+                </td>
                 <td class="text-right num">{number(row.views)}</td>
                 <td class="text-right num people">{number(row.people)}</td>
                 <td class="text-right num hidden sm:table-cell">
                   {Map.get(@comment_counts, row.article.id, 0)}
-                </td>
-                <td class="text-right">
-                  <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
-                    {gettext("details")}
-                  </.link>
                 </td>
               </tr>
             </tbody>
@@ -269,7 +271,7 @@ defmodule TexttileWeb.StatsLive do
 
         <p class="note mt-[22px]" id="statsRule">
           {gettext(
-            "A reader is a number for one day: their address and their browser line, mixed with a secret this server draws every morning and forgets every night. Nothing links the same reader to two days, so somebody who reads every week counts as one person each time. A page counts once per reader every half hour, and what says it is a bot, or only fetched the page ahead, counts not at all."
+            "A reader is a new number each day, made with a secret the server forgets every night, so nothing links two days. A page counts once per reader every half hour. Bots and prefetches do not count."
           )}
         </p>
       </div>
@@ -302,7 +304,7 @@ defmodule TexttileWeb.StatsLive do
   defp moved(now, before, key) do
     case Map.fetch!(before, key) do
       0 -> nil
-      was -> " · " <> signed(round((now - was) / was * 100)) <> "\u00a0%"
+      was -> signed(round((now - was) / was * 100)) <> "\u00a0%"
     end
   end
 
@@ -312,6 +314,5 @@ defmodule TexttileWeb.StatsLive do
   defp busiest_number(nil), do: "0"
   defp busiest_number({_day, views}), do: number(views)
 
-  defp busiest_label(nil), do: gettext("busiest day")
-  defp busiest_label({day, _views}), do: gettext("busiest day, %{day}", day: day_label(day))
+  defp busiest_day({day, _views}), do: day_label(day)
 end

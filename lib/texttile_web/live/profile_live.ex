@@ -180,12 +180,12 @@ defmodule TexttileWeb.ProfileLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col narrow">
         <h1 class="page-h">{gettext("Your profile")}</h1>
         <p class="lead">
           {gettext("You are signed in as")}
           <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>. {gettext(
-            "Change here your name, your address, your password and your open sessions. Your address and your password need your password once, because whoever holds them holds the account."
+            "To change your address or your password, confirm your password once."
           )}
         </p>
 
@@ -204,6 +204,7 @@ defmodule TexttileWeb.ProfileLive do
                 name={@profile_form[:display_name].name}
                 value={@profile_form[:display_name].value}
                 phx-debounce="300"
+                class="max-w-[530px]"
               />
               <div class="hint">
                 {gettext("What others see. Empty shows the part of your address in front of the @.")}
@@ -220,8 +221,8 @@ defmodule TexttileWeb.ProfileLive do
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="em-address">
+                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}
                   </label>
                   <input
@@ -234,8 +235,8 @@ defmodule TexttileWeb.ProfileLive do
                     autocapitalize="off"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="em-current">
+                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-current">
                     {gettext("Your password")}
                   </label>
                   <input
@@ -251,7 +252,7 @@ defmodule TexttileWeb.ProfileLive do
               <.field_errors field={@email_form[:email]} />
               <div class="hint">
                 {gettext(
-                  "This is what you sign in with, and where password links go. Readers never see it. Changing it needs your password, because whoever holds the address holds the account."
+                  "You sign in with this address, and password links go to it. Readers never see it."
                 )}
               </div>
               <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
@@ -264,8 +265,8 @@ defmodule TexttileWeb.ProfileLive do
           <div class="drow">
             <span class="val">
               <span class="flex items-end gap-[10px] flex-wrap">
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="pw-current">
+                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-current">
                     {gettext("Current password")}
                   </label>
                   <input
@@ -275,8 +276,8 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <span class="flex-1 min-w-[180px] max-w-[260px]">
-                  <label class="block text-[12px] text-dim mb-[3px]" for="pw-new">
+                <span class="flex-1 min-w-[180px] sm:max-w-[260px]">
+                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-new">
                     {gettext("New password")}
                   </label>
                   <input
@@ -291,9 +292,7 @@ defmodule TexttileWeb.ProfileLive do
               <.field_errors field={@pw_form[:current_password]} />
               <.field_errors field={@pw_form[:password]} />
               <div class="hint">
-                {gettext(
-                  "Confirm the current password once to change it. Needs to be at least 12 characters."
-                )}
+                {gettext("At least 12 characters. Confirm your current password to change it.")}
               </div>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
             </span>
