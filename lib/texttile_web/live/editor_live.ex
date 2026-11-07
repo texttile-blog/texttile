@@ -2286,14 +2286,14 @@ defmodule TexttileWeb.EditorLive do
                     :if={@public_url && Visibility.live?(@article)}
                     href={@public_url}
                     target="_blank"
-                    class="link block break-all mb-[4px]"
+                    class="link break-all"
                     id="slugPrefix"
                   >
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
                   </a>
                   <span
                     :if={!(@public_url && Visibility.live?(@article))}
-                    class="block break-all mb-[4px]"
+                    class="break-all"
                     id="slugPrefix"
                   >
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}

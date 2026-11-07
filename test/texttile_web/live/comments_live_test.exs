@@ -140,7 +140,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
 
-      assert has_element?(view, "#commentTools", "Select all 26")
+      assert has_element?(view, "#commentTools", "Select all")
       view |> element("#bulk-release", "Release all 26") |> render_click()
       assert has_element?(view, "#dialog", "Release 26 comments?")
       assert has_element?(view, "#dialog", "no way back except Delete")
@@ -174,7 +174,8 @@ defmodule TexttileWeb.CommentsLiveTest do
       view |> element("#dialog-ok") |> render_click()
 
       assert Comments.ids("waiting") == [three.id]
-      assert has_element?(view, "#commentTools", "Select all 1")
+      assert has_element?(view, "#commentTools", "Select all")
+      assert has_element?(view, "#bulk-delete", "Delete all 1")
     end
 
     test "Select all ticks the whole filter and takes it back", %{conn: conn} do
@@ -188,7 +189,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert has_element?(view, "#bulk-delete", "Delete 26")
 
       view |> element("#selectAll") |> render_click()
-      assert has_element?(view, "#commentTools", "Select all 26")
+      assert has_element?(view, "#commentTools", "Select all")
       refute has_element?(view, "#selectAll[checked]")
     end
 
@@ -202,7 +203,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert has_element?(view, "#commentTools", "1 selected")
 
       view |> element(~s(#commentFilter a[data-f="all"])) |> render_click()
-      assert has_element?(view, "#commentTools", "Select all 26")
+      assert has_element?(view, "#commentTools", "Select all")
     end
 
     test "the dialog acts on what it named, not on what came after it", %{conn: conn} do

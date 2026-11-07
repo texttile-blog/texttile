@@ -134,7 +134,7 @@ defmodule TexttileWeb.NewsletterLive do
                 <%!-- the address on a fixed column, its day beside it as
                      Tags sets a count beside a name; the right is for
                      the action alone --%>
-                <span class="rowp truncate max-w-full sm:w-[260px] sm:flex-none">
+                <span class="rowp truncate max-w-full sm:w-[354px] sm:flex-none">
                   {subscriber.email}
                 </span>
                 <span class="hidden sm:inline text-[13px] text-faint num">

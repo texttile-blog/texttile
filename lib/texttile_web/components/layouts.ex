@@ -140,7 +140,7 @@ defmodule TexttileWeb.Layouts do
         <p class="text-faint text-[13px] mt-[6px]">{@subtitle}</p>
         {render_slot(@inner_block)}
         <%!-- the way back for whoever came here from the blog --%>
-        <p class="mt-[30px] pt-4 border-t border-hair text-[13px]">
+        <p class="mt-6 text-[13px]">
           <a class="rowlink text-dim" href={~p"/"} id="back-to-blog">
             ← {gettext("Back to %{site}", site: @brand.title)}
           </a>

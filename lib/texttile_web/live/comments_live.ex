@@ -309,7 +309,8 @@ defmodule TexttileWeb.CommentsLive do
   defp bulk_actions("trash"), do: ["restore"]
   defp bulk_actions(_status), do: ["delete"]
 
-  defp selection_line(0, all), do: gettext("Select all %{count}", count: all)
+  # the count stands on the bulk action, which is what it acts on
+  defp selection_line(0, _all), do: gettext("Select all")
   defp selection_line(selected, _all), do: gettext("%{count} selected", count: selected)
 
   defp bulk_label("release", 0, all), do: gettext("Release all %{count}", count: all)

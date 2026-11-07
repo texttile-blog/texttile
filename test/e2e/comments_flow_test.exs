@@ -158,7 +158,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments?status=waiting")
-    |> assert_has("#commentTools", text: "Select all 30")
+    |> assert_has("#commentTools", text: "Select all")
+    |> assert_has("#bulk-delete", text: "Delete all 30")
     |> click("#selectAll")
     |> assert_has("#commentTools", text: "30 selected")
     |> assert_has("#commentsList .cmt.on", count: 25)
@@ -180,7 +181,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#dialog", text: "Delete 29 comments?")
     |> click_button("#dialog-ok", "Delete")
     |> assert_has("#commentFilter a[data-f='trash']", text: "29")
-    |> assert_has("#commentTools", text: "Select all 1")
+    |> assert_has("#commentTools", text: "Select all")
+    |> assert_has("#bulk-delete", text: "Delete all 1")
 
     assert Texttile.Comments.status_counts()["trash"] == 29
   end

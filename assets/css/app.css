@@ -597,8 +597,8 @@
   }
   .card .cimg .ci { display: none; }
   .card .cimg .cx {
-    font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.4;
-    color: var(--tt-ink); text-align: left;
+    font-family: var(--tt-font-serif); font-size: 15px; line-height: 1.45;
+    color: var(--tt-dim); text-align: left;
     display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
 
@@ -1254,7 +1254,7 @@
 
   .tile-add {
     grid-column: 1 / -1; height: 38px; display: grid; place-items: center;
-    color: var(--tt-dim); font-size: 13px; font-weight: 500;
+    color: var(--tt-ink); font-size: 13px; font-weight: 500;
     border-radius: var(--tt-radius);
     border: 1px solid var(--tt-rule); background: var(--tt-paper);
     transition: border-color .15s, color .15s, background-color .15s;
@@ -2453,3 +2453,19 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 
 /* a way on to another entry is a link: its title in violet */
 .textnav .t { color: var(--tt-accent); }
+
+/* every admin card keeps two lines for its title, so a row's meta
+   lines share one line */
+@media (min-width: 640px) { #cards .card .ct { min-height: calc(17px * 1.25 * 2); } }
+
+/* a tag's count stands with its tag, the next tag a clear step away */
+#tagbar { column-gap: 24px; }
+#tagbar .ctag .cnt { margin-left: 4px; }
+
+/* the band ends close under the form; on a phone the colophon starts
+   on the gutter like everything else in the band */
+section.foot-band .cols { padding-bottom: 32px; }
+@media (max-width: 639px) { .wrap.f-foot .sp { display: none; } }
+
+/* the editor's address is a link inside its one help line */
+#slugHint #slugPrefix { margin-right: 4px; }
