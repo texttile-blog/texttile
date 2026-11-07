@@ -229,11 +229,11 @@ defmodule TexttileWeb.StatsLive do
           <table>
             <thead>
               <tr>
-                <%!-- the entry on the first third of the figures above, the
-                     counts in columns of one width packed to the right
-                     edge, and the day takes what is left --%>
-                <th class="sm:w-1/3">{gettext("Entry")}</th>
-                <th class="num hidden sm:table-cell">{gettext("Published")}</th>
+                <%!-- the entry takes the free width; the day and the counts
+                     are columns of fixed width packed to the right edge, so
+                     the data of a row reads as one line --%>
+                <th>{gettext("Entry")}</th>
+                <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Published")}</th>
                 <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("Views")}</th>
                 <th class="text-right num w-[52px] sm:w-[88px] pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">

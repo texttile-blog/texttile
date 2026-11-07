@@ -30,20 +30,19 @@ test("a spent note gives the toast back to the plain word", () => {
   assert.equal(toastLine({now: at + 5000, note: "Restored", noteUntil: at + 1000}, t).text, "Saved")
 })
 
-test("a fresh save reads as Saved, an old one with its clock time", () => {
+test("a save reads as Saved, fresh or old, the clock in the tooltip", () => {
   assert.equal(line({now: at + 19_000}).text, "Saved")
-  assert.equal(line({now: at + 21_000}).text, "Saved 12:34")
+  assert.equal(line({now: at + 21_000}).text, "Saved")
+  assert.equal(line({now: at + 21_000}).title, "The last save was at 12:34:56.")
 })
 
-test("a phone bar says the word alone, the clock stays in the tooltip", () => {
-  assert.equal(line({wide: false, now: at + 60_000}).text, "Saved")
-  assert.equal(line({wide: false, now: at + 60_000}).title, "The last save was at 12:34:56.")
-  assert.equal(line({wide: true, now: at + 60_000}).text, "Saved 12:34")
+test("a phone bar and a desk bar say the same word", () => {
+  for (const wide of [true, false]) assert.equal(line({wide, now: at + 60_000}).text, "Saved")
 })
 
 test("the clock pads its digits", () => {
   const early = new Date(2026, 7, 11, 9, 5, 7).getTime()
   const {text, title} = line({at: early, now: early + 60_000})
-  assert.equal(text, "Saved 09:05")
+  assert.equal(text, "Saved")
   assert.equal(title, "The last save was at 09:05:07.")
 })

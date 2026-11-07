@@ -29,7 +29,6 @@ defmodule TexttileWeb.SessionHTML do
             spellcheck="false"
             autocapitalize="off"
             autocorrect="off"
-            autofocus
           />
         </div>
         <div class="mb-[15px]">

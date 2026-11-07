@@ -2277,14 +2277,11 @@ body.site .card-wrap .cm { font-size: 14px; }
 #statsFigures + .sec-h { margin-top: 32px; }
 @media (min-width: 768px) { #statsFigures + .sec-h { margin-top: 40px; } }
 
-/* the archive's tags on a phone: one row that scrolls sideways, its
-   rule under it, so it reads as tabs and not as a heap of links */
+/* the archive's tags on a phone */
 @media (max-width: 639px) {
-  /* it runs out to the glass, so the cut reads as more to come */
-  #tagbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; white-space: nowrap;
-    margin-right: -16px; padding-right: 16px; }
-  #tagbar::-webkit-scrollbar { display: none; }
-  #tagbar .ctag { flex: none; }
+  /* seven tags fit in two lines: they wrap inside the gutters, the open
+     one keeps its rule, and nothing is cut */
+  #tagbar { row-gap: 8px; }
 }
 
 /* the figures' row ends on its numbers: the chart under it is theirs */
@@ -2298,3 +2295,12 @@ body.site .card-wrap .cm { font-size: 14px; }
   .auth-main input:not([type=checkbox]) { font-size: 16px; height: 44px; }
   .auth-main label, .auth-main .lab { font-size: 14px; }
 }
+
+/* the Logo & favicon heading on the line of its first row's name */
+@media (min-width: 1000px) { .admin-col.twocol > .set-h:has(+ #logoRow) { padding-top: 26px; } }
+/* on a desk the option lines of Settings are help lines like any other */
+@media (min-width: 1024px) { .opt .note { font-size: 14px; } }
+/* the website is optional and short: half the row */
+@media (min-width: 640px) { .cform > .cf-url { max-width: calc(50% - 8px); } }
+/* the formatting glyphs at the size of the words they sit over */
+.mdb svg { width: 17px; height: 17px; }

@@ -14,9 +14,9 @@ import {t} from "./i18n.js"
 
 const SAVED_MS = 2600
 
-/* What the stamp says at one moment, as a value: the sentence, and
-   the tooltip. Pure, so the wording matrix - fresh, narrow bar - is a
-   table test away from a browser. */
+/* What the stamp says, as a value: the word, and the tooltip with the
+   clock of the save. Pure, so it is a table test away from a browser;
+   the moment and the width are read by callers, not by the words. */
 export function savedLine({at, now, wide}, say = t) {
   const d = new Date(at)
   const pad = n => String(n).padStart(2, "0")
@@ -28,13 +28,10 @@ export function savedLine({at, now, wide}, say = t) {
      tooltip, for the one time a year it settles an argument. */
   const title = say("The last save was at %{time}.", {time: `${clock}:${pad(d.getSeconds())}`})
 
-  const fresh = (now - at) / 1000 < 20
-
-  // "Saved", then the clock of the save. A phone bar is full with the
-  // state, the logo and the button, so there the word stands alone and
-  // the clock waits in the tooltip.
-  if (!wide) return {text: say("Saved"), title}
-  return {text: fresh ? say("Saved") : say("Saved %{time}", {time: clock}), title}
+  // "Saved" alone in every bar, at every width: the same state reads the
+  // same everywhere, and the clock of the save waits in the tooltip.
+  void wide, now
+  return {text: say("Saved"), title}
 }
 
 /* What the toast says for one save, and for how long: the note while
