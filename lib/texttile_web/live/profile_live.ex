@@ -185,7 +185,7 @@ defmodule TexttileWeb.ProfileLive do
         <p class="lead">
           {gettext("You are signed in as")}
           <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>. {gettext(
-            "To change your address or your password, confirm your password once."
+            "Changing your address or your password asks for your current password."
           )}
         </p>
 
@@ -246,7 +246,7 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="current-password"
                   />
                 </span>
-                <button class="btn" type="submit" id="em-set">{gettext("Change")}</button>
+                <button class="btn" type="submit" id="em-set">{gettext("Change email")}</button>
               </span>
               <.field_errors field={@email_form[:current_password]} />
               <.field_errors field={@email_form[:email]} />
@@ -287,7 +287,7 @@ defmodule TexttileWeb.ProfileLive do
                     autocomplete="new-password"
                   />
                 </span>
-                <button class="btn" type="submit">{gettext("Set")}</button>
+                <button class="btn" type="submit" id="pw-set">{gettext("Change password")}</button>
               </span>
               <.field_errors field={@pw_form[:current_password]} />
               <.field_errors field={@pw_form[:password]} />

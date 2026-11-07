@@ -223,7 +223,7 @@ defmodule TexttileWeb.TextsLive do
                      between two bits and refuse to break there --%>
                 <span>
                   <%= for {bit, i} <- card_meta(article, article.id in @pending) do %>
-                    <span class="whitespace-nowrap" phx-no-format><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
+                    <span class="whitespace-nowrap bit" phx-no-format><span :if={i == 0 and article.status == "published"} class="st published"></span>{bit}</span>
                   <% end %>
                 </span>
                 <span :if={article.user} class="by">{admin_name(article.user)}</span>
@@ -339,9 +339,8 @@ defmodule TexttileWeb.TextsLive do
 
     bits = if article.type == "page", do: [gettext("page") | bits], else: bits
 
-    # a comma after every bit but the last, and each bit with its
-    # place, so the template can hang the state mark on the first
-    last = length(bits) - 1
-    Enum.with_index(bits, fn bit, i -> {if(i < last, do: bit <> ",", else: bit), i} end)
+    # each bit with its place, so the template can hang the state mark
+    # on the first; the separators are the stylesheet's
+    Enum.with_index(bits)
   end
 end

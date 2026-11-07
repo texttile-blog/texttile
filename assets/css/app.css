@@ -142,7 +142,7 @@
      toast below. app.js (SavedTicker) writes the words of both. */
   .saved {
     display: inline-block; font-size: 12.5px; color: var(--tt-faint);
-    padding: 2px 9px;
+    padding: 2px 9px; margin-right: 10px;
   }
   /* The one save state that needs the eye, and the only loud thing the
      bar is allowed. LiveView writes .phx-client-error on an element
@@ -243,13 +243,13 @@
   }
   @media (min-width: 1000px) {
     .admin-col.twocol {
-      display: grid; grid-template-columns: 200px minmax(0, 640px);
+      display: grid; grid-template-columns: 200px minmax(0, 1fr);
       column-gap: 56px; align-items: start;
     }
     .admin-col.twocol > * { grid-column: 2; min-width: 0; }
     .admin-col.twocol > .page-h, .admin-col.twocol > .lead { grid-column: 1 / -1; }
     .admin-col.twocol > .set-h { grid-column: 1; }
-    .admin-col.twocol > .set-h, .admin-col.twocol > .set-h + * { margin-top: 44px; }
+    .admin-col.twocol > .set-h, .admin-col.twocol > .set-h + * { margin-top: 40px; }
     .admin-col.twocol > .set-h { padding-top: 2px; }
   }
 
@@ -263,11 +263,14 @@
   .set-h {
     font-family: var(--tt-font-serif); font-size: 19px; font-weight: 600;
     line-height: 1.2; letter-spacing: -.01em; color: var(--tt-ink);
-    margin-top: 44px; margin-bottom: 12px;
+    margin-top: 38px; margin-bottom: 12px;
   }
   /* the section heading on Stats: quieter than .set-h, because the
      blocks under it are rows of numbers, not fields to fill in */
-  .sec-h { font-size: 13px; font-weight: 600; color: var(--tt-dim); margin-top: 32px; margin-bottom: 10px; }
+  .sec-h {
+    font-family: var(--tt-font-serif); font-size: 19px; font-weight: 600; line-height: 1.2;
+    letter-spacing: -.01em; color: var(--tt-ink); margin-top: 40px; margin-bottom: 12px;
+  }
   /* one number and what it counts */
   .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
   @media (min-width: 768px) { .fig .n { font-size: 28px; } }
@@ -402,14 +405,19 @@
   }
   /* the moment follows the entry on the same line, so the eye reads
      who, where and when in one run */
-  .cmt-when { font-size: 12.5px; color: var(--tt-faint); }
-  .cmt-when::before { content: "\00b7\00a0"; color: var(--tt-slash); }
+  /* the second line: the entry and the moment, one run of quiet ink */
+  .cmt-sub {
+    display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0; row-gap: 2px;
+    margin-top: 2px; font-size: 12.5px; color: var(--tt-faint);
+  }
+  .cmt-when { font-size: 12.5px; color: var(--tt-faint); white-space: nowrap; }
+  .cmt-ent + .cmt-when::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
   .cmt-when .num { white-space: nowrap; }
   .cmt-ico { color: var(--tt-faint); align-self: center; display: inline-flex; }
   .cmt-ico:hover { color: var(--tt-accent); }
   .cmt-sep { color: var(--tt-slash); }
   .cmt-ent {
-    min-width: 0; font-size: 13px; color: var(--tt-dim); text-decoration: none;
+    min-width: 0; font-size: 12.5px; color: var(--tt-dim); text-decoration: none;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch;
   }
   .cmt-ent:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
@@ -453,10 +461,11 @@
      row of a screen, so the right edges line up down the page; a
      single field spans the two field columns */
   .pairrow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: end; }
+  .pairrow .btn { justify-self: start; }
   @media (min-width: 640px) {
-    .pairrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 96px; }
+    .pairrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 150px; }
     .pairrow .btn { width: 100%; }
-    .pairwide { max-width: calc(100% - 106px); }
+    .pairwide { max-width: calc(100% - 160px); }
   }
   /* a one-line text that may run long: it wraps and grows instead of
      hiding its end, and it is never dragged bigger */
@@ -556,7 +565,7 @@
     color: var(--tt-inksoft); text-align: left;
     display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
-  body.site .card .cimg .cx { font-size: 19px; line-height: 1.48; }
+  body.site .card .cimg .cx { font-size: 19px; line-height: 1.48; -webkit-line-clamp: 5; }
   /* the first letter of the title, for a square too small for words */
   .card .cimg .ci { display: none; }
   .card .ct {
@@ -574,18 +583,19 @@
   .card .cm { column-gap: 0; }
   .card .cm .by { white-space: nowrap; }
   .card .cm .by::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
-  /* a grid row of cards keeps one height for its titles, so the lines
-     under them stand level across the row */
-  @media (min-width: 640px) { #cards .card .ct { min-height: 2.5em; } }
+  /* the admin grid is a list to work through, not a gallery: its
+     pictures stand lower than the reader's squares, so the titles
+     carry the row */
+  @media (min-width: 640px) { #cards .card .cimg { aspect-ratio: 4 / 3; } }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
   .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
+  /* the state is a word (Draft, Page, goes live on a day); only a live
+     entry wears the dot, so the one state a reader can see is the one
+     that is marked. The facts of the line are held apart by a middle
+     dot, never by a comma. */
   .card .cm .st.published { background: var(--tt-accent); }
-  .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
-  /* scheduled: half on its way, the left half filled */
-  .card .cm .st.scheduled {
-    background: linear-gradient(90deg, var(--tt-accent) 50%, transparent 50%);
-    box-shadow: inset 0 0 0 1.5px var(--tt-accent);
-  }
+  .card .cm .bit + .bit::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  .card .cm .bit:first-child::first-letter { text-transform: uppercase; }
 
   /* the way to the zip, laid over the corner of the picture. The card
      under it is one link, so this one cannot stand inside it. It waits
@@ -779,10 +789,6 @@
   @keyframes tt-pulse { 50% { opacity: .35; } }
   /* on a phone the dot alone says it; the name is in the wordmark menu */
   @media (max-width: 639px) { .pres .w { display: none; } }
-  /* On a phone the bar holds the title, the dot of the state and the
-     one control; the word of the state gives way, the dot says it. The
-     word stays in the accessibility tree. */
-  @media (max-width: 639px) { #topbar .st { font-size: 0; gap: 0; } }
   /* the side column is the target of the jump down on a narrow
      screen; it lands under the sticky bar, not behind it */
   #sideCol { scroll-margin-top: 60px; }
@@ -1574,23 +1580,17 @@
   @media (max-width: 560px) { .searchrow input { flex-basis: 100%; } }
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   .searchrow .cnt { margin-left: auto; }
-  /* a choice is a word on the line, not a box: the browser's chrome
-     goes, a small chevron says it opens, and the words keep the weight
-     of a year in the archive */
+  /* a choice wears the one select of the app, and its words keep the
+     weight of a year in the archive */
   .pick { position: relative; flex: none; }
   .pick select {
     appearance: none; -webkit-appearance: none; width: auto; max-width: none;
     font-weight: 600; color: var(--tt-ink); cursor: pointer;
-    padding-right: 18px; font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums;
   }
   /* the field size base.css gives a phone stays: iOS zooms on a smaller
      control the moment it opens */
   @media (min-width: 900px) { .pick select { font-size: 13px; } }
-  .pick::after {
-    content: ""; position: absolute; right: 4px; top: 50%; width: 6px; height: 6px;
-    border-right: 1.5px solid var(--tt-dim); border-bottom: 1.5px solid var(--tt-dim);
-    transform: translateY(-70%) rotate(45deg); pointer-events: none;
-  }
   .cnt { color: var(--tt-dim); font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 400; flex: none; }
 
   /* the archive over a list: one line of years, and under it the months
@@ -1611,7 +1611,7 @@
   /* The count keeps its own quiet ink whatever the year beside it does,
      and inline-block keeps the rule of the open one off it: the mark
      belongs to the year, not to how many entries it holds. */
-  .per .cnt { display: inline-block; margin-left: 5px; font-weight: 400; color: var(--tt-dim); }
+  .per .cnt { display: inline-block; margin-left: 6px; font-size: 11.5px; font-weight: 400; color: var(--tt-faint); }
   a.per:hover, button.per:hover { color: var(--tt-ink); }
   /* the open one: weight says "year" for every word in the row, so the
      one the reader stands in says it with the accent and a rule under
@@ -1732,6 +1732,8 @@
 
   /* reader prose: serif, one narrow column's worth of comfort */
   .prose { font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.72; margin-top: 26px; }
+  /* a desk reads from further away than a phone in the hand */
+  @media (min-width: 768px) { .prose { font-size: 19px; line-height: 1.66; } }
   .prose p { margin-bottom: 19px; }
   .prose h1, .prose h2, .prose h3 {
     font-family: var(--tt-font-serif); font-weight: 600; letter-spacing: -.01em;

@@ -83,6 +83,14 @@
     box-shadow: var(--fld-sh-f);
   }
   input:disabled { color: var(--tt-faint); }
+  /* One select: the box of every field, with a chevron drawn inline
+     (nothing is fetched for it) instead of the browser's own. */
+  select {
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    padding-right: 34px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%235a554d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
   /* one height for every control: a field is 22px of line, 7px of air
      over and under it and a hairline, 38px in all, the height of a
      button beside it */

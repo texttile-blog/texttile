@@ -59,7 +59,7 @@ defmodule TexttileWeb.TextsLiveTest do
       assert has_element?(view, "#gridCount", "1 entry")
 
       # the state with its day, and who it is by apart from them
-      assert has_element?(view, "#cards .card .cm", "draft,")
+      assert has_element?(view, "#cards .card .cm .bit", "draft")
 
       assert has_element?(
                view,

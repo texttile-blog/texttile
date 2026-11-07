@@ -53,6 +53,20 @@ defmodule TexttileWeb.StatsComponents do
       >
         {ngettext("1 view", "%{count} views", @max)}
       </span>
+      <%!-- and one at half of it, so a bar between reads as a number too --%>
+      <span
+        :if={@max > 1}
+        class="absolute left-0 right-0 top-[84px] border-t border-dashed border-hair pointer-events-none"
+        aria-hidden="true"
+      >
+      </span>
+      <span
+        :if={@max > 1}
+        class="absolute right-0 top-[66px] text-[12px] leading-[16px] text-faint tabular-nums"
+        aria-hidden="true"
+      >
+        {div(@max, 2)}
+      </span>
       <div id={@id} class="flex items-end gap-[3px] h-[150px] pt-[18px] pb-0">
         <%= for bar <- @series do %>
           <button

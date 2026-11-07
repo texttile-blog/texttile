@@ -689,7 +689,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-[14px] py-[14px] border-b border-hair">
+        <div class="flex items-center gap-[14px] pt-[14px]">
           <span
             class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-logo"
@@ -706,9 +706,6 @@ defmodule TexttileWeb.SettingsLive do
             <b>{gettext("Logo")}</b>
             <span class="note" id="name-logo">
               {@settings.logo_name || gettext("Default: the Texttile mark")}
-            </span>
-            <span class="note">
-              {gettext("Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP.")}
             </span>
           </span>
           <button
@@ -731,7 +728,10 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <div class="flex items-center gap-[14px] py-[14px] border-b border-hair">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
+          {gettext("Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP.")}
+        </p>
+        <div class="flex items-center gap-[14px] pt-[14px]">
           <span
             class="w-[44px] h-[44px] flex-none grid place-items-center bg-field rounded"
             id="prev-favicon"
@@ -748,9 +748,6 @@ defmodule TexttileWeb.SettingsLive do
             <b>{gettext("Favicon")}</b>
             <span class="note" id="name-favicon">
               {@settings.favicon_name || gettext("Default: the Texttile mark")}
-            </span>
-            <span class="note">
-              {gettext("The icon in the browser tab. A square SVG, PNG, JPG or WebP.")}
             </span>
           </span>
           <button
@@ -773,6 +770,9 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
+        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
+          {gettext("The icon in the browser tab. A square SVG, PNG, JPG or WebP.")}
+        </p>
 
         <.section>{gettext("About")}</.section>
         <label class="lab block mb-[6px]" for="setting-about_markdown">

@@ -1723,6 +1723,13 @@ defmodule TexttileWeb.EditorLive do
               </button>
             </nav>
 
+            <%!-- on a narrow screen the tiles and the settings follow the
+                 words; this is the labelled way down to them --%>
+            <p class="lg:hidden -mt-3 mb-4 text-right">
+              <a href="#sideCol" class="link text-[13px]" id="jumpSideText">
+                {gettext("Tiles & settings")} ↓
+              </a>
+            </p>
             <div :if={@tab == "text"} id="tp-text">
               <form id="text-form" phx-change="title_changed" phx-submit="title_submitted">
                 <input
@@ -2237,9 +2244,7 @@ defmodule TexttileWeb.EditorLive do
                       </span>
                     <% Enum.all?(@preview_candidates, &(&1 in Enum.map(@gallery, fn image -> image.path end))) -> %>
                       <span class="note" id="previewByTile">
-                        {gettext(
-                          "The tile marked preview. To choose another, open it and tick Preview image."
-                        )}
+                        {gettext("Marked on its tile. Open another tile to choose it.")}
                       </span>
                     <% true -> %>
                       <button

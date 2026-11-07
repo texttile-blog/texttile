@@ -38,13 +38,15 @@ defmodule TexttileWeb.CommentComponents do
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
-        <%!-- the entry the comment stands under, on the same line: the
-             jump of the overview, quiet until the pointer finds it --%>
-        <span :if={@article} class="cmt-sep" aria-hidden="true">·</span>
+        <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
+      </div>
+      <%!-- where and when, on a line of their own under the name: the
+           entry is the jump of the overview, quiet until the pointer
+           finds it --%>
+      <div class="cmt-sub">
         <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent">
           {Texttile.Articles.display_title(@article)}
         </.link>
-        <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
         <span class="cmt-when num">{moment_line(@comment)}</span>
       </div>
 
@@ -205,7 +207,8 @@ defmodule TexttileWeb.CommentComponents do
       <div class="cmt-top">
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
-        <span class="cmt-sep" aria-hidden="true">·</span>
+      </div>
+      <div class="cmt-sub">
         <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent">
           {Texttile.Articles.display_title(@comment.article)}
         </.link>
