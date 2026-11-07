@@ -624,7 +624,7 @@ defmodule TexttileWeb.SettingsLive do
           data-note={@saved_note}
           data-note-until={@saved_note_until}
         >
-          {gettext("Last saved · just now")}
+          {gettext("Saved")}
         </span>
         <Layouts.view_site />
       </:bar>
@@ -798,13 +798,13 @@ defmodule TexttileWeb.SettingsLive do
           <textarea>{@settings.about_markdown}</textarea>
         </div>
         <div class="lab mt-[14px]">{gettext("Preview")}</div>
-        <div class="md-preview text-[13.5px] mt-[10px] pt-3 border-t border-hair" id="aboutPreview">
+        <div class="md-preview mt-[10px] pt-3 border-t border-hair" id="aboutPreview">
           {Phoenix.HTML.raw(@about_html)}
         </div>
 
         <.section>{gettext("Front page")}</.section>
         <.form for={@settings_form} id="front-page-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-3 cursor-pointer border-b border-hair">
+          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
             <input
               type="radio"
               name="settings[front_page]"
@@ -822,7 +822,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
           </label>
           <label class={[
-            "flex gap-[10px] items-start py-3 border-b border-hair",
+            "flex gap-[10px] items-start py-2",
             @pages == [] && "opacity-60"
           ]}>
             <input

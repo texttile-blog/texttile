@@ -109,7 +109,7 @@
      the violet of the main action */
   .btn.danger { color: var(--tt-julia); }
   .btn.danger:hover { color: var(--tt-julia); }
-  .btn.quiet.danger { color: var(--tt-dim); }
+  .btn.quiet.danger { color: var(--tt-julia); }
   .btn.quiet.danger:hover { color: var(--tt-julia); background-color: var(--tt-juliatint); }
   /* the small badge on a comment whose reader has not confirmed the
      address yet - worn in the admin area and on the reader's own
@@ -210,11 +210,12 @@
     .phx-late .st { display: none; }
   }
 
-  /* THE ADMIN COLUMN · every screen of the admin area stands in the
-     same column under the same bar, so moving between them never makes
-     the page jump or narrow. */
+  /* THE ADMIN COLUMN · every screen of the admin area stands in one
+     column of one measure, centred under a bar of the same width, so
+     moving between screens never makes the page jump, widen or narrow.
+     The editor alone takes the window, for its two columns. */
   .admin-col {
-    width: 100%; max-width: 1060px; margin: 0 auto;
+    width: 100%; max-width: 808px; margin: 0 auto;
     padding: 22px 16px 90px;
   }
   @media (min-width: 768px) { .admin-col { padding: 34px 24px 110px; } }
@@ -225,8 +226,8 @@
      in one row on the same top margin, so they start on one line. */
   @media (min-width: 1000px) {
     .admin-col.twocol {
-      display: grid; grid-template-columns: 200px minmax(0, 1fr);
-      column-gap: 56px; align-items: start;
+      display: grid; grid-template-columns: 168px minmax(0, 1fr);
+      column-gap: 40px; align-items: start;
     }
     .admin-col.twocol > * { grid-column: 2; min-width: 0; }
     .admin-col.twocol > .page-h, .admin-col.twocol > .lead { grid-column: 1 / -1; }
@@ -237,6 +238,9 @@
 
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.018em; }
+  /* a phone already names the screen in its bar, so the heading under
+     it is a section title and not a second banner */
+  @media (max-width: 639px) { .page-h { font-size: 22px; } }
   .lead { color: var(--tt-dim); font-size: 14px; line-height: 1.55; max-width: 62ch; margin-top: 6px; margin-bottom: 28px; }
   /* the section heading on Settings: the serif carries the hierarchy,
      so the screen needs no rule under the heading. A rule there reads
@@ -381,7 +385,6 @@
   .cmt {
     padding: 16px 0 12px; border-bottom: 1px solid var(--tt-hair);
   }
-  #commentsList, #commentTools, #commentsRule, #commentsList ~ #pager { max-width: 720px; }
   .cmt-top {
     display: flex; flex-wrap: wrap; align-items: baseline;
     column-gap: 7px; row-gap: 3px; font-size: 13.5px;
@@ -558,7 +561,7 @@
     color: var(--tt-inksoft); text-align: left;
     display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
-  body.site .card .cimg .cx { font-size: 19px; line-height: 1.48; -webkit-line-clamp: 5; }
+  body.site .card .cimg .cx { font-size: 17px; line-height: 1.5; -webkit-line-clamp: 4; }
   /* the first letter of the title, for a square too small for words */
   .card .cimg .ci { display: none; }
   .card .ct {
@@ -897,6 +900,12 @@
     box-shadow: var(--edb-sh);
   }
   .boxed-cm:hover { border-bottom: var(--fld-bb-h); }
+  /* About stands in the foot of every page in the sans of the band, so
+     its editor and its preview both write in that face */
+  #setting-about_markdown .cm-scroller, #setting-about_markdown > textarea {
+    font-family: var(--tt-font-sans); font-size: 15px; line-height: 1.6;
+  }
+  #aboutPreview { font-size: 15px; line-height: 1.6; }
   .boxed-cm:focus-within {
     border: var(--fld-bd-f); border-bottom: var(--fld-bb-f);
     box-shadow: var(--edb-shf);
@@ -986,8 +995,8 @@
   .bar-col { padding-left: 10px; padding-right: 16px; }
   @media (min-width: 768px) {
     .bar-col {
-      padding-left: max(18px, calc((100% - 1060px) / 2 + 18px));
-      padding-right: max(24px, calc((100% - 1060px) / 2 + 24px));
+      padding-left: max(18px, calc((100% - 808px) / 2 + 18px));
+      padding-right: max(24px, calc((100% - 808px) / 2 + 24px));
     }
   }
   /* THE ROW OF SECTIONS · every screen of the admin area in one line
@@ -1139,10 +1148,13 @@
   /* the "preview" flag on the chosen tile, bottom-right */
   .tile .cov {
     position: absolute; right: 5px; bottom: 5px;
-    font-size: 10px; color: #fff; padding: 1px 6px;
-    border-radius: var(--tt-radius-img);
-    background: rgb(var(--tt-overlay, 25 23 32) / .72);
+    font-size: 10.5px; font-weight: 600; color: var(--tt-onsolid); padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--tt-solid);
   }
+  /* the chosen tile wears the accent around it, the way a chosen
+     filter wears it under its word */
+  .tile[data-preview] { box-shadow: 0 0 0 2px var(--tt-page), 0 0 0 4px var(--tt-accent); }
 
   /* the preview-image picker in the article settings */
   .cover-opt {
@@ -1468,10 +1480,9 @@
   }
 
   /* THE COMMENT FORM
-     One amendment to WordPress' rows: the name and the address share a
-     row at half each and the website stands under the name, in the same
-     half. It is the only field that does not fill its row, which is the
-     point: it is the only optional one and the least important one. */
+     WordPress' rows, with who is writing on one row: the name, the
+     address and the optional website share it in thirds, so no field
+     stands alone beside an empty cell. */
   .cform {
     display: grid;
     gap: 14px 16px;
@@ -1490,15 +1501,14 @@
 
   @media (min-width: 620px) {
     .cform {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       grid-template-areas:
-        "lead  lead"
-        "body  body"
-        "name  mail"
-        "url   ."
-        "remem remem"
-        "err   err"
-        "act   act";
+        "lead  lead  lead"
+        "body  body  body"
+        "name  mail  url"
+        "remem remem remem"
+        "err   err   err"
+        "act   act   act";
     }
   }
 
@@ -1509,8 +1519,9 @@
   .cf-opt { margin-left: 6px; font-size: 12.5px; font-weight: 400; color: var(--tt-faint); }
   /* the checkbox is a note about the next visit, not a field */
   .cf-remem .opt {
-    align-items: baseline; padding: 0; font-size: 13.5px; color: var(--tt-dim);
+    align-items: flex-start; padding: 0; font-size: 13.5px; color: var(--tt-dim);
   }
+  .cf-remem .opt input { width: 16px; height: 16px; margin-top: 2px; }
 
   /* Signed in, the name and the address are facts the account carries,
      not questions. Dimmer ink and the plain cursor say the two take no
@@ -1712,6 +1723,7 @@
   }
   @media (min-width: 860px) {
     section.foot-band .cols { grid-template-columns: 1.5fr 1fr; gap: 64px; }
+    section.foot-band #subscribe { grid-column: 2; }
   }
   .f-eyebrow {
     font-size: 13px; font-weight: 600; color: var(--tt-ink); margin-bottom: 9px;
@@ -1752,6 +1764,8 @@
   .prose ul { list-style: disc; }
   .prose ol { list-style: decimal; }
   .prose li { margin-bottom: 7px; line-height: 1.55; }
+  .prose li:last-child { margin-bottom: 0; }
+  .prose ul, .prose ol { margin-bottom: 24px; }
   .prose a { color: var(--tt-accent); text-decoration-line: underline; text-underline-offset: 2px; text-decoration-color: var(--tt-accentsoft); }
   .prose blockquote { margin: 0 0 19px; padding-left: 14px; border-left: 2px solid var(--tt-rule); color: var(--tt-dim); }
   .prose code { font-family: var(--tt-font-mono); font-size: .88em; background: var(--tt-field); padding: 1px 4px; border-radius: 3px; }
@@ -1867,7 +1881,7 @@
 @media (min-width: 1024px) { .mdbar { top: 0; } }
 /* a finger needs room: on a touch screen every button is 40px square
    and the row scrolls sideways instead of shrinking them */
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 639px) {
   .mdbar { overflow-x: auto; scrollbar-width: none; }
   .mdbar::-webkit-scrollbar { display: none; }
   .mdb { width: 40px; height: 40px; }

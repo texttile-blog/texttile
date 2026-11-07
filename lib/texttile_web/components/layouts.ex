@@ -36,9 +36,9 @@ defmodule TexttileWeb.Layouts do
   The sections of the wordmark menu, in the order they stand there, and
   the digit each one answers to from anywhere in the admin area.
 
-  One list, two readers: the menu draws itself from it, and the key hint
-  under the entries grid names the same digits, so the two can never
-  drift apart.
+  One list, two readers: the menu draws itself from it, each row with
+  its digit, and the bar's row of sections takes its screens from it,
+  so the two can never drift apart.
   """
   def sections do
     [

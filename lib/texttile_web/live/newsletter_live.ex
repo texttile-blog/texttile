@@ -96,7 +96,7 @@ defmodule TexttileWeb.NewsletterLive do
           <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
         </div>
         <div>
-          <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2 max-w-[720px]">
+          <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
             <input
               type="email"
               name="email"
@@ -116,7 +116,7 @@ defmodule TexttileWeb.NewsletterLive do
             </span>
           </form>
 
-          <div id="subList" class="mt-[18px] max-w-[720px]">
+          <div id="subList" class="mt-[18px]">
             <p :if={@subscribers == []} class="note">
               {gettext(
                 "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
@@ -150,7 +150,7 @@ defmodule TexttileWeb.NewsletterLive do
             </div>
           </div>
 
-          <p class="note mt-[22px] max-w-[720px]" id="newsletterRule">
+          <p class="note mt-[22px]" id="newsletterRule">
             {gettext(
               "A reader who subscribes on the site confirms by mail first. An address you add here is confirmed at once. When an entry goes live with the subscriber mail on, every confirmed address gets it."
             )}

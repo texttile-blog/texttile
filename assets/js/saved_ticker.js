@@ -30,15 +30,10 @@ export function savedLine({at, now, wide}, say = t) {
 
   const fresh = (now - at) / 1000 < 20
 
-  // a phone bar has room for the stamp, not for the sentence
-  if (!wide) {
-    return {text: fresh ? say("Saved") : say("Saved %{time}", {time: clock}), title}
-  }
-
-  return {
-    text: fresh ? say("Last saved · just now") : say("Last saved %{time}", {time: clock}),
-    title,
-  }
+  // one stamp at every width: "Saved", then the clock of the save.
+  // `wide` is still read by callers; the words no longer depend on it.
+  void wide
+  return {text: fresh ? say("Saved") : say("Saved %{time}", {time: clock}), title}
 }
 
 /* What the toast says for one save, and for how long: the note while

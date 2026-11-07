@@ -1441,7 +1441,7 @@ defmodule TexttileWeb.EditorLive do
           data-note={@saved_note}
           data-note-until={@saved_until}
         >
-          {gettext("Last saved · just now")}
+          {gettext("Saved")}
         </span>
         <%!-- the one save state that needs the eye. LiveView puts the
              class on an element above this one the moment the socket
@@ -1460,17 +1460,8 @@ defmodule TexttileWeb.EditorLive do
           phx-click="save_version"
           data-flush-body
         >
-          <%!-- a phone has room for the verb alone --%>
-          <span class="sm:hidden">{gettext("Save")}</span>
-          <span class="hidden sm:inline">{gettext("Save version")}</span>
+          {gettext("Save version")}
         </button>
-
-        <%!-- On a narrow screen the tiles and the settings follow the
-             words. The bar stays in reach while the words scroll, so the
-             short way down to them stands in it. --%>
-        <a href="#sideCol" class="bn lg:hidden" id="jumpSide">
-          {gettext("Tiles")}
-        </a>
 
         <%!-- One control, one shape at the right edge in every state.
              A live entry gets View, because looking at it is what you
@@ -1712,6 +1703,12 @@ defmodule TexttileWeb.EditorLive do
                   {length(@comments)}
                 </span>
               </button>
+              <%!-- on a narrow screen the tiles and the settings follow
+                   the words; the strip scrolls, and its last stop is the
+                   way down to them --%>
+              <a href="#sideCol" class="tab lg:hidden" id="jumpSide">
+                {gettext("Gallery")} ↓
+              </a>
             </nav>
 
             <div :if={@tab == "text"} id="tp-text">
@@ -1826,7 +1823,7 @@ defmodule TexttileWeb.EditorLive do
                    the reference when the upload finishes. --%>
               <%!-- with nothing in the words the block stands empty; its
                    heading and count arrive with the first file --%>
-              <div class="mt-[28px]">
+              <div class={Body.refs(@article.body) != [] && "mt-[28px]"}>
                 <div
                   :if={Body.refs(@article.body) != []}
                   class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule"
@@ -2209,53 +2206,6 @@ defmodule TexttileWeb.EditorLive do
             </div>
 
             <div class="drow pt-0.5">
-              <span class="lab">{gettext("Preview image")}</span>
-              <span class="val">
-                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
-                  <%!-- With only tiles to choose from, the tiles above are
-                       the picker: the one marked preview is the choice,
-                       and the lightbox of any other one changes it. The
-                       strip is for pictures in the words, which have no
-                       tile of their own. --%>
-                  <%= cond do %>
-                    <% @preview_candidates == [] -> %>
-                      <span class="note">
-                        {gettext(
-                          "No pictures yet. Once the entry or the gallery has one, pick it here."
-                        )}
-                      </span>
-                    <% Enum.all?(@preview_candidates, &(&1 in Enum.map(@gallery, fn image -> image.path end))) -> %>
-                      <span class="note" id="previewByTile">
-                        {gettext("Marked on its tile. Open another tile to choose it.")}
-                      </span>
-                    <% true -> %>
-                      <button
-                        :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
-                        type="button"
-                        class={["cover-opt", @effective_preview == path && "on"]}
-                        style={tile_bg((@media[path] && @media[path].still) || path)}
-                        phx-click="set_preview"
-                        phx-value-path={path}
-                        aria-label={gettext("Use image %{index} as the preview image", index: index)}
-                      >
-                      </button>
-                  <% end %>
-                </div>
-                <div
-                  :if={
-                    !Enum.all?(
-                      @preview_candidates,
-                      &(&1 in Enum.map(@gallery, fn image -> image.path end))
-                    )
-                  }
-                  class="hint"
-                >
-                  {gettext("Used in the entries grid, on the front page and in link previews.")}
-                </div>
-              </span>
-            </div>
-
-            <div class="drow gtop">
               <span class="lab">{gettext("Address")}</span>
               <span class="val">
                 <span class="addr">
@@ -2336,6 +2286,53 @@ defmodule TexttileWeb.EditorLive do
               <span class="val">
                 <input type="date" id="edDate" name="publish_date" value={@article.publish_date} />
                 <div class="hint" id="edDateHint">{date_hint(@article)}</div>
+              </span>
+            </div>
+
+            <div class="drow gtop">
+              <span class="lab">{gettext("Preview image")}</span>
+              <span class="val">
+                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
+                  <%!-- With only tiles to choose from, the tiles above are
+                       the picker: the one marked preview is the choice,
+                       and the lightbox of any other one changes it. The
+                       strip is for pictures in the words, which have no
+                       tile of their own. --%>
+                  <%= cond do %>
+                    <% @preview_candidates == [] -> %>
+                      <span class="note">
+                        {gettext(
+                          "No pictures yet. Once the entry or the gallery has one, pick it here."
+                        )}
+                      </span>
+                    <% Enum.all?(@preview_candidates, &(&1 in Enum.map(@gallery, fn image -> image.path end))) -> %>
+                      <span class="note" id="previewByTile">
+                        {gettext("Marked on its tile. Open another tile to choose it.")}
+                      </span>
+                    <% true -> %>
+                      <button
+                        :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
+                        type="button"
+                        class={["cover-opt", @effective_preview == path && "on"]}
+                        style={tile_bg((@media[path] && @media[path].still) || path)}
+                        phx-click="set_preview"
+                        phx-value-path={path}
+                        aria-label={gettext("Use image %{index} as the preview image", index: index)}
+                      >
+                      </button>
+                  <% end %>
+                </div>
+                <div
+                  :if={
+                    !Enum.all?(
+                      @preview_candidates,
+                      &(&1 in Enum.map(@gallery, fn image -> image.path end))
+                    )
+                  }
+                  class="hint"
+                >
+                  {gettext("Used in the entries grid, on the front page and in link previews.")}
+                </div>
               </span>
             </div>
 

@@ -169,14 +169,14 @@ defmodule TexttileWeb.ProfileLive do
     >
       <:bar>
         <span
-          class="text-[12.5px] text-faint num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
+          class="saved num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
           id="savedProfile"
           phx-hook="SavedTicker"
           data-at={@saved_at}
           data-note={@saved_note}
           data-note-until={@saved_note_until}
         >
-          {gettext("Last saved · just now")}
+          {gettext("Saved")}
         </span>
         <Layouts.view_site />
       </:bar>

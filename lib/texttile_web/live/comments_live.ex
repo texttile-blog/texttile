@@ -201,7 +201,11 @@ defmodule TexttileWeb.CommentsLive do
             <span class="sp"></span>
             <button
               :for={action <- bulk_actions(@status)}
-              class={["btn sm", action == "delete" && "danger"]}
+              class={[
+                "btn sm",
+                MapSet.size(@selected) == 0 && "quiet",
+                action == "delete" && "danger"
+              ]}
               id={"bulk-#{action}"}
               phx-click="bulk"
               phx-value-action={action}
@@ -360,7 +364,7 @@ defmodule TexttileWeb.CommentsLive do
   defp status_name("all"), do: gettext("All")
   defp status_name("waiting"), do: gettext("Not confirmed yet")
   defp status_name("confirmed"), do: gettext("Confirmed")
-  defp status_name("released"), do: gettext("Allowed")
+  defp status_name("released"), do: gettext("Released")
   defp status_name("trash"), do: gettext("Trash")
 
   defp empty_line("all") do

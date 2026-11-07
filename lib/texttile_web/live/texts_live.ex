@@ -279,17 +279,6 @@ defmodule TexttileWeb.TextsLive do
             do: gettext("No entries yet. New entry starts the first one."),
             else: gettext("Nothing matches. The search covers titles, tags and the entry itself.")}
         </p>
-        <%!-- every digit the wordmark menu carries, in the order it
-             carries them, so the two never say different things --%>
-        <p class="hidden md:block text-[12.5px] text-faint mt-9 pt-[13px] border-t border-hair">
-          {gettext("Press a key anywhere to jump:")}
-          <span :for={section <- Layouts.sections()} class="whitespace-nowrap">
-            <b class="text-dim num">{section.key}</b>
-            {section.label} ·
-          </span>
-          <b class="text-dim">/</b>
-          {gettext("search.")}
-        </p>
       </div>
     </Layouts.app>
     """

@@ -224,9 +224,7 @@ defmodule TexttileWeb.StatsLive do
                   </.link>
                 </td>
                 <td class="text-right num hidden sm:table-cell">
-                  {(row.article.publish_date &&
-                      Texttile.I18n.format_short_date(row.article.publish_date)) ||
-                    gettext("draft")}
+                  {published_cell(row.article)}
                 </td>
                 <td class="text-right num">{number(row.views)}</td>
                 <td class="text-right num people">{number(row.people)}</td>
@@ -317,4 +315,13 @@ defmodule TexttileWeb.StatsLive do
   defp busiest_number({_day, views}), do: number(views)
 
   defp busiest_day({day, _views}), do: day_label(day)
+
+  # The Published cell speaks the entries grid's words for a state.
+  defp published_cell(%{status: "draft"}), do: gettext("Draft")
+
+  defp published_cell(%{status: "scheduled", publish_date: day}) when not is_nil(day),
+    do: gettext("Scheduled") <> " · " <> Texttile.I18n.format_short_date(day)
+
+  defp published_cell(%{publish_date: nil}), do: ""
+  defp published_cell(%{publish_date: day}), do: Texttile.I18n.format_short_date(day)
 end

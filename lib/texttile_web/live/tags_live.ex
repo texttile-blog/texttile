@@ -137,7 +137,7 @@ defmodule TexttileWeb.TagsLive do
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </span>
         </div>
-        <div id="tagsList" class="max-w-[720px]">
+        <div id="tagsList">
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>

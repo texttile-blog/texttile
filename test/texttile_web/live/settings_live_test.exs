@@ -20,7 +20,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
       assert html =~ "Settings"
-      assert html =~ "Last saved"
+      assert html =~ ~s(id="savedSettings")
 
       for section <- ~w(Site About Theme Comments Users Images Storage) do
         assert has_element?(view, "h2", section)

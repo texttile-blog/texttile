@@ -51,6 +51,13 @@ defmodule TexttileWeb.SiteHTMLTest do
       refute lead =~ "letter…"
     end
 
+    test "a cut after a comma leaves the comma out of the ellipsis" do
+      body = String.duplicate("flour, ", 40)
+      lead = SiteHTML.lead(%{body: body})
+
+      assert String.ends_with?(lead, "flour…")
+    end
+
     test "an umlaut lead under the limit keeps its last word" do
       body = String.duplicate("über ", 30) |> String.trim()
       assert String.length(body) == 149

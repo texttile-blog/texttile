@@ -351,7 +351,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> open_editor(article.id)
         |> evaluate(@author_field, [is_function: true], &assert(&1 == "kb"))
         |> select("Author", option: "Anna Berger")
-        |> assert_has("#state", text: "Last saved")
+        |> assert_has("#state", text: "Saved")
 
       moved =
         eventually(fn ->
