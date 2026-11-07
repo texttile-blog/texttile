@@ -147,7 +147,7 @@ defmodule TexttileWeb.TextsLive do
               aria-label={gettext("Search entries")}
               autocomplete="off"
               phx-debounce="200"
-              class="w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
+              class="max-sm:order-2 max-sm:basis-full w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
             />
           </form>
           <%!-- the archive, the way the reader's list offers it: a year,

@@ -1674,7 +1674,7 @@ defmodule TexttileWeb.EditorLive do
            them, one screen tall, with a bar of their own that is always
            drawn (.sidecol), so the column never looks like it ends
            where the window does. --%>
-      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px]">
+      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] xl:max-w-[1108px] xl:mx-auto">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
             <%!-- A phone has the gallery and the settings under the words,
@@ -1689,11 +1689,24 @@ defmodule TexttileWeb.EditorLive do
               >
                 {gettext("Text")}
               </button>
-              <a href="#tilesBlock" class="ptab" id="jumpGallery">{gettext("Gallery")}</a>
-              <a href="#artSettings" class="ptab" id="jumpSettings">{gettext("Settings")}</a>
+              <a href="#tilesBlock" class="ptab jump" id="jumpGallery">{gettext("Gallery")} ↓</a>
+              <a href="#artSettings" class="ptab jump" id="jumpSettings">{gettext("Settings")} ↓</a>
               <details class="ptab-more" id="moreTabs">
                 <summary class={["ptab", @tab != "text" && "on"]}>
-                  {more_label(@tab)} <span aria-hidden="true">▾</span>
+                  {more_label(@tab)}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
                 </summary>
                 <div class="ptab-menu">
                   <button

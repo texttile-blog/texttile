@@ -193,7 +193,7 @@ defmodule TexttileWeb.SiteHTML do
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
         <span :if={!@preview && lead(@article) != ""} class="cimg words" aria-hidden="true">
-          <span class="cx">{lead(@article, 130)}</span>
+          <span class="cx">{lead(@article, 110)}</span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />

@@ -43,7 +43,7 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
 
     conn
     |> sign_in()
-    |> click_button("#wmBtn", "Texttile")
+    |> click("#wmBtn")
     |> click_link("#navMenu a[data-key='8']", "Stats")
     |> assert_has("h1", text: "Stats")
     |> assert_has("#figViews", text: "12")

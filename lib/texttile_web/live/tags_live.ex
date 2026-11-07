@@ -147,10 +147,10 @@ defmodule TexttileWeb.TagsLive do
             class="py-[8px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
           >
             <b class="text-[14.5px] break-words min-w-0">#{tag}</b>
-            <span class="note num flex-1">
+            <span class="note num flex-1 max-sm:order-3 max-sm:basis-full max-sm:-mt-1">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>
-            <div :if={@editing != tag} class="flex gap-1 -mr-[10px]">
+            <div :if={@editing != tag} class="flex gap-1 -mr-[10px] max-sm:ml-auto">
               <button
                 type="button"
                 class="btn quiet sm"

@@ -45,7 +45,7 @@ defmodule TexttileWeb.SessionHTML do
         </div>
         <%!-- The sign-in lasts two days. This makes it fourteen, on
              this browser only. --%>
-        <label class="opt">
+        <label class="opt text-[13px]">
           <input
             type="checkbox"
             id="login-remember"

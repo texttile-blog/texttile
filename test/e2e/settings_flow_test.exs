@@ -8,7 +8,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("#wmBtn", "Texttile")
+        |> click("#wmBtn")
         # the menu opens in the browser: wait for it, or the next click
         # races the script on a slow machine
         |> assert_has("#navMenu", text: "Settings")
