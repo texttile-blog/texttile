@@ -281,8 +281,8 @@ msgid_plural ", %{names} are here"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/controllers/site_html.ex:349
-#: lib/texttile_web/controllers/site_html.ex:357
+#: lib/texttile_web/controllers/site_html.ex:351
+#: lib/texttile_web/controllers/site_html.ex:359
 #: lib/texttile_web/live/import_live.ex:198
 #: lib/texttile_web/live/stats_live.ex:260
 #, elixir-autogen, elixir-format
@@ -568,7 +568,7 @@ msgid "Comment"
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:55
-#: lib/texttile_web/controllers/site_html.ex:348
+#: lib/texttile_web/controllers/site_html.ex:350
 #: lib/texttile_web/controllers/site_html/article.html.heex:139
 #: lib/texttile_web/live/comments_live.ex:33
 #: lib/texttile_web/live/comments_live.ex:170
@@ -786,7 +786,7 @@ msgid "Empty means whenever you publish. A future date schedules the entry."
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:48
-#: lib/texttile_web/controllers/site_html.ex:316
+#: lib/texttile_web/controllers/site_html.ex:318
 #: lib/texttile_web/live/texts_live.ex:23
 #: lib/texttile_web/live/texts_live.ex:148
 #: lib/texttile_web/live/texts_live.ex:160
@@ -3274,7 +3274,7 @@ msgid "%{from} to %{to}"
 msgstr ""
 
 #: lib/texttile/i18n.ex:142
-#: lib/texttile_web/controllers/site_html.ex:335
+#: lib/texttile_web/controllers/site_html.ex:337
 #, elixir-autogen, elixir-format
 msgid "%{month} %{year}"
 msgstr ""
@@ -3398,17 +3398,17 @@ msgstr ""
 msgid "Password: %{password}"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:341
+#: lib/texttile_web/controllers/site_html.ex:343
 #, elixir-autogen, elixir-format
 msgid "Entries from %{period}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:343
+#: lib/texttile_web/controllers/site_html.ex:345
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}” from %{period}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:342
+#: lib/texttile_web/controllers/site_html.ex:344
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}”."
 msgstr ""
