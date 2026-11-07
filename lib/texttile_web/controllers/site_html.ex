@@ -82,7 +82,8 @@ defmodule TexttileWeb.SiteHTML do
     ~H"""
     <footer class="foot-band">
       <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
-        <a href={~p"/"} class="font-semibold text-ink">{site_title()}</a>
+        <%!-- the name stands in the header and the band; the colophon
+             keeps the ways out --%>
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
         <button type="button" id="foot-share" hidden>{gettext("Share")}</button>

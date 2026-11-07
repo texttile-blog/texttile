@@ -2418,3 +2418,19 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 
 /* Description is the same two-line field on both widths */
 #setting-site_description { min-height: 60px; }
+
+/* a short opening is set larger, so its square looks set, not empty */
+@media (min-width: 640px) { #cards .card .cimg .cx.short { font-size: 20px; line-height: 1.4; } }
+/* an admin card's title keeps to one line on a desk, so a row's meta
+   lines stand on one line; the full title is the card's own words */
+@media (min-width: 640px) { #cards .card .ct { -webkit-line-clamp: 1; } }
+
+/* a quotation reads in ink; its rule says it is a quotation */
+.prose blockquote { color: var(--tt-ink); }
+.ed-cm .cm-line.cm-mdquote { color: var(--tt-ink); }
+
+/* numbers stand on the first line of their row */
+.admin-col table td { vertical-align: baseline; }
+
+/* the phone formatting bar's dividers a step quieter */
+@media (max-width: 639px) { .mdsep { background: var(--tt-rule); } }

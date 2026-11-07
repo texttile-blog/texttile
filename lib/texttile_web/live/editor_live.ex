@@ -2280,7 +2280,22 @@ defmodule TexttileWeb.EditorLive do
                   id="slugHint"
                   data-live={@article.status != "draft" && Articles.public_path(@article)}
                 >
-                  <span class="block break-all mb-[4px] text-ink" id="slugPrefix">
+                  <%!-- the whole address: a link while readers can open it,
+                       quiet help otherwise --%>
+                  <a
+                    :if={@public_url && Visibility.live?(@article)}
+                    href={@public_url}
+                    target="_blank"
+                    class="link block break-all mb-[4px]"
+                    id="slugPrefix"
+                  >
+                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
+                  </a>
+                  <span
+                    :if={!(@public_url && Visibility.live?(@article))}
+                    class="block break-all mb-[4px]"
+                    id="slugPrefix"
+                  >
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
                   </span>
                   {slug_hint(@article)}
@@ -3123,11 +3138,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp date_hint(article) do
     if article.publish_date,
-      do:
-        gettext(
-          "Live since %{date}. A future date changes it to unpublished until the date.",
-          date: Texttile.I18n.format_date(article.publish_date)
-        ),
+      do: gettext("Live since %{date}.", date: Texttile.I18n.format_date(article.publish_date)),
       else: gettext("Pick the day it went live. An empty field makes the entry a draft again.")
   end
 
@@ -3142,7 +3153,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp slug_hint(article) do
     if Articles.public_path(article) do
-      gettext("Live at this address. After a change, the old address leads here.")
+      gettext("After a change, the old address leads here.")
     end
   end
 

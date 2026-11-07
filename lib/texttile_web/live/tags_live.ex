@@ -216,6 +216,10 @@ defmodule TexttileWeb.TagsLive do
             </.form>
           </div>
         </div>
+        <%!-- where a tag comes from, at the foot of the list --%>
+        <p :if={@tags != []} class="note mt-[16px]" id="tagsRule">
+          {gettext("Tags are added in an entry's settings.")}
+        </p>
       </div>
       <.ask
         :if={@confirm_tag}

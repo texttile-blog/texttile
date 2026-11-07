@@ -246,7 +246,10 @@ defmodule TexttileWeb.TextsLive do
                      an empty one says what is missing. The small square
                      of the phone list is the same quiet box, empty. --%>
                 <span class="cimg empty">
-                  <span :if={Articles.lead(article) != ""} class="cx">
+                  <span
+                    :if={Articles.lead(article) != ""}
+                    class={["cx", String.length(Articles.lead(article, 140)) < 70 && "short"]}
+                  >
                     {Articles.lead(article, 140)}
                   </span>
                   <%!-- the small square of the phone list holds the first

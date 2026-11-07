@@ -766,8 +766,10 @@ defmodule TexttileWeb.SettingsLive do
           </form>
         </div>
         <p class="note pt-[8px] pb-[6px]">
-          <span id="name-favicon">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
-            "A square SVG, PNG, JPG or WebP."
+          <%!-- the default is said once, under the logo; the favicon
+               names its file only once one is uploaded --%>
+          <span :if={@settings.favicon_name} id="name-favicon">{@settings.favicon_name}.</span> {gettext(
+            "Square."
           )}
         </p>
 
