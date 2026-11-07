@@ -130,26 +130,24 @@ defmodule TexttileWeb.TagsLive do
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
-      <div class="admin-col rail">
-        <%!-- the rail: what this screen is and how it is narrowed; the
-             list stands beside it on a wide window, under it on a phone --%>
-        <div class="rail-side flex items-baseline gap-[14px] flex-wrap mb-5">
+      <div class="admin-col">
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
           <h1 class="page-h">{gettext("Tags")}</h1>
           <span class="note num" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </span>
         </div>
-        <div id="tagsList" class="rail-main">
+        <div id="tagsList">
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[9px] border-b border-hair flex items-baseline gap-[10px] flex-wrap"
+            class="py-[9px] border-b border-hair grid grid-cols-[minmax(0,1fr)_84px_auto] items-baseline gap-x-[10px]"
           >
-            <b class="text-[14.5px] break-words min-w-0 flex-1">#{tag}</b>
-            <span class="note num w-[88px] text-right">
+            <b class="text-[14.5px] break-words min-w-0">#{tag}</b>
+            <span class="note num text-right">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>
             <div :if={@editing != tag} class="flex gap-1 -mr-[10px]">
@@ -176,7 +174,7 @@ defmodule TexttileWeb.TagsLive do
               :if={@editing == tag}
               for={@form}
               id="rename-tag-form"
-              class="w-full pt-2"
+              class="col-span-3 w-full pt-2"
               phx-submit="rename_tag"
             >
               <label for="tag-name" class="lab block mb-[3px]">{gettext("Name")}</label>

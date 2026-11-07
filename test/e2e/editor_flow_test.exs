@@ -71,7 +71,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> open_editor(article.id)
       |> type("#edSlug", "restored-doors")
-      |> assert_has("#slugHint", text: "restored-doors is live")
+      |> assert_has(~s(#slugHint[data-live$="/restored-doors"]))
 
       assert Articles.get_article!(article.id).slug == "restored-doors"
     end
@@ -84,7 +84,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
         |> assert_has("#stateWord", text: "Published")
-        |> assert_has("#slugHint", text: "is live")
+        |> assert_has("#slugHint[data-live]")
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
 

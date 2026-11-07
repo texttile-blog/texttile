@@ -57,7 +57,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
     conn
     |> press("#edSlug", "ControlOrMeta+a")
     |> type("#edSlug", "doors-edited")
-    |> assert_has("#slugHint", text: "doors-edited is live")
+    |> assert_has(~s(#slugHint[data-live$="/doors-edited"]))
 
     assert Articles.get_article!(article.id).slug == "doors-edited"
   end
@@ -75,7 +75,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
       |> open_editor(article.id)
       |> press("#edSlug", "ControlOrMeta+a")
       |> type("#edSlug", "doors-earlier")
-      |> assert_has("#slugHint", text: "doors-earlier is live")
+      |> assert_has(~s(#slugHint[data-live$="/doors-earlier"]))
       |> click("#stateWord")
       |> disconnect()
 

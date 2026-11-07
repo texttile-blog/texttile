@@ -204,7 +204,6 @@ defmodule TexttileWeb.ProfileLive do
                 name={@profile_form[:display_name].name}
                 value={@profile_form[:display_name].value}
                 phx-debounce="300"
-                class="pairwide"
               />
               <div class="hint">
                 {gettext("What others see. Empty shows the part of your address in front of the @.")}

@@ -142,7 +142,7 @@
      toast below. app.js (SavedTicker) writes the words of both. */
   .saved {
     display: inline-block; font-size: 12.5px; color: var(--tt-faint);
-    padding: 2px 9px; margin-right: 10px;
+    padding: 2px 9px; margin-right: 20px;
   }
   /* The one save state that needs the eye, and the only loud thing the
      bar is allowed. LiveView writes .phx-client-error on an element
@@ -222,25 +222,6 @@
      whole width is used and the eye runs down the names. The page
      heading spans both. A heading and the first block after it stand
      in one row on the same top margin, so they start on one line. */
-  /* A list on a wide window: the screen's name and its filters in the
-     rail on the left, the list beside it at a measure a row can be read
-     at. The same two columns as Settings, so every screen that manages
-     something has one shape. */
-  @media (min-width: 1000px) {
-    .admin-col.rail {
-      display: grid; grid-template-columns: 200px minmax(0, 1fr);
-      column-gap: 56px; align-items: start;
-    }
-    .admin-col.rail > .rail-side { position: sticky; top: 86px; margin-bottom: 0; }
-    .admin-col.rail > .rail-main { min-width: 0; padding-top: 4px; }
-    /* the filters of the rail stand as a column, the open one ruled on
-       the side the list is on */
-    .rail-side nav { flex-direction: column; align-items: flex-start; gap: 0; margin-top: 22px; }
-    .rail-side .seg-b, .rail-side .seg-b:first-child { padding: 0 0 0 12px; min-height: 32px; box-shadow: inset 2px 0 0 var(--tt-hair); }
-    .rail-side .seg-b.on { box-shadow: inset 2px 0 0 var(--tt-accent); }
-    .rail-side .lead { margin-bottom: 0; }
-    .rail-side .cmt-tools { top: 52px; }
-  }
   @media (min-width: 1000px) {
     .admin-col.twocol {
       display: grid; grid-template-columns: 200px minmax(0, 1fr);
@@ -263,7 +244,7 @@
   .set-h {
     font-family: var(--tt-font-serif); font-size: 19px; font-weight: 600;
     line-height: 1.2; letter-spacing: -.01em; color: var(--tt-ink);
-    margin-top: 38px; margin-bottom: 12px;
+    margin-top: 32px; margin-bottom: 12px;
   }
   /* the section heading on Stats: quieter than .set-h, because the
      blocks under it are rows of numbers, not fields to fill in */
@@ -273,7 +254,7 @@
   }
   /* one number and what it counts */
   .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
-  @media (min-width: 768px) { .fig .n { font-size: 28px; } }
+  @media (min-width: 768px) { .fig .n { font-size: 28px; } .set-h { margin-top: 38px; } }
   .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; }
   .lab { font-size: 13px; color: var(--tt-dim); }
   .note { font-size: 13px; line-height: 1.5; color: var(--tt-faint); }
@@ -438,7 +419,8 @@
     background: var(--tt-page); border-bottom: 1px solid var(--tt-rule);
     font-size: 13px; color: var(--tt-dim);
   }
-  .cmt-tools label { display: flex; align-items: center; gap: 9px; min-height: 28px; padding-left: 12px; cursor: pointer; }
+  /* the box of the whole list stands in the gutter of the row boxes */
+  .cmt-tools label { display: flex; align-items: center; gap: 9px; min-height: 28px; padding-left: 9px; cursor: pointer; }
   .cmt-tools .sp { flex: 1; }
 
   /* the same name under a text, when an imported comment carries the
@@ -465,7 +447,7 @@
   @media (min-width: 640px) {
     .pairrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 150px; }
     .pairrow .btn { width: 100%; }
-    .pairwide { max-width: calc(100% - 160px); }
+
   }
   /* a one-line text that may run long: it wraps and grows instead of
      hiding its end, and it is never dragged bigger */
@@ -589,13 +571,18 @@
   @media (min-width: 640px) { #cards .card .cimg { aspect-ratio: 4 / 3; } }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
   .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
-  /* the state is a word (Draft, Page, goes live on a day); only a live
-     entry wears the dot, so the one state a reader can see is the one
-     that is marked. The facts of the line are held apart by a middle
-     dot, never by a comma. */
+  /* Every line starts with its state: a mark and a word. Live is a
+     filled dot, Scheduled a half one, Draft a ring. The facts after it
+     are held apart by a middle dot, never by a comma; the bits are one
+     flex row, so the template's own spaces never double a gap. */
+  .card .cm .bits { display: inline-flex; flex-wrap: wrap; align-items: baseline; }
   .card .cm .st.published { background: var(--tt-accent); }
+  .card .cm .st.scheduled {
+    background: linear-gradient(90deg, var(--tt-accent) 50%, transparent 50%);
+    box-shadow: inset 0 0 0 1.5px var(--tt-accent);
+  }
+  .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
   .card .cm .bit + .bit::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
-  .card .cm .bit:first-child::first-letter { text-transform: uppercase; }
 
   /* the way to the zip, laid over the corner of the picture. The card
      under it is one link, so this one cannot stand inside it. It waits
@@ -895,7 +882,7 @@
     background-color: var(--fld-bg); background-image: none;
     border: var(--fld-bd); border-bottom: var(--fld-bb);
     border-radius: var(--fld-r);
-    padding: 8px 10px; padding-left: var(--edb-pl);
+    padding: 8px 12px;
     box-shadow: var(--edb-sh);
   }
   .boxed-cm:hover { border-bottom: var(--fld-bb-h); }
@@ -912,12 +899,7 @@
     text-underline-offset: 2px;
   }
   .foot-act:hover { text-decoration-color: var(--tt-accent); }
-  /* a square icon in the bar, the height of the control beside it */
-  .bar-ico {
-    display: inline-grid; place-items: center; flex: none;
-    width: 32px; height: 30px; border-radius: var(--tt-radius); color: var(--tt-dim);
-  }
-  .bar-ico:hover { background: var(--tt-field); color: var(--tt-ink); }
+
   .ed-foot .flag { display: none; align-items: center; gap: 6px; margin-right: 9px; color: var(--tt-accent); font-weight: 600; }
   #bodyWrap:not(.is-readonly):has(.cm-content:focus) .ed-foot .flag { display: inline-flex; }
 
@@ -1110,17 +1092,18 @@
   /* delete, on the picture itself: quiet until the tile is under the
      pointer, always there for a finger (the imaedge tile toolbar) */
   .tile .tile-del {
-    position: absolute; right: 5px; top: 5px; width: 22px; height: 22px;
+    position: absolute; right: 5px; top: 5px; width: 24px; height: 24px;
     display: grid; place-items: center;
     color: #fff; font-size: 15px; line-height: 1;
-    border-radius: var(--tt-radius-img);
-    background: rgb(var(--tt-overlay, 25 23 32) / .55);
+    border-radius: 999px;
+    background: rgb(0 0 0 / .55);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / .3);
     opacity: 0; transition: opacity .15s, background-color .15s;
   }
   .tile:hover .tile-del, .tile:focus-within .tile-del { opacity: 1; }
   .tile .tile-del:hover { background: rgb(var(--tt-overlay, 25 23 32) / .9); }
   @media (hover: none) {
-    .tile .tile-del { opacity: .65; }
+    .tile .tile-del { opacity: 1; }
   }
   @media (pointer: coarse) {
     .tile .tile-del::after {
@@ -1399,7 +1382,11 @@
   /* the ground answers the pointer, because the ink has nowhere darker
      to go, and the page you are on is the one in bold */
   .site-nav a:hover { background: var(--tt-field); }
-  .site-nav a[aria-current] { font-weight: 600; }
+  /* the open one: the admin bar's mark, the ink and a violet rule */
+  .site-nav a[aria-current] {
+    font-weight: 600; text-decoration: underline; text-decoration-color: var(--tt-accent);
+    text-decoration-thickness: 2px; text-underline-offset: 7px;
+  }
   @media (max-width: 900px) { .site-desc { display: none; } }
 
   /* the foot of every page: one row, small type in reading ink, links
@@ -1429,6 +1416,9 @@
     font-family: var(--tt-font-serif); font-weight: 600;
     font-size: clamp(33px, 6.2vw, 47px); line-height: 1.06; letter-spacing: -.025em;
   }
+  /* the heading over a list is the door to it, not a title: a step
+     quieter than the title of an entry */
+  .f-h1.list-h { font-size: clamp(30px, 4.2vw, 38px); }
   .f-sec-h {
     font-family: var(--tt-font-serif); font-size: 21px; font-weight: 600;
     line-height: 1.2; letter-spacing: -.015em; color: var(--tt-ink);
@@ -1576,7 +1566,7 @@
      phone the field takes a line of its own and the choices stand under
      it, so the placeholder is never cut short by the count. */
   .searchrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 16px; }
-  .searchrow input { flex: 1; min-width: 0; }
+  .searchrow input { flex: 1; min-width: 0; max-width: 460px; }
   @media (max-width: 560px) { .searchrow input { flex-basis: 100%; } }
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   .searchrow .cnt { margin-left: auto; }

@@ -1466,19 +1466,8 @@ defmodule TexttileWeb.EditorLive do
         <%!-- On a narrow screen the tiles and the settings follow the
              words. The bar stays in reach while the words scroll, so the
              short way down to them stands in it. --%>
-        <a
-          href="#sideCol"
-          class="bar-ico lg:hidden"
-          id="jumpSide"
-          title={gettext("Tiles & settings")}
-          aria-label={gettext("Tiles & settings")}
-        >
-          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-            <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" />
-            <rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" />
-            <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" />
-            <rect x="9" y="9" width="5.5" height="5.5" rx="1.2" />
-          </svg>
+        <a href="#sideCol" class="bn lg:hidden" id="jumpSide">
+          {gettext("Tiles")}
         </a>
 
         <%!-- One control, one shape at the right edge in every state.
@@ -1723,13 +1712,6 @@ defmodule TexttileWeb.EditorLive do
               </button>
             </nav>
 
-            <%!-- on a narrow screen the tiles and the settings follow the
-                 words; this is the labelled way down to them --%>
-            <p class="lg:hidden -mt-3 mb-4 text-right">
-              <a href="#sideCol" class="link text-[13px]" id="jumpSideText">
-                {gettext("Tiles & settings")} ↓
-              </a>
-            </p>
             <div :if={@tab == "text"} id="tp-text">
               <form id="text-form" phx-change="title_changed" phx-submit="title_submitted">
                 <input
@@ -1840,11 +1822,13 @@ defmodule TexttileWeb.EditorLive do
                    a list of its own. An upload that is still running
                    holds its place with a token, and the token becomes
                    the reference when the upload finishes. --%>
-              <div class="mt-[34px]">
-                <div class={[
-                  "flex items-baseline gap-[10px] flex-wrap",
-                  Body.refs(@article.body) != [] && "pb-[10px] border-b border-rule"
-                ]}>
+              <%!-- with nothing in the words the block is one quiet line;
+                   its heading and count arrive with the first file --%>
+              <div class="mt-[28px]">
+                <div
+                  :if={Body.refs(@article.body) != []}
+                  class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule"
+                >
                   <span class="text-[13px] font-semibold">
                     {gettext("Pictures and videos in the text")}
                   </span>
@@ -1852,7 +1836,7 @@ defmodule TexttileWeb.EditorLive do
                   <span class="note num" id="inlineCount">{inline_count(@article.body)}</span>
                 </div>
                 <div id="inlineImgs">
-                  <p :if={Body.refs(@article.body) == []} class="note pt-[4px]">
+                  <p :if={Body.refs(@article.body) == []} class="note">
                     {gettext(
                       "None in this entry yet. Paste a picture or a video into the text, or drop one on it."
                     )}
@@ -2097,7 +2081,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:px-6 pt-[22px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 border-t lg:border-t-0 lg:border-l border-hair px-[14px] lg:px-6 pt-[22px] lg:pt-[39px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -2114,7 +2098,8 @@ defmodule TexttileWeb.EditorLive do
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <span class="text-[13px] font-semibold">
-                {gettext("Tiles")} <span class="note num" id="tileCount">{tile_count(@gallery)}</span>
+                {gettext("Gallery")}
+                <span class="note num" id="tileCount">{tile_count(@gallery)}</span>
                 <span class="note num" id="tileOnWay" phx-update="ignore"></span>
               </span>
               <span class="sp"></span>
@@ -2259,7 +2244,15 @@ defmodule TexttileWeb.EditorLive do
                       </button>
                   <% end %>
                 </div>
-                <div class="hint">
+                <div
+                  :if={
+                    !Enum.all?(
+                      @preview_candidates,
+                      &(&1 in Enum.map(@gallery, fn image -> image.path end))
+                    )
+                  }
+                  class="hint"
+                >
                   {gettext("Used in the entries grid, on the front page and in link previews.")}
                 </div>
               </span>
@@ -2282,7 +2275,16 @@ defmodule TexttileWeb.EditorLive do
                     phx-debounce="300"
                   />
                 </span>
-                <div class="hint" id="slugHint">{slug_hint(@article)}</div>
+                <%!-- the field already shows the address; the hint says
+                     what it means, and carries the live one for whoever
+                     reads the page by machine --%>
+                <div
+                  class="hint"
+                  id="slugHint"
+                  data-live={@article.status != "draft" && Articles.public_path(@article)}
+                >
+                  {slug_hint(@article)}
+                </div>
                 <%!-- every address this entry used to answer at. They
                      are kept so a link somebody shared still arrives;
                      a row that is not worth keeping goes with one
@@ -3097,10 +3099,8 @@ defmodule TexttileWeb.EditorLive do
   defp slug_hint(%{status: "draft"}), do: gettext("Free to change while the entry is a draft.")
 
   defp slug_hint(article) do
-    if path = Articles.public_path(article) do
-      gettext("%{address} is live. After a change, the old address leads here.",
-        address: TexttileWeb.Endpoint.host() <> path
-      )
+    if Articles.public_path(article) do
+      gettext("Live at this address. After a change, the old address leads here.")
     end
   end
 

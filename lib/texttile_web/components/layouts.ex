@@ -309,8 +309,10 @@ defmodule TexttileWeb.Layouts do
           <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
             /
           </span>
+          <%!-- a phone has the title in the field right under the bar,
+               so the bar keeps the state and leaves the name out --%>
           <span
-            class="text-[14px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
+            class="hidden sm:block text-[14px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
             id="crumb"
             title={@crumb}
           >

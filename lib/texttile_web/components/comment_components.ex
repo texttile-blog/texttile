@@ -47,7 +47,15 @@ defmodule TexttileWeb.CommentComponents do
         <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent">
           {Texttile.Articles.display_title(@article)}
         </.link>
-        <span class="cmt-when num">{moment_line(@comment)}</span>
+        <span class="cmt-when num">
+          <%!-- the server writes UTC; the hook rewrites it in the zone of
+               the browser, the one the reader pages use as well --%>
+          <time
+            id={"cmt-at-#{@comment.id}"}
+            datetime={DateTime.to_iso8601(@comment.inserted_at)}
+            phx-hook="LocalMoment"
+          >{I18n.format_short_moment(@comment.inserted_at)}</time>{moment_tail(@comment)}
+        </span>
       </div>
 
       <form
@@ -170,14 +178,14 @@ defmodule TexttileWeb.CommentComponents do
 
   # The moment a comment arrived, and the marks it earned since: let
   # through by an admin, rewritten by one. Commas between them.
-  defp moment_line(comment) do
+  # What follows the moment of a comment: let through, edited.
+  defp moment_tail(comment) do
     [
-      I18n.format_short_moment(comment.inserted_at),
       Comments.released?(comment) && gettext("let through"),
       Comments.edited?(comment) && gettext("edited")
     ]
     |> Enum.filter(& &1)
-    |> Enum.join(", ")
+    |> Enum.map_join(&(", " <> &1))
   end
 
   # The address to write back to. An imported comment whose author

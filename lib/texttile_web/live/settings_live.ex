@@ -1079,7 +1079,7 @@ defmodule TexttileWeb.SettingsLive do
                  carries the colour that means "read this". --%>
             <p class="note mt-[3px]">
               {user_meta(user)}
-              <span :if={delete_block(user, @users, @current_scope.user)} class="text-julia">
+              <span :if={delete_block(user, @users, @current_scope.user)} class="text-faint">
                 · {delete_block(user, @users, @current_scope.user)}
               </span>
             </p>

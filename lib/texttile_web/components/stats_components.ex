@@ -39,33 +39,34 @@ defmodule TexttileWeb.StatsComponents do
         "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
       )}
     </p>
-    <div :if={@max > 0} class="relative">
-      <%!-- the scale: one hairline at the height of the busiest bar,
-           with its count, so a bar's height reads as a number --%>
+    <div :if={@max > 0} class="relative isolate pr-[44px]">
+      <%!-- the scale: a hairline at the height of the busiest bar and
+           one at half of it, behind the bars, their counts in a gutter
+           of their own at the right, so a bar's height reads as a
+           number and no label sits on a bar --%>
       <span
-        class="absolute left-0 right-0 top-[18px] border-t border-dashed border-rule pointer-events-none"
+        class="absolute left-0 right-[44px] top-[18px] border-t border-hair -z-10 pointer-events-none"
         aria-hidden="true"
       >
       </span>
       <span
-        class="absolute right-0 top-0 text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[10px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
         id={"#{@id}Max"}
       >
-        {ngettext("1 view", "%{count} views", @max)}
+        {number(@max)}
       </span>
-      <%!-- and one at half of it, so a bar between reads as a number too --%>
       <span
         :if={@max > 1}
-        class="absolute left-0 right-0 top-[84px] border-t border-dashed border-hair pointer-events-none"
+        class="absolute left-0 right-[44px] top-[84px] border-t border-hair -z-10 pointer-events-none"
         aria-hidden="true"
       >
       </span>
       <span
         :if={@max > 1}
-        class="absolute right-0 top-[66px] text-[12px] leading-[16px] text-faint tabular-nums"
+        class="absolute right-0 top-[76px] w-[38px] text-[12px] leading-[16px] text-faint tabular-nums"
         aria-hidden="true"
       >
-        {div(@max, 2)}
+        {number(div(@max, 2))}
       </span>
       <div id={@id} class="flex items-end gap-[3px] h-[150px] pt-[18px] pb-0">
         <%= for bar <- @series do %>

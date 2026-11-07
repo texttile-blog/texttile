@@ -221,9 +221,9 @@ defmodule TexttileWeb.TextsLive do
                 <%!-- a bit holds no whitespace of the template: the browser
                      would carry a space of a nowrap span over to the gap
                      between two bits and refuse to break there --%>
-                <span>
+                <span class="bits">
                   <%= for {bit, i} <- card_meta(article, article.id in @pending) do %>
-                    <span class="whitespace-nowrap bit" phx-no-format><span :if={i == 0 and article.status == "published"} class="st published"></span>{bit}</span>
+                    <span class="whitespace-nowrap bit" phx-no-format><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
                   <% end %>
                 </span>
                 <span :if={article.user} class="by">{admin_name(article.user)}</span>
@@ -305,39 +305,34 @@ defmodule TexttileWeb.TextsLive do
 
   # The facts of a card's line, in order: the state with its day, and
   # "page" in front of them for a page.
+  # The line under a card's title: the state as a word, then the day,
+  # then what else is true. Every row starts the same way, with the
+  # state, so a column of cards reads down one vocabulary.
   defp card_meta(article, pending?) do
-    bits =
+    day =
       case article.status do
-        "draft" ->
-          [
-            gettext("draft"),
-            Texttile.I18n.format_short_date(DateTime.to_date(article.updated_at))
-          ]
-
-        "scheduled" ->
-          [
-            if(article.publish_date,
-              do:
-                gettext("goes live %{date}",
-                  date: Texttile.I18n.format_short_date(article.publish_date)
-                ),
-              else: gettext("scheduled, no date yet")
-            )
-          ]
-
-        "published" ->
-          # A live entry that is being rewritten says so here, because
-          # this grid is the one place that shows every entry at once
-          # and is where somebody looks for what is still open.
-          if pending?,
-            do: [
-              Texttile.I18n.format_short_date(article.publish_date),
-              gettext("edited since publishing")
-            ],
-            else: [Texttile.I18n.format_short_date(article.publish_date)]
+        "draft" -> Texttile.I18n.format_short_date(DateTime.to_date(article.updated_at))
+        _status -> article.publish_date && Texttile.I18n.format_short_date(article.publish_date)
       end
 
-    bits = if article.type == "page", do: [gettext("page") | bits], else: bits
+    state =
+      case article.status do
+        "draft" -> gettext("Draft")
+        "scheduled" -> gettext("Scheduled")
+        "published" -> gettext("Live")
+      end
+
+    # A live entry that is being rewritten says so here, because this
+    # grid is the one place that shows every entry at once and is where
+    # somebody looks for what is still open.
+    bits =
+      [
+        state,
+        article.type == "page" && gettext("page"),
+        day || gettext("no date yet"),
+        pending? && gettext("edited since publishing")
+      ]
+      |> Enum.filter(& &1)
 
     # each bit with its place, so the template can hang the state mark
     # on the first; the separators are the stylesheet's

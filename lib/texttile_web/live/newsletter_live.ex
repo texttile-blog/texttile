@@ -90,14 +90,12 @@ defmodule TexttileWeb.NewsletterLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col rail">
-        <%!-- the rail: what this screen is and how it is narrowed; the
-             list stands beside it on a wide window, under it on a phone --%>
-        <div class="rail-side">
+      <div class="admin-col">
+        <div>
           <h1 class="page-h">{gettext("Newsletter")}</h1>
           <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
         </div>
-        <div class="rail-main">
+        <div>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
             <input
               type="email"

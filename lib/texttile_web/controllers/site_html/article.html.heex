@@ -315,7 +315,10 @@
   </article>
 
   <%!-- the second zone: what belongs to the blog and not to the text --%>
-  <.site_band about_html={assigns[:about_html]} />
+  <%!-- a page is the blog speaking for itself (an About page above
+       all), so its foot leaves the About block out and keeps the
+       invitation to subscribe --%>
+  <.site_band about_html={@article.type == "post" && assigns[:about_html]} />
 </main>
 <.site_foot current_scope={@current_scope} />
 

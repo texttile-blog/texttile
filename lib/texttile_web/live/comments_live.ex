@@ -168,10 +168,8 @@ defmodule TexttileWeb.CommentsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col rail">
-        <%!-- the rail: what this screen is and how it is narrowed; the
-             list stands beside it on a wide window, under it on a phone --%>
-        <div class="rail-side">
+      <div class="admin-col">
+        <div>
           <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
           <nav
             class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"
@@ -188,7 +186,7 @@ defmodule TexttileWeb.CommentsLive do
             </.link>
           </nav>
         </div>
-        <div class="rail-main">
+        <div>
           <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">
             <label>
               <input
@@ -203,7 +201,11 @@ defmodule TexttileWeb.CommentsLive do
             <span class="sp"></span>
             <button
               :for={action <- bulk_actions(@status)}
-              class={["btn sm", action == "delete" && "danger"]}
+              class={[
+                "btn sm",
+                MapSet.size(@selected) == 0 && "quiet",
+                action == "delete" && "danger"
+              ]}
               id={"bulk-#{action}"}
               phx-click="bulk"
               phx-value-action={action}
