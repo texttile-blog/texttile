@@ -1253,7 +1253,7 @@
   }
 
   .tile-add {
-    grid-column: 1 / -1; height: 44px; display: grid; place-items: center;
+    grid-column: 1 / -1; height: 38px; display: grid; place-items: center;
     color: var(--tt-dim); font-size: 13px; font-weight: 500;
     border-radius: var(--tt-radius);
     border: 1px solid var(--tt-rule); background: var(--tt-paper);
@@ -2329,7 +2329,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 .bar-me.on { box-shadow: none; background: linear-gradient(var(--tt-accent), var(--tt-accent)) no-repeat; background-size: calc(100% - 12px) 2px; background-position: 0 100%; }
 
 /* a phone says the unit of a referrer's share after the number */
-@media (max-width: 639px) { #referrers td:last-child::after { content: "\2009%"; color: var(--tt-faint); } }
+@media (max-width: 639px) { #referrers td:last-child::after { content: "%"; color: var(--tt-faint); } }
 
 /* (the line under an option stays under its label on both widths: it
    is about that choice) */
@@ -2347,13 +2347,36 @@ section.foot-band .cols:not(:has(#about)) { padding-top: calc(var(--tt-sec) * .4
 
 /* About in the band reads in the reading serif, wide enough to show
    why it spans two columns */
-section.foot-band .about-md { font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.6; max-width: 600px; }
+/* the band's two columns in one face and one line, so their lines
+   share baselines; the About page itself keeps the serif */
+section.foot-band p, section.foot-band .about-md { font-size: 15px; line-height: 23px; }
+section.foot-band .about-md { max-width: 600px; }
 
 /* Your sessions opens on a rule: its heading stands on the first row */
 @media (min-width: 1000px) { .admin-col.twocol > .set-h:has(+ #sessions) { padding-top: 15px; } }
 
 /* the editor's title sits a little closer over its formatting bar */
-.ed-title { line-height: 1.08; }
+/* the reader's title weight (.f-h1): writing looks like reading */
+.ed-title { line-height: 1.08; font-weight: 500; }
 
 /* a bar of the chart answers the keyboard too */
 #dayChart button:focus-visible { outline: 2px solid var(--tt-accent); outline-offset: 1px; }
+
+/* the open tag of the archive rests its rule on the row's rule */
+@media (min-width: 640px) { #tagbar .ctag { padding-bottom: 7px; } #tagbar .ctag.on { box-shadow: inset 0 -2px 0 var(--tt-accent); margin-bottom: -1px; } }
+
+/* an entry ends without a stack of rules: the space before the comments
+   separates them from Previous and Next */
+.textnav { border-bottom: 0; }
+
+/* Settings: the intro stands as close over the first section as on
+   Profile */
+.admin-col.twocol > .lead { margin-bottom: 12px; }
+
+/* a section that opens on a rule starts as far under the last help line
+   as a section that opens on a label */
+@media (min-width: 1000px) {
+  .admin-col.twocol > #logoRow, .admin-col.twocol > #usersList { margin-top: 46px; }
+  .admin-col.twocol > .set-h:has(+ #logoRow) { padding-top: 40px; }
+  .admin-col.twocol > .set-h:has(+ #usersList) { padding-top: 27px; }
+}

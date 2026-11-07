@@ -58,14 +58,15 @@
 
   /* fields: a white box with a hairline, violet on focus */
   --fld-bg:     var(--tt-paper);
-  --fld-bd:     1px solid var(--tt-rule);
-  --fld-bb:     1px solid var(--tt-rule);
+  /* a field's frame holds up on a phone in daylight */
+  --fld-bd:     1px solid #a59e94;
+  --fld-bb:     1px solid #a59e94;
   --fld-r:      6px;
   --fld-p:      7px 12px;
   --fld-sh:     none;
 
   --fld-bg-h:   var(--tt-paper);
-  --fld-bb-h:   1px solid #b8b1a7;
+  --fld-bb-h:   1px solid #857e74;
 
   --fld-bg-f:   var(--tt-paper);
   --fld-bd-f:   1px solid var(--tt-accent);

@@ -2209,8 +2209,8 @@ defmodule TexttileWeb.EditorLive do
                  screen has, under the tiles it is about, so both headings of
                  the column stand on their rule alike --%>
             <p class="note mt-[8px]">
-              <span class="on-pointer">{gettext("Grab a tile to sort it.")}</span>
-              <span class="on-touch">{gettext("Hold a tile, then drag.")}</span>
+              <span class="on-pointer">{gettext("Drag a tile to sort it.")}</span>
+              <span class="on-touch">{gettext("Hold a tile, then drag it to sort.")}</span>
             </p>
             <%!-- the hook shows it under the tiles it sends, while two
                  or more wait for a Retry: after a reload, or when the
@@ -2283,7 +2283,7 @@ defmodule TexttileWeb.EditorLive do
                   id="slugHint"
                   data-live={@article.status != "draft" && Articles.public_path(@article)}
                 >
-                  <span class="block break-all" id="slugPrefix">
+                  <span class="block break-all mb-[4px]" id="slugPrefix">
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
                   </span>
                   {slug_hint(@article)}
