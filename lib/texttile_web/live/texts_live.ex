@@ -216,8 +216,15 @@ defmodule TexttileWeb.TextsLive do
             </form>
             <%!-- the one primary action ends the row of tools, on a phone
                  as on a desk, so it never needs a row of its own --%>
-            <button class="btn solid flex-none" id="new-text" phx-click="new_text">
-              {gettext("New entry")}
+            <%!-- a phone says New: the search beside it needs the room --%>
+            <button
+              class="btn solid flex-none"
+              id="new-text"
+              phx-click="new_text"
+              aria-label={gettext("New entry")}
+            >
+              <span class="max-sm:hidden">{gettext("New entry")}</span>
+              <span class="sm:hidden" aria-hidden="true">{gettext("New")}</span>
             </button>
           </div>
         </div>

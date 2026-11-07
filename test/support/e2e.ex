@@ -149,7 +149,7 @@ defmodule TexttileWeb.E2E do
     |> PhoenixTest.fill_in("Email address", with: "kb@example.org")
     |> PhoenixTest.fill_in("Password", with: Texttile.AccountsFixtures.valid_password())
     |> PhoenixTest.click_button("Sign in")
-    |> PhoenixTest.assert_has("#crumb", text: "Entries")
+    |> PhoenixTest.assert_has("#new-text")
     |> await_live()
   end
 

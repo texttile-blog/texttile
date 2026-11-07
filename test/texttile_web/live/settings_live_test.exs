@@ -176,7 +176,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the page size is a row of sizes, and picking one saves it", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "Pagination"
+      assert html =~ "Entries per page"
 
       # every size divides by two, three and four, so a page of cards
       # ends with a full row whatever the window is

@@ -149,7 +149,15 @@ defmodule TexttileWeb.TagsLive do
             id={"tagrow-#{tag_id(tag)}"}
             class="py-[8px] sm:py-[11px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
           >
-            <b class="text-[14.5px] sm:text-[15px] break-words min-w-[92px]">#{tag}</b>
+            <%!-- the tag is the way to its archive on the site, a link like every
+                 other tag in the product --%>
+            <a
+              href={~p"/tags/#{String.downcase(tag)}"}
+              target="_blank"
+              class="link font-semibold text-[14.5px] sm:text-[15px] break-words min-w-[92px]"
+            >
+              #{tag}
+            </a>
             <span class="note num flex-1">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>

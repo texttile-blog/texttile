@@ -110,7 +110,10 @@
   .btn.danger { color: var(--tt-julia); }
   .btn.danger:hover { color: var(--tt-julia); }
   .btn.quiet.danger { color: var(--tt-dim); }
-  .cmt-tools > .btn.danger { color: var(--tt-julia); }
+  /* with nothing ticked the bulk delete speaks for the whole filter, a
+     spam wave, and stays a quiet grey word like every row action; a
+     selection turns it into the one rust button of the screen */
+  .cmt-tools > .btn.danger:not(.quiet) { color: var(--tt-julia); }
   .cmt-tools > .btn.quiet { margin-right: -10px; }
   .btn.quiet.danger:hover { color: var(--tt-julia); background-color: var(--tt-juliatint); }
   /* the small badge on a comment whose reader has not confirmed the
@@ -253,6 +256,12 @@
     line-height: 1.2; letter-spacing: -.01em; color: var(--tt-ink);
     margin-top: 32px; margin-bottom: 12px;
   }
+  /* a phone starts a form screen as close under the bar as a list: the
+     first section has no air over it, and the rest stand a little closer */
+  @media (max-width: 767px) {
+    .set-h { margin-top: 26px; margin-bottom: 8px; }
+    .admin-col > h2.set-h:first-of-type { margin-top: 0; }
+  }
   /* the section heading on Stats: quieter than .set-h, because the
      blocks under it are rows of numbers, not fields to fill in */
   .sec-h {
@@ -267,6 +276,8 @@
      an admin opened. */
   .barc { background: var(--tt-slash); }
   .fig .l { font-size: 13.5px; color: var(--tt-dim); margin-top: 2px; min-height: 2.9em; }
+  /* a phone's third of the row holds "busiest day, 7 Nov" at this size */
+  @media (max-width: 639px) { .fig .l { font-size: 12px; letter-spacing: -.005em; } }
   .lab { font-size: 13px; color: var(--tt-dim); }
   .note { font-size: 13.5px; line-height: 1.5; color: var(--tt-faint); }
   .hint { font-size: 13px; line-height: 1.45; color: var(--tt-dim); margin-top: 6px; }
@@ -1083,15 +1094,11 @@
   .bn-sep { color: var(--tt-slash); }
   /* the count after the screen's name in a phone bar, in the grey the
      numbers of the filters wear */
-  /* 6px after the name, as a tab's count sits after its label: the
-     name's own inner space is taken back */
-  .bn-count { align-self: center; font-size: 14px; font-weight: 500; color: var(--tt-faint); margin-left: -9px; }
+  /* 6px after the name, as a tab's count sits after its label */
+  .bn-count { font-size: 14px; font-weight: 500; color: var(--tt-faint); margin-left: 6px; font-variant-numeric: tabular-nums; }
   span.bn.on { box-shadow: none; padding-left: 0; }
-  @media (max-width: 767px) {
-    .barnav { margin-left: 0; }
-    .barnav .bn:not(.on), .barnav.has-extra .bn, .bn-sep { display: none; }
-    .barnav .bn.on { box-shadow: none; padding-left: 2px; }
-  }
+  /* a phone carries the screen's name in the menu button instead */
+  @media (max-width: 767px) { .barnav, .bn-sep { display: none; } }
   #topbar {
     background: var(--tt-bar);
     border-bottom: 1px solid var(--tt-hair);
@@ -1959,7 +1966,11 @@
   .mdbar::-webkit-scrollbar { display: none; }
   .mdb { width: 40px; height: 40px; }
 }
-@media (max-width: 639px) { .mdb.rare, .mdsep.rare { display: none; } }
+@media (max-width: 639px) {
+  .mdb.rare, .mdsep.rare { display: none; }
+  /* the buttons that are left share the row's width evenly */
+  .mdbar { justify-content: space-between; margin-right: -9px; }
+}
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; flex: none;
@@ -2029,8 +2040,14 @@
 .ed-cm .cm-mdcbfirst { border-radius: var(--tt-radius) var(--tt-radius) 0 0; padding-top: 5px; }
 .ed-cm .cm-mdcblast { border-radius: 0 0 var(--tt-radius) var(--tt-radius); padding-bottom: 5px; }
 .ed-cm .cm-mdtable { font-family: var(--tt-font-mono); font-size: 13px; line-height: 1.6; }
-.ed-cm .cm-mdbullet { color: var(--tt-dim); }
 .ed-cm .cm-line.cm-mdli { padding-left: 1.15em; text-indent: -1.15em; }
+/* a bullet line hangs at the reader's list indent (.prose ul, 24px),
+   its disc where the reader's stands, in the ink of the words */
+.ed-cm .cm-line.cm-mdli.cm-mdul { padding-left: 24px; text-indent: -24px; }
+.ed-cm .cm-mdbullet {
+  display: inline-block; width: 24px; text-indent: 0; text-align: right;
+  padding-right: 9px; color: var(--tt-ink);
+}
 .ed-cm .cm-mdnum { color: var(--tt-dim); font-variant-numeric: tabular-nums; }
 .ed-cm .cm-mdcheck {
   width: 15px; height: 15px; margin: 0 4px 0 0; vertical-align: -2px;

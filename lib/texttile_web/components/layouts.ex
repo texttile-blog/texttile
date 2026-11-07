@@ -232,7 +232,13 @@ defmodule TexttileWeb.Layouts do
           </span>
           <%!-- the mark alone stands for the blog on every screen: the
                bar spends its width on the sections, or on the entry;
-               the button's label names it for a screen reader --%>
+               the button's label names it for a screen reader. A phone
+               has no room for the row of sections, so there the name of
+               the screen stands in the button, its count beside it, and
+               the chevron after them says the name opens the others. --%>
+          <span :if={!@wide && @crumb} class="md:hidden text-[14px] font-semibold text-ink -ml-[2px]">
+            {@crumb}<span :if={@count} class="bn-count">{@count}</span>
+          </span>
           <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
@@ -339,10 +345,14 @@ defmodule TexttileWeb.Layouts do
             </.link>
           </nav>
           <span :if={!crumb_in_nav?(@crumb, @active)} class="bn-sep" aria-hidden="true">/</span>
-          <span :if={!crumb_in_nav?(@crumb, @active)} class="bn on truncate" id="crumb" title={@crumb}>
+          <span
+            :if={!crumb_in_nav?(@crumb, @active)}
+            class="bn on truncate max-md:hidden"
+            id="crumb"
+            title={@crumb}
+          >
             {@crumb}
           </span>
-          <span :if={@count} class="bn-count num md:hidden" id="barCount">{@count}</span>
           {render_slot(@lead)}
         <% end %>
       </span>

@@ -83,7 +83,7 @@ defmodule TexttileWeb.TagsLiveTest do
     tags |> form("#rename-tag-form", tag: %{name: "Reisen"}) |> render_submit()
 
     for view <- [tags, other_tags] do
-      assert has_element?(view, "#tagrow-reisen b", "Reisen")
+      assert has_element?(view, "#tagrow-reisen a", "Reisen")
     end
 
     for view <- [editor, watcher] do

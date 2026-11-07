@@ -143,13 +143,13 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
-              <%!-- one line, so the three figures end together: a phone's
-                   narrow third leaves the day out, and the chart marks it --%>
-              {gettext("busiest day")}<span
-                :if={@summary.busiest}
-                id="figBusiestDay"
-                class="whitespace-nowrap max-sm:hidden"
-              >, {busiest_day(@summary.busiest)}</span>
+              <%!-- one line, so the three figures end together --%>
+              <span class="whitespace-nowrap">
+                {gettext("busiest day")}<span
+                  :if={@summary.busiest}
+                  id="figBusiestDay"
+                >, {busiest_day(@summary.busiest)}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -189,8 +189,12 @@ defmodule TexttileWeb.StatsLive do
                 <thead>
                   <tr>
                     <th>{gettext("Read")}</th>
-                    <th class="text-right num w-[64px] pl-4">{gettext("Views")}</th>
-                    <th class="text-right num w-[64px] pl-4">{gettext("People")}</th>
+                    <th class="text-right num w-[44px] sm:w-[64px] pl-2 sm:pl-4">
+                      {gettext("Views")}
+                    </th>
+                    <th class="text-right num w-[44px] sm:w-[64px] pl-2 sm:pl-4">
+                      {gettext("People")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -225,10 +229,12 @@ defmodule TexttileWeb.StatsLive do
           <table>
             <thead>
               <tr>
-                <th>{gettext("Entry")}</th>
-                <th class="num hidden sm:table-cell">{gettext("Published")}</th>
-                <th class="text-right num w-[64px] pl-4">{gettext("Views")}</th>
-                <th class="text-right num w-[64px] pl-4">{gettext("People")}</th>
+                <%!-- the columns stand on the thirds of the figures above:
+                     the entry, then the day, then the counts --%>
+                <th class="sm:w-1/3">{gettext("Entry")}</th>
+                <th class="num hidden sm:table-cell sm:w-1/3">{gettext("Published")}</th>
+                <th class="text-right num w-[44px] sm:w-[64px] pl-2 sm:pl-4">{gettext("Views")}</th>
+                <th class="text-right num w-[44px] sm:w-[64px] pl-2 sm:pl-4">{gettext("People")}</th>
                 <th class="text-right num hidden sm:table-cell">{gettext("Comments")}</th>
               </tr>
             </thead>

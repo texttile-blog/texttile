@@ -724,9 +724,9 @@ defmodule TexttileWeb.SettingsLive do
           </form>
         </div>
         <%!-- what is in use now and what the field is for, as one line --%>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair pl-[58px]">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
           <span id="name-logo" class="text-ink">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
-            "Shown in the bar of the blog and of this admin area. SVG, PNG, JPG or WebP."
+            "SVG, PNG, JPG or WebP."
           )}
         </p>
         <div class="flex items-center gap-[14px] pt-[14px]">
@@ -765,9 +765,9 @@ defmodule TexttileWeb.SettingsLive do
             </label>
           </form>
         </div>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair pl-[58px]">
+        <p class="note pt-[8px] pb-[14px] border-b border-hair sm:pl-[58px]">
           <span id="name-favicon" class="text-ink">{@settings.favicon_name || gettext("Default: the Texttile mark")}</span>. {gettext(
-            "The icon in the browser tab. A square SVG, PNG, JPG or WebP."
+            "A square SVG, PNG, JPG or WebP."
           )}
         </p>
 
@@ -878,7 +878,7 @@ defmodule TexttileWeb.SettingsLive do
             </select>
           </div>
           <div class="drow gtop">
-            <label class="lab" for="setting-posts_per_page">{gettext("Pagination")}</label>
+            <label class="lab" for="setting-posts_per_page">{gettext("Entries per page")}</label>
             <span class="val">
               <select
                 id="setting-posts_per_page"
@@ -893,9 +893,6 @@ defmodule TexttileWeb.SettingsLive do
                   {size}
                 </option>
               </select>
-              <div class="hint">
-                {gettext("Entries per page, on /blog and in Entries.")}
-              </div>
               <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
                 {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}
               </p>
@@ -1055,8 +1052,6 @@ defmodule TexttileWeb.SettingsLive do
             </p>
           </div>
         </div>
-        <%!-- the rule of the list stands at its foot, as on Comments --%>
-        <p class="note mt-[10px]">{gettext("Everybody on this list is an admin.")}</p>
 
         <%!-- The next admin, by address. Nothing is handed over by
              hand: the link goes to the inbox, and whoever opens that
@@ -1099,11 +1094,6 @@ defmodule TexttileWeb.SettingsLive do
             </span>
           </div>
         </.form>
-
-        <p class="note mt-3">
-          {gettext("Change your own displayed name, address and password on")}
-          <.link navigate={~p"/admin/profile"} class="link">{gettext("your profile")}</.link>.
-        </p>
 
         <.section>{gettext("Images")}</.section>
         <.form for={@settings_form} id="images-form" phx-change="save_setting">
