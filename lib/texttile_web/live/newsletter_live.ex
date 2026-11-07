@@ -91,7 +91,7 @@ defmodule TexttileWeb.NewsletterLive do
         <Layouts.view_site />
       </:bar>
       <div class="admin-col">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-4">
           <h1 class="page-h">{gettext("Newsletter")}</h1>
           <span class="note num" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</span>
         </div>
@@ -116,7 +116,7 @@ defmodule TexttileWeb.NewsletterLive do
             </span>
           </form>
 
-          <div id="subList" class="mt-[18px]">
+          <div id="subList" class={["mt-[18px]", @subscribers != [] && "border-t border-hair"]}>
             <p :if={@subscribers == []} class="note">
               {gettext(
                 "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."

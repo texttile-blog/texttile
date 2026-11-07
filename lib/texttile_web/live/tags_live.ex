@@ -131,13 +131,13 @@ defmodule TexttileWeb.TagsLive do
     >
       <:bar><Layouts.view_site /></:bar>
       <div class="admin-col">
-        <div class="flex items-baseline gap-[14px] flex-wrap mb-5">
+        <div class="flex items-baseline gap-[14px] flex-wrap mb-4">
           <h1 class="page-h">{gettext("Tags")}</h1>
           <span class="note num" id="tagsCount">
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </span>
         </div>
-        <div id="tagsList">
+        <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>

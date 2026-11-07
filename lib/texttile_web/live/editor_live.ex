@@ -1819,31 +1819,17 @@ defmodule TexttileWeb.EditorLive do
                       )}
                     </span>
                     <span id="edFootText">
-                      <%!-- the words that name the action are the action --%>
+                      <%!-- plain words: Save version is a button in the bar,
+                           and a second one here would be the loudest thing
+                           under the text --%>
                       <%= if @holds_lock do %>
-                        {gettext("The draft saves as you type.")}
-                        <button
-                          type="button"
-                          class="foot-act"
-                          id="footSaveVersion"
-                          phx-click="save_version"
-                          data-flush-body
-                        >
-                          {gettext("Save version")}
-                        </button>
-                        {gettext("takes a snapshot that you can go back to.")}
+                        {gettext(
+                          "The draft saves as you type. A version is a snapshot you can go back to."
+                        )}
                       <% else %>
-                        {gettext("The title and the body are read-only right now.")}
-                        <button
-                          type="button"
-                          class="foot-act"
-                          id="footSaveVersion"
-                          phx-click="save_version"
-                          data-flush-body
-                        >
-                          {gettext("Save version")}
-                        </button>
-                        {gettext("and the Versions tab still work.")}
+                        {gettext(
+                          "The title and the body are read-only right now. Save version and the Versions tab still work."
+                        )}
                       <% end %>
                     </span>
                   </p>
@@ -2182,7 +2168,7 @@ defmodule TexttileWeb.EditorLive do
                   }
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
-                  <span :if={@effective_preview == image.path} class="cov">{gettext("preview")}</span>
+                  <span :if={@effective_preview == image.path} class="cov">{gettext("Preview")}</span>
                   <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
                   <span :if={conversion_note(@media[image.path])} class="tile-wait">
                     {conversion_note(@media[image.path])}
@@ -2339,48 +2325,36 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
 
-            <div class="drow gtop">
+            <%!-- With only tiles to choose from, the tiles above are the
+                 picker: the one marked preview is the choice, and the
+                 lightbox of any other one changes it. The row is for
+                 pictures in the words, which have no tile of their own; an
+                 entry without any picture has nothing to choose. --%>
+            <div
+              :if={
+                !Enum.all?(
+                  @preview_candidates,
+                  &(&1 in Enum.map(@gallery, fn image -> image.path end))
+                )
+              }
+              class="drow gtop"
+              id="previewRow"
+            >
               <span class="lab">{gettext("Preview image")}</span>
               <span class="val">
                 <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
-                  <%!-- With only tiles to choose from, the tiles above are
-                       the picker: the one marked preview is the choice,
-                       and the lightbox of any other one changes it. The
-                       strip is for pictures in the words, which have no
-                       tile of their own. --%>
-                  <%= cond do %>
-                    <% @preview_candidates == [] -> %>
-                      <span class="note">
-                        {gettext(
-                          "No pictures yet. Once the entry or the gallery has one, pick it here."
-                        )}
-                      </span>
-                    <% Enum.all?(@preview_candidates, &(&1 in Enum.map(@gallery, fn image -> image.path end))) -> %>
-                      <span class="note" id="previewByTile">
-                        {gettext("Marked on its tile. Open another tile to choose it.")}
-                      </span>
-                    <% true -> %>
-                      <button
-                        :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
-                        type="button"
-                        class={["cover-opt", @effective_preview == path && "on"]}
-                        style={tile_bg((@media[path] && @media[path].still) || path)}
-                        phx-click="set_preview"
-                        phx-value-path={path}
-                        aria-label={gettext("Use image %{index} as the preview image", index: index)}
-                      >
-                      </button>
-                  <% end %>
+                  <button
+                    :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
+                    type="button"
+                    class={["cover-opt", @effective_preview == path && "on"]}
+                    style={tile_bg((@media[path] && @media[path].still) || path)}
+                    phx-click="set_preview"
+                    phx-value-path={path}
+                    aria-label={gettext("Use image %{index} as the preview image", index: index)}
+                  >
+                  </button>
                 </div>
-                <div
-                  :if={
-                    !Enum.all?(
-                      @preview_candidates,
-                      &(&1 in Enum.map(@gallery, fn image -> image.path end))
-                    )
-                  }
-                  class="hint"
-                >
+                <div class="hint">
                   {gettext("Used in the entries grid, on the front page and in link previews.")}
                 </div>
               </span>

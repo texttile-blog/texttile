@@ -172,13 +172,13 @@
               datetime={DateTime.to_iso8601(comment.inserted_at)}
               data-comment-moment
               data-zone={comment.imported_at && "UTC"}
-              class="font-normal text-dim text-[13px]"
+              class="font-normal text-dim text-[13.5px]"
             >
               {comment_when(comment.inserted_at)}
             </time>
           </div>
           <p
-            class="comment-body mt-[5px] font-serif text-[16px] leading-[1.6]"
+            class="comment-body mt-[6px] font-serif text-[16px] md:text-[17px] leading-[1.6]"
             phx-no-format
           >{comment.body}</p>
           <p :if={kind == :own} class="f-note mt-[6px]">

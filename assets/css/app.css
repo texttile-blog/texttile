@@ -472,6 +472,12 @@
   @media (min-width: 640px) {
     .pairrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 150px; }
     .pairrow .btn { width: 100%; }
+    /* an address is long and a password is not: the address takes a
+       row of two columns, the password and the button sit under it, on
+       the edges of the row below */
+    .pairrow.addr-first > span:first-child { grid-column: 1 / 3; }
+    .pairrow.addr-first > span:nth-child(2) { grid-column: 1; }
+    .pairrow.addr-first > .btn { grid-column: 3; }
 
   }
   /* a one-line text that may run long: it wraps and grows instead of
@@ -560,19 +566,25 @@
   }
   .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
   .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
-  /* An entry of words alone: its opening words on a quiet ground, set
-     large and centred like a pull quote. They are a picture of the
-     entry, not the text to read, so a long opening ends in an ellipsis. */
+  /* An entry of words alone: its opening words on a quiet ground,
+     filling the square the way a picture would. They are a picture of
+     the entry, not the text to read, so the square cuts them off with an
+     ellipsis. A single column on the reader's phone has no row to keep
+     square, so there the words take the height they need. */
   .card .cimg.empty:has(.cx), .card .cimg.words {
     display: block; overflow: hidden;
     background: var(--tt-field); padding: 8% 9%;
   }
   .card .cimg .cx {
-    font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.5;
+    font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.4;
     color: var(--tt-inksoft); text-align: left;
     display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
-  body.site .card .cimg .cx { font-size: 18px; line-height: 1.5; -webkit-line-clamp: 8; }
+  body.site .card .cimg .cx { font-size: 19px; line-height: 1.42; -webkit-line-clamp: 7; }
+  @media (max-width: 639px) {
+    body.site .card .cimg.words { aspect-ratio: auto; padding: 22px 22px 24px; }
+    body.site .card .cimg .cx { -webkit-line-clamp: 5; }
+  }
   .card .ct {
     display: block; font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
     line-height: 1.25; letter-spacing: -.01em; margin-top: 12px; overflow: hidden;
@@ -593,17 +605,14 @@
      carry the row */
   @media (min-width: 640px) { #cards .card .cimg { aspect-ratio: 4 / 3; } }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
-  .card .cm .st { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
+  .card .cm .st { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
   /* Every line starts with its state: a mark and a word. Live is a
-     filled dot, Scheduled a half one, Draft a ring. The facts after it
+     filled violet dot, Scheduled a violet ring, Draft a grey one. The facts after it
      are held apart by a middle dot, never by a comma; the bits are one
      flex row, so the template's own spaces never double a gap. */
   .card .cm .bits { display: inline-flex; flex-wrap: wrap; align-items: baseline; }
   .card .cm .st.published { background: var(--tt-accent); }
-  .card .cm .st.scheduled {
-    background: linear-gradient(90deg, var(--tt-accent) 50%, transparent 50%);
-    box-shadow: inset 0 0 0 1.5px var(--tt-accent);
-  }
+  .card .cm .st.scheduled { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-accent); }
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
   .card .cm .bit + .bit::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
 
@@ -1186,16 +1195,14 @@
     font-size: 10.5px; color: var(--tt-dim);
   }
 
-  /* the "preview" flag on the chosen tile, bottom-right */
+  /* the "Preview" flag on the chosen tile, bottom-left: the one mark
+     of the choice, so the tile needs no ring as well */
   .tile .cov {
-    position: absolute; right: 5px; bottom: 5px;
-    font-size: 10.5px; font-weight: 600; color: #fff; padding: 1px 6px;
+    position: absolute; left: 6px; bottom: 6px;
+    font-size: 11px; font-weight: 600; line-height: 16px; color: #fff; padding: 2px 7px;
     border-radius: var(--tt-radius-img);
-    background: rgb(var(--tt-overlay, 25 23 32) / .72);
+    background: rgb(var(--tt-overlay, 25 23 32) / .78);
   }
-  /* the chosen tile wears the accent around it, the way a chosen
-     filter wears it under its word */
-  .tile[data-preview] { box-shadow: 0 0 0 2px var(--tt-page), 0 0 0 4px var(--tt-accent); }
 
   /* the preview-image picker in the article settings */
   .cover-opt {
@@ -1432,15 +1439,6 @@
      on a narrow phone would otherwise push the menu out of the bar */
   .site-mark svg, .site-mark img { flex: none; }
   .site-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* the site description, as it stands in Settings: the whole
-     positioning line, and it costs no chrome. The bar is read, not
-     skimmed past, so it carries reading ink like the name does: the
-     note ink it wore made a header of quiet grey. */
-  .site-desc {
-    color: var(--tt-dim); font-size: 14px; white-space: nowrap;
-    padding-left: 6px;
-    min-width: 0; overflow: hidden; text-overflow: ellipsis;
-  }
   .site-nav { display: flex; align-items: center; gap: 0; margin-left: auto; flex: none; }
   .site-nav { align-self: stretch; }
   .site-nav a {
@@ -1454,7 +1452,6 @@
   .site-nav a:hover { color: var(--tt-ink); }
   /* the open one: the admin bar's mark, the ink and a violet rule */
   .site-nav a[aria-current] { color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tt-accent); }
-  @media (max-width: 900px) { .site-desc { display: none; } }
 
   /* the foot of every page: one row, small type in reading ink, links
      that answer the pointer instead of underlining themselves
@@ -1693,9 +1690,6 @@
   .textnav .nx { text-align: right; }
   @media (max-width: 619px) {
     .textnav { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 0 14px; }
-    .textnav .nx { text-align: left; }
-    .textnav .nx .lab::after { content: none; }
-    .textnav .nx .lab::before { content: "\2192\00a0"; color: var(--tt-dim); }
     .textnav .t {
       font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 2;
       -webkit-box-orient: vertical; overflow: hidden;
@@ -1911,13 +1905,14 @@
 }
 @media (min-width: 1024px) { .mdbar { top: 0; } }
 /* a finger needs room: on a touch screen every button is 40px square
-   and the row scrolls sideways instead of shrinking them */
+   and the row scrolls sideways instead of shrinking them. A phone
+   drops the two rare buttons, so the groups fit inside the gutter. */
 @media (pointer: coarse), (max-width: 639px) {
   .mdbar { overflow-x: auto; scrollbar-width: none; }
   .mdbar::-webkit-scrollbar { display: none; }
   .mdb { width: 40px; height: 40px; }
-  .mdsep { display: none; }
 }
+@media (max-width: 639px) { .mdb.rare { display: none; } }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; flex: none;
@@ -2041,10 +2036,11 @@
   border-color: transparent transparent transparent #fff;
 }
 
-/* About stands in the foot of every page in the sans of the band, so
-   its editor writes in that face, like its preview. Outside the layers,
-   like every rule that has to outweigh CodeMirror's own. */
+/* About writes in the serif of the entry editor, a size down for a
+   field among fields: Markdown looks the same wherever it is typed.
+   Outside the layers, like every rule that has to outweigh
+   CodeMirror's own. */
 #aboutBar { margin-left: 0; padding-left: 6px; }
 #setting-about_markdown .cm-scroller, #setting-about_markdown > textarea {
-  font-family: var(--tt-font-sans); font-size: 15px; line-height: 1.6;
+  font-size: 16px; line-height: 1.65;
 }

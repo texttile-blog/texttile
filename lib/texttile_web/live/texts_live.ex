@@ -48,7 +48,6 @@ defmodule TexttileWeb.TextsLive do
     |> assign(:month, list.month)
     |> assign(:years, list.years)
     |> assign(:months, list.months)
-    |> assign(:across_years, list.across_years)
     |> assign(:page, list.page)
     |> assign(:pages, list.pages)
     |> assign(:shown, list.shown)
@@ -120,7 +119,7 @@ defmodule TexttileWeb.TextsLive do
           <span class="sp"></span>
           <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
         </div>
-        <div class="flex items-center gap-3 flex-wrap mt-[14px] sm:mt-[18px] mb-4 sm:mb-6">
+        <div class="flex items-center gap-x-3 gap-y-[10px] flex-wrap mt-[8px] sm:mt-[18px] mb-3 sm:mb-6">
           <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
             <button
               :for={
@@ -156,7 +155,7 @@ defmodule TexttileWeb.TextsLive do
           <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
             <span class="pick">
               <select name="year" id="years" aria-label={gettext("Year")}>
-                <option value="">{gettext("All years")} ({@across_years})</option>
+                <option value="">{gettext("All years")}</option>
                 <option :for={{year, count} <- @years} value={year} selected={@year == year}>
                   {year} ({count})
                 </option>
@@ -191,7 +190,7 @@ defmodule TexttileWeb.TextsLive do
                      of the phone list is the same quiet box, empty. --%>
                 <span class="cimg empty">
                   <span :if={Articles.lead(article) != ""} class="cx">
-                    {Articles.lead(article, 90)}
+                    {Articles.lead(article, 240)}
                   </span>
                   <span :if={Articles.lead(article) == ""} class="cn">
                     {gettext("no images yet")}

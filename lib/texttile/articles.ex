@@ -1021,8 +1021,9 @@ defmodule Texttile.Articles do
           words -> words |> Enum.drop(-1) |> Enum.join(" ")
         end
 
-      # a comma or a dash before the ellipsis reads as a stutter
-      String.replace(head, ~r/[\s,;:\-–—]+$/u, "") <> "…"
+      # a comma, a dash or a full stop before the ellipsis reads as a
+      # stutter
+      String.replace(head, ~r/[\s,;:.\-–—]+$/u, "") <> "…"
     end
   end
 

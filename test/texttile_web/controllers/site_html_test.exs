@@ -58,6 +58,12 @@ defmodule TexttileWeb.SiteHTMLTest do
       assert String.ends_with?(lead, "flour…")
     end
 
+    test "a cut after a sentence ends in the ellipsis alone" do
+      body = String.duplicate("Well. ", 40)
+
+      assert SiteHTML.lead(%{body: body}) |> String.ends_with?("Well. Well…")
+    end
+
     test "an umlaut lead under the limit keeps its last word" do
       body = String.duplicate("über ", 30) |> String.trim()
       assert String.length(body) == 149

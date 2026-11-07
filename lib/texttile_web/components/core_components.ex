@@ -188,7 +188,8 @@ defmodule TexttileWeb.CoreComponents do
   the caret never leaves the text, and finds this bar by its id.
 
   `files: false` takes the image button off, for a surface that holds
-  words and no pictures.
+  words and no pictures. A phone leaves out the two rare ones, task list
+  and code, so the row fits the screen; the Markdown still types.
   """
   attr :id, :string, required: true
   attr :files, :boolean, default: true
@@ -308,7 +309,7 @@ defmodule TexttileWeb.CoreComponents do
       </button>
       <button
         type="button"
-        class="mdb"
+        class="mdb rare"
         data-cmd="task"
         title={gettext("Task list. Click a box in the text to tick it.")}
         aria-label={gettext("Task list")}
@@ -329,7 +330,7 @@ defmodule TexttileWeb.CoreComponents do
       <span class="mdsep" aria-hidden="true"></span>
       <button
         type="button"
-        class="mdb"
+        class="mdb rare"
         data-cmd="code"
         title={gettext("Code")}
         aria-label={gettext("Code")}

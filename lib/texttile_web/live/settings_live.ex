@@ -582,20 +582,16 @@ defmodule TexttileWeb.SettingsLive do
 
   defp comments_note(true) do
     gettext(
-      "The reader gets one confirmation link per address. The comment stays hidden from readers until the reader follows it, and it carries the mark \"not confirmed yet\" here. Turn this off and every comment appears at once. Spam is filtered by honeypot, timing and rate limit checks either way."
+      "A comment stays hidden until its reader follows the link in a mail. Until then it is marked \"not confirmed yet\" here."
     )
   end
 
   defp comments_note(false) do
-    gettext(
-      "Comments appear at once. Turn this on and a comment waits until its reader follows a confirmation link. The spam filters work either way."
-    )
+    gettext("Comments appear at once. Spam is filtered either way.")
   end
 
   defp notify_note(true) do
-    gettext(
-      "Every admin gets one mail per comment that appears under an entry. The reader's address is never in it."
-    )
+    gettext("One mail per new comment, to every admin. The reader's address is never in it.")
   end
 
   defp notify_note(false) do
@@ -941,9 +937,7 @@ defmodule TexttileWeb.SettingsLive do
               <span class="text-[14.5px] font-medium">{gettext("Password-protected")}</span>
               <br />
               <span class="text-[12.5px] text-faint">
-                {gettext(
-                  "One password for the whole blog. Readers enter it once and are remembered. Search engines see nothing."
-                )}
+                {gettext("One password for the whole blog. Search engines see nothing.")}
               </span>
             </span>
           </label>
@@ -963,9 +957,7 @@ defmodule TexttileWeb.SettingsLive do
               class="max-w-[240px]"
             />
             <div class="hint">
-              {gettext(
-                "One word for all readers, not a login. Every entry mail carries it, so everybody on the newsletter list has it."
-              )}
+              {gettext("Every entry mail carries it, so subscribers have it too.")}
             </div>
           </div>
         </.form>
@@ -1008,9 +1000,7 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>{gettext("Users")}</.section>
         <p class="note mb-1 leading-[1.6]">
-          {gettext(
-            "Everybody on this list can sign in, and everybody is an admin. Invite the next one by address: the link for the first password goes to that inbox."
-          )}
+          {gettext("Everybody on this list is an admin.")}
         </p>
         <div id="usersList">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
@@ -1085,9 +1075,7 @@ defmodule TexttileWeb.SettingsLive do
                 </button>
               </span>
               <div class="hint">
-                {gettext(
-                  "The address gets an account at once and a link that sets its password. The link works one time and for a week. Until it is used, the account cannot sign in, and you can delete it from the list above."
-                )}
+                {gettext("The link sets the first password. It works once, for a week.")}
               </div>
               <%!-- What went wrong wears the colour that means "read
                    this"; what worked stays quiet. --%>

@@ -591,6 +591,8 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      # an empty Released filter has nothing left to fill it
+      refute has_element?(view, "#commentFilter [data-f=released]")
     end
   end
 

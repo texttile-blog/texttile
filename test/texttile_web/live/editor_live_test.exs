@@ -855,8 +855,8 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       {:ok, other, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#coverRow #previewByTile")
-      refute has_element?(view, "#coverRow button")
+      # the tiles are the picker: no second row draws them again
+      refute has_element?(view, "#previewRow")
 
       # without a choice the first image wears the flag
       assert has_element?(view, "#tile-#{a.id} .cov")

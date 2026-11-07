@@ -219,7 +219,7 @@ defmodule TexttileWeb.ProfileLive do
         <.form for={@email_form} id="email-form" phx-submit="set_email">
           <div class="drow">
             <span class="val">
-              <span class="pairrow">
+              <span class="pairrow addr-first">
                 <span class="min-w-0">
                   <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}

@@ -16,8 +16,8 @@ defmodule TexttileWeb.SiteHTML do
   embed_templates "site_html/*"
 
   @doc """
-  The header every reader page wears: the mark and the site name, the
-  site description as it stands in Settings, then the menu the app
+  The header every reader page wears: the mark and the site name, then
+  the menu the app
   builds out of its pages - Home when a fixed page is the front door,
   Blog for the list, then every published page by publish date. The
   way into the admin area is the foot's, once per page.
@@ -27,16 +27,10 @@ defmodule TexttileWeb.SiteHTML do
   attr :home_page, :any, default: nil
   attr :menu_pages, :list, default: []
 
-  attr :desc, :boolean,
-    default: true,
-    doc: "false where the page opens with the description itself"
-
   def site_head(assigns) do
     assigns =
       assigns
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
-      |> assign(:show_desc, assigns.desc)
-      |> assign(:desc, String.trim(Texttile.Settings.get(:site_description)))
 
     ~H"""
     <header class="site-head">
@@ -50,7 +44,6 @@ defmodule TexttileWeb.SiteHTML do
         <Layouts.mark :if={!@brand.logo} size={21} />
         <span class="site-name">{@brand.title}</span>
       </a>
-      <span :if={@show_desc && @desc != ""} class="site-desc">{@desc}</span>
       <nav class="site-nav" aria-label={gettext("Site")}>
         <a :if={@home_page} id="menu-home" href={~p"/"} aria-current={@active == :home && "page"}>
           {gettext("Home")}
@@ -193,7 +186,7 @@ defmodule TexttileWeb.SiteHTML do
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
         <span :if={!@preview && lead(@article) != ""} class="cimg words" aria-hidden="true">
-          <span class="cx">{lead(@article, 110)}</span>
+          <span class="cx">{lead(@article, 240)}</span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />

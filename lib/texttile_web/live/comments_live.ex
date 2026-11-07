@@ -55,10 +55,16 @@ defmodule TexttileWeb.CommentsLive do
   defp selected_for(_socket, _status), do: MapSet.new()
 
   # A status the setting took away, or one nobody ever wrote, reads as
-  # all of them.
+  # all of them. Without the confirmation nothing gets released any
+  # more, so that filter stays only while it still holds a comment.
   defp load(socket) do
     require? = Settings.get(:comments_require_confirmation)
-    statuses = Comments.statuses(require?)
+    counts = Comments.status_counts()
+
+    statuses =
+      Comments.statuses(require?)
+      |> Enum.reject(&(&1 == "released" and not require? and counts["released"] == 0))
+
     status = if socket.assigns.status in statuses, do: socket.assigns.status, else: "all"
     list = Comments.overview(status, socket.assigns.page)
 
@@ -66,7 +72,7 @@ defmodule TexttileWeb.CommentsLive do
     |> assign(:status, status)
     |> assign(:statuses, statuses)
     |> assign(:selected, still_there(socket.assigns.selected, status))
-    |> assign(:counts, Comments.status_counts())
+    |> assign(:counts, counts)
     |> assign(:comments, list.rows)
     |> assign(:page, list.page)
     |> assign(:pages, list.pages)
@@ -170,12 +176,8 @@ defmodule TexttileWeb.CommentsLive do
       </:bar>
       <div class="admin-col">
         <div>
-          <div class="flex items-baseline gap-[14px] flex-wrap">
-            <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
-            <span class="note num" id="commentsCount">
-              {ngettext("1 comment", "%{count} comments", @counts["all"])}
-            </span>
-          </div>
+          <%!-- no count beside the heading: the All filter carries it --%>
+          <h1 class="page-h" id="commentsTop">{gettext("Comments")}</h1>
           <nav
             class="flex gap-[3px] flex-wrap mt-[18px] mb-[8px]"
             id="commentFilter"
