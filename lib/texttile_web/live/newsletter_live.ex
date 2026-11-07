@@ -137,6 +137,11 @@ defmodule TexttileWeb.NewsletterLive do
                 <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
                   {gettext("waits for their confirmation")}
                 </span>
+                <%!-- a phone says the day under the address: it knows
+                     what the desk knows --%>
+                <span class="sm:hidden basis-full text-[12.5px] text-faint num">
+                  {since(subscriber)}
+                </span>
               </span>
               <span class="hidden sm:inline text-[13px] text-faint num flex-none">
                 {since(subscriber)}

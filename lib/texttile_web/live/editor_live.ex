@@ -2262,10 +2262,12 @@ defmodule TexttileWeb.EditorLive do
             <div class="drow pt-0.5">
               <span class="lab">{gettext("Address")}</span>
               <span class="val">
+                <%!-- the fixed part of the address on a quiet line of its
+                     own, so the field holds only what can be edited --%>
+                <span class="block text-[12.5px] text-faint mb-[4px] break-all" id="slugPrefix">
+                  {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}
+                </span>
                 <span class="addr">
-                  <span class="pre">
-                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}
-                  </span>
                   <input
                     type="text"
                     id="edSlug"

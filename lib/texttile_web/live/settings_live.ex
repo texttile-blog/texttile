@@ -831,7 +831,7 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-medium">{gettext("Latest entries")}</span>
               <br />
-              <span class="text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
                 {gettext("Published entries, newest first.")}
               </span>
             </span>
@@ -852,7 +852,7 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-medium">{gettext("A fixed page")}</span>
               <br />
-              <span class="text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
                 <%= if @pages == [] do %>
                   {gettext(
                     "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
@@ -926,7 +926,7 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-medium">{gettext("Public")}</span>
               <br />
-              <span class="text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
                 {gettext("Anyone can read the blog.")}
               </span>
             </span>
@@ -943,7 +943,7 @@ defmodule TexttileWeb.SettingsLive do
             <span>
               <span class="text-[14.5px] font-medium">{gettext("Password-protected")}</span>
               <br />
-              <span class="text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
                 {gettext("One password for the whole blog. Search engines see nothing.")}
               </span>
             </span>

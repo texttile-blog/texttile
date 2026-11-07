@@ -269,7 +269,7 @@ defmodule TexttileWeb.TextsLive do
                 <span class="bits">
                   <%= for {bit, i} <- card_meta(article, article.id in @pending) do %>
                     <span
-                      class={["whitespace-nowrap bit", bit == gettext("Page") && "max-sm:hidden"]}
+                      class="whitespace-nowrap bit"
                       phx-no-format
                     ><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
                   <% end %>

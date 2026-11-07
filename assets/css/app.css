@@ -139,6 +139,7 @@
      row of underlines */
   #meta { font-size: 15px; }
   #meta .link { text-decoration: none; margin-left: 2px; margin-right: 4px; }
+  #meta .mtags .link { margin: 0; }
   #meta .link:hover { text-decoration: underline; }
 
   /* THE SAVED STAMP · the quiet half of a screen without a Save
@@ -621,7 +622,7 @@
      carry the row */
   @media (min-width: 640px) { #cards .card .cimg { aspect-ratio: 4 / 3; } }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
-  .card .cm .st { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
+  .card .cm .st { display: inline-block; width: 9px; height: 9px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
   /* Every line starts with its state: a mark and a word. Live is a
      filled ink dot, Scheduled a half-filled one, Draft a grey ring: three
      shapes, so the mark says it without the word. Ink, because
@@ -2152,7 +2153,7 @@
 
 /* the state mark beside a day in a table: the Entries grid's shapes */
 .mk {
-  display: inline-block; width: 8px; height: 8px; border-radius: 9999px;
+  display: inline-block; width: 9px; height: 9px; border-radius: 9999px;
   margin-right: 7px; vertical-align: 1px;
   background: var(--tt-ink);
 }
@@ -2304,7 +2305,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 
 /* the last item of the reader's menu ends its words on the grid's edge,
    as the cards and the footer do; its rule keeps the padded width */
-.site-nav a:last-child { margin-right: -9px; }
+.site-nav a:last-child { padding-right: 0; }
 
 /* Stats on a phone: a referrer's bar takes a line of its own under the
    source, across the column, so the shares can be compared */
@@ -2315,3 +2316,25 @@ body.site .card-wrap .cm { font-size: 14px; }
   #referrers td.align-middle { grid-column: 1 / -1; grid-row: 2; padding: 6px 0 0; }
   #referrers .track { height: 4px; }
 }
+
+/* an underline belongs to its word: it runs under the text, not under
+   the padding that makes the tap target */
+.bn.on, .site-nav a[aria-current] {
+  box-shadow: none;
+  background: linear-gradient(var(--tt-accent), var(--tt-accent)) no-repeat;
+  background-size: calc(100% - 18px) 2px; background-position: 9px 100%;
+}
+.site-nav a[aria-current]:last-child { background-size: calc(100% - 9px) 2px; }
+.bar-me.on { box-shadow: none; background: linear-gradient(var(--tt-accent), var(--tt-accent)) no-repeat; background-size: calc(100% - 12px) 2px; background-position: 0 100%; }
+
+/* a phone says the unit of a referrer's share after the number */
+@media (max-width: 639px) { #referrers td:last-child::after { content: "\2009%"; color: var(--tt-faint); } }
+
+/* on a phone the line under an option starts on the gutter, like every
+   help line, while the control stays beside its label */
+@media (max-width: 639px) {
+  .opt .note { margin-left: -25px; }
+  .optnote { display: block; margin-left: -26px; }
+}
+/* a crumb after the row is a name, not a tab: no rule under it */
+span.bn.on { background: none; }

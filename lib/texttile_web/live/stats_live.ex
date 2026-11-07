@@ -245,9 +245,16 @@ defmodule TexttileWeb.StatsLive do
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
                 <td class="pr-5">
-                  <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
-                    {Articles.display_title(row.article)}
-                  </.link>
+                  <%!-- a phone has no Date column: the mark of the state goes
+                       before the title, so a draft is never read as live --%>
+                  <span class="flex items-baseline">
+                    <i class={["mk sm:hidden flex-none", row.article.status]} aria-hidden="true"></i><.link
+                      class="link min-w-0"
+                      navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}
+                    >
+                      {Articles.display_title(row.article)}
+                    </.link>
+                  </span>
                 </td>
                 <td class="num hidden sm:table-cell">
                   <.published_cell article={row.article} />
