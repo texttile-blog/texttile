@@ -124,7 +124,7 @@ defmodule TexttileWeb.StatsLive do
 
         <%!-- no rule over the figures: the window switch above them is a row
              of tabs like every other, its line under the open one alone --%>
-        <div id="statsFigures" class="grid grid-cols-3 border-b border-hair">
+        <div id="statsFigures" class="grid grid-cols-3">
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;

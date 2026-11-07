@@ -242,7 +242,11 @@ defmodule TexttileWeb.Layouts do
           <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
             {@crumb}<span :if={@count} class="bn-count">{@count}</span>
           </span>
-          <span class="text-dim -ml-[2px] mt-px" aria-hidden="true"><.chevron /></span>
+          <%!-- a desk bar that shows the row of sections needs no chevron:
+               the mark still opens the menu --%>
+          <span class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden"]} aria-hidden="true">
+            <.chevron />
+          </span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
       </span>

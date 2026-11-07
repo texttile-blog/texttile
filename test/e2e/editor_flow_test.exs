@@ -384,8 +384,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
   describe "the writing surface" do
     # The glyphs format the words under them, so they belong to the
-    # words. They stood 18px under the title and 26px over the body,
-    # which read as a bar attached to the title.
+    # words: the bar stands closer to the body than to the title.
     @bar_gaps """
     () => {
       const bar = document.querySelector(".mdbar").getBoundingClientRect()

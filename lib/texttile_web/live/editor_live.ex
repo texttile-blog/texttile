@@ -2109,7 +2109,7 @@ defmodule TexttileWeb.EditorLive do
         <aside
           id="sideCol"
           aria-label={gettext("Entry settings")}
-          class="sidecol min-w-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-12 lg:pt-[33px] pb-[50px] lg:pb-[55px]"
+          class="sidecol min-w-0 lg:border-l border-hair px-4 lg:pl-[33px] lg:pr-6 pt-8 lg:pt-[33px] pb-[50px] lg:pb-[55px]"
         >
           <%!-- The tiles block: the gallery as the reader will see it.
                Server truth renders into #tileServer; the hook owns the
@@ -2170,7 +2170,9 @@ defmodule TexttileWeb.EditorLive do
                   }
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
-                  <span :if={@effective_preview == image.path} class="cov">{gettext("Preview")}</span>
+                  <span :if={@effective_preview == image.path} class="cov">
+                    ✓ {gettext("Preview")}
+                  </span>
                   <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
                   <span :if={conversion_note(@media[image.path])} class="tile-wait">
                     {conversion_note(@media[image.path])}

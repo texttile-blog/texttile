@@ -7,13 +7,11 @@
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1" id="title">#{@tag}</h1>
-    <p class="f-note mt-2" id="sub">
-      {ngettext("1 entry", "%{count} entries", length(@articles))}
-    </p>
+    <%!-- no count line: the open tag in the row carries it --%>
 
     <%!-- every tag of the blog; the one being read is marked and does
          not link, the others are the way into the next archive --%>
-    <p class="mt-4 pb-2 border-b border-hair flex flex-wrap gap-x-4" id="tagbar">
+    <p class="mt-4 pb-2 border-b border-hair flex flex-wrap gap-x-4 gap-y-[6px]" id="tagbar">
       <%= for {tag, count} <- @tags do %>
         <span :if={tag == @tag} class="ctag on" aria-current="page">
           #{tag} <span class="cnt">{count}</span>

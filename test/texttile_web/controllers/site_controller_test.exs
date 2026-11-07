@@ -442,7 +442,8 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/tags/sea") |> html_response(200)
 
       assert html =~ "#Sea"
-      assert html =~ "1 entry"
+      # the count stands in the open tag of the row
+      assert html =~ ~r{aria-current="page">\s*#Sea <span class="cnt">1</span>}
       assert html =~ ~s(id="text-#{sea.id}")
       refute html =~ "Desert nights"
 
