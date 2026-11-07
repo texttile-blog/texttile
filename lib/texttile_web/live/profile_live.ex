@@ -201,7 +201,7 @@ defmodule TexttileWeb.ProfileLive do
           <b id="profileWho">{Accounts.display_name(@current_scope.user)}</b>.
         </p>
 
-        <h2 class="set-h">{gettext("You")}</h2>
+        <h2 class="set-h">{gettext("Name")}</h2>
         <%!-- fields to type into, so they look like fields; the same
              treatment the Site block of Settings wears --%>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">

@@ -259,7 +259,7 @@
   /* a phone starts a form screen as close under the bar as a list: the
      first section has no air over it, and the rest stand a little closer */
   @media (max-width: 767px) {
-    .set-h { margin-top: 26px; margin-bottom: 8px; }
+    .set-h { margin-top: 32px; margin-bottom: 8px; }
     .admin-col > h2.set-h:first-of-type { margin-top: 0; }
   }
   /* the section heading on Stats: quieter than .set-h, because the
@@ -679,8 +679,8 @@
     #cards .card .cimg.empty { display: grid; place-items: center; padding: 0; }
     #cards .card .cimg .cx, #cards .card .cimg .cn { display: none; }
     #cards .card .cimg .ci {
-      display: block; font-family: var(--tt-font-serif); font-size: 24px;
-      font-weight: 600; line-height: 1; color: var(--tt-dim);
+      display: block; font-family: var(--tt-font-serif); font-size: 20px;
+      font-weight: 500; line-height: 1; color: var(--tt-faint);
     }
 
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
@@ -1978,7 +1978,7 @@
 @media (max-width: 639px) {
   .mdb.rare, .mdsep.rare { display: none; }
   /* the buttons that are left share the row's width evenly */
-  .mdbar { justify-content: space-between; margin-right: -9px; }
+  .mdbar { justify-content: space-between; margin-right: -18px; }
 }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2189,11 +2189,20 @@ input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-colo
   .sidecol::before { content: ""; position: absolute; top: 0; left: 16px; right: 16px; border-top: 1px solid var(--tt-hair); }
 }
 
-/* picture cards keep four lines for their lead, so the tags of a row
-   stand on one line */
-@media (min-width: 640px) { .card-wrap .clead:not(.long) { min-height: calc(1.55em * 4); } }
+/* a picture card's lead is short enough for three lines, and its tags
+   follow it at one distance, so every card has the same cadence under
+   its picture; the last line is balanced, never one word alone */
+.card-wrap .clead { text-wrap: pretty; }
+.card-wrap .ctags { margin-top: 12px; }
 
 /* the reader's cards: the name of an entry carries the card next to its
    picture, and its line is read, not squinted at */
 body.site .card .ct { font-size: 20px; line-height: 1.22; }
 body.site .card-wrap .cm { font-size: 14px; }
+
+/* a bar of the chart is a button: the pointer finds it darker */
+#dayChart button:hover i.barc { background: var(--tt-dim); }
+
+/* on a desk the help lines come up a step, so a long form stays calm
+   without going faint */
+@media (min-width: 1024px) { .hint, .drow .hint { font-size: 14px; } }

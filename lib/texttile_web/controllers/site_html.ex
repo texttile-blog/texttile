@@ -204,7 +204,7 @@ defmodule TexttileWeb.SiteHTML do
           </a>
         </span>
       </p>
-      <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article, 130)}</p>
+      <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article, 110)}</p>
       <p :if={!@preview && lead(@article) != ""} class="clead long">{lead(@article, 320)}</p>
       <p :if={Articles.tag_list(@article) != []} class="ctags">
         <a

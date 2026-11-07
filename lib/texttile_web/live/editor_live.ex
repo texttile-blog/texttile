@@ -2133,13 +2133,12 @@ defmodule TexttileWeb.EditorLive do
                 <span class="note num font-normal font-sans" id="tileOnWay" phx-update="ignore">
                 </span>
               </span>
-              <span class="sp max-sm:hidden"></span>
               <%!-- a finger holds, a pointer grabs: the hint says the one
-                   the screen has, and a phone sets it under the heading --%>
-              <span class="note max-sm:basis-full on-pointer">
+                   the screen has, under the heading as every explanation --%>
+              <span class="note basis-full on-pointer">
                 {gettext("Grab a tile to sort it.")}
               </span>
-              <span class="note max-sm:basis-full on-touch">
+              <span class="note basis-full on-touch">
                 {gettext("Hold a tile, then drag.")}
               </span>
             </div>
@@ -2247,9 +2246,8 @@ defmodule TexttileWeb.EditorLive do
             phx-auto-recover="recover_settings"
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
+              <%!-- no line on saving: the bar says Saved --%>
               <span class="font-serif text-[18px] font-semibold">{gettext("Entry settings")}</span>
-              <span class="sp max-sm:hidden"></span>
-              <span class="note max-sm:basis-full">{gettext("Every change saves itself.")}</span>
             </div>
 
             <div class="drow pt-0.5">

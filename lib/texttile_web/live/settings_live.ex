@@ -1006,7 +1006,9 @@ defmodule TexttileWeb.SettingsLive do
         <.section>{gettext("Users")}</.section>
         <div id="usersList" class="border-t border-hair">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
-            <div class="flex items-center gap-[10px] flex-wrap">
+            <%!-- the name line keeps the height of its buttons in every
+                 row, so name and address stand at one rhythm --%>
+            <div class="flex items-center gap-[10px] flex-wrap min-h-[30px]">
               <span class="rowp">{Accounts.display_name(user)}</span>
               <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
               <span
