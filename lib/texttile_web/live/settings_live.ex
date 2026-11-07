@@ -797,8 +797,19 @@ defmodule TexttileWeb.SettingsLive do
         >
           <textarea>{@settings.about_markdown}</textarea>
         </div>
-        <div class="lab mt-[14px]">{gettext("Preview")}</div>
-        <div class="md-preview mt-[10px] pt-3 border-t border-hair" id="aboutPreview">
+        <%!-- the rendered words, on demand: JS.toggle keeps them open
+             across every redraw the saving sends --%>
+        <p class="mt-[10px]">
+          <button
+            type="button"
+            class="link text-[13px]"
+            id="toggle-about-preview"
+            phx-click={JS.toggle(to: "#aboutPreview")}
+          >
+            {gettext("Preview")}
+          </button>
+        </p>
+        <div class="md-preview mt-[8px] pt-3 border-t border-hair hidden" id="aboutPreview">
           {Phoenix.HTML.raw(@about_html)}
         </div>
 
@@ -814,7 +825,7 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("Latest entries")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("Latest entries")}</span>
               <br />
               <span class="text-[12.5px] text-faint">
                 {gettext("Published entries, newest first.")}
@@ -835,7 +846,7 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("A fixed page")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("A fixed page")}</span>
               <br />
               <span class="text-[12.5px] text-faint">
                 <%= if @pages == [] do %>
@@ -912,7 +923,7 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("Public")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("Public")}</span>
               <br />
               <span class="text-[12.5px] text-faint">{gettext("Anyone can read the blog.")}</span>
             </span>
@@ -927,7 +938,7 @@ defmodule TexttileWeb.SettingsLive do
               style="accent-color:var(--tt-accent)"
             />
             <span>
-              <span class="text-[14.5px] font-semibold">{gettext("Password-protected")}</span>
+              <span class="text-[14.5px] font-medium">{gettext("Password-protected")}</span>
               <br />
               <span class="text-[12.5px] text-faint">
                 {gettext(

@@ -489,58 +489,6 @@ defmodule TexttileWeb.CoreComponents do
   end
 
   @doc """
-  One word of an archive row: a year, a month, or the "all" that lets
-  go of one.
-
-  The open one says so and stops being a way anywhere, so the row never
-  sends anybody to the page they are already on. The reader's archive
-  walks by address and the admin grid by click, so the way there is
-  either an `href` or whatever the caller puts on the button.
-
-  "All years" and "All months" are `all`: standing on one of them is
-  where a list starts, not a period somebody chose, so it drops the
-  link and wears none of the marks of a choice.
-  """
-  attr :label, :any, required: true
-  attr :on, :boolean, default: false
-
-  attr :all, :boolean,
-    default: false,
-    doc: "the word that lets go of a period. Standing on it is not a choice, so it wears no mark."
-
-  attr :count, :any, default: nil
-  attr :href, :string, default: nil
-  attr :rest, :global, include: ~w(phx-click phx-value-year phx-value-month)
-
-  def period(assigns) do
-    ~H"""
-    <span :if={@on} class="per on" aria-current="true">
-      {@label}<.period_count count={@count} />
-    </span>
-    <a :if={!@on && @href} class="per" href={@href}>
-      {@label}<.period_count count={@count} />
-    </a>
-    <button :if={!@on && !@href} type="button" class="per" {@rest}>
-      {@label}<.period_count count={@count} />
-    </button>
-    """
-  end
-
-  # The number beside a year is how many entries it holds. Nothing on
-  # the row says the word, because the row has to stay one line at ten
-  # years of writing, so the number says it where a reader asks: on the
-  # pointer, and to whoever listens to the page.
-  attr :count, :any, default: nil
-
-  defp period_count(assigns) do
-    assigns = assign(assigns, :says, assigns.count && entry_count(assigns.count, assigns.count))
-
-    ~H"""
-    <span :if={@count} class="cnt" title={@says} aria-label={@says}>{@count}</span>
-    """
-  end
-
-  @doc """
   What an entry's state is called on screen.
 
   The stored word is English and stays English; only what a person

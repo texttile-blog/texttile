@@ -180,21 +180,24 @@ defmodule TexttileWeb.TextsLiveTest do
     test "narrows the grid to one year, then to one month", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
 
-      assert has_element?(view, "#years .per", "2026")
-      assert has_element?(view, "#years .per", "2024")
+      assert has_element?(view, "#years option", "2026 (2)")
+      assert has_element?(view, "#years option", "2024 (1)")
       refute has_element?(view, "#months")
 
-      view |> element("#years button.per", "2026") |> render_click()
+      view |> element("#periods") |> render_change(%{"year" => "2026", "_target" => ["year"]})
       assert has_element?(view, "#cards .card", "Harbour mornings")
       assert has_element?(view, "#cards .card", "Desert nights")
       refute has_element?(view, "#cards .card", "The long winter")
 
       # only the months that carry entries
-      assert has_element?(view, "#months .per", "Aug")
-      assert has_element?(view, "#months .per", "Mar")
-      refute has_element?(view, "#months .per", "May")
+      assert has_element?(view, "#months option", "August")
+      assert has_element?(view, "#months option", "March")
+      refute has_element?(view, "#months option", "May")
 
-      view |> element("#months button.per", "Aug") |> render_click()
+      view
+      |> element("#periods")
+      |> render_change(%{"year" => "2026", "month" => "8", "_target" => ["month"]})
+
       assert has_element?(view, "#cards .card", "Harbour mornings")
       refute has_element?(view, "#cards .card", "Desert nights")
     end

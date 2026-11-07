@@ -1455,7 +1455,7 @@ defmodule TexttileWeb.EditorLive do
         <button
           :if={@holds_lock}
           type="button"
-          class="btn sm quiet"
+          class="btn sm"
           id="barSaveVersion"
           phx-click="save_version"
           data-flush-body
@@ -1677,8 +1677,51 @@ defmodule TexttileWeb.EditorLive do
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px]">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto px-[14px] lg:px-[30px] pt-[22px] lg:pt-[30px] pb-10 lg:pb-[110px]">
+            <%!-- A phone has the gallery and the settings under the words,
+                 so its row is the three places a writer goes: the words,
+                 the gallery, the settings. The record of the entry
+                 (comments, stats, log, versions) folds into More. --%>
+            <nav class="ptabs lg:hidden" aria-label={gettext("Entry sections")}>
+              <button
+                type="button"
+                class={["ptab", @tab == "text" && "on"]}
+                phx-click={JS.push("set_tab", value: %{tab: "text"})}
+              >
+                {gettext("Text")}
+              </button>
+              <a href="#tilesBlock" class="ptab" id="jumpGallery">{gettext("Gallery")}</a>
+              <a href="#artSettings" class="ptab" id="jumpSettings">{gettext("Settings")}</a>
+              <details class="ptab-more" id="moreTabs">
+                <summary class={["ptab", @tab != "text" && "on"]}>
+                  {more_label(@tab)} <span aria-hidden="true">▾</span>
+                </summary>
+                <div class="ptab-menu">
+                  <button
+                    :for={
+                      {tab, label} <- [
+                        {"comments", gettext("Comments")},
+                        {"stats", gettext("Stats")},
+                        {"log", gettext("Log")},
+                        {"versions", gettext("Versions")}
+                      ]
+                    }
+                    type="button"
+                    class={["row", @tab == tab && "on"]}
+                    phx-click={JS.push("set_tab", value: %{tab: tab})}
+                  >
+                    {label}
+                    <span :if={tab == "versions" && @versions != []} class="k">
+                      {length(@versions)}
+                    </span>
+                    <span :if={tab == "comments" && @comments != []} class="k">
+                      {length(@comments)}
+                    </span>
+                  </button>
+                </div>
+              </details>
+            </nav>
             <nav
-              class="flex gap-0.5 border-b border-rule mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              class="hidden lg:flex gap-0.5 border-b border-rule mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               aria-label={gettext("Entry sections")}
             >
               <button
@@ -1703,12 +1746,6 @@ defmodule TexttileWeb.EditorLive do
                   {length(@comments)}
                 </span>
               </button>
-              <%!-- on a narrow screen the tiles and the settings follow
-                   the words; the strip scrolls, and its last stop is the
-                   way down to them --%>
-              <a href="#sideCol" class="tab lg:hidden" id="jumpSide">
-                {gettext("Gallery")} ↓
-              </a>
             </nav>
 
             <div :if={@tab == "text"} id="tp-text">
@@ -3089,6 +3126,13 @@ defmodule TexttileWeb.EditorLive do
         ),
       else: gettext("Pick the day it went live. An empty field makes the entry a draft again.")
   end
+
+  # What the folded tabs of a phone say: the open one by its name, or More.
+  defp more_label("comments"), do: gettext("Comments")
+  defp more_label("stats"), do: gettext("Stats")
+  defp more_label("log"), do: gettext("Log")
+  defp more_label("versions"), do: gettext("Versions")
+  defp more_label(_tab), do: gettext("More")
 
   defp slug_hint(%{status: "draft"}), do: gettext("Free to change while the entry is a draft.")
 

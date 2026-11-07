@@ -27,10 +27,15 @@ defmodule TexttileWeb.SiteHTML do
   attr :home_page, :any, default: nil
   attr :menu_pages, :list, default: []
 
+  attr :desc, :boolean,
+    default: true,
+    doc: "false where the page opens with the description itself"
+
   def site_head(assigns) do
     assigns =
       assigns
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
+      |> assign(:show_desc, assigns.desc)
       |> assign(:desc, String.trim(Texttile.Settings.get(:site_description)))
 
     ~H"""
@@ -45,7 +50,7 @@ defmodule TexttileWeb.SiteHTML do
         <Layouts.mark :if={!@brand.logo} size={21} />
         <span class="site-name">{@brand.title}</span>
       </a>
-      <span :if={@desc != ""} class="site-desc">{@desc}</span>
+      <span :if={@show_desc && @desc != ""} class="site-desc">{@desc}</span>
       <nav class="site-nav" aria-label={gettext("Site")}>
         <a :if={@home_page} id="menu-home" href={~p"/"} aria-current={@active == :home && "page"}>
           {gettext("Home")}

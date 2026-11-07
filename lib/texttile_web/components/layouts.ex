@@ -170,9 +170,9 @@ defmodule TexttileWeb.Layouts do
   attr :wide, :boolean,
     default: false,
     doc: """
-    the screen uses the whole window, as the editor does with its two
-    columns. Every other screen hangs its bar off the edges of the
-    admin column, so the wordmark stands over the page title.
+    the screen is about one thing, as the editor is about its entry: the
+    bar names it in the crumb instead of showing the row of sections.
+    Every bar stands on the same grid either way.
     """
 
   slot :lead,
@@ -201,7 +201,7 @@ defmodule TexttileWeb.Layouts do
       id="topbar"
       class={[
         "sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] border-b border-hair backdrop-blur-[8px] backdrop-saturate-150",
-        if(@wide, do: "px-[10px] md:px-4", else: "bar-col")
+        "bar-col"
       ]}
       role="banner"
     >

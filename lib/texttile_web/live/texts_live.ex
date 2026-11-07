@@ -79,14 +79,21 @@ defmodule TexttileWeb.TextsLive do
   # The archive narrows the grid to one year, and then to one month of
   # it. `Listing` reads the raw values and drops a month whose year is
   # gone: a month only ever belongs to the year over it.
+  # A year chosen anew opens all of its months; an empty choice is all.
   def handle_event("period", params, socket) do
+    year = blank_to_nil(params["year"])
+    month = if params["_target"] == ["year"], do: nil, else: blank_to_nil(params["month"])
+
     {:noreply,
      socket
-     |> assign(:year, params["year"])
-     |> assign(:month, params["month"])
+     |> assign(:year, year)
+     |> assign(:month, month)
      |> assign(:page, 1)
      |> load()}
   end
+
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(value), do: value
 
   def handle_info({:article_changed, _article}, socket), do: {:noreply, load(socket)}
   def handle_info({:article_deleted, _id}, socket), do: {:noreply, load(socket)}
@@ -143,49 +150,28 @@ defmodule TexttileWeb.TextsLive do
               class="w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
             />
           </form>
+          <%!-- the archive, the way the reader's list offers it: a year,
+               then the months of that year that carry entries, each with
+               its count; the counts follow the search and the filter --%>
+          <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
+            <span class="pick">
+              <select name="year" id="years" aria-label={gettext("Year")}>
+                <option value="">{gettext("All years")} ({@across_years})</option>
+                <option :for={{year, count} <- @years} value={year} selected={@year == year}>
+                  {year} ({count})
+                </option>
+              </select>
+            </span>
+            <span :if={@months != []} class="pick">
+              <select name="month" id="months" aria-label={gettext("Month")}>
+                <option value="">{gettext("All months")}</option>
+                <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
+                  {Texttile.I18n.month_name(month)}
+                </option>
+              </select>
+            </span>
+          </form>
         </div>
-        <%!-- the archive: one line of years, and the months of the year
-             that is open under it. Only the months that carry entries;
-             the counts follow the search and the status filter. --%>
-        <nav :if={@years != []} class="periods" id="periods" aria-label={gettext("Archive")}>
-          <p class="prow" id="years">
-            <.period
-              label={gettext("All years")}
-              on={is_nil(@year)}
-              all
-              count={@across_years}
-              phx-click="period"
-            />
-            <.period
-              :for={{year, count} <- @years}
-              label={year}
-              on={@year == year}
-              count={count}
-              phx-click="period"
-              phx-value-year={year}
-            />
-          </p>
-          <p :if={@months != []} class="prow" id="months">
-            <%!-- no count on this row at all: the year over it already
-                 says how many the year holds, and twelve numbers in a
-                 row is a table, not a line --%>
-            <.period
-              label={gettext("All months")}
-              on={is_nil(@month)}
-              all
-              phx-click="period"
-              phx-value-year={@year}
-            />
-            <.period
-              :for={{month, _count} <- @months}
-              label={Articles.month_name(month)}
-              on={@month == month}
-              phx-click="period"
-              phx-value-year={@year}
-              phx-value-month={month}
-            />
-          </p>
-        </nav>
         <div
           class="grid items-start gap-y-0 sm:gap-y-[26px] gap-x-4 md:gap-y-8 md:gap-x-5 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"

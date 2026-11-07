@@ -109,6 +109,9 @@ defmodule TexttileWeb.StatsComponents do
       </div>
       <div class="flex justify-between text-[12px] text-faint pt-[7px] pb-2 border-t border-faint">
         <span>{axis_label(List.first(@series).from, @step)}</span>
+        <span :if={length(@series) > 4}>
+          {axis_label(Enum.at(@series, div(length(@series), 2)).from, @step)}
+        </span>
         <span>{axis_label(List.last(@series).to, @step)}</span>
       </div>
     </div>
@@ -193,7 +196,7 @@ defmodule TexttileWeb.StatsComponents do
   defdelegate day_label(day), to: Texttile.I18n, as: :format_short_day
 
   defp bar_colour(views, max) when views == max and views > 0, do: "bg-accent"
-  defp bar_colour(_views, _max), do: "bg-accentsoft"
+  defp bar_colour(_views, _max), do: "barc"
 
   defp height(_views, 0), do: 0
   defp height(views, max), do: max(round(views / max * 100), 1)

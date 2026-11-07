@@ -144,16 +144,13 @@ defmodule TexttileWeb.TagsLive do
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[7px] sm:py-[9px] border-b border-hair grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_84px_auto] items-baseline gap-x-[10px]"
+            class="py-[8px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
           >
             <b class="text-[14.5px] break-words min-w-0">#{tag}</b>
-            <span class="note num row-start-2 sm:row-start-auto sm:text-right">
+            <span class="note num flex-1">
               {ngettext("1 entry", "%{count} entries", count)}
             </span>
-            <div
-              :if={@editing != tag}
-              class="flex gap-1 -mr-[10px] col-start-2 row-start-1 row-span-2 self-center sm:col-start-auto sm:row-start-auto sm:row-span-1"
-            >
+            <div :if={@editing != tag} class="flex gap-1 -mr-[10px]">
               <button
                 type="button"
                 class="btn quiet sm"
@@ -177,7 +174,7 @@ defmodule TexttileWeb.TagsLive do
               :if={@editing == tag}
               for={@form}
               id="rename-tag-form"
-              class="col-span-full w-full pt-2"
+              class="w-full pt-2"
               phx-submit="rename_tag"
             >
               <label for="tag-name" class="lab block mb-[3px]">{gettext("Name")}</label>

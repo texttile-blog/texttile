@@ -30,8 +30,8 @@
   --tt-accentline:  #d8cff2;
 
   /* solid buttons */
-  --tt-solid:       #44288f;
-  --tt-solidhover:  #5a37c2;
+  --tt-solid:       #5a37c2;
+  --tt-solidhover:  #4a2aa6;
   --tt-onsolid:     #ffffff;
   --tt-solidline:   rgba(255, 255, 255, .32);
 
