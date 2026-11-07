@@ -10,8 +10,8 @@ defmodule TexttileWeb.LinkHTML do
     ~H"""
     <Layouts.auth subtitle={
       if @invitation,
-        do: gettext("Your admin account · %{host}", host: @conn.host),
-        else: gettext("A new password · %{host}", host: @conn.host)
+        do: gettext("Your admin account"),
+        else: gettext("A new password")
     }>
       <p :if={@invitation} class="text-[13.5px] mt-[20px] leading-[1.6]" id="link-who">
         {gettext("This link opens the admin account of")} <b>{@user.email}</b>. {gettext(
@@ -37,7 +37,7 @@ defmodule TexttileWeb.LinkHTML do
              answer, because an entry signed with the part in front of
              an @ is a byline nobody chose. --%>
         <div :if={@invitation} class="mb-[15px]">
-          <label class="lab block mb-0" for="link-display-name">
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="link-display-name">
             {gettext("Displayed name")}
           </label>
           <input
@@ -54,7 +54,7 @@ defmodule TexttileWeb.LinkHTML do
           </p>
         </div>
         <div class="mb-[7px]">
-          <label class="lab block mb-0" for="link-password">
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="link-password">
             {if @invitation, do: gettext("Your password"), else: gettext("New password")}
           </label>
           <input
@@ -70,7 +70,10 @@ defmodule TexttileWeb.LinkHTML do
              knows it yet, and a typo would shut its owner out of the
              account they are opening, with the link spent. --%>
         <div :if={@invitation} class="mb-[7px]">
-          <label class="lab block mb-0" for="link-password-confirmation">
+          <label
+            class="block text-[13px] font-medium text-ink mb-[6px]"
+            for="link-password-confirmation"
+          >
             {gettext("Repeat the password")}
           </label>
           <input
@@ -141,7 +144,7 @@ defmodule TexttileWeb.LinkHTML do
 
   def dead(assigns) do
     ~H"""
-    <Layouts.auth subtitle={gettext("A new password · %{host}", host: @conn.host)}>
+    <Layouts.auth subtitle={gettext("A new password")}>
       <h2 class="font-serif text-[19px] font-semibold tracking-[-.01em] mt-[22px]">
         {gettext("This link does not work any more")}
       </h2>
@@ -163,7 +166,7 @@ defmodule TexttileWeb.LinkHTML do
 
   def forgot(assigns) do
     ~H"""
-    <Layouts.auth subtitle={gettext("A new password · %{host}", host: @conn.host)}>
+    <Layouts.auth subtitle={gettext("A new password")}>
       <%= if @sent do %>
         <p class="text-[13.5px] mt-[20px] leading-[1.6]" id="forgot-sent">
           {gettext(
@@ -190,7 +193,9 @@ defmodule TexttileWeb.LinkHTML do
           class="mt-[18px]"
         >
           <div class="mb-[15px]">
-            <label class="lab block mb-0" for="forgot-email">{gettext("Email address")}</label>
+            <label class="block text-[13px] font-medium text-ink mb-[6px]" for="forgot-email">
+              {gettext("Email address")}
+            </label>
             <input type="email" id="forgot-email" name="user[email]" autocomplete="email" autofocus />
           </div>
           <button class="btn solid w-full h-[38px] mt-[6px]" type="submit">

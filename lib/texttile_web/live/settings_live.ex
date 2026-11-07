@@ -775,7 +775,7 @@ defmodule TexttileWeb.SettingsLive do
         </p>
 
         <.section>{gettext("About")}</.section>
-        <label class="block text-[13px] font-semibold text-ink mb-[2px]" for="setting-about_markdown">
+        <label class="block text-[13px] font-medium text-ink mb-[2px]" for="setting-about_markdown">
           {gettext("About this blog")}
         </label>
         <%!-- the editor of an entry, with the pictures taken out: About
@@ -891,45 +891,6 @@ defmodule TexttileWeb.SettingsLive do
             </span>
           </div>
         </.form>
-
-        <.section>{gettext("Theme")}</.section>
-        <p class="note mb-[10px]">
-          {gettext("One CSS file styles the blog and this admin area.")}
-        </p>
-        <.form for={@settings_form} id="theme-form" phx-change="save_setting" phx-hook=".ThemeRefresh">
-          <span class="labrow">
-            <label class="lab" for="setting-theme_css">theme.css</label>
-            <%!-- emptying a twelve-row field by hand to get the default
-                 back is no way to ask for it --%>
-            <button
-              :if={@settings.theme_css != ""}
-              type="button"
-              class="link"
-              id="reset-theme"
-              phx-click="reset_theme"
-            >
-              {gettext("Reset")}
-            </button>
-          </span>
-          <textarea
-            id="setting-theme_css"
-            name="settings[theme_css]"
-            rows="12"
-            spellcheck="false"
-            class="font-mono text-[12.5px] leading-[1.65]"
-            phx-debounce="300"
-          >{@settings_form[:theme_css].value}</textarea>
-        </.form>
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
-          export default {
-            mounted() {
-              this.handleEvent("theme_saved", () => {
-                const link = document.querySelector('link[href^="/theme.css"]')
-                if (link) link.href = "/theme.css?v=" + Date.now()
-              })
-            }
-          }
-        </script>
 
         <.section>{gettext("Access")}</.section>
         <%!-- Two choices and the field that belongs to the second one.
@@ -1284,6 +1245,66 @@ defmodule TexttileWeb.SettingsLive do
           <button class="btn sm" phx-click="clear_cache">Clear image cache</button>
           <span class="note">Variants regenerate on demand.</span>
         </p>
+
+        <.section>{gettext("Theme")}</.section>
+        <p class="note mb-[10px]">
+          {gettext("One CSS file styles the blog and this admin area.")}
+        </p>
+        <%!-- the theme is code, and most visits never touch it: the
+             field opens on demand, and JS.toggle keeps it open across
+             every redraw the saving sends --%>
+        <p>
+          <button
+            type="button"
+            class="btn sm"
+            id="open-theme"
+            phx-click={JS.toggle(to: "#themeBox")}
+          >
+            {gettext("Edit theme.css")}
+          </button>
+        </p>
+        <div id="themeBox" class="hidden mt-3">
+          <.form
+            for={@settings_form}
+            id="theme-form"
+            phx-change="save_setting"
+            phx-hook=".ThemeRefresh"
+          >
+            <span class="labrow">
+              <label class="lab" for="setting-theme_css">theme.css</label>
+              <%!-- emptying a twelve-row field by hand to get the default
+                 back is no way to ask for it --%>
+              <button
+                :if={@settings.theme_css != ""}
+                type="button"
+                class="link"
+                id="reset-theme"
+                phx-click="reset_theme"
+              >
+                {gettext("Reset")}
+              </button>
+            </span>
+            <textarea
+              wrap="off"
+              id="setting-theme_css"
+              name="settings[theme_css]"
+              rows="12"
+              spellcheck="false"
+              class="font-mono text-[12.5px] leading-[1.65]"
+              phx-debounce="300"
+            >{@settings_form[:theme_css].value}</textarea>
+          </.form>
+        </div>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
+          export default {
+            mounted() {
+              this.handleEvent("theme_saved", () => {
+                const link = document.querySelector('link[href^="/theme.css"]')
+                if (link) link.href = "/theme.css?v=" + Date.now()
+              })
+            }
+          }
+        </script>
 
         <.section>{gettext("Backup")}</.section>
         <div id="backupSection">

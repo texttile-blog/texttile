@@ -202,13 +202,14 @@ defmodule TexttileWeb.TextsLive do
               <% else %>
                 <%!-- an entry of words alone shows its opening words, and
                      an empty one says what is missing. The small square
-                     of the phone list carries the mark of a paragraph. --%>
+                     of the phone list is the same quiet box, empty. --%>
                 <span class="cimg empty">
-                  <span :if={Articles.lead(article) != ""} class="cx">{Articles.lead(article)}</span>
+                  <span :if={Articles.lead(article) != ""} class="cx">
+                    {Articles.lead(article, 90)}
+                  </span>
                   <span :if={Articles.lead(article) == ""} class="cn">
                     {gettext("no images yet")}
                   </span>
-                  <span class="ci" aria-hidden="true">¶</span>
                 </span>
               <% end %>
               <span class="ct">{Articles.display_title(article)}</span>

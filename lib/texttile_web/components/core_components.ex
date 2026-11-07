@@ -211,7 +211,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Heading. Click again for the next size.")}
         aria-label={gettext("Heading")}
       >
-        <span class="g font-serif font-semibold text-[15px]">H</span>
+        <span class="g font-sans font-semibold text-[15px]">H</span>
       </button>
       <button
         type="button"
@@ -220,7 +220,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Bold (Ctrl or Cmd + B)")}
         aria-label={gettext("Bold")}
       >
-        <span class="g font-serif font-bold text-[14.5px]">B</span>
+        <span class="g font-sans font-bold text-[14.5px]">B</span>
       </button>
       <button
         type="button"
@@ -229,7 +229,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Italic (Ctrl or Cmd + I)")}
         aria-label={gettext("Italic")}
       >
-        <span class="g font-serif italic font-semibold text-[14.5px]">I</span>
+        <span class="g font-sans italic font-semibold text-[14.5px]">I</span>
       </button>
       <button
         type="button"
@@ -514,7 +514,7 @@ defmodule TexttileWeb.CoreComponents do
 
   def period(assigns) do
     ~H"""
-    <span :if={@on} class={["per", !@all && "on"]} aria-current="true">
+    <span :if={@on} class="per on" aria-current="true">
       {@label}<.period_count count={@count} />
     </span>
     <a :if={!@on && @href} class="per" href={@href}>

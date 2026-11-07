@@ -105,7 +105,7 @@ defmodule TexttileWeb.NewsletterLive do
               required
               class="flex-1 min-w-[200px]"
             />
-            <button class="btn">{gettext("Add")}</button>
+            <button class="btn solid">{gettext("Add")}</button>
             <span
               :if={@add_error}
               id="subAddError"

@@ -188,7 +188,7 @@ defmodule TexttileWeb.SiteHTML do
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
         <span :if={!@preview && lead(@article) != ""} class="cimg words" aria-hidden="true">
-          <span class="cx">{lead(@article)}</span>
+          <span class="cx">{lead(@article, 130)}</span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />
@@ -299,11 +299,23 @@ defmodule TexttileWeb.SiteHTML do
   def gallery_size([_one]), do: :reading
   def gallery_size(_gallery), do: :card
 
+  @doc """
+  The heading over the reader's list: the site description from
+  Settings, which is the blog's own opening line, or the plain name of
+  the list when there is none.
+  """
+  def list_heading do
+    case String.trim(Texttile.Settings.get(:site_description)) do
+      "" -> gettext("Entries")
+      description -> description
+    end
+  end
+
   @doc "A date the way the example blog writes one: 2 July 2026."
   defdelegate format_date(date), to: Texttile.I18n
 
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
-  defdelegate lead(article), to: Articles
+  defdelegate lead(article, max \\ 160), to: Articles
 
   @doc """
   Why the list is shorter than the blog: the term, the year, the month,

@@ -221,7 +221,7 @@ defmodule TexttileWeb.ProfileLive do
             <span class="val">
               <span class="pairrow">
                 <span class="min-w-0">
-                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-address">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-address">
                     {gettext("Address")}
                   </label>
                   <input
@@ -235,7 +235,7 @@ defmodule TexttileWeb.ProfileLive do
                   />
                 </span>
                 <span class="min-w-0">
-                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="em-current">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-current">
                     {gettext("Your password")}
                   </label>
                   <input
@@ -265,7 +265,7 @@ defmodule TexttileWeb.ProfileLive do
             <span class="val">
               <span class="pairrow">
                 <span class="min-w-0">
-                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-current">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="pw-current">
                     {gettext("Current password")}
                   </label>
                   <input
@@ -276,7 +276,7 @@ defmodule TexttileWeb.ProfileLive do
                   />
                 </span>
                 <span class="min-w-0">
-                  <label class="block text-[13px] font-semibold text-ink mb-[6px]" for="pw-new">
+                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="pw-new">
                     {gettext("New password")}
                   </label>
                   <input

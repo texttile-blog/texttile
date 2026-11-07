@@ -7,7 +7,7 @@ defmodule TexttileWeb.SessionHTML do
 
   def new(assigns) do
     ~H"""
-    <Layouts.auth subtitle={gettext("Admin sign-in · %{host}", host: @conn.host)}>
+    <Layouts.auth subtitle={gettext("Admin sign-in")}>
       <.form
         :let={_f}
         for={%{}}
@@ -17,7 +17,9 @@ defmodule TexttileWeb.SessionHTML do
         class="mt-[26px]"
       >
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-email">{gettext("Email address")}</label>
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-email">
+            {gettext("Email address")}
+          </label>
           <input
             type="email"
             id="login-email"
@@ -31,7 +33,9 @@ defmodule TexttileWeb.SessionHTML do
           />
         </div>
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-password">{gettext("Password")}</label>
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-password">
+            {gettext("Password")}
+          </label>
           <input
             type="password"
             id="login-password"

@@ -204,7 +204,7 @@ defmodule TexttileWeb.CommentsLive do
               class={[
                 "btn sm",
                 MapSet.size(@selected) == 0 && "quiet",
-                action == "delete" && "danger"
+                action == "delete" && MapSet.size(@selected) > 0 && "danger"
               ]}
               id={"bulk-#{action}"}
               phx-click="bulk"

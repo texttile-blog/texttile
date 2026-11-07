@@ -39,6 +39,24 @@ defmodule TexttileWeb.CommentComponents do
         <span class="font-semibold">{@comment.name}</span>
         <.writer_links comment={@comment} />
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
+        <%!-- the actions stand at the end of the meta line, quiet like
+               the Restore of a version: three on every row would shout --%>
+        <div :if={!@editing} class="cmt-acts">
+          <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
+            {gettext("Edit")}
+          </button>
+          <button
+            :if={@waiting}
+            class="btn quiet sm"
+            phx-click="release_comment"
+            phx-value-id={@comment.id}
+          >
+            {gettext("Release")}
+          </button>
+          <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
+            {gettext("Delete")}
+          </button>
+        </div>
       </div>
       <%!-- where and when, on a line of their own under the name: the
            entry is the jump of the overview, quiet until the pointer
@@ -94,24 +112,6 @@ defmodule TexttileWeb.CommentComponents do
         class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
         phx-no-format
       >{@comment.body}</p>
-      <%!-- three actions on every row would shout in a list this long,
-           so they are quiet like the Restore of a version --%>
-      <div :if={!@editing} class="mt-[6px] btn-row -ml-[10px]">
-        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
-          {gettext("Edit")}
-        </button>
-        <button
-          :if={@waiting}
-          class="btn quiet sm"
-          phx-click="release_comment"
-          phx-value-id={@comment.id}
-        >
-          {gettext("Release")}
-        </button>
-        <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
-          {gettext("Delete")}
-        </button>
-      </div>
     </div>
     """
   end

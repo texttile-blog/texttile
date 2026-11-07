@@ -6,12 +6,9 @@
 />
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
-    <%!-- the count stands with the heading, as it does over the admin
-         grid; the search under them narrows it --%>
-    <div class="flex items-baseline gap-[14px] flex-wrap">
-      <h1 class="f-h1 list-h">{gettext("Blog Entries")}</h1>
-      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
-    </div>
+    <%!-- the blog's own line opens its list: the description from
+         Settings, set as the heading; without one the list is named --%>
+    <h1 class="f-h1 list-h">{list_heading()}</h1>
 
     <%!-- the list is narrowed from under it, so a reader who lands on
          a year or a term reads here why the list is shorter than the
@@ -42,7 +39,7 @@
         id="q"
         name="q"
         value={@q}
-        placeholder={gettext("Search titles, tags and text")}
+        placeholder={gettext("Search entries")}
         autocomplete="off"
         spellcheck="false"
       />
@@ -64,6 +61,7 @@
           </option>
         </select>
       </span>
+      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
     </form>
 
     <div class="cards mt-8" id="texts">

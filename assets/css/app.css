@@ -109,7 +109,7 @@
      the violet of the main action */
   .btn.danger { color: var(--tt-julia); }
   .btn.danger:hover { color: var(--tt-julia); }
-  .btn.quiet.danger { color: var(--tt-julia); }
+  .btn.quiet.danger { color: var(--tt-dim); }
   .btn.quiet.danger:hover { color: var(--tt-julia); background-color: var(--tt-juliatint); }
   /* the small badge on a comment whose reader has not confirmed the
      address yet - worn in the admin area and on the reader's own
@@ -211,9 +211,9 @@
   }
 
   /* THE ADMIN COLUMN · every screen of the admin area stands in one
-     column of one measure, centred under a bar of the same width, so
-     moving between screens never makes the page jump, widen or narrow.
-     The editor alone takes the window, for its two columns. */
+     column of one measure, centred in the grid of the bar, so moving
+     between screens never makes the page jump, widen or narrow. The
+     editor alone takes the window, for its two columns. */
   .admin-col {
     width: 100%; max-width: 808px; margin: 0 auto;
     padding: 22px 16px 90px;
@@ -226,8 +226,8 @@
      in one row on the same top margin, so they start on one line. */
   @media (min-width: 1000px) {
     .admin-col.twocol {
-      display: grid; grid-template-columns: 168px minmax(0, 1fr);
-      column-gap: 40px; align-items: start;
+      display: grid; grid-template-columns: 144px minmax(0, 1fr);
+      column-gap: 32px; align-items: start;
     }
     .admin-col.twocol > * { grid-column: 2; min-width: 0; }
     .admin-col.twocol > .page-h, .admin-col.twocol > .lead { grid-column: 1 / -1; }
@@ -238,9 +238,11 @@
 
   /* type roles */
   .page-h { font-family: var(--tt-font-serif); font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.018em; }
-  /* a phone already names the screen in its bar, so the heading under
-     it is a section title and not a second banner */
-  @media (max-width: 639px) { .page-h { font-size: 22px; } }
+  /* a phone names the screen once, in its bar: the heading under it
+     stays for whoever listens to the page, and gives its line back */
+  @media (max-width: 639px) {
+    .page-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
   .lead { color: var(--tt-dim); font-size: 14px; line-height: 1.55; max-width: 62ch; margin-top: 6px; margin-bottom: 28px; }
   /* the section heading on Settings: the serif carries the hierarchy,
      so the screen needs no rule under the heading. A rule there reads
@@ -260,9 +262,9 @@
   /* one number and what it counts */
   .fig .n { font-family: var(--tt-font-serif); font-size: 22px; font-weight: 600; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
   @media (min-width: 768px) { .fig .n { font-size: 28px; } .set-h { margin-top: 38px; } }
-  .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; }
+  .fig .l { font-size: 12.5px; color: var(--tt-faint); margin-top: 2px; min-height: 2.9em; }
   .lab { font-size: 13px; color: var(--tt-dim); }
-  .note { font-size: 13px; line-height: 1.5; color: var(--tt-faint); }
+  .note { font-size: 13.5px; line-height: 1.5; color: var(--tt-faint); }
   .hint { font-size: 12.5px; line-height: 1.5; color: var(--tt-faint); margin-top: 6px; }
 
   /* TOUCH · a finger needs 40px, a pointer does not. The small
@@ -335,7 +337,7 @@
 
   /* the field row: a semibold ink group name over its value */
   .drow { display: block; padding-top: 7px; padding-bottom: 7px; }
-  .drow > .lab { display: block; padding-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em; }
+  .drow > .lab { display: block; padding-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--tt-ink); }
   .drow > .val { display: block; font-size: 14.5px; color: var(--tt-ink); }
   .drow .hint { margin-top: 6px; font-size: 12.5px; line-height: 1.5; }
   /* What lies on the volume: a folder, a count and a weight. Numbers
@@ -361,7 +363,7 @@
   .labrow { display: flex; align-items: baseline; gap: 10px; padding-bottom: 6px; }
   .labrow > .lab {
     flex: 1; min-width: 0; padding-bottom: 0;
-    font-weight: 600; color: var(--tt-ink); letter-spacing: -.005em;
+    font-weight: 500; color: var(--tt-ink);
   }
   .labrow > .link { flex: none; font-size: 12.5px; }
 
@@ -383,7 +385,7 @@
      the ways to reach its writer as quiet icons, the waiting mark, and
      the moment pushed to the right; the entry stands alone under it. */
   .cmt {
-    padding: 16px 0 12px; border-bottom: 1px solid var(--tt-hair);
+    padding: 14px 0 16px; border-bottom: 1px solid var(--tt-hair);
   }
   .cmt-top {
     display: flex; flex-wrap: wrap; align-items: baseline;
@@ -394,16 +396,18 @@
   /* the second line: the entry and the moment, one run of quiet ink */
   .cmt-sub {
     display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0; row-gap: 2px;
-    margin-top: 2px; font-size: 12.5px; color: var(--tt-faint);
+    margin-top: 2px; font-size: 13px; color: var(--tt-faint);
   }
-  .cmt-when { font-size: 12.5px; color: var(--tt-faint); white-space: nowrap; }
+  .cmt-when { font-size: 13px; color: var(--tt-faint); white-space: nowrap; }
   .cmt-ent + .cmt-when::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  /* Edit, Release and Delete close the name line, at its right end */
+  .cmt-acts { display: flex; gap: 2px; margin-left: auto; margin-right: -10px; }
   .cmt-when .num { white-space: nowrap; }
   .cmt-ico { color: var(--tt-faint); align-self: center; display: inline-flex; }
   .cmt-ico:hover { color: var(--tt-accent); }
   .cmt-sep { color: var(--tt-slash); }
   .cmt-ent {
-    min-width: 0; font-size: 12.5px; color: var(--tt-dim); text-decoration: none;
+    min-width: 0; font-size: 13px; color: var(--tt-dim); text-decoration: none;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch;
   }
   .cmt-ent:hover { color: var(--tt-accent); text-decoration: underline; text-underline-offset: 2px; }
@@ -491,7 +495,7 @@
      under them. Everything that is not chosen stands in the quiet ink. */
   .seg-b {
     display: inline-flex; align-items: center; gap: 5px; min-height: 34px;
-    font-size: 13.5px; font-weight: 500; color: var(--tt-dim); padding: 0 10px;
+    font-size: 14px; font-weight: 500; color: var(--tt-dim); padding: 0 10px;
     box-shadow: inset 0 -2px 0 transparent;
     transition: color .15s ease, box-shadow .15s ease;
   }
@@ -553,17 +557,15 @@
      large and centred like a pull quote. They are a picture of the
      entry, not the text to read, so a long opening ends in an ellipsis. */
   .card .cimg.empty:has(.cx), .card .cimg.words {
-    display: flex; align-items: center; overflow: hidden;
-    background: var(--tt-field); padding: 0 11%;
+    display: block; overflow: hidden;
+    background: var(--tt-field); padding: 10% 11%;
   }
   .card .cimg .cx {
     font-family: var(--tt-font-serif); font-size: 17px; line-height: 1.5;
     color: var(--tt-inksoft); text-align: left;
     display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
   }
-  body.site .card .cimg .cx { font-size: 17px; line-height: 1.5; -webkit-line-clamp: 4; }
-  /* the first letter of the title, for a square too small for words */
-  .card .cimg .ci { display: none; }
+  body.site .card .cimg .cx { font-size: 17px; line-height: 1.55; -webkit-line-clamp: 7; }
   .card .ct {
     display: block; font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600;
     line-height: 1.25; letter-spacing: -.01em; margin-top: 12px; overflow: hidden;
@@ -572,7 +574,7 @@
   .card:hover .ct { text-decoration-line: underline; text-underline-offset: 3px; }
   .card .cm {
     display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px;
-    font-size: 13px; color: var(--tt-dim); margin-top: 5px;
+    font-size: 13.5px; color: var(--tt-dim); margin-top: 5px;
   }
   /* who it is by follows the day on the same line, so the facts of a
      card read as one run */
@@ -631,16 +633,13 @@
   @media (max-width: 639px) {
     #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
     #cards .card {
-      display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 14px;
-      align-items: center; padding: 12px 44px 12px 0;
+      display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 14px;
+      align-items: center; padding: 9px 44px 9px 0;
     }
-    #cards .card .cimg { grid-row: span 2; width: 60px; }
+    #cards .card .cimg { grid-row: span 2; width: 52px; }
     #cards .card .cimg.empty, #cards .card .cimg.empty:has(.cx) { display: grid; place-items: center; padding: 0; background: var(--tt-field); }
     #cards .card .cimg .cx, #cards .card .cimg .cn { display: none; }
-    #cards .card .cimg .ci {
-      display: block; font-family: var(--tt-font-serif); font-size: 24px;
-      line-height: 1; color: var(--tt-faint);
-    }
+
     #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
     #cards .card .cm { align-self: start; margin-top: 3px; }
     #cards .card:hover .cimg { transform: none; box-shadow: none; }
@@ -812,12 +811,18 @@
 
   /* the editor's tab row */
   .tab {
-    padding: 9px 13px; font-size: 13.5px; color: var(--tt-dim); white-space: nowrap; flex: none;
+    padding: 9px 13px; font-size: 14px; color: var(--tt-dim); white-space: nowrap; flex: none;
     border-bottom: var(--tt-tabw) solid transparent; margin-bottom: -1px;
     transition: color .15s ease;
   }
   .tab:first-child { padding-left: 0; }
-  @media (max-width: 639px) { .tab { padding-left: 10px; padding-right: 10px; } }
+  /* a phone fits the whole strip, the way down to the gallery
+     included: the counts give way (each tab still shows them inside)
+     and the tabs stand a little closer */
+  @media (max-width: 639px) {
+    .tab { padding-left: 7px; padding-right: 7px; font-size: 13px; }
+    .tab .cnt { display: none; }
+  }
   .tab:hover { color: var(--tt-ink); }
   .tab.on { color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent); }
   .tab .cnt { color: var(--tt-faint); font-weight: 400; margin-left: 5px; }
@@ -900,12 +905,9 @@
     box-shadow: var(--edb-sh);
   }
   .boxed-cm:hover { border-bottom: var(--fld-bb-h); }
-  /* About stands in the foot of every page in the sans of the band, so
-     its editor and its preview both write in that face */
-  #setting-about_markdown .cm-scroller, #setting-about_markdown > textarea {
-    font-family: var(--tt-font-sans); font-size: 15px; line-height: 1.6;
-  }
-  #aboutPreview { font-size: 15px; line-height: 1.6; }
+  /* the theme is code: its lines are kept whole and the box scrolls */
+  #setting-theme_css { white-space: pre; overflow-x: auto; overflow-wrap: normal; }
+  #aboutPreview { font-size: 15px; line-height: 1.6; margin-top: 6px; }
   .boxed-cm:focus-within {
     border: var(--fld-bd-f); border-bottom: var(--fld-bb-f);
     box-shadow: var(--edb-shf);
@@ -988,15 +990,15 @@
      hairline under it. It wears the page's own tokens, so every control
      on it (the crumb, the state dot, the saved mark, the split button)
      looks the way it does everywhere else. */
-  /* The bar of a column screen hangs off the column's edges: the
-     wordmark stands over the page title and the last control over the
-     right edge of the content. The wordmark button carries 6px of air
-     of its own, which the edge gives back. */
+  /* The bar of a column screen is the wide grid the column stands
+     centred in: the wordmark and the row of sections at its left, the
+     stamp and the way to the site at its right. The wordmark button
+     carries 6px of air of its own, which the edge gives back. */
   .bar-col { padding-left: 10px; padding-right: 16px; }
   @media (min-width: 768px) {
     .bar-col {
-      padding-left: max(18px, calc((100% - 808px) / 2 + 18px));
-      padding-right: max(24px, calc((100% - 808px) / 2 + 24px));
+      padding-left: max(18px, calc((100% - 1060px) / 2 + 18px));
+      padding-right: max(24px, calc((100% - 1060px) / 2 + 24px));
     }
   }
   /* THE ROW OF SECTIONS · every screen of the admin area in one line
@@ -1006,7 +1008,7 @@
   .barnav { display: flex; align-items: stretch; gap: 2px; height: 52px; margin-left: 6px; }
   .bn {
     display: inline-flex; align-items: center; padding: 0 9px;
-    font-size: 13.5px; font-weight: 500; color: var(--tt-dim); text-decoration: none;
+    font-size: 14px; font-weight: 500; color: var(--tt-dim); text-decoration: none;
     white-space: nowrap; box-shadow: inset 0 -2px 0 transparent;
     transition: color .15s ease, box-shadow .15s ease;
   }
@@ -1400,19 +1402,19 @@
     padding-left: 6px;
     min-width: 0; overflow: hidden; text-overflow: ellipsis;
   }
-  .site-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: none; }
+  .site-nav { display: flex; align-items: center; gap: 0; margin-left: auto; flex: none; }
+  .site-nav { align-self: stretch; }
   .site-nav a {
-    font-size: 14px; color: var(--tt-ink); text-decoration: none; white-space: nowrap;
-    padding: 5px 8px; border-radius: var(--tt-radius); transition: background-color .15s ease;
+    display: inline-flex; align-items: center; align-self: stretch;
+    font-size: 14px; color: var(--tt-dim); text-decoration: none; white-space: nowrap;
+    padding: 0 9px; box-shadow: inset 0 -2px 0 transparent;
+    transition: color .15s ease, box-shadow .15s ease;
   }
   /* the ground answers the pointer, because the ink has nowhere darker
      to go, and the page you are on is the one in bold */
-  .site-nav a:hover { background: var(--tt-field); }
+  .site-nav a:hover { color: var(--tt-ink); }
   /* the open one: the admin bar's mark, the ink and a violet rule */
-  .site-nav a[aria-current] {
-    font-weight: 600; text-decoration: underline; text-decoration-color: var(--tt-accent);
-    text-decoration-thickness: 2px; text-underline-offset: 7px;
-  }
+  .site-nav a[aria-current] { color: var(--tt-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--tt-accent); }
   @media (max-width: 900px) { .site-desc { display: none; } }
 
   /* the foot of every page: one row, small type in reading ink, links
@@ -1444,7 +1446,7 @@
   }
   /* the heading over a list is the door to it, not a title: a step
      quieter than the title of an entry */
-  .f-h1.list-h { font-size: clamp(30px, 4.2vw, 38px); }
+  .f-h1.list-h { font-size: clamp(26px, 3.6vw, 34px); line-height: 1.18; max-width: 26ch; font-weight: 500; }
   .f-sec-h {
     font-family: var(--tt-font-serif); font-size: 21px; font-weight: 600;
     line-height: 1.2; letter-spacing: -.015em; color: var(--tt-ink);
@@ -1514,7 +1516,7 @@
 
   /* a field is a label over an input */
   .cfld { display: block; min-width: 0; }
-  .cf-lab { display: block; padding-bottom: 6px; font-size: 13.5px; font-weight: 500; color: var(--tt-inksoft); }
+  .cf-lab { display: block; padding-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--tt-ink); }
   /* said once, on the one field it is true of */
   .cf-opt { margin-left: 6px; font-size: 12.5px; font-weight: 400; color: var(--tt-faint); }
   /* the checkbox is a note about the next visit, not a field */
@@ -1592,9 +1594,9 @@
      it, so the placeholder is never cut short by the count. */
   .searchrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 16px; }
   .searchrow input { flex: 1; min-width: 0; max-width: 460px; }
-  @media (max-width: 560px) { .searchrow input { flex-basis: 100%; } }
+
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
-  .searchrow .cnt { margin-left: auto; }
+  .searchrow .cnt { align-self: center; }
   /* a choice wears the one select of the app, and its words keep the
      weight of a year in the archive */
   .pick { position: relative; flex: none; }
@@ -1672,14 +1674,20 @@
      column. Nothing else on the page has that left edge, so the eye
      takes it for the end of the text. */
   .textnav {
-    display: grid; gap: 16px; padding: 16px 0 18px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 16px 0 18px;
     border-top: 1px solid var(--tt-rule);
     border-bottom: 1px solid var(--tt-rule);
   }
-  @media (min-width: 620px) {
-    .textnav { grid-template-columns: 1fr 1fr; gap: 30px; }
-    .textnav .nx { text-align: right; }
+  .textnav .nx { text-align: right; }
+  @media (max-width: 619px) {
+    .textnav { gap: 28px; }
+    .textnav .nx { text-align: left; }
+    .textnav .t {
+      font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
   }
+  @media (min-width: 620px) { .textnav { gap: 30px; } }
   .textnav a { display: block; color: inherit; text-decoration: none; }
   /* the label stands over the title, so a long title has the whole
      column to wrap in */
@@ -1723,7 +1731,16 @@
   }
   @media (min-width: 860px) {
     section.foot-band .cols { grid-template-columns: 1.5fr 1fr; gap: 64px; }
-    section.foot-band #subscribe { grid-column: 2; }
+    /* alone on the band (a page leaves About out), Subscribe is one
+       row: the words on the left, the form on the right */
+    section.foot-band .cols:not(:has(#about)) #subscribe {
+      grid-column: 1 / -1; display: grid; grid-template-columns: 1.5fr 1fr;
+      column-gap: 64px; align-items: center;
+    }
+    section.foot-band .cols:not(:has(#about)) #subscribe > :not(form) { grid-column: 1; }
+    section.foot-band .cols:not(:has(#about)) #subscribe > form {
+      grid-column: 2; grid-row: 1 / span 2; margin-top: 0;
+    }
   }
   .f-eyebrow {
     font-size: 13px; font-weight: 600; color: var(--tt-ink); margin-bottom: 9px;
@@ -1875,7 +1892,7 @@
 .mdbar {
   position: sticky; top: 52px; z-index: 30;
   display: flex; align-items: center; gap: 2px;
-  margin: 24px -6px 0; padding: 5px 6px 4px;
+  margin: 14px -6px 0; padding: 4px 6px 4px;
   background: var(--tt-page);
 }
 @media (min-width: 1024px) { .mdbar { top: 0; } }
@@ -1888,8 +1905,8 @@
 }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; flex: none;
-  border-radius: var(--tt-radius); color: var(--tt-dim);
+  width: 36px; height: 36px; flex: none;
+  border-radius: var(--tt-radius); color: var(--tt-inksoft);
   transition: background-color .12s ease, color .12s ease;
 }
 .mdb:hover { background: var(--tt-field); color: var(--tt-ink); }
@@ -2007,4 +2024,11 @@
   border-width: calc(var(--play, 30px) / 6) 0 calc(var(--play, 30px) / 6)
     calc(var(--play, 30px) / 3.4);
   border-color: transparent transparent transparent #fff;
+}
+
+/* About stands in the foot of every page in the sans of the band, so
+   its editor writes in that face, like its preview. Outside the layers,
+   like every rule that has to outweigh CodeMirror's own. */
+#setting-about_markdown .cm-scroller, #setting-about_markdown > textarea {
+  font-family: var(--tt-font-sans); font-size: 15px; line-height: 1.6;
 }
