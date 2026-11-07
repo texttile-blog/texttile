@@ -815,7 +815,7 @@
     background-color: var(--tt-ink);
     box-shadow: 0 0 0 2px var(--tt-paper), 0 0 0 3.5px var(--tt-slash);
   }
-  .st b { font-weight: 600; color: var(--tt-inksoft); }
+  .st b { font-weight: 400; color: var(--tt-dim); }
 
   /* the version the readers have, in the Versions list */
   .note.is-live {
@@ -1794,7 +1794,8 @@
      hairline meant for a white page and all but vanished on the
      band's own ground. It carries the same weight as the line that
      opens the block. */
-  footer.foot-band { border-top-color: var(--b-rule); }
+  /* the colophon is the band's last line, not a strip of its own */
+  footer.foot-band { border-top-color: transparent; }
   section.foot-band .cols {
     display: grid; gap: 34px;
     padding-top: calc(var(--tt-sec) * .62);
@@ -2350,7 +2351,7 @@ section.foot-band .cols:not(:has(#about)) { padding-top: calc(var(--tt-sec) * .4
 /* the band's two columns in one face and one line, so their lines
    share baselines; the About page itself keeps the serif */
 section.foot-band p, section.foot-band .about-md { font-size: 15px; line-height: 23px; }
-section.foot-band .about-md { max-width: 600px; }
+section.foot-band .about-md { max-width: none; }
 
 /* Your sessions opens on a rule: its heading stands on the first row */
 @media (min-width: 1000px) { .admin-col.twocol > .set-h:has(+ #sessions) { padding-top: 15px; } }
@@ -2436,3 +2437,19 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 /* a phone's hero fills its column: balancing a short column leaves a
    ragged gap beside a large line */
 @media (max-width: 480px) { .f-h1.list-h { text-wrap: wrap; max-width: none; } }
+
+/* the Entries tools lock to the card grid on a desk: the search ends on
+   the second column's edge and the year and New entry fill the third */
+@media (min-width: 1000px) {
+  #gridTools { display: grid; grid-template-columns: minmax(0, 1fr) 134px 94px; column-gap: 12px; }
+  #gridTools > #grid-search > input { margin-right: 8px; }
+  #gridTools #periods { min-width: 0; }
+  #gridTools #periods .pick, #gridTools #years { width: 100%; }
+  #gridTools #new-text { width: 100%; padding-left: 0; padding-right: 0; }
+}
+
+/* the title and the state in the editor bar stand apart */
+#stateWord { margin-left: 8px; }
+
+/* a way on to another entry is a link: its title in violet */
+.textnav .t { color: var(--tt-accent); }

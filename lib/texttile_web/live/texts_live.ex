@@ -180,7 +180,10 @@ defmodule TexttileWeb.TextsLive do
               {label} <span class="num text-faint">{@counts[value]}</span>
             </button>
           </span>
-          <div class="flex items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0">
+          <div
+            class="flex items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0"
+            id="gridTools"
+          >
             <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
               <input
                 type="search"

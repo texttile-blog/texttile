@@ -131,8 +131,14 @@ defmodule TexttileWeb.NewsletterLive do
               class="flex items-start sm:items-center gap-x-3 py-[9px] sm:py-[12px] border-b border-hair"
             >
               <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
-                <span class="rowp truncate max-w-full">
+                <%!-- the address on a fixed column, its day beside it as
+                     Tags sets a count beside a name; the right is for
+                     the action alone --%>
+                <span class="rowp truncate max-w-full sm:w-[260px] sm:flex-none">
                   {subscriber.email}
+                </span>
+                <span class="hidden sm:inline text-[13px] text-faint num">
+                  {since(subscriber)}
                 </span>
                 <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
                   {gettext("waits for their confirmation")}
@@ -142,9 +148,6 @@ defmodule TexttileWeb.NewsletterLive do
                 <span class="sm:hidden basis-full text-[12.5px] text-faint num">
                   {since(subscriber)}
                 </span>
-              </span>
-              <span class="hidden sm:inline text-[13px] text-faint num flex-none">
-                {since(subscriber)}
               </span>
               <button
                 class="btn quiet sm danger flex-none -mr-[11px] max-sm:-mt-[5px]"
