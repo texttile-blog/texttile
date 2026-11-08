@@ -17,10 +17,11 @@
    ELEMENT DEFAULTS
    ================================================================== */
 @layer base {
-  /* the gutter stays reserved on a short page, so nothing shifts
-     sideways when a screen grows past the window and the scrollbar
-     appears */
-  html { -webkit-text-size-adjust: 100%; height: 100%; background: var(--tt-page); }
+  /* the scrollbar is drawn on a short page too, so nothing shifts
+     sideways between a short screen and a long one. Drawn, not merely
+     reserved: an empty reserved lane would leave the full-width bands
+     stopping short of the window's edge. */
+  html { -webkit-text-size-adjust: 100%; height: 100%; overflow-y: scroll; background: var(--tt-page); }
   body {
     margin: 0; font-family: var(--tt-font-sans); font-size: 14px; line-height: 1.55;
     color: var(--tt-ink); background: var(--tt-page); -webkit-font-smoothing: antialiased;
