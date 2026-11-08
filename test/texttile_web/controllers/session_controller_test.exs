@@ -189,6 +189,29 @@ defmodule TexttileWeb.SessionControllerTest do
       assert %{max_age: 0} = restarted.resp_cookies["_texttile_auth"]
     end
 
+    test "marks the browser as one that has signed in here", %{conn: conn, user: user} do
+      conn = sign_in(conn, user)
+
+      # a plain flag, no name and no token: it only lets the reader
+      # pages offer the way back in
+      assert %{value: "1", http_only: true, max_age: max_age} =
+               conn.resp_cookies["_texttile_known"]
+
+      assert max_age >= 365 * 86_400
+    end
+
+    test "signing out keeps the mark, so the way back stays offered", %{conn: conn, user: user} do
+      conn = sign_in(conn, user)
+
+      out =
+        build_conn()
+        |> Plug.Test.put_req_cookie("_texttile_auth", conn.resp_cookies["_texttile_auth"].value)
+        |> Plug.Test.put_req_cookie("_texttile_known", "1")
+        |> delete(~p"/logout")
+
+      refute Map.has_key?(out.resp_cookies, "_texttile_known")
+    end
+
     test "signing out takes it away", %{conn: conn, user: user} do
       conn = sign_in(conn, user)
       auth = conn.resp_cookies["_texttile_auth"].value

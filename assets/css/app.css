@@ -1449,6 +1449,18 @@
   body.site > main > section.foot-band { margin-top: auto; }
   body.site > footer { margin-top: auto; }
 
+  /* the way back in, for a browser that has signed in here: a thin
+     ink strip over the header that scrolls away with the page, its
+     ends on the header's edges. Readers never get it. */
+  .known-strip {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    height: 30px; font-size: 13px; line-height: 1;
+    padding: 0 max(var(--tt-gut), calc((100% - 1060px) / 2 + var(--tt-gut)));
+    background: var(--tt-ink); color: var(--tt-page);
+  }
+  .known-strip a { color: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .known-strip a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
   /* the header: the reader header of round-13, with the site menu the
      app builds out of its pages */
   .site-head {

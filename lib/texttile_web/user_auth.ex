@@ -25,8 +25,14 @@ defmodule TexttileWeb.UserAuth do
   @doc "The cookie that carries the sign-in over a closed browser."
   def auth_cookie, do: @auth_cookie
 
+  # A plain flag that this browser has signed in here once: no name, no
+  # token. It outlives signing out, so the reader pages keep offering
+  # the way back in at the top. The longest a browser keeps a cookie.
+  @known_cookie "_texttile_known"
+  @known_max_age 400 * 86_400
+
   @doc """
-  Opens a session for the user, writes both cookies and redirects to
+  Opens a session for the user, writes its cookies and redirects to
   the admin area. `remember?` is the box on the sign-in form.
   """
   def log_in_user(conn, user, remember? \\ false) do
@@ -36,6 +42,12 @@ defmodule TexttileWeb.UserAuth do
     |> renew_session()
     |> put_token_in_session(token)
     |> put_auth_cookie(token, remember?)
+    |> put_resp_cookie(@known_cookie, "1",
+      max_age: @known_max_age,
+      same_site: "Lax",
+      http_only: true,
+      secure: conn.scheme == :https
+    )
     |> redirect(to: ~p"/admin")
   end
 
@@ -85,6 +97,15 @@ defmodule TexttileWeb.UserAuth do
     conn
     |> renew_session()
     |> redirect(to: ~p"/login")
+  end
+
+  @doc """
+  Assigns `:known_browser`: whether this browser has signed in here
+  before. The reader pages show a thin strip with the way back in.
+  """
+  def fetch_known_browser(conn, _opts) do
+    conn = fetch_cookies(conn)
+    assign(conn, :known_browser, conn.cookies[@known_cookie] == "1")
   end
 
   @doc """

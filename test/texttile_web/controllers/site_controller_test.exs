@@ -7,6 +7,34 @@ defmodule TexttileWeb.SiteControllerTest do
   alias Texttile.Articles
   alias Texttile.Settings
 
+  describe "the strip for a browser that has signed in" do
+    test "a reader who never signed in here sees none", %{conn: conn} do
+      html = conn |> get(~p"/blog") |> html_response(200)
+
+      refute html =~ ~s(id="known-strip")
+    end
+
+    test "a browser that signed in before is offered the way back in", %{conn: conn} do
+      html =
+        conn
+        |> Plug.Test.put_req_cookie("_texttile_known", "1")
+        |> get(~p"/blog")
+        |> html_response(200)
+
+      assert html =~ ~s(id="known-strip")
+      assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/login"}
+    end
+
+    test "a signed-in admin is named and led to the admin area", %{conn: conn} do
+      user = user_fixture()
+      html = conn |> log_in_user(user) |> get(~p"/blog") |> html_response(200)
+
+      assert html =~ ~s(id="known-strip")
+      assert html =~ "Signed in as"
+      assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/admin"}
+    end
+  end
+
   describe "the front page" do
     test "lists published posts, newest first, and nothing else", %{conn: conn} do
       old = published_post(title: "Old text", publish_date: ~D[2026-01-05])

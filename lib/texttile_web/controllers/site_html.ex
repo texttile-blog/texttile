@@ -21,9 +21,14 @@ defmodule TexttileWeb.SiteHTML do
   builds out of its pages - Home when a fixed page is the front door,
   Blog for the list, then every published page by publish date. The
   way into the admin area is the foot's, once per page.
+
+  Over it, for a browser that has signed in here before (`known`) or
+  is signed in now, a thin dark strip with the way back in: Sign in, or
+  the admin's name and the admin area. A reader never sees it.
   """
   attr :active, :any, default: nil
   attr :current_scope, :any, default: nil
+  attr :known, :boolean, default: false
   attr :home_page, :any, default: nil
   attr :menu_pages, :list, default: []
 
@@ -33,6 +38,14 @@ defmodule TexttileWeb.SiteHTML do
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
+    <div :if={@current_scope || @known} class="known-strip" id="known-strip">
+      <span :if={@current_scope} class="truncate">
+        {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
+      </span>
+      <span :if={!@current_scope} class="truncate">{site_title()}</span>
+      <a :if={@current_scope} id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      <a :if={!@current_scope} id="known-strip-go" href={~p"/login"}>{gettext("Sign in")}</a>
+    </div>
     <header class="site-head">
       <a class="site-mark" href={~p"/"}>
         <img
