@@ -617,10 +617,6 @@
   .card .cm { column-gap: 0; }
   .card .cm .by { white-space: nowrap; }
   .card .cm .by::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
-  /* the admin grid is a list to work through, not a gallery: its
-     pictures stand lower than the reader's squares, so the titles
-     carry the row */
-  @media (min-width: 640px) { #cards .card .cimg { aspect-ratio: 4 / 3; } }
   .card .cm .j { color: var(--tt-julia); font-weight: 600; }
   .card .cm .st { display: inline-block; width: 9px; height: 9px; border-radius: 9999px; margin-right: 6px; background: var(--tt-ink); }
   /* Every line starts with its state: a mark and a word. Live is a
