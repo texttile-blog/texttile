@@ -1682,9 +1682,9 @@ defmodule TexttileWeb.EditorLive do
            them, one screen tall, with a bar of their own that is always
            drawn (.sidecol), so the column never looks like it ends
            where the window does. --%>
-      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] xl:max-w-[1108px] xl:mx-auto">
+      <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:max-w-[1108px] lg:mx-auto">
         <div class="min-w-0" id="textCol">
-          <div class="max-w-[680px] mx-auto px-4 lg:px-[30px] pt-[22px] lg:pt-[30px] pb-0 lg:pb-[110px]">
+          <div class="max-w-[680px] mx-auto md:ml-0 px-4 md:pl-[34px] lg:pr-[30px] pt-[22px] lg:pt-[30px] pb-0 lg:pb-[110px]">
             <%!-- A phone has the gallery and the settings under the words,
                  so its row is the three places a writer goes: the words,
                  the gallery, the settings. The record of the entry

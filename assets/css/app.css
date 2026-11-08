@@ -215,14 +215,20 @@
   }
 
   /* THE ADMIN COLUMN · every screen of the admin area stands in one
-     column of one measure, under a bar on the same edges, so moving
-     between screens never makes the page jump, widen or narrow. The
-     editor alone is wider, for its two columns. */
+     column of one measure. On a wide window it starts on the left line
+     of the editor's grid, under the wordmark, where the editor's words
+     start, so moving between screens never moves the page sideways.
+     The editor alone is wider, for its two columns. */
   .admin-col {
     width: 100%; max-width: 808px; margin: 0 auto;
     padding: 22px 16px 90px;
   }
-  @media (min-width: 768px) { .admin-col { padding: 34px 24px 110px; } }
+  @media (min-width: 768px) {
+    .admin-col {
+      width: auto; padding: 34px 24px 110px;
+      margin-left: max(10px, calc((100% - 1108px) / 2 + 10px)); margin-right: auto;
+    }
+  }
   /* A screen of settings on a wide window: the name of each section in
      a column of its own on the left, its fields on the right, so the
      whole width is used and the eye runs down the names. The page
@@ -1063,22 +1069,18 @@
      hairline under it. It wears the page's own tokens, so every control
      on it (the crumb, the state dot, the saved mark, the split button)
      looks the way it does everywhere else. */
-  /* The bar stands on the grid of the page under it: the column of a
-     column screen, the two columns of the editor. The wordmark and the
-     row of sections at its left edge, the stamp and the way to the site
-     at its right. The wordmark button carries 6px of air of its own,
-     which the edge gives back. */
+  /* The bar stands on the one grid of the admin area, the editor's,
+     on every screen, so the wordmark and the sections never move from
+     screen to screen. The wordmark and the row of sections at its left
+     edge, the stamp and the way to the site at its right. The wordmark
+     button carries 6px of air of its own, which the edge gives back:
+     its glyph starts 34px into the grid, where the editor's words and
+     every column screen start. The right edge is the end of the
+     editor's gallery, past the column's scrollbar lane. */
   .bar-col { padding-left: 10px; padding-right: 16px; }
   @media (min-width: 768px) {
     .bar-col {
-      padding-left: max(18px, calc((100% - 808px) / 2 + 18px));
-      padding-right: max(24px, calc((100% - 808px) / 2 + 24px));
-    }
-    /* the editor's words start 34px into its grid and its gallery ends
-       39px before the grid's edge, past the column's scrollbar lane:
-       the bar ends on that edge */
-    .bar-col.wide {
-      padding-left: max(18px, calc((100% - 1108px) / 2 + 28px));
+      padding-left: max(28px, calc((100% - 1108px) / 2 + 28px));
       padding-right: max(24px, calc((100% - 1108px) / 2 + 39px));
     }
   }
