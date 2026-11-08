@@ -1435,7 +1435,11 @@ defmodule TexttileWeb.EditorLive do
           data-note={@saved_note}
           data-note-until={@saved_until}
         >
-          {gettext("Saved")}
+          <%!-- a phone bar keeps the tick alone: the word stays for a
+               screen reader, and the clock of the save is in the
+               tooltip. A word here ran under the View button on a
+               narrow phone, the longer German one on any phone. --%>
+          <span data-words class="max-md:sr-only">{gettext("Saved")}</span>
         </span>
         <%!-- the one save state that needs the eye. LiveView puts the
              class on an element above this one the moment the socket

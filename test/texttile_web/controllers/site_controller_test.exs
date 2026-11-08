@@ -612,6 +612,19 @@ defmodule TexttileWeb.SiteControllerTest do
       :ok
     end
 
+    test "the gate offers a browser that has signed in here the way in", %{conn: conn} do
+      stranger = conn |> get(~p"/unlock") |> html_response(200)
+      refute stranger =~ ~s(id="known-strip")
+
+      known =
+        build_conn()
+        |> Plug.Test.put_req_cookie("_texttile_known", "1")
+        |> get(~p"/unlock")
+        |> html_response(200)
+
+      assert known =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/login"}
+    end
+
     test "a locked reader is sent to the gate and back again", %{conn: conn} do
       published_post(
         title: "Behind the wall",

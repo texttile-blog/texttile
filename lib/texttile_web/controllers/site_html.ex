@@ -22,9 +22,7 @@ defmodule TexttileWeb.SiteHTML do
   Blog for the list, then every published page by publish date. The
   way into the admin area is the foot's, once per page.
 
-  Over it, for a browser that has signed in here before (`known`) or
-  is signed in now, a thin dark strip with the way back in: Sign in, or
-  the admin's name and the admin area. A reader never sees it.
+  Over it stands `known_strip/1`.
   """
   attr :active, :any, default: nil
   attr :current_scope, :any, default: nil
@@ -38,14 +36,7 @@ defmodule TexttileWeb.SiteHTML do
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
-    <div :if={@current_scope || @known} class="known-strip" id="known-strip">
-      <span :if={@current_scope} class="truncate">
-        {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
-      </span>
-      <span :if={!@current_scope} class="truncate">{site_title()}</span>
-      <a :if={@current_scope} id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
-      <a :if={!@current_scope} id="known-strip-go" href={~p"/login"}>{gettext("Sign in")}</a>
-    </div>
+    <.known_strip current_scope={@current_scope} known={@known} />
     <header class="site-head">
       <a class="site-mark" href={~p"/"}>
         <img
@@ -74,6 +65,29 @@ defmodule TexttileWeb.SiteHTML do
         </a>
       </nav>
     </header>
+    """
+  end
+
+  @doc """
+  The thin dark strip with the way back in, for a browser that has
+  signed in here before (`known`) or is signed in now: Sign in, or the
+  admin's name and the admin area. A reader never sees it. It stands
+  over the header, and over the password gate, where a known browser
+  would otherwise have no way in.
+  """
+  attr :current_scope, :any, default: nil
+  attr :known, :boolean, default: false
+
+  def known_strip(assigns) do
+    ~H"""
+    <div :if={@current_scope || @known} class="known-strip" id="known-strip">
+      <span :if={@current_scope} class="truncate">
+        {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
+      </span>
+      <span :if={!@current_scope} class="truncate">{site_title()}</span>
+      <a :if={@current_scope} id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      <a :if={!@current_scope} id="known-strip-go" href={~p"/login"}>{gettext("Sign in")}</a>
+    </div>
     """
   end
 

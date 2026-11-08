@@ -5,7 +5,8 @@
      site layout makes every `main` a flex column of its own
      (`body.site > main`), which turned `justify-center` into vertical
      centring and left the card against the left edge. --%>
-<main class="min-h-[100dvh] px-5 pt-[13vh] pb-10">
+<.known_strip current_scope={assigns[:current_scope]} known={assigns[:known_browser]} />
+<main class="px-5 pt-[13vh] pb-10">
   <div class="w-[min(374px,100%)] mx-auto">
     <div class="flex items-center gap-[11px]">
       <Layouts.mark size={28} ink="var(--tt-ink)" />

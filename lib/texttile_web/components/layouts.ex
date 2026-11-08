@@ -324,7 +324,11 @@ defmodule TexttileWeb.Layouts do
            screen that is no section (the profile, the import) adds its
            own name. The editor, whose crumb is the entry, keeps the
            crumb alone, and whatever it puts in :lead stands beside it. --%>
-      <span class="flex items-center gap-[6px] md:gap-2 min-w-0 text-[13.5px] text-dim">
+      <%!-- on a phone, whatever the states say gives way before the
+           buttons at the right and never runs under them. Only there:
+           on a wide bar the clip would cut the focus ring of the
+           sections, and the room is there anyway. --%>
+      <span class="flex items-center gap-[6px] md:gap-2 min-w-0 max-md:overflow-hidden text-[13.5px] text-dim">
         <%= if @wide do %>
           <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
             /
