@@ -27,10 +27,10 @@ defmodule TexttileWeb.SiteArchiveTest do
     {older, _} = :binary.match(html, ~s(value="2024"))
     assert newer < older
 
-    # the archive stands under the list, not over it
+    # the archive stands over the list, so it is found before the pictures
     {list, _} = :binary.match(html, ~s(id="texts"))
     {archive, _} = :binary.match(html, ~s(id="archive"))
-    assert list < archive
+    assert archive < list
   end
 
   test "narrows the list to one year, then to one month of it", %{conn: conn} do

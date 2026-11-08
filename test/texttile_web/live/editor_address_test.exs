@@ -25,7 +25,7 @@ defmodule TexttileWeb.EditorAddressTest do
       assert Articles.public_path(article) == nil
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       assert has_element?(view, "#edSlug")
-      refute has_element?(view, "#slugHint", "is live")
+      refute has_element?(view, "#slugHint[data-live]")
 
       view |> element("#stateChev") |> render_click()
       view |> element("#stateMenu button", "Delete") |> render_click()
@@ -48,13 +48,13 @@ defmodule TexttileWeb.EditorAddressTest do
       |> log_in_user(Texttile.AccountsFixtures.user_fixture())
 
     {:ok, watcher, _html} = live(watcher_conn, ~p"/admin/texts/#{article}")
-    assert has_element?(writer, "#slugHint", "is live")
+    assert has_element?(writer, "#slugHint[data-live]")
 
     writer |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: ""})
 
     assert Articles.get_article!(article.id).slug == nil
-    refute has_element?(writer, "#slugHint", "is live")
-    refute has_element?(watcher, "#slugHint", "is live")
+    refute has_element?(writer, "#slugHint[data-live]")
+    refute has_element?(watcher, "#slugHint[data-live]")
     {:ok, reloaded, _html} = live(conn, ~p"/admin/texts/#{article}")
     assert has_element?(reloaded, "#edSlug")
 
@@ -63,7 +63,7 @@ defmodule TexttileWeb.EditorAddressTest do
     |> render_change(%{_target: ["slug"], slug: "restored-doors"})
 
     assert Articles.get_article!(article.id).slug == "restored-doors"
-    assert has_element?(writer, "#slugHint", "restored-doors is live")
-    assert has_element?(watcher, "#slugHint", "restored-doors is live")
+    assert has_element?(writer, ~s(#slugHint[data-live$="/restored-doors"]))
+    assert has_element?(watcher, ~s(#slugHint[data-live$="/restored-doors"]))
   end
 end

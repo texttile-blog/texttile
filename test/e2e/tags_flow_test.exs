@@ -20,7 +20,7 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
       |> assert_has("#crumb", text: "Tags")
       |> fill_in("Name", with: "Reisen")
       |> click_button("Rename")
-      |> assert_has("#tagrow-reisen b", text: "Reisen")
+      |> assert_has("#tagrow-reisen a", text: "Reisen")
       |> assert_has("#tagrow-reisen", text: "2 entries")
 
     assert Articles.get_article!(live.id).tags == "Reisen, Meer"

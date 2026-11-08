@@ -43,7 +43,7 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
 
     conn
     |> sign_in()
-    |> click_button("#wmBtn", "Texttile")
+    |> click("#wmBtn")
     |> click_link("#navMenu a[data-key='8']", "Stats")
     |> assert_has("h1", text: "Stats")
     |> assert_has("#figViews", text: "12")
@@ -66,7 +66,7 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     |> assert_has("#win-7.on")
     |> assert_has("#figViews", text: "12")
     |> refute_has("#barDetail")
-    |> click_link("#top-#{article.id} a", "details")
+    |> click_link("#top-#{article.id} a", "Concrete flowers of Kaunas")
     |> assert_has("#tp-stats")
     |> assert_has("#tpFigViews", text: "10")
     |> assert_has("#tpReferrers", text: "news.ycombinator.com")

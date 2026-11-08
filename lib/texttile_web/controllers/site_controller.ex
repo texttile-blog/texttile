@@ -136,6 +136,9 @@ defmodule TexttileWeb.SiteController do
         |> Enum.flat_map(&Articles.tag_list/1)
         |> Enum.uniq_by(&String.downcase/1)
         |> Enum.map(fn t -> {t, Enum.count(posts, &Articles.has_tag?(&1, t))} end)
+        # the order of the admin's Tags screen: the most used first, then
+        # by name
+        |> Enum.sort_by(fn {t, count} -> {-count, String.downcase(t)} end)
 
       {tag, _count} = Enum.find(tags, fn {name, _} -> String.downcase(name) == tag end)
 
@@ -595,10 +598,6 @@ defmodule TexttileWeb.SiteController do
 
     metadata = entry_metadata(article, gallery, home?)
 
-    # The chosen preview stands once more at the head of a post. A page
-    # is a place and not a story, so it keeps its title first.
-    hero = if article.type == "post", do: Gallery.hero(article, Enum.map(gallery, & &1.path))
-
     # A video tile has nothing to show before ffmpeg is through, so the
     # reader's gallery waits for it instead of holding an empty square.
     gallery = Gallery.tiles(gallery)
@@ -607,13 +606,12 @@ defmodule TexttileWeb.SiteController do
 
     conn
     |> assign(:page_title, if(home?, do: nil, else: Articles.display_title(article)))
-    |> assign(:active, if(home?, do: :home, else: article.id))
+    |> assign(:active, active_for(article, home?))
     |> merge_assigns(metadata)
     |> assign(:count_entry, countable_entry(conn, article))
     |> merge_assigns(comment_assigns(conn, article))
     |> render(:article,
       article: article,
-      hero: hero,
       gallery: gallery,
       older: older,
       newer: newer,
@@ -645,6 +643,12 @@ defmodule TexttileWeb.SiteController do
       %{meta_description: nil, og_title: nil, og_image: nil, canonical_url: nil, noindex: true}
     end
   end
+
+  # What the menu marks as open: a post stands in the blog, so Blog
+  # stays open; a page is a place of its own.
+  defp active_for(_article, true), do: :home
+  defp active_for(%{type: "post"}, _home?), do: :texts
+  defp active_for(article, _home?), do: article.id
 
   # The entry the beacon names, if this page counts at all and the
   # entry is one a reader can read.

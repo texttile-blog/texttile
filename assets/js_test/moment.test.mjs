@@ -24,3 +24,10 @@ test("an imported comment keeps the wall clock it was stored with", () => {
   const at = new Date("2026-07-30T22:14:00Z")
   assert.equal(commentMoment(at, "de", now, "UTC"), "30. Juli um 22:14")
 })
+
+test("the admin lists write a moment short, in the zone they are given", async () => {
+  const {adminMoment} = await import("../js/moment.js")
+  const at = new Date("2026-10-29T13:05:00Z")
+  assert.equal(adminMoment(at, "en", "Europe/Berlin"), "29 Oct 2026, 14:05")
+  assert.equal(adminMoment(at, "en", "UTC"), "29 Oct 2026, 13:05")
+})

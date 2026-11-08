@@ -71,7 +71,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> open_editor(article.id)
       |> type("#edSlug", "restored-doors")
-      |> assert_has("#slugHint", text: "restored-doors is live")
+      |> assert_has(~s(#slugHint[data-live$="/restored-doors"]))
 
       assert Articles.get_article!(article.id).slug == "restored-doors"
     end
@@ -83,8 +83,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Published")
-        |> assert_has("#slugHint", text: "is live")
+        |> assert_has("#stateWord", text: "Live", exact: true)
+        |> assert_has("#slugHint[data-live]")
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
 
@@ -111,7 +111,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click("#stateChev")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Published")
+        |> assert_has("#stateWord", text: "Live", exact: true)
 
       address =
         "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
@@ -351,7 +351,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> open_editor(article.id)
         |> evaluate(@author_field, [is_function: true], &assert(&1 == "kb"))
         |> select("Author", option: "Anna Berger")
-        |> assert_has("#state", text: "Last saved")
+        |> assert_has("#state", text: "Saved")
 
       moved =
         eventually(fn ->
@@ -384,8 +384,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
   describe "the writing surface" do
     # The glyphs format the words under them, so they belong to the
-    # words. They stood 18px under the title and 26px over the body,
-    # which read as a bar attached to the title.
+    # words: the bar stands closer to the body than to the title.
     @bar_gaps """
     () => {
       const bar = document.querySelector(".mdbar").getBoundingClientRect()
@@ -409,8 +408,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     # surface. It drew a hairline of its own beside the host's and
     # stood its words elsewhere, so every load flashed two lines and a
     # jump. This puts the server's markup back in place of the editor
-    # and measures both: one element draws a line, and the words stand
-    # where the editor's words stood.
+    # and measures both: no more lines are drawn than the editor draws
+    # (none around the body, the field's own box around About), and
+    # the words stand where the editor's words stood.
     @seed_surface """
     async (host) => {
       const live = document.querySelector(host)
@@ -439,11 +439,14 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     }
     """
 
-    for {surface, path, host} <- [
-          {"the body", :editor, "#edBodyHost"},
-          {"About", "/admin/settings", "#setting-about_markdown"}
+    for {surface, path, host, lines} <- [
+          {"the body", :editor, "#edBodyHost", 0},
+          {"About", "/admin/settings", "#setting-about_markdown", 1}
         ] do
-      test "#{surface} shows one line and no jump while the editor loads", %{conn: conn, kb: kb} do
+      test "#{surface} draws no second line and no jump while the editor loads", %{
+        conn: conn,
+        kb: kb
+      } do
         conn = sign_in(conn)
 
         conn =
@@ -455,7 +458,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         conn
         |> assert_has("#{unquote(host)} .cm-content")
         |> evaluate(@seed_surface, [arg: unquote(host), is_function: true], fn result ->
-          assert result["lines"] == 1
+          assert result["lines"] == unquote(lines)
           assert Enum.all?(result["shift"], &(&1 < 1))
         end)
       end
@@ -558,7 +561,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
     # The word for the state used to blink, because the rule that makes
     # a presence dot pulse was written for the bare class the state word
-    # also wears. A word that reads "Published" and then fades out reads
+    # also wears. A word that reads "Live" and then fades out reads
     # as a warning, and it is a fact. The dot still pulses: the probe
     # says so, so a rule that got deleted instead of narrowed is seen.
     @state_motion """
@@ -579,7 +582,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#stateWord", text: "Published")
+      |> assert_has("#stateWord", text: "Live", exact: true)
       |> evaluate(@state_motion, [is_function: true], fn [word, dot] ->
         assert word == "none"
         assert dot == "pulse"

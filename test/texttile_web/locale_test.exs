@@ -16,7 +16,7 @@ defmodule TexttileWeb.LocaleTest do
     test "speak English while the site does", %{conn: conn} do
       html = conn |> get(~p"/blog") |> html_response(200)
 
-      assert html =~ "Blog Entries"
+      assert html =~ ~s(placeholder="Search entries")
       assert html =~ ~s(<html lang="en")
     end
 
@@ -25,8 +25,8 @@ defmodule TexttileWeb.LocaleTest do
 
       html = conn |> get(~p"/blog") |> html_response(200)
 
-      assert html =~ "Blogeinträge"
-      refute html =~ "Blog Entries"
+      assert html =~ ~s(placeholder="Einträge durchsuchen")
+      refute html =~ ~s(placeholder="Search entries")
       assert html =~ ~s(<html lang="de")
     end
 

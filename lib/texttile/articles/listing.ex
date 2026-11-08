@@ -20,8 +20,7 @@ defmodule Texttile.Articles.Listing do
             months: [],
             page: 1,
             pages: 1,
-            shown: 0,
-            across_years: 0
+            shown: 0
 
   @doc """
   The page of a list that answers what was asked for.
@@ -54,10 +53,7 @@ defmodule Texttile.Articles.Listing do
       pages: pages,
       # the count over the grid speaks of everything in the period, not
       # of the page it happens to show
-      shown: length(in_period),
-      # what the search found across every year: the number "All years"
-      # carries, so it counts the same way the years beside it do
-      across_years: length(found)
+      shown: length(in_period)
     }
   end
 

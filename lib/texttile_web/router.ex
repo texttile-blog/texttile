@@ -38,6 +38,7 @@ defmodule TexttileWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{"content-security-policy" => @content_security_policy}
     plug :fetch_current_scope_for_user
+    plug :fetch_known_browser
   end
 
   # The dashboard and the mailbox write their own scripts into the page.

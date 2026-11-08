@@ -245,11 +245,6 @@ document.querySelectorAll("time[data-comment-moment]").forEach((el) => {
   }
   tiles.forEach(openOn);
 
-  // The square at the head of the text is one of the tiles shown
-  // again: it opens the lightbox on that tile, not on a copy of it.
-  const hero = document.getElementById("preview");
-  const heroAt = hero ? tiles.findIndex((tile) => tile.href === hero.href) : -1;
-  if (heroAt >= 0) openOn(hero, heroAt);
   document.getElementById("lbClose").addEventListener("click", close);
   document.getElementById("lbPrev").addEventListener("click", () => nav(-1));
   document.getElementById("lbNext").addEventListener("click", () => nav(1));

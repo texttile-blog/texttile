@@ -205,6 +205,10 @@ list and say which entries applied.
 - While a server you started is running, every answer you give ends with
   one line that says so: the address, the port and the PID. Klaus reads
   that line to know what is open before he closes the session.
+- When you give Klaus the address of a dev server, give him the sign-in
+  for it in the same answer: the email address and the password that work
+  on that server's database. If you do not know the password (Klaus's own
+  data on port 4000), say so, and say where the sign-in link appears.
 - Stop what you started, by the PID you tracked. See rule 1.
 
 ## Test data

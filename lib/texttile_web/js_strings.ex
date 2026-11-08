@@ -74,10 +74,6 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Now press the copy key"),
     # saved_ticker.js: the saved stamp in the topbar, and the toast
     gettext_noop("Saved"),
-    gettext_noop("saved"),
-    gettext_noop("saved %{time}"),
-    gettext_noop("Last saved · just now"),
-    gettext_noop("Last saved %{time}"),
     gettext_noop("The last save was at %{time}.")
   ]
 

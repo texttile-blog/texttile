@@ -27,7 +27,7 @@ defmodule TexttileWeb.ProfileLiveTest do
     |> render_change(%{"_target" => ["user", "display_name"]})
 
     assert has_element?(view, "#wmMe", "Klaus")
-    assert has_element?(view, "#profileWho", "Klaus")
+    assert has_element?(view, "#barMe", "Klaus")
     assert Accounts.get_user!(user.id).display_name == "Klaus"
   end
 
@@ -42,8 +42,25 @@ defmodule TexttileWeb.ProfileLiveTest do
     refute render(view) =~ ~r/wmMe[^>]*>[^<]*@/
   end
 
+  test "asks for the password only once the address differs", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/admin/profile")
+    refute has_element?(view, "#em-current")
+    refute has_element?(view, "#em-set")
+
+    view |> form("#email-form", %{"em" => %{"email" => "new@example.org"}}) |> render_change()
+    assert has_element?(view, "#em-current")
+    assert has_element?(view, "#em-set")
+
+    view |> form("#email-form", %{"em" => %{"email" => user.email}}) |> render_change()
+    refute has_element?(view, "#em-current")
+  end
+
   test "changes the address against the password", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
+
+    view
+    |> form("#email-form", %{"em" => %{"email" => "new@example.org"}})
+    |> render_change()
 
     html =
       view
@@ -62,6 +79,10 @@ defmodule TexttileWeb.ProfileLiveTest do
   test "refuses the address change without the current password", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
+    view
+    |> form("#email-form", %{"em" => %{"email" => "thief@example.org"}})
+    |> render_change()
+
     html =
       view
       |> form("#email-form", %{
@@ -77,6 +98,10 @@ defmodule TexttileWeb.ProfileLiveTest do
     user_fixture(%{email: "taken@example.org"})
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
 
+    view
+    |> form("#email-form", %{"em" => %{"email" => "broken"}})
+    |> render_change()
+
     html =
       view
       |> form("#email-form", %{
@@ -85,6 +110,10 @@ defmodule TexttileWeb.ProfileLiveTest do
       |> render_submit()
 
     assert html =~ "must be an email address"
+
+    view
+    |> form("#email-form", %{"em" => %{"email" => "taken@example.org"}})
+    |> render_change()
 
     html =
       view
@@ -136,7 +165,7 @@ defmodule TexttileWeb.ProfileLiveTest do
     assert html =~ "Every other session is signed out"
     assert Accounts.get_user_by_session_token(other_token) == nil
     assert [_only_this_browser] = Accounts.list_sessions(user)
-    assert has_element?(view, "#sessions", "the only one open")
+    refute has_element?(view, "#sessions", "Another browser")
   end
 
   test "lists the open sessions with this browser first", %{conn: conn, user: user} do
@@ -146,13 +175,12 @@ defmodule TexttileWeb.ProfileLiveTest do
 
     assert has_element?(view, "#sessions", "This browser")
     assert has_element?(view, "#sessions", "Another browser")
-    refute has_element?(view, "#sessions", "the only one open")
   end
 
-  test "a single session is the only one open", %{conn: conn} do
+  test "a single session lists this browser alone", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/profile")
     assert has_element?(view, "#sessions", "This browser")
-    assert has_element?(view, "#sessions", "the only one open")
+    refute has_element?(view, "#sessions", "Another browser")
   end
 
   test "offers sign out", %{conn: conn} do

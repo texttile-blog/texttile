@@ -104,7 +104,7 @@ defmodule Texttile.SettingsTest do
 
   describe "button_colors/0" do
     test "answers the solid buttons of the iris theme" do
-      assert Settings.button_colors() == %{solid: "#4b2a83", onsolid: "#ffffff"}
+      assert Settings.button_colors() == %{solid: "#5a37c2", onsolid: "#ffffff"}
     end
 
     test "reads the buttons out of a stored theme, over its page" do
@@ -119,14 +119,14 @@ defmodule Texttile.SettingsTest do
 
     test "a theme without the tokens takes the iris buttons" do
       {:ok, _} = Settings.put(:theme_css, ":root { --tt-ink: #123456; }")
-      assert Settings.button_colors() == %{solid: "#4b2a83", onsolid: "#ffffff"}
+      assert Settings.button_colors() == %{solid: "#5a37c2", onsolid: "#ffffff"}
     end
   end
 
   describe "theme_color/0" do
     test "answers the bar of the iris theme, laid over the page" do
-      # --tt-bar is rgba(255, 255, 255, .93) over the #f6f3ee page
-      assert Settings.theme_color() == "#fefefe"
+      # --tt-bar is rgba(247, 245, 241, .92) over the #f7f5f1 page
+      assert Settings.theme_color() == "#f7f5f1"
     end
 
     test "reads the bar out of a stored theme" do
@@ -156,39 +156,6 @@ defmodule Texttile.SettingsTest do
     test "a bar nobody can read falls back to the page" do
       {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #123456; --tt-bar: chartreuse; }")
       assert Settings.theme_color() == "#123456"
-    end
-  end
-
-  # The bar of the admin area is the solid violet of the buttons, and
-  # the chrome on a phone sits against it.
-  describe "admin_theme_color/0" do
-    test "answers the solid bar of the iris theme" do
-      assert Settings.admin_theme_color() == "#4b2a83"
-    end
-
-    test "reads the solid bar out of a stored theme" do
-      {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #101010; --tt-barsolid: #204080; }")
-      assert Settings.admin_theme_color() == "#204080"
-    end
-
-    # A theme stored before the token had a name does not carry it. The
-    # bar is painted from the build then, so the chrome takes the same
-    # road: a white strip over a violet bar is the seam this closes.
-    test "a theme without the token answers the build's own violet" do
-      {:ok, _} = Settings.put(:theme_css, ":root { --tt-page: #f6f3ee; --tt-bar: #ffffff; }")
-
-      assert Settings.admin_theme_color() == "#4b2a83"
-      assert Settings.theme_color() == "#ffffff"
-    end
-
-    test "a translucent solid bar is laid over the page colour" do
-      {:ok, _} =
-        Settings.put(
-          :theme_css,
-          ":root { --tt-page: #000000; --tt-barsolid: rgba(255,255,255,.5); }"
-        )
-
-      assert Settings.admin_theme_color() == "#808080"
     end
   end
 

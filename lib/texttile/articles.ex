@@ -965,8 +965,12 @@ defmodule Texttile.Articles do
 
   Headings, rules and lines that are nothing but a picture are not
   words a reader wants in a lead; they go before the run.
+
+  `max` is the most characters it keeps; a square that shows the words
+  in place of a picture asks for fewer, so they end on a whole word
+  inside it instead of being cut by the box.
   """
-  def lead(article) do
+  def lead(article, max \\ 160) do
     article.body
     |> to_string()
     |> String.split("\n")
@@ -974,7 +978,7 @@ defmodule Texttile.Articles do
     |> Enum.map(&unmark/1)
     |> Enum.join(" ")
     |> strip_markdown()
-    |> shorten(160)
+    |> shorten(max)
   end
 
   # A line that carries no words of the text: a heading, a rule, a
@@ -1017,7 +1021,9 @@ defmodule Texttile.Articles do
           words -> words |> Enum.drop(-1) |> Enum.join(" ")
         end
 
-      head <> "…"
+      # a comma, a dash or a full stop before the ellipsis reads as a
+      # stutter
+      String.replace(head, ~r/[\s,;:.\-–—]+$/u, "") <> "…"
     end
   end
 

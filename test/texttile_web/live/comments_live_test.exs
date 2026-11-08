@@ -24,7 +24,9 @@ defmodule TexttileWeb.CommentsLiveTest do
     comment
   end
 
-  test "the icons after a name are the ways to answer its writer", %{conn: conn} do
+  test "Reply answers the writer by mail, and the website stands after the moment", %{
+    conn: conn
+  } do
     article = published_post(title: "Harbor mornings")
     comment = post!(article, %{"website" => "https://christel.example.org/garden"})
 
@@ -34,12 +36,12 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a.cmt-ico[href="mailto:christel@example.org"][title="Write to christel@example.org"])
+             ~s(#comment-#{comment.id} .cmt-acts a[href="mailto:christel@example.org"][title="Write to christel@example.org"])
            )
 
     assert has_element?(
              view,
-             ~s(#comment-#{comment.id} a.cmt-ico[href="https://christel.example.org/garden"][title="christel.example.org"][rel~="nofollow"])
+             ~s(#comment-#{comment.id} .cmt-sub a.cmt-web[href="https://christel.example.org/garden"][rel~="nofollow"])
            )
   end
 
@@ -138,7 +140,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
 
-      assert has_element?(view, "#commentTools", "Select all 26")
+      assert has_element?(view, "#commentTools", "Select all")
       view |> element("#bulk-release", "Release all 26") |> render_click()
       assert has_element?(view, "#dialog", "Release 26 comments?")
       assert has_element?(view, "#dialog", "no way back except Delete")
@@ -172,7 +174,8 @@ defmodule TexttileWeb.CommentsLiveTest do
       view |> element("#dialog-ok") |> render_click()
 
       assert Comments.ids("waiting") == [three.id]
-      assert has_element?(view, "#commentTools", "Select all 1")
+      assert has_element?(view, "#commentTools", "Select all")
+      assert has_element?(view, "#bulk-delete", "Delete all 1")
     end
 
     test "Select all ticks the whole filter and takes it back", %{conn: conn} do
@@ -186,7 +189,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert has_element?(view, "#bulk-delete", "Delete 26")
 
       view |> element("#selectAll") |> render_click()
-      assert has_element?(view, "#commentTools", "Select all 26")
+      assert has_element?(view, "#commentTools", "Select all")
       refute has_element?(view, "#selectAll[checked]")
     end
 
@@ -200,7 +203,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       assert has_element?(view, "#commentTools", "1 selected")
 
       view |> element(~s(#commentFilter a[data-f="all"])) |> render_click()
-      assert has_element?(view, "#commentTools", "Select all 26")
+      assert has_element?(view, "#commentTools", "Select all")
     end
 
     test "the dialog acts on what it named, not on what came after it", %{conn: conn} do
@@ -591,6 +594,8 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      # an empty Released filter has nothing left to fill it
+      refute has_element?(view, "#commentFilter [data-f=released]")
     end
   end
 
@@ -600,6 +605,6 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#commentsRule", "within 3 days goes for good")
 
     {:ok, _} = Settings.put(:comments_require_confirmation, false)
-    assert has_element?(view, "#commentsRule", "nobody confirms anything")
+    assert has_element?(view, "#commentsRule", "Comments appear the moment a reader sends them")
   end
 end

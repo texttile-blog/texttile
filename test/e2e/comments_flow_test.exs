@@ -143,8 +143,21 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> evaluate("() => window.scrollTo(0, document.body.scrollHeight)", is_function: true)
     |> click_link("#next-page", "Older")
     |> assert_has("#commentsList", text: "Words 25")
+    # LiveView jumps to the anchor a frame after the new rows are in, so
+    # the check waits for the jump (up to two seconds) instead of reading
+    # the position once; a page that never jumps still fails
     |> evaluate(
-      "() => document.querySelector('#commentFilter').getBoundingClientRect().top >= 0",
+      """
+      () => new Promise((done) => {
+        const until = Date.now() + 2000;
+        const look = () => {
+          if (document.querySelector('#commentFilter').getBoundingClientRect().top >= 0) done(true);
+          else if (Date.now() > until) done(false);
+          else requestAnimationFrame(look);
+        };
+        look();
+      })
+      """,
       [is_function: true],
       &assert(&1 == true)
     )
@@ -158,7 +171,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments?status=waiting")
-    |> assert_has("#commentTools", text: "Select all 30")
+    |> assert_has("#commentTools", text: "Select all")
+    |> assert_has("#bulk-delete", text: "Delete all 30")
     |> click("#selectAll")
     |> assert_has("#commentTools", text: "30 selected")
     |> assert_has("#commentsList .cmt.on", count: 25)
@@ -180,7 +194,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#dialog", text: "Delete 29 comments?")
     |> click_button("#dialog-ok", "Delete")
     |> assert_has("#commentFilter a[data-f='trash']", text: "29")
-    |> assert_has("#commentTools", text: "Select all 1")
+    |> assert_has("#commentTools", text: "Select all")
+    |> assert_has("#bulk-delete", text: "Delete all 1")
 
     assert Texttile.Comments.status_counts()["trash"] == 29
   end

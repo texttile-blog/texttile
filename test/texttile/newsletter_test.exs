@@ -191,7 +191,7 @@ defmodule Texttile.NewsletterTest do
       assert first.html_body =~
                ~s(href="#{TexttileWeb.Endpoint.url()}#{Articles.public_path(article)}")
 
-      assert first.html_body =~ "background:#4b2a83"
+      assert first.html_body =~ "background:#5a37c2"
       assert first.html_body =~ ~r"href=\"http://\S+/newsletter/unsubscribe/\S+\""
       # without a picture there is nothing to carry
       assert first.attachments == []

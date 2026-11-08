@@ -188,12 +188,12 @@ defmodule TexttileWeb.CoreComponents do
   the caret never leaves the text, and finds this bar by its id.
 
   `files: false` takes the image button off, for a surface that holds
-  words and no pictures.
+  words and no pictures. A phone leaves out the two rare ones, task list
+  and code, so the row fits the screen; the Markdown still types.
   """
   attr :id, :string, required: true
   attr :files, :boolean, default: true
   attr :readonly, :boolean, default: false
-  attr :note, :string, default: nil
   attr :class, :any, default: nil
 
   def md_bar(assigns) do
@@ -211,7 +211,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Heading. Click again for the next size.")}
         aria-label={gettext("Heading")}
       >
-        <span class="g font-serif font-semibold text-[15px]">H</span>
+        <span class="g font-sans font-semibold text-[15px]">H</span>
       </button>
       <button
         type="button"
@@ -220,7 +220,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Bold (Ctrl or Cmd + B)")}
         aria-label={gettext("Bold")}
       >
-        <span class="g font-serif font-bold text-[14.5px]">B</span>
+        <span class="g font-sans font-bold text-[14.5px]">B</span>
       </button>
       <button
         type="button"
@@ -229,7 +229,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Italic (Ctrl or Cmd + I)")}
         aria-label={gettext("Italic")}
       >
-        <span class="g font-serif italic font-semibold text-[14.5px]">I</span>
+        <span class="g font-sans italic font-semibold text-[14.5px]">I</span>
       </button>
       <button
         type="button"
@@ -243,7 +243,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.35"
           stroke-linecap="round"
         >
           <path d="M6.5 9.5 9.5 6.5" />
@@ -259,7 +259,9 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Quote")}
         aria-label={gettext("Quote")}
       >
-        <span class="g font-serif font-bold text-[17px] leading-none pt-[5px]">&rdquo;</span>
+        <svg class="g" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M3 9.6C3 7 4.3 5.1 6.6 4.2l.5.9C5.7 5.8 5 6.8 4.9 8h1.6c.6 0 1 .4 1 1v2.4c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1V9.6Zm6 0c0-2.6 1.3-4.5 3.6-5.4l.5.9c-1.4.7-2.1 1.7-2.2 2.9h1.6c.6 0 1 .4 1 1v2.4c0 .6-.4 1-1 1H10c-.6 0-1-.4-1-1V9.6Z" />
+        </svg>
       </button>
       <button
         type="button"
@@ -308,7 +310,7 @@ defmodule TexttileWeb.CoreComponents do
       </button>
       <button
         type="button"
-        class="mdb"
+        class="mdb rare"
         data-cmd="task"
         title={gettext("Task list. Click a box in the text to tick it.")}
         aria-label={gettext("Task list")}
@@ -326,10 +328,11 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M5.2 8.2l2 2 3.6-4" />
         </svg>
       </button>
-      <span class="mdsep" aria-hidden="true"></span>
+      <%!-- without the image, a phone has nothing after this rule --%>
+      <span class={["mdsep", !@files && "rare"]} aria-hidden="true"></span>
       <button
         type="button"
-        class="mdb"
+        class="mdb rare"
         data-cmd="code"
         title={gettext("Code")}
         aria-label={gettext("Code")}
@@ -360,7 +363,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.35"
           stroke-linecap="round"
           stroke-linejoin="round"
         >
@@ -369,8 +372,6 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M2.6 11.4 6.5 8l3 2.6 1.9-1.6 2.2 2" />
         </svg>
       </button>
-      <span class="sp"></span>
-      <span :if={@note} class="note hidden sm:inline self-center">{@note}</span>
     </div>
     """
   end
@@ -489,58 +490,6 @@ defmodule TexttileWeb.CoreComponents do
   end
 
   @doc """
-  One word of an archive row: a year, a month, or the "all" that lets
-  go of one.
-
-  The open one says so and stops being a way anywhere, so the row never
-  sends anybody to the page they are already on. The reader's archive
-  walks by address and the admin grid by click, so the way there is
-  either an `href` or whatever the caller puts on the button.
-
-  "All years" and "All months" are `all`: standing on one of them is
-  where a list starts, not a period somebody chose, so it drops the
-  link and wears none of the marks of a choice.
-  """
-  attr :label, :any, required: true
-  attr :on, :boolean, default: false
-
-  attr :all, :boolean,
-    default: false,
-    doc: "the word that lets go of a period. Standing on it is not a choice, so it wears no mark."
-
-  attr :count, :any, default: nil
-  attr :href, :string, default: nil
-  attr :rest, :global, include: ~w(phx-click phx-value-year phx-value-month)
-
-  def period(assigns) do
-    ~H"""
-    <span :if={@on} class={["per", !@all && "on"]} aria-current="true">
-      {@label}<.period_count count={@count} />
-    </span>
-    <a :if={!@on && @href} class="per" href={@href}>
-      {@label}<.period_count count={@count} />
-    </a>
-    <button :if={!@on && !@href} type="button" class="per" {@rest}>
-      {@label}<.period_count count={@count} />
-    </button>
-    """
-  end
-
-  # The number beside a year is how many entries it holds. Nothing on
-  # the row says the word, because the row has to stay one line at ten
-  # years of writing, so the number says it where a reader asks: on the
-  # pointer, and to whoever listens to the page.
-  attr :count, :any, default: nil
-
-  defp period_count(assigns) do
-    assigns = assign(assigns, :says, assigns.count && entry_count(assigns.count, assigns.count))
-
-    ~H"""
-    <span :if={@count} class="cnt" title={@says} aria-label={@says}>{@count}</span>
-    """
-  end
-
-  @doc """
   What an entry's state is called on screen.
 
   The stored word is English and stays English; only what a person
@@ -550,7 +499,7 @@ defmodule TexttileWeb.CoreComponents do
   """
   def status_word("draft"), do: gettext("Draft")
   def status_word("scheduled"), do: gettext("Scheduled")
-  def status_word("published"), do: gettext("Published")
+  def status_word("published"), do: gettext("Live")
   def status_word(other), do: String.capitalize(other)
 
   @doc """

@@ -8,13 +8,13 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("#wmBtn", "Texttile")
+        |> click("#wmBtn")
         # the menu opens in the browser: wait for it, or the next click
         # races the script on a slow machine
         |> assert_has("#navMenu", text: "Settings")
-        |> click_link("Settings")
+        |> click_link("#navMenu a", "Settings")
         |> assert_has("#crumb", text: "Settings")
-        |> assert_has("#savedSettings", text: "Last saved")
+        |> assert_has("#savedSettings", text: "Saved")
         |> fill_in("Site title", with: "Two of us")
         # the toast is the save answering
         |> assert_has("#toast", text: "Saved")
@@ -101,7 +101,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> open("/admin/settings")
       |> assert_has("#user-#{julia.id}", text: "you")
-      |> assert_has("#delete-user-#{julia.id}[disabled]")
+      |> refute_has("#delete-user-#{julia.id}")
       |> click_button("#delete-user-#{kb.id}", "Delete")
       |> assert_has("h2", text: "Delete the account of kb?")
       |> click_button("#dialog-ok", "Delete the account")
@@ -130,7 +130,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
     end
 
     # Access is one question with two answers, and the password belongs
-    # to the second answer. The rules between the rows made it three
+    # to the second answer: it shows once that answer is picked. The rules between the rows made it three
     # unrelated things, and the field began at the left edge, under the
     # radio instead of under the word.
     @access_shape """
@@ -149,6 +149,8 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
+      |> refute_has("#pwRow")
+      |> click("#access-form input[value=protected]")
       |> assert_has("#pwRow")
       |> evaluate(@access_shape, [is_function: true], fn [ruled, off] ->
         assert ruled == 0

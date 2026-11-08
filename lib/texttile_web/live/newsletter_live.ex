@@ -84,75 +84,92 @@ defmodule TexttileWeb.NewsletterLive do
       flash={@flash}
       current_scope={@current_scope}
       crumb={gettext("Newsletter")}
+      count={@confirmed}
       active="newsletter"
       others={@others}
     >
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[760px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
-        <h1 class="page-h">{gettext("Newsletter")}</h1>
-        <p class="lead" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</p>
-
-        <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2 mt-[6px]">
-          <input
-            type="email"
-            name="email"
-            placeholder={gettext("Email")}
-            aria-label={gettext("Email")}
-            required
-            class="flex-1 min-w-[200px] max-w-[290px]"
-          />
-          <button class="btn">{gettext("Add")}</button>
-          <span :if={@add_error} id="subAddError" class="text-[12.5px]" style="color:var(--tt-julia)">
-            {gettext("That does not look like an email address.")}
-          </span>
-        </form>
-
-        <div id="subList" class="mt-[18px]">
-          <p :if={@subscribers == []} class="note">
-            {gettext(
-              "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
-            )}
+      <div class="admin-col">
+        <div class="mb-[9px] md:mb-6">
+          <h1 class="page-h">{gettext("Newsletter")}</h1>
+          <p class="lead !mb-0 num max-md:hidden" id="newsletterSub">
+            {sub_line(@subscribers, @confirmed)}
           </p>
-          <div
-            :for={subscriber <- @subscribers}
-            id={"sub-#{subscriber.id}"}
-            class="flex items-center gap-x-3 py-[9px] border-b border-hair"
-          >
-            <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
-              <span class="text-[13.5px] font-semibold truncate max-w-full">
-                {subscriber.email}
-              </span>
-              <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
-                {gettext("waits for their confirmation")}
-              </span>
-            </span>
-            <span class="hidden sm:inline text-[12.5px] text-faint num flex-none">
-              {since(subscriber)}
-            </span>
-            <button
-              class="btn ghost flex-none"
-              type="button"
-              id={"remove-#{subscriber.id}"}
-              phx-click="ask_remove"
-              phx-value-id={subscriber.id}
-            >
-              {gettext("Remove")}
-            </button>
-          </div>
         </div>
+        <div>
+          <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
+            <input
+              type="email"
+              name="email"
+              placeholder={gettext("Email")}
+              aria-label={gettext("Email")}
+              required
+              class="flex-1 min-w-[200px]"
+            />
+            <button class="btn solid">{gettext("Add")}</button>
+            <span
+              :if={@add_error}
+              id="subAddError"
+              class="text-[12.5px]"
+              style="color:var(--tt-julia)"
+            >
+              {gettext("That does not look like an email address.")}
+            </span>
+          </form>
 
-        <p class="note mt-[22px]" id="newsletterRule">
-          {gettext(
-            "A reader who subscribes on the site confirms the address by mail first; until then it gets no updates. An address you add here is directly confirmed. When an entry goes live with Email subscribers checked, it goes to every confirmed address."
-          )}
-          <span :if={@protected?}>
-            {gettext(
-              "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
-            )}
-          </span>
-        </p>
+          <div id="subList" class={["mt-7", @subscribers != [] && "border-t border-hair"]}>
+            <p :if={@subscribers == []} class="note">
+              {gettext(
+                "Nobody is on the list yet. Every reader who subscribes on the site shows up here, and so does every address you add."
+              )}
+            </p>
+            <div
+              :for={subscriber <- @subscribers}
+              id={"sub-#{subscriber.id}"}
+              class="flex items-start sm:items-center gap-x-3 py-[9px] sm:py-[12px] border-b border-hair"
+            >
+              <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
+                <%!-- the address on a fixed column, its day beside it as
+                     Tags sets a count beside a name; the right is for
+                     the action alone --%>
+                <span class="rowp truncate max-w-full sm:w-[354px] sm:flex-none">
+                  {subscriber.email}
+                </span>
+                <span class="hidden sm:inline text-[13px] text-faint num">
+                  {since(subscriber)}
+                </span>
+                <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
+                  {gettext("waits for their confirmation")}
+                </span>
+                <%!-- a phone says the day under the address: it knows
+                     what the desk knows --%>
+                <span class="sm:hidden basis-full text-[12.5px] text-faint num">
+                  {since(subscriber)}
+                </span>
+              </span>
+              <button
+                class="btn quiet sm danger flex-none -mr-[11px] max-sm:-mt-[5px]"
+                type="button"
+                id={"remove-#{subscriber.id}"}
+                phx-click="ask_remove"
+                phx-value-id={subscriber.id}
+              >
+                {gettext("Remove")}
+              </button>
+            </div>
+          </div>
+
+          <p class="hint mt-[16px]" id="newsletterRule">
+            {gettext("Readers confirm by mail first; an address added here is confirmed at once.")}
+            <span :if={@protected?}>
+              {gettext(
+                "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
+              )}
+            </span>
+          </p>
+        </div>
       </div>
 
       <.ask
@@ -178,30 +195,21 @@ defmodule TexttileWeb.NewsletterLive do
     """
   end
 
-  # The lead line: how many addresses get the entries, and who still waits.
-  defp sub_line([], _confirmed) do
-    gettext("Everybody who gets a mail when a new entry goes live.")
-  end
-
+  # The count beside the heading: a short noun, the way every admin
+  # list counts, and who still waits after it.
   defp sub_line(subscribers, confirmed) do
     waiting = length(subscribers) - confirmed
-
-    line = ngettext("1 email gets updates.", "%{count} emails get updates.", confirmed)
+    line = ngettext("1 subscriber", "%{count} subscribers", confirmed)
 
     if waiting == 0 do
       line
     else
-      line <>
-        " " <>
-        ngettext(
-          "1 more waits for their confirmation.",
-          "%{count} more wait for their confirmation.",
-          waiting
-        )
+      line <> " · " <> ngettext("1 waiting", "%{count} waiting", waiting)
     end
   end
 
   defp since(subscriber) do
-    subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_date()
+    day = subscriber.inserted_at |> DateTime.to_date() |> Texttile.I18n.format_short_date()
+    gettext("since %{day}", day: day)
   end
 end

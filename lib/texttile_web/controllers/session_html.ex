@@ -7,7 +7,7 @@ defmodule TexttileWeb.SessionHTML do
 
   def new(assigns) do
     ~H"""
-    <Layouts.auth subtitle={gettext("Admin sign-in · %{host}", host: @conn.host)}>
+    <Layouts.auth subtitle={gettext("Admin sign-in")}>
       <.form
         :let={_f}
         for={%{}}
@@ -17,7 +17,9 @@ defmodule TexttileWeb.SessionHTML do
         class="mt-[26px]"
       >
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-email">{gettext("Email address")}</label>
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-email">
+            {gettext("Email address")}
+          </label>
           <input
             type="email"
             id="login-email"
@@ -27,11 +29,12 @@ defmodule TexttileWeb.SessionHTML do
             spellcheck="false"
             autocapitalize="off"
             autocorrect="off"
-            autofocus
           />
         </div>
         <div class="mb-[15px]">
-          <label class="lab block mb-0" for="login-password">{gettext("Password")}</label>
+          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-password">
+            {gettext("Password")}
+          </label>
           <input
             type="password"
             id="login-password"
@@ -41,7 +44,7 @@ defmodule TexttileWeb.SessionHTML do
         </div>
         <%!-- The sign-in lasts two days. This makes it fourteen, on
              this browser only. --%>
-        <label class="opt">
+        <label class="opt text-[13px]">
           <input
             type="checkbox"
             id="login-remember"
@@ -77,10 +80,8 @@ defmodule TexttileWeb.SessionHTML do
           "No account here has a password yet. The addresses in ADMIN_USERS have been mailed a link that sets one. While nobody can sign in, the server writes that link into its own log as well, so an installation whose mail does not leave still lets its first admin in."
         )}
       </p>
-      <p :if={not @nobody_can_sign_in} class="note mt-[22px] leading-[1.6]">
-        {gettext(
-          "This page is for admins, and there is no public registration. You sign in with the address your account was invited to, and readers never see it. An admin who is already in invites the next one from Settings."
-        )}
+      <p :if={not @nobody_can_sign_in} class="note text-[12.5px] mt-4 leading-[1.5]">
+        {gettext("There is no public sign-up. An admin invites the next one from Settings.")}
       </p>
     </Layouts.auth>
     """

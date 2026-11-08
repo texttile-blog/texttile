@@ -56,11 +56,19 @@ defmodule TexttileWeb.TextsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
       assert has_element?(view, "#cards .card", "Fourteen doors")
-      assert has_element?(view, "#gridCount", "1 entry")
+      # the count stands in its filter, and no line says it again
+      assert has_element?(view, "[data-f=all] .num", "1")
+      refute has_element?(view, "#gridCount")
 
       # the state with its day, and who it is by apart from them
-      assert has_element?(view, "#cards .card .cm", "draft,")
-      assert has_element?(view, "#cards .card .cm", Date.to_string(Date.utc_today()))
+      assert has_element?(view, "#cards .card .cm .bit", "Draft")
+
+      assert has_element?(
+               view,
+               "#cards .card .cm",
+               Texttile.I18n.format_short_date(Date.utc_today())
+             )
+
       assert has_element?(view, "#cards .card .cm .by", Texttile.Accounts.display_name(user))
       refute has_element?(view, "#cards .card .cm", "· #{Texttile.Accounts.display_name(user)}")
     end
@@ -114,7 +122,21 @@ defmodule TexttileWeb.TextsLiveTest do
       view |> element("#grid-search") |> render_change(%{q: "wooden"})
       assert has_element?(view, "#cards .card", "Doors")
       refute has_element?(view, "#cards .card", "Trains")
+      # a narrowed grid says how much of all it shows
+      assert has_element?(view, "#gridCount", "1 of 2")
     end
+  end
+
+  test "a scheduled entry gets a filter of its own, so the counts add up", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/texts")
+    refute has_element?(view, "[data-f=scheduled]")
+
+    scheduled_post(title: "Winter plans")
+    {:ok, view, _html} = live(conn, ~p"/admin/texts")
+    assert has_element?(view, "[data-f=scheduled] .num", "1")
+
+    view |> element("[data-f=scheduled]") |> render_click()
+    assert has_element?(view, "#cards .card", "Winter plans")
   end
 
   describe "the pager" do
@@ -138,7 +160,7 @@ defmodule TexttileWeb.TextsLiveTest do
       assert has_element?(view, "#cards .card", "Text 5")
       assert has_element?(view, "#cards .card", "Text 4")
       refute has_element?(view, "#cards .card", "Text 3")
-      assert has_element?(view, "#gridCount", "5 entries")
+      assert has_element?(view, "[data-f=all] .num", "5")
       assert has_element?(view, "#pager", "Page 1 of 3")
 
       view |> element("#next-page") |> render_click()
@@ -174,21 +196,24 @@ defmodule TexttileWeb.TextsLiveTest do
     test "narrows the grid to one year, then to one month", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
 
-      assert has_element?(view, "#years .per", "2026")
-      assert has_element?(view, "#years .per", "2024")
+      assert has_element?(view, "#years option", "2026 (2)")
+      assert has_element?(view, "#years option", "2024 (1)")
       refute has_element?(view, "#months")
 
-      view |> element("#years button.per", "2026") |> render_click()
+      view |> element("#periods") |> render_change(%{"year" => "2026", "_target" => ["year"]})
       assert has_element?(view, "#cards .card", "Harbour mornings")
       assert has_element?(view, "#cards .card", "Desert nights")
       refute has_element?(view, "#cards .card", "The long winter")
 
       # only the months that carry entries
-      assert has_element?(view, "#months .per", "Aug")
-      assert has_element?(view, "#months .per", "Mar")
-      refute has_element?(view, "#months .per", "May")
+      assert has_element?(view, "#months option", "August")
+      assert has_element?(view, "#months option", "March")
+      refute has_element?(view, "#months option", "May")
 
-      view |> element("#months button.per", "Aug") |> render_click()
+      view
+      |> element("#periods")
+      |> render_change(%{"year" => "2026", "month" => "8", "_target" => ["month"]})
+
       assert has_element?(view, "#cards .card", "Harbour mornings")
       refute has_element?(view, "#cards .card", "Desert nights")
     end

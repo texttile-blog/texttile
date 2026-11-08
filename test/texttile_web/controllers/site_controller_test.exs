@@ -7,6 +7,34 @@ defmodule TexttileWeb.SiteControllerTest do
   alias Texttile.Articles
   alias Texttile.Settings
 
+  describe "the strip for a browser that has signed in" do
+    test "a reader who never signed in here sees none", %{conn: conn} do
+      html = conn |> get(~p"/blog") |> html_response(200)
+
+      refute html =~ ~s(id="known-strip")
+    end
+
+    test "a browser that signed in before is offered the way back in", %{conn: conn} do
+      html =
+        conn
+        |> Plug.Test.put_req_cookie("_texttile_known", "1")
+        |> get(~p"/blog")
+        |> html_response(200)
+
+      assert html =~ ~s(id="known-strip")
+      assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/login"}
+    end
+
+    test "a signed-in admin is named and led to the admin area", %{conn: conn} do
+      user = user_fixture()
+      html = conn |> log_in_user(user) |> get(~p"/blog") |> html_response(200)
+
+      assert html =~ ~s(id="known-strip")
+      assert html =~ "Signed in as"
+      assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/admin"}
+    end
+  end
+
   describe "the front page" do
     test "lists published posts, newest first, and nothing else", %{conn: conn} do
       old = published_post(title: "Old text", publish_date: ~D[2026-01-05])
@@ -68,11 +96,17 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ "cimg blank"
     end
 
-    test "a text without a picture keeps the square, so the grid holds", %{conn: conn} do
-      published_post(title: "Without a picture")
+    test "a text without a picture shows its opening words in its square", %{conn: conn} do
+      published_post(title: "Without a picture", body: "Only words here.")
+      published_post(title: "Nothing at all", body: "")
 
       html = conn |> get(~p"/blog") |> html_response(200)
 
+      # every card keeps the square, so the grid never looks like a
+      # picture went missing; the words stand once, inside it
+      assert html =~ ~s(<span class="cx">Only words here.</span>)
+      refute html =~ ~s(class="clead">Only words here.)
+      # an entry without words either keeps the quiet mark
       assert html =~ "cimg blank"
       refute html =~ "/renditions/640/"
     end
@@ -190,29 +224,6 @@ defmodule TexttileWeb.SiteControllerTest do
     # The chosen preview stands once more at the head of the post, as
     # a square the size of a tile, and its link is the tile's link, so
     # the lightbox can open on that tile.
-    test "shows the chosen preview as a square above the title", %{conn: conn} do
-      article = published_post(title: "Square", slug: "square", publish_date: ~D[2026-03-01])
-      {:ok, _first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
-      {:ok, chosen} = Texttile.Gallery.add_file(article, jpg_fixture(), "gull.jpg")
-      {:ok, _} = Texttile.Articles.update_settings(article, %{preview_path: chosen.path})
-
-      html = conn |> get(~p"/2026/03/01/square") |> html_response(200)
-
-      assert attribute(html, "#preview", "href") == ["/uploads/#{chosen.path}"]
-      assert attribute(html, "#preview img", "src") == ["/renditions/640/#{chosen.path}"]
-      # the square comes before the title
-      assert :binary.match(html, ~s(id="preview")) < :binary.match(html, ~s(class="f-h1"))
-    end
-
-    test "a post without a picture and a page with one get no square", %{conn: conn} do
-      published_post(title: "Bare", slug: "bare", publish_date: ~D[2026-03-01])
-      page = published_page(title: "About", slug: "about-me", publish_date: ~D[2026-03-01])
-      {:ok, _} = Texttile.Gallery.add_file(page, jpg_fixture(), "pier.jpg")
-
-      refute conn |> get(~p"/2026/03/01/bare") |> html_response(200) =~ ~s(id="preview")
-      refute conn |> get(~p"/about-me") |> html_response(200) =~ ~s(id="preview")
-    end
-
     test "a tile of the wide grid fetches the card size", %{conn: conn} do
       article = published_post(title: "Grid", slug: "grid", publish_date: ~D[2026-03-01])
 
@@ -467,7 +478,8 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/tags/sea") |> html_response(200)
 
       assert html =~ "#Sea"
-      assert html =~ "entry has this tag."
+      # the count stands in the open tag of the row
+      assert html =~ ~r{aria-current="page">\s*#Sea <span class="cnt">1</span>}
       assert html =~ ~s(id="text-#{sea.id}")
       refute html =~ "Desert nights"
 
@@ -549,15 +561,16 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~s(id="menu-texts" href="/blog")
     end
 
-    test "Sign in closes the menu: to the login for a reader, to the admin area once signed in",
+    test "Sign in stands once, in the foot: the login for a reader, the admin area once signed in",
          %{conn: conn} do
       published_post(title: "A post")
 
       html = conn |> get(~p"/blog") |> html_response(200)
-      assert html =~ ~s(id="menu-signin" href="/login")
+      refute html =~ ~s(id="menu-signin")
+      assert html =~ ~s(id="foot-signin" href="/login")
 
       html = conn |> log_in_user(user_fixture()) |> get(~p"/blog") |> html_response(200)
-      assert html =~ ~s(id="menu-signin" href="/admin")
+      assert html =~ ~s(id="foot-admin" href="/admin")
     end
 
     test "a fixed front page that disappears sends the door to the list", %{conn: conn} do
@@ -597,6 +610,19 @@ defmodule TexttileWeb.SiteControllerTest do
       {:ok, _} = Settings.put(:site_visibility, "protected")
       {:ok, _} = Settings.put(:site_password, "sesame")
       :ok
+    end
+
+    test "the gate offers a browser that has signed in here the way in", %{conn: conn} do
+      stranger = conn |> get(~p"/unlock") |> html_response(200)
+      refute stranger =~ ~s(id="known-strip")
+
+      known =
+        build_conn()
+        |> Plug.Test.put_req_cookie("_texttile_known", "1")
+        |> get(~p"/unlock")
+        |> html_response(200)
+
+      assert known =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/login"}
     end
 
     test "a locked reader is sent to the gate and back again", %{conn: conn} do

@@ -3,23 +3,21 @@
   home_page={@home_page}
   menu_pages={@menu_pages}
   current_scope={@current_scope}
+  known={assigns[:known_browser]}
 />
 <main>
   <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1" id="title">#{@tag}</h1>
-    <p class="f-lead mt-3" id="sub">
-      {ngettext(
-        "One entry has this tag.",
-        "%{count} entries have this tag.",
-        length(@articles)
-      )}
-    </p>
+    <%!-- no count line: the open tag in the row carries it --%>
 
     <%!-- every tag of the blog; the one being read is marked and does
          not link, the others are the way into the next archive --%>
-    <p class="mt-7 pb-3 border-b border-rule" id="tagbar">
+    <p
+      class="mt-4 sm:border-b sm:border-hair max-sm:mb-6 flex flex-wrap gap-x-4 gap-y-[6px]"
+      id="tagbar"
+    >
       <%= for {tag, count} <- @tags do %>
-        <span :if={tag == @tag} class="ctag" style="color:var(--tt-ink);font-weight:600">
+        <span :if={tag == @tag} class="ctag on" aria-current="page">
           #{tag} <span class="cnt">{count}</span>
         </span>
         <a :if={tag != @tag} class="ctag" href={~p"/tags/#{String.downcase(tag)}"}>
@@ -28,7 +26,7 @@
       <% end %>
     </p>
 
-    <div class="cards mt-8" id="texts">
+    <div class="cards mt-7" id="texts">
       <.card
         :for={article <- @articles}
         article={article}

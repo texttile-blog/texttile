@@ -48,7 +48,6 @@ defmodule TexttileWeb.TextsLive do
     |> assign(:month, list.month)
     |> assign(:years, list.years)
     |> assign(:months, list.months)
-    |> assign(:across_years, list.across_years)
     |> assign(:page, list.page)
     |> assign(:pages, list.pages)
     |> assign(:shown, list.shown)
@@ -58,7 +57,47 @@ defmodule TexttileWeb.TextsLive do
     # the whole grid: the bodies of every entry are far too much to
     # carry here a second time just to compare them.
     |> assign(:pending, Articles.entries_with_unpublished_changes())
-    |> assign(:total, length(Articles.list_articles()))
+    |> assign_counts()
+  end
+
+  # What each filter holds, written into its tab the way the Comments
+  # filters carry theirs; the search and the period narrow the grid,
+  # not these.
+  defp assign_counts(socket) do
+    all = Articles.list_articles()
+    count = fn status -> Enum.count(all, &(&1.status == status)) end
+
+    socket
+    |> assign(:total, length(all))
+    |> assign(:counts, %{
+      "all" => length(all),
+      "published" => count.("published"),
+      "scheduled" => count.("scheduled"),
+      "draft" => count.("draft")
+    })
+  end
+
+  defp initial(article) do
+    article
+    |> Articles.display_title()
+    |> String.trim()
+    |> String.first()
+    |> to_string()
+    |> String.upcase()
+  end
+
+  # The status filters in their order. Scheduled stands only while an
+  # entry waits for its day (or while it is the open filter).
+  defp filters(counts, open) do
+    [
+      {"all", gettext("All")},
+      {"published", gettext("Live")},
+      {"scheduled", gettext("Scheduled")},
+      {"draft", gettext("Drafts")}
+    ]
+    |> Enum.filter(fn {value, _} ->
+      value != "scheduled" or counts["scheduled"] > 0 or open == "scheduled"
+    end)
   end
 
   def handle_event("filter", %{"filter" => filter}, socket) do
@@ -79,14 +118,21 @@ defmodule TexttileWeb.TextsLive do
   # The archive narrows the grid to one year, and then to one month of
   # it. `Listing` reads the raw values and drops a month whose year is
   # gone: a month only ever belongs to the year over it.
+  # A year chosen anew opens all of its months; an empty choice is all.
   def handle_event("period", params, socket) do
+    year = blank_to_nil(params["year"])
+    month = if params["_target"] == ["year"], do: nil, else: blank_to_nil(params["month"])
+
     {:noreply,
      socket
-     |> assign(:year, params["year"])
-     |> assign(:month, params["month"])
+     |> assign(:year, year)
+     |> assign(:month, month)
      |> assign(:page, 1)
      |> load()}
   end
+
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(value), do: value
 
   def handle_info({:article_changed, _article}, socket), do: {:noreply, load(socket)}
   def handle_info({:article_deleted, _id}, socket), do: {:noreply, load(socket)}
@@ -106,88 +152,87 @@ defmodule TexttileWeb.TextsLive do
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="max-w-[1060px] mx-auto px-[14px] md:px-6 pt-[22px] md:pt-[30px] pb-[90px]">
+      <div class="admin-col">
+        <%!-- the counts live in the filters, as on Comments; a line of
+             its own speaks only while a search or a period narrows the
+             grid --%>
         <div class="flex items-baseline gap-[14px] flex-wrap">
           <h1 class="page-h">{gettext("Entries")}</h1>
-          <span class="note num" id="gridCount">{entry_count(@shown, @total)}</span>
-          <span class="sp"></span>
-          <button class="btn solid" id="new-text" phx-click="new_text">{gettext("New entry")}</button>
+          <span :if={@q != "" or @year} class="note num" id="gridCount">
+            {entry_count(@shown, @total)}
+          </span>
         </div>
-        <div class="flex items-center gap-3 flex-wrap py-3 mt-[14px] mb-6 border-y border-rule">
-          <span class="flex gap-[3px] flex-none" role="group" aria-label={gettext("Filter by status")}>
+        <div class="flex items-center gap-x-3 gap-y-5 sm:gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
+          <span
+            class="flex gap-[3px] max-sm:gap-[6px] flex-none"
+            role="group"
+            aria-label={gettext("Filter by status")}
+          >
+            <%!-- Scheduled has a tab only while an entry waits for its
+                 day, so the parts always add up to All --%>
             <button
-              :for={
-                {value, label} <- [
-                  {"all", gettext("All")},
-                  {"published", gettext("Live")},
-                  {"draft", gettext("Drafts")}
-                ]
-              }
+              :for={{value, label} <- filters(@counts, @filter)}
               class={["seg-b", @filter == value && "on"]}
               data-f={value}
               phx-click="filter"
               phx-value-filter={value}
             >
-              {label}
+              {label} <span class="num text-faint">{@counts[value]}</span>
             </button>
           </span>
-          <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
-            <input
-              type="search"
-              name="q"
-              value={@q}
-              placeholder={gettext("Search title, tags, text")}
-              aria-label={gettext("Search entries")}
-              autocomplete="off"
-              phx-debounce="200"
-              class="w-auto grow shrink basis-[240px] min-w-[150px] max-w-[680px] ml-auto"
-            />
-          </form>
+          <div
+            class="flex items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0"
+            id="gridTools"
+          >
+            <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
+              <input
+                type="search"
+                name="q"
+                value={@q}
+                placeholder={gettext("Search")}
+                aria-label={gettext("Search entries")}
+                autocomplete="off"
+                phx-debounce="200"
+                class="w-auto grow shrink basis-[160px] min-w-0"
+              />
+            </form>
+            <%!-- the archive, the way the reader's list offers it: a year,
+                 then the months of that year that carry entries, each with
+                 its count; the counts follow the search and the filter --%>
+            <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
+              <span class="pick">
+                <select name="year" id="years" aria-label={gettext("Year")}>
+                  <option value="">{gettext("All years")}</option>
+                  <option :for={{year, count} <- @years} value={year} selected={@year == year}>
+                    {year} ({count})
+                  </option>
+                </select>
+              </span>
+              <span :if={@months != []} class="pick">
+                <select name="month" id="months" aria-label={gettext("Month")}>
+                  <option value="">{gettext("All months")}</option>
+                  <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
+                    {Texttile.I18n.month_name(month)}
+                  </option>
+                </select>
+              </span>
+            </form>
+            <%!-- the one primary action ends the row of tools, on a phone
+                 as on a desk, so it never needs a row of its own --%>
+            <%!-- a phone says New: the search beside it needs the room --%>
+            <button
+              class="btn solid flex-none"
+              id="new-text"
+              phx-click="new_text"
+              aria-label={gettext("New entry")}
+            >
+              <span class="max-sm:hidden">{gettext("New entry")}</span>
+              <span class="sm:hidden" aria-hidden="true">{gettext("New")}</span>
+            </button>
+          </div>
         </div>
-        <%!-- the archive: one line of years, and the months of the year
-             that is open under it. Only the months that carry entries;
-             the counts follow the search and the status filter. --%>
-        <nav :if={@years != []} class="periods" id="periods" aria-label={gettext("Archive")}>
-          <p class="prow" id="years">
-            <.period
-              label={gettext("All years")}
-              on={is_nil(@year)}
-              all
-              count={@across_years}
-              phx-click="period"
-            />
-            <.period
-              :for={{year, count} <- @years}
-              label={year}
-              on={@year == year}
-              count={count}
-              phx-click="period"
-              phx-value-year={year}
-            />
-          </p>
-          <p :if={@months != []} class="prow" id="months">
-            <%!-- no count on this row at all: the year over it already
-                 says how many the year holds, and twelve numbers in a
-                 row is a table, not a line --%>
-            <.period
-              label={gettext("All months")}
-              on={is_nil(@month)}
-              all
-              phx-click="period"
-              phx-value-year={@year}
-            />
-            <.period
-              :for={{month, _count} <- @months}
-              label={Articles.month_name(month)}
-              on={@month == month}
-              phx-click="period"
-              phx-value-year={@year}
-              phx-value-month={month}
-            />
-          </p>
-        </nav>
         <div
-          class="grid items-start gap-y-[22px] gap-x-3 md:gap-y-7 md:gap-x-5 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
+          class="grid items-start gap-y-0 sm:gap-y-[26px] gap-x-4 md:gap-y-8 md:gap-x-5 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
           id="cards"
         >
           <%!-- The card is one link to the editor, so the way to the
@@ -200,7 +245,24 @@ defmodule TexttileWeb.TextsLive do
               <%= if cover = @covers[article.id] do %>
                 <span class="cimg" style={cover_bg(cover)}></span>
               <% else %>
-                <span class="cimg empty">{gettext("no images yet")}</span>
+                <%!-- an entry of words alone shows its opening words, and
+                     an empty one says what is missing. The small square
+                     of the phone list is the same quiet box, empty. --%>
+                <span class="cimg empty">
+                  <span
+                    :if={Articles.lead(article) != ""}
+                    class="cx"
+                  >
+                    {Articles.lead(article, 140)}
+                  </span>
+                  <%!-- the small square of the phone list holds the first
+                       letter of the title, set large: words at that size
+                       could not be read --%>
+                  <span class="ci" aria-hidden="true">{initial(article)}</span>
+                  <span :if={Articles.lead(article) == ""} class="cn">
+                    {gettext("no images yet")}
+                  </span>
+                </span>
               <% end %>
               <span class="ct">{Articles.display_title(article)}</span>
               <%!-- the state and its day on the left, who it is by on the
@@ -210,9 +272,12 @@ defmodule TexttileWeb.TextsLive do
                 <%!-- a bit holds no whitespace of the template: the browser
                      would carry a space of a nowrap span over to the gap
                      between two bits and refuse to break there --%>
-                <span>
+                <span class="bits">
                   <%= for {bit, i} <- card_meta(article, article.id in @pending) do %>
-                    <span class="whitespace-nowrap" phx-no-format><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
+                    <span
+                      class="whitespace-nowrap bit"
+                      phx-no-format
+                    ><span :if={i == 0} class={["st", article.status]}></span>{bit}</span>
                   <% end %>
                 </span>
                 <span :if={article.user} class="by">{admin_name(article.user)}</span>
@@ -270,17 +335,6 @@ defmodule TexttileWeb.TextsLive do
             do: gettext("No entries yet. New entry starts the first one."),
             else: gettext("Nothing matches. The search covers titles, tags and the entry itself.")}
         </p>
-        <%!-- every digit the wordmark menu carries, in the order it
-             carries them, so the two never say different things --%>
-        <p class="hidden md:block text-[12.5px] text-faint mt-9 pt-[13px] border-t border-hair">
-          {gettext("Press a key anywhere to jump:")}
-          <span :for={section <- Layouts.sections()} class="whitespace-nowrap">
-            <b class="text-dim num">{section.key}</b>
-            {section.label} ·
-          </span>
-          <b class="text-dim">/</b>
-          {gettext("search.")}
-        </p>
       </div>
     </Layouts.app>
     """
@@ -294,34 +348,37 @@ defmodule TexttileWeb.TextsLive do
 
   # The facts of a card's line, in order: the state with its day, and
   # "page" in front of them for a page.
+  # The line under a card's title: the state as a word, then the day,
+  # then what else is true. Every row starts the same way, with the
+  # state, so a column of cards reads down one vocabulary.
   defp card_meta(article, pending?) do
-    bits =
+    day =
       case article.status do
-        "draft" ->
-          [gettext("draft"), Texttile.I18n.format_plain_day(article.updated_at)]
-
-        "scheduled" ->
-          [
-            if(article.publish_date,
-              do: gettext("goes live %{date}", date: article.publish_date),
-              else: gettext("scheduled, no date yet")
-            )
-          ]
-
-        "published" ->
-          # A live entry that is being rewritten says so here, because
-          # this grid is the one place that shows every entry at once
-          # and is where somebody looks for what is still open.
-          if pending?,
-            do: [to_string(article.publish_date), gettext("edited since publishing")],
-            else: [to_string(article.publish_date)]
+        "draft" -> Texttile.I18n.format_short_date(DateTime.to_date(article.updated_at))
+        _status -> article.publish_date && Texttile.I18n.format_short_date(article.publish_date)
       end
 
-    bits = if article.type == "page", do: [gettext("page") | bits], else: bits
+    state =
+      case article.status do
+        "draft" -> gettext("Draft")
+        "scheduled" -> gettext("Scheduled")
+        "published" -> gettext("Live")
+      end
 
-    # a comma after every bit but the last, and each bit with its
-    # place, so the template can hang the state mark on the first
-    last = length(bits) - 1
-    Enum.with_index(bits, fn bit, i -> {if(i < last, do: bit <> ",", else: bit), i} end)
+    # A live entry that is being rewritten says so here, because this
+    # grid is the one place that shows every entry at once and is where
+    # somebody looks for what is still open.
+    bits =
+      [
+        state,
+        article.type == "page" && gettext("Page"),
+        day || gettext("no date yet"),
+        pending? && gettext("edited since publishing")
+      ]
+      |> Enum.filter(& &1)
+
+    # each bit with its place, so the template can hang the state mark
+    # on the first; the separators are the stylesheet's
+    Enum.with_index(bits)
   end
 end

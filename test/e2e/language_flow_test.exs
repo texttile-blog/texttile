@@ -51,6 +51,6 @@ defmodule TexttileWeb.E2E.LanguageFlowTest do
     # wait for: the words stand in the first render.
     conn
     |> PhoenixTest.visit("/blog")
-    |> assert_has("h1", text: "Blogeinträge")
+    |> assert_has(~s(#q[placeholder="Einträge durchsuchen"]))
   end
 end

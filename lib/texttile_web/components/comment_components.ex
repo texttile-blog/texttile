@@ -8,8 +8,6 @@ defmodule TexttileWeb.CommentComponents do
   use Phoenix.Component
   use Gettext, backend: TexttileWeb.Gettext
 
-  import TexttileWeb.CoreComponents, only: [icon: 1]
-
   alias Texttile.Comments
   alias Texttile.I18n
 
@@ -36,14 +34,26 @@ defmodule TexttileWeb.CommentComponents do
     <div class={row_class(@selected)} id={"comment-#{@comment.id}"}>
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
-        <span class="font-semibold">{@comment.name}</span>
-        <.writer_links comment={@comment} />
+        <span class="rowp">{@comment.name}</span>
         <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
-        <span class="cmt-when num">{moment_line(@comment)}</span>
       </div>
-      <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent link">
-        {Texttile.Articles.display_title(@article)}
-      </.link>
+      <%!-- where and when, on a line of their own under the name: the
+           entry is the jump of the overview, a link like every other --%>
+      <div class="cmt-sub">
+        <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent">
+          {Texttile.Articles.display_title(@article)}
+        </.link>
+        <span class="cmt-when num">
+          <%!-- the server writes UTC; the hook rewrites it in the zone of
+               the browser, the one the reader pages use as well --%>
+          <time
+            id={"cmt-at-#{@comment.id}"}
+            datetime={DateTime.to_iso8601(@comment.inserted_at)}
+            phx-hook="LocalMoment"
+          >{I18n.format_short_moment(@comment.inserted_at)}</time>{moment_tail(@comment)}
+        </span>
+        <.website comment={@comment} />
+      </div>
 
       <form
         :if={@editing}
@@ -80,10 +90,13 @@ defmodule TexttileWeb.CommentComponents do
         :if={!@editing}
         class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
         phx-no-format
-      >{@comment.body}</p>
-      <%!-- three actions on every row would shout in a list this long,
-           so they are quiet like the Restore of a version --%>
-      <div :if={!@editing} class="mt-[6px] btn-row -ml-[10px]">
+      >{String.trim(@comment.body)}</p>
+      <%!-- the actions, quiet like the Restore of a version: at the
+         right of the name line on a desk, on a line of their own under
+         the words on a phone, so a long name never meets them. Reply
+         answers by mail, in words: an icon said nothing. --%>
+      <div :if={!@editing} class="cmt-acts">
+        <.write_link comment={@comment} />
         <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
           {gettext("Edit")}
         </button>
@@ -95,7 +108,7 @@ defmodule TexttileWeb.CommentComponents do
         >
           {gettext("Release")}
         </button>
-        <button class="btn quiet sm" phx-click="delete_comment" phx-value-id={@comment.id}>
+        <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
           {gettext("Delete")}
         </button>
       </div>
@@ -104,41 +117,47 @@ defmodule TexttileWeb.CommentComponents do
   end
 
   @doc """
-  The ways to reach the writer of a comment, as two quiet icons after
-  the name: the mail they left, and the website they gave. Only the
-  admin area ever draws this, and the address goes no further than the
-  mail client it opens: readers never see it anywhere. The website is
-  the writer's own, so the link carries the marks of a link a reader
-  put there.
-
-  A comment whose address row is gone, or whose author left none, gets
-  no mail icon.
+  The way to answer the writer of a comment: Reply, a quiet action that
+  opens the mail client on the address they left. Only the admin area
+  ever draws this, and the address goes no further than that mail
+  client: readers never see it anywhere. A comment whose address row
+  is gone, or whose author left none, gets no Reply.
   """
   attr :comment, :any, required: true
 
-  def writer_links(assigns) do
+  def write_link(assigns) do
     assigns = assign(assigns, :email, email_of(assigns.comment))
 
     ~H"""
     <a
       :if={@email}
-      class="cmt-ico"
+      class="btn quiet sm"
       href={"mailto:#{@email}"}
       title={gettext("Write to %{email}", email: @email)}
-      aria-label={gettext("Write to %{email}", email: @email)}
     >
-      <.icon name="hero-envelope" class="size-[15px]" />
+      {gettext("Reply")}
     </a>
+    """
+  end
+
+  @doc """
+  The website a writer gave, as its host after the moment. It is the
+  writer's own, so the link carries the marks of a link a reader put
+  there.
+  """
+  attr :comment, :any, required: true
+
+  def website(assigns) do
+    ~H"""
     <a
       :if={@comment.website}
-      class="cmt-ico"
+      class="cmt-web"
       href={@comment.website}
-      title={host_of(@comment.website)}
-      aria-label={host_of(@comment.website)}
+      title={@comment.website}
       rel="nofollow noopener ugc"
       target="_blank"
     >
-      <.icon name="hero-globe-alt" class="size-[15px]" />
+      {host_of(@comment.website)}
     </a>
     """
   end
@@ -165,14 +184,14 @@ defmodule TexttileWeb.CommentComponents do
 
   # The moment a comment arrived, and the marks it earned since: let
   # through by an admin, rewritten by one. Commas between them.
-  defp moment_line(comment) do
+  # What follows the moment of a comment: let through, edited.
+  defp moment_tail(comment) do
     [
-      I18n.format_moment(comment.inserted_at),
       Comments.released?(comment) && gettext("let through"),
       Comments.edited?(comment) && gettext("edited")
     ]
     |> Enum.filter(& &1)
-    |> Enum.join(", ")
+    |> Enum.map_join(&(", " <> &1))
   end
 
   # The address to write back to. An imported comment whose author
@@ -200,17 +219,18 @@ defmodule TexttileWeb.CommentComponents do
     <div class={row_class(@selected)} id={"trash-#{@comment.id}"}>
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
-        <span class="font-semibold">{@comment.name}</span>
-        <.writer_links comment={@comment} />
+        <span class="rowp">{@comment.name}</span>
+      </div>
+      <div class="cmt-sub">
+        <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent">
+          {Texttile.Articles.display_title(@comment.article)}
+        </.link>
         <span class="cmt-when num">
-          {I18n.format_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_plain_day(
-            @comment.delete_after
+          {I18n.format_short_moment(@comment.inserted_at)}, {gettext("goes for good on")} {I18n.format_short_date(
+            DateTime.to_date(@comment.delete_after)
           )}
         </span>
       </div>
-      <.link navigate={"/admin/texts/#{@comment.article.id}?tab=comments"} class="cmt-ent link">
-        {Texttile.Articles.display_title(@comment.article)}
-      </.link>
       <p
         class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch] text-dim"
         phx-no-format
@@ -239,7 +259,7 @@ defmodule TexttileWeb.CommentComponents do
 
   def comment_rule(false) do
     gettext(
-      "A comment appears under the entry the moment a reader sends it, and nobody confirms anything. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing and rate limit checks. No captcha, ever.",
+      "Comments appear the moment a reader sends them. Delete keeps a comment in the trash for %{days} days, then it is gone. Spam is filtered without a captcha.",
       days: Comments.trash_days()
     )
   end
