@@ -281,8 +281,8 @@ msgid_plural ", %{names} are here"
 msgstr[0] ", %{names} ist hier"
 msgstr[1] ", %{names} sind hier"
 
-#: lib/texttile_web/controllers/site_html.ex:364
-#: lib/texttile_web/controllers/site_html.ex:372
+#: lib/texttile_web/controllers/site_html.ex:370
+#: lib/texttile_web/controllers/site_html.ex:378
 #: lib/texttile_web/live/import_live.ex:198
 #: lib/texttile_web/live/stats_live.ex:260
 #, elixir-autogen, elixir-format
@@ -568,7 +568,7 @@ msgid "Comment"
 msgstr "Kommentar"
 
 #: lib/texttile_web/components/layouts.ex:55
-#: lib/texttile_web/controllers/site_html.ex:363
+#: lib/texttile_web/controllers/site_html.ex:369
 #: lib/texttile_web/controllers/site_html/article.html.heex:140
 #: lib/texttile_web/live/comments_live.ex:33
 #: lib/texttile_web/live/comments_live.ex:170
@@ -786,7 +786,7 @@ msgid "Empty means whenever you publish. A future date schedules the entry."
 msgstr "Leer heißt: sobald du veröffentlichst. Ein Datum in der Zukunft plant den Eintrag ein."
 
 #: lib/texttile_web/components/layouts.ex:48
-#: lib/texttile_web/controllers/site_html.ex:331
+#: lib/texttile_web/controllers/site_html.ex:337
 #: lib/texttile_web/live/texts_live.ex:23
 #: lib/texttile_web/live/texts_live.ex:148
 #: lib/texttile_web/live/texts_live.ex:160
@@ -3277,7 +3277,7 @@ msgid "%{from} to %{to}"
 msgstr "%{from} bis %{to}"
 
 #: lib/texttile/i18n.ex:142
-#: lib/texttile_web/controllers/site_html.ex:350
+#: lib/texttile_web/controllers/site_html.ex:356
 #, elixir-autogen, elixir-format
 msgid "%{month} %{year}"
 msgstr "%{month} %{year}"
@@ -3401,17 +3401,17 @@ msgstr "gallery_descriptions benötigt eine ausdrücklich angegebene gallery-Lis
 msgid "Password: %{password}"
 msgstr "Passwort: %{password}"
 
-#: lib/texttile_web/controllers/site_html.ex:356
+#: lib/texttile_web/controllers/site_html.ex:362
 #, elixir-autogen, elixir-format
 msgid "Entries from %{period}."
 msgstr "Einträge aus %{period}."
 
-#: lib/texttile_web/controllers/site_html.ex:358
+#: lib/texttile_web/controllers/site_html.ex:364
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}” from %{period}."
 msgstr "Einträge zu „%{q}“ aus %{period}."
 
-#: lib/texttile_web/controllers/site_html.ex:357
+#: lib/texttile_web/controllers/site_html.ex:363
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}”."
 msgstr "Einträge zu „%{q}“."

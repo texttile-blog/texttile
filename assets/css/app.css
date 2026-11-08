@@ -919,6 +919,9 @@
     border-radius: 0;
     padding: 4px 0 2px;
     border-bottom: var(--edt-bb);
+    /* the rule is two pixels at rest as well, only its colour changes:
+       a wider rule on hover or focus would push the words below down */
+    border-bottom-width: 2px;
     box-shadow: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
@@ -1887,11 +1890,13 @@
 
   /* the reader gallery: the tile grid, and the lightbox behind it */
   .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  @media (min-width: 620px) { .gal { grid-template-columns: repeat(3, 1fr); } }
-  /* One fills the column and two halve it, at every width. Two classes
-     beat the grid above, so the count decides and the window does not. */
+  @media (min-width: 900px) { .gal { grid-template-columns: repeat(4, 1fr); } }
+  /* Four and more stand in the wide grid (see `gallery_wrap/1`). One
+     fills the reading column, two halve it and three third it, at every
+     width: two classes beat the grid above, so the count decides. */
   .gal.gal-1 { grid-template-columns: 1fr; }
   .gal.gal-2 { grid-template-columns: repeat(2, 1fr); }
+  .gal.gal-3 { grid-template-columns: repeat(3, 1fr); }
   /* the one picture is a picture, not a tile: it keeps its own shape,
      the way a picture in the text does */
   .gal.gal-1 a { aspect-ratio: auto; }

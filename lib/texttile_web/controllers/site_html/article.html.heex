@@ -76,7 +76,7 @@
          and answers the picture, or the film, itself. A video tile is
          its poster with a play mark; the lightbox plays the film from
          data-video. --%>
-    <figure :if={@gallery != []} class="wrap narrow mt-[36px]" id="gallery">
+    <figure :if={@gallery != []} class={[gallery_wrap(@gallery), "mt-[36px]"]} id="gallery">
       <div class={["gal", gallery_shape(@gallery)]} id="gal">
         <a
           :for={tile <- @gallery}
