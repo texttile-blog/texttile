@@ -14,6 +14,7 @@ defmodule TexttileWeb.SettingsLive do
   alias Texttile.Markdown
   alias Texttile.Newsletter
   alias Texttile.Settings
+  alias Texttile.Settings.Theme
   alias Texttile.Uploads
 
   @note_ms 4600
@@ -64,6 +65,8 @@ defmodule TexttileWeb.SettingsLive do
         progress: &handle_upload/3
       )
       |> refresh_settings()
+      # a theme stored before the contract may still carry such names
+      |> then(&assign(&1, :theme_ignored, Theme.ignored(&1.assigns.settings.theme_css)))
       |> refresh_users()
       |> refresh_storage()
       |> mark_saved(nil)
@@ -84,6 +87,7 @@ defmodule TexttileWeb.SettingsLive do
           socket
           |> assign(:errors, Map.delete(socket.assigns.errors, key_atom))
           |> refresh_settings()
+          |> theme_ignored(key_atom, get_in(params, ["settings", key]))
           # The storage report is not refreshed here: the broadcast
           # this save sends comes back to this tab as well, and
           # handle_info decides there whether the report has to be
@@ -170,6 +174,7 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply,
      socket
      |> refresh_settings()
+     |> assign(:theme_ignored, [])
      |> push_event("theme_saved", %{})
      |> mark_saved(gettext("The theme is the iris default again"))}
   end
@@ -414,10 +419,16 @@ defmodule TexttileWeb.SettingsLive do
     resolved_front_page(settings, pages) || List.first(pages)
   end
 
-  # The textarea always shows the theme the site wears: the stored one,
-  # or the iris default while nothing is stored.
-  defp shown_theme_css(""), do: Settings.default_theme_css()
-  defp shown_theme_css(css), do: css
+  # The textarea shows every token: the default sheet with the stored
+  # values in their place.
+  defp shown_theme_css(stored), do: Theme.merged(stored)
+
+  # What the last theme written here declared that a theme cannot set.
+  # It is not stored, so the note goes with the next save.
+  defp theme_ignored(socket, :theme_css, raw),
+    do: assign(socket, :theme_ignored, Theme.ignored(raw))
+
+  defp theme_ignored(socket, _key, _raw), do: socket
 
   # Where the mailed link points, and which site it says it is from.
   defp link_opts do
@@ -1260,7 +1271,9 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>{gettext("Theme")}</.section>
         <p class="note mb-[10px]">
-          {gettext("One CSS file styles the blog and this admin area.")}
+          {gettext(
+            "One CSS file colours the blog and this admin area. Only the values you change are kept, so the rest follows every update."
+          )}
         </p>
         <%!-- the theme is code, and most visits never touch it: the
              field opens on demand, and JS.toggle keeps it open across
@@ -1305,6 +1318,13 @@ defmodule TexttileWeb.SettingsLive do
               class="font-mono text-[12.5px] leading-[1.65]"
               phx-debounce="300"
             >{@settings_form[:theme_css].value}</textarea>
+            <%!-- a theme sets the tokens above and nothing else; what
+                 else it declares is not stored, and this says so --%>
+            <p :if={@theme_ignored != []} id="theme-ignored" class="note mt-2">
+              {gettext("Not a theme token, so left out: %{names}",
+                names: Enum.join(@theme_ignored, ", ")
+              )}
+            </p>
           </.form>
         </div>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">

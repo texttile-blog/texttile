@@ -832,9 +832,16 @@ defmodule Texttile.CommentsTest do
 
   describe "many comments at once" do
     # The confirmation mails of the comments a test has just posted.
+    # The admin mail leaves in a task of its own, so wait for it first:
+    # a mail still on its way would land after the flush.
     defp flush_mail do
+      settle_mail_tasks()
+      drain_mail()
+    end
+
+    defp drain_mail do
       receive do
-        {:email, _mail} -> flush_mail()
+        {:email, _mail} -> drain_mail()
       after
         0 -> :ok
       end
