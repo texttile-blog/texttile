@@ -15,6 +15,7 @@ import Gallery from "./gallery"
 import {SavedTicker} from "./saved_ticker"
 import {PlacePop} from "./place"
 import {initNavMenu} from "./nav_menu"
+import {initExportGet} from "./export_get"
 import {LocalMoment} from "./moment"
 import {FALLBACK_MS, forgetLongpollFallback, watchLiveness} from "./connection"
 
@@ -37,6 +38,7 @@ liveSocket.connect()
 
 watchLiveness(liveSocket)
 initNavMenu()
+initExportGet()
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

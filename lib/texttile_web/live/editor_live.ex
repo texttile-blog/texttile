@@ -1617,8 +1617,14 @@ defmodule TexttileWeb.EditorLive do
         <%!-- A copy to keep, or to carry to another site: the entry as
              a folder with its text and its files, in the format the
              import reads. It leaves the entry as it is. --%>
-        <a class="row" id="exportRow" href={~p"/admin/texts/#{@article}/export"} download>
-          {gettext("Export as a zip")}
+        <a
+          class="row"
+          id="exportRow"
+          href={~p"/admin/texts/#{@article}/export"}
+          download
+          data-export
+        >
+          <span data-export-label>{gettext("Export as a zip")}</span>
         </a>
 
         <div class="h-px bg-hair mx-0.5 my-[6px]"></div>

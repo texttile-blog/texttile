@@ -658,6 +658,17 @@
     transition: background-color .15s ease;
   }
   .card-get .get-i { position: relative; width: 15px; height: 15px; }
+  /* The answer to the click (export_get.js): the arrow drops into the
+     tray and a tick takes its place, once, and the mark stays in sight
+     while it says so. A failed export turns the circle the colour of a
+     warning. One transition each way, nothing that loops. */
+  .card-get .ar, .card-get .ok { transition: transform .3s ease, opacity .3s ease; }
+  .card-get .ok { opacity: 0; transform: translateY(-3px); }
+  .card-get.sent, .card-get.failed { opacity: 1; }
+  .card-get.sent .ar { opacity: 0; transform: translateY(4px); }
+  .card-get.sent .ok { opacity: 1; transform: none; transition-delay: .15s; }
+  .card-get.failed::before, .card-get.failed:hover::before { background: var(--tt-julia); }
+  @media (prefers-reduced-motion: reduce) { .card-get .ar, .card-get .ok { transition: none; } }
   .card-get:hover::before { background: rgb(var(--tt-shadow) / .78); }
   .card-slot:hover .card-get, .card-get:focus-visible { opacity: 1; }
   /* No hover to wait for, so it has to stand there; a grid of cards
@@ -1414,6 +1425,7 @@
     padding: 8px 10px; font-size: 13.5px; border-radius: var(--tt-radius);
     color: var(--tt-ink); text-decoration: none;
   }
+  .pop .row.failed { color: var(--tt-julia); }
   .pop .row:hover { background-color: var(--tt-field); }
   .pop .row.on { color: var(--tt-accent); font-weight: 600; }
   /* the one row that cannot be taken back: behind a hairline, at the

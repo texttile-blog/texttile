@@ -46,4 +46,48 @@ defmodule TexttileWeb.E2E.ExportFlowTest do
     |> open("/admin/texts")
     |> assert_has("#export-#{article.id}[href='/admin/texts/#{article.id}/export']")
   end
+
+  test "two marks clicked one after the other give two downloads, and both say so",
+       %{conn: conn, kb: kb} do
+    one = draft!(kb, "One", "Plain words.")
+    {:ok, one} = Texttile.Articles.update_settings(one, %{slug: "one"})
+    two = draft!(kb, "Two", "Plain words.")
+    {:ok, two} = Texttile.Articles.update_settings(two, %{slug: "two"})
+
+    session =
+      conn
+      |> sign_in()
+      |> open("/admin/texts")
+      |> click("#export-#{one.id}")
+      |> click("#export-#{two.id}")
+      |> assert_has("#export-#{one.id}.sent")
+      |> assert_has("#export-#{two.id}.sent")
+
+    # The second click does not cancel the first: each export runs in a
+    # frame of its own, so both arrive.
+    names =
+      for _ <- 1..2 do
+        PhoenixTest.Playwright.assert_download(session, &send(self(), {:name, &1.name}))
+        assert_received {:name, name}
+        name
+      end
+
+    assert Enum.sort(names) == ["one.zip", "two.zip"]
+  end
+
+  test "an export that fails says so on its mark", %{conn: conn, kb: kb} do
+    article = draft!(kb, "Gone soon", "Plain words.")
+
+    session =
+      conn
+      |> sign_in()
+      |> open("/admin/texts")
+
+    # The entry goes behind the page's back, so the export answers 404.
+    Texttile.Repo.delete!(article)
+
+    session
+    |> click("#export-#{article.id}")
+    |> assert_has("#export-#{article.id}.failed")
+  end
 end

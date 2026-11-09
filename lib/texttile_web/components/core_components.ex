@@ -398,6 +398,10 @@ defmodule TexttileWeb.CoreComponents do
   The mark of a way out of the site: an arrow into a tray. It stands
   where a control has no room for words, so whoever draws it says what
   it is, with a title or an aria-label.
+
+  It carries a tick as well, hidden: once the download has started, the
+  arrow drops into the tray and the tick takes its place (`.sent` on the
+  export mark, see `export_get.js`).
   """
   def down_icon(assigns) do
     ~H"""
@@ -411,8 +415,11 @@ defmodule TexttileWeb.CoreComponents do
       stroke-linejoin="round"
       aria-hidden="true"
     >
-      <path d="M8 2.5v7" />
-      <path d="M5 7l3 3 3-3" />
+      <g class="ar">
+        <path d="M8 2.5v7" />
+        <path d="M5 7l3 3 3-3" />
+      </g>
+      <path class="ok" d="M4.5 6.5l2.5 2.5 4.5-5" />
       <path d="M3 11.5v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1" />
     </svg>
     """

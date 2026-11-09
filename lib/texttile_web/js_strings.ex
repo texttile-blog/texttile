@@ -74,7 +74,10 @@ defmodule TexttileWeb.JsStrings do
     gettext_noop("Now press the copy key"),
     # saved_ticker.js: the saved stamp in the topbar, and the toast
     gettext_noop("Saved"),
-    gettext_noop("The last save was at %{time}.")
+    gettext_noop("The last save was at %{time}."),
+    # export_get.js: the answer of an export mark
+    gettext_noop("Download started"),
+    gettext_noop("The export failed. Try again.")
   ]
 
   @doc """

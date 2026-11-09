@@ -288,6 +288,7 @@ defmodule TexttileWeb.TextsLive do
               id={"export-#{article.id}"}
               href={~p"/admin/texts/#{article}/export"}
               download
+              data-export
               title={gettext("Export as a zip")}
               aria-label={gettext("Export %{title} as a zip", title: Articles.display_title(article))}
             >
