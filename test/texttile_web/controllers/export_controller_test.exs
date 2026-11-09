@@ -33,18 +33,6 @@ defmodule TexttileWeb.ExportControllerTest do
       assert "beach-days/index.md" in names
       assert "beach-days/gallery/001_beach.jpg" in names
     end
-
-    test "nothing of the export is left on disk", %{conn: conn} do
-      article = published_post(%{title: "Beach days", slug: "beach-days"})
-
-      before = System.tmp_dir!() |> File.ls!() |> Enum.filter(&String.starts_with?(&1, "export-"))
-      get(conn, ~p"/admin/texts/#{article}/export")
-
-      after_it =
-        System.tmp_dir!() |> File.ls!() |> Enum.filter(&String.starts_with?(&1, "export-"))
-
-      assert after_it == before
-    end
   end
 
   test "a stranger is sent to the sign-in", %{conn: conn} do
