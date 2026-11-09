@@ -14,6 +14,17 @@ defmodule TexttileWeb.EditorLiveTest do
     article
   end
 
+  # Typing in the address field, which saves nothing on its own.
+  defp type_slug(view, slug) do
+    view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: slug})
+  end
+
+  # Typing an address and pressing its button.
+  defp set_slug(view, slug) do
+    type_slug(view, slug)
+    view |> element("#artSettings") |> render_submit(%{slug: slug})
+  end
+
   # Save version lives behind the chevron of the one control, so every
   # click on it opens the menu first.
   defp save_version(view) do
@@ -350,7 +361,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
       # a slug is all it takes: from then on the door is the address the
       # entry will wear, and the site serves it to whoever is signed in
-      view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "harbour"})
+      set_slug(view, "harbour")
       article = Articles.get_article!(article.id)
 
       assert has_element?(view, ~s(a#viewRow[target="_blank"]))
@@ -430,7 +441,8 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#slugHint", "the old address leads here")
       refute has_element?(view, "#slugHint", "breaks old links")
 
-      view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: "the-harbour"})
+      set_slug(view, "the-harbour")
+      view |> element("#dialog-ok") |> render_click()
 
       assert has_element?(view, "#oldAddresses", "/2026/08/08/doors")
 
@@ -441,7 +453,7 @@ defmodule TexttileWeb.EditorLiveTest do
   end
 
   describe "article settings" do
-    test "tags and slug save on change", %{conn: conn, user: user} do
+    test "tags save on change", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
@@ -450,12 +462,49 @@ defmodule TexttileWeb.EditorLiveTest do
       |> render_change(%{_target: ["tags"], tags: "travel, doors"})
 
       assert Articles.get_article!(article.id).tags == "travel, doors"
+    end
 
-      view
-      |> element("#artSettings")
-      |> render_change(%{_target: ["slug"], slug: "doors-of-vilnius"})
+    # Every pause in typing used to save the address, and on a live
+    # entry every saved address left an old one behind.
+    test "the address of a draft waits for its button", %{conn: conn, user: user} do
+      article = draft(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+      refute has_element?(view, "#slugSet")
 
+      type_slug(view, "doors-of-vil")
+      assert Articles.get_article!(article.id).slug == nil
+      assert has_element?(view, "#slugSet", "Change address")
+
+      # Cancel gives the saved address back and the button goes
+      view |> element("#slugReset") |> render_click()
+      refute has_element?(view, "#slugSet")
+      refute has_element?(view, "#edSlug[value='doors-of-vil']")
+
+      # a draft has no readers to lose, so it saves without a question
+      set_slug(view, "doors-of-vilnius")
+      refute has_element?(view, "#dialog")
       assert Articles.get_article!(article.id).slug == "doors-of-vilnius"
+      refute has_element?(view, "#slugSet")
+    end
+
+    test "the address of a live entry moves only after a question", %{conn: conn, user: user} do
+      {:ok, article} = draft(user) |> Articles.publish(user)
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
+
+      set_slug(view, "the-harbour")
+      assert has_element?(view, "#dialog", "/the-harbour")
+      assert Articles.get_article!(article.id).slug == "doors"
+
+      # Cancel keeps the address and what was typed
+      view |> element("#dialog-cancel") |> render_click()
+      assert Articles.get_article!(article.id).slug == "doors"
+      assert has_element?(view, "#slugSet")
+
+      set_slug(view, "the-harbour")
+      view |> element("#dialog-ok") |> render_click()
+      assert Articles.get_article!(article.id).slug == "the-harbour"
+      assert has_element?(view, "#oldAddresses", "/doors")
+      refute has_element?(view, "#slugSet")
     end
 
     test "a page hides the tags field and never emails", %{conn: conn, user: user} do
@@ -539,12 +588,10 @@ defmodule TexttileWeb.EditorLiveTest do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      html =
-        view
-        |> element("#artSettings")
-        |> render_change(%{_target: ["slug"], slug: "admin"})
+      html = set_slug(view, "admin")
 
       assert html =~ "That address belongs to the site itself"
+      refute has_element?(view, "#dialog")
       assert Articles.get_article!(article.id).slug == nil
     end
 

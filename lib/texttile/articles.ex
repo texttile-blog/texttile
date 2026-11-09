@@ -519,6 +519,14 @@ defmodule Texttile.Articles do
     end
   end
 
+  @doc """
+  What `update_settings/2` would store, without storing it: the
+  editor shows a moved address before it asks to move it.
+  """
+  def change_settings(%Article{} = article, attrs) do
+    Article.settings_changeset(article, attrs)
+  end
+
   @doc "One article setting changed. Atomic, last write wins."
   def update_settings(%Article{} = article, attrs) do
     with {:ok, moved} <- article |> Article.settings_changeset(attrs) |> Repo.update() do
