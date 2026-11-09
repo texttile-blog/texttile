@@ -2266,7 +2266,31 @@ defmodule TexttileWeb.EditorLive do
               <span class="font-serif text-[18px] font-semibold">{gettext("Entry settings")}</span>
             </div>
 
-            <div class="drow pt-0.5">
+            <%!-- every picture of the entry, the tiles and the ones in
+                 the words. An entry without any picture has nothing to
+                 choose, so the row is not there. --%>
+            <div :if={@preview_candidates != []} class="drow pt-0.5" id="previewRow">
+              <span class="lab">{gettext("Preview image")}</span>
+              <span class="val">
+                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
+                  <button
+                    :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
+                    type="button"
+                    class={["cover-opt", @effective_preview == path && "on"]}
+                    style={tile_bg((@media[path] && @media[path].still) || path)}
+                    phx-click="set_preview"
+                    phx-value-path={path}
+                    aria-label={gettext("Use image %{index} as the preview image", index: index)}
+                  >
+                  </button>
+                </div>
+                <div class="hint">
+                  {gettext("Used in the entries grid, on the front page and in link previews.")}
+                </div>
+              </span>
+            </div>
+
+            <div class={["drow", if(@preview_candidates == [], do: "pt-0.5", else: "gtop")]}>
               <span class="lab">{gettext("Address")}</span>
               <span class="val">
                 <%!-- the field holds only what can be edited; the whole
@@ -2366,41 +2390,6 @@ defmodule TexttileWeb.EditorLive do
               <span class="val">
                 <input type="date" id="edDate" name="publish_date" value={@article.publish_date} />
                 <div class="hint" id="edDateHint">{date_hint(@article)}</div>
-              </span>
-            </div>
-
-            <%!-- With only tiles to choose from, the tiles above are the
-                 picker: the one marked preview is the choice, and the
-                 lightbox of any other one changes it. The row is for
-                 pictures in the words, which have no tile of their own; an
-                 entry without any picture has nothing to choose. --%>
-            <div
-              :if={
-                !Enum.all?(
-                  @preview_candidates,
-                  &(&1 in Enum.map(@gallery, fn image -> image.path end))
-                )
-              }
-              class="drow gtop"
-              id="previewRow"
-            >
-              <span class="lab">{gettext("Preview image")}</span>
-              <span class="val">
-                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
-                  <button
-                    :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
-                    type="button"
-                    class={["cover-opt", @effective_preview == path && "on"]}
-                    style={tile_bg((@media[path] && @media[path].still) || path)}
-                    phx-click="set_preview"
-                    phx-value-path={path}
-                    aria-label={gettext("Use image %{index} as the preview image", index: index)}
-                  >
-                  </button>
-                </div>
-                <div class="hint">
-                  {gettext("Used in the entries grid, on the front page and in link previews.")}
-                </div>
               </span>
             </div>
 
