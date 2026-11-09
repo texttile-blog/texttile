@@ -13,14 +13,27 @@ defmodule Texttile.ExportTest do
   alias Texttile.Import.Frontmatter
   alias Texttile.Uploads
 
-  # The zip as a map of name to content, which is what every test here
-  # asks about.
-  defp export!(article) do
+  # The streamed zip written to a file in `dir`, the way a browser
+  # saves it.
+  defp zip!(article, dir) do
+    {:ok, size, stream} = Export.zip(article)
+    path = Path.join(dir, Export.zip_name(article))
+    File.write!(path, Enum.to_list(stream))
+    assert File.stat!(path).size == size
+    path
+  end
+
+  defp tmp_dir! do
     dir = Path.join(System.tmp_dir!(), "export-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)
     on_exit(fn -> File.rm_rf!(dir) end)
+    dir
+  end
 
-    {:ok, path} = Export.write_zip(article, dir)
+  # The zip as a map of name to content, which is what every test here
+  # asks about.
+  defp export!(article) do
+    path = zip!(article, tmp_dir!())
     {:ok, files} = :zip.unzip(String.to_charlist(path), [:memory])
 
     Map.new(files, fn {name, content} -> {List.to_string(name), content} end)
@@ -47,11 +60,8 @@ defmodule Texttile.ExportTest do
   # aside so the import has to build a new one instead of updating this
   # one, and answer the entry the import built.
   defp round_trip!(article, user, aside) do
-    dir = Path.join(System.tmp_dir!(), "roundtrip-#{System.unique_integer([:positive])}")
-    File.mkdir_p!(dir)
-    on_exit(fn -> File.rm_rf!(dir) end)
-
-    {:ok, zip} = Export.write_zip(article, dir)
+    dir = tmp_dir!()
+    zip = zip!(article, dir)
     {:ok, _stepped_aside} = Articles.update_settings(article, %{slug: aside})
 
     unpacked = Path.join(dir, "unpacked")
@@ -319,6 +329,28 @@ defmodule Texttile.ExportTest do
       {_entries, body} = index!(export!(article))
 
       assert body =~ "![far](https://example.org/far.png)"
+    end
+  end
+
+  describe "the stream" do
+    test "a tile deleted after the zip began still travels whole" do
+      article = published_post(%{title: "Beach days", slug: "beach-days"})
+      image = tile!(article, "beach.jpg")
+      original = File.read!(Uploads.absolute(image.path))
+
+      {:ok, _size, stream} = Export.zip(article)
+      File.rm!(Uploads.absolute(image.path))
+      path = Path.join(tmp_dir!(), "late.zip")
+      File.write!(path, Enum.to_list(stream))
+
+      {:ok, files} = :zip.unzip(String.to_charlist(path), [:memory])
+      files = Map.new(files, fn {name, content} -> {List.to_string(name), content} end)
+      assert files["beach-days/gallery/001_beach.jpg"] == original
+    end
+
+    test "a bundle larger than a zip holds is refused before a byte goes out" do
+      refute Export.Zip.fits?([{"film.mp4", {nil, 0x100000000}}])
+      assert Export.Zip.fits?([{"film.mp4", {nil, 500_000_000}}])
     end
   end
 

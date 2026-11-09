@@ -4132,3 +4132,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Signed in as %{name}"
 msgstr ""
+
+#: lib/texttile_web/controllers/export_controller.ex:45
+#, elixir-autogen, elixir-format
+msgid "This entry is larger than 4 GB, more than one zip can hold."
+msgstr ""
