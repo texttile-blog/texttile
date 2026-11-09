@@ -41,6 +41,9 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:tab, "text")
       |> assign(:state_menu, false)
       |> assign(:dialog, nil)
+      # What is typed in the address field and not saved yet: nil
+      # while the field shows the saved address.
+      |> assign(:slug_draft, nil)
       |> assign(:saved_at, DateTime.to_unix(article.updated_at, :millisecond))
       |> assign(:saved_note, nil)
       |> assign(:saved_until, 0)
@@ -379,8 +382,14 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
+  # The address saves on its button, not on a pause in typing: every
+  # address a live entry leaves behind stays on as an old one.
+  def handle_event("settings_changed", %{"_target" => ["slug" | _]} = params, socket) do
+    {:noreply, assign(socket, :slug_draft, params["slug"])}
+  end
+
   def handle_event("settings_changed", %{"_target" => [field | _]} = params, socket)
-      when field in ~w(type tags slug allow_comments notify_on_publish) do
+      when field in ~w(type tags allow_comments notify_on_publish) do
     %{article: article} = socket.assigns
 
     case Articles.update_settings(article, Map.take(params, [field])) do
@@ -395,6 +404,54 @@ defmodule TexttileWeb.EditorLive do
   end
 
   def handle_event("settings_changed", _params, socket), do: {:noreply, socket}
+
+  # The button beside the address, and Enter in any field of the form.
+  # A draft has no readers, so its address moves at once. A live entry
+  # asks first, because its old address stays on as a redirect.
+  def handle_event("ask_slug", %{"slug" => slug}, socket) do
+    %{article: article} = socket.assigns
+    changeset = Articles.change_settings(article, %{slug: slug})
+    moved = Ecto.Changeset.apply_changes(changeset)
+
+    cond do
+      moved.slug == article.slug ->
+        {:noreply, assign(socket, :slug_draft, nil)}
+
+      not changeset.valid? ->
+        {:noreply, mark_saved(socket, slug_error(changeset))}
+
+      Visibility.live?(article) ->
+        {:noreply,
+         socket
+         |> assign(:slug_draft, slug)
+         |> assign(:dialog, %{
+           id: "slug",
+           title: gettext("Change the address?"),
+           body: slug_move_lines(article, moved),
+           ok: gettext("Change address"),
+           event: "confirm_slug"
+         })}
+
+      true ->
+        {:noreply, save_slug(socket, slug)}
+    end
+  end
+
+  def handle_event("ask_slug", _params, socket), do: {:noreply, socket}
+
+  def handle_event("confirm_slug", _params, socket) do
+    socket = assign(socket, :dialog, nil)
+
+    case socket.assigns.slug_draft do
+      nil -> {:noreply, socket}
+      slug -> {:noreply, save_slug(socket, slug)}
+    end
+  end
+
+  # Cancel beside the address: the field shows the saved one again.
+  def handle_event("reset_slug", _params, socket) do
+    {:noreply, assign(socket, :slug_draft, nil)}
+  end
 
   # The Reset beside the date label: the same thing as emptying the
   # field, which a date input makes hard by hand.
@@ -1241,6 +1298,40 @@ defmodule TexttileWeb.EditorLive do
     |> assign(:editing, editing)
     |> push_event("set_readonly", %{readOnly: Editing.read_only?(editing)})
     |> announce_activity()
+  end
+
+  defp save_slug(socket, slug) do
+    case Articles.update_settings(socket.assigns.article, %{"slug" => slug}) do
+      {:ok, article} ->
+        socket
+        |> assign(:slug_draft, nil)
+        |> assign_article(article)
+        |> load_redirects()
+        |> mark_saved()
+
+      {:error, changeset} ->
+        mark_saved(socket, slug_error(changeset))
+    end
+  end
+
+  # What the question before a move says: where the entry goes, and
+  # that a link to where it was still arrives.
+  defp slug_move_lines(before, moved) do
+    host = TexttileWeb.Endpoint.host()
+
+    to =
+      case Articles.public_path(moved) do
+        nil -> gettext("From now on the entry has no address of its own.")
+        path -> gettext("From now on the entry is at %{address}.", address: host <> path)
+      end
+
+    from =
+      case Articles.public_path(before) do
+        nil -> []
+        path -> [gettext("A link to %{address} still leads here.", address: host <> path)]
+      end
+
+    [to | from]
   end
 
   # The two ways an address can be refused, in the words of the note.
@@ -2258,7 +2349,7 @@ defmodule TexttileWeb.EditorLive do
             id="artSettings"
             class="mt-[34px]"
             phx-change="settings_changed"
-            phx-submit="settings_changed"
+            phx-submit="ask_slug"
             phx-auto-recover="recover_settings"
           >
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
@@ -2300,12 +2391,22 @@ defmodule TexttileWeb.EditorLive do
                     type="text"
                     id="edSlug"
                     name="slug"
-                    value={@article.slug}
+                    value={@slug_draft || @article.slug}
                     spellcheck="false"
                     autocapitalize="off"
                     phx-debounce="300"
                   />
                 </span>
+                <%!-- until the field differs from the saved address there
+                     is nothing to save, so the buttons wait --%>
+                <div :if={slug_moved?(@slug_draft, @article)} class="flex gap-2 mt-2">
+                  <button type="submit" class="btn sm" id="slugSet">
+                    {gettext("Change address")}
+                  </button>
+                  <button type="button" class="btn quiet sm" id="slugReset" phx-click="reset_slug">
+                    {gettext("Cancel")}
+                  </button>
+                </div>
                 <%!-- the field already shows the address; the hint says
                      what it means, and carries the live one for whoever
                      reads the page by machine --%>
@@ -3149,6 +3250,9 @@ defmodule TexttileWeb.EditorLive do
   defp more_label("log"), do: gettext("Log")
   defp more_label("versions"), do: gettext("Versions")
   defp more_label(_tab), do: gettext("More")
+
+  defp slug_moved?(nil, _article), do: false
+  defp slug_moved?(draft, article), do: draft != (article.slug || "")
 
   defp slug_hint(%{status: "draft"}), do: gettext("Free to change while the entry is a draft.")
 

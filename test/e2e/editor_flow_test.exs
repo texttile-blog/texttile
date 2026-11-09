@@ -65,12 +65,17 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click("#edSlug")
         |> press("#edSlug", "ControlOrMeta+a")
         |> press("#edSlug", "Backspace")
+        |> click("#slugSet")
+        |> assert_has("#dialog", text: "no address of its own")
+        |> click("#dialog-ok")
 
       eventually(fn -> Articles.get_article!(article.id).slug == nil end)
 
       conn
       |> open_editor(article.id)
       |> type("#edSlug", "restored-doors")
+      |> click("#slugSet")
+      |> click("#dialog-ok")
       |> assert_has(~s(#slugHint[data-live$="/restored-doors"]))
 
       assert Articles.get_article!(article.id).slug == "restored-doors"

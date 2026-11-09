@@ -34,6 +34,13 @@ defmodule TexttileWeb.EditorAddressTest do
     end
   end
 
+  # A live entry moves its address on the button and the question after it.
+  defp move_slug(view, slug) do
+    view |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: slug})
+    view |> element("#artSettings") |> render_submit(%{slug: slug})
+    view |> element("#dialog-ok") |> render_click()
+  end
+
   test "clearing and restoring a live address keeps both editors usable", %{
     conn: conn,
     user: user
@@ -50,7 +57,7 @@ defmodule TexttileWeb.EditorAddressTest do
     {:ok, watcher, _html} = live(watcher_conn, ~p"/admin/texts/#{article}")
     assert has_element?(writer, "#slugHint[data-live]")
 
-    writer |> element("#artSettings") |> render_change(%{_target: ["slug"], slug: ""})
+    move_slug(writer, "")
 
     assert Articles.get_article!(article.id).slug == nil
     refute has_element?(writer, "#slugHint[data-live]")
@@ -58,9 +65,7 @@ defmodule TexttileWeb.EditorAddressTest do
     {:ok, reloaded, _html} = live(conn, ~p"/admin/texts/#{article}")
     assert has_element?(reloaded, "#edSlug")
 
-    writer
-    |> element("#artSettings")
-    |> render_change(%{_target: ["slug"], slug: "restored-doors"})
+    move_slug(writer, "restored-doors")
 
     assert Articles.get_article!(article.id).slug == "restored-doors"
     assert has_element?(writer, ~s(#slugHint[data-live$="/restored-doors"]))
