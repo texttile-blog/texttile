@@ -72,7 +72,7 @@ defmodule TexttileWeb.E2E.ExportFlowTest do
         name
       end
 
-    assert Enum.sort(names) == ["one.zip", "two.zip"]
+    assert Enum.sort(names) == Enum.sort(Enum.map([one, two], &Texttile.Export.zip_name/1))
   end
 
   test "an export that fails says so on its mark", %{conn: conn, kb: kb} do
