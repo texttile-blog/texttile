@@ -28,8 +28,15 @@ defmodule Texttile.Export do
 
   @uploads_prefix "/uploads/"
 
-  @doc "The name the download carries."
-  def zip_name(%Article{} = article), do: folder(article) <> ".zip"
+  @doc """
+  The name the download carries: the day of the entry, its address and
+  its number, so a folder of downloads sorts by day and two entries
+  never share a name. A draft without a day takes the day it was made.
+  """
+  def zip_name(%Article{} = article) do
+    day = article.publish_date || DateTime.to_date(article.inserted_at)
+    "#{Date.to_iso8601(day)}_#{said(article.slug) || "entry"}_#{article.id}.zip"
+  end
 
   @doc """
   The bundle of one entry as a zip, answered as `{:ok, size, stream}`:

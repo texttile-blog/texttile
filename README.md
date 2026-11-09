@@ -567,10 +567,14 @@ not: a film is large, and the import does not carry one over the network.
 ## Export one entry
 
 Every entry hands out a copy of itself as a zip. It stands in the menu at the
-right of the editor bar, and on every card of the entry list.
+right of the editor bar, and on every card of the entry list. Click several
+cards, and the downloads run side by side.
+
+The zip is named by the day of the entry, its address and its number. A draft
+without a day takes the day it was made.
 
 ```
-beach-days.zip
+2019-06-02_beach-days_42.zip
 └── beach-days/
     ├── index.md
     └── gallery/

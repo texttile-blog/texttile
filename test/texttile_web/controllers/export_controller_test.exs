@@ -8,7 +8,7 @@ defmodule TexttileWeb.ExportControllerTest do
   describe "signed in" do
     setup :register_and_log_in_user
 
-    test "answers with the zip of the entry, named after its address", %{conn: conn} do
+    test "answers with the zip of the entry, under the name of the entry", %{conn: conn} do
       article = published_post(%{title: "Beach days", slug: "beach-days"})
       {:ok, _tile} = Gallery.add_file(article, jpg_fixture(), "beach.jpg")
 
@@ -17,7 +17,7 @@ defmodule TexttileWeb.ExportControllerTest do
       assert response_content_type(conn, :zip) =~ "application/zip"
 
       assert get_resp_header(conn, "content-disposition") == [
-               ~s(attachment; filename="beach-days.zip")
+               ~s(attachment; filename="#{Texttile.Export.zip_name(article)}")
              ]
 
       body = response(conn, 200)

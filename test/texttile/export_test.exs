@@ -94,7 +94,13 @@ defmodule Texttile.ExportTest do
       files = export!(article)
 
       assert Map.has_key?(files, "beach-days/index.md")
-      assert Export.zip_name(article) == "beach-days.zip"
+    end
+
+    test "the zip is named by the day of the entry, its address and its number" do
+      article =
+        published_post(%{title: "Beach days", slug: "beach-days", publish_date: ~D[2019-06-02]})
+
+      assert Export.zip_name(article) == "2019-06-02_beach-days_#{article.id}.zip"
     end
 
     test "an entry without an address falls back to its number" do
@@ -103,7 +109,9 @@ defmodule Texttile.ExportTest do
       files = export!(article)
 
       assert Map.has_key?(files, "entry-#{article.id}/index.md")
-      assert Export.zip_name(article) == "entry-#{article.id}.zip"
+      # a draft has no day of its own yet, so it takes the day it was made
+      day = Date.to_iso8601(DateTime.to_date(article.inserted_at))
+      assert Export.zip_name(article) == "#{day}_entry_#{article.id}.zip"
     end
   end
 
