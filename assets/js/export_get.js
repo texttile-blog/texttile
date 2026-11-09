@@ -16,8 +16,6 @@
 import {t} from "./i18n"
 
 const SHOWN_MS = 2500
-// A frame is kept long enough for its download to be handed over.
-const FRAME_MS = 60_000
 
 export function initExportGet(doc = document) {
   doc.addEventListener("click", event => {
@@ -40,13 +38,17 @@ function start(doc, mark) {
 
   // A download never loads a document into the frame. Whatever does
   // load (a 404, the sign-in page, a 413) is the export failing.
+  //
+  // A frame that is downloading stays: taking it away could cancel a
+  // long download in some browser, and an empty frame costs nothing.
   frame.addEventListener("load", () => {
     const text = frame.contentDocument?.body?.textContent?.trim()
-    if (text) show(mark, "failed", t("The export failed. Try again."))
+    if (!text) return
+    show(mark, "failed", t("The export failed. Try again."))
+    frame.remove()
   })
 
   doc.body.appendChild(frame)
-  setTimeout(() => frame.remove(), FRAME_MS)
 
   show(mark, "sent", t("Download started"))
 }
