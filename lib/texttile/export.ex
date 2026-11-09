@@ -22,6 +22,7 @@ defmodule Texttile.Export do
   alias Texttile.Articles.Article
   alias Texttile.Articles.Body
   alias Texttile.Articles.Reading
+  alias Texttile.Export.Zip
   alias Texttile.Gallery
   alias Texttile.Uploads
 
@@ -31,49 +32,51 @@ defmodule Texttile.Export do
   def zip_name(%Article{} = article), do: folder(article) <> ".zip"
 
   @doc """
-  Writes the bundle of one entry as a zip below `dir` and answers
-  `{:ok, path}`. The folder it unpacks to is named after the address of
-  the entry.
+  The bundle of one entry as a zip, answered as `{:ok, size, stream}`:
+  the exact size in bytes, and a stream of binaries to send as they
+  come. The folder it unpacks to is named after the address of the
+  entry.
 
-  The files are copied into `dir` on the way, so nothing bigger than
-  one picture stands in memory. `dir` belongs to the caller, who is the
-  one that takes it away again.
+  Every file is opened here, before the first byte goes out, and
+  `index.md` names only the files that opened. A file that goes after
+  that, when an undo window closes or another admin deletes a tile, is
+  still read to the end from the open handle. The stream closes the
+  files when it ends or is halted.
+
+  A bundle larger than a zip holds answers `{:error, :too_large}`.
   """
-  def write_zip(%Article{} = article, dir) do
+  def zip(%Article{} = article) do
     # The bundle is a reader's copy: it hands on what the site says,
     # never the working copy.
     article = Reading.text(article, :reader)
     folder = folder(article)
-    carried = carried(article)
 
-    stage = Path.join(dir, folder)
-    File.mkdir_p!(stage)
+    # A file can go between the reading of the gallery and the opening:
+    # that is not an error here, it is one file less, the way a
+    # reference whose file has gone is one file less.
+    carried = article |> carried() |> Enum.flat_map(&opened/1)
 
-    # A file can go between the reading of the gallery and the copy: an
-    # undo window closes, another admin deletes a tile. That is not an
-    # error here, it is one file less, the way a reference whose file
-    # has gone is one file less. The bundle is written from what
-    # actually arrived.
-    carried = Enum.filter(carried, &copied?(&1, stage))
+    entries = [
+      {"#{folder}/index.md", index_md(article, carried)}
+      | Enum.map(carried, &{"#{folder}/#{&1.name}", {&1.io, &1.size}})
+    ]
 
-    File.write!(Path.join(stage, "index.md"), index_md(article, carried))
-
-    names = Enum.map(["index.md" | Enum.map(carried, & &1.name)], &~c"#{folder}/#{&1}")
-    path = Path.join(dir, zip_name(article))
-
-    case :zip.create(String.to_charlist(path), names, cwd: String.to_charlist(dir)) do
-      {:ok, _} -> {:ok, path}
-      {:error, reason} -> {:error, "the zip could not be written: #{inspect(reason)}"}
+    if Zip.fits?(entries) do
+      {:ok, Zip.size(entries), Zip.stream(entries)}
+    else
+      Zip.close(entries)
+      {:error, :too_large}
     end
   end
 
-  defp copied?(file, stage) do
-    target = Path.join(stage, file.name)
-    File.mkdir_p!(Path.dirname(target))
+  defp opened(file) do
+    case File.open(Uploads.absolute(file.path), [:read, :raw, :binary]) do
+      {:ok, io} ->
+        {:ok, size} = :file.position(io, :eof)
+        [Map.merge(file, %{io: io, size: size})]
 
-    case File.cp(Uploads.absolute(file.path), target) do
-      :ok -> true
-      {:error, _gone} -> false
+      {:error, _gone} ->
+        []
     end
   end
 

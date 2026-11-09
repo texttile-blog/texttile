@@ -20,8 +20,11 @@ defmodule TexttileWeb.ExportControllerTest do
                ~s(attachment; filename="beach-days.zip")
              ]
 
+      body = response(conn, 200)
+      assert get_resp_header(conn, "content-length") == [Integer.to_string(byte_size(body))]
+
       zip = Path.join(System.tmp_dir!(), "answer-#{System.unique_integer([:positive])}.zip")
-      File.write!(zip, response(conn, 200))
+      File.write!(zip, body)
       on_exit(fn -> File.rm_rf!(zip) end)
 
       {:ok, files} = :zip.unzip(String.to_charlist(zip), [:memory])
@@ -29,18 +32,6 @@ defmodule TexttileWeb.ExportControllerTest do
 
       assert "beach-days/index.md" in names
       assert "beach-days/gallery/001_beach.jpg" in names
-    end
-
-    test "nothing of the export is left on disk", %{conn: conn} do
-      article = published_post(%{title: "Beach days", slug: "beach-days"})
-
-      before = System.tmp_dir!() |> File.ls!() |> Enum.filter(&String.starts_with?(&1, "export-"))
-      get(conn, ~p"/admin/texts/#{article}/export")
-
-      after_it =
-        System.tmp_dir!() |> File.ls!() |> Enum.filter(&String.starts_with?(&1, "export-"))
-
-      assert after_it == before
     end
   end
 
