@@ -466,6 +466,27 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "hotpink"
     end
 
+    test "a save keeps the one change and names what a theme cannot set", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      sheet =
+        Texttile.Settings.Theme.default()
+        |> String.replace(~r/--tt-accent:\s*[^;]+;/, "--tt-accent: hotpink;")
+        |> Kernel.<>(":root { --fld-bg: transparent; }")
+
+      view
+      |> form("#theme-form", settings: %{theme_css: sheet})
+      |> render_change(%{"_target" => ["settings", "theme_css"]})
+
+      assert Settings.get(:theme_css) == ":root {\n  --tt-accent: hotpink;\n}\n"
+      assert view |> element("#theme-ignored") |> render() =~ "--fld-bg"
+
+      # the field still lists every token, the changed one in its place
+      html = render(view)
+      assert html =~ "--tt-accent:      hotpink;"
+      assert html =~ "--tt-ink:"
+    end
+
     test "Reset puts the iris default back", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 

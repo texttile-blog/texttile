@@ -1,8 +1,9 @@
 defmodule TexttileWeb.ThemeController do
   @moduledoc """
   The one theme stylesheet, loaded after app.css on every page: the
-  stored theme.css from Settings, or the iris default while nothing is
-  stored. The admin area and the public site both wear it.
+  tokens the stored theme changes, and nothing while none is stored
+  (app.css carries the iris default). The admin area and the public
+  site both wear it.
   """
   use TexttileWeb, :controller
 

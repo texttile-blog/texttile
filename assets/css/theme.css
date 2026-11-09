@@ -1,6 +1,7 @@
 /* Texttile theme: iris.
-   Every colour, line and corner of the blog and the admin area is one
-   of these tokens. Change a value here and both faces follow. */
+   Every colour and corner of the blog and the admin area is one of
+   these tokens. Change a value here and both faces follow. Only the
+   values you change are kept; every other one follows the updates. */
 :root {
   color-scheme: light;
 
@@ -56,26 +57,8 @@
   --tt-radius-img:  4px;
   --tt-tabw:        2px;
 
-  /* fields: a white box with a hairline, violet on focus */
-  --fld-bg:     var(--tt-paper);
-  /* a field's frame holds up on a phone in daylight */
-  --fld-bd:     1px solid #a59e94;
-  --fld-bb:     1px solid #a59e94;
-  --fld-r:      6px;
-  --fld-p:      7px 12px;
-  --fld-sh:     none;
-
-  --fld-bg-h:   var(--tt-paper);
-  --fld-bb-h:   1px solid #857e74;
-
-  --fld-bg-f:   var(--tt-paper);
-  --fld-bd-f:   1px solid var(--tt-accent);
-  --fld-bb-f:   1px solid var(--tt-accent);
-  --fld-sh-f:   0 0 0 3px var(--tt-accentwash);
-
-  /* the writing surface */
-  --edt-bb:     1px solid transparent;
-  --edb-sh:     none;
-  --edb-shf:    none;
-  --edb-pl:     6px;
+  /* the frame of a field, at rest and under the pointer. A field's
+     frame holds up on a phone in daylight. */
+  --tt-fieldline:      #a59e94;
+  --tt-fieldlinehover: #857e74;
 }

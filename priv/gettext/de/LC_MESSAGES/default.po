@@ -219,7 +219,7 @@ msgstr "%{day}. %{month} %{year}"
 msgid "%{day}: %{views}"
 msgstr "%{day}: %{views}"
 
-#: lib/texttile_web/live/settings_live.ex:346
+#: lib/texttile_web/live/settings_live.ex:351
 #, elixir-autogen, elixir-format
 msgid "%{mark} uploaded · %{file}"
 msgstr "%{mark} hochgeladen · %{file}"
@@ -351,7 +351,7 @@ msgstr "Ein Kommentar braucht ein paar Worte. Es wurde nichts gespeichert."
 msgid "A deleted account"
 msgstr "Ein gelöschtes Konto"
 
-#: lib/texttile_web/live/settings_live.ex:856
+#: lib/texttile_web/live/settings_live.ex:867
 #, elixir-autogen, elixir-format
 msgid "A fixed page"
 msgstr "Eine feste Seite"
@@ -363,23 +363,23 @@ msgstr "Aus einem ZIP mit Bündeln werden Einträge: ein Ordner pro Eintrag, mit
 
 #: lib/texttile_web/controllers/site_html.ex:151
 #: lib/texttile_web/controllers/site_html.ex:152
-#: lib/texttile_web/live/settings_live.ex:776
+#: lib/texttile_web/live/settings_live.ex:787
 #, elixir-autogen, elixir-format
 msgid "About"
 msgstr "Über"
 
 #: lib/texttile_web/controllers/site_html.ex:149
-#: lib/texttile_web/live/settings_live.ex:788
+#: lib/texttile_web/live/settings_live.ex:799
 #, elixir-autogen, elixir-format
 msgid "About this blog"
 msgstr "Über dieses Blog"
 
-#: lib/texttile_web/live/settings_live.ex:798
+#: lib/texttile_web/live/settings_live.ex:809
 #, elixir-autogen, elixir-format
 msgid "About this blog, Markdown"
 msgstr "Über dieses Blog, Markdown"
 
-#: lib/texttile_web/live/settings_live.ex:910
+#: lib/texttile_web/live/settings_live.ex:921
 #, elixir-autogen, elixir-format
 msgid "Access"
 msgstr "Zugang"
@@ -444,7 +444,7 @@ msgstr "Ein Import läuft. Lass ihn erst zu Ende laufen"
 msgid "Another browser"
 msgstr "Ein anderer Browser"
 
-#: lib/texttile_web/live/settings_live.ex:933
+#: lib/texttile_web/live/settings_live.ex:944
 #, elixir-autogen, elixir-format
 msgid "Anyone can read the blog."
 msgstr "Jede und jeder kann das Blog lesen."
@@ -509,7 +509,7 @@ msgid "Blog"
 msgstr "Blog"
 
 #: lib/texttile_web/live/editor_live.ex:2948
-#: lib/texttile_web/live/settings_live.ex:958
+#: lib/texttile_web/live/settings_live.ex:969
 #, elixir-autogen, elixir-format
 msgid "Blog password"
 msgstr "Blog-Passwort"
@@ -546,7 +546,7 @@ msgstr "Fett (Strg oder Cmd + B)"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: lib/texttile_web/live/settings_live.ex:965
+#: lib/texttile_web/live/settings_live.ex:976
 #, elixir-autogen, elixir-format
 msgid "Choose a password"
 msgstr "Wähle ein Passwort"
@@ -578,13 +578,13 @@ msgstr "Kommentar"
 #: lib/texttile_web/live/editor_live.ex:1853
 #: lib/texttile_web/live/editor_live.ex:2826
 #: lib/texttile_web/live/editor_live.ex:3248
-#: lib/texttile_web/live/settings_live.ex:975
+#: lib/texttile_web/live/settings_live.ex:986
 #: lib/texttile_web/live/stats_live.ex:240
 #, elixir-autogen, elixir-format
 msgid "Comments"
 msgstr "Kommentare"
 
-#: lib/texttile_web/live/settings_live.ex:517
+#: lib/texttile_web/live/settings_live.ex:528
 #, elixir-autogen, elixir-format
 msgid "Comments appear at once · no confirmation asked"
 msgstr "Kommentare erscheinen sofort · keine Bestätigung nötig"
@@ -602,7 +602,7 @@ msgstr "Bestätigt. Dein Kommentar steht jetzt unter dem Eintrag."
 
 #: lib/texttile_web/js_strings.ex:72
 #: lib/texttile_web/live/editor_live.ex:2925
-#: lib/texttile_web/live/settings_live.ex:1362
+#: lib/texttile_web/live/settings_live.ex:1382
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr "Kopieren"
@@ -639,7 +639,7 @@ msgstr "Dez"
 msgid "December"
 msgstr "Dezember"
 
-#: lib/texttile_web/live/settings_live.ex:728
+#: lib/texttile_web/live/settings_live.ex:739
 #, elixir-autogen, elixir-format
 msgid "Default: the Texttile mark"
 msgstr "Vorgabe: das Texttile-Zeichen"
@@ -648,7 +648,7 @@ msgstr "Vorgabe: das Texttile-Zeichen"
 #: lib/texttile_web/js_strings.ex:52
 #: lib/texttile_web/live/comments_live.ex:354
 #: lib/texttile_web/live/editor_live.ex:2461
-#: lib/texttile_web/live/settings_live.ex:1051
+#: lib/texttile_web/live/settings_live.ex:1062
 #: lib/texttile_web/live/tags_live.ex:181
 #, elixir-autogen, elixir-format
 msgid "Delete"
@@ -664,12 +664,12 @@ msgstr "\"%{title}\" löschen?"
 msgid "Delete %{file}"
 msgstr "%{file} löschen"
 
-#: lib/texttile_web/live/settings_live.ex:1484
+#: lib/texttile_web/live/settings_live.ex:1504
 #, elixir-autogen, elixir-format
 msgid "Delete the account"
 msgstr "Konto löschen"
 
-#: lib/texttile_web/live/settings_live.ex:1482
+#: lib/texttile_web/live/settings_live.ex:1502
 #, elixir-autogen, elixir-format
 msgid "Delete the account of %{name}?"
 msgstr "Das Konto von %{name} löschen?"
@@ -705,7 +705,7 @@ msgid "Delete this entry"
 msgstr "Diesen Eintrag löschen"
 
 #: lib/texttile_web/js_strings.ex:54
-#: lib/texttile_web/live/settings_live.ex:652
+#: lib/texttile_web/live/settings_live.ex:663
 #, elixir-autogen, elixir-format
 msgid "Description"
 msgstr "Beschreibung"
@@ -807,7 +807,7 @@ msgstr "Eintrag"
 msgid "Entry sections"
 msgstr "Bereiche des Eintrags"
 
-#: lib/texttile_web/live/settings_live.ex:520
+#: lib/texttile_web/live/settings_live.ex:531
 #, elixir-autogen, elixir-format
 msgid "Every new comment travels to everybody with an account here"
 msgstr "Jeder neue Kommentar geht an alle mit einem Konto hier"
@@ -822,8 +822,8 @@ msgstr "Jeder neue Eintrag von %{site} geht ab jetzt per Mail an %{email}. Jede 
 msgid "Everything that happened to this entry, newest first: your edits, the edits of every other admin, every handover of the entry, and every version anybody saved."
 msgstr "Alles, was mit diesem Eintrag geschehen ist, das Neueste zuerst: deine Änderungen, die aller anderen Admins, jede Übernahme des Eintrags und jede Version, die jemand gesichert hat."
 
-#: lib/texttile_web/live/settings_live.ex:361
-#: lib/texttile_web/live/settings_live.ex:746
+#: lib/texttile_web/live/settings_live.ex:366
+#: lib/texttile_web/live/settings_live.ex:757
 #, elixir-autogen, elixir-format
 msgid "Favicon"
 msgstr "Favicon"
@@ -864,7 +864,7 @@ msgstr "Formatierung"
 msgid "Free to change while the entry is a draft."
 msgstr "Frei änderbar, solange der Eintrag ein Entwurf ist."
 
-#: lib/texttile_web/live/settings_live.ex:823
+#: lib/texttile_web/live/settings_live.ex:834
 #, elixir-autogen, elixir-format
 msgid "Front page"
 msgstr "Startseite"
@@ -910,12 +910,12 @@ msgstr "Start"
 msgid "Image"
 msgstr "Bild"
 
-#: lib/texttile_web/live/settings_live.ex:268
+#: lib/texttile_web/live/settings_live.ex:273
 #, elixir-autogen, elixir-format
 msgid "Image cache cleared · variants regenerate on demand"
 msgstr "Bild-Cache geleert · Größen entstehen bei Bedarf neu"
 
-#: lib/texttile_web/live/settings_live.ex:1109
+#: lib/texttile_web/live/settings_live.ex:1120
 #, elixir-autogen, elixir-format
 msgid "Images"
 msgstr "Bilder"
@@ -923,7 +923,7 @@ msgstr "Bilder"
 #: lib/texttile_web/live/import_live.ex:20
 #: lib/texttile_web/live/import_live.ex:106
 #: lib/texttile_web/live/import_live.ex:114
-#: lib/texttile_web/live/settings_live.ex:1451
+#: lib/texttile_web/live/settings_live.ex:1471
 #, elixir-autogen, elixir-format
 msgid "Import"
 msgstr "Import"
@@ -988,12 +988,12 @@ msgstr "Jun"
 msgid "June"
 msgstr "Juni"
 
-#: lib/texttile_web/live/settings_live.ex:666
+#: lib/texttile_web/live/settings_live.ex:677
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr "Sprache"
 
-#: lib/texttile_web/live/settings_live.ex:835
+#: lib/texttile_web/live/settings_live.ex:846
 #, elixir-autogen, elixir-format
 msgid "Latest entries"
 msgstr "Neueste Einträge"
@@ -1043,13 +1043,13 @@ msgstr "Volle Größe wird geladen …"
 msgid "Log"
 msgstr "Protokoll"
 
-#: lib/texttile_web/live/settings_live.ex:360
-#: lib/texttile_web/live/settings_live.ex:704
+#: lib/texttile_web/live/settings_live.ex:365
+#: lib/texttile_web/live/settings_live.ex:715
 #, elixir-autogen, elixir-format
 msgid "Logo"
 msgstr "Logo"
 
-#: lib/texttile_web/live/settings_live.ex:689
+#: lib/texttile_web/live/settings_live.ex:700
 #, elixir-autogen, elixir-format
 msgid "Logo & favicon"
 msgstr "Logo und Favicon"
@@ -1152,12 +1152,12 @@ msgstr "Für diesen Eintrag ging keine Mail raus. Die Mail geht nur in dem Momen
 msgid "No entries yet. New entry starts the first one."
 msgstr "Noch keine Einträge. Neuer Eintrag beginnt den ersten."
 
-#: lib/texttile_web/live/settings_live.ex:522
+#: lib/texttile_web/live/settings_live.ex:533
 #, elixir-autogen, elixir-format
 msgid "No mail goes out for a comment"
 msgstr "Für einen Kommentar geht keine Mail raus"
 
-#: lib/texttile_web/live/settings_live.ex:598
+#: lib/texttile_web/live/settings_live.ex:609
 #, elixir-autogen, elixir-format
 msgid "No mail goes out for a comment. New comments stand on the Comments screen and in the entry they belong to."
 msgstr "Für einen Kommentar geht keine Mail raus. Neue Kommentare stehen auf der Seite Kommentare und in dem Eintrag, zu dem sie gehören."
@@ -1192,7 +1192,7 @@ msgstr "Noch steht niemand auf der Liste. Wer sich auf der Site einträgt, tauch
 msgid "Not found"
 msgstr "Nicht gefunden"
 
-#: lib/texttile_web/live/settings_live.ex:353
+#: lib/texttile_web/live/settings_live.ex:358
 #, elixir-autogen, elixir-format
 msgid "Not stored · %{message}"
 msgstr "Nicht gespeichert · %{message}"
@@ -1286,7 +1286,7 @@ msgstr "Ein Klick, und %{email} bekommt keine Mail mehr von %{site}."
 msgid "One mail is on its way to %{email}. Follow the link in it, and every new entry of %{site} lands in your mailbox."
 msgstr "Eine Mail ist unterwegs zu %{email}. Folge dem Link darin, und jeder neue Eintrag von %{site} landet in deinem Postfach."
 
-#: lib/texttile_web/live/settings_live.ex:860
+#: lib/texttile_web/live/settings_live.ex:871
 #, elixir-autogen, elixir-format
 msgid "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
 msgstr "Eine deiner Seiten wird die Eingangstür. Die Blogliste bleibt so oder so unter /blog. Es gibt noch keine Seiten: diese Wahl öffnet sich mit der ersten, die du schreibst."
@@ -1306,7 +1306,7 @@ msgstr "Das siehst nur du. Folge dem Link in der Mail, dann sehen es alle."
 msgid "Open the entry"
 msgstr "Eintrag öffnen"
 
-#: lib/texttile_web/live/settings_live.ex:1461
+#: lib/texttile_web/live/settings_live.ex:1481
 #, elixir-autogen, elixir-format
 msgid "Open the import"
 msgstr "Import öffnen"
@@ -1368,7 +1368,7 @@ msgstr "Passwort"
 msgid "Password changed · just now"
 msgstr "Passwort geändert · gerade eben"
 
-#: lib/texttile_web/live/settings_live.ex:947
+#: lib/texttile_web/live/settings_live.ex:958
 #, elixir-autogen, elixir-format
 msgid "Password-protected"
 msgstr "Passwortgeschützt"
@@ -1399,7 +1399,7 @@ msgid "Post comment"
 msgstr "Kommentar abschicken"
 
 #: lib/texttile_web/live/editor_live.ex:2280
-#: lib/texttile_web/live/settings_live.ex:816
+#: lib/texttile_web/live/settings_live.ex:827
 #, elixir-autogen, elixir-format
 msgid "Preview"
 msgstr "Vorschau"
@@ -1422,12 +1422,12 @@ msgstr "Zurück"
 msgid "Previous tile"
 msgstr "Vorige Kachel"
 
-#: lib/texttile_web/live/settings_live.ex:529
+#: lib/texttile_web/live/settings_live.ex:540
 #, elixir-autogen, elixir-format
 msgid "Protected once the blog password below is set"
 msgstr "Geschützt, sobald das Blog-Passwort unten gesetzt ist"
 
-#: lib/texttile_web/live/settings_live.ex:930
+#: lib/texttile_web/live/settings_live.ex:941
 #, elixir-autogen, elixir-format
 msgid "Public"
 msgstr "Öffentlich"
@@ -1483,7 +1483,7 @@ msgstr "Das Bild in den Text setzen, wo die Schreibmarke steht"
 msgid "Quote"
 msgstr "Zitat"
 
-#: lib/texttile_web/live/settings_live.ex:514
+#: lib/texttile_web/live/settings_live.ex:525
 #, elixir-autogen, elixir-format
 msgid "Readers confirm their email · new comments wait for the link"
 msgstr "Lesende bestätigen ihre Adresse · neue Kommentare warten auf den Link"
@@ -1522,7 +1522,7 @@ msgid "Request a new link"
 msgstr "Neuen Link anfordern"
 
 #: lib/texttile_web/live/editor_live.ex:2488
-#: lib/texttile_web/live/settings_live.ex:1296
+#: lib/texttile_web/live/settings_live.ex:1309
 #, elixir-autogen, elixir-format
 msgid "Reset"
 msgstr "Zurücksetzen"
@@ -1560,7 +1560,7 @@ msgstr "Version sichern"
 #: lib/texttile_web/js_strings.ex:76
 #: lib/texttile_web/live/editor_live.ex:1533
 #: lib/texttile_web/live/profile_live.ex:193
-#: lib/texttile_web/live/settings_live.ex:623
+#: lib/texttile_web/live/settings_live.ex:634
 #, elixir-autogen, elixir-format
 msgid "Saved"
 msgstr "Gesichert"
@@ -1570,7 +1570,7 @@ msgstr "Gesichert"
 msgid "Saved · just now"
 msgstr "Gesichert · gerade eben"
 
-#: lib/texttile_web/live/settings_live.ex:546
+#: lib/texttile_web/live/settings_live.ex:557
 #, elixir-autogen, elixir-format
 msgid "Saved · the next entry mails the new word to 1 subscriber"
 msgid_plural "Saved · the next entry mails the new word to %{count} subscribers"
@@ -1601,7 +1601,7 @@ msgid "Sections"
 msgstr "Bereiche"
 
 #: lib/texttile_web/controllers/link_html.ex:202
-#: lib/texttile_web/live/settings_live.ex:1090
+#: lib/texttile_web/live/settings_live.ex:1101
 #, elixir-autogen, elixir-format
 msgid "Send the link"
 msgstr "Link schicken"
@@ -1639,9 +1639,9 @@ msgstr "Passwort setzen und anmelden"
 #: lib/texttile/comments/notifier.ex:173
 #: lib/texttile_web/components/layouts.ex:77
 #: lib/texttile_web/live/editor_live.ex:1802
-#: lib/texttile_web/live/settings_live.ex:39
-#: lib/texttile_web/live/settings_live.ex:608
-#: lib/texttile_web/live/settings_live.ex:628
+#: lib/texttile_web/live/settings_live.ex:40
+#: lib/texttile_web/live/settings_live.ex:619
+#: lib/texttile_web/live/settings_live.ex:639
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Einstellungen"
@@ -1694,12 +1694,12 @@ msgid "Sign out everywhere ends all of them, in every browser."
 msgstr "Überall abmelden beendet alle, in jedem Browser."
 
 #: lib/texttile_web/controllers/site_html.ex:51
-#: lib/texttile_web/live/settings_live.ex:635
+#: lib/texttile_web/live/settings_live.ex:646
 #, elixir-autogen, elixir-format
 msgid "Site"
 msgstr "Site"
 
-#: lib/texttile_web/live/settings_live.ex:640
+#: lib/texttile_web/live/settings_live.ex:651
 #, elixir-autogen, elixir-format
 msgid "Site title"
 msgstr "Titel der Site"
@@ -1745,7 +1745,7 @@ msgstr "Statistik-Seite"
 msgid "Stop answering %{path}"
 msgstr "%{path} nicht mehr beantworten"
 
-#: lib/texttile_web/live/settings_live.ex:1169
+#: lib/texttile_web/live/settings_live.ex:1180
 #, elixir-autogen, elixir-format
 msgid "Storage"
 msgstr "Speicher"
@@ -1808,7 +1808,7 @@ msgstr "Aufgabenliste. Klicke ein Kästchen im Text an, um es abzuhaken."
 msgid "Text"
 msgstr "Text"
 
-#: lib/texttile_web/live/settings_live.ex:1453
+#: lib/texttile_web/live/settings_live.ex:1473
 #, elixir-autogen, elixir-format
 msgid "Texttile imports entries from a zip of bundles: Markdown, settings and pictures, made from another systems export."
 msgstr "Texttile importiert Einträge aus einem ZIP mit Bündeln: Markdown, Einstellungen und Bilder, gebaut aus dem Export eines anderen Systems."
@@ -1865,7 +1865,7 @@ msgstr "Diese Kachel wurde gerade eben gelöscht"
 msgid "That title is too long; 500 characters is the roof"
 msgstr "Dieser Titel ist zu lang, 500 Zeichen sind die Grenze"
 
-#: lib/texttile_web/live/settings_live.ex:160
+#: lib/texttile_web/live/settings_live.ex:164
 #, elixir-autogen, elixir-format
 msgid "The %{mark} is the Texttile mark again"
 msgstr "Das %{mark} ist wieder das Texttile-Zeichen"
@@ -1880,7 +1880,7 @@ msgstr "Die %{rows} größten Quellen. Was den Anteilen auf hundert fehlt, kam v
 msgid "The %{rows} most read addresses."
 msgstr "Die %{rows} meistgelesenen Adressen."
 
-#: lib/texttile_web/live/settings_live.ex:250
+#: lib/texttile_web/live/settings_live.ex:255
 #, elixir-autogen, elixir-format
 msgid "The account of %{name} is deleted"
 msgstr "Das Konto von %{name} ist gelöscht"
@@ -1890,7 +1890,7 @@ msgstr "Das Konto von %{name} ist gelöscht"
 msgid "The blog is open right now, so nobody is asked for this word. Settings > Access turns the gate on."
 msgstr "Das Blog steht gerade offen, also wird niemand nach diesem Wort gefragt. Einstellungen > Zugang schaltet das Tor ein."
 
-#: lib/texttile_web/live/settings_live.ex:535
+#: lib/texttile_web/live/settings_live.ex:546
 #, elixir-autogen, elixir-format
 msgid "The blog is open to everyone"
 msgstr "Das Blog steht allen offen"
@@ -1900,7 +1900,7 @@ msgstr "Das Blog steht allen offen"
 msgid "The blog password is: "
 msgstr "Das Blog-Passwort lautet: "
 
-#: lib/texttile_web/live/settings_live.ex:531
+#: lib/texttile_web/live/settings_live.ex:542
 #, elixir-autogen, elixir-format
 msgid "The blog waits behind the password now"
 msgstr "Das Blog wartet jetzt hinter dem Passwort"
@@ -1977,12 +1977,12 @@ msgstr "Die Mail ist unterwegs, sofern ein Konto diese Adresse benutzt. Öffne s
 msgid "The old password stops working the moment you set a new one."
 msgstr "Das alte Passwort gilt nicht mehr, sobald du ein neues setzt."
 
-#: lib/texttile_web/live/settings_live.ex:569
+#: lib/texttile_web/live/settings_live.ex:580
 #, elixir-autogen, elixir-format
 msgid "The only account left: deleting it would leave nobody who can sign in."
 msgstr "Das letzte Konto: es zu löschen ließe niemanden übrig, der sich anmelden kann."
 
-#: lib/texttile_web/live/settings_live.ex:876
+#: lib/texttile_web/live/settings_live.ex:887
 #, elixir-autogen, elixir-format
 msgid "The page"
 msgstr "Die Seite"
@@ -2002,7 +2002,7 @@ msgstr "Die Mail an die Abonnenten ging für diesen Eintrag am %{day} raus. Sie 
 msgid "The text holds the place. The marker becomes the image when the upload finishes."
 msgstr "Der Text hält den Platz. Aus der Markierung wird das Bild, sobald der Upload fertig ist."
 
-#: lib/texttile_web/live/settings_live.ex:174
+#: lib/texttile_web/live/settings_live.ex:179
 #, elixir-autogen, elixir-format
 msgid "The theme is the iris default again"
 msgstr "Das Theme ist wieder die Iris-Vorgabe"
@@ -2022,10 +2022,10 @@ msgstr "Der Upload ist fehlgeschlagen (%{reason})"
 msgid "The upload stopped at %{pct}%, so the file never reached the server. The text keeps a marker where the image belongs. Retry sends the same file again. Remove takes the marker out of the text."
 msgstr "Der Upload blieb bei %{pct}% stehen, die Datei hat den Server also nie erreicht. Der Text behält eine Markierung an der Stelle, an die das Bild gehört. Erneut versuchen schickt dieselbe Datei noch einmal. Entfernen nimmt die Markierung aus dem Text."
 
-#: lib/texttile_web/live/settings_live.ex:904
-#: lib/texttile_web/live/settings_live.ex:1128
-#: lib/texttile_web/live/settings_live.ex:1158
-#: lib/texttile_web/live/settings_live.ex:1189
+#: lib/texttile_web/live/settings_live.ex:915
+#: lib/texttile_web/live/settings_live.ex:1139
+#: lib/texttile_web/live/settings_live.ex:1169
+#: lib/texttile_web/live/settings_live.ex:1200
 #, elixir-autogen, elixir-format
 msgid "The value must be %{rule}."
 msgstr "Der Wert muss %{rule}."
@@ -2045,7 +2045,7 @@ msgstr "Der Wortlaut des Kommentars"
 msgid "The zip holds no bundle folders."
 msgstr "Das ZIP enthält keine Bündel-Ordner."
 
-#: lib/texttile_web/live/settings_live.ex:1261
+#: lib/texttile_web/live/settings_live.ex:1272
 #, elixir-autogen, elixir-format
 msgid "Theme"
 msgstr "Theme"
@@ -2186,18 +2186,18 @@ msgstr "Planung aufheben"
 msgid "Unscheduled · a draft again"
 msgstr "Planung aufgehoben · wieder ein Entwurf"
 
-#: lib/texttile_web/live/settings_live.ex:717
-#: lib/texttile_web/live/settings_live.ex:759
+#: lib/texttile_web/live/settings_live.ex:728
+#: lib/texttile_web/live/settings_live.ex:770
 #, elixir-autogen, elixir-format
 msgid "Upload"
 msgstr "Hochladen"
 
-#: lib/texttile_web/live/settings_live.ex:763
+#: lib/texttile_web/live/settings_live.ex:774
 #, elixir-autogen, elixir-format
 msgid "Upload a favicon"
 msgstr "Ein Favicon hochladen"
 
-#: lib/texttile_web/live/settings_live.ex:721
+#: lib/texttile_web/live/settings_live.ex:732
 #, elixir-autogen, elixir-format
 msgid "Upload a logo"
 msgstr "Ein Logo hochladen"
@@ -2208,8 +2208,8 @@ msgstr "Ein Logo hochladen"
 msgid "Upload the zip"
 msgstr "Das ZIP hochladen"
 
-#: lib/texttile_web/live/settings_live.ex:713
-#: lib/texttile_web/live/settings_live.ex:755
+#: lib/texttile_web/live/settings_live.ex:724
+#: lib/texttile_web/live/settings_live.ex:766
 #, elixir-autogen, elixir-format
 msgid "Use default"
 msgstr "Vorgabe benutzen"
@@ -2225,7 +2225,7 @@ msgstr "Bild %{index} als Vorschaubild benutzen"
 msgid "Used in the entries grid, on the front page and in link previews."
 msgstr "Steht im Raster der Einträge, auf der Startseite und in Linkvorschauen."
 
-#: lib/texttile_web/live/settings_live.ex:1011
+#: lib/texttile_web/live/settings_live.ex:1022
 #, elixir-autogen, elixir-format
 msgid "Users"
 msgstr "Konten"
@@ -2242,7 +2242,7 @@ msgstr "Version vom %{stamp} wiederhergestellt"
 msgid "Versions"
 msgstr "Versionen"
 
-#: lib/texttile_web/live/settings_live.ex:1139
+#: lib/texttile_web/live/settings_live.ex:1150
 #, elixir-autogen, elixir-format
 msgid "Videos"
 msgstr "Videos"
@@ -2271,12 +2271,12 @@ msgstr "Aufrufe, letzte 14 Tage"
 msgid "What changed against the version from"
 msgstr "Was sich geändert hat gegenüber der Version vom"
 
-#: lib/texttile_web/live/settings_live.ex:800
+#: lib/texttile_web/live/settings_live.ex:811
 #, elixir-autogen, elixir-format
 msgid "Who writes here, and what this blog is. Markdown works: ## for a heading."
 msgstr "Wer hier schreibt, und was dieses Blog ist. Markdown geht: ## für eine Überschrift."
 
-#: lib/texttile_web/live/settings_live.ex:537
+#: lib/texttile_web/live/settings_live.ex:548
 #, elixir-autogen, elixir-format
 msgid "Without a password nothing is protected"
 msgstr "Ohne Passwort ist nichts geschützt"
@@ -2399,7 +2399,7 @@ msgstr "hin"
 msgid "goes for good on"
 msgstr "endgültig weg am"
 
-#: lib/texttile_web/live/settings_live.ex:1026
+#: lib/texttile_web/live/settings_live.ex:1037
 #, elixir-autogen, elixir-format
 msgid "here now"
 msgstr "gerade hier"
@@ -2419,7 +2419,7 @@ msgstr "in der Leiste sichert Titel und Text, wie sie gerade stehen. Die Einstel
 msgid "in the bar writes the first one, and every one after it shows what changed."
 msgstr "in der Leiste schreibt die erste, und jede weitere zeigt, was sich geändert hat."
 
-#: lib/texttile_web/live/settings_live.ex:1457
+#: lib/texttile_web/live/settings_live.ex:1477
 #, elixir-autogen, elixir-format
 msgid "in the repository is the format contract."
 msgstr "im Repository ist der Formatvertrag."
@@ -2533,7 +2533,7 @@ msgstr "wird nicht importiert"
 msgid "yesterday"
 msgstr "gestern"
 
-#: lib/texttile_web/live/settings_live.ex:1018
+#: lib/texttile_web/live/settings_live.ex:1029
 #, elixir-autogen, elixir-format
 msgid "you"
 msgstr "du"
@@ -2615,7 +2615,7 @@ msgstr "%{name} schreibt."
 msgid "%{size} GB"
 msgstr "%{size} GB"
 
-#: lib/texttile_web/live/settings_live.ex:1172
+#: lib/texttile_web/live/settings_live.ex:1183
 #, elixir-autogen, elixir-format
 msgid "Biggest upload"
 msgstr "Größter Upload"
@@ -2625,17 +2625,17 @@ msgstr "Größter Upload"
 msgid "Email subscribers at go-live"
 msgstr "Abonnenten beim Livegang mailen"
 
-#: lib/texttile_web/live/settings_live.ex:1210
+#: lib/texttile_web/live/settings_live.ex:1221
 #, elixir-autogen, elixir-format
 msgid "Files"
 msgstr "Dateien"
 
-#: lib/texttile_web/live/settings_live.ex:1209
+#: lib/texttile_web/live/settings_live.ex:1220
 #, elixir-autogen, elixir-format
 msgid "Folder"
 msgstr "Ordner"
 
-#: lib/texttile_web/live/settings_live.ex:1239
+#: lib/texttile_web/live/settings_live.ex:1250
 #, elixir-autogen, elixir-format
 msgid "Free on this volume"
 msgstr "Frei auf diesem Volume"
@@ -2645,7 +2645,7 @@ msgstr "Frei auf diesem Volume"
 msgid "Goes out to the confirmed subscribers when this goes live on %{date}."
 msgstr "Geht an die bestätigten Abonnenten, wenn dieser Beitrag am %{date} live geht."
 
-#: lib/texttile_web/live/settings_live.ex:1186
+#: lib/texttile_web/live/settings_live.ex:1197
 #, elixir-autogen, elixir-format
 msgid "MB"
 msgstr "MB"
@@ -2710,7 +2710,7 @@ msgstr "Geplant für %{date} · ohne Mail"
 msgid "Scheduled for %{date} · the mail goes out then"
 msgstr "Geplant für %{date} · dann geht die Mail hinaus"
 
-#: lib/texttile_web/live/settings_live.ex:1211
+#: lib/texttile_web/live/settings_live.ex:1222
 #, elixir-autogen, elixir-format
 msgid "Size"
 msgstr "Größe"
@@ -2730,12 +2730,12 @@ msgstr "Die Abonnentenmail ging am %{day} hinaus."
 msgid "The subscribers get the mail when this goes live"
 msgstr "Die Abonnenten bekommen die Mail beim Livegang"
 
-#: lib/texttile_web/live/settings_live.ex:1247
+#: lib/texttile_web/live/settings_live.ex:1258
 #, elixir-autogen, elixir-format
 msgid "The uploads stand below %{root} and the database is %{db}."
 msgstr "Die Uploads liegen unter %{root}, die Datenbank ist %{db}."
 
-#: lib/texttile_web/live/settings_live.ex:1234
+#: lib/texttile_web/live/settings_live.ex:1245
 #, elixir-autogen, elixir-format
 msgid "Together"
 msgstr "Zusammen"
@@ -2750,7 +2750,7 @@ msgstr "Version gesichert · der Reiter Versionen zeigt, was sich geändert hat"
 msgid "View"
 msgstr "Ansehen"
 
-#: lib/texttile_web/live/settings_live.ex:1204
+#: lib/texttile_web/live/settings_live.ex:1215
 #, elixir-autogen, elixir-format
 msgid "What lies on the volume"
 msgstr "Was auf dem Volume liegt"
@@ -2760,27 +2760,27 @@ msgstr "Was auf dem Volume liegt"
 msgid "You are writing."
 msgstr "Du schreibst."
 
-#: lib/texttile_web/live/settings_live.ex:510
+#: lib/texttile_web/live/settings_live.ex:521
 #, elixir-autogen, elixir-format
 msgid "display sizes, disposable"
 msgstr "Anzeigegrößen, entbehrlich"
 
-#: lib/texttile_web/live/settings_live.ex:507
+#: lib/texttile_web/live/settings_live.ex:518
 #, elixir-autogen, elixir-format
 msgid "every picture as it came"
 msgstr "jedes Bild, so wie es kam"
 
-#: lib/texttile_web/live/settings_live.ex:508
+#: lib/texttile_web/live/settings_live.ex:519
 #, elixir-autogen, elixir-format
 msgid "every video, and the MP4 ffmpeg made of it"
 msgstr "jedes Video und das MP4, das ffmpeg daraus machte"
 
-#: lib/texttile_web/live/settings_live.ex:1226
+#: lib/texttile_web/live/settings_live.ex:1237
 #, elixir-autogen, elixir-format
 msgid "the database, one SQLite file"
 msgstr "die Datenbank, eine SQLite-Datei"
 
-#: lib/texttile_web/live/settings_live.ex:509
+#: lib/texttile_web/live/settings_live.ex:520
 #, elixir-autogen, elixir-format
 msgid "the logo and the favicon"
 msgstr "das Logo und das Favicon"
@@ -2836,17 +2836,17 @@ msgid_plural "%{count} other tabs of yours"
 msgstr[0] "ein anderer Tab von dir"
 msgstr[1] "%{count} andere Tabs von dir"
 
-#: lib/texttile_web/live/settings_live.ex:1472
+#: lib/texttile_web/live/settings_live.ex:1492
 #, elixir-autogen, elixir-format
 msgid "Every change to Texttile raises this number: the last of the three for a repair, the middle one for something new, the first one when an old habit breaks. Name it when you report a problem, because it says which build stands here."
 msgstr "Jede Änderung an Texttile erhöht diese Zahl: die letzte der drei bei einer Reparatur, die mittlere bei etwas Neuem, die erste, wenn eine alte Gewohnheit bricht. Nenne sie, wenn du ein Problem meldest, denn sie sagt, welcher Build hier steht."
 
-#: lib/texttile_web/live/settings_live.ex:1469
+#: lib/texttile_web/live/settings_live.ex:1489
 #, elixir-autogen, elixir-format
 msgid "This installation"
 msgstr "Diese Installation"
 
-#: lib/texttile_web/live/settings_live.ex:1467
+#: lib/texttile_web/live/settings_live.ex:1487
 #, elixir-autogen, elixir-format
 msgid "Version"
 msgstr "Version"
@@ -2861,122 +2861,122 @@ msgstr "Ein Kommentar braucht einen Namen, eine E-Mail-Adresse und ein paar Wort
 msgid "Website"
 msgstr "Website"
 
-#: lib/texttile_web/live/settings_live.ex:396
+#: lib/texttile_web/live/settings_live.ex:401
 #, elixir-autogen, elixir-format
 msgid "%{when} from %{ip}"
 msgstr "%{when} von %{ip}"
 
-#: lib/texttile_web/live/settings_live.ex:297
+#: lib/texttile_web/live/settings_live.ex:302
 #, elixir-autogen, elixir-format
 msgid "A backup token is in service · copy it now, it is shown once"
 msgstr "Ein Sicherungs-Token ist in Betrieb · kopiere ihn jetzt, er wird einmal gezeigt"
 
-#: lib/texttile_web/live/settings_live.ex:391
+#: lib/texttile_web/live/settings_live.ex:396
 #, elixir-autogen, elixir-format
 msgid "A token is in service, kept as a hash"
 msgstr "Ein Token ist in Betrieb, als Hash gespeichert"
 
-#: lib/texttile_web/live/settings_live.ex:1424
+#: lib/texttile_web/live/settings_live.ex:1444
 #, elixir-autogen, elixir-format
 msgid "Any address"
 msgstr "Beliebige Adresse"
 
-#: lib/texttile_web/live/settings_live.ex:1321
+#: lib/texttile_web/live/settings_live.ex:1341
 #, elixir-autogen, elixir-format
 msgid "Backup"
 msgstr "Sicherung"
 
-#: lib/texttile_web/live/settings_live.ex:1393
+#: lib/texttile_web/live/settings_live.ex:1413
 #, elixir-autogen, elixir-format
 msgid "Create a token"
 msgstr "Token erzeugen"
 
-#: lib/texttile_web/live/settings_live.ex:1515
+#: lib/texttile_web/live/settings_live.ex:1535
 #, elixir-autogen, elixir-format
 msgid "Do this when a token may have got out, and after that whenever you like: the copies you already keep are untouched by it."
 msgstr "Mach das, wenn ein Token nach außen gelangt sein könnte, und sonst, wann du willst: Die Kopien, die du schon hast, bleiben davon unberührt."
 
-#: lib/texttile_web/live/settings_live.ex:1441
+#: lib/texttile_web/live/settings_live.ex:1461
 #, elixir-autogen, elixir-format
 msgid "Last fetched"
 msgstr "Zuletzt geholt"
 
-#: lib/texttile_web/live/settings_live.ex:390
+#: lib/texttile_web/live/settings_live.ex:395
 #, elixir-autogen, elixir-format
 msgid "No token yet, so nothing is served"
 msgstr "Noch kein Token, also wird nichts ausgeliefert"
 
-#: lib/texttile_web/live/settings_live.ex:393
+#: lib/texttile_web/live/settings_live.ex:398
 #, elixir-autogen, elixir-format
 msgid "Nothing has been fetched yet"
 msgstr "Es wurde noch nichts geholt"
 
-#: lib/texttile_web/live/settings_live.ex:1416
+#: lib/texttile_web/live/settings_live.ex:1436
 #, elixir-autogen, elixir-format
 msgid "Only these addresses"
 msgstr "Nur diese Adressen"
 
-#: lib/texttile_web/live/settings_live.ex:1505
+#: lib/texttile_web/live/settings_live.ex:1525
 #, elixir-autogen, elixir-format
 msgid "Replace it"
 msgstr "Ersetzen"
 
-#: lib/texttile_web/live/settings_live.ex:1504
+#: lib/texttile_web/live/settings_live.ex:1524
 #, elixir-autogen, elixir-format
 msgid "Replace the backup token?"
 msgstr "Sicherungs-Token ersetzen?"
 
-#: lib/texttile_web/live/settings_live.ex:1402
+#: lib/texttile_web/live/settings_live.ex:1422
 #, elixir-autogen, elixir-format
 msgid "Replace the token"
 msgstr "Token ersetzen"
 
-#: lib/texttile_web/live/settings_live.ex:1340
+#: lib/texttile_web/live/settings_live.ex:1360
 #, elixir-autogen, elixir-format
 msgid "Serve a backup client at /backup"
 msgstr "Einen Sicherungs-Client unter /backup bedienen"
 
-#: lib/texttile_web/live/settings_live.ex:1510
+#: lib/texttile_web/live/settings_live.ex:1530
 #, elixir-autogen, elixir-format
 msgid "The token in service stops opening anything the moment you confirm, and your backup machine gets nothing until you write the new one into its configuration."
 msgstr "Der Token in Betrieb öffnet nichts mehr, sobald du bestätigst, und dein Sicherungsrechner bekommt nichts, bis du den neuen in seine Konfiguration schreibst."
 
-#: lib/texttile_web/live/settings_live.ex:1354
+#: lib/texttile_web/live/settings_live.ex:1374
 #, elixir-autogen, elixir-format
 msgid "Token"
 msgstr "Token"
 
-#: lib/texttile_web/live/settings_live.ex:388
+#: lib/texttile_web/live/settings_live.ex:393
 #, elixir-autogen, elixir-format
 msgid "· /backup answers nothing, as if it were not there"
 msgstr "· /backup antwortet nichts, als gäbe es das nicht"
 
-#: lib/texttile_web/live/settings_live.ex:387
+#: lib/texttile_web/live/settings_live.ex:392
 #, elixir-autogen, elixir-format
 msgid "· a client with the token may fetch"
 msgstr "· ein Client mit dem Token darf holen"
 
-#: lib/texttile_web/live/settings_live.ex:1444
+#: lib/texttile_web/live/settings_live.ex:1464
 #, elixir-autogen, elixir-format
 msgid "A backup that stopped running says nothing until the day you need it. This line is where it shows."
 msgstr "Eine Sicherung, die nicht mehr läuft, sagt nichts, bis du sie brauchst. Hier steht es."
 
-#: lib/texttile_web/live/settings_live.ex:1376
+#: lib/texttile_web/live/settings_live.ex:1396
 #, elixir-autogen, elixir-format
 msgid "Write it into the configuration of your backup machine now. It is never shown again."
 msgstr "Schreib ihn jetzt in die Konfiguration deines Sicherungsrechners. Er wird nie wieder gezeigt."
 
-#: lib/texttile_web/live/settings_live.ex:1324
+#: lib/texttile_web/live/settings_live.ex:1344
 #, elixir-autogen, elixir-format
 msgid "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository, and where it puts the copies is as worth guarding as this blog."
 msgstr "Ein Rechner, der dir gehört, holt die Datenbank und jede hochgeladene Datei von hier, nach seiner eigenen Uhr. Er hält den Token und dieser Server hält nichts davon, also findet niemand, der hier einbricht, einen Weg zu deinen Kopien. Der Client ist scripts/texttile-backup.sh im Repository, und wo er die Kopien ablegt, ist so schützenswert wie dieses Blog."
 
-#: lib/texttile_web/live/settings_live.ex:1407
+#: lib/texttile_web/live/settings_live.ex:1427
 #, elixir-autogen, elixir-format
 msgid "It opens the backup endpoints and nothing else, and it only ever reads. Keep it like a password all the same: what it fetches is the database, and the database carries the blog password, the sign-in of every account and the address of every reader who wrote to you."
 msgstr "Er öffnet die Sicherungs-Endpunkte und sonst nichts, und er liest immer nur. Behandle ihn trotzdem wie ein Passwort: Was er holt, ist die Datenbank, und die trägt das Blog-Passwort, die Anmeldung jedes Kontos und die Adresse jedes Lesers, der dir geschrieben hat."
 
-#: lib/texttile_web/live/settings_live.ex:1433
+#: lib/texttile_web/live/settings_live.ex:1453
 #, elixir-autogen, elixir-format
 msgid "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides. Behind a proxy this is only as good as the header the proxy writes, so read it as a second lock and never as the first."
 msgstr "Die Adressen, von denen dein Sicherungsrechner anruft, durch Kommas getrennt. Leer ist der Normalfall: Dann entscheidet der Token allein. Hinter einem Proxy ist das nur so gut wie der Header, den der Proxy schreibt, also lies es als zweites Schloss und nie als erstes."
@@ -2986,7 +2986,7 @@ msgstr "Die Adressen, von denen dein Sicherungsrechner anruft, durch Kommas getr
 msgid "Copied"
 msgstr "Kopiert"
 
-#: lib/texttile_web/live/settings_live.ex:1373
+#: lib/texttile_web/live/settings_live.ex:1393
 #, elixir-autogen, elixir-format
 msgid "The backup token"
 msgstr "Der Sicherungs-Token"
@@ -3152,7 +3152,7 @@ msgstr "Ein Link für ein Passwort gilt einmal: einen Tag für ein neues Passwor
 msgid "Address changed · just now"
 msgstr "Adresse geändert · gerade eben"
 
-#: lib/texttile_web/live/settings_live.ex:1072
+#: lib/texttile_web/live/settings_live.ex:1083
 #, elixir-autogen, elixir-format
 msgid "Invite an admin"
 msgstr "Admin einladen"
@@ -3162,12 +3162,12 @@ msgstr "Admin einladen"
 msgid "No account here has a password yet. The addresses in ADMIN_USERS have been mailed a link that sets one. While nobody can sign in, the server writes that link into its own log as well, so an installation whose mail does not leave still lets its first admin in."
 msgstr "Noch hat kein Konto hier ein Passwort. An die Adressen in ADMIN_USERS ging ein Link, der eines setzt. Solange sich niemand anmelden kann, schreibt der Server diesen Link auch in sein eigenes Log, damit eine Installation ohne Mailversand ihren ersten Admin trotzdem hereinlässt."
 
-#: lib/texttile_web/live/settings_live.ex:1040
+#: lib/texttile_web/live/settings_live.ex:1051
 #, elixir-autogen, elixir-format
 msgid "Send the link again"
 msgstr "Link noch einmal schicken"
 
-#: lib/texttile_web/live/settings_live.ex:445
+#: lib/texttile_web/live/settings_live.ex:456
 #, elixir-autogen, elixir-format
 msgid "That is not an email address."
 msgstr "Das ist keine E-Mail-Adresse."
@@ -3177,12 +3177,12 @@ msgstr "Das ist keine E-Mail-Adresse."
 msgid "The address and the password do not match."
 msgstr "Adresse und Passwort passen nicht zusammen."
 
-#: lib/texttile_web/live/settings_live.ex:434
+#: lib/texttile_web/live/settings_live.ex:445
 #, elixir-autogen, elixir-format
 msgid "The link is on its way to %{email}."
 msgstr "Der Link ist unterwegs an %{email}."
 
-#: lib/texttile_web/live/settings_live.ex:440
+#: lib/texttile_web/live/settings_live.ex:451
 #, elixir-autogen, elixir-format
 msgid "The mail did not leave this server. The account is there and waiting: check the mail settings, then send the link again."
 msgstr "Die Mail hat diesen Server nicht verlassen. Das Konto ist da und wartet: sieh in den Mail-Einstellungen nach und schick den Link dann noch einmal."
@@ -3192,7 +3192,7 @@ msgstr "Die Mail hat diesen Server nicht verlassen. Das Konto ist da und wartet:
 msgid "The password you choose here becomes its password, and you sign in with it from then on."
 msgstr "Das Passwort, das du hier wählst, wird sein Passwort, und von da an meldest du dich damit an."
 
-#: lib/texttile_web/live/settings_live.ex:437
+#: lib/texttile_web/live/settings_live.ex:448
 #, elixir-autogen, elixir-format
 msgid "This address has an account already. It is in the list."
 msgstr "Diese Adresse hat schon ein Konto. Es steht in der Liste."
@@ -3222,12 +3222,12 @@ msgstr "Dein Konto liegt jetzt auf %{email}. Von jetzt an meldest du dich damit 
 msgid "Your password"
 msgstr "Dein Passwort"
 
-#: lib/texttile_web/live/settings_live.ex:576
+#: lib/texttile_web/live/settings_live.ex:587
 #, elixir-autogen, elixir-format
 msgid "invited · waiting for its first password"
 msgstr "eingeladen · wartet auf sein erstes Passwort"
 
-#: lib/texttile_web/live/settings_live.ex:1086
+#: lib/texttile_web/live/settings_live.ex:1097
 #, elixir-autogen, elixir-format
 msgid "name@example.org"
 msgstr "name@example.org"
@@ -3257,12 +3257,12 @@ msgstr "Was Leser unter deinen Einträgen sehen. Deine Adresse bleibt privat."
 msgid "%{name} (deleted)"
 msgstr "%{name} (gelöscht)"
 
-#: lib/texttile_web/live/settings_live.ex:1496
+#: lib/texttile_web/live/settings_live.ex:1516
 #, elixir-autogen, elixir-format
 msgid "There is no undo, and the address is free again: you can invite it back as a new account. While it stands in ADMIN_USERS, the next start of the server invites it by itself, so take it out of there as well."
 msgstr "Es gibt kein Zurück, und die Adresse ist wieder frei: du kannst sie als neues Konto wieder einladen. Solange sie in ADMIN_USERS steht, lädt der nächste Start des Servers sie von selbst ein, nimm sie also auch dort heraus."
 
-#: lib/texttile_web/live/settings_live.ex:1490
+#: lib/texttile_web/live/settings_live.ex:1510
 #, elixir-autogen, elixir-format
 msgid "can no longer sign in from the moment you confirm, and every session open right now ends. What %{name} already wrote stays, and keeps this name: the entries, the images, the comments and every line of every Log belong to the site, not to the account. Readers see no difference; here the name says the account is gone."
 msgstr "kann sich ab dem Moment, in dem du bestätigst, nicht mehr anmelden, und jede gerade offene Sitzung endet. Was %{name} geschrieben hat, bleibt und behält diesen Namen: die Einträge, die Bilder, die Kommentare und jede Zeile jedes Protokolls gehören der Site, nicht dem Konto. Leser sehen keinen Unterschied; hier sagt der Name, dass es das Konto nicht mehr gibt."
@@ -3843,7 +3843,7 @@ msgstr "Deine Adresse wird nie veröffentlicht. Du bekommst einen Link per Mail,
 msgid "Entry settings"
 msgstr "Einstellungen des Eintrags"
 
-#: lib/texttile_web/live/settings_live.ex:864
+#: lib/texttile_web/live/settings_live.ex:875
 #, elixir-autogen, elixir-format
 msgid "A page you choose. The list of entries stays at /blog."
 msgstr "Eine Seite deiner Wahl. Die Liste der Einträge bleibt unter /blog."
@@ -3863,22 +3863,17 @@ msgstr "Mindestens 12 Zeichen. Bestätige dein aktuelles Passwort, um es zu änd
 msgid "Comments appear the moment a reader sends them. Delete keeps a comment in the trash for %{days} days, then it is gone. Spam is filtered without a captcha."
 msgstr "Kommentare erscheinen, sobald ein Leser sie abschickt. Löschen legt einen Kommentar für %{days} Tage in den Papierkorb, dann ist er weg. Spam wird ohne Captcha gefiltert."
 
-#: lib/texttile_web/live/settings_live.ex:632
+#: lib/texttile_web/live/settings_live.ex:643
 #, elixir-autogen, elixir-format
 msgid "Every change saves itself the moment you make it."
 msgstr "Jede Änderung speichert sich sofort selbst."
 
-#: lib/texttile_web/live/settings_live.ex:681
+#: lib/texttile_web/live/settings_live.ex:692
 #, elixir-autogen, elixir-format
 msgid "For the reader pages, this admin area, the dates and the mails. Your own words stay as you wrote them."
 msgstr "Für die Leserseiten, diesen Adminbereich, die Daten und die Mails. Deine eigenen Worte bleiben, wie du sie geschrieben hast."
 
-#: lib/texttile_web/live/settings_live.ex:1263
-#, elixir-autogen, elixir-format
-msgid "One CSS file styles the blog and this admin area."
-msgstr "Eine CSS-Datei gestaltet den Blog und diesen Adminbereich."
-
-#: lib/texttile_web/live/settings_live.ex:838
+#: lib/texttile_web/live/settings_live.ex:849
 #, elixir-autogen, elixir-format
 msgid "Published entries, newest first."
 msgstr "Veröffentlichte Einträge, die neuesten zuerst."
@@ -3941,7 +3936,7 @@ msgstr "Neues Passwort"
 msgid "Admin sign-in"
 msgstr "Admin-Anmeldung"
 
-#: lib/texttile_web/live/settings_live.ex:1275
+#: lib/texttile_web/live/settings_live.ex:1288
 #, elixir-autogen, elixir-format
 msgid "Edit theme.css"
 msgstr "theme.css bearbeiten"
@@ -3951,7 +3946,7 @@ msgstr "theme.css bearbeiten"
 msgid "More"
 msgstr "Mehr"
 
-#: lib/texttile_web/live/settings_live.ex:1251
+#: lib/texttile_web/live/settings_live.ex:1262
 #, elixir-autogen, elixir-format
 msgid "Both paths come from the install config. The volume is the whole installation: a copy of it is a copy of the site."
 msgstr "Beide Pfade kommen aus der Installation. Das Volume ist die ganze Installation: Eine Kopie davon ist eine Kopie der Seite."
@@ -3961,47 +3956,47 @@ msgstr "Beide Pfade kommen aus der Installation. Das Volume ist die ganze Instal
 msgid "Readers confirm by mail first; an address added here is confirmed at once."
 msgstr "Leser bestätigen zuerst per Mail; eine hier hinzugefügte Adresse ist sofort bestätigt."
 
-#: lib/texttile_web/live/settings_live.ex:1193
+#: lib/texttile_web/live/settings_live.ex:1204
 #, elixir-autogen, elixir-format
 msgid "The largest picture, video or import zip the site takes. A few minutes of phone video weigh a few hundred MB."
 msgstr "Das größte Bild, Video oder Import-ZIP, das die Seite annimmt. Ein paar Minuten Handyvideo wiegen einige hundert MB."
 
-#: lib/texttile_web/live/settings_live.ex:1131
+#: lib/texttile_web/live/settings_live.ex:1142
 #, elixir-autogen, elixir-format
 msgid "The longest edge a picture is shown at. Originals stay on disk, and nothing is scaled up."
 msgstr "Die längste Kante, mit der ein Bild gezeigt wird. Originale bleiben erhalten, nichts wird vergrößert."
 
-#: lib/texttile_web/live/settings_live.ex:1161
+#: lib/texttile_web/live/settings_live.ex:1172
 #, elixir-autogen, elixir-format
 msgid "Videos are converted once to an MP4 with at most this edge, gently in the background. A new value applies to the next conversion."
 msgstr "Videos werden einmal in ein MP4 mit höchstens dieser Kante umgewandelt, behutsam im Hintergrund. Ein neuer Wert gilt ab der nächsten Umwandlung."
 
-#: lib/texttile_web/live/settings_live.ex:584
+#: lib/texttile_web/live/settings_live.ex:595
 #, elixir-autogen, elixir-format
 msgid "A comment stays hidden until its reader follows the link in a mail. Until then it is marked \"not confirmed yet\" here."
 msgstr "Ein Kommentar bleibt verborgen, bis sein Leser dem Link in einer Mail folgt. Bis dahin trägt er hier den Vermerk \"noch nicht bestätigt\"."
 
-#: lib/texttile_web/live/settings_live.ex:590
+#: lib/texttile_web/live/settings_live.ex:601
 #, elixir-autogen, elixir-format
 msgid "Comments appear at once. Spam is filtered either way."
 msgstr "Kommentare erscheinen sofort. Spam wird so oder so gefiltert."
 
-#: lib/texttile_web/live/settings_live.ex:970
+#: lib/texttile_web/live/settings_live.ex:981
 #, elixir-autogen, elixir-format
 msgid "Every entry mail carries it, so subscribers have it too."
 msgstr "Jede Mail zu einem Eintrag enthält es, also kennen es auch die Abonnenten."
 
-#: lib/texttile_web/live/settings_live.ex:594
+#: lib/texttile_web/live/settings_live.ex:605
 #, elixir-autogen, elixir-format
 msgid "One mail per new comment, to every admin. The reader's address is never in it."
 msgstr "Eine Mail pro neuem Kommentar, an jeden Admin. Die Adresse des Lesers steht nie darin."
 
-#: lib/texttile_web/live/settings_live.ex:950
+#: lib/texttile_web/live/settings_live.ex:961
 #, elixir-autogen, elixir-format
 msgid "One password for the whole blog. Search engines see nothing."
 msgstr "Ein Passwort für das ganze Blog. Suchmaschinen sehen nichts."
 
-#: lib/texttile_web/live/settings_live.ex:1094
+#: lib/texttile_web/live/settings_live.ex:1105
 #, elixir-autogen, elixir-format
 msgid "The link sets the first password. It works once, for a week."
 msgstr "Der Link setzt das erste Passwort. Er gilt einmal, eine Woche lang."
@@ -4040,7 +4035,7 @@ msgstr "Antworten"
 msgid "The dark bar is the busiest day."
 msgstr "Der dunkle Balken ist der stärkste Tag."
 
-#: lib/texttile_web/live/settings_live.ex:888
+#: lib/texttile_web/live/settings_live.ex:899
 #, elixir-autogen, elixir-format
 msgid "Entries per page"
 msgstr "Einträge pro Seite"
@@ -4050,17 +4045,17 @@ msgstr "Einträge pro Seite"
 msgid "New"
 msgstr "Neu"
 
-#: lib/texttile_web/live/settings_live.ex:728
+#: lib/texttile_web/live/settings_live.ex:739
 #, elixir-autogen, elixir-format
 msgid "SVG, PNG, JPG or WebP."
 msgstr "SVG, PNG, JPG oder WebP."
 
-#: lib/texttile_web/live/settings_live.ex:987
+#: lib/texttile_web/live/settings_live.ex:998
 #, elixir-autogen, elixir-format
 msgid "Confirm comments by email"
 msgstr "Kommentare per Mail bestätigen"
 
-#: lib/texttile_web/live/settings_live.ex:1003
+#: lib/texttile_web/live/settings_live.ex:1014
 #, elixir-autogen, elixir-format
 msgid "Email new comments"
 msgstr "Neue Kommentare per Mail"
@@ -4080,8 +4075,8 @@ msgstr "Ein Tag öffnet seine Einträge und Quellen."
 msgid "since %{day}"
 msgstr "seit %{day}"
 
-#: lib/texttile_web/live/settings_live.ex:1112
-#: lib/texttile_web/live/settings_live.ex:1142
+#: lib/texttile_web/live/settings_live.ex:1123
+#: lib/texttile_web/live/settings_live.ex:1153
 #, elixir-autogen, elixir-format
 msgid "Longest edge"
 msgstr "Längste Kante"
@@ -4111,7 +4106,7 @@ msgstr "Nach einer Änderung führt die alte Adresse hierher."
 msgid "Live since %{date}."
 msgstr "Live seit %{date}."
 
-#: lib/texttile_web/live/settings_live.ex:771
+#: lib/texttile_web/live/settings_live.ex:782
 #, elixir-autogen, elixir-format
 msgid "Square."
 msgstr "Quadratisch."
@@ -4176,3 +4171,13 @@ msgstr "Ab jetzt hat der Eintrag keine eigene Adresse mehr."
 #, elixir-autogen, elixir-format
 msgid "From now on the entry is at %{address}."
 msgstr "Ab jetzt steht der Eintrag unter %{address}."
+
+#: lib/texttile_web/live/settings_live.ex:1324
+#, elixir-autogen, elixir-format
+msgid "Not a theme token, so left out: %{names}"
+msgstr "Kein Theme-Token, darum weggelassen: %{names}"
+
+#: lib/texttile_web/live/settings_live.ex:1274
+#, elixir-autogen, elixir-format
+msgid "One CSS file colours the blog and this admin area. Only the values you change are kept, so the rest follows every update."
+msgstr "Eine CSS-Datei färbt den Blog und diesen Adminbereich. Gespeichert werden nur die Werte, die du änderst. Alles andere folgt jedem Update."

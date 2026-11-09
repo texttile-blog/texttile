@@ -12,6 +12,7 @@ defmodule Texttile.Settings do
 
   alias Texttile.Repo
   alias Texttile.Settings.Setting
+  alias Texttile.Settings.Theme
 
   @topic "settings"
 
@@ -53,23 +54,13 @@ defmodule Texttile.Settings do
     admin_emails_made: {:string, ""}
   }
 
-  # The iris theme is the default the whole site wears, admin and public
-  # side alike, while no theme.css is stored. Embedded at compile time;
-  # the file in assets/ stays the single source.
-  @iris_theme_path Path.expand("../../assets/css/theme.css", __DIR__)
-  @external_resource @iris_theme_path
-  @iris_theme File.read!(@iris_theme_path)
-
-  @doc "The iris theme: what `theme_css` means while it is empty."
-  def default_theme_css, do: @iris_theme
-
-  @doc "The theme the site wears right now: the stored one, or iris."
-  def theme_css do
-    case get(:theme_css) do
-      "" -> default_theme_css()
-      custom -> custom
-    end
-  end
+  @doc """
+  The stored theme as the site serves it at /theme.css: the tokens it
+  changes and nothing else (see `Texttile.Settings.Theme`). The default
+  itself is bundled in app.css, so an untouched install serves `""`.
+  A theme stored before the contract existed is held to it here too.
+  """
+  def theme_css, do: Theme.compact(get(:theme_css))
 
   @doc """
   The colour a browser paints its own chrome with, for the theme-color
@@ -78,13 +69,13 @@ defmodule Texttile.Settings do
   design, so it is laid over the page colour first. A theme that
   answers neither token falls back to the iris page.
   """
-  # Every page render asks for this, so the two patterns are compiled
-  # once instead of per call.
+  # Every page render asks for this, so the patterns are compiled once
+  # instead of per call.
   @page_token ~r/--tt-page\s*:\s*([^;}]+)/
   @bar_token ~r/--tt-bar\s*:\s*([^;}]+)/
 
   def theme_color do
-    css = theme_css()
+    css = worn_theme(theme_css())
     page = color(css, @page_token) || {250, 249, 247, 1.0}
 
     css
@@ -103,16 +94,20 @@ defmodule Texttile.Settings do
   answers neither token falls back to the iris buttons.
   """
   def button_colors do
-    css = theme_css()
-    page = color(css, @page_token) || {250, 249, 247, 1.0}
-    iris = default_theme_css()
+    stored = theme_css()
+    page = color(worn_theme(stored), @page_token) || {250, 249, 247, 1.0}
 
+    # a stored button colour nobody can read falls back to the default
     pick = fn token ->
-      (color(css, token) || color(iris, token)) |> over(page)
+      (color(stored, token) || color(Theme.default(), token)) |> over(page)
     end
 
     %{solid: pick.(@solid_token), onsolid: pick.(@onsolid_token)}
   end
+
+  # The default with the stored tokens over it, the way the browser
+  # stacks app.css and /theme.css.
+  defp worn_theme(stored), do: Theme.default() <> "\n" <> stored
 
   # The last declaration wins, the way the browser reads it.
   defp color(css, token) do
@@ -284,6 +279,10 @@ defmodule Texttile.Settings do
   ## Casting: what a form sends becomes the key's type
 
   defp cast(_key, nil), do: {:ok, nil}
+
+  # A theme keeps only the tokens it changes, so every other one goes
+  # on following the default.
+  defp cast(:theme_css, raw) when is_binary(raw), do: {:ok, Theme.compact(raw)}
 
   defp cast(key, raw) do
     case {type(key), raw} do

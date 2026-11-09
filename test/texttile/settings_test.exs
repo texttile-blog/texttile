@@ -102,6 +102,20 @@ defmodule Texttile.SettingsTest do
     end
   end
 
+  describe "the theme" do
+    test "keeps only the tokens a theme changes" do
+      sheet =
+        String.replace(
+          Settings.Theme.default(),
+          ~r/--tt-accent:\s*[^;]+;/,
+          "--tt-accent: hotpink;"
+        )
+
+      assert {:ok, ":root {\n  --tt-accent: hotpink;\n}\n"} = Settings.put(:theme_css, sheet)
+      assert Settings.get(:theme_css) == ":root {\n  --tt-accent: hotpink;\n}\n"
+    end
+  end
+
   describe "button_colors/0" do
     test "answers the solid buttons of the iris theme" do
       assert Settings.button_colors() == %{solid: "#5a37c2", onsolid: "#ffffff"}
