@@ -841,10 +841,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert Enum.map(Texttile.Gallery.list(article.id), & &1.id) == [b.id, a.id]
     end
 
-    # With tiles alone, the tiles are the picker: the lightbox of a tile
-    # sends set_preview, and the pane says so instead of drawing every
-    # tile a second time.
-    test "choosing a tile's picture flags the tile, and lets go again", %{
+    test "the preview picker chooses, flags the tile, and lets go again", %{
       conn: conn,
       user: user
     } do
@@ -855,24 +852,28 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       {:ok, other, _html} = live(conn, ~p"/admin/texts/#{article}")
 
-      # the tiles are the picker: no second row draws them again
-      refute has_element?(view, "#previewRow")
-
       # without a choice the first image wears the flag
       assert has_element?(view, "#tile-#{a.id} .cov")
       refute has_element?(view, "#tile-#{b.id} .cov")
 
-      render_click(view, "set_preview", %{"path" => b.path})
+      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == b.path
       assert has_element?(view, "#tile-#{b.id} .cov")
+      assert has_element?(view, "#coverRow button.on[phx-value-path='#{b.path}']")
       assert has_element?(other, "#tile-#{b.id} .cov")
 
-      # the second choice of the same picture lets the first speak again
-      render_click(view, "set_preview", %{"path" => b.path})
+      # the second click lets the first image speak again
+      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == nil
       assert has_element?(view, "#tile-#{a.id} .cov")
+    end
+
+    test "an entry without a picture has no preview picker", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/admin/texts/#{draft(user)}")
+
+      refute has_element?(view, "#previewRow")
     end
 
     test "the preview picker offers every image, not only the first eight", %{
@@ -880,9 +881,6 @@ defmodule TexttileWeb.EditorLiveTest do
       user: user
     } do
       article = draft(user)
-      # a picture in the words has no tile, so the picker stands
-      {:ok, article} =
-        Articles.update_text(article, %{body: "![x](/uploads/images/in-words.jpg)"})
 
       tiles =
         for n <- 1..9 do
