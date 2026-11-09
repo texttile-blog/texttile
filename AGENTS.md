@@ -286,6 +286,27 @@ An empty database is a bad test. Work from real data instead of pointing at it.
   dismiss a false positive with a written reason. Stay quiet when nothing is
   new. Stop when the bots are green on the latest commit.
 
+## After a merge
+
+- Follow the `CI` push run in `.github/workflows/ci.yml` for the merge commit.
+  Both `test` and `docker` must succeed. Then follow `Publish image` in
+  `.github/workflows/publish.yml`, including `publish`, `release`, and `staging`.
+  Match the chained run through `workflow_run.head_sha`, not just the latest run.
+- Confirm publication of `ghcr.io/texttile-blog/texttile:<commit>` and its version.
+  A Git tag alone does not prove publication: the workflow creates it before the image.
+  Read each job's conclusion and output. Failed CI skips publication, which is not success.
+- The `staging` job deploys the newest published commit through `scripts/deploy-bunny.py`.
+  Its output must confirm the new pod, expected image digest, preserved volume, and successful site check.
+  If a newer version caused a skip, verify that version contains this change and reached staging.
+- Publication and staging do not prove that a separate installation has updated.
+  For example, `blog.breyer.berlin` has its own repository and `deploy.yml` workflow.
+  If the task includes that installation, follow its deployment under the existing authorization.
+  Confirm its image digest or running version against the published build.
+  Settings shows the running version when authorized access is available.
+- Report the verified target, version, and run links. Report failed, skipped, or unverified stages explicitly.
+  Never claim "live" from a green PR, a published tag, HTTP 200 alone, or a background script's exit status.
+  These checks do not authorize a manual production deployment or new access to a live installation.
+
 ## How it works
 
 One Phoenix application serves both faces of the blog. Reader pages are
