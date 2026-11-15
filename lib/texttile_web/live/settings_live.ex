@@ -41,6 +41,7 @@ defmodule TexttileWeb.SettingsLive do
       |> assign(:errors, %{})
       |> assign(:confirm_delete, nil)
       |> assign(:confirm_token, false)
+      |> assign(:confirm_theme, false)
       # The one moment the backup token exists in the clear: from the
       # click that made it to the next thing this screen does.
       |> assign(:backup_token, nil)
@@ -166,6 +167,12 @@ defmodule TexttileWeb.SettingsLive do
 
   ## Theme
 
+  # A stored theme may be hours of work, and the reset keeps no copy of
+  # it, so it asks first.
+  def handle_event("ask_reset_theme", _params, socket) do
+    {:noreply, assign(socket, :confirm_theme, true)}
+  end
+
   # Back to the iris default: the stored sheet goes, and the field shows
   # the default again on the next render.
   def handle_event("reset_theme", _params, socket) do
@@ -173,6 +180,7 @@ defmodule TexttileWeb.SettingsLive do
 
     {:noreply,
      socket
+     |> assign(:confirm_theme, false)
      |> refresh_settings()
      |> assign(:theme_ignored, [])
      |> push_event("theme_saved", %{})
@@ -220,7 +228,8 @@ defmodule TexttileWeb.SettingsLive do
     {:noreply,
      socket
      |> assign(:confirm_delete, nil)
-     |> assign(:confirm_token, false)}
+     |> assign(:confirm_token, false)
+     |> assign(:confirm_theme, false)}
   end
 
   def handle_event("delete_user", _params, socket) do
@@ -1304,7 +1313,7 @@ defmodule TexttileWeb.SettingsLive do
                 type="button"
                 class="link"
                 id="reset-theme"
-                phx-click="reset_theme"
+                phx-click="ask_reset_theme"
               >
                 {gettext("Reset")}
               </button>
@@ -1534,6 +1543,20 @@ defmodule TexttileWeb.SettingsLive do
           <br />
           {gettext(
             "Do this when a token may have got out, and after that whenever you like: the copies you already keep are untouched by it."
+          )}
+        </p>
+      </.ask>
+
+      <.ask
+        :if={@confirm_theme}
+        heading={gettext("Reset the theme?")}
+        ok={gettext("Reset the theme")}
+        on_ok="reset_theme"
+        on_cancel="cancel_delete"
+      >
+        <p>
+          {gettext(
+            "The site wears the iris default again the moment you confirm. Your theme.css is gone, and there is no undo, so copy it first if you may want it back."
           )}
         </p>
       </.ask>

@@ -487,7 +487,7 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "--tt-ink:"
     end
 
-    test "Reset puts the iris default back", %{conn: conn} do
+    test "Reset asks first, then puts the iris default back", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 
       # nothing to reset while the site wears the default
@@ -496,7 +496,17 @@ defmodule TexttileWeb.SettingsLiveTest do
       {:ok, _} = Settings.put(:theme_css, ":root { --tt-accent: hotpink; }")
       {:ok, view, _html} = live(conn, ~p"/admin/settings")
 
-      html = view |> element("#reset-theme") |> render_click()
+      # Cancel keeps the theme
+      view |> element("#reset-theme") |> render_click()
+      assert has_element?(view, "#dialog", "Reset the theme?")
+      view |> element("#dialog-cancel") |> render_click()
+      refute has_element?(view, "#dialog")
+      assert Settings.get(:theme_css) =~ "hotpink"
+
+      view |> element("#reset-theme") |> render_click()
+      html = view |> element("#dialog-ok") |> render_click()
+
+      refute has_element?(view, "#dialog")
 
       assert Settings.get(:theme_css) == ""
       refute html =~ "hotpink"
