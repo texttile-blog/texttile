@@ -2437,6 +2437,11 @@ defmodule TexttileWeb.EditorLive do
             phx-submit="ask_slug"
             phx-auto-recover="recover_settings"
           >
+            <%!-- a phone has scrolled the title away by here: the line
+                 over the heading says whose settings these are --%>
+            <p class="lg:hidden text-[13px] text-dim mb-1 truncate" id="settingsOf">
+              {Articles.display_title(@article)}
+            </p>
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <%!-- no line on saving: the bar says Saved --%>
               <span class="font-serif text-[18px] font-semibold">{gettext("Entry settings")}</span>

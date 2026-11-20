@@ -3235,3 +3235,37 @@ th.num { font-variant-numeric: normal; white-space: nowrap; }
 @media (max-width: 767px) {
   #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 40px; }
 }
+
+/* ROUND 20 */
+/* the reader's text square: a surface a step deeper than the page, so
+   it reads as made on a slow line too. A short opening is a cover: set
+   large, on the floor of its square; a long one fills it from the top. */
+.card .cimg.empty:has(.cx) { background: color-mix(in srgb, var(--tt-field), var(--tt-ink) 3%); }
+.card .cimg.empty:has(.cx.short) { justify-content: flex-end; }
+.card .cimg .cx.short { font-size: clamp(22px, 9.4cqi, 30px); line-height: 1.2; }
+@media (max-width: 560px) { body.site .card .cimg .cx.short { font-size: 30px; } }
+
+/* a phone's comment row: Reply and Edit keep their places on every
+   row; Approve, when it applies, stands at the far end beside Delete */
+@media (max-width: 639px) {
+  .cmt-acts > .rel { order: 2; margin-left: auto; }
+  .cmt-acts > .danger { order: 3; }
+  .cmt-acts > .rel + * { margin-left: 0; }
+  .cmt-acts:has(> .rel) > .danger { margin-left: 14px; }
+}
+
+/* a reader's tag on a phone: a size up, a finger tall */
+@media (max-width: 639px) {
+  .ctag { font-size: 14px; padding: 10px 0; margin: -10px 12px -10px 0; }
+  #tagbar .ctag { margin: 0; padding: 6px 0; }
+  #meta .mtags .link { padding: 10px 0; margin: -10px 0; }
+}
+
+/* a heading's count stands on the heading's line */
+.page-h .hcount { vertical-align: baseline; font-size: 16px; line-height: 1; }
+
+/* a phone without a heading: the first thing under the bar starts on
+   one line on every list screen */
+@media (max-width: 639px) {
+  .admin-col > div:has(> .page-h:only-child) { margin-bottom: 0; }
+}

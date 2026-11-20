@@ -96,10 +96,11 @@ defmodule TexttileWeb.CommentComponents do
          the words on a phone, so a long name never meets them. Reply
          answers by mail, in words: an icon said nothing. --%>
       <div :if={!@editing} class="cmt-acts">
-        <%!-- Release stands first and only while it applies, so Reply,
-             Edit and Delete keep their places down the list. It is the
-             one decision a waiting comment asks for, so it wears the
-             accent where the others are the quiet ink. --%>
+        <%!-- Approve stands only while it applies. It is the one
+             decision a waiting comment asks for, so it wears the accent
+             where the others are the quiet ink. A desk shows it first;
+             a phone puts it at the far end beside Delete, so Reply and
+             Edit keep their places down the list. --%>
         <button
           :if={@waiting}
           class="btn quiet sm rel"
