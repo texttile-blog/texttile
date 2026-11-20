@@ -48,7 +48,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     view |> element("nav .tab", "Comments") |> render_click()
     assert has_element?(view, "#tp-comments", "No comments yet.")
-    assert has_element?(view, "#tp-comments", "No captcha, ever")
+    assert has_element?(view, "#tp-comments", "Readers confirm their email first")
   end
 
   test "?tab=comments opens the tab straight from the overview's jump", %{conn: conn} do

@@ -2071,7 +2071,7 @@
 @media (max-width: 639px) {
   .mdb.rare, .mdsep.rare { display: none; }
   /* the buttons that are left share the row's width evenly */
-  .mdbar { justify-content: space-between; margin-right: -17px; }
+  .mdbar { justify-content: flex-start; gap: 2px; }
 }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2899,3 +2899,53 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* the address to add a subscriber: as wide as an address */
 @media (min-width: 640px) { #subAdd input[type=email] { max-width: 400px; } }
+
+/* ROUND 10 */
+/* a phone's comment filters keep one row: the words a step smaller,
+   the gaps a step closer; past the edge the row scrolls under a fade */
+@media (max-width: 639px) {
+  #commentFilter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #commentFilter::-webkit-scrollbar { display: none; }
+  #commentFilter .seg-b { flex: none; font-size: 14px; margin-right: 15px; }
+}
+
+/* the base line every row of choices stands on, its open one's rule on it */
+#commentFilter, #statsWindows { border-bottom: 1px solid var(--tt-hair); }
+#commentFilter .seg-b.on, #statsWindows .seg-b.on { margin-bottom: -1px; }
+
+/* the phone's Settings picker: as wide as its words, its chevron right
+   after them; the first section keeps its own heading */
+@media (max-width: 999px) {
+  .setnav .setpick { field-sizing: content; }
+  .setbody > .set-h:first-child { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; margin-top: 18px; }
+  .setbody > .set-h:first-child + * { margin-top: 0; }
+}
+
+/* the phone editor's bar: its two buttons a finger tall */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 40px; }
+  #topbar.wide .split .chev { width: 40px; }
+}
+
+/* the chosen tile's flag: one line */
+.tile .cov { white-space: nowrap; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; }
+
+/* an entry without a picture: its first letter, in the serif, in a
+   framed square, so the column reads as a column of entries */
+#cards .card .cimg.empty { background: transparent; box-shadow: inset 0 0 0 1px var(--tt-hair); }
+#cards .card .cimg .ci {
+  display: block; font-family: var(--tt-font-serif); font-size: 22px; font-weight: 500;
+  line-height: 1; color: var(--tt-faint);
+}
+
+/* the waiting mark on the line of the name it follows */
+.cmt-top { align-items: baseline; }
+.wait { align-self: baseline; }
+
+/* the reader's search on a phone: the year and the count share a row */
+@media (max-width: 860px) {
+  .searchrow .cnt { flex-basis: auto; margin-top: 0; margin-left: auto; align-self: center; }
+}
+
+/* Import: its heading a step over the words, as on every screen */
+.admin-col > .page-h + .lead { margin-top: 14px; }

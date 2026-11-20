@@ -50,7 +50,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     assert has_element?(view, "#crumb", "Comments")
     assert has_element?(view, "#commentsList", "No comments yet, anywhere")
-    assert has_element?(view, "#commentsRule", "No captcha, ever")
+    assert has_element?(view, "#commentsRule", "Readers confirm their email first")
   end
 
   test "lists the latest comments across texts with their marks and jumps", %{conn: conn} do
@@ -604,7 +604,7 @@ defmodule TexttileWeb.CommentsLiveTest do
   test "the rule follows the setting as it changes", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
     assert has_element?(view, "#commentsRule", "Readers confirm their email first")
-    assert has_element?(view, "#commentsRule", "within 3 days goes for good")
+    assert has_element?(view, "#commentsRule", "deleted after 3 days")
 
     {:ok, _} = Settings.put(:comments_require_confirmation, false)
     assert has_element?(view, "#commentsRule", "Comments appear the moment a reader sends them")

@@ -654,6 +654,7 @@ defmodule TexttileWeb.SettingsLive do
              other. Without the script both are plain jumps. --%>
         <nav class="setnav" id="setNav" phx-hook=".SetNav" aria-label={gettext("Sections")}>
           <select class="setpick" aria-label={gettext("Jump to a section")}>
+            <option value="" disabled selected>{gettext("Jump to a section")}</option>
             <option :for={{id, label} <- sections()} value={id}>{label}</option>
           </select>
           <a :for={{id, label} <- sections()} href={"#" <> id}>{label}</a>
@@ -675,9 +676,13 @@ defmodule TexttileWeb.SettingsLive do
                 const beside = matchMedia("(min-width: 1000px)").matches
                 const top = beside ? 52 : this.el.getBoundingClientRect().bottom
                 const line = top + 120
-                let now = heads[0]
-                for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
+                // before the first heading has reached the bars, the
+                // screen is at its top and the picker names no section
+                let now = null
+                if (heads[0].getBoundingClientRect().top < top + 8)
+                  for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
                 if (now) mark(now.id)
+                else { links.forEach(a => a.removeAttribute("aria-current")); pick.value = "" }
               }
               pick.addEventListener("change", () => document.getElementById(pick.value)?.scrollIntoView())
               addEventListener("scroll", this.onScroll, {passive: true})
@@ -1073,7 +1078,9 @@ defmodule TexttileWeb.SettingsLive do
                  row, so name and address stand at one rhythm --%>
               <div class="flex items-center gap-[10px] flex-wrap min-h-[30px]">
                 <span class="rowp">{Accounts.display_name(user)}</span>
-                <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
+                <span :if={user.id == @current_scope.user.id} class="text-[13px] text-faint">
+                  {gettext("you")}
+                </span>
                 <span
                   :if={
                     user.id != @current_scope.user.id and
@@ -1392,7 +1399,7 @@ defmodule TexttileWeb.SettingsLive do
           <div id="backupSection">
             <p class="note mb-2 leading-[1.6]">
               {gettext(
-                "A machine you keep fetches the database and every upload from here, with scripts/texttile-backup.sh from the repository."
+                "Run scripts/texttile-backup.sh from the repository on a machine you keep, and it downloads the database and every upload from here."
               )}
             </p>
 

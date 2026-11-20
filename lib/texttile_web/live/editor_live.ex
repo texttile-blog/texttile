@@ -1812,15 +1812,6 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
-              <%!-- comments waiting for their reader, carried out of
-                   the folded menu --%>
-              <span
-                :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
-                class="more"
-                title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
-              >
-                {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
-              </span>
               <svg
                 width="14"
                 height="14"
@@ -1922,6 +1913,22 @@ defmodule TexttileWeb.EditorLive do
               </button>
             </nav>
 
+            <%!-- a phone folds Comments into More, so comments waiting
+                 for their reader are named here, over the words, one tap
+                 from their list --%>
+            <button
+              :if={@tab == "text" and unconfirmed(@comments, @cmt_require) > 0}
+              type="button"
+              class="lg:hidden block text-[13.5px] font-medium text-accent mb-4"
+              id="newComments"
+              phx-click={JS.push("set_tab", value: %{tab: "comments"})}
+            >
+              {ngettext(
+                "1 new comment waits for you",
+                "%{count} new comments wait for you",
+                unconfirmed(@comments, @cmt_require)
+              )}
+            </button>
             <div :if={@tab == "text"} id="tp-text">
               <form id="text-form" phx-change="title_changed" phx-submit="title_submitted">
                 <input

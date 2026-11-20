@@ -256,7 +256,7 @@ defmodule TexttileWeb.CommentComponents do
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
-      "Readers confirm their email first; Release shows a comment before that. A comment nobody confirms within %{waiting} days goes for good, and the trash keeps a deleted one for %{days} days. No captcha, ever.",
+      "Readers confirm their email first; Release shows a comment before that. Unconfirmed comments are deleted after %{waiting} days, and deleted comments stay in the trash for %{days} days.",
       waiting: Comments.waiting_days(),
       days: Comments.trash_days()
     )
@@ -264,7 +264,7 @@ defmodule TexttileWeb.CommentComponents do
 
   def comment_rule(false) do
     gettext(
-      "Comments appear the moment a reader sends them. The trash keeps a deleted comment for %{days} days. No captcha, ever.",
+      "Comments appear the moment a reader sends them. Deleted comments stay in the trash for %{days} days.",
       days: Comments.trash_days()
     )
   end

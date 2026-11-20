@@ -77,6 +77,17 @@ defmodule TexttileWeb.TextsLive do
     })
   end
 
+  # The first letter of an entry's title, for the square of an entry
+  # without a picture.
+  defp initial(article) do
+    article
+    |> Articles.display_title()
+    |> String.trim()
+    |> String.first()
+    |> to_string()
+    |> String.upcase()
+  end
+
   # The status filters in their order. Scheduled stands only while an
   # entry waits for its day (or while it is the open filter).
   defp filters(counts, open) do
@@ -238,9 +249,11 @@ defmodule TexttileWeb.TextsLive do
               <%= if cover = @covers[article.id] do %>
                 <span class="cimg" style={cover_bg(cover)}></span>
               <% else %>
-                <%!-- an entry of words alone keeps the square: the
-                     stylesheet draws a page of lines in it --%>
-                <span class="cimg empty"></span>
+                <%!-- an entry of words alone keeps the square, framed,
+                     with the first letter of its title in it --%>
+                <span class="cimg empty">
+                  <span class="ci" aria-hidden="true">{initial(article)}</span>
+                </span>
               <% end %>
               <span class="ct">{Articles.display_title(article)}</span>
               <%!-- the facts of the row: the state, the day, who it is by.

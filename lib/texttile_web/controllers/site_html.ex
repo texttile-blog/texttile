@@ -86,9 +86,10 @@ defmodule TexttileWeb.SiteHTML do
       <%!-- on an entry the strip says what is shown: the working copy,
            which every signed-in admin reads instead of the live one --%>
       <span :if={@current_scope && @edit} class="truncate">
-        {gettext("Working copy · signed in as %{name}",
-          name: Texttile.Accounts.display_name(@current_scope.user)
-        )}
+        {gettext("Working copy")}<span class="max-sm:hidden"> · {gettext(
+            "signed in as %{name}",
+            name: Texttile.Accounts.display_name(@current_scope.user)
+          )}</span>
       </span>
       <span :if={@current_scope && !@edit} class="truncate">
         {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
@@ -170,14 +171,13 @@ defmodule TexttileWeb.SiteHTML do
              band full with the blog's one line, so Subscribe never stands
              over two empty columns --%>
         <div
-          :if={
-            @describe and !@about_html and
-              String.trim(Texttile.Settings.get(:site_description)) != ""
-          }
+          :if={!@about_html}
           id="bandDesc"
         >
           <p class="f-eyebrow">{site_title()}</p>
-          <p>{String.trim(Texttile.Settings.get(:site_description))}</p>
+          <p :if={@describe and String.trim(Texttile.Settings.get(:site_description)) != ""}>
+            {String.trim(Texttile.Settings.get(:site_description))}
+          </p>
         </div>
         <.site_foot current_scope={@current_scope} />
         <div id="subscribe" aria-label={gettext("Subscribe")}>
