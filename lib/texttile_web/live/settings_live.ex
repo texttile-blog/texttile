@@ -1397,12 +1397,6 @@ defmodule TexttileWeb.SettingsLive do
 
           <.section id="set-backup">{gettext("Backup")}</.section>
           <div id="backupSection">
-            <p class="note mb-2 leading-[1.6]">
-              {gettext(
-                "Run scripts/texttile-backup.sh from the repository on a machine you keep, and it downloads the database and every upload from here."
-              )}
-            </p>
-
             <.form for={@settings_form} id="backup-form" phx-change="save_setting">
               <label class="opt">
                 <input type="hidden" name="settings[backup_enabled]" value="false" />
@@ -1421,6 +1415,12 @@ defmodule TexttileWeb.SettingsLive do
                 </span>
               </label>
             </.form>
+            <%!-- how the switch is used, under the switch --%>
+            <p class="note mt-2 mb-2 leading-[1.6]" id="backupHow">
+              {gettext(
+                "Run scripts/texttile-backup.sh from the repository on a machine you keep, and it downloads the database and every upload from here."
+              )}
+            </p>
 
             <%!-- The word is shown once and has to reach a configuration
                file somewhere else, so it is handed over the way the

@@ -199,7 +199,7 @@ defmodule TexttileWeb.CommentsLive do
           <%!-- the one distinction a decision needs, said before the
                decisions; what is kept and for how long stays under the
                list --%>
-          <p :if={@require? and @status in ["all", "waiting"]} class="note mt-2 mb-1" id="releaseNote">
+          <p :if={@require? and @status == "waiting"} class="note mt-2 mb-1" id="releaseNote">
             {gettext(
               "Unconfirmed: the reader has not confirmed the email yet. Release shows the comment now."
             )}

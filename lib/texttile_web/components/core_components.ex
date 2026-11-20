@@ -188,8 +188,8 @@ defmodule TexttileWeb.CoreComponents do
   the caret never leaves the text, and finds this bar by its id.
 
   `files: false` takes the image button off, for a surface that holds
-  words and no pictures. A phone leaves out the two rare ones, task list
-  and code, so the row fits the screen; the Markdown still types.
+  words and no pictures. A phone folds task list, code and image behind
+  an ellipsis, so the row fits the screen; the Markdown still types.
   """
   attr :id, :string, required: true
   attr :files, :boolean, default: true
@@ -328,8 +328,9 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M5.2 8.2l2 2 3.6-4" />
         </svg>
       </button>
-      <%!-- without the image, a phone has nothing after this rule --%>
-      <span class={["mdsep", !@files && "rare"]} aria-hidden="true"></span>
+      <%!-- a phone has nothing after this rule until the ellipsis
+           opens the rest --%>
+      <span class="mdsep rare" aria-hidden="true"></span>
       <button
         type="button"
         class="mdb rare"
@@ -353,7 +354,7 @@ defmodule TexttileWeb.CoreComponents do
       <button
         :if={@files}
         type="button"
-        class="mdb"
+        class="mdb rare"
         data-cmd="image"
         title={gettext("Put an image in the text, at the caret")}
         aria-label={gettext("Image")}

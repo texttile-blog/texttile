@@ -1812,12 +1812,20 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
+              <%!-- a dot alone: the count stands on the Comments tab
+                   inside --%>
               <span
                 :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
-                class="more"
+                class="more dot-only"
                 title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
               >
-                {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
+                <span class="sr">
+                  {ngettext(
+                    "1 new comment",
+                    "%{count} new comments",
+                    unconfirmed(@comments, @cmt_require)
+                  )}
+                </span>
               </span>
               <svg
                 width="14"
@@ -1920,22 +1928,6 @@ defmodule TexttileWeb.EditorLive do
               </button>
             </nav>
 
-            <%!-- a phone folds Comments into More, so comments waiting
-                 for their reader are named here, over the words, one tap
-                 from their list --%>
-            <button
-              :if={@tab == "text" and unconfirmed(@comments, @cmt_require) > 0}
-              type="button"
-              class="lg:hidden block text-[13.5px] font-medium text-accent underline underline-offset-2 decoration-accentsoft mb-5"
-              id="newComments"
-              phx-click={JS.push("set_tab", value: %{tab: "comments"})}
-            >
-              {ngettext(
-                "1 new comment waits for you",
-                "%{count} new comments wait for you",
-                unconfirmed(@comments, @cmt_require)
-              )}
-            </button>
             <div :if={@tab == "text"} id="tp-text">
               <form id="text-form" phx-change="title_changed" phx-submit="title_submitted">
                 <input

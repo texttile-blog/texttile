@@ -112,7 +112,7 @@ defmodule TexttileWeb.ImportLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
-        <p class="lead !text-ink !max-w-none">
+        <p class="note leading-[1.6] max-w-[584px]">
           {gettext(
             "Bring entries over from another blog: a zip with one folder per entry, holding its Markdown, its settings and its pictures. Pictures can also be web addresses the server downloads."
           )}
@@ -121,9 +121,9 @@ defmodule TexttileWeb.ImportLive do
 
         <%= case @job.phase do %>
           <% :idle -> %>
-            <form id="import-upload" phx-change="validate_upload" class="mt-6">
+            <form id="import-upload" phx-change="validate_upload" class="mt-3">
               <%!-- what somebody wants to know before they pick a file --%>
-              <p class="note mb-3 max-w-[62ch]">
+              <p class="note leading-[1.6] mb-4 max-w-[584px]">
                 {gettext(
                   "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
                 )}

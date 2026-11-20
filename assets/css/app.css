@@ -3118,3 +3118,24 @@ section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font
 /* Profile: fields as wide as a name and an address need */
 @media (min-width: 768px) { .admin-col.profile .val, .admin-col.profile .pairrow { max-width: 520px; } }
 @media (max-width: 639px) { #cards .card .cm .open i { margin-left: 0; } }
+
+/* ROUND 15 */
+/* an entry without a picture: no fill, a hairline frame and a pilcrow
+   in the faint ink, so the column reads as made, not as a picture that
+   failed to load */
+#cards .card .cimg.empty { background: transparent; box-shadow: inset 0 0 0 1px var(--tt-rule); }
+#cards .card .cimg .ci { display: block; font-size: 17px; color: var(--tt-faint); }
+
+/* the phone's More: a dot alone, the count is on the tab inside */
+.more.dot-only::before { margin: 0 2px 1px 6px; }
+
+/* a long address breaks inside the side column instead of running
+   to its edge */
+#slugHint a { overflow-wrap: anywhere; }
+
+/* Profile: the one form measure of the admin area, the width of a
+   Settings field, for the fields and the sessions under them */
+@media (min-width: 768px) {
+  .admin-col.profile .val, .admin-col.profile .pairrow { max-width: none; }
+  .admin-col.profile > * { max-width: 584px; }
+}
