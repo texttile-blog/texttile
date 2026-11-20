@@ -124,7 +124,7 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
   end
 
-  describe "gallery_wrap/1, gallery_shape/1 and gallery_size/2" do
+  describe "gallery_wrap/1, gallery_shape/1 and gallery_size/1" do
     # a tile carries more than this, but the shape only counts them
     defp tiles(count), do: for(index <- 1..count//1, do: %{id: index})
 
@@ -143,21 +143,9 @@ defmodule TexttileWeb.SiteHTMLTest do
     end
 
     test "a picture alone fills the column, so it comes at the reading size" do
-      [one] = tiles(1)
-      assert SiteHTML.gallery_size(tiles(1), one) == :reading
-
-      for count <- [2, 4, 9], tile <- tiles(count) |> Enum.take(count - 1) do
-        assert SiteHTML.gallery_size(tiles(count), tile) == :card
-      end
-    end
-
-    # an odd gallery of five or more ends on a tile that spans the
-    # whole width, on a phone always and on a desk for 4n+1
-    test "the last tile of an odd gallery spans the width, so it comes at the reading size" do
-      assert SiteHTML.gallery_size(tiles(5), List.last(tiles(5))) == :reading
-      assert SiteHTML.gallery_size(tiles(9), List.last(tiles(9))) == :reading
-      assert SiteHTML.gallery_size(tiles(4), List.last(tiles(4))) == :card
-      assert SiteHTML.gallery_size(tiles(6), List.last(tiles(6))) == :card
+      assert SiteHTML.gallery_size(tiles(1)) == :reading
+      assert SiteHTML.gallery_size(tiles(2)) == :card
+      assert SiteHTML.gallery_size(tiles(9)) == :card
     end
   end
 end

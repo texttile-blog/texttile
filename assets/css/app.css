@@ -2548,22 +2548,6 @@ section.foot-band .cols { padding-bottom: 32px; }
   .admin-col table th.people, .admin-col table td.people { padding-right: 0; }
 }
 
-/* THE GALLERY'S LAST ROW · four to a row on a desk, two on a phone. A
-   row that comes up short spreads its pictures over the whole width
-   and keeps the height of the rows over it, so the grid ends on a full
-   line instead of a hole. The pictures fill their wider frames. */
-.gal:not(.gal-1, .gal-2, .gal-3) > a:last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
-@media (min-width: 900px) {
-  .gal:not(.gal-1, .gal-2, .gal-3) { grid-template-columns: repeat(12, minmax(0, 1fr)); }
-  .gal:not(.gal-1, .gal-2, .gal-3) > a,
-  .gal:not(.gal-1, .gal-2, .gal-3) > a:last-child:nth-child(odd) { grid-column: span 3; aspect-ratio: 1; }
-  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):last-child { grid-column: 1 / -1; aspect-ratio: 4 / 1; }
-  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(2),
-  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(2) + a { grid-column: span 6; aspect-ratio: 2 / 1; }
-  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(3),
-  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(3) ~ a { grid-column: span 4; aspect-ratio: 4 / 3; }
-}
-
 /* the tag row of the archive reads like every other row of choices:
    the quiet ink, the open one in ink with the violet rule */
 #tagbar .ctag { color: var(--tt-dim); }
