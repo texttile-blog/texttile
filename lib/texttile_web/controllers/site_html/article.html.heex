@@ -4,6 +4,7 @@
   menu_pages={@menu_pages}
   current_scope={@current_scope}
   known={assigns[:known_browser]}
+  edit={@current_scope && ~p"/admin/texts/#{@article.id}"}
 />
 <main>
   <%!-- An entry that is not live wears its address for the admins and
@@ -27,39 +28,27 @@
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
-      <%!-- the line under the title: the day, the tags, and for the
-           admin who is signed in the way straight into the admin area.
-           A page has no date and no tags, so there the line is the way
-           in and nothing else. --%>
-      <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
-        <%= if @article.type == "post" do %>
-          <span class="num">{format_date(@article.publish_date)}</span>
-          <%!-- who started the entry, read from the account now, so a
-               rename reaches every entry that person ever wrote --%>
-          <span :if={Articles.author_name(@article)} id="by">
-            · {Articles.author_name(@article)}
-          </span>
-          <span :if={Articles.tag_list(@article) != []}>·</span>
-          <%!-- the tags 8px apart, as on the cards --%>
-          <span :if={Articles.tag_list(@article) != []} class="mtags">
-            <a
-              :for={tag <- Articles.tag_list(@article)}
-              href={~p"/tags/#{String.downcase(tag)}"}
-              class="link"
-            >
-              #{tag}
-            </a>
-          </span>
-        <% end %>
-        <span :if={@current_scope && @article.type == "post"} aria-hidden="true">·</span>
-        <a
-          :if={@current_scope}
-          id="edit-text"
-          class="edit-link"
-          href={~p"/admin/texts/#{@article.id}"}
-        >
-          {gettext("Edit")}
-        </a>
+      <%!-- the line under the title: the day, who wrote it, the tags.
+           A page has no date and no tags, so it has no line. The way
+           into the editor stands in the strip over the header. --%>
+      <p :if={@article.type == "post"} id="meta" class="f-note mt-3">
+        <span class="num">{format_date(@article.publish_date)}</span>
+        <%!-- who started the entry, read from the account now, so a
+             rename reaches every entry that person ever wrote --%>
+        <span :if={Articles.author_name(@article)} id="by">
+          · {Articles.author_name(@article)}
+        </span>
+        <span :if={Articles.tag_list(@article) != []}>·</span>
+        <%!-- the tags 8px apart, as on the cards --%>
+        <span :if={Articles.tag_list(@article) != []} class="mtags">
+          <a
+            :for={tag <- Articles.tag_list(@article)}
+            href={~p"/tags/#{String.downcase(tag)}"}
+            class="link"
+          >
+            #{tag}
+          </a>
+        </span>
       </p>
 
       <div class="prose" id="body">{body_html(@article)}</div>

@@ -398,8 +398,8 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:backup_access, Texttile.Backup.last_access())
   end
 
-  defp backup_note(true), do: gettext("A client with the token may fetch.")
-  defp backup_note(false), do: gettext("/backup answers nothing, as if it were not there.")
+  defp backup_note(true), do: gettext("On: a client with the token may fetch.")
+  defp backup_note(false), do: gettext("Off: /backup answers nothing, as if it were not there.")
 
   defp token_state(""), do: gettext("No token yet, so nothing is served.")
   defp token_state(_hash), do: gettext("A token is in service, kept as a hash.")
@@ -644,7 +644,7 @@ defmodule TexttileWeb.SettingsLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col twocol">
+      <div class="admin-col setgrid">
         <h1 class="page-h">{gettext("Settings")}</h1>
         <%!-- a phone has the save state in its bar, so the line that
              explains it stays on the desk --%>
@@ -652,283 +652,290 @@ defmodule TexttileWeb.SettingsLive do
           {gettext("Every change saves itself the moment you make it.")}
         </p>
 
-        <.section>{gettext("Site")}</.section>
-        <%!-- three fields somebody fills in on their first visit here,
+        <%!-- the way through a long screen: every section by name. A
+             desk keeps the list beside the sections while they scroll;
+             a phone has it once, at the top. --%>
+        <nav class="setnav" id="setNav" aria-label={gettext("Sections")}>
+          <a :for={{id, label} <- sections()} href={"#" <> id}>{label}</a>
+        </nav>
+
+        <div class="setbody">
+          <.section id="set-site">{gettext("Site")}</.section>
+          <%!-- three fields somebody fills in on their first visit here,
              so all three look like fields and not like values --%>
-        <.form for={@settings_form} id="site-form" phx-change="save_setting">
-          <div class="drow">
-            <label class="lab" for="setting-site_title">{gettext("Site title")}</label>
-            <span class="val">
-              <input
-                type="text"
-                id="setting-site_title"
-                name="settings[site_title]"
-                value={@settings_form[:site_title].value}
-                phx-debounce="300"
-              />
-            </span>
-          </div>
-          <div class="drow">
-            <label class="lab" for="setting-site_description">{gettext("Description")}</label>
-            <span class="val">
-              <%!-- a sentence, not a word: the field grows to show all of
+          <.form for={@settings_form} id="site-form" phx-change="save_setting">
+            <div class="drow">
+              <label class="lab" for="setting-site_title">{gettext("Site title")}</label>
+              <span class="val">
+                <input
+                  type="text"
+                  id="setting-site_title"
+                  name="settings[site_title]"
+                  value={@settings_form[:site_title].value}
+                  phx-debounce="300"
+                />
+              </span>
+            </div>
+            <div class="drow">
+              <label class="lab" for="setting-site_description">{gettext("Description")}</label>
+              <span class="val">
+                <%!-- a sentence, not a word: the field grows to show all of
                    it, so the line the readers get can be read back whole --%>
-              <textarea
-                id="setting-site_description"
-                name="settings[site_description]"
-                rows="1"
-                phx-debounce="300"
-                class="grow-line"
-              >{@settings_form[:site_description].value}</textarea>
-            </span>
-          </div>
-          <div class="drow">
-            <label class="lab" for="setting-language">{gettext("Language")}</label>
-            <span class="val">
-              <%!-- every language carries the name it calls itself, so
+                <textarea
+                  id="setting-site_description"
+                  name="settings[site_description]"
+                  rows="1"
+                  phx-debounce="300"
+                  class="grow-line"
+                >{@settings_form[:site_description].value}</textarea>
+              </span>
+            </div>
+            <div class="drow">
+              <label class="lab" for="setting-language">{gettext("Language")}</label>
+              <span class="val">
+                <%!-- every language carries the name it calls itself, so
                    the row reads for somebody who cannot read the one
                    the blog is set to right now --%>
-              <select id="setting-language" name="settings[language]">
-                <option
-                  :for={{code, name} <- Texttile.I18n.languages()}
-                  value={code}
-                  selected={@settings.language == code}
-                >
-                  {name}
-                </option>
-              </select>
-              <div class="hint">
-                {gettext(
-                  "For the reader pages, this admin area, the dates and the mails. Your own words stay as you wrote them."
-                )}
-              </div>
+                <select id="setting-language" name="settings[language]">
+                  <option
+                    :for={{code, name} <- Texttile.I18n.languages()}
+                    value={code}
+                    selected={@settings.language == code}
+                  >
+                    {name}
+                  </option>
+                </select>
+                <div class="hint">
+                  {gettext(
+                    "For the reader pages, this admin area, the dates and the mails. Your own words stay as you wrote them."
+                  )}
+                </div>
+              </span>
+            </div>
+          </.form>
+
+          <div class="flex items-center gap-[14px] pt-[6px]" id="logoRow">
+            <span
+              class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
+              id="prev-logo"
+            >
+              <img
+                :if={@settings.logo}
+                src={Images.url(@settings.logo, :original)}
+                alt=""
+                class="max-w-[30px] max-h-[30px]"
+              />
+              <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
             </span>
-          </div>
-        </.form>
-
-        <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-[14px] pt-[6px]" id="logoRow">
-          <span
-            class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
-            id="prev-logo"
-          >
-            <img
+            <span class="flex flex-col flex-1 min-w-0">
+              <span class="rowp">{gettext("Logo")}</span>
+            </span>
+            <button
               :if={@settings.logo}
-              src={Images.url(@settings.logo, :original)}
-              alt=""
-              class="max-w-[30px] max-h-[30px]"
-            />
-            <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
-          </span>
-          <span class="flex flex-col flex-1 min-w-0">
-            <span class="rowp">{gettext("Logo")}</span>
-          </span>
-          <button
-            :if={@settings.logo}
-            class="link"
-            id="reset-logo"
-            phx-click="reset_mark"
-            phx-value-mark="logo"
-          >
-            {gettext("Use default")}
-          </button>
-          <form id="logo-form" phx-change="validate_upload">
-            <label class="btn cursor-pointer relative overflow-hidden">
-              {gettext("Upload")}
-              <.live_file_input
-                upload={@uploads.logo}
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                aria-label={gettext("Upload a logo")}
+              class="link"
+              id="reset-logo"
+              phx-click="reset_mark"
+              phx-value-mark="logo"
+            >
+              {gettext("Use default")}
+            </button>
+            <form id="logo-form" phx-change="validate_upload">
+              <label class="btn cursor-pointer relative overflow-hidden">
+                {gettext("Upload")}
+                <.live_file_input
+                  upload={@uploads.logo}
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label={gettext("Upload a logo")}
+                />
+              </label>
+            </form>
+          </div>
+          <%!-- what is in use now and what the field is for, as one line --%>
+          <p class="note pt-[8px] pb-[14px] border-b border-hair">
+            <span id="name-logo">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
+              "SVG, PNG, JPG or WebP."
+            )}
+          </p>
+          <div class="flex items-center gap-[14px] pt-[14px]">
+            <span
+              class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
+              id="prev-favicon"
+            >
+              <img
+                :if={@settings.favicon}
+                src={Images.url(@settings.favicon, :original)}
+                alt=""
+                class="max-w-[30px] max-h-[30px]"
               />
-            </label>
-          </form>
-        </div>
-        <%!-- what is in use now and what the field is for, as one line --%>
-        <p class="note pt-[8px] pb-[14px] border-b border-hair">
-          <span id="name-logo">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
-            "SVG, PNG, JPG or WebP."
-          )}
-        </p>
-        <div class="flex items-center gap-[14px] pt-[14px]">
-          <span
-            class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
-            id="prev-favicon"
-          >
-            <img
+              <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
+            </span>
+            <span class="flex flex-col flex-1 min-w-0">
+              <span class="rowp">{gettext("Favicon")}</span>
+            </span>
+            <button
               :if={@settings.favicon}
-              src={Images.url(@settings.favicon, :original)}
-              alt=""
-              class="max-w-[30px] max-h-[30px]"
-            />
-            <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
-          </span>
-          <span class="flex flex-col flex-1 min-w-0">
-            <span class="rowp">{gettext("Favicon")}</span>
-          </span>
-          <button
-            :if={@settings.favicon}
-            class="link"
-            id="reset-favicon"
-            phx-click="reset_mark"
-            phx-value-mark="favicon"
-          >
-            {gettext("Use default")}
-          </button>
-          <form id="favicon-form" phx-change="validate_upload">
-            <label class="btn cursor-pointer relative overflow-hidden">
-              {gettext("Upload")}
-              <.live_file_input
-                upload={@uploads.favicon}
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                aria-label={gettext("Upload a favicon")}
-              />
-            </label>
-          </form>
-        </div>
-        <p class="note pt-[8px] pb-[6px]">
-          <%!-- the default is said once, under the logo; the favicon
+              class="link"
+              id="reset-favicon"
+              phx-click="reset_mark"
+              phx-value-mark="favicon"
+            >
+              {gettext("Use default")}
+            </button>
+            <form id="favicon-form" phx-change="validate_upload">
+              <label class="btn cursor-pointer relative overflow-hidden">
+                {gettext("Upload")}
+                <.live_file_input
+                  upload={@uploads.favicon}
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label={gettext("Upload a favicon")}
+                />
+              </label>
+            </form>
+          </div>
+          <p class="note pt-[8px] pb-[6px]">
+            <%!-- the default is said once, under the logo; the favicon
                names its file only once one is uploaded --%>
-          <span :if={@settings.favicon_name} id="name-favicon">{@settings.favicon_name}.</span> {gettext(
-            "Square."
-          )}
-        </p>
+            <span :if={@settings.favicon_name} id="name-favicon">{@settings.favicon_name}.</span> {gettext(
+              "Square."
+            )}
+          </p>
 
-        <.section>{gettext("About")}</.section>
-        <%!-- the editor of an entry, with the pictures taken out: About
+          <.section id="set-about">{gettext("About")}</.section>
+          <%!-- the editor of an entry, with the pictures taken out: About
              stands in the band under every page and carries words, not
              a gallery. One hook, one behaviour, one set of keys. The bar
              follows the heading straight, so the two share a top. --%>
-        <%!-- one item of the section's grid: the bar and the box are one
+          <%!-- one item of the section's grid: the bar and the box are one
              frame --%>
-        <div>
-          <.md_bar id="aboutBar" files={false} />
-          <%!-- the section names the one field, so its label is for a
+          <div>
+            <.md_bar id="aboutBar" files={false} />
+            <%!-- the section names the one field, so its label is for a
              screen reader only --%>
-          <label class="sr" for="setting-about_markdown">
-            {gettext("About this blog")}
-          </label>
-          <div
-            id="setting-about_markdown"
-            class="ed-body ed-cm boxed-cm"
-            phx-hook="BodyEd"
-            phx-update="ignore"
-            data-event="about_changed"
-            data-bar="#aboutBar"
-            data-files="false"
-            data-label={gettext("About this blog, Markdown")}
-            data-placeholder={
-              gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
-            }
-          >
-            <textarea>{@settings.about_markdown}</textarea>
+            <label class="sr" for="setting-about_markdown">
+              {gettext("About this blog")}
+            </label>
+            <div
+              id="setting-about_markdown"
+              class="ed-body ed-cm boxed-cm"
+              phx-hook="BodyEd"
+              phx-update="ignore"
+              data-event="about_changed"
+              data-bar="#aboutBar"
+              data-files="false"
+              data-label={gettext("About this blog, Markdown")}
+              data-placeholder={
+                gettext("Who writes here, and what this blog is. Markdown works: ## for a heading.")
+              }
+            >
+              <textarea>{@settings.about_markdown}</textarea>
+            </div>
           </div>
-        </div>
-        <%!-- the rendered words, on demand: JS.toggle keeps them open
+          <%!-- the rendered words, on demand: JS.toggle keeps them open
              across every redraw the saving sends. Close under the field
              it belongs to. --%>
-        <p class="mt-[8px] mb-[8px]">
-          <button
-            type="button"
-            class="link text-[13px]"
-            id="toggle-about-preview"
-            phx-click={JS.toggle(to: "#aboutPreview")}
-          >
-            {gettext("Preview")}
-          </button>
-        </p>
-        <div class="md-preview mt-[8px] pt-3 border-t border-hair hidden" id="aboutPreview">
-          {Phoenix.HTML.raw(@about_html)}
-        </div>
-
-        <.section>{gettext("Front page")}</.section>
-        <.form for={@settings_form} id="front-page-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
-            <input
-              type="radio"
-              name="settings[front_page]"
-              value="latest"
-              checked={resolved_front_page(@settings, @pages) == nil}
-              class="w-auto flex-none mt-[3px]"
-              style="accent-color:var(--tt-accent)"
-            />
-            <span>
-              <span class="text-[14.5px] font-medium">{gettext("Latest entries")}</span>
-              <br />
-              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
-                {gettext("Published entries, newest first.")}
-              </span>
-            </span>
-          </label>
-          <label class={[
-            "flex gap-[10px] items-start py-2",
-            @pages == [] && "opacity-60"
-          ]}>
-            <input
-              type="radio"
-              name="settings[front_page]"
-              value={@pages != [] && "page:#{fixed_front_page(@settings, @pages).id}"}
-              checked={resolved_front_page(@settings, @pages) != nil}
-              disabled={@pages == []}
-              class="w-auto flex-none mt-[3px]"
-              style="accent-color:var(--tt-accent)"
-            />
-            <span>
-              <span class="text-[14.5px] font-medium">{gettext("A fixed page")}</span>
-              <br />
-              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
-                <%= if @pages == [] do %>
-                  {gettext(
-                    "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
-                  )}
-                <% else %>
-                  {gettext("A page you choose. The list of entries stays at /blog.")}
-                <% end %>
-              </span>
-            </span>
-          </label>
-          <div
-            :if={resolved_front_page(@settings, @pages) != nil}
-            class="py-3 sm:max-w-[240px]"
-            id="front-page-choice"
-          >
-            <%!-- its own name: with the radios' name, its value would
-                 shadow a click back to "Latest entries" --%>
-            <label class="lab block mb-[5px]" for="setting-front_page">{gettext("The page")}</label>
-            <select id="setting-front_page" name="settings[front_page_choice]">
-              <option
-                :for={page <- @pages}
-                value={"page:#{page.id}"}
-                selected={@settings.front_page == "page:#{page.id}"}
-              >
-                {Articles.display_title(page)}
-              </option>
-            </select>
+          <p class="mt-[8px] mb-[8px]">
+            <button
+              type="button"
+              class="link text-[13px]"
+              id="toggle-about-preview"
+              phx-click={JS.toggle(to: "#aboutPreview")}
+            >
+              {gettext("Preview")}
+            </button>
+          </p>
+          <div class="md-preview mt-[8px] pt-3 border-t border-hair hidden" id="aboutPreview">
+            {Phoenix.HTML.raw(@about_html)}
           </div>
-          <div class="drow gtop">
-            <label class="lab" for="setting-posts_per_page">{gettext("Entries per page")}</label>
-            <span class="val">
-              <select
-                id="setting-posts_per_page"
-                name="settings[posts_per_page]"
-                class="sm:max-w-[240px]"
-              >
+
+          <.section id="set-front">{gettext("Front page")}</.section>
+          <.form for={@settings_form} id="front-page-form" phx-change="save_setting">
+            <label class="flex gap-[10px] items-start py-2 cursor-pointer">
+              <input
+                type="radio"
+                name="settings[front_page]"
+                value="latest"
+                checked={resolved_front_page(@settings, @pages) == nil}
+                class="w-auto flex-none mt-[3px]"
+                style="accent-color:var(--tt-accent)"
+              />
+              <span>
+                <span class="text-[14.5px] font-medium">{gettext("Latest entries")}</span>
+                <br />
+                <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+                  {gettext("Published entries, newest first.")}
+                </span>
+              </span>
+            </label>
+            <label class={[
+              "flex gap-[10px] items-start py-2",
+              @pages == [] && "opacity-60"
+            ]}>
+              <input
+                type="radio"
+                name="settings[front_page]"
+                value={@pages != [] && "page:#{fixed_front_page(@settings, @pages).id}"}
+                checked={resolved_front_page(@settings, @pages) != nil}
+                disabled={@pages == []}
+                class="w-auto flex-none mt-[3px]"
+                style="accent-color:var(--tt-accent)"
+              />
+              <span>
+                <span class="text-[14.5px] font-medium">{gettext("A fixed page")}</span>
+                <br />
+                <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+                  <%= if @pages == [] do %>
+                    {gettext(
+                      "One of your pages becomes the front door. The blog list keeps /blog either way. There are no pages yet: this choice unlocks with the first one you write."
+                    )}
+                  <% else %>
+                    {gettext("A page you choose. The list of entries stays at /blog.")}
+                  <% end %>
+                </span>
+              </span>
+            </label>
+            <div
+              :if={resolved_front_page(@settings, @pages) != nil}
+              class="py-3 sm:max-w-[240px]"
+              id="front-page-choice"
+            >
+              <%!-- its own name: with the radios' name, its value would
+                 shadow a click back to "Latest entries" --%>
+              <label class="lab block mb-[5px]" for="setting-front_page">{gettext("The page")}</label>
+              <select id="setting-front_page" name="settings[front_page_choice]">
                 <option
-                  :for={size <- page_sizes(@settings.posts_per_page)}
-                  value={size}
-                  selected={@settings.posts_per_page == size}
+                  :for={page <- @pages}
+                  value={"page:#{page.id}"}
+                  selected={@settings.front_page == "page:#{page.id}"}
                 >
-                  {size}
+                  {Articles.display_title(page)}
                 </option>
               </select>
-              <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
-                {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}
-              </p>
-            </span>
-          </div>
-        </.form>
+            </div>
+            <div class="drow gtop">
+              <label class="lab" for="setting-posts_per_page">{gettext("Entries per page")}</label>
+              <span class="val">
+                <select
+                  id="setting-posts_per_page"
+                  name="settings[posts_per_page]"
+                  class="sm:max-w-[240px]"
+                >
+                  <option
+                    :for={size <- page_sizes(@settings.posts_per_page)}
+                    value={size}
+                    selected={@settings.posts_per_page == size}
+                  >
+                    {size}
+                  </option>
+                </select>
+                <p :if={@errors[:posts_per_page]} class="text-julia text-[13px] mt-[6px]">
+                  {gettext("The value must be %{rule}.", rule: @errors[:posts_per_page])}
+                </p>
+              </span>
+            </div>
+          </.form>
 
-        <.section>{gettext("Access")}</.section>
-        <%!-- Two choices and the field that belongs to the second one.
+          <.section id="set-access">{gettext("Access")}</.section>
+          <%!-- Two choices and the field that belongs to the second one.
              No rules between them: they are one question, not three
              rows of a list, and a line under the last choice cut the
              password field away from the word it serves. The field is
@@ -936,569 +943,568 @@ defmodule TexttileWeb.SettingsLive do
              reads as what "Password-protected" needs. The radios carry
              a size of their own, so that indent is one number and not
              a browser's idea of a radio. --%>
-        <.form for={@settings_form} id="access-form" phx-change="save_setting">
-          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
-            <input
-              type="radio"
-              name="settings[site_visibility]"
-              value="public"
-              checked={@settings.site_visibility == "public"}
-              class="w-4 h-4 flex-none mt-[2px]"
-              style="accent-color:var(--tt-accent)"
-            />
-            <span>
-              <span class="text-[14.5px] font-medium">{gettext("Public")}</span>
-              <br />
-              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
-                {gettext("Anyone can read the blog.")}
-              </span>
-            </span>
-          </label>
-          <label class="flex gap-[10px] items-start py-2 cursor-pointer">
-            <input
-              type="radio"
-              name="settings[site_visibility]"
-              value="protected"
-              checked={@settings.site_visibility == "protected"}
-              class="w-4 h-4 flex-none mt-[2px]"
-              style="accent-color:var(--tt-accent)"
-            />
-            <span>
-              <span class="text-[14.5px] font-medium">{gettext("Password-protected")}</span>
-              <br />
-              <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
-                {gettext("One password for the whole blog. Search engines see nothing.")}
-              </span>
-            </span>
-          </label>
-          <%!-- the field is short, the sentence under it is not: the
-               hint keeps the width of the column --%>
-          <div class="pl-[26px] pb-3" id="pwRow">
-            <label class="lab block mb-[5px]" for="setting-site_password">
-              {gettext("Blog password")}
-            </label>
-            <input
-              type="text"
-              id="setting-site_password"
-              name="settings[site_password]"
-              value={@settings_form[:site_password].value}
-              placeholder={gettext("Choose a password")}
-              phx-debounce="300"
-              class="sm:max-w-[240px]"
-            />
-            <div class="hint">
-              {gettext("Every entry mail carries it, so subscribers have it too.")}
-            </div>
-          </div>
-        </.form>
-
-        <.section>{gettext("Comments")}</.section>
-        <.form for={@settings_form} id="comments-form" phx-change="save_setting">
-          <label class="opt py-2">
-            <input type="hidden" name="settings[comments_require_confirmation]" value="false" />
-            <input
-              type="checkbox"
-              id="setting-comments_require_confirmation"
-              name="settings[comments_require_confirmation]"
-              value="true"
-              checked={@settings.comments_require_confirmation}
-            />
-            <span>
-              {gettext("Confirm comments by email")}
-              <span class="note" id="setCmtNote">
-                {comments_note(@settings.comments_require_confirmation)}
-              </span>
-            </span>
-          </label>
-          <label class="opt py-2">
-            <input type="hidden" name="settings[notify_on_comment]" value="false" />
-            <input
-              type="checkbox"
-              id="setting-notify_on_comment"
-              name="settings[notify_on_comment]"
-              value="true"
-              checked={@settings.notify_on_comment}
-            />
-            <span>
-              {gettext("Email new comments")}
-              <span class="note" id="setNotifyNote">
-                {notify_note(@settings.notify_on_comment)}
-              </span>
-            </span>
-          </label>
-        </.form>
-
-        <.section>{gettext("Users")}</.section>
-        <div id="usersList">
-          <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
-            <%!-- the name line keeps the height of its buttons in every
-                 row, so name and address stand at one rhythm --%>
-            <div class="flex items-center gap-[10px] flex-wrap min-h-[30px]">
-              <span class="rowp">{Accounts.display_name(user)}</span>
-              <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
-              <span
-                :if={
-                  user.id != @current_scope.user.id and
-                    to_string(user.id) in @online_ids
-                }
-                class="text-julia text-[12.5px] font-semibold inline-flex items-center gap-[6px]"
-              >
-                <span class="dot live"></span>{gettext("here now")}
-              </span>
-              <span class="sp"></span>
-              <%!-- a quiet button carries its padding as a gutter, so the
-                   pair steps out by it and the words end on the column
-                   edge like every other row action --%>
-              <span class="flex gap-1 -mr-[10px]">
-                <button
-                  :if={Accounts.pending?(user)}
-                  class="btn quiet sm"
-                  id={"invite-again-#{user.id}"}
-                  phx-click="invite_again"
-                  phx-value-id={user.id}
-                >
-                  {gettext("Send the link again")}
-                </button>
-                <%!-- your own row has no Delete: another admin removes it --%>
-                <button
-                  :if={user.id != @current_scope.user.id}
-                  class="btn quiet sm danger"
-                  id={"delete-user-#{user.id}"}
-                  phx-click="ask_delete"
-                  phx-value-id={user.id}
-                  disabled={delete_block(user, @users, @current_scope.user) != nil}
-                >
-                  {gettext("Delete")}
-                </button>
-              </span>
-            </div>
-            <%!-- why the Delete is off, if it is. It is the one thing
-                 on the row that is not a fact about the account, so it
-                 carries the colour that means "read this". --%>
-            <p class="note mt-[3px]">
-              {user_meta(user)}
-              <span :if={delete_block(user, @users, @current_scope.user)} class="text-faint">
-                · {delete_block(user, @users, @current_scope.user)}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <%!-- The next admin, by address. Nothing is handed over by
-             hand: the link goes to the inbox, and whoever opens that
-             inbox is who the account belongs to. --%>
-        <.form for={@invite_form} id="invite-form" phx-submit="invite" class="mt-3">
-          <div class="drow">
-            <label class="lab" for="invite-email">{gettext("Invite an admin")}</label>
-            <span class="val">
-              <%!-- an address and its button, the way Newsletter adds one:
-                   the field takes the column, the button closes it --%>
-              <span class="flex items-center gap-2">
-                <span class="flex-1 min-w-0">
-                  <input
-                    type="email"
-                    id="invite-email"
-                    name="user[email]"
-                    value={@invite_email}
-                    autocomplete="off"
-                    spellcheck="false"
-                    autocapitalize="off"
-                    placeholder={gettext("name@example.org")}
-                  />
-                </span>
-                <button class="btn solid flex-none" type="submit" id="invite-send">
-                  {gettext("Send the link")}
-                </button>
-              </span>
-              <div class="hint">
-                {gettext("The link sets the first password. It works once, for a week.")}
-              </div>
-              <%!-- What went wrong wears the colour that means "read
-                   this"; what worked stays quiet. --%>
-              <p
-                :if={@invite_note}
-                class={["mt-[7px]", if(@invite_sent, do: "note", else: "text-julia text-[13px]")]}
-                id="inviteState"
-              >
-                {@invite_note}
-              </p>
-            </span>
-          </div>
-        </.form>
-
-        <.section>{gettext("Images")}</.section>
-        <.form for={@settings_form} id="images-form" phx-change="save_setting">
-          <div class="drow">
-            <label class="lab" for="setting-image_max_edge">{gettext("Longest edge")}</label>
-            <span class="val">
-              <span class="addr">
-                <input
-                  type="number"
-                  id="setting-image_max_edge"
-                  name="settings[image_max_edge]"
-                  value={@settings_form[:image_max_edge].value}
-                  min="800"
-                  step="80"
-                  class="sm:max-w-[240px]"
-                  phx-debounce="400"
-                />
-                <span class="pre">px</span>
-              </span>
-              <p :if={@errors[:image_max_edge]} class="text-julia text-[13px] mt-[6px]">
-                {gettext("The value must be %{rule}.", rule: @errors[:image_max_edge])}
-              </p>
-              <div class="hint">
-                {gettext(
-                  "The longest edge a picture is shown at. Originals stay on disk, and nothing is scaled up."
-                )}
-              </div>
-            </span>
-          </div>
-        </.form>
-
-        <.section>{gettext("Videos")}</.section>
-        <.form for={@settings_form} id="videos-form" phx-change="save_setting">
-          <div class="drow">
-            <label class="lab" for="setting-video_max_edge">{gettext("Longest edge")}</label>
-            <span class="val">
-              <span class="addr">
-                <input
-                  type="number"
-                  id="setting-video_max_edge"
-                  name="settings[video_max_edge]"
-                  value={@settings_form[:video_max_edge].value}
-                  min="480"
-                  step="80"
-                  class="sm:max-w-[240px]"
-                  phx-debounce="400"
-                />
-                <span class="pre">px</span>
-              </span>
-              <p :if={@errors[:video_max_edge]} class="text-julia text-[13px] mt-[6px]">
-                {gettext("The value must be %{rule}.", rule: @errors[:video_max_edge])}
-              </p>
-              <div class="hint">
-                {gettext(
-                  "Each video is converted once to an MP4 of at most this edge, in the background. A new value applies to the next video."
-                )}
-              </div>
-            </span>
-          </div>
-        </.form>
-
-        <.section>{gettext("Storage")}</.section>
-        <.form for={@settings_form} id="upload-form" phx-change="save_setting">
-          <div class="drow">
-            <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
-            <span class="val">
-              <span class="addr">
-                <input
-                  type="number"
-                  id="setting-max_upload_mb"
-                  name="settings[max_upload_mb]"
-                  value={@settings.max_upload_mb}
-                  min="10"
-                  max="2048"
-                  step="1"
-                  phx-debounce="500"
-                  class="sm:max-w-[240px]"
-                />
-                <span class="pre">{gettext("MB")}</span>
-              </span>
-              <p :if={@errors[:max_upload_mb]} class="text-julia text-[13px] mt-[6px]">
-                {gettext("The value must be %{rule}.", rule: @errors[:max_upload_mb])}
-              </p>
-            </span>
-            <div class="hint">
-              {gettext(
-                "The largest picture, video or import zip the site takes. A few minutes of phone video weigh a few hundred MB."
-              )}
-            </div>
-          </div>
-        </.form>
-
-        <%!-- What is on the volume, folder by folder, and what is left
-             of it. The counts are walked on every render of this
-             screen, which one person opens now and then. --%>
-        <div class="drow">
-          <span class="lab">{gettext("Space in use")}</span>
-          <span class="val">
-            <table class="tally" id="storageTally">
-              <thead>
-                <tr>
-                  <th>{gettext("Folder")}</th>
-                  <th class="n">{gettext("Files")}</th>
-                  <th class="n">{gettext("Size")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr :for={row <- @usage} id={"usage-#{row.dir}"}>
-                  <td>
-                    <span class="p">{row.dir}/</span>
-                    <span class="note">{dir_note(row.dir)}</span>
-                  </td>
-                  <td class="n num">{row.files}</td>
-                  <td class="n num">{human_size(row.bytes)}</td>
-                </tr>
-                <tr id="usage-db">
-                  <td>
-                    <span class="p">{Path.basename(@db_path)}</span>
-                    <span class="note">{gettext("the database, one SQLite file")}</span>
-                  </td>
-                  <td class="n num">1</td>
-                  <td class="n num">{@db_size}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr id="usage-total">
-                  <td>{gettext("Total")}</td>
-                  <td class="n num">{@usage_files}</td>
-                  <td class="n num">{@usage_size}</td>
-                </tr>
-                <tr :if={@free_size} id="usage-free">
-                  <td>{gettext("Free on this volume")}</td>
-                  <td></td>
-                  <td class="n num">{@free_size}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </span>
-          <%!-- where the installation lies, as the install config set it:
-               the answer somebody needs before a copy or a move --%>
-          <div class="hint [overflow-wrap:anywhere]">
-            {gettext("The uploads are in %{root} and the database is %{db}.",
-              root: @uploads_root,
-              db: @db_path
-            )}
-            {gettext("A copy of the volume is a copy of the site.")}
-          </div>
-        </div>
-        <p class="mt-3 flex items-center flex-wrap gap-x-3 gap-y-2">
-          <button class="btn" phx-click="clear_cache">{gettext("Clear image cache")}</button>
-          <span class="note">
-            {gettext("Display sizes are made again when a page asks for them.")}
-          </span>
-        </p>
-
-        <.section>{gettext("Theme")}</.section>
-        <p class="note mb-[10px]">
-          {gettext(
-            "One CSS file colours the blog and this admin area. Only the values you change are kept, so the rest follows every update."
-          )}
-        </p>
-        <%!-- the theme is code, and most visits never touch it: the
-             field opens on demand, and JS.toggle keeps it open across
-             every redraw the saving sends --%>
-        <p>
-          <button
-            type="button"
-            class="btn"
-            id="open-theme"
-            phx-click={JS.toggle(to: "#themeBox")}
-          >
-            {gettext("Edit theme.css")}
-          </button>
-        </p>
-        <div id="themeBox" class="hidden mt-3">
-          <.form
-            for={@settings_form}
-            id="theme-form"
-            phx-change="save_setting"
-            phx-hook=".ThemeRefresh"
-          >
-            <span class="labrow">
-              <label class="lab" for="setting-theme_css">theme.css</label>
-              <%!-- emptying a twelve-row field by hand to get the default
-                 back is no way to ask for it --%>
-              <button
-                :if={@settings.theme_css != ""}
-                type="button"
-                class="link"
-                id="reset-theme"
-                phx-click="ask_reset_theme"
-              >
-                {gettext("Reset")}
-              </button>
-            </span>
-            <textarea
-              wrap="off"
-              id="setting-theme_css"
-              name="settings[theme_css]"
-              rows="12"
-              spellcheck="false"
-              class="font-mono text-[12.5px] leading-[1.65]"
-              phx-debounce="300"
-            >{@settings_form[:theme_css].value}</textarea>
-            <%!-- a theme sets the tokens above and nothing else; what
-                 else it declares is not stored, and this says so --%>
-            <p :if={@theme_ignored != []} id="theme-ignored" class="note mt-2">
-              {gettext("Not a theme token, so left out: %{names}",
-                names: Enum.join(@theme_ignored, ", ")
-              )}
-            </p>
-          </.form>
-        </div>
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
-          export default {
-            mounted() {
-              this.handleEvent("theme_saved", () => {
-                const link = document.querySelector('link[href^="/theme.css"]')
-                if (link) link.href = "/theme.css?v=" + Date.now()
-              })
-            }
-          }
-        </script>
-
-        <.section>{gettext("Backup")}</.section>
-        <div id="backupSection">
-          <p class="note mb-2 leading-[1.6]">
-            {gettext(
-              "A machine you keep fetches the database and every upload from here, on its own schedule. The token lives on that machine; this server keeps only a hash of it. The client is scripts/texttile-backup.sh in the repository."
-            )}
-          </p>
-
-          <.form for={@settings_form} id="backup-form" phx-change="save_setting">
-            <label class="opt">
-              <input type="hidden" name="settings[backup_enabled]" value="false" />
+          <.form for={@settings_form} id="access-form" phx-change="save_setting">
+            <label class="flex gap-[10px] items-start py-2 cursor-pointer">
               <input
-                type="checkbox"
-                id="setting-backup_enabled"
-                name="settings[backup_enabled]"
-                value="true"
-                checked={@settings.backup_enabled}
+                type="radio"
+                name="settings[site_visibility]"
+                value="public"
+                checked={@settings.site_visibility == "public"}
+                class="w-4 h-4 flex-none mt-[2px]"
+                style="accent-color:var(--tt-accent)"
               />
               <span>
-                {gettext("Serve a backup client at /backup")}
-                <span class="note block" id="setBackupNote">
-                  {backup_note(@settings.backup_enabled)}
+                <span class="text-[14.5px] font-medium">{gettext("Public")}</span>
+                <br />
+                <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+                  {gettext("Anyone can read the blog.")}
+                </span>
+              </span>
+            </label>
+            <label class="flex gap-[10px] items-start py-2 cursor-pointer">
+              <input
+                type="radio"
+                name="settings[site_visibility]"
+                value="protected"
+                checked={@settings.site_visibility == "protected"}
+                class="w-4 h-4 flex-none mt-[2px]"
+                style="accent-color:var(--tt-accent)"
+              />
+              <span>
+                <span class="text-[14.5px] font-medium">{gettext("Password-protected")}</span>
+                <br />
+                <span class="optnote text-[12.5px] lg:text-[14px] text-faint lg:text-dim">
+                  {gettext("One password for the whole blog. Search engines see nothing.")}
+                </span>
+              </span>
+            </label>
+            <%!-- the field is short, the sentence under it is not: the
+               hint keeps the width of the column --%>
+            <div class="pl-[26px] pb-3" id="pwRow">
+              <label class="lab block mb-[5px]" for="setting-site_password">
+                {gettext("Blog password")}
+              </label>
+              <input
+                type="text"
+                id="setting-site_password"
+                name="settings[site_password]"
+                value={@settings_form[:site_password].value}
+                placeholder={gettext("Choose a password")}
+                phx-debounce="300"
+                class="sm:max-w-[240px]"
+              />
+              <div class="hint">
+                {gettext("Every entry mail carries it, so subscribers have it too.")}
+              </div>
+            </div>
+          </.form>
+
+          <.section id="set-comments">{gettext("Comments")}</.section>
+          <.form for={@settings_form} id="comments-form" phx-change="save_setting">
+            <label class="opt py-2">
+              <input type="hidden" name="settings[comments_require_confirmation]" value="false" />
+              <input
+                type="checkbox"
+                id="setting-comments_require_confirmation"
+                name="settings[comments_require_confirmation]"
+                value="true"
+                checked={@settings.comments_require_confirmation}
+              />
+              <span>
+                {gettext("Confirm comments by email")}
+                <span class="note" id="setCmtNote">
+                  {comments_note(@settings.comments_require_confirmation)}
+                </span>
+              </span>
+            </label>
+            <label class="opt py-2">
+              <input type="hidden" name="settings[notify_on_comment]" value="false" />
+              <input
+                type="checkbox"
+                id="setting-notify_on_comment"
+                name="settings[notify_on_comment]"
+                value="true"
+                checked={@settings.notify_on_comment}
+              />
+              <span>
+                {gettext("Email new comments")}
+                <span class="note" id="setNotifyNote">
+                  {notify_note(@settings.notify_on_comment)}
                 </span>
               </span>
             </label>
           </.form>
 
-          <%!-- The word is shown once and has to reach a configuration
+          <.section id="set-users">{gettext("Users")}</.section>
+          <div id="usersList">
+            <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
+              <%!-- the name line keeps the height of its buttons in every
+                 row, so name and address stand at one rhythm --%>
+              <div class="flex items-center gap-[10px] flex-wrap min-h-[30px]">
+                <span class="rowp">{Accounts.display_name(user)}</span>
+                <span :if={user.id == @current_scope.user.id} class="note">{gettext("you")}</span>
+                <span
+                  :if={
+                    user.id != @current_scope.user.id and
+                      to_string(user.id) in @online_ids
+                  }
+                  class="text-julia text-[12.5px] font-semibold inline-flex items-center gap-[6px]"
+                >
+                  <span class="dot live"></span>{gettext("here now")}
+                </span>
+                <span class="sp"></span>
+                <%!-- a quiet button carries its padding as a gutter, so the
+                   pair steps out by it and the words end on the column
+                   edge like every other row action --%>
+                <span class="flex gap-1 -mr-[10px]">
+                  <button
+                    :if={Accounts.pending?(user)}
+                    class="btn quiet sm"
+                    id={"invite-again-#{user.id}"}
+                    phx-click="invite_again"
+                    phx-value-id={user.id}
+                  >
+                    {gettext("Send the link again")}
+                  </button>
+                  <%!-- your own row has no Delete: another admin removes it --%>
+                  <button
+                    :if={user.id != @current_scope.user.id}
+                    class="btn quiet sm danger"
+                    id={"delete-user-#{user.id}"}
+                    phx-click="ask_delete"
+                    phx-value-id={user.id}
+                    disabled={delete_block(user, @users, @current_scope.user) != nil}
+                  >
+                    {gettext("Delete")}
+                  </button>
+                </span>
+              </div>
+              <%!-- why the Delete is off, if it is. It is the one thing
+                 on the row that is not a fact about the account, so it
+                 carries the colour that means "read this". --%>
+              <p class="note mt-[3px]">
+                {user_meta(user)}
+                <span :if={delete_block(user, @users, @current_scope.user)} class="text-faint">
+                  · {delete_block(user, @users, @current_scope.user)}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <%!-- The next admin, by address. Nothing is handed over by
+             hand: the link goes to the inbox, and whoever opens that
+             inbox is who the account belongs to. --%>
+          <.form for={@invite_form} id="invite-form" phx-submit="invite" class="mt-3">
+            <div class="drow">
+              <label class="lab" for="invite-email">{gettext("Invite an admin")}</label>
+              <span class="val">
+                <%!-- an address and its button, the way Newsletter adds one:
+                   the field takes the column, the button closes it --%>
+                <span class="flex items-center gap-2">
+                  <span class="flex-1 min-w-0">
+                    <input
+                      type="email"
+                      id="invite-email"
+                      name="user[email]"
+                      value={@invite_email}
+                      autocomplete="off"
+                      spellcheck="false"
+                      autocapitalize="off"
+                      placeholder={gettext("name@example.org")}
+                    />
+                  </span>
+                  <button class="btn solid flex-none" type="submit" id="invite-send">
+                    {gettext("Send the link")}
+                  </button>
+                </span>
+                <div class="hint">
+                  {gettext("The link sets the first password. It works once, for a week.")}
+                </div>
+                <%!-- What went wrong wears the colour that means "read
+                   this"; what worked stays quiet. --%>
+                <p
+                  :if={@invite_note}
+                  class={["mt-[7px]", if(@invite_sent, do: "note", else: "text-julia text-[13px]")]}
+                  id="inviteState"
+                >
+                  {@invite_note}
+                </p>
+              </span>
+            </div>
+          </.form>
+
+          <.section id="set-media">{gettext("Pictures & videos")}</.section>
+          <.form for={@settings_form} id="images-form" phx-change="save_setting">
+            <div class="drow">
+              <label class="lab" for="setting-image_max_edge">
+                {gettext("Longest edge of a picture")}
+              </label>
+              <span class="val">
+                <span class="addr">
+                  <input
+                    type="number"
+                    id="setting-image_max_edge"
+                    name="settings[image_max_edge]"
+                    value={@settings_form[:image_max_edge].value}
+                    min="800"
+                    step="80"
+                    class="sm:max-w-[240px]"
+                    phx-debounce="400"
+                  />
+                  <span class="pre">px</span>
+                </span>
+                <p :if={@errors[:image_max_edge]} class="text-julia text-[13px] mt-[6px]">
+                  {gettext("The value must be %{rule}.", rule: @errors[:image_max_edge])}
+                </p>
+                <div class="hint">
+                  {gettext(
+                    "The longest edge a picture is shown at. Originals stay on disk, and nothing is scaled up."
+                  )}
+                </div>
+              </span>
+            </div>
+          </.form>
+
+          <.form for={@settings_form} id="videos-form" phx-change="save_setting">
+            <div class="drow">
+              <label class="lab" for="setting-video_max_edge">
+                {gettext("Longest edge of a video")}
+              </label>
+              <span class="val">
+                <span class="addr">
+                  <input
+                    type="number"
+                    id="setting-video_max_edge"
+                    name="settings[video_max_edge]"
+                    value={@settings_form[:video_max_edge].value}
+                    min="480"
+                    step="80"
+                    class="sm:max-w-[240px]"
+                    phx-debounce="400"
+                  />
+                  <span class="pre">px</span>
+                </span>
+                <p :if={@errors[:video_max_edge]} class="text-julia text-[13px] mt-[6px]">
+                  {gettext("The value must be %{rule}.", rule: @errors[:video_max_edge])}
+                </p>
+                <div class="hint">
+                  {gettext(
+                    "Each video is converted once to an MP4 of at most this edge, in the background. A new value applies to the next video."
+                  )}
+                </div>
+              </span>
+            </div>
+          </.form>
+
+          <.section id="set-storage">{gettext("Storage")}</.section>
+          <.form for={@settings_form} id="upload-form" phx-change="save_setting">
+            <div class="drow">
+              <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
+              <span class="val">
+                <span class="addr">
+                  <input
+                    type="number"
+                    id="setting-max_upload_mb"
+                    name="settings[max_upload_mb]"
+                    value={@settings.max_upload_mb}
+                    min="10"
+                    max="2048"
+                    step="1"
+                    phx-debounce="500"
+                    class="sm:max-w-[240px]"
+                  />
+                  <span class="pre">{gettext("MB")}</span>
+                </span>
+                <p :if={@errors[:max_upload_mb]} class="text-julia text-[13px] mt-[6px]">
+                  {gettext("The value must be %{rule}.", rule: @errors[:max_upload_mb])}
+                </p>
+              </span>
+              <div class="hint">
+                {gettext(
+                  "The largest picture, video or import zip the site takes. A few minutes of phone video weigh a few hundred MB."
+                )}
+              </div>
+            </div>
+          </.form>
+
+          <%!-- What is on the volume, folder by folder, and what is left
+             of it. The counts are walked on every render of this
+             screen, which one person opens now and then. --%>
+          <div class="drow">
+            <span class="lab">{gettext("Space in use")}</span>
+            <span class="val">
+              <table class="tally" id="storageTally">
+                <thead>
+                  <tr>
+                    <th>{gettext("Folder")}</th>
+                    <th class="n">{gettext("Files")}</th>
+                    <th class="n">{gettext("Size")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr :for={row <- @usage} id={"usage-#{row.dir}"}>
+                    <td>
+                      <span class="p">{row.dir}/</span>
+                      <span class="note">{dir_note(row.dir)}</span>
+                    </td>
+                    <td class="n num">{row.files}</td>
+                    <td class="n num">{human_size(row.bytes)}</td>
+                  </tr>
+                  <tr id="usage-db">
+                    <td>
+                      <span class="p">{Path.basename(@db_path)}</span>
+                      <span class="note">{gettext("the database, one SQLite file")}</span>
+                    </td>
+                    <td class="n num">1</td>
+                    <td class="n num">{@db_size}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr id="usage-total">
+                    <td>{gettext("Total")}</td>
+                    <td class="n num">{@usage_files}</td>
+                    <td class="n num">{@usage_size}</td>
+                  </tr>
+                  <tr :if={@free_size} id="usage-free">
+                    <td>{gettext("Free on this volume")}</td>
+                    <td></td>
+                    <td class="n num">{@free_size}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </span>
+            <%!-- where the installation lies, as the install config set it:
+               the answer somebody needs before a copy or a move --%>
+            <div class="hint [overflow-wrap:anywhere]">
+              {gettext("The uploads are in %{root} and the database is %{db}.",
+                root: @uploads_root,
+                db: @db_path
+              )}
+              {gettext("A copy of the volume is a copy of the site.")}
+            </div>
+          </div>
+          <div class="mt-3">
+            <button class="btn" phx-click="clear_cache">{gettext("Clear image cache")}</button>
+            <p class="hint">{gettext("Display sizes are made again when a page asks for them.")}</p>
+          </div>
+
+          <.section id="set-theme">{gettext("Theme")}</.section>
+          <p class="note mb-[10px]">
+            {gettext(
+              "One CSS file colours the blog and this admin area. Only the values you change are kept, so the rest follows every update."
+            )}
+          </p>
+          <%!-- the theme is code, and most visits never touch it: the
+             field opens on demand, and JS.toggle keeps it open across
+             every redraw the saving sends --%>
+          <p>
+            <button
+              type="button"
+              class="btn"
+              id="open-theme"
+              phx-click={JS.toggle(to: "#themeBox")}
+            >
+              {gettext("Edit theme.css")}
+            </button>
+          </p>
+          <div id="themeBox" class="hidden mt-3">
+            <.form
+              for={@settings_form}
+              id="theme-form"
+              phx-change="save_setting"
+              phx-hook=".ThemeRefresh"
+            >
+              <span class="labrow">
+                <label class="lab" for="setting-theme_css">theme.css</label>
+                <%!-- emptying a twelve-row field by hand to get the default
+                 back is no way to ask for it --%>
+                <button
+                  :if={@settings.theme_css != ""}
+                  type="button"
+                  class="link"
+                  id="reset-theme"
+                  phx-click="ask_reset_theme"
+                >
+                  {gettext("Reset")}
+                </button>
+              </span>
+              <textarea
+                wrap="off"
+                id="setting-theme_css"
+                name="settings[theme_css]"
+                rows="12"
+                spellcheck="false"
+                class="font-mono text-[12.5px] leading-[1.65]"
+                phx-debounce="300"
+              >{@settings_form[:theme_css].value}</textarea>
+              <%!-- a theme sets the tokens above and nothing else; what
+                 else it declares is not stored, and this says so --%>
+              <p :if={@theme_ignored != []} id="theme-ignored" class="note mt-2">
+                {gettext("Not a theme token, so left out: %{names}",
+                  names: Enum.join(@theme_ignored, ", ")
+                )}
+              </p>
+            </.form>
+          </div>
+          <script :type={Phoenix.LiveView.ColocatedHook} name=".ThemeRefresh">
+            export default {
+              mounted() {
+                this.handleEvent("theme_saved", () => {
+                  const link = document.querySelector('link[href^="/theme.css"]')
+                  if (link) link.href = "/theme.css?v=" + Date.now()
+                })
+              }
+            }
+          </script>
+
+          <.section id="set-backup">{gettext("Backup")}</.section>
+          <div id="backupSection">
+            <p class="note mb-2 leading-[1.6]">
+              {gettext(
+                "A machine you keep fetches the database and every upload from here, on its own schedule. The token lives on that machine; this server keeps only a hash of it. The client is scripts/texttile-backup.sh in the repository."
+              )}
+            </p>
+
+            <.form for={@settings_form} id="backup-form" phx-change="save_setting">
+              <label class="opt">
+                <input type="hidden" name="settings[backup_enabled]" value="false" />
+                <input
+                  type="checkbox"
+                  id="setting-backup_enabled"
+                  name="settings[backup_enabled]"
+                  value="true"
+                  checked={@settings.backup_enabled}
+                />
+                <span>
+                  {gettext("Serve a backup client at /backup")}
+                  <span class="note block" id="setBackupNote">
+                    {backup_note(@settings.backup_enabled)}
+                  </span>
+                </span>
+              </label>
+            </.form>
+
+            <%!-- The word is shown once and has to reach a configuration
                file somewhere else, so it is handed over the way the
                editor hands over the lines of an entry: touching it
                picks all of it, and Copy says what it did. --%>
-          <div class="drow" id="backupTokenRow" phx-hook="CopyOut">
-            <span class="labrow">
-              <span class="lab">{gettext("Token")}</span>
-              <button
-                :if={@backup_token}
-                type="button"
-                class="link"
-                id="copyBackupToken"
-                data-copy
-              >
-                {gettext("Copy")}
-              </button>
-            </span>
-            <span class="val">
-              <%= if @backup_token do %>
-                <textarea
-                  id="backupToken"
-                  class="sharelines block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
-                  style="border-radius: var(--tt-radius); border: 1px solid var(--tt-rule)"
-                  readonly
-                  spellcheck="false"
-                  aria-label={gettext("The backup token")}
-                >{@backup_token}</textarea>
-                <p class="note mt-[6px]">
-                  {gettext(
-                    "Write it into the configuration of your backup machine now. It is never shown again."
-                  )}
-                </p>
-              <% else %>
-                <span class="note" id="backupTokenState">
-                  {token_state(@settings.backup_token_hash)}
-                </span>
-              <% end %>
-              <p class="mt-2">
+            <div class="drow" id="backupTokenRow" phx-hook="CopyOut">
+              <span class="labrow">
+                <span class="lab">{gettext("Token")}</span>
                 <button
-                  :if={@settings.backup_token_hash == ""}
+                  :if={@backup_token}
                   type="button"
-                  class="btn"
-                  id="makeBackupToken"
-                  phx-click="make_backup_token"
+                  class="link"
+                  id="copyBackupToken"
+                  data-copy
                 >
-                  {gettext("Create a token")}
+                  {gettext("Copy")}
                 </button>
-                <button
-                  :if={@settings.backup_token_hash != ""}
-                  type="button"
-                  class="btn"
-                  id="replaceBackupToken"
-                  phx-click="ask_replace_token"
-                >
-                  {gettext("Replace the token")}
-                </button>
-              </p>
-            </span>
-            <div class="hint">
-              {gettext(
-                "It only reads, and only the backup endpoints. Keep it like a password: the database it fetches holds every account and the address of every reader."
-              )}
-            </div>
-          </div>
-
-          <.form for={@settings_form} id="backup-ips-form" phx-change="save_setting">
-            <div class="drow">
-              <label class="lab" for="setting-backup_allowed_ips">
-                {gettext("Only these addresses")}
-              </label>
+              </span>
               <span class="val">
-                <input
-                  type="text"
-                  id="setting-backup_allowed_ips"
-                  name="settings[backup_allowed_ips]"
-                  value={@settings.backup_allowed_ips}
-                  placeholder={gettext("Any address")}
-                  phx-debounce="500"
-                  class="sm:max-w-[240px]"
-                />
-                <p :if={@errors[:backup_allowed_ips]} class="text-julia text-[13px] mt-[6px]">
-                  {@errors[:backup_allowed_ips]}
+                <%= if @backup_token do %>
+                  <textarea
+                    id="backupToken"
+                    class="sharelines block break-all bg-wash px-[10px] py-2 text-[12.5px] leading-[1.5]"
+                    style="border-radius: var(--tt-radius); border: 1px solid var(--tt-rule)"
+                    readonly
+                    spellcheck="false"
+                    aria-label={gettext("The backup token")}
+                  >{@backup_token}</textarea>
+                  <p class="note mt-[6px]">
+                    {gettext(
+                      "Write it into the configuration of your backup machine now. It is never shown again."
+                    )}
+                  </p>
+                <% else %>
+                  <span class="note" id="backupTokenState">
+                    {token_state(@settings.backup_token_hash)}
+                  </span>
+                <% end %>
+                <p class="mt-2">
+                  <button
+                    :if={@settings.backup_token_hash == ""}
+                    type="button"
+                    class="btn"
+                    id="makeBackupToken"
+                    phx-click="make_backup_token"
+                  >
+                    {gettext("Create a token")}
+                  </button>
+                  <button
+                    :if={@settings.backup_token_hash != ""}
+                    type="button"
+                    class="btn"
+                    id="replaceBackupToken"
+                    phx-click="ask_replace_token"
+                  >
+                    {gettext("Replace the token")}
+                  </button>
                 </p>
               </span>
               <div class="hint">
                 {gettext(
-                  "The addresses your backup machine calls from, separated by commas. Leave it empty and the token alone decides. Behind a proxy it is a second lock, never the first."
+                  "Read-only. Keep it like a password: the database holds every account and every reader's address."
                 )}
               </div>
             </div>
-          </.form>
 
-          <div class="drow">
-            <span class="lab">{gettext("Last fetched")}</span>
-            <span class="val" id="backupLastAccess">{last_access_line(@backup_access)}</span>
-            <div class="hint">
-              {gettext(
-                "A backup that stopped says nothing until the day you need it. This line shows it."
-              )}
+            <.form for={@settings_form} id="backup-ips-form" phx-change="save_setting">
+              <div class="drow">
+                <label class="lab" for="setting-backup_allowed_ips">
+                  {gettext("Only these addresses")}
+                </label>
+                <span class="val">
+                  <input
+                    type="text"
+                    id="setting-backup_allowed_ips"
+                    name="settings[backup_allowed_ips]"
+                    value={@settings.backup_allowed_ips}
+                    placeholder={gettext("Any address")}
+                    phx-debounce="500"
+                    class="sm:max-w-[240px]"
+                  />
+                  <p :if={@errors[:backup_allowed_ips]} class="text-julia text-[13px] mt-[6px]">
+                    {@errors[:backup_allowed_ips]}
+                  </p>
+                </span>
+                <div class="hint">
+                  {gettext(
+                    "Separated by commas. Empty, the token alone decides. Behind a proxy it is a second lock, never the first."
+                  )}
+                </div>
+              </div>
+            </.form>
+
+            <div class="drow">
+              <span class="lab">{gettext("Last fetched")}</span>
+              <span class="val" id="backupLastAccess">{last_access_line(@backup_access)}</span>
             </div>
           </div>
-        </div>
 
-        <.section>{gettext("Import")}</.section>
-        <p class="note mb-2 leading-[1.6]">
-          {gettext("Bring entries over from another blog: a zip of Markdown, settings and pictures.")}
-          <.import_doc />
-          {gettext("in the repository describes the format.")}
-        </p>
-        <p>
-          <.link navigate={~p"/admin/settings/import"} class="btn" id="open-import">
-            {gettext("Open the import")}
-          </.link>
-        </p>
+          <.section id="set-import">{gettext("Import")}</.section>
+          <p class="note mb-2 leading-[1.6]">
+            {gettext(
+              "Bring entries over from another blog: a zip of Markdown, settings and pictures."
+            )}
+            <.import_doc />
+            {gettext("in the repository describes the format.")}
+          </p>
+          <p>
+            <.link navigate={~p"/admin/settings/import"} class="btn" id="open-import">
+              {gettext("Open the import")}
+            </.link>
+          </p>
 
-        <%!-- Which build runs. The number stays behind the sign-in:
+          <%!-- Which build runs. The number stays behind the sign-in:
              a public version tells an attacker which holes to try. --%>
-        <.section>{gettext("Version")}</.section>
-        <div class="drow">
-          <span class="lab">{gettext("This installation")}</span>
-          <span class="val num" id="appVersion">{Texttile.version()}</span>
-          <div class="hint">
-            {gettext("Name this number when you report a problem: it says which build runs here.")}
+          <.section id="set-version">{gettext("Version")}</.section>
+          <div class="drow">
+            <span class="lab">{gettext("This installation")}</span>
+            <span class="val num" id="appVersion">{Texttile.version()}</span>
+            <div class="hint">
+              {gettext("Name this number when you report a problem: it says which build runs here.")}
+            </div>
           </div>
         </div>
       </div>
@@ -1562,11 +1568,31 @@ defmodule TexttileWeb.SettingsLive do
     """
   end
 
+  attr :id, :string, required: true
   slot :inner_block, required: true
 
   defp section(assigns) do
     ~H"""
-    <h2 class="set-h">{render_slot(@inner_block)}</h2>
+    <h2 class="set-h" id={@id}>{render_slot(@inner_block)}</h2>
     """
+  end
+
+  # The sections of the screen in their order, for the list that leads
+  # to them. One list, so the list and the screen never drift apart.
+  defp sections do
+    [
+      {"set-site", gettext("Site")},
+      {"set-about", gettext("About")},
+      {"set-front", gettext("Front page")},
+      {"set-access", gettext("Access")},
+      {"set-comments", gettext("Comments")},
+      {"set-users", gettext("Users")},
+      {"set-media", gettext("Pictures & videos")},
+      {"set-storage", gettext("Storage")},
+      {"set-theme", gettext("Theme")},
+      {"set-backup", gettext("Backup")},
+      {"set-import", gettext("Import")},
+      {"set-version", gettext("Version")}
+    ]
   end
 end

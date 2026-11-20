@@ -570,7 +570,9 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       refute has_element?(view, "#comment-#{comment.id} .wait")
       refute has_element?(view, "#comment-#{comment.id} button", "Release")
-      assert has_element?(view, ~s(#commentFilter a[data-f="waiting"]), "0")
+      # an empty filter leaves the row, and the released one joins it
+      refute has_element?(view, ~s(#commentFilter a[data-f="waiting"]))
+      assert has_element?(view, ~s(#commentFilter a[data-f="released"]), "1")
       assert Comments.shown_to_readers?(Comments.get_comment!(comment.id))
 
       # the next comment from the same address waits like every other

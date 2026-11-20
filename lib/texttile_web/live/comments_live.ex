@@ -183,8 +183,11 @@ defmodule TexttileWeb.CommentsLive do
             id="commentFilter"
             aria-label={gettext("Filter by status")}
           >
+            <%!-- an empty filter other than All and the open one says
+                 nothing worth a place in the row --%>
             <.link
               :for={status <- @statuses}
+              :if={status in ["all", @status] or @counts[status] > 0}
               patch={comments_path(status, 1)}
               class={["seg-b", @status == status && "on"]}
               data-f={status}

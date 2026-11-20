@@ -351,7 +351,7 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ ~s(id="edit-text")
     end
 
-    test "a signed-in admin gets an Edit link beside the date", %{conn: conn} do
+    test "a signed-in admin gets an Edit link in the strip over the header", %{conn: conn} do
       article = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
       conn = log_in_user(conn, user_fixture())
 

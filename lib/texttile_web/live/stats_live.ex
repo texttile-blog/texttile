@@ -29,7 +29,9 @@ defmodule TexttileWeb.StatsLive do
     {:ok,
      socket
      |> assign(:page_title, gettext("Stats"))
-     |> assign(:comment_counts, Comments.count_map())}
+     # the comments a reader sees under the entry: the same number the
+     # entry page and the cards show, so the screens never disagree
+     |> assign(:comment_counts, Comments.reader_count_map())}
   end
 
   # The address holds the whole state: `days` is the window and `day`
@@ -137,7 +139,7 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
-              {gettext("daily readers")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
+              {gettext("reader-days")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
             </div>
           </div>
           <div class="fig py-4 pr-3 md:pr-5">

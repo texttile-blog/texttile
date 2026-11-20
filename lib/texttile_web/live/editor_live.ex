@@ -2365,8 +2365,36 @@ defmodule TexttileWeb.EditorLive do
             <div :if={@preview_candidates != []} class="drow pt-0.5" id="previewRow">
               <span class="lab">{gettext("Preview image")}</span>
               <span class="val">
+                <%!-- The choice in use, and the way to change it. The
+                     pictures stand in the gallery right above, so the
+                     row of all of them opens only when asked for;
+                     JS.toggle keeps it open across every redraw. --%>
+                <span class="flex items-center gap-3">
+                  <span
+                    :if={@effective_preview}
+                    class="cover-now"
+                    style={
+                      tile_bg(
+                        (@media[@effective_preview] && @media[@effective_preview].still) ||
+                          @effective_preview
+                      )
+                    }
+                  >
+                  </span>
+                  <span class="hint !mt-0 flex-1">
+                    {gettext("Used in the entries list, on the front page and in link previews.")}
+                  </span>
+                  <button
+                    type="button"
+                    class="link flex-none text-[13px]"
+                    id="changePreview"
+                    phx-click={JS.toggle(to: "#coverRow", display: "grid")}
+                  >
+                    {gettext("Change")}
+                  </button>
+                </span>
                 <div
-                  class="grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] gap-[6px]"
+                  class="hidden grid-cols-[repeat(auto-fill,minmax(40px,1fr))] gap-[6px] mt-3"
                   id="coverRow"
                 >
                   <button
@@ -2379,9 +2407,6 @@ defmodule TexttileWeb.EditorLive do
                     aria-label={gettext("Use image %{index} as the preview image", index: index)}
                   >
                   </button>
-                </div>
-                <div class="hint">
-                  {gettext("Used in the entries grid, on the front page and in link previews.")}
                 </div>
               </span>
             </div>

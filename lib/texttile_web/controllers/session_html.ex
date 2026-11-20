@@ -81,7 +81,7 @@ defmodule TexttileWeb.SessionHTML do
         )}
       </p>
       <p :if={not @nobody_can_sign_in} class="note text-[12.5px] mt-4 leading-[1.5]">
-        {gettext("There is no public sign-up. An admin invites the next one from Settings.")}
+        {gettext("Need an account? Ask an admin here for an invitation.")}
       </p>
     </Layouts.auth>
     """

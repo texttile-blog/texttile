@@ -29,6 +29,7 @@ defmodule TexttileWeb.SiteHTML do
   attr :known, :boolean, default: false
   attr :home_page, :any, default: nil
   attr :menu_pages, :list, default: []
+  attr :edit, :string, default: nil, doc: "the editor of the entry on screen, for the strip"
 
   def site_head(assigns) do
     assigns =
@@ -36,7 +37,7 @@ defmodule TexttileWeb.SiteHTML do
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
-    <.known_strip current_scope={@current_scope} known={@known} />
+    <.known_strip current_scope={@current_scope} known={@known} edit={@edit} />
     <header class="site-head">
       <a class="site-mark" href={~p"/"}>
         <img
@@ -77,6 +78,7 @@ defmodule TexttileWeb.SiteHTML do
   """
   attr :current_scope, :any, default: nil
   attr :known, :boolean, default: false
+  attr :edit, :string, default: nil
 
   def known_strip(assigns) do
     ~H"""
@@ -85,7 +87,12 @@ defmodule TexttileWeb.SiteHTML do
         {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
       </span>
       <span :if={!@current_scope} class="truncate">{site_title()}</span>
-      <a :if={@current_scope} id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      <%!-- on an entry, the way into its editor comes first: the one
+           thing a signed-in writer reading it may want next --%>
+      <span :if={@current_scope} class="flex items-center gap-5">
+        <a :if={@edit} id="edit-text" href={@edit}>{gettext("Edit entry")}</a>
+        <a id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      </span>
       <a :if={!@current_scope} id="known-strip-go" href={~p"/login"}>{gettext("Sign in")}</a>
     </div>
     """
