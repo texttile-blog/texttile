@@ -195,6 +195,11 @@ defmodule TexttileWeb.CommentsLive do
               {status_name(status)} <span class="num text-faint">{@counts[status]}</span>
             </.link>
           </nav>
+          <%!-- what Release does, said once where the decision is made;
+               the rest of the rule stands under the list --%>
+          <p :if={@require? and @status in ["all", "waiting"]} class="note mb-2" id="releaseNote">
+            {gettext("Release shows a comment before its reader confirms the email.")}
+          </p>
         </div>
         <div>
           <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">
@@ -316,11 +321,19 @@ defmodule TexttileWeb.CommentsLive do
   defp selection_line(0, _all), do: gettext("Select all")
   defp selection_line(selected, _all), do: gettext("%{count} selected", count: selected)
 
-  defp bulk_label("release", 0, all), do: gettext("Release all %{count}", count: all)
+  defp bulk_label("release", 0, all),
+    do: ngettext("Release all %{count} comment", "Release all %{count} comments", all)
+
   defp bulk_label("release", selected, _all), do: gettext("Release %{count}", count: selected)
-  defp bulk_label("delete", 0, all), do: gettext("Delete all %{count}", count: all)
+
+  defp bulk_label("delete", 0, all),
+    do: ngettext("Delete all %{count} comment", "Delete all %{count} comments", all)
+
   defp bulk_label("delete", selected, _all), do: gettext("Delete %{count}", count: selected)
-  defp bulk_label("restore", 0, all), do: gettext("Restore all %{count}", count: all)
+
+  defp bulk_label("restore", 0, all),
+    do: ngettext("Restore all %{count} comment", "Restore all %{count} comments", all)
+
   defp bulk_label("restore", selected, _all), do: gettext("Restore %{count}", count: selected)
 
   defp run_bulk("release", ids), do: Comments.release_comments(ids)

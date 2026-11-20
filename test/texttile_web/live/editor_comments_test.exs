@@ -35,7 +35,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     view |> element("nav .tab", "Comments") |> render_click()
 
-    assert has_element?(view, "#tp-comments #comment-#{waiting.id}", "not confirmed yet")
+    assert has_element?(view, "#tp-comments #comment-#{waiting.id}", "unconfirmed")
     assert has_element?(view, "#tp-comments #comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
     assert has_element?(view, "#tp-comments", "1 comment is still out of the entry")

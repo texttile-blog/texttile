@@ -35,7 +35,7 @@ defmodule TexttileWeb.CommentComponents do
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
         <span class="rowp">{@comment.name}</span>
-        <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
+        <span :if={@waiting} class="wait">{gettext("unconfirmed")}</span>
       </div>
       <%!-- where and when, on a line of their own under the name: the
            entry is the jump of the overview, a link like every other --%>

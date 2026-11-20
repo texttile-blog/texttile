@@ -602,7 +602,7 @@ defmodule TexttileWeb.SettingsLive do
 
   defp comments_note(true) do
     gettext(
-      "A comment stays hidden until its reader follows the link in a mail. Until then it is marked \"not confirmed yet\" here."
+      "A comment stays hidden until its reader follows the link in a mail. Until then it is marked unconfirmed here."
     )
   end
 
@@ -668,11 +668,15 @@ defmodule TexttileWeb.SettingsLive do
                 links.forEach(a => a.hash === "#" + id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current"))
                 pick.value = id
               }
+              // the section in view is the last one whose heading has
+              // passed a line a third of the way down the visible part,
+              // under the bars that stay
               this.onScroll = () => {
-                const end = innerHeight + scrollY >= document.documentElement.scrollHeight - 4
+                const beside = matchMedia("(min-width: 1000px)").matches
+                const top = beside ? 52 : this.el.getBoundingClientRect().bottom
+                const line = top + (innerHeight - top) / 3
                 let now = heads[0]
-                for (const head of heads) if (head.getBoundingClientRect().top < 150) now = head
-                if (end) now = heads[heads.length - 1]
+                for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
                 if (now) mark(now.id)
               }
               pick.addEventListener("change", () => document.getElementById(pick.value)?.scrollIntoView())
@@ -824,7 +828,7 @@ defmodule TexttileWeb.SettingsLive do
             )}
           </p>
 
-          <.section id="set-about">{gettext("About")}</.section>
+          <.section id="set-about">{gettext("About this blog")}</.section>
           <p class="note mb-[10px]" id="aboutWhere">
             {gettext("A few lines about the blog, at the foot of every entry.")}
           </p>
@@ -1614,7 +1618,7 @@ defmodule TexttileWeb.SettingsLive do
   defp sections do
     [
       {"set-site", gettext("Site")},
-      {"set-about", gettext("About")},
+      {"set-about", gettext("About this blog")},
       {"set-front", gettext("Front page")},
       {"set-access", gettext("Access")},
       {"set-comments", gettext("Comments")},

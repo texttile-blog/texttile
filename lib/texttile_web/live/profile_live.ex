@@ -194,7 +194,7 @@ defmodule TexttileWeb.ProfileLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col twocol">
+      <div class="admin-col">
         <h1 class="page-h">{gettext("Your profile")}</h1>
 
         <h2 class="set-h on-field">{gettext("Name")}</h2>

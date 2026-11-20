@@ -1785,65 +1785,89 @@ defmodule TexttileWeb.EditorLive do
            them, one screen tall, with a bar of their own that is always
            drawn (.sidecol), so the column never looks like it ends
            where the window does. --%>
+      <div class="ptabs-wrap lg:hidden" id="pTabs" phx-hook=".PTabs">
+        <%!-- A phone has the gallery and the settings under the words,
+             so its row is the three places a writer goes: the words,
+             the gallery, the settings. The record of the entry
+             (comments, stats, log, versions) folds into More. The row
+             stays under the bar the whole way down, and marks the
+             gallery or the settings while they are the part in view. --%>
+        <nav class="ptabs" aria-label={gettext("Entry sections")}>
+          <button
+            type="button"
+            class={["ptab", @tab == "text" && "on"]}
+            phx-click={JS.push("set_tab", value: %{tab: "text"})}
+          >
+            {gettext("Text")}
+          </button>
+          <a href="#tilesBlock" class="ptab jump" id="jumpGallery">{gettext("Gallery")}</a>
+          <a href="#artSettings" class="ptab jump" id="jumpSettings">{gettext("Settings")}</a>
+          <details class="ptab-more" id="moreTabs">
+            <summary class={["ptab", @tab != "text" && "on"]}>
+              {more_label(@tab)}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <div class="ptab-menu">
+              <button
+                :for={
+                  {tab, label} <- [
+                    {"comments", gettext("Comments")},
+                    {"stats", gettext("Stats")},
+                    {"log", gettext("Log")},
+                    {"versions", gettext("Versions")}
+                  ]
+                }
+                type="button"
+                class={["row", @tab == tab && "on"]}
+                phx-click={JS.push("set_tab", value: %{tab: tab})}
+              >
+                {label}
+                <span :if={tab == "versions" && @versions != []} class="k">
+                  {length(@versions)}
+                </span>
+                <span :if={tab == "comments" && @comments != []} class="k">
+                  {comment_tally(@comments, @cmt_require)}
+                </span>
+              </button>
+            </div>
+          </details>
+        </nav>
+      </div>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".PTabs">
+        export default {
+          mounted() {
+            const parts = [["gallery", "tilesBlock"], ["settings", "artSettings"]]
+            this.onScroll = () => {
+              const line = this.el.getBoundingClientRect().bottom + 80
+              let now = ""
+              for (const [name, id] of parts) {
+                const part = document.getElementById(id)
+                if (part && part.getBoundingClientRect().top < line) now = name
+              }
+              this.el.dataset.spy = now
+            }
+            addEventListener("scroll", this.onScroll, {passive: true})
+            this.onScroll()
+          },
+          updated() { this.onScroll() },
+          destroyed() { removeEventListener("scroll", this.onScroll) }
+        }
+      </script>
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:max-w-[1108px] lg:mx-auto">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto md:ml-0 px-4 md:pl-[34px] lg:pr-[30px] pt-[22px] lg:pt-[30px] pb-0 lg:pb-[110px]">
-            <%!-- A phone has the gallery and the settings under the words,
-                 so its row is the three places a writer goes: the words,
-                 the gallery, the settings. The record of the entry
-                 (comments, stats, log, versions) folds into More. --%>
-            <nav class="ptabs lg:hidden" aria-label={gettext("Entry sections")}>
-              <button
-                type="button"
-                class={["ptab", @tab == "text" && "on"]}
-                phx-click={JS.push("set_tab", value: %{tab: "text"})}
-              >
-                {gettext("Text")}
-              </button>
-              <a href="#tilesBlock" class="ptab jump" id="jumpGallery">{gettext("Gallery")} ↓</a>
-              <a href="#artSettings" class="ptab jump" id="jumpSettings">{gettext("Settings")} ↓</a>
-              <details class="ptab-more" id="moreTabs">
-                <summary class={["ptab", @tab != "text" && "on"]}>
-                  {more_label(@tab)}
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </summary>
-                <div class="ptab-menu">
-                  <button
-                    :for={
-                      {tab, label} <- [
-                        {"comments", gettext("Comments")},
-                        {"stats", gettext("Stats")},
-                        {"log", gettext("Log")},
-                        {"versions", gettext("Versions")}
-                      ]
-                    }
-                    type="button"
-                    class={["row", @tab == tab && "on"]}
-                    phx-click={JS.push("set_tab", value: %{tab: tab})}
-                  >
-                    {label}
-                    <span :if={tab == "versions" && @versions != []} class="k">
-                      {length(@versions)}
-                    </span>
-                    <span :if={tab == "comments" && @comments != []} class="k">
-                      {comment_tally(@comments, @cmt_require)}
-                    </span>
-                  </button>
-                </div>
-              </details>
-            </nav>
             <nav
               class="hidden lg:flex gap-0.5 border-b border-rule mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               aria-label={gettext("Entry sections")}

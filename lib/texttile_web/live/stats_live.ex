@@ -141,7 +141,7 @@ defmodule TexttileWeb.StatsLive do
             <div class="l">
               <%!-- the unit, then the day on a line of its own, as the
                    change stands under the other two --%>
-              {gettext("views on the busiest day")}<span
+              {gettext("busiest day")}<span
                 :if={@summary.busiest}
                 id="figBusiestDay"
                 class="block"
@@ -150,7 +150,7 @@ defmodule TexttileWeb.StatsLive do
           </div>
         </div>
         <%!-- how a reader is counted, where the count stands --%>
-        <p class="hint !mt-1" id="statsRule">
+        <p class="hint !mt-2 mb-2" id="statsRule">
           {gettext(
             "A reader counts once a day: the server forgets every night who was here, so nothing links two days. Bots and prefetches do not count."
           )}

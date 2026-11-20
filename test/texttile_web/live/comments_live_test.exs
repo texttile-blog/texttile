@@ -62,7 +62,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
 
-    assert has_element?(view, "#comment-#{waiting.id}", "not confirmed yet")
+    assert has_element?(view, "#comment-#{waiting.id}", "unconfirmed")
     assert has_element?(view, "#comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
 
@@ -564,7 +564,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(article)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      assert has_element?(view, "#comment-#{comment.id}", "not confirmed yet")
+      assert has_element?(view, "#comment-#{comment.id}", "unconfirmed")
 
       view |> element("#comment-#{comment.id} button", "Release") |> render_click()
 
@@ -577,7 +577,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
       # the next comment from the same address waits like every other
       later = post!(article, %{"body" => "And another thing"})
-      assert has_element?(view, "#comment-#{later.id}", "not confirmed yet")
+      assert has_element?(view, "#comment-#{later.id}", "unconfirmed")
     end
 
     test "a confirmed comment is never offered a release", %{conn: conn} do

@@ -625,7 +625,7 @@
   .card .cimg .cx {
     font-family: var(--tt-font-serif); font-size: clamp(16px, 6.2cqi, 20px); line-height: 1.5;
     color: var(--tt-inksoft); text-align: left; text-wrap: pretty;
-    display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 9; -webkit-box-orient: vertical; overflow: hidden;
   }
   .card .cimg .cx.short {
     font-size: clamp(20px, 8.6cqi, 28px); line-height: 1.3; letter-spacing: -.01em;
@@ -1754,18 +1754,17 @@
      it, so the placeholder is never cut short by the count. */
   .searchrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 16px; }
   .searchrow input { flex: 1; min-width: 0; }
-  /* On a desk the row stands on the grid of the cards under it: the
-     field spans the first two columns, the year (and the month) the
-     third, and the count goes under them. */
+  /* On a desk the row runs the width of the grid under it: the field
+     takes it, the year (and the month) stand at its right end at the
+     width of a choice, and the count goes under them. */
   @media (min-width: 861px) {
     .searchrow {
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: 28px; row-gap: 10px; align-items: center;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 12px; row-gap: 10px; align-items: center;
     }
-    .searchrow > label + input, .searchrow > input { grid-column: 1 / 3; }
-    .searchrow .picks { grid-column: 3; display: flex !important; gap: 10px; }
-    .searchrow .picks .pick { flex: 1; min-width: 0; }
-    .searchrow .picks select { width: 100%; }
+    .searchrow > label + input, .searchrow > input { grid-column: 1; }
+    .searchrow .picks { grid-column: 2; display: flex !important; gap: 10px; }
+    .searchrow .picks select { width: 170px; }
     .searchrow .cnt { grid-column: 1 / -1; margin-top: 0; }
   }
 
@@ -2381,8 +2380,7 @@ body.site .card-wrap .cm { font-size: 14px; }
 /* on a desk the option lines of Settings are help lines like any other */
 @media (min-width: 1024px) { .opt .note { font-size: 14px; } }
 /* the website is optional and short: half the row */
-/* the website is optional and short: half the row */
-@media (min-width: 640px) { .cform > .cf-url { max-width: calc(50% - 8px); } }
+
 /* the formatting glyphs at the size of the words they sit over */
 .mdb svg { width: 17px; height: 17px; }
 
@@ -2591,18 +2589,12 @@ section.foot-band .cols { padding-bottom: 32px; }
   #commentFilter .seg-b { padding-left: 0; padding-right: 0; margin-right: 18px; }
 }
 
-/* the actions of a comment: one step between them all. On a phone the
-   row is the ink of the words and Release closes it at the right end,
-   so Reply, Edit and Delete stand in the same places on every row */
+/* the actions of a comment: one step between them all, Release first
+   at every width. On a phone the row is the ink of the words. */
 @media (max-width: 639px) {
   .cmt-acts > .btn.quiet:not(.rel) { color: var(--tt-inksoft); }
-  .cmt-acts > .rel { order: 9; margin-left: auto; margin-right: -10px; }
 }
 
-/* the phone's jumps down the page are links, not tabs: the quiet ink,
-   after a hairline, never the open rule */
-.ptab.jump { color: var(--tt-faint); font-size: 13.5px; }
-#jumpGallery { border-left: 1px solid var(--tt-hair); padding-left: 12px; margin-left: 4px; height: 18px; align-self: center; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
 
 /* the tags the blog carries, under the tag field: words, not pills.
    The ones on this entry stand in ink, the others in the quiet ink */
@@ -2671,3 +2663,56 @@ section.foot-band .cols { padding-bottom: 32px; }
 /* Backup: while the switch is off, the token, the addresses and the
    last fetch say nothing a reader of the screen needs */
 #backupSection:has(#setting-backup_enabled:not(:checked)) .backup-more { display: none; }
+
+/* a table's headings keep one line: a heading broken at its hyphen
+   reads as two words */
+.admin-col table th { white-space: nowrap; }
+
+/* the archive's tags on a phone: one row that scrolls sideways under
+   the open one's rule, on the row's own hairline */
+@media (max-width: 639px) {
+  #tagbar {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    margin-left: calc(var(--tt-gut) * -1); margin-right: calc(var(--tt-gut) * -1);
+    padding-left: var(--tt-gut); padding-right: var(--tt-gut);
+  }
+  #tagbar::-webkit-scrollbar { display: none; }
+  #tagbar .ctag { flex: none; white-space: nowrap; }
+  #tagbar { border-bottom: 1px solid var(--tt-hair); }
+  #tagbar .ctag.on { margin-bottom: -1px; }
+}
+
+/* Settings on a phone: a section is a step apart, on a hairline */
+@media (max-width: 999px) {
+  .setbody > .set-h:not(:first-child) { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--tt-hair); }
+}
+
+/* what is still open about a live entry is a fact, not a link: the
+   ink of the facts, after the ring the editor bar wears for it */
+.card .cm .open { color: var(--tt-inksoft); }
+
+/* the whole filter's delete: the rust of a warning in its words even
+   before a selection, so its reach is never mistaken for a quiet word */
+.cmt-tools > #bulk-delete { color: var(--tt-julia); }
+.cmt-tools > #bulk-delete:hover { background-color: var(--tt-juliatint); }
+
+/* THE PHONE'S ROW OF PLACES stays under the bar the whole way down the
+   entry: Text, Gallery, Settings and More, one kind of tab. Gallery
+   and Settings are parts of the one page, so they take the open rule
+   while they are the part in view (the hook writes data-spy). The
+   formatting bar sticks under the row. */
+.ptabs-wrap {
+  position: sticky; top: 52px; z-index: 35;
+  padding: 0 16px; background: var(--tt-page);
+}
+.ptabs-wrap .ptabs { margin-bottom: 0; }
+.ptabs-wrap[data-spy="gallery"] .ptab.on, .ptabs-wrap[data-spy="settings"] .ptab.on {
+  color: var(--tt-dim); font-weight: 400; border-bottom-color: transparent;
+}
+.ptabs-wrap[data-spy="gallery"] #jumpGallery, .ptabs-wrap[data-spy="settings"] #jumpSettings {
+  color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent);
+}
+@media (max-width: 1023px) {
+  .mdbar { top: 92px; }
+  #tilesBlock, #artSettings { scroll-margin-top: 104px; }
+}

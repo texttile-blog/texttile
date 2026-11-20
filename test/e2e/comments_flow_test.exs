@@ -84,7 +84,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       session
       |> sign_in()
       |> open("/admin/comments")
-      |> assert_has("#commentsList", text: "not confirmed yet")
+      |> assert_has("#commentsList", text: "unconfirmed")
       |> click_button("Release")
       |> assert_has("#commentsList", text: "let through")
       |> refute_has("#commentsList .wait")
