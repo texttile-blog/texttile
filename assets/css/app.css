@@ -3290,3 +3290,33 @@ th.num { font-variant-numeric: normal; white-space: nowrap; }
   .edstat .saved:not(.warn)::before { margin-left: 12px; }
   #topbar.wide #barSaveVersion { box-shadow: none; background: transparent; font-weight: 600; padding-left: 6px; padding-right: 6px; }
 }
+
+/* ROUND 22 */
+/* a text square shows whole lines only: the count of lines follows
+   the width of the card, so the last line it keeps ends inside the
+   padding with its ellipsis and no line is cut through */
+.card .cimg .cx.mid { -webkit-line-clamp: 8; }
+@container (max-width: 256px) { .card .cimg .cx { -webkit-line-clamp: 8; } }
+@container (max-width: 257px) { .card .cimg .cx.mid { -webkit-line-clamp: 7; } }
+@container (max-width: 228px) { .card .cimg .cx { -webkit-line-clamp: 7; } }
+@media (max-width: 560px) {
+  /* a phone's square: 22px inset, 27px lines at page size, 31.5px a
+     size up */
+  body.site .card .cimg .cx { -webkit-line-clamp: 12; }
+  body.site .card .cimg .cx.mid { -webkit-line-clamp: 11; }
+  @container (max-width: 389px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 10; } }
+  @container (max-width: 367px) { body.site .card .cimg .cx { -webkit-line-clamp: 11; } }
+  @container (max-width: 358px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 9; } }
+  @container (max-width: 340px) { body.site .card .cimg .cx { -webkit-line-clamp: 10; } }
+  @container (max-width: 327px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 8; } }
+  @container (max-width: 313px) { body.site .card .cimg .cx { -webkit-line-clamp: 9; } }
+  @container (max-width: 295px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 7; } }
+}
+
+/* the signed-in strip on a phone: a finger tall, its two ways in on
+   the full height and apart from the state */
+@media (max-width: 639px) {
+  .known-strip { height: 44px; gap: 12px; }
+  .known-strip a { display: inline-flex; align-items: center; height: 44px; }
+  .known-strip > span:last-child { gap: 18px; }
+}
