@@ -22,7 +22,15 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "Settings"
       assert html =~ ~s(id="savedSettings")
 
-      for section <- ["Site", "About", "Theme", "Comments", "Users", "Pictures & videos", "Storage"] do
+      for section <- [
+            "Site",
+            "About",
+            "Theme",
+            "Comments",
+            "Users",
+            "Pictures & videos",
+            "Storage"
+          ] do
         assert has_element?(view, "h2", section)
       end
 
