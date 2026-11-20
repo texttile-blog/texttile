@@ -30,7 +30,7 @@ defmodule TexttileWeb.TagsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/tags")
 
-      assert has_element?(view, "#tagrow-sea", "3 entries · 1 live")
+      assert has_element?(view, "#tagrow-sea", "3 entries · 2 not live")
       refute has_element?(view, "#tagrow-fog", "live")
     end
 

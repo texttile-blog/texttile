@@ -399,7 +399,7 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   defp backup_note(true), do: gettext("On: a client with the token may fetch.")
-  defp backup_note(false), do: gettext("Off: /backup answers nothing, as if it were not there.")
+  defp backup_note(false), do: gettext("Off: the backup address answers nothing.")
 
   defp token_state(""), do: gettext("No token yet, so nothing is served.")
   defp token_state(_hash), do: gettext("A token is in service, kept as a hash.")
@@ -675,10 +675,10 @@ defmodule TexttileWeb.SettingsLive do
               this.onScroll = () => {
                 const beside = matchMedia("(min-width: 1000px)").matches
                 const top = beside ? 52 : this.el.getBoundingClientRect().bottom
-                const line = top + 120
+                const line = top + (beside ? 120 : 24)
                 // before the first heading has reached the bars, the
                 // screen is at its top and the picker names no section
-                let now = null
+                let now = beside ? heads[0] : null
                 if (heads[0].getBoundingClientRect().top < top + 8)
                   for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
                 if (now) mark(now.id)
@@ -1329,7 +1329,7 @@ defmodule TexttileWeb.SettingsLive do
           <.section id="set-theme">{gettext("Theme")}</.section>
           <p class="note mb-[10px]">
             {gettext(
-              "The colours of the blog and this admin area, in one CSS file. Only the values you change are kept, so the rest follows every update."
+              "The colours of the blog and this admin area, in one CSS file. Your changes are kept when Texttile updates."
             )}
           </p>
           <%!-- the theme is code, and most visits never touch it: the

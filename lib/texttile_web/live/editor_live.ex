@@ -1812,6 +1812,14 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
+              <i
+                :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
+                class="more-dot"
+                aria-label={
+                  gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))
+                }
+              >
+              </i>
               <svg
                 width="14"
                 height="14"
@@ -1919,7 +1927,7 @@ defmodule TexttileWeb.EditorLive do
             <button
               :if={@tab == "text" and unconfirmed(@comments, @cmt_require) > 0}
               type="button"
-              class="lg:hidden block text-[13.5px] font-medium text-accent mb-4"
+              class="lg:hidden block text-[13.5px] font-medium text-accent mb-5"
               id="newComments"
               phx-click={JS.push("set_tab", value: %{tab: "comments"})}
             >
@@ -2335,8 +2343,12 @@ defmodule TexttileWeb.EditorLive do
                   }
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
-                  <span :if={@effective_preview == image.path} class="cov">
-                    ✓ {gettext("Preview image")}
+                  <span
+                    :if={@effective_preview == image.path}
+                    class="cov"
+                    aria-label={gettext("Preview image")}
+                  >
+                    ✓ {gettext("Preview")}
                   </span>
                   <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
                   <span :if={conversion_note(@media[image.path])} class="tile-wait">
@@ -3346,7 +3358,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp slug_hint(article) do
     if Articles.public_path(article) do
-      gettext("After a change, the old address leads here.")
+      gettext("If you change it, the old address still leads to this entry.")
     end
   end
 

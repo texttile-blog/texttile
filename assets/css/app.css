@@ -2949,3 +2949,52 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* Import: its heading a step over the words, as on every screen */
 .admin-col > .page-h + .lead { margin-top: 14px; }
+
+/* ROUND 11 */
+/* the reader's search on a phone: the field on a row of its own, the
+   year at the left of the next row and the count at its right end */
+@media (max-width: 860px) {
+  .searchrow > input { flex-basis: 100%; }
+  .searchrow .cnt { margin-left: auto; }
+}
+
+/* the archive's tags on a phone: wrapped rows a step apart, every tag
+   whole and in sight, no base line to fall between the rows */
+@media (max-width: 639px) {
+  #tagbar {
+    flex-wrap: wrap; overflow: visible; row-gap: 12px; padding-right: var(--tt-gut);
+    -webkit-mask-image: none; mask-image: none; border-bottom: 0;
+  }
+}
+
+/* THE READER'S CARDS SHARE THEIR ROWS · each card takes four rows of
+   its row of cards: the picture with the title, the facts, the lead,
+   the tags (subgrid). The facts and the tags of one row stand on one
+   line, however many lines a title takes or whether a lead is there. */
+@media (min-width: 561px) {
+  /* the space between rows of cards is each card's own, so the rows
+     inside a card stand close */
+  .cards { row-gap: 0; }
+  .cards > .card-wrap { margin-bottom: 44px; }
+  .cards > .card-wrap { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 0; }
+  /* a card without a lead closes on its tags right under its facts */
+  .cards > .card-wrap:not(:has(> .clead)) > .ctags { grid-row: 3; }
+  .cards > .card-wrap > .card { grid-row: 1; }
+  .cards > .card-wrap > .cm { grid-row: 2; }
+  .cards > .card-wrap > .clead { grid-row: 3; }
+  .cards > .card-wrap > .ctags { grid-row: 4; }
+}
+
+/* Storage: the folder names in a column of their own, so the words
+   after them start on one edge; a phone puts the words under the name */
+.tally td .p { display: inline-block; min-width: 10.5em; }
+@media (max-width: 639px) {
+  .tally td .p { display: block; min-width: 0; }
+  .tally td .note { display: block; margin-left: 0; }
+}
+
+/* the dot on More while comments wait for their reader */
+.more-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin-left: 5px; }
+
+/* the optional mark, a step quieter than its label */
+.cf-opt { font-size: 12.5px; }
