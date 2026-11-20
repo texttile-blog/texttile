@@ -1813,18 +1813,37 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
-              <%!-- the one place a phone names new comments, with its
-                   noun: the count stands for the comments, not for More --%>
+              <%!-- new comments as a speech mark and their count, a badge
+                   of its own after More; the menu names them in words --%>
               <span
                 :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
-                class="more"
-                title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
+                class="mcount"
+                title={
+                  ngettext(
+                    "1 new comment",
+                    "%{count} new comments",
+                    unconfirmed(@comments, @cmt_require)
+                  )
+                }
               >
-                {ngettext(
-                  "1 new comment",
-                  "%{count} new comments",
-                  unconfirmed(@comments, @cmt_require)
-                )}
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 3.5h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Z" />
+                </svg>
+                <span aria-hidden="true">{unconfirmed(@comments, @cmt_require)}</span>
+                <span class="sr">
+                  {ngettext(
+                    "1 new comment",
+                    "%{count} new comments",
+                    unconfirmed(@comments, @cmt_require)
+                  )}
+                </span>
               </span>
               <svg
                 width="14"

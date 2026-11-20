@@ -107,7 +107,7 @@ defmodule TexttileWeb.CommentComponents do
           phx-click="release_comment"
           phx-value-id={@comment.id}
         >
-          {gettext("Release")}
+          {gettext("Approve")}
         </button>
         <.write_link comment={@comment} />
         <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>

@@ -99,7 +99,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(published_post())
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
-      view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+      view |> element("#comment-#{comment.id} button", "Approve") |> render_click()
 
       refute has_element?(view, "#comment-#{comment.id}")
       assert has_element?(view, "#commentsList", "No comments here.")
@@ -135,14 +135,14 @@ defmodule TexttileWeb.CommentsLiveTest do
       view |> element("#comment-#{comment.id} input[type=checkbox]") |> render_click()
     end
 
-    test "Release all takes every comment of the filter, across the pages", %{conn: conn} do
+    test "Approve all takes every comment of the filter, across the pages", %{conn: conn} do
       comments = wave(26)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
 
       assert has_element?(view, "#commentTools", "Select all")
-      view |> element("#bulk-release", "Release all 26") |> render_click()
-      assert has_element?(view, "#dialog", "Release 26 comments?")
+      view |> element("#bulk-release", "Approve all 26") |> render_click()
+      assert has_element?(view, "#dialog", "Approve 26 comments?")
       assert has_element?(view, "#dialog", "no way back except Delete")
       assert Comments.status_counts()["waiting"] == 26
 
@@ -566,10 +566,10 @@ defmodule TexttileWeb.CommentsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
       assert has_element?(view, "#comment-#{comment.id}", "unconfirmed")
 
-      view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+      view |> element("#comment-#{comment.id} button", "Approve") |> render_click()
 
       refute has_element?(view, "#comment-#{comment.id} .wait")
-      refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      refute has_element?(view, "#comment-#{comment.id} button", "Approve")
       # an empty filter leaves the row, and the released one joins it
       refute has_element?(view, ~s(#commentFilter a[data-f="waiting"]))
       assert has_element?(view, ~s(#commentFilter a[data-f="released"]), "1")
@@ -586,7 +586,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       {:ok, _} = Comments.confirm(comment.address.token)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      refute has_element?(view, "#comment-#{comment.id} button", "Approve")
     end
 
     test "with the setting off nothing waits and nothing is released", %{conn: conn} do
@@ -595,7 +595,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(article)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      refute has_element?(view, "#comment-#{comment.id} button", "Approve")
       # an empty Released filter has nothing left to fill it
       refute has_element?(view, "#commentFilter [data-f=released]")
     end

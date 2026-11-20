@@ -268,7 +268,7 @@ defmodule TexttileWeb.SiteHTML do
              square; a long one fills the square at the size of a page --%>
         <span :if={!@preview && lead(@article) != ""} class="cimg empty">
           <span class={["cx", String.length(lead(@article)) < 120 && "short"]}>
-            {lead(@article, 200)}
+            {lead(@article, 480)}
           </span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">

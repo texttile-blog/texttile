@@ -105,7 +105,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
 
-    view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+    view |> element("#comment-#{comment.id} button", "Approve") |> render_click()
     refute has_element?(view, "#comment-#{comment.id} .wait")
     assert Comments.released?(Comments.get_comment!(comment.id))
 

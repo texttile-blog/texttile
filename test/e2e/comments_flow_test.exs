@@ -85,7 +85,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       |> sign_in()
       |> open("/admin/comments")
       |> assert_has("#commentsList", text: "unconfirmed")
-      |> click_button("Release")
+      |> click_button("Approve")
       |> assert_has("#commentsList", text: "let through")
       |> refute_has("#commentsList .wait")
       |> open_page(Articles.public_path(article))

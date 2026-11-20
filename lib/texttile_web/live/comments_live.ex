@@ -201,7 +201,7 @@ defmodule TexttileWeb.CommentsLive do
                list --%>
           <p :if={@require? and @status == "waiting"} class="note mt-2 mb-1" id="releaseNote">
             {gettext(
-              "Unconfirmed: the reader has not confirmed the email yet. Release shows the comment now."
+              "Unconfirmed: the reader has not confirmed the email yet. Approve shows the comment now."
             )}
           </p>
         </div>
@@ -326,9 +326,9 @@ defmodule TexttileWeb.CommentsLive do
   defp selection_line(selected, _all), do: gettext("%{count} selected", count: selected)
 
   defp bulk_label("release", 0, all),
-    do: ngettext("Release all %{count} comment", "Release all %{count} comments", all)
+    do: ngettext("Approve all %{count} comment", "Approve all %{count} comments", all)
 
-  defp bulk_label("release", selected, _all), do: gettext("Release %{count}", count: selected)
+  defp bulk_label("release", selected, _all), do: gettext("Approve %{count}", count: selected)
 
   defp bulk_label("delete", 0, all),
     do: ngettext("Delete all %{count} comment", "Delete all %{count} comments", all)
@@ -347,14 +347,14 @@ defmodule TexttileWeb.CommentsLive do
   # The shape `<.ask>` reads, plus the list the answer acts on.
   defp bulk_dialog("release", ids) do
     %{
-      title: ngettext("Release 1 comment?", "Release %{count} comments?", length(ids)),
+      title: ngettext("Approve 1 comment?", "Approve %{count} comments?", length(ids)),
       body: [
         gettext(
           "They stand under their entries at once. Their addresses stay unconfirmed, and nobody is mailed."
         ),
         gettext("There is no way back except Delete.")
       ],
-      ok: gettext("Release"),
+      ok: gettext("Approve"),
       event: "confirm_bulk",
       value: "release",
       ids: ids
@@ -392,7 +392,7 @@ defmodule TexttileWeb.CommentsLive do
   defp status_name("all"), do: gettext("All")
   defp status_name("waiting"), do: gettext("Unconfirmed")
   defp status_name("confirmed"), do: gettext("Confirmed")
-  defp status_name("released"), do: gettext("Released")
+  defp status_name("released"), do: gettext("Approved")
   defp status_name("trash"), do: gettext("Trash")
 
   defp empty_line("all") do

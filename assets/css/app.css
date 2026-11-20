@@ -3209,3 +3209,29 @@ section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font
 
 /* a column header is a word: no figures' spacing, never broken */
 th.num { font-variant-numeric: normal; white-space: nowrap; }
+
+/* ROUND 19 */
+/* the reader's text square, one rule: every opening from the top at
+   one inset; a long one runs to the bottom inset and ends on an
+   ellipsis, a short one is a size larger. A phone draws the square of
+   the pictures beside it. */
+.card .cimg.empty:has(.cx), .card .cimg.empty:has(.cx.short) { justify-content: flex-start; }
+.card .cimg .cx { -webkit-line-clamp: 9; }
+@media (max-width: 560px) {
+  body.site .card .cimg.empty:has(.cx) { aspect-ratio: 1; padding: 22px; }
+  body.site .card .cimg .cx { -webkit-line-clamp: 11; }
+}
+
+/* the entries list: Live is the quiet state, a dot in the meta's ink;
+   the marks that ask for something keep the full ink */
+.card .cm .st.published { background: var(--tt-faint); }
+
+/* the phone's More: new comments as a speech mark and a count in the
+   accent, a badge of its own */
+.mcount { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; color: var(--tt-accent); font-weight: 600; font-size: 13px; }
+.mcount svg { width: 14px; height: 14px; }
+
+/* the phone editor's bar: its two buttons a finger tall */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 40px; }
+}

@@ -335,10 +335,23 @@ defmodule TexttileWeb.TextsLive do
   # then what else is true. Every row starts the same way, with the
   # state, so a column of cards reads down one vocabulary.
   defp card_meta(article) do
+    # the day says which day it is: a draft's last edit, the day a
+    # scheduled one goes live, the day a live one went out
     day =
       case article.status do
-        "draft" -> Texttile.I18n.format_short_date(DateTime.to_date(article.updated_at))
-        _status -> article.publish_date && Texttile.I18n.format_short_date(article.publish_date)
+        "draft" ->
+          gettext("edited %{date}",
+            date: Texttile.I18n.format_short_date(DateTime.to_date(article.updated_at))
+          )
+
+        "scheduled" ->
+          article.publish_date &&
+            gettext("goes live %{date}",
+              date: Texttile.I18n.format_short_date(article.publish_date)
+            )
+
+        _status ->
+          article.publish_date && Texttile.I18n.format_short_date(article.publish_date)
       end
 
     state =
