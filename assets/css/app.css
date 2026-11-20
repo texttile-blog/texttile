@@ -616,16 +616,16 @@
   .card .cimg.empty:has(.cx) {
     /* `place-items` goes back to its start: a browser that aligns the
        children of a block (Chrome does) centred a one-line opening */
-    display: flex; flex-direction: column; justify-content: flex-start; place-items: normal;
+    display: flex; flex-direction: column; justify-content: center; place-items: normal;
     overflow: hidden;
     background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); padding: 8cqi 8.5cqi;
   }
   .card .cimg.empty:has(.cx.short) { justify-content: center; }
   .card .cimg .ci { display: none; }
   .card .cimg .cx {
-    font-family: var(--tt-font-serif); font-size: clamp(16px, 6.2cqi, 20px); line-height: 1.5;
+    font-family: var(--tt-font-serif); font-size: clamp(16px, 5.8cqi, 19px); line-height: 1.5;
     color: var(--tt-inksoft); text-align: left; text-wrap: pretty;
-    display: -webkit-box; -webkit-line-clamp: 9; -webkit-box-orient: vertical; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden;
   }
   .card .cimg .cx.short {
     font-size: clamp(20px, 8.6cqi, 28px); line-height: 1.3; letter-spacing: -.01em;
@@ -2716,3 +2716,30 @@ section.foot-band .cols { padding-bottom: 32px; }
   .mdbar { top: 92px; }
   #tilesBlock, #artSettings { scroll-margin-top: 104px; }
 }
+
+/* a phone's comment actions: a finger's height, the words at the size
+   of a control, Delete at the far end where a slip cannot reach it */
+@media (max-width: 639px) {
+  .cmt-acts > .btn { font-size: 14px; font-weight: 500; }
+  .cmt-acts > .danger { margin-left: auto; margin-right: -10px; }
+}
+
+/* the foot's ways out start on the left, under the blog's own line */
+.wrap.f-foot .sp { display: none; }
+
+/* every list screen's heading stands as far over its first control */
+#statsWindows { margin-top: 24px; }
+
+/* the count after a list's name, at the size of the counts in its tabs */
+.hcount { font-size: 15px; font-weight: 400; }
+
+/* a person in Users is one row: the address right under the name */
+#usersList .note { margin-top: -4px; }
+
+/* an edited live entry: the ink of the words, the one state a writer
+   has to notice in the list */
+.card .cm .open { color: var(--tt-ink); }
+
+/* a few fields about one person: as wide as an address needs, not the
+   whole column */
+@media (min-width: 768px) { .admin-col.profile .val, .admin-col.profile .pairrow { max-width: 480px; } }

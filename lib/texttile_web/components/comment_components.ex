@@ -255,7 +255,7 @@ defmodule TexttileWeb.CommentComponents do
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
-      "Readers confirm their email first. Release shows a comment before that, and a comment nobody confirms within %{waiting} days goes for good. The trash keeps a deleted comment for %{days} days. No captcha, ever.",
+      "Readers confirm their email first, and a comment nobody confirms within %{waiting} days goes for good. The trash keeps a deleted comment for %{days} days. No captcha, ever.",
       waiting: Comments.waiting_days(),
       days: Comments.trash_days()
     )

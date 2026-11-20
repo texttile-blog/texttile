@@ -1554,11 +1554,13 @@ defmodule TexttileWeb.EditorLive do
         </span>
 
         <%!-- the deliberate save beside the automatic one, at every
-             width: it is the one action a writer takes on purpose --%>
+             width and in the frame of an action: it is the one thing a
+             writer does on purpose, and a phone keeps it in sight
+             while writing --%>
         <button
           :if={@holds_lock}
           type="button"
-          class="btn quiet sm max-md:hidden"
+          class="btn sm"
           id="barSaveVersion"
           phx-click="save_version"
           data-flush-body
@@ -1850,7 +1852,8 @@ defmodule TexttileWeb.EditorLive do
           mounted() {
             const parts = [["gallery", "tilesBlock"], ["settings", "artSettings"]]
             this.onScroll = () => {
-              const line = this.el.getBoundingClientRect().bottom + 80
+              // the part at the top, right under this row
+              const line = this.el.getBoundingClientRect().bottom + 24
               let now = ""
               for (const [name, id] of parts) {
                 const part = document.getElementById(id)
@@ -1963,25 +1966,6 @@ defmodule TexttileWeb.EditorLive do
                         )}
                       <% end %>
                     </span>
-                  </p>
-                  <%!-- A phone bar has no room for the deliberate save, so
-                       it stands where the writing ends: the one action a
-                       writer takes on purpose, said with what it keeps. --%>
-                  <p
-                    :if={@holds_lock}
-                    class="md:hidden flex items-center gap-3 mt-5 mb-10"
-                    id="footSave"
-                  >
-                    <button
-                      type="button"
-                      class="btn sm"
-                      id="footSaveVersion"
-                      phx-click="save_version"
-                      data-flush-body
-                    >
-                      {gettext("Save version")}
-                    </button>
-                    <span class="note">{gettext("Keeps a copy you can restore.")}</span>
                   </p>
                   <span class="drop-flag" id="bodyDropFlag" hidden>
                     {gettext("Put the image in the text, where the caret is")}
@@ -2497,14 +2481,14 @@ defmodule TexttileWeb.EditorLive do
                     class="link block truncate"
                     id="slugPrefix"
                   >
-                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
+                    {site_address()}{Articles.public_prefix(@article)}{@article.slug}
                   </a>
                   <span
                     :if={!(@public_url && Visibility.live?(@article))}
                     class="block truncate"
                     id="slugPrefix"
                   >
-                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
+                    {site_address()}{Articles.public_prefix(@article)}{@article.slug}
                   </span>
                   {slug_hint(@article)}
                 </div>
@@ -3373,6 +3357,10 @@ defmodule TexttileWeb.EditorLive do
         "No email went out for this entry. The email goes out only at the moment an entry goes live."
       )
 
+  # The address of the site as the share lines write it, without the
+  # scheme: the host and, where there is one, the port.
+  defp site_address, do: String.replace(TexttileWeb.Endpoint.url(), ~r{\Ahttps?://}, "")
+
   # The comments of the tab, counted the way a reader counts them, and
   # the ones still waiting for their reader beside them: the number on
   # the entry page and the number here never disagree.
@@ -3381,7 +3369,7 @@ defmodule TexttileWeb.EditorLive do
 
     case waiting do
       0 -> "#{length(comments)}"
-      n -> gettext("%{shown} · %{waiting} waiting", shown: length(comments) - n, waiting: n)
+      n -> gettext("%{shown} · %{waiting} unconfirmed", shown: length(comments) - n, waiting: n)
     end
   end
 

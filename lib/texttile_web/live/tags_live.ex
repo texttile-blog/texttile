@@ -90,7 +90,15 @@ defmodule TexttileWeb.TagsLive do
     tags = Articles.tag_counts()
     editing = socket.assigns.editing
     confirm_tag = socket.assigns.confirm_tag
-    socket = assign(socket, :tags, tags)
+
+    # how many of a tag's entries a reader can open, by the tag's lower
+    # case: the archive on the site counts these and nothing else
+    live =
+      Articles.list_published()
+      |> Enum.flat_map(&Articles.tag_list/1)
+      |> Enum.frequencies_by(&String.downcase/1)
+
+    socket = socket |> assign(:tags, tags) |> assign(:live, live)
 
     socket =
       if editing && not Enum.any?(tags, fn {tag, _} -> tag == editing end) do
@@ -158,7 +166,9 @@ defmodule TexttileWeb.TagsLive do
               #{tag}
             </a>
             <span class="note num flex-1">
-              {ngettext("1 entry", "%{count} entries", count)}
+              {ngettext("1 entry", "%{count} entries", count)}<span :if={
+                Map.get(@live, String.downcase(tag), 0) not in [0, count]
+              }> · {gettext("%{count} live", count: Map.get(@live, String.downcase(tag), 0))}</span>
             </span>
             <div :if={@editing != tag} class="flex gap-1 max-sm:gap-3 -mr-[11px] max-sm:ml-auto">
               <button

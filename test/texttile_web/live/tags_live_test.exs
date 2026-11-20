@@ -23,6 +23,17 @@ defmodule TexttileWeb.TagsLiveTest do
       assert has_element?(view, "#tagrow-fog", "1 entry")
     end
 
+    # the reader's archive counts live entries only; the row says both,
+    # so the two numbers never look like a mistake side by side
+    test "says how many of them are live when not all are", %{conn: conn} do
+      published_post(title: "Out there", tags: "sea")
+
+      {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+      assert has_element?(view, "#tagrow-sea", "3 entries · 1 live")
+      refute has_element?(view, "#tagrow-fog", "live")
+    end
+
     test "deleting a tag asks first, then takes it off every text",
          %{conn: conn, one: one, two: two} do
       {:ok, view, _html} = live(conn, ~p"/admin/tags")

@@ -31,7 +31,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}")
     # the one readers see, and the one that waits for its reader
-    assert has_element?(view, "nav .tab .cnt", "1 · 1 waiting")
+    assert has_element?(view, "nav .tab .cnt", "1 · 1 unconfirmed")
 
     view |> element("nav .tab", "Comments") |> render_click()
 

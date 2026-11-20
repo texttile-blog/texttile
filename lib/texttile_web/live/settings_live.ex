@@ -668,13 +668,13 @@ defmodule TexttileWeb.SettingsLive do
                 links.forEach(a => a.hash === "#" + id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current"))
                 pick.value = id
               }
-              // the section in view is the last one whose heading has
-              // passed a line a third of the way down the visible part,
-              // under the bars that stay
+              // the section in view is the one at the top of the visible
+              // part: the last heading that has reached the bars that
+              // stay (the admin bar, and on a phone the picker)
               this.onScroll = () => {
                 const beside = matchMedia("(min-width: 1000px)").matches
                 const top = beside ? 52 : this.el.getBoundingClientRect().bottom
-                const line = top + (innerHeight - top) / 3
+                const line = top + 24
                 let now = heads[0]
                 for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
                 if (now) mark(now.id)
@@ -1322,7 +1322,7 @@ defmodule TexttileWeb.SettingsLive do
           <.section id="set-theme">{gettext("Theme")}</.section>
           <p class="note mb-[10px]">
             {gettext(
-              "One CSS file colours the blog and this admin area. Only the values you change are kept, so the rest follows every update."
+              "The colours of the blog and this admin area, in one CSS file. Only the values you change are kept, so the rest follows every update."
             )}
           </p>
           <%!-- the theme is code, and most visits never touch it: the
@@ -1407,7 +1407,7 @@ defmodule TexttileWeb.SettingsLive do
                   checked={@settings.backup_enabled}
                 />
                 <span>
-                  {gettext("Serve a backup client at /backup")}
+                  {gettext("Allow backups at /backup")}
                   <span class="note block" id="setBackupNote">
                     {backup_note(@settings.backup_enabled)}
                   </span>
@@ -1523,8 +1523,7 @@ defmodule TexttileWeb.SettingsLive do
             {gettext(
               "Bring entries over from another blog: a zip of Markdown, settings and pictures."
             )}
-            <.import_doc />
-            {gettext("in the repository describes the format.")}
+            {gettext("See")} <.import_doc />.
           </p>
           <p>
             <.link navigate={~p"/admin/settings/import"} class="btn" id="open-import">

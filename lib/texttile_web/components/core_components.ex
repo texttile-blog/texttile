@@ -389,7 +389,7 @@ defmodule TexttileWeb.CoreComponents do
       target="_blank"
       rel="noopener"
     >
-      IMPORT.md<.out_icon />
+      {gettext("the format guide")}<.out_icon />
     </a>
     """
   end

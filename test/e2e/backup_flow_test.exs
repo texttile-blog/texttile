@@ -33,9 +33,9 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> assert_has("#setBackupNote", text: "answers nothing")
       # the token and the rest wait behind the switch
       |> refute_has("#backupLastAccess")
-      |> check("Serve a backup client", exact: false)
+      |> check("Allow backups at /backup", exact: false)
       |> assert_has("#backupLastAccess", text: "Nothing has been fetched yet")
-      |> uncheck("Serve a backup client", exact: false)
+      |> uncheck("Allow backups at /backup", exact: false)
       |> refute_has("#backupLastAccess")
 
       refute Backup.enabled?()
@@ -47,7 +47,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Serve a backup client", exact: false)
+        |> check("Allow backups at /backup", exact: false)
         # the toast is the save answering
         |> assert_has("#toast", text: "Saved")
         |> click_button("#makeBackupToken", "Create a token")
@@ -90,7 +90,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
-      |> check("Serve a backup client", exact: false)
+      |> check("Allow backups at /backup", exact: false)
       |> click_button("#makeBackupToken", "Create a token")
       |> assert_has("#backupToken")
       |> evaluate(@token_selected, [is_function: true], &assert(&1 == true))
@@ -124,7 +124,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Serve a backup client", exact: false)
+        |> check("Allow backups at /backup", exact: false)
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 
@@ -164,12 +164,12 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
-      |> check("Serve a backup client", exact: false)
+      |> check("Allow backups at /backup", exact: false)
       |> click_button("#makeBackupToken", "Create a token")
       |> assert_has("#backupToken")
-      |> uncheck("Serve a backup client", exact: false)
+      |> uncheck("Allow backups at /backup", exact: false)
       |> assert_has("#setBackupNote", text: "answers nothing")
-      |> check("Serve a backup client", exact: false)
+      |> check("Allow backups at /backup", exact: false)
       |> assert_has("#setBackupNote", text: "may fetch")
       |> click_button("#copyBackupToken", "Copy")
       |> assert_has("#copyBackupToken", text: "Copied")
@@ -181,7 +181,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Serve a backup client", exact: false)
+        |> check("Allow backups at /backup", exact: false)
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 
@@ -206,7 +206,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Serve a backup client", exact: false)
+        |> check("Allow backups at /backup", exact: false)
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 

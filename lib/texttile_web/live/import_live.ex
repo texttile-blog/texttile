@@ -112,12 +112,11 @@ defmodule TexttileWeb.ImportLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
-        <p class="lead">
+        <p class="lead !max-w-none">
           {gettext(
-            "Bring entries over from another blog: one folder per entry in a zip, with its Markdown, settings and pictures. Pictures may also be addresses; the server fetches them."
+            "Bring entries over from another blog: a zip with one folder per entry, holding its Markdown, its settings and its pictures. Pictures can also be web addresses the server downloads."
           )}
-          <.import_doc />
-          {gettext("in the repository describes the format.")}
+          {gettext("See")} <.import_doc />.
         </p>
 
         <%= case @job.phase do %>
