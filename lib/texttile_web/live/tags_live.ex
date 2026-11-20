@@ -154,14 +154,14 @@ defmodule TexttileWeb.TagsLive do
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[8px] sm:py-[11px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
+            class="py-[8px] sm:py-[11px] border-b border-hair flex items-baseline gap-x-[10px] flex-wrap"
           >
             <%!-- the tag is the way to its archive on the site, a link like every
                  other tag in the product --%>
             <a
               href={~p"/tags/#{String.downcase(tag)}"}
               target="_blank"
-              class="link rowp break-words min-w-[92px]"
+              class="link rowp break-words min-w-[160px]"
             >
               #{tag}
             </a>

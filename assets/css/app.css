@@ -2742,7 +2742,7 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* a few fields about one person: as wide as an address needs, not the
    whole column */
-@media (min-width: 768px) { .admin-col.profile .val, .admin-col.profile .pairrow { max-width: 480px; } }
+
 
 /* THE EDITOR'S STATE GROUP · the entry's state and the save state side
    by side on a wide bar; on a phone stacked, two short lines of words
@@ -2792,7 +2792,7 @@ section.foot-band .cols { padding-bottom: 32px; }
 #storagePaths code { font-family: var(--tt-font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
 
 /* Profile: the sessions at the width of the fields over them */
-@media (min-width: 768px) { .admin-col.profile #sessions { max-width: 480px; } }
+
 
 /* a phone's tag rows: Edit and Delete a full step apart */
 @media (max-width: 639px) { #tagsList .btn.danger { margin-left: 12px; } }
@@ -2898,7 +2898,7 @@ section.foot-band .cols { padding-bottom: 32px; }
 }
 
 /* the address to add a subscriber: as wide as an address */
-@media (min-width: 640px) { #subAdd input[type=email] { max-width: 400px; } }
+
 
 /* ROUND 10 */
 /* a phone's comment filters keep one row: the words a step smaller,
@@ -2998,3 +2998,34 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* the optional mark, a step quieter than its label */
 .cf-opt { font-size: 12.5px; }
+
+/* ROUND 12 */
+/* the reader's grid: a title keeps one line, its facts close under it;
+   the whole title stands on the entry */
+@media (min-width: 561px) {
+  body.site .cards .card .ct { -webkit-line-clamp: 1; line-clamp: 1; }
+}
+
+/* a text tile: two sizes of type and one inset, its words from the
+   top like a page, so the first lines of a row share a line */
+.card .cimg.empty:has(.cx) { justify-content: flex-start; }
+.card .cimg .cx.short { font-size: clamp(18px, 6.9cqi, 22px); line-height: 1.38; }
+
+/* the archive's tags on a phone: a line of tags, not a row of tabs;
+   the open one in the bold ink, no rule */
+@media (max-width: 639px) {
+  #tagbar .ctag.on { box-shadow: none; background: none; margin-bottom: 0; }
+}
+
+/* Tags on a desk: the name in a column as wide as a long tag, its
+   count on the name's line */
+#tagsList > div { align-items: baseline; }
+
+/* the editor's address keeps inside its pane */
+#slugHint, #slugPrefix { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+
+/* the blog's name in the band in the serif of its wordmark */
+section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600; }
+
+/* a path is set as a path, everywhere */
+.p, #storagePaths code, #backupSection code { font-family: var(--tt-font-mono); font-size: 12.5px; }
