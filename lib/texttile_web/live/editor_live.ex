@@ -1819,7 +1819,7 @@ defmodule TexttileWeb.EditorLive do
                 class="more"
                 title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
               >
-                +{unconfirmed(@comments, @cmt_require)}
+                · {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
               </span>
               <svg
                 width="14"
@@ -1908,9 +1908,8 @@ defmodule TexttileWeb.EditorLive do
                 <span :if={tab == "versions" && @versions != []} class="cnt">
                   {length(@versions)}
                 </span>
-                <%!-- the comments readers see, and in the accent the ones
-                     still waiting for their reader: a tab says it in a
-                     number, its panel in words --%>
+                <%!-- the comments readers see, and in the accent how many
+                     are new, still waiting for their reader --%>
                 <span :if={tab == "comments" && @comments != []} class="cnt">
                   {length(@comments) - unconfirmed(@comments, @cmt_require)}<span
                     :if={unconfirmed(@comments, @cmt_require) > 0}
@@ -1918,7 +1917,7 @@ defmodule TexttileWeb.EditorLive do
                     title={
                       gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))
                     }
-                  >+{unconfirmed(@comments, @cmt_require)}</span>
+                  >· {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}</span>
                 </span>
               </button>
             </nav>
@@ -2330,7 +2329,7 @@ defmodule TexttileWeb.EditorLive do
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
                   <span :if={@effective_preview == image.path} class="cov">
-                    ✓ {gettext("Preview")}
+                    ✓ {gettext("Preview image")}
                   </span>
                   <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
                   <span :if={conversion_note(@media[image.path])} class="tile-wait">
@@ -2613,7 +2612,7 @@ defmodule TexttileWeb.EditorLive do
                   />
                   <span>
                     {gettext("Blog post")}<span class="note">{gettext(
-                      "Listed on the front page and in the feed, has tags, can email subscribers."
+                      "On the front page and in the feed, with tags and the subscriber email."
                     )}</span>
                   </span>
                 </label>
@@ -2626,7 +2625,7 @@ defmodule TexttileWeb.EditorLive do
                   />
                   <span>
                     {gettext("Page")}<span class="note">{gettext(
-                      "A page of its own, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
+                      "A page of its own in the site menu, like About or Imprint. Never in the feed."
                     )}</span>
                   </span>
                 </label>
@@ -2902,8 +2901,8 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
 
+            <%!-- one box that says what it is: no group name over it --%>
             <div class="drow gtop">
-              <span class="lab">{gettext("Comments")}</span>
               <span class="val">
                 <label class="opt">
                   <input type="hidden" name="allow_comments" value="false" />

@@ -241,7 +241,12 @@ defmodule TexttileWeb.Layouts do
           </span>
           <%!-- a desk bar that shows the row of sections needs no chevron:
                the mark still opens the menu --%>
-          <span class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden"]} aria-hidden="true">
+          <%!-- the editor's phone bar needs the room for its words: there
+               the mark alone opens the menu, as on a desk --%>
+          <span
+            class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden", @wide && "max-md:hidden"]}
+            aria-hidden="true"
+          >
             <.chevron />
           </span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>

@@ -195,11 +195,6 @@ defmodule TexttileWeb.CommentsLive do
               {status_name(status)} <span class="num text-faint">{@counts[status]}</span>
             </.link>
           </nav>
-          <%!-- what Release does, said once where the decision is made;
-               the rest of the rule stands under the list --%>
-          <p :if={@require? and @status in ["all", "waiting"]} class="note mb-2" id="releaseNote">
-            {gettext("Release shows a comment before its reader confirms the email.")}
-          </p>
         </div>
         <div>
           <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">

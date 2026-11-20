@@ -103,6 +103,7 @@ defmodule TexttileWeb.CommentComponents do
         <button
           :if={@waiting}
           class="btn quiet sm rel"
+          title={gettext("Show the comment now, before its reader confirms")}
           phx-click="release_comment"
           phx-value-id={@comment.id}
         >
@@ -255,7 +256,7 @@ defmodule TexttileWeb.CommentComponents do
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
-      "Readers confirm their email first, and a comment nobody confirms within %{waiting} days goes for good. The trash keeps a deleted comment for %{days} days. No captcha, ever.",
+      "Readers confirm their email first; Release shows a comment before that. A comment nobody confirms within %{waiting} days goes for good, and the trash keeps a deleted one for %{days} days. No captcha, ever.",
       waiting: Comments.waiting_days(),
       days: Comments.trash_days()
     )

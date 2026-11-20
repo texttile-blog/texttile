@@ -136,7 +136,9 @@ defmodule TexttileWeb.NewsletterLive do
                 <span class="rowp truncate max-w-full">
                   {subscriber.email}
                 </span>
-                <span class="hidden sm:inline text-[13px] text-faint num">
+                <%!-- the day in a column of its own at the right, before
+                     Remove, so the days of the list read down one edge --%>
+                <span class="hidden sm:inline sm:ml-auto sm:order-2 text-[13px] text-faint num">
                   {since(subscriber)}
                 </span>
                 <span :if={!Subscriber.confirmed?(subscriber)} class="wait">

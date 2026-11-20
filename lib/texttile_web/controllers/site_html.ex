@@ -99,10 +99,10 @@ defmodule TexttileWeb.SiteHTML do
   end
 
   @doc """
-  The foot of every page: the site name, the way to pass the page on,
-  and the door to the admin area. It is not the text either, so it
-  keeps the ground of the band over it and the two read as one block; a
-  hairline is all that stands between them.
+  The ways out of every page: the feed, the way to pass the page on,
+  and the door to the admin area. They stand in the band, under the
+  blog's own line, so the band ends on a full block instead of a
+  stray row of links.
 
   Share hands the page to the sheet the browser itself opens, on a
   phone and on a Mac. Nothing is loaded for it and no other site hears
@@ -114,17 +114,12 @@ defmodule TexttileWeb.SiteHTML do
 
   def site_foot(assigns) do
     ~H"""
-    <footer class="foot-band">
-      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
-        <%!-- the name stands in the header and the band; the colophon
-             keeps the ways out --%>
-        <span class="sp"></span>
-        <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
-        <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
-        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Admin area")}</a>
-        <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
-      </div>
-    </footer>
+    <p class="band-out f-foot" id="band-out">
+      <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
+      <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
+      <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Admin area")}</a>
+      <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
+    </p>
     """
   end
 
@@ -143,6 +138,7 @@ defmodule TexttileWeb.SiteHTML do
   stamp of the moment it was drawn, and a honeypot no person ever sees.
   """
   attr :about_html, :any, default: nil
+  attr :current_scope, :any, default: nil
 
   def site_band(assigns) do
     assigns =
@@ -169,6 +165,7 @@ defmodule TexttileWeb.SiteHTML do
           <p class="f-eyebrow">{site_title()}</p>
           <p>{String.trim(Texttile.Settings.get(:site_description))}</p>
         </div>
+        <.site_foot current_scope={@current_scope} />
         <div id="subscribe" aria-label={gettext("Subscribe")}>
           <p class="f-eyebrow">{gettext("Subscribe")}</p>
           <p>

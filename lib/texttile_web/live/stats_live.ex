@@ -144,8 +144,7 @@ defmodule TexttileWeb.StatsLive do
               {gettext("busiest day")}<span
                 :if={@summary.busiest}
                 id="figBusiestDay"
-                class="block"
-              >{busiest_day(@summary.busiest)}</span>
+              >, {busiest_day(@summary.busiest)}</span>
             </div>
           </div>
         </div>

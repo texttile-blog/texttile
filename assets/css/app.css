@@ -2798,3 +2798,62 @@ section.foot-band .cols { padding-bottom: 32px; }
 @media (max-width: 639px) { #tagsList .btn.danger { margin-left: 12px; } }
 /* the accent dot is the edited note's separator too: no middle dot */
 @media (min-width: 640px) { #cards .card .cm .open::before { content: none; } #cards .card .cm .open { margin-left: 10px; } }
+
+/* THE WAYS OUT stand in the band, under the blog's own line: on a desk
+   in the first column, close under the words; on a phone at the end of
+   the band, after Subscribe */
+.band-out { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; padding-bottom: env(safe-area-inset-bottom); }
+.band-out a + a::before, .band-out a + button::before, .band-out button + a::before {
+  content: "\00b7"; margin-right: 12px; color: var(--tt-dim);
+}
+@media (min-width: 860px) {
+  section.foot-band .cols .band-out { grid-column: 1 / 3; grid-row: 2; margin-top: -14px; }
+  section.foot-band .cols #subscribe { grid-row: 1 / 3; }
+}
+@media (max-width: 859px) { section.foot-band .cols .band-out { order: 9; } }
+
+/* ROUND OF FINISHING TOUCHES */
+/* an entry without a picture keeps its slot empty: the titles stay on
+   one edge and nothing stands in for a picture that is not there */
+#cards .card .cimg.empty { background: transparent; }
+
+/* the phone editor's states on one line: the entry's, then the save's */
+@media (max-width: 767px) {
+  .edstat { flex-direction: row; align-items: center; gap: 0; }
+  .edstat .st, .edstat .saved { font-size: 12.5px; }
+  .edstat .saved:not(.warn)::before { content: "\00b7\00a0"; color: var(--tt-slash); margin-left: 5px; }
+}
+
+/* the whole filter's delete: a framed quiet button at rest, the rust
+   of a warning under the pointer, where its reach is about to act */
+.cmt-tools > #bulk-delete {
+  color: var(--tt-inksoft); background: transparent;
+  box-shadow: inset 0 0 0 1px var(--tt-rule); padding-left: 11px; padding-right: 11px; margin-right: 0;
+}
+.cmt-tools > #bulk-delete:hover { color: var(--tt-julia); background: var(--tt-juliatint); box-shadow: inset 0 0 0 1px var(--tt-julialine); }
+
+/* Settings on a phone: the picker names the first section already */
+@media (max-width: 999px) {
+  .setbody > .set-h:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .setbody > .set-h:first-child + * { margin-top: 14px; }
+}
+
+/* Settings on a desk: the section in view carries the accent's rule */
+@media (min-width: 1000px) {
+  .setnav a { padding-left: 12px; margin-left: -12px; box-shadow: inset 2px 0 0 transparent; }
+  .setnav a[aria-current] { box-shadow: inset 2px 0 0 var(--tt-accent); }
+}
+
+/* a quotation's rule in the ink of a field's frame, so it reads as one */
+.prose blockquote { border-left-color: var(--tt-slash); }
+
+/* a text tile's square has an edge, and its words sit on the floor of
+   it, a quotation on its baseline */
+.card .cimg.empty:has(.cx) { justify-content: flex-end; box-shadow: inset 0 0 0 1px var(--tt-hair); }
+
+/* the phone editor bar: its buttons a little tighter, so the states
+   beside them keep their words */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion { padding-left: 9px; padding-right: 9px; }
+  #topbar.wide { gap: 4px; }
+}

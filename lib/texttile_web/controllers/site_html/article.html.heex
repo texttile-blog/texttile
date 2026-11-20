@@ -313,9 +313,11 @@
   <%!-- a page is the blog speaking for itself (an About page above
        all), so its foot leaves the About block out and keeps the
        invitation to subscribe --%>
-  <.site_band about_html={@article.type == "post" && assigns[:about_html]} />
+  <.site_band
+    about_html={@article.type == "post" && assigns[:about_html]}
+    current_scope={@current_scope}
+  />
 </main>
-<.site_foot current_scope={@current_scope} />
 
 <%!-- the lightbox: a count, a way out, an arrow on each side, the
      caption at the foot. public.js fills it from the tiles. --%>
