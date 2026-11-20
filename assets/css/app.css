@@ -3087,3 +3087,34 @@ section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font
   .fmt-more { display: inline-flex; margin-left: auto; }
   .mdbar.show-rare .mdb.rare, .mdbar.show-rare .mdsep.rare { display: inline-flex; }
 }
+
+/* ROUND 14 */
+/* one rule for the text squares: every opening from the top, at one
+   inset; a short one only a size larger */
+.card .cimg.empty:has(.cx), .card .cimg.empty:has(.cx.short) { justify-content: flex-start; padding: 8cqi 8.5cqi; }
+.card .cimg .cx.short { font-size: clamp(19px, 7.4cqi, 23px); line-height: 1.32; }
+
+/* an entry without a picture: a flat square of the paper's tint, as on
+   the reader's side, nothing drawn in it */
+#cards .card .cimg.empty { background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); box-shadow: none; }
+#cards .card .cimg .ci { display: none; }
+
+/* a state is not a link: the edited note and the new-comment counts in
+   the ink of the facts, after a small dot in the accent */
+.card .cm .open { color: var(--tt-inksoft); }
+#cards .card .cm .open::before { content: none; }
+#cards .card .cm .open i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin: 0 6px 0 10px; }
+.more { color: var(--tt-inksoft); font-weight: 500; }
+.more::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin: 0 5px 1px 2px; vertical-align: middle; }
+
+/* the phone editor bar: both actions plain words, View with its chevron */
+@media (max-width: 767px) {
+  #topbar.wide .split.calm { outline: none; background: transparent; }
+  #topbar.wide .split.calm .div { display: none; }
+  #topbar.wide .split .main { padding-left: 6px; padding-right: 2px; font-weight: 600; }
+  .edstat .st, .edstat .saved { font-size: 13px; }
+}
+
+/* Profile: fields as wide as a name and an address need */
+@media (min-width: 768px) { .admin-col.profile .val, .admin-col.profile .pairrow { max-width: 520px; } }
+@media (max-width: 639px) { #cards .card .cm .open i { margin-left: 0; } }

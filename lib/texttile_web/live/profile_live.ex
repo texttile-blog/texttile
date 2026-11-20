@@ -203,7 +203,7 @@ defmodule TexttileWeb.ProfileLive do
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
           <div class="drow">
             <label class="lab" for={@profile_form[:display_name].id}>
-              {gettext("Displayed name")}
+              {gettext("Display name")}
             </label>
             <span class="val">
               <input
@@ -301,7 +301,7 @@ defmodule TexttileWeb.ProfileLive do
                 <.field_errors field={@pw_form[:current_password]} />
                 <.field_errors field={@pw_form[:password]} />
                 <div class="hint pairhint">
-                  {gettext("At least 12 characters. Confirm your current password to change it.")}
+                  {gettext("At least 12 characters.")}
                 </div>
               </span>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>

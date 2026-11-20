@@ -89,7 +89,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> assert_has("#link-who", text: "opens the admin account of")
       |> fill_in("Your password", with: "julias own password")
       |> fill_in("Repeat the password", with: "julias own password")
-      |> fill_in("Displayed name", with: "Julia")
+      |> fill_in("Display name", with: "Julia")
       |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
 

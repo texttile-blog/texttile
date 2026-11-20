@@ -298,7 +298,7 @@ msgid_plural "%{count} comments are still out of the entry: those readers have n
 msgstr[0] "1 Kommentar steht noch nicht im Eintrag: diese Person ist dem Bestätigungslink noch nicht gefolgt."
 msgstr[1] "%{count} Kommentare stehen noch nicht im Eintrag: diese Personen sind dem Bestätigungslink noch nicht gefolgt."
 
-#: lib/texttile_web/live/comments_live.ex:398
+#: lib/texttile_web/live/comments_live.ex:406
 #, elixir-autogen, elixir-format
 msgid "1 deleted comment waits here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood."
 msgid_plural "%{count} deleted comments wait here. A comment goes for good %{days} days after you deleted it, and until then Restore puts it back where it stood."
@@ -407,7 +407,7 @@ msgstr "Bilder und Videos zur Galerie hinzufügen"
 msgid "Address"
 msgstr "Adresse"
 
-#: lib/texttile_web/live/comments_live.ex:384
+#: lib/texttile_web/live/comments_live.ex:392
 #: lib/texttile_web/live/texts_live.ex:95
 #, elixir-autogen, elixir-format
 msgid "All"
@@ -637,7 +637,7 @@ msgstr "Vorgabe: das Texttile-Zeichen"
 
 #: lib/texttile_web/components/comment_components.ex:117
 #: lib/texttile_web/js_strings.ex:52
-#: lib/texttile_web/live/comments_live.ex:366
+#: lib/texttile_web/live/comments_live.ex:374
 #: lib/texttile_web/live/editor_live.ex:2559
 #: lib/texttile_web/live/settings_live.ex:1116
 #: lib/texttile_web/live/tags_live.ex:192
@@ -707,7 +707,6 @@ msgid "Discard"
 msgstr "Verwerfen"
 
 #: lib/texttile_web/controllers/link_html.ex:41
-#: lib/texttile_web/live/profile_live.ex:206
 #, elixir-autogen, elixir-format
 msgid "Displayed name"
 msgstr "Angezeigter Name"
@@ -1079,7 +1078,7 @@ msgid "New password"
 msgstr "Neues Passwort"
 
 #: lib/texttile_web/controllers/site_html/texts.html.heex:92
-#: lib/texttile_web/live/comments_live.ex:268
+#: lib/texttile_web/live/comments_live.ex:276
 #: lib/texttile_web/live/texts_live.ex:309
 #, elixir-autogen, elixir-format
 msgid "Newer"
@@ -1106,7 +1105,7 @@ msgstr "Weiter"
 msgid "Next tile"
 msgstr "Nächste Kachel"
 
-#: lib/texttile_web/live/comments_live.ex:391
+#: lib/texttile_web/live/comments_live.ex:399
 #, elixir-autogen, elixir-format
 msgid "No comments yet, anywhere. Every comment a reader sends shows up here."
 msgstr "Noch keine Kommentare, nirgends. Jeder Kommentar, den jemand abschickt, taucht hier auf."
@@ -1244,7 +1243,7 @@ msgid "Old addresses, still arriving here"
 msgstr "Alte Adressen, die weiter hier ankommen"
 
 #: lib/texttile_web/controllers/site_html/texts.html.heex:106
-#: lib/texttile_web/live/comments_live.ex:281
+#: lib/texttile_web/live/comments_live.ex:289
 #: lib/texttile_web/live/texts_live.ex:323
 #, elixir-autogen, elixir-format
 msgid "Older"
@@ -1312,14 +1311,14 @@ msgid "Page"
 msgstr "Seite"
 
 #: lib/texttile_web/controllers/site_html/texts.html.heex:96
-#: lib/texttile_web/live/comments_live.ex:272
+#: lib/texttile_web/live/comments_live.ex:280
 #: lib/texttile_web/live/texts_live.ex:313
 #, elixir-autogen, elixir-format
 msgid "Page %{page} of %{pages}"
 msgstr "Seite %{page} von %{pages}"
 
 #: lib/texttile_web/controllers/site_html/texts.html.heex:85
-#: lib/texttile_web/live/comments_live.ex:259
+#: lib/texttile_web/live/comments_live.ex:267
 #: lib/texttile_web/live/texts_live.ex:299
 #, elixir-autogen, elixir-format
 msgid "Pages"
@@ -1474,7 +1473,7 @@ msgid "Referrers, last 14 days"
 msgstr "Herkunft, letzte 14 Tage"
 
 #: lib/texttile_web/components/comment_components.ex:110
-#: lib/texttile_web/live/comments_live.ex:349
+#: lib/texttile_web/live/comments_live.ex:357
 #, elixir-autogen, elixir-format
 msgid "Release"
 msgstr "Freigeben"
@@ -1503,7 +1502,7 @@ msgid "Reset"
 msgstr "Zurücksetzen"
 
 #: lib/texttile_web/components/comment_components.ex:245
-#: lib/texttile_web/live/comments_live.ex:377
+#: lib/texttile_web/live/comments_live.ex:385
 #, elixir-autogen, elixir-format
 msgid "Restore"
 msgstr "Wiederherstellen"
@@ -2109,7 +2108,7 @@ msgstr "Titel"
 msgid "Too late · the picture is gone for good"
 msgstr "Zu spät · das Bild ist endgültig weg"
 
-#: lib/texttile_web/live/comments_live.ex:388
+#: lib/texttile_web/live/comments_live.ex:396
 #, elixir-autogen, elixir-format
 msgid "Trash"
 msgstr "Papierkorb"
@@ -3521,58 +3520,58 @@ msgstr "du hast einen Kommentar zu „%{title}“ geschrieben:"
 msgid "Your admin account"
 msgstr "Dein Admin-Konto"
 
-#: lib/texttile_web/live/comments_live.ex:386
+#: lib/texttile_web/live/comments_live.ex:394
 #, elixir-autogen, elixir-format
 msgid "Confirmed"
 msgstr "Bestätigt"
 
-#: lib/texttile_web/live/comments_live.ex:394
+#: lib/texttile_web/live/comments_live.ex:402
 #, elixir-autogen, elixir-format
 msgid "No comments here."
 msgstr "Hier sind keine Kommentare."
 
-#: lib/texttile_web/live/comments_live.ex:318
+#: lib/texttile_web/live/comments_live.ex:326
 #, elixir-autogen, elixir-format
 msgid "%{count} selected"
 msgstr "%{count} ausgewählt"
 
-#: lib/texttile_web/live/comments_live.ex:328
+#: lib/texttile_web/live/comments_live.ex:336
 #, elixir-autogen, elixir-format
 msgid "Delete %{count}"
 msgstr "%{count} löschen"
 
-#: lib/texttile_web/live/comments_live.ex:358
+#: lib/texttile_web/live/comments_live.ex:366
 #, elixir-autogen, elixir-format
 msgid "Delete 1 comment?"
 msgid_plural "Delete %{count} comments?"
 msgstr[0] "1 Kommentar löschen?"
 msgstr[1] "%{count} Kommentare löschen?"
 
-#: lib/texttile_web/live/comments_live.ex:323
+#: lib/texttile_web/live/comments_live.ex:331
 #, elixir-autogen, elixir-format
 msgid "Release %{count}"
 msgstr "%{count} freigeben"
 
-#: lib/texttile_web/live/comments_live.ex:342
+#: lib/texttile_web/live/comments_live.ex:350
 #, elixir-autogen, elixir-format
 msgid "Release 1 comment?"
 msgid_plural "Release %{count} comments?"
 msgstr[0] "1 Kommentar freigeben?"
 msgstr[1] "%{count} Kommentare freigeben?"
 
-#: lib/texttile_web/live/comments_live.ex:333
+#: lib/texttile_web/live/comments_live.ex:341
 #, elixir-autogen, elixir-format
 msgid "Restore %{count}"
 msgstr "%{count} wiederherstellen"
 
-#: lib/texttile_web/live/comments_live.ex:375
+#: lib/texttile_web/live/comments_live.ex:383
 #, elixir-autogen, elixir-format
 msgid "Restore 1 comment?"
 msgid_plural "Restore %{count} comments?"
 msgstr[0] "1 Kommentar wiederherstellen?"
 msgstr[1] "%{count} Kommentare wiederherstellen?"
 
-#: lib/texttile_web/live/comments_live.ex:208
+#: lib/texttile_web/live/comments_live.ex:216
 #, elixir-autogen, elixir-format
 msgid "Select every comment of this filter"
 msgstr "Jeden Kommentar dieses Filters auswählen"
@@ -3582,27 +3581,27 @@ msgstr "Jeden Kommentar dieses Filters auswählen"
 msgid "Select the comment of %{name}"
 msgstr "Den Kommentar von %{name} auswählen"
 
-#: lib/texttile_web/live/comments_live.ex:361
+#: lib/texttile_web/live/comments_live.ex:369
 #, elixir-autogen, elixir-format
 msgid "The trash keeps them for %{days} days. Restore puts them back where they stood; after that they are gone for good."
 msgstr "Der Papierkorb bewahrt sie %{days} Tage auf. Wiederherstellen bringt sie zurück an ihren Platz, danach sind sie endgültig weg."
 
-#: lib/texttile_web/live/comments_live.ex:347
+#: lib/texttile_web/live/comments_live.ex:355
 #, elixir-autogen, elixir-format
 msgid "There is no way back except Delete."
 msgstr "Zurück geht es nur noch über Löschen."
 
-#: lib/texttile_web/live/comments_live.ex:376
+#: lib/texttile_web/live/comments_live.ex:384
 #, elixir-autogen, elixir-format
 msgid "They go back where they stood, and the same rule decides who sees them."
 msgstr "Sie kommen zurück an ihren Platz, und dieselbe Regel entscheidet, wer sie sieht."
 
-#: lib/texttile_web/live/comments_live.ex:360
+#: lib/texttile_web/live/comments_live.ex:368
 #, elixir-autogen, elixir-format
 msgid "They leave their entries at once, and the readers are not told."
 msgstr "Sie verschwinden sofort aus ihren Einträgen, und die Leser erfahren nichts davon."
 
-#: lib/texttile_web/live/comments_live.ex:344
+#: lib/texttile_web/live/comments_live.ex:352
 #, elixir-autogen, elixir-format
 msgid "They stand under their entries at once. Their addresses stay unconfirmed, and nobody is mailed."
 msgstr "Sie stehen sofort unter ihren Einträgen. Ihre Adressen bleiben unbestätigt, und niemand bekommt eine Mail."
@@ -3632,11 +3631,6 @@ msgstr "Einstellungen des Eintrags"
 #, elixir-autogen, elixir-format
 msgid "A page you choose. The list of entries stays at /blog."
 msgstr "Eine Seite deiner Wahl. Die Liste der Einträge bleibt unter /blog."
-
-#: lib/texttile_web/live/profile_live.ex:304
-#, elixir-autogen, elixir-format
-msgid "At least 12 characters. Confirm your current password to change it."
-msgstr "Mindestens 12 Zeichen. Bestätige dein aktuelles Passwort, um es zu ändern."
 
 #: lib/texttile_web/live/settings_live.ex:901
 #, elixir-autogen, elixir-format
@@ -3679,7 +3673,7 @@ msgstr "Galerie"
 msgid "All time"
 msgstr "Seit Beginn"
 
-#: lib/texttile_web/live/comments_live.ex:387
+#: lib/texttile_web/live/comments_live.ex:395
 #, elixir-autogen, elixir-format
 msgid "Released"
 msgstr "Freigegeben"
@@ -3833,7 +3827,7 @@ msgstr "Live seit %{date}."
 msgid "Tags are added in an entry's settings."
 msgstr "Tags werden in den Einstellungen eines Eintrags vergeben."
 
-#: lib/texttile_web/live/comments_live.ex:317
+#: lib/texttile_web/live/comments_live.ex:325
 #, elixir-autogen, elixir-format
 msgid "Select all"
 msgstr "Alle auswählen"
@@ -3980,7 +3974,7 @@ msgstr "Du kommentierst als"
 msgid "A copy of the volume is a copy of the site."
 msgstr "Eine Kopie des Volumes ist eine Kopie der Site."
 
-#: lib/texttile_web/live/comments_live.ex:385
+#: lib/texttile_web/live/comments_live.ex:393
 #, elixir-autogen, elixir-format
 msgid "Unconfirmed"
 msgstr "Unbestätigt"
@@ -4063,21 +4057,21 @@ msgstr "Lesertage"
 msgid "A comment stays hidden until its reader follows the link in a mail. Until then it is marked unconfirmed here."
 msgstr "Ein Kommentar bleibt verborgen, bis sein Leser dem Link in einer Mail folgt. Bis dahin ist er hier als unbestätigt markiert."
 
-#: lib/texttile_web/live/comments_live.ex:326
+#: lib/texttile_web/live/comments_live.ex:334
 #, elixir-autogen, elixir-format
 msgid "Delete all %{count} comment"
 msgid_plural "Delete all %{count} comments"
 msgstr[0] "Den %{count} Kommentar löschen"
 msgstr[1] "Alle %{count} Kommentare löschen"
 
-#: lib/texttile_web/live/comments_live.ex:321
+#: lib/texttile_web/live/comments_live.ex:329
 #, elixir-autogen, elixir-format
 msgid "Release all %{count} comment"
 msgid_plural "Release all %{count} comments"
 msgstr[0] "Den %{count} Kommentar freigeben"
 msgstr[1] "Alle %{count} Kommentare freigeben"
 
-#: lib/texttile_web/live/comments_live.ex:331
+#: lib/texttile_web/live/comments_live.ex:339
 #, elixir-autogen, elixir-format
 msgid "Restore all %{count} comment"
 msgid_plural "Restore all %{count} comments"
@@ -4136,6 +4130,7 @@ msgstr "%{count} unbestätigt"
 msgid "A square picture for the browser tab. SVG or PNG."
 msgstr "Ein quadratisches Bild für den Browser-Tab. SVG oder PNG."
 
+#: lib/texttile_web/live/editor_live.ex:1820
 #: lib/texttile_web/live/editor_live.ex:1918
 #, elixir-autogen, elixir-format
 msgid "%{count} new"
@@ -4177,11 +4172,6 @@ msgstr[1] "%{count} neue Kommentare warten auf dich"
 #, elixir-autogen, elixir-format
 msgid "Comments appear the moment a reader sends them. Deleted comments stay in the trash for %{days} days."
 msgstr "Kommentare erscheinen, sobald ein Leser sie abschickt. Gelöschte Kommentare bleiben %{days} Tage im Papierkorb."
-
-#: lib/texttile_web/components/comment_components.ex:258
-#, elixir-autogen, elixir-format
-msgid "Readers confirm their email first; Release shows a comment before that. Unconfirmed comments are deleted after %{waiting} days, and deleted comments stay in the trash for %{days} days."
-msgstr "Leser bestätigen zuerst ihre E-Mail; Freigeben zeigt einen Kommentar schon vorher. Unbestätigte Kommentare werden nach %{waiting} Tagen gelöscht, und gelöschte bleiben %{days} Tage im Papierkorb."
 
 #: lib/texttile_web/live/settings_live.ex:1401
 #, elixir-autogen, elixir-format
@@ -4273,3 +4263,23 @@ msgstr "Hochgeladene Dateien"
 #, elixir-autogen, elixir-format
 msgid "every video and its MP4 copy"
 msgstr "jedes Video und seine MP4-Kopie"
+
+#: lib/texttile_web/live/profile_live.ex:304
+#, elixir-autogen, elixir-format
+msgid "At least 12 characters."
+msgstr "Mindestens 12 Zeichen."
+
+#: lib/texttile_web/live/profile_live.ex:206
+#, elixir-autogen, elixir-format
+msgid "Display name"
+msgstr "Angezeigter Name"
+
+#: lib/texttile_web/components/comment_components.ex:258
+#, elixir-autogen, elixir-format
+msgid "Readers confirm their email first. Unconfirmed comments are deleted after %{waiting} days, and deleted comments stay in the trash for %{days} days."
+msgstr "Leser bestätigen zuerst ihre E-Mail. Unbestätigte Kommentare werden nach %{waiting} Tagen gelöscht, und gelöschte bleiben %{days} Tage im Papierkorb."
+
+#: lib/texttile_web/live/comments_live.ex:203
+#, elixir-autogen, elixir-format
+msgid "Unconfirmed: the reader has not confirmed the email yet. Release shows the comment now."
+msgstr "Unbestätigt: Der Leser hat die E-Mail noch nicht bestätigt. Freigeben zeigt den Kommentar sofort."

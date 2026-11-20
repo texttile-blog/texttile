@@ -196,6 +196,14 @@ defmodule TexttileWeb.CommentsLive do
               {status_name(status)} <span class="num text-faint">{@counts[status]}</span>
             </.link>
           </nav>
+          <%!-- the one distinction a decision needs, said before the
+               decisions; what is kept and for how long stays under the
+               list --%>
+          <p :if={@require? and @status in ["all", "waiting"]} class="note mt-2 mb-1" id="releaseNote">
+            {gettext(
+              "Unconfirmed: the reader has not confirmed the email yet. Release shows the comment now."
+            )}
+          </p>
         </div>
         <div>
           <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">

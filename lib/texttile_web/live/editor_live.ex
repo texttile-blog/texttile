@@ -1817,7 +1817,7 @@ defmodule TexttileWeb.EditorLive do
                 class="more"
                 title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
               >
-                {unconfirmed(@comments, @cmt_require)}
+                {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
               </span>
               <svg
                 width="14"
@@ -1915,7 +1915,7 @@ defmodule TexttileWeb.EditorLive do
                     title={
                       gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))
                     }
-                  >· {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}</span>
+                  >{gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}</span>
                 </span>
               </button>
             </nav>
@@ -1926,7 +1926,7 @@ defmodule TexttileWeb.EditorLive do
             <button
               :if={@tab == "text" and unconfirmed(@comments, @cmt_require) > 0}
               type="button"
-              class="lg:hidden block text-[13.5px] font-medium text-accent mb-5"
+              class="lg:hidden block text-[13.5px] font-medium text-accent underline underline-offset-2 decoration-accentsoft mb-5"
               id="newComments"
               phx-click={JS.push("set_tab", value: %{tab: "comments"})}
             >
