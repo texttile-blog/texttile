@@ -3139,3 +3139,31 @@ section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font
   .admin-col.profile .val, .admin-col.profile .pairrow { max-width: none; }
   .admin-col.profile > * { max-width: 584px; }
 }
+
+/* ROUND 16 */
+/* the reader's text square: a short opening is a quotation, larger and
+   in the middle of its square; a long one fills it from the top */
+.card .cimg.empty:has(.cx.short) { justify-content: center; }
+.card .cimg .cx.short { font-size: clamp(22px, 9cqi, 30px); line-height: 1.25; }
+@media (max-width: 560px) { body.site .card .cimg .cx.short { font-size: 24px; } }
+
+/* the entries list: an entry without a picture wears the reader's
+   tint for words alone, its pilcrow in a quiet ink, no frame */
+#cards .card .cimg.empty { background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); box-shadow: none; }
+#cards .card .cimg .ci { color: color-mix(in srgb, var(--tt-ink) 40%, transparent); }
+
+/* the phone editor's bar: its two actions framed as on a desk */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion { box-shadow: revert-layer; background: revert-layer; font-weight: revert-layer; padding-left: 8px; padding-right: 8px; }
+  #topbar.wide .split.calm { outline: revert-layer; background: revert-layer; }
+  #topbar.wide .split.calm .div { display: revert-layer; }
+  #topbar.wide .split .main { padding-left: 8px; padding-right: 6px; font-weight: revert-layer; }
+  #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 34px; }
+  #topbar.wide .split .chev { width: 26px; }
+  /* the states give the buttons their room: one step of air less */
+  .edstat .saved:not(.warn)::before { margin-left: 6px; }
+  #topbar.wide { gap: 6px; }
+}
+
+/* a phone's Stats: the periods start where every list screen starts */
+@media (max-width: 639px) { #statsWindows { margin-top: 0; } }

@@ -112,10 +112,9 @@ defmodule TexttileWeb.ImportLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
-        <p class="note leading-[1.6] max-w-[584px]">
-          {gettext(
-            "Bring entries over from another blog: a zip with one folder per entry, holding its Markdown, its settings and its pictures. Pictures can also be web addresses the server downloads."
-          )}
+        <%!-- the instruction in the ink, the details in the guide --%>
+        <p class="leading-[1.6] max-w-[584px] md:mt-6">
+          {gettext("Bring entries over from another blog as a zip, one folder per entry.")}
           {gettext("See")} <.import_doc />.
         </p>
 
@@ -125,7 +124,7 @@ defmodule TexttileWeb.ImportLive do
               <%!-- what somebody wants to know before they pick a file --%>
               <p class="note leading-[1.6] mb-4 max-w-[584px]">
                 {gettext(
-                  "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
+                  "Uploading checks the zip and shows a report first. Nothing is imported yet."
                 )}
               </p>
               <label class="btn solid cursor-pointer relative overflow-hidden">

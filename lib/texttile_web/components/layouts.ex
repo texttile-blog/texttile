@@ -240,11 +240,10 @@ defmodule TexttileWeb.Layouts do
             {@crumb}<span :if={@count} class="bn-count">{@count}</span>
           </span>
           <%!-- a desk bar that shows the row of sections needs no chevron:
-               the mark still opens the menu --%>
-          <%!-- the editor's phone bar needs the room for its words: there
-               the mark alone opens the menu, as on a desk --%>
+               the mark still opens the menu. The editor has no row of
+               sections, so its chevron stands at every width. --%>
           <span
-            class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden", @wide && "max-md:hidden"]}
+            class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden"]}
             aria-hidden="true"
           >
             <.chevron />

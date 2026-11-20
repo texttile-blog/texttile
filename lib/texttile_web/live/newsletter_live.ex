@@ -99,7 +99,7 @@ defmodule TexttileWeb.NewsletterLive do
           </h1>
         </div>
         <div>
-          <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2 max-w-[584px]">
+          <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
             <input
               type="email"
               name="email"
