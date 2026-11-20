@@ -122,12 +122,12 @@ defmodule TexttileWeb.StatsLiveTest do
     assert has_element?(view, "#pagesCapped")
   end
 
-  test "a big number is written with a space between the thousands", %{conn: conn} do
+  test "a big number groups its thousands the English way", %{conn: conn} do
     seed_views(1200)
 
     {:ok, view, _html} = live(conn, ~p"/admin/stats")
 
-    assert has_element?(view, "#figViews", "1 200")
+    assert has_element?(view, "#figViews", "1,200")
   end
 
   test "a day older than the window is not counted", %{conn: conn} do

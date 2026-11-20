@@ -29,6 +29,11 @@ defmodule TexttileWeb.SiteHTML do
   attr :known, :boolean, default: false
   attr :home_page, :any, default: nil
   attr :menu_pages, :list, default: []
+  attr :edit, :string, default: nil, doc: "the editor of the entry on screen, for the strip"
+
+  attr :live_state, :atom,
+    default: nil,
+    doc: "for a live entry: `:same` or `:changed` working copy, for the strip"
 
   def site_head(assigns) do
     assigns =
@@ -36,7 +41,12 @@ defmodule TexttileWeb.SiteHTML do
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
-    <.known_strip current_scope={@current_scope} known={@known} />
+    <.known_strip
+      current_scope={@current_scope}
+      known={@known}
+      edit={@edit}
+      live_state={@live_state}
+    />
     <header class="site-head">
       <a class="site-mark" href={~p"/"}>
         <img
@@ -68,6 +78,32 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
+  # The strip's words for the entry on screen.
+  defp working_copy_line(:same), do: gettext("Working copy") <> " · " <> gettext("same as live")
+
+  defp working_copy_line(:changed),
+    do: gettext("Working copy") <> " · " <> gettext("changes not published yet")
+
+  defp working_copy_line(_), do: gettext("Working copy")
+
+  # The setting of a text square, by how long its opening is.
+  defp lead_size(article) do
+    case String.length(lead(article, 480)) do
+      n when n < 70 -> "short"
+      n when n < 300 -> "mid"
+      _ -> nil
+    end
+  end
+
+  @doc "Whether the readers of a live entry have the words on screen."
+  def live_state(article) do
+    cond do
+      not Visibility.live?(article) -> nil
+      Articles.unpublished_changes?(article) -> :changed
+      true -> :same
+    end
+  end
+
   @doc """
   The thin dark strip with the way back in, for a browser that has
   signed in here before (`known`) or is signed in now: Sign in, or the
@@ -77,25 +113,38 @@ defmodule TexttileWeb.SiteHTML do
   """
   attr :current_scope, :any, default: nil
   attr :known, :boolean, default: false
+  attr :edit, :string, default: nil
+  attr :live_state, :atom, default: nil
 
   def known_strip(assigns) do
     ~H"""
     <div :if={@current_scope || @known} class="known-strip" id="known-strip">
-      <span :if={@current_scope} class="truncate">
+      <%!-- on an entry the strip says what is shown: the working copy,
+           which every signed-in admin reads instead of the live one,
+           and on a live entry whether readers have the same words --%>
+      <span :if={@current_scope && @edit} class="truncate">
+        {working_copy_line(@live_state)}<span class="max-sm:hidden">{" · " <> gettext("signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}</span>
+      </span>
+      <span :if={@current_scope && !@edit} class="truncate">
         {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
       </span>
       <span :if={!@current_scope} class="truncate">{site_title()}</span>
-      <a :if={@current_scope} id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      <%!-- on an entry, the way into its editor comes first: the one
+           thing a signed-in writer reading it may want next --%>
+      <span :if={@current_scope} class="flex items-center gap-5">
+        <a :if={@edit} id="edit-text" href={@edit}>{gettext("Edit entry")}</a>
+        <a id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      </span>
       <a :if={!@current_scope} id="known-strip-go" href={~p"/login"}>{gettext("Sign in")}</a>
     </div>
     """
   end
 
   @doc """
-  The foot of every page: the site name, the way to pass the page on,
-  and the door to the admin area. It is not the text either, so it
-  keeps the ground of the band over it and the two read as one block; a
-  hairline is all that stands between them.
+  The ways out of every page: the feed, the way to pass the page on,
+  and the door to the admin area. They stand in the band, under the
+  blog's own line, so the band ends on a full block instead of a
+  stray row of links.
 
   Share hands the page to the sheet the browser itself opens, on a
   phone and on a Mac. Nothing is loaded for it and no other site hears
@@ -107,17 +156,12 @@ defmodule TexttileWeb.SiteHTML do
 
   def site_foot(assigns) do
     ~H"""
-    <footer class="foot-band">
-      <div class="wrap f-foot flex flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-4">
-        <%!-- the name stands in the header and the band; the colophon
-             keeps the ways out --%>
-        <span class="sp"></span>
-        <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
-        <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
-        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Sign in")}</a>
-        <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
-      </div>
-    </footer>
+    <p class="band-out f-foot" id="band-out">
+      <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
+      <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
+      <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Admin area")}</a>
+      <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
+    </p>
     """
   end
 
@@ -136,6 +180,7 @@ defmodule TexttileWeb.SiteHTML do
   stamp of the moment it was drawn, and a honeypot no person ever sees.
   """
   attr :about_html, :any, default: nil
+  attr :current_scope, :any, default: nil
 
   def site_band(assigns) do
     assigns =
@@ -156,18 +201,19 @@ defmodule TexttileWeb.SiteHTML do
              band full with the blog's one line, so Subscribe never stands
              over two empty columns --%>
         <div
-          :if={!@about_html and String.trim(Texttile.Settings.get(:site_description)) != ""}
+          :if={!@about_html}
           id="bandDesc"
         >
           <p class="f-eyebrow">{site_title()}</p>
-          <p>{String.trim(Texttile.Settings.get(:site_description))}</p>
+          <p :if={String.trim(Texttile.Settings.get(:site_description)) != ""}>
+            {String.trim(Texttile.Settings.get(:site_description))}
+          </p>
         </div>
+        <.site_foot current_scope={@current_scope} />
         <div id="subscribe" aria-label={gettext("Subscribe")}>
           <p class="f-eyebrow">{gettext("Subscribe")}</p>
           <p>
-            {gettext(
-              "You get an email when a new entry goes out, nothing else. Unsubscribe is one click, no questions."
-            )}
+            {gettext("New entries by email, nothing else. Unsubscribe in one click.")}
           </p>
           <form
             id="newsletter-form"
@@ -223,8 +269,14 @@ defmodule TexttileWeb.SiteHTML do
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
+        <%!-- the length of the opening picks its setting: a short one
+             is a cover, large on the floor of its square; a middling
+             one a size up from the top; a long one at the size of a page,
+             from the top, to the foot of the square --%>
         <span :if={!@preview && lead(@article) != ""} class="cimg empty">
-          <span class="cx">{lead(@article, 320)}</span>
+          <span class={["cx", lead_size(@article)]}>
+            {lead(@article, 480)}
+          </span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />

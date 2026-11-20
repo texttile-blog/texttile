@@ -448,12 +448,16 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
   end
 
   describe "the foot" do
-    # The foot wears .wrap and .f-foot together. `.wrap` writes the
-    # padding shorthand, so the space under the last line only holds
-    # while the rule that writes it beats `.wrap`. Once it lost, the
-    # site name stood on the bottom edge of the page.
+    # The ways out stand at the end of the band, and the band keeps
+    # space under its last line: without it the links stood on the
+    # bottom edge of the page.
     @foot_pad """
-    () => parseFloat(getComputedStyle(document.querySelector(".f-foot")).paddingBottom)
+    () => {
+      const band = document.querySelector("section.foot-band");
+      const last = [...band.querySelectorAll(".cols > *")]
+        .reduce((low, el) => Math.max(low, el.getBoundingClientRect().bottom), 0);
+      return band.getBoundingClientRect().bottom - last;
+    }
     """
 
     test "keeps space under the last line", %{conn: conn} do
@@ -516,5 +520,33 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       )
 
     session
+  end
+
+  describe "the archive's tag row on a phone" do
+    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    test "brings the open tag into the row and leaves the page where it is", %{conn: conn} do
+      # twelve tags carried twice each, and the open one once: it stands
+      # last whether the row counts or spells
+      for n <- 1..12, _ <- 1..2 do
+        published_post(title: "Walk #{n}", tags: "alpha#{n}")
+      end
+
+      published_post(title: "Stripes", tags: "zebra")
+
+      conn
+      |> open_page("/tags/zebra")
+      |> evaluate(
+        """
+        () => {
+          const bar = document.querySelector("#tagbar")
+          const on = bar.querySelector(".ctag.on").getBoundingClientRect()
+          const row = bar.getBoundingClientRect()
+          return [window.scrollY, bar.scrollLeft > 0, on.left >= row.left && on.right <= row.right]
+        }
+        """,
+        [is_function: true],
+        &assert(&1 == [0, true, true])
+      )
+    end
   end
 end

@@ -1417,7 +1417,7 @@ defmodule TexttileWeb.EditorLive do
   defp load_stats(socket, _tab), do: socket
 
   defp stats_empty(%{status: "scheduled", publish_date: date}) do
-    gettext("No numbers yet. It goes live on %{date}.", date: date)
+    gettext("No numbers yet. It goes live on %{date}.", date: Texttile.I18n.format_date(date))
   end
 
   defp stats_empty(_article) do
@@ -1480,6 +1480,7 @@ defmodule TexttileWeb.EditorLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={Articles.display_title(@article)}
       active="texts"
@@ -1491,52 +1492,57 @@ defmodule TexttileWeb.EditorLive do
            button all carrying the same word. Nothing here is a button,
            so "Draft" and "Publish" stop saying the same thing. --%>
       <:lead>
-        <span
-          class={
-            [
-              "st",
-              # the state and the save state stand together at the left
-              # on every width
-              if(@pending, do: "pending", else: state_tone(@article.status))
-            ]
-          }
-          id="stateWord"
-        >
-          <i aria-hidden="true"></i>
-          <%!-- Two words, because this pill shares a phone bar with the
+        <%!-- the entry's state and the save state, one group: side by
+             side on a wide bar, stacked on a phone, so both stay words
+             beside the buttons --%>
+        <span class="edstat">
+          <span
+            class={
+              [
+                "st",
+                # the state and the save state stand together at the left
+                # on every width
+                if(@pending, do: "pending", else: state_tone(@article.status))
+              ]
+            }
+            id="stateWord"
+          >
+            <i aria-hidden="true"></i>
+            <%!-- Two words, because this pill shares a phone bar with the
                title of the entry and the publish button. A sentence
                here ran under the button and took the title with it. --%>
-          <b>
-            {if @pending, do: gettext("Live · draft"), else: status_word(@article.status)}
-          </b>
-        </span>
-        <%!-- The save state stands with the entry's state at the left:
+            <b>
+              {if @pending, do: gettext("Live · draft"), else: status_word(@article.status)}
+            </b>
+          </span>
+          <%!-- The save state stands with the entry's state at the left:
              the right of the bar is for actions alone. --%>
-        <%!-- The save state, and no longer a link with a bare arrow on
+          <%!-- The save state, and no longer a link with a bare arrow on
              it: the way to the reader's side is the button at the end
              of this bar, or a row of its menu, and it carries a word.
              The clock reading is gone with the link; the exact second
              lives in the tooltip, where a moving number cannot pull at
              the eye. --%>
-        <span
-          class="saved whitespace-nowrap num save-on"
-          id="state"
-          phx-hook="SavedTicker"
-          data-at={@saved_at}
-          data-note={@saved_note}
-          data-note-until={@saved_until}
-        >
-          <%!-- a phone bar keeps the tick alone: the word stays for a
-               screen reader, and the clock of the save is in the
-               tooltip. A word here ran under the View button on a
-               narrow phone, the longer German one on any phone. --%>
-          <span data-words class="max-md:sr-only">{gettext("Saved")}</span>
-        </span>
-        <%!-- the one save state that needs the eye. LiveView puts the
+          <span
+            class="saved whitespace-nowrap num save-on"
+            id="state"
+            phx-hook="SavedTicker"
+            data-at={@saved_at}
+            data-note={@saved_note}
+            data-note-until={@saved_until}
+          >
+            <%!-- the word at every width: a tick alone read as a stray
+               mark. A phone bar has the room since the wordmark there
+               carries no word of its own; on the narrowest phone the
+               left of the bar gives way before the View button. --%>
+            <span data-words>{gettext("Saved")}</span>
+          </span>
+          <%!-- the one save state that needs the eye. LiveView puts the
              class on an element above this one the moment the socket
              drops, so no event and no timer is needed. --%>
-        <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
-          {gettext("Not saved · offline")}
+          <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
+            {gettext("Not saved · offline")}
+          </span>
         </span>
       </:lead>
 
@@ -1554,11 +1560,13 @@ defmodule TexttileWeb.EditorLive do
         </span>
 
         <%!-- the deliberate save beside the automatic one, at every
-             width: it is the one action a writer takes on purpose --%>
+             width and in the frame of an action: it is the one thing a
+             writer does on purpose, and a phone keeps it in sight
+             while writing --%>
         <button
           :if={@holds_lock}
           type="button"
-          class="btn quiet sm max-md:hidden"
+          class="btn sm"
           id="barSaveVersion"
           phx-click="save_version"
           data-flush-body
@@ -1651,7 +1659,9 @@ defmodule TexttileWeb.EditorLive do
              so once it has gone the menu says so before it offers
              anything else. --%>
         <p :if={@article.notified_on} class="fact" id="mailSaid">
-          {gettext("The subscriber email went out on %{day}.", day: @article.notified_on)}
+          {gettext("The subscriber email went out on %{day}.",
+            day: Texttile.I18n.format_date(@article.notified_on)
+          )}
         </p>
 
         <%!-- data-flush-body: the editor settles its debounce on the
@@ -1783,65 +1793,129 @@ defmodule TexttileWeb.EditorLive do
            them, one screen tall, with a bar of their own that is always
            drawn (.sidecol), so the column never looks like it ends
            where the window does. --%>
+      <div class="ptabs-wrap lg:hidden" id="pTabs" phx-hook=".PTabs">
+        <%!-- A phone has the gallery and the settings under the words,
+             so its row is the three places a writer goes: the words,
+             the gallery, the settings. The record of the entry
+             (comments, stats, log, versions) folds into More. The row
+             stays under the bar the whole way down, and marks the
+             gallery or the settings while they are the part in view. --%>
+        <nav class="ptabs" aria-label={gettext("Entry sections")}>
+          <button
+            type="button"
+            class={["ptab", @tab == "text" && "on"]}
+            id="ptabText"
+            phx-click={JS.push("set_tab", value: %{tab: "text"})}
+          >
+            {gettext("Text")}
+          </button>
+          <a href="#tilesBlock" class="ptab jump" id="jumpGallery">{gettext("Gallery")}</a>
+          <a href="#artSettings" class="ptab jump" id="jumpSettings">{gettext("Settings")}</a>
+          <details class="ptab-more" id="moreTabs">
+            <summary class={["ptab", @tab != "text" && "on"]}>
+              {more_label(@tab)}
+              <%!-- new comments as a speech mark and their count, a badge
+                   of its own after More; the menu names them in words --%>
+              <span
+                :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
+                class="mcount"
+                title={
+                  ngettext(
+                    "1 new comment",
+                    "%{count} new comments",
+                    unconfirmed(@comments, @cmt_require)
+                  )
+                }
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 3.5h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Z" />
+                </svg>
+                <span aria-hidden="true">{unconfirmed(@comments, @cmt_require)}</span>
+                <span class="sr">
+                  {ngettext(
+                    "1 new comment",
+                    "%{count} new comments",
+                    unconfirmed(@comments, @cmt_require)
+                  )}
+                </span>
+              </span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <div class="ptab-menu">
+              <button
+                :for={
+                  {tab, label} <- [
+                    {"comments", gettext("Comments")},
+                    {"stats", gettext("Stats")},
+                    {"log", gettext("Log")},
+                    {"versions", gettext("Versions")}
+                  ]
+                }
+                type="button"
+                class={["row", @tab == tab && "on"]}
+                phx-click={JS.push("set_tab", value: %{tab: tab})}
+              >
+                {label}
+                <span :if={tab == "versions" && @versions != []} class="k">
+                  {length(@versions)}
+                </span>
+                <span :if={tab == "comments" && @comments != []} class="k">
+                  {comment_tally(@comments, @cmt_require)}
+                </span>
+              </button>
+            </div>
+          </details>
+        </nav>
+      </div>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".PTabs">
+        export default {
+          mounted() {
+            const parts = [["gallery", "tilesBlock"], ["settings", "artSettings"]]
+            this.onScroll = () => {
+              // the part the eye is in: its heading within a short step
+              // under this row
+              const line = this.el.getBoundingClientRect().bottom + 120
+              let now = ""
+              for (const [name, id] of parts) {
+                const part = document.getElementById(id)
+                if (part && part.getBoundingClientRect().top < line) now = name
+              }
+              this.el.dataset.spy = now
+            }
+            addEventListener("scroll", this.onScroll, {passive: true})
+            this.onScroll()
+            // the words stand at the top of the page, so Text takes the
+            // writer back up there, from the gallery or the settings too
+            this.el.addEventListener("click", (event) => {
+              if (event.target.closest("#ptabText")) window.scrollTo({top: 0})
+            })
+          },
+          updated() { this.onScroll() },
+          destroyed() { removeEventListener("scroll", this.onScroll) }
+        }
+      </script>
       <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:max-w-[1108px] lg:mx-auto">
         <div class="min-w-0" id="textCol">
           <div class="max-w-[680px] mx-auto md:ml-0 px-4 md:pl-[34px] lg:pr-[30px] pt-[22px] lg:pt-[30px] pb-0 lg:pb-[110px]">
-            <%!-- A phone has the gallery and the settings under the words,
-                 so its row is the three places a writer goes: the words,
-                 the gallery, the settings. The record of the entry
-                 (comments, stats, log, versions) folds into More. --%>
-            <nav class="ptabs lg:hidden" aria-label={gettext("Entry sections")}>
-              <button
-                type="button"
-                class={["ptab", @tab == "text" && "on"]}
-                phx-click={JS.push("set_tab", value: %{tab: "text"})}
-              >
-                {gettext("Text")}
-              </button>
-              <a href="#tilesBlock" class="ptab jump" id="jumpGallery">{gettext("Gallery")} ↓</a>
-              <a href="#artSettings" class="ptab jump" id="jumpSettings">{gettext("Settings")} ↓</a>
-              <details class="ptab-more" id="moreTabs">
-                <summary class={["ptab", @tab != "text" && "on"]}>
-                  {more_label(@tab)}
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </summary>
-                <div class="ptab-menu">
-                  <button
-                    :for={
-                      {tab, label} <- [
-                        {"comments", gettext("Comments")},
-                        {"stats", gettext("Stats")},
-                        {"log", gettext("Log")},
-                        {"versions", gettext("Versions")}
-                      ]
-                    }
-                    type="button"
-                    class={["row", @tab == tab && "on"]}
-                    phx-click={JS.push("set_tab", value: %{tab: tab})}
-                  >
-                    {label}
-                    <span :if={tab == "versions" && @versions != []} class="k">
-                      {length(@versions)}
-                    </span>
-                    <span :if={tab == "comments" && @comments != []} class="k">
-                      {length(@comments)}
-                    </span>
-                  </button>
-                </div>
-              </details>
-            </nav>
             <nav
               class="hidden lg:flex gap-0.5 border-b border-rule mb-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               aria-label={gettext("Entry sections")}
@@ -1864,8 +1938,16 @@ defmodule TexttileWeb.EditorLive do
                 <span :if={tab == "versions" && @versions != []} class="cnt">
                   {length(@versions)}
                 </span>
+                <%!-- the comments readers see, and in the accent how many
+                     are new, still waiting for their reader --%>
                 <span :if={tab == "comments" && @comments != []} class="cnt">
-                  {length(@comments)}
+                  {length(@comments) - unconfirmed(@comments, @cmt_require)}<span
+                    :if={unconfirmed(@comments, @cmt_require) > 0}
+                    class="more"
+                    title={
+                      gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))
+                    }
+                  >{gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}</span>
                 </span>
               </button>
             </nav>
@@ -2241,7 +2323,7 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
             <div
-              class="grid gap-[10px] grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
+              class="grid gap-[8px] sm:gap-[10px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
               id="tileGrid"
             >
               <div class="contents" id="tileServer">
@@ -2276,7 +2358,11 @@ defmodule TexttileWeb.EditorLive do
                   }
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
-                  <span :if={@effective_preview == image.path} class="cov">
+                  <span
+                    :if={@effective_preview == image.path}
+                    class="cov"
+                    title={gettext("Preview image")}
+                  >
                     ✓ {gettext("Preview")}
                   </span>
                   <span :if={@media[image.path].film} class="play-badge" aria-hidden="true"></span>
@@ -2352,6 +2438,11 @@ defmodule TexttileWeb.EditorLive do
             phx-submit="ask_slug"
             phx-auto-recover="recover_settings"
           >
+            <%!-- a phone has scrolled the title away by here: the line
+                 over the heading says whose settings these are --%>
+            <p class="lg:hidden text-[13px] text-dim mb-1 truncate" id="settingsOf">
+              {Articles.display_title(@article)}
+            </p>
             <div class="flex items-baseline gap-[10px] flex-wrap pb-[10px] border-b border-rule">
               <%!-- no line on saving: the bar says Saved --%>
               <span class="font-serif text-[18px] font-semibold">{gettext("Entry settings")}</span>
@@ -2363,7 +2454,38 @@ defmodule TexttileWeb.EditorLive do
             <div :if={@preview_candidates != []} class="drow pt-0.5" id="previewRow">
               <span class="lab">{gettext("Preview image")}</span>
               <span class="val">
-                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
+                <%!-- The choice in use, and the way to change it. The
+                     pictures stand in the gallery right above, so the
+                     row of all of them opens only when asked for;
+                     JS.toggle keeps it open across every redraw. --%>
+                <span class="flex items-center gap-3">
+                  <span
+                    :if={@effective_preview}
+                    class="cover-now"
+                    style={
+                      tile_bg(
+                        (@media[@effective_preview] && @media[@effective_preview].still) ||
+                          @effective_preview
+                      )
+                    }
+                  >
+                  </span>
+                  <span class="hint !mt-0 flex-1">
+                    {gettext("Used in the entries list, on the front page and in link previews.")}
+                  </span>
+                  <button
+                    type="button"
+                    class="link flex-none text-[13px]"
+                    id="changePreview"
+                    phx-click={JS.toggle(to: "#coverRow", display: "grid")}
+                  >
+                    {gettext("Change")}
+                  </button>
+                </span>
+                <div
+                  class="hidden grid-cols-[repeat(auto-fill,minmax(40px,1fr))] gap-[6px] mt-3"
+                  id="coverRow"
+                >
                   <button
                     :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
                     type="button"
@@ -2374,9 +2496,6 @@ defmodule TexttileWeb.EditorLive do
                     aria-label={gettext("Use image %{index} as the preview image", index: index)}
                   >
                   </button>
-                </div>
-                <div class="hint">
-                  {gettext("Used in the entries grid, on the front page and in link previews.")}
                 </div>
               </span>
             </div>
@@ -2421,17 +2540,17 @@ defmodule TexttileWeb.EditorLive do
                     :if={@public_url && Visibility.live?(@article)}
                     href={@public_url}
                     target="_blank"
-                    class="link break-all"
+                    class="link block [overflow-wrap:anywhere]"
                     id="slugPrefix"
                   >
-                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
+                    {site_address()}{Articles.public_prefix(@article)}{@article.slug}
                   </a>
                   <span
                     :if={!(@public_url && Visibility.live?(@article))}
-                    class="break-all"
+                    class="block [overflow-wrap:anywhere]"
                     id="slugPrefix"
                   >
-                    {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
+                    {site_address()}{Articles.public_prefix(@article)}{@article.slug}
                   </span>
                   {slug_hint(@article)}
                 </div>
@@ -2532,7 +2651,7 @@ defmodule TexttileWeb.EditorLive do
                   />
                   <span>
                     {gettext("Blog post")}<span class="note">{gettext(
-                      "Listed on the front page and in the feed, has tags, can email subscribers."
+                      "On the front page and in the feed, with tags and the subscriber email."
                     )}</span>
                   </span>
                 </label>
@@ -2545,7 +2664,7 @@ defmodule TexttileWeb.EditorLive do
                   />
                   <span>
                     {gettext("Page")}<span class="note">{gettext(
-                      "Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
+                      "A page of its own in the site menu, like About or Imprint. Never in the feed."
                     )}</span>
                   </span>
                 </label>
@@ -2815,15 +2934,14 @@ defmodule TexttileWeb.EditorLive do
                     id={"tagchip-#{Articles.slugify(tag)}"}
                     phx-click="toggle_tag"
                     phx-value-tag={tag}
-                  >
-                    {tag}
-                  </button>
+                    phx-no-format
+                  >#{tag}</button>
                 </div>
               </span>
             </div>
 
+            <%!-- one box that says what it is: no group name over it --%>
             <div class="drow gtop">
-              <span class="lab">{gettext("Comments")}</span>
               <span class="val">
                 <label class="opt">
                   <input type="hidden" name="allow_comments" value="false" />
@@ -2846,7 +2964,7 @@ defmodule TexttileWeb.EditorLive do
                      pane still owes: whether this kind of entry mails
                      anybody at all. --%>
             <div class="drow gtop">
-              <span class="lab">{gettext("Email")}</span>
+              <span class="lab">{gettext("Subscriber email")}</span>
               <span class="val" id="notifyOpt">
                 <span :if={@article.type == "page"} class="note">
                   {gettext("Pages never email anyone.")}
@@ -3234,7 +3352,10 @@ defmodule TexttileWeb.EditorLive do
   # same screen.
   defp date_hint(%{status: "scheduled"} = article) do
     if article.publish_date,
-      do: gettext("Scheduled. It goes live on %{date}.", date: article.publish_date),
+      do:
+        gettext("Scheduled. It goes live on %{date}.",
+          date: Texttile.I18n.format_date(article.publish_date)
+        ),
       else: gettext("Pick the day it goes live.")
   end
 
@@ -3258,7 +3379,7 @@ defmodule TexttileWeb.EditorLive do
 
   defp slug_hint(article) do
     if Articles.public_path(article) do
-      gettext("After a change, the old address leads here.")
+      gettext("If you change it, the old address still leads to this entry.")
     end
   end
 
@@ -3271,17 +3392,20 @@ defmodule TexttileWeb.EditorLive do
     do:
       gettext(
         "The subscriber email for this entry went out on %{day}. It goes out once; publishing again does not send it again.",
-        day: day
+        day: Texttile.I18n.format_date(day)
       )
 
   defp notify_note(%{status: "scheduled", notify_on_publish: true} = article),
     do:
       gettext("Goes out to the confirmed subscribers when this goes live on %{date}.",
-        date: article.publish_date
+        date: Texttile.I18n.format_date(article.publish_date)
       )
 
   defp notify_note(%{status: "scheduled"} = article),
-    do: gettext("No email will go out on %{date}.", date: article.publish_date)
+    do:
+      gettext("No email will go out on %{date}.",
+        date: Texttile.I18n.format_date(article.publish_date)
+      )
 
   defp notify_note(%{status: "draft"}),
     do:
@@ -3294,6 +3418,22 @@ defmodule TexttileWeb.EditorLive do
       gettext(
         "No email went out for this entry. The email goes out only at the moment an entry goes live."
       )
+
+  # The address of the site as the share lines write it, without the
+  # scheme: the host and, where there is one, the port.
+  defp site_address, do: String.replace(TexttileWeb.Endpoint.url(), ~r{\Ahttps?://}, "")
+
+  # The comments of the tab, counted the way a reader counts them, and
+  # the ones still waiting for their reader beside them: the number on
+  # the entry page and the number here never disagree.
+  defp comment_tally(comments, require?) do
+    case unconfirmed(comments, require?) do
+      0 -> "#{length(comments)}"
+      n -> gettext("%{shown} · %{waiting} unconfirmed", shown: length(comments) - n, waiting: n)
+    end
+  end
+
+  defp unconfirmed(comments, require?), do: Enum.count(comments, &Comments.waiting?(&1, require?))
 
   # The dot beside the state word: hollow while nothing is out,
   # outlined once a date stands, filled once a reader can reach it.

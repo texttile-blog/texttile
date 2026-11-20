@@ -503,6 +503,9 @@ defmodule Texttile.Comments do
     %{rows: rows, page: page, pages: pages}
   end
 
+  @doc "How many comments one status holds."
+  def count(status) when status in @statuses, do: Repo.aggregate(in_status(status), :count)
+
   @doc "How many comments each status holds, one map keyed by status."
   def status_counts do
     Map.new(@statuses, &{&1, Repo.aggregate(in_status(&1), :count)})

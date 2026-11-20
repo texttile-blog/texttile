@@ -26,7 +26,7 @@ defmodule TexttileWeb.ImportLive do
       # number would say nothing about whether the zip fits.
       |> assign(:free_bytes, Uploads.free_bytes(Import.workroom()))
       # The roof over the zip is the one roof the admin area has:
-      # Settings > Storage > Biggest upload. A second number here would
+      # Settings > Storage > Upload size limit. A second number here would
       # be a second thing to find and to raise, and the zip is by far
       # the largest thing this area ever takes. It is read when the
       # page opens, so a new limit holds from the next opening.
@@ -102,6 +102,7 @@ defmodule TexttileWeb.ImportLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Import")}
       active="settings"
@@ -112,20 +113,22 @@ defmodule TexttileWeb.ImportLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
-        <p class="lead">
-          {gettext(
-            "A zip of bundles becomes entries: one folder per entry, with Markdown, settings and pictures. Pictures may be files in the bundle or URLs; the server downloads the URLs itself, so the zip stays small."
-          )}
-          <.import_doc />
-          {gettext(
-            "in the repository is the format, written so a script or an AI agent can build the zip from any export."
-          )}
+        <%!-- the instruction in the ink, the details in the guide --%>
+        <p class="leading-[1.6] md:mt-6">
+          {gettext("Bring entries over from another blog as a zip, one folder per entry.")}
+          {gettext("See")} <.import_doc />.
         </p>
 
         <%= case @job.phase do %>
           <% :idle -> %>
-            <form id="import-upload" phx-change="validate_upload" class="mt-6">
-              <label class="btn cursor-pointer relative overflow-hidden">
+            <form id="import-upload" phx-change="validate_upload" class="mt-3">
+              <%!-- what somebody wants to know before they pick a file --%>
+              <p class="note leading-[1.6] mb-4 max-w-[584px]">
+                {gettext(
+                  "Uploading checks the zip and shows a report first. Nothing is imported yet."
+                )}
+              </p>
+              <label class="btn solid cursor-pointer relative overflow-hidden">
                 {gettext("Upload the zip")}
                 <.live_file_input
                   upload={@uploads.zip}
@@ -160,11 +163,6 @@ defmodule TexttileWeb.ImportLive do
                 <span :for={error <- upload_errors(@uploads.zip, entry)}>
                   {upload_error_note(error, @limit_mb)}
                 </span>
-              </p>
-              <p class="note mt-3">
-                {gettext(
-                  "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
-                )}
               </p>
             </form>
           <% :validating -> %>
@@ -305,7 +303,7 @@ defmodule TexttileWeb.ImportLive do
   # now and the person reading this is the person who can raise it.
   defp upload_error_note(:too_large, limit_mb) do
     gettext(
-      "The zip is larger than %{limit}. Raise the roof in Settings > Storage > Biggest upload.",
+      "The zip is larger than %{limit}. Raise the roof in Settings > Storage > Upload size limit.",
       limit: mb(limit_mb)
     )
   end

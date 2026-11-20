@@ -30,11 +30,13 @@ defmodule TexttileWeb.EditorCommentsTest do
     {:ok, _} = Comments.confirm(confirmed.address.token)
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}")
-    assert has_element?(view, "nav .tab .cnt", "2")
+    # the one readers see, and the one that waits for its reader
+    assert has_element?(view, "nav .tab .cnt", "1")
+    assert has_element?(view, "nav .tab .cnt .more[title='1 unconfirmed']", "1 new")
 
     view |> element("nav .tab", "Comments") |> render_click()
 
-    assert has_element?(view, "#tp-comments #comment-#{waiting.id}", "not confirmed yet")
+    assert has_element?(view, "#tp-comments #comment-#{waiting.id}", "unconfirmed")
     assert has_element?(view, "#tp-comments #comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
     assert has_element?(view, "#tp-comments", "1 comment is still out of the entry")
@@ -46,7 +48,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     view |> element("nav .tab", "Comments") |> render_click()
     assert has_element?(view, "#tp-comments", "No comments yet.")
-    assert has_element?(view, "#tp-comments", "No captcha, ever")
+    assert has_element?(view, "#tp-comments", "Readers confirm their email first")
   end
 
   test "?tab=comments opens the tab straight from the overview's jump", %{conn: conn} do
@@ -103,7 +105,7 @@ defmodule TexttileWeb.EditorCommentsTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article.id}?tab=comments")
 
-    view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+    view |> element("#comment-#{comment.id} button", "Approve") |> render_click()
     refute has_element?(view, "#comment-#{comment.id} .wait")
     assert Comments.released?(Comments.get_comment!(comment.id))
 

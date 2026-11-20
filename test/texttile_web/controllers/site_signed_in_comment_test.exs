@@ -29,12 +29,11 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
         |> get(Articles.public_path(article))
         |> html_response(200)
 
-      assert html =~ ~r/<input[^>]*id="comment-name"[^>]*value="Katharina"/
-      assert html =~ ~r/<input[^>]*id="comment-email"[^>]*value="kb@example\.org"/
-
-      # both fields are facts, not questions
-      assert html =~ ~r/<input[^>]*id="comment-name"[^>]*disabled/
-      assert html =~ ~r/<input[^>]*id="comment-email"[^>]*disabled/
+      # the form asks for nothing but the words, and says under which
+      # name they go out
+      assert html =~ ~r/id="comment-as"[^>]*>.*Katharina/s
+      refute html =~ ~s(id="comment-name")
+      refute html =~ ~s(id="comment-email")
       assert html =~ "You are signed in"
     end
 
@@ -43,7 +42,9 @@ defmodule TexttileWeb.SiteSignedInCommentTest do
 
       html = conn |> get(Articles.public_path(article)) |> html_response(200)
 
-      refute html =~ ~r/<input[^>]*id="comment-name"[^>]*disabled/
+      assert html =~ ~s(id="comment-name")
+      assert html =~ ~s(id="comment-email")
+      refute html =~ ~s(id="comment-as")
       refute html =~ "You are signed in"
     end
   end

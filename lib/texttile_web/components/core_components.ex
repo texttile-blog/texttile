@@ -188,8 +188,8 @@ defmodule TexttileWeb.CoreComponents do
   the caret never leaves the text, and finds this bar by its id.
 
   `files: false` takes the image button off, for a surface that holds
-  words and no pictures. A phone leaves out the two rare ones, task list
-  and code, so the row fits the screen; the Markdown still types.
+  words and no pictures. A phone folds task list, code and image behind
+  an ellipsis, so the row fits the screen; the Markdown still types.
   """
   attr :id, :string, required: true
   attr :files, :boolean, default: true
@@ -328,8 +328,9 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M5.2 8.2l2 2 3.6-4" />
         </svg>
       </button>
-      <%!-- without the image, a phone has nothing after this rule --%>
-      <span class={["mdsep", !@files && "rare"]} aria-hidden="true"></span>
+      <%!-- a phone has nothing after this rule until the ellipsis
+           opens the rest --%>
+      <span class="mdsep rare" aria-hidden="true"></span>
       <button
         type="button"
         class="mdb rare"
@@ -353,7 +354,7 @@ defmodule TexttileWeb.CoreComponents do
       <button
         :if={@files}
         type="button"
-        class="mdb"
+        class="mdb rare"
         data-cmd="image"
         title={gettext("Put an image in the text, at the caret")}
         aria-label={gettext("Image")}
@@ -372,6 +373,17 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M2.6 11.4 6.5 8l3 2.6 1.9-1.6 2.2 2" />
         </svg>
       </button>
+      <%!-- a phone keeps the rare formats folded: this opens them in
+           the bar, and JS.toggle_class keeps them open across redraws --%>
+      <button
+        type="button"
+        class="mdb fmt-more"
+        phx-click={Phoenix.LiveView.JS.toggle_class("show-rare", to: "#" <> @id)}
+        title={gettext("More formats")}
+        aria-label={gettext("More formats")}
+      >
+        <span class="g font-sans font-semibold text-[15px] leading-none">⋯</span>
+      </button>
     </div>
     """
   end
@@ -383,14 +395,13 @@ defmodule TexttileWeb.CoreComponents do
   def import_doc(assigns) do
     ~H"""
     <a
-      class="link"
+      class="link whitespace-nowrap"
       id="import-doc"
       href="https://github.com/texttile-blog/texttile/blob/main/IMPORT.md"
       target="_blank"
       rel="noopener"
-    >
-      IMPORT.md<.out_icon />
-    </a>
+      phx-no-format
+    >{gettext("the format guide")}<.out_icon /></a>
     """
   end
 

@@ -35,7 +35,7 @@ defmodule TexttileWeb.CommentComponents do
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
         <span class="rowp">{@comment.name}</span>
-        <span :if={@waiting} class="wait">{gettext("not confirmed yet")}</span>
+        <span :if={@waiting} class="wait">{gettext("unconfirmed")}</span>
       </div>
       <%!-- where and when, on a line of their own under the name: the
            entry is the jump of the overview, a link like every other --%>
@@ -96,17 +96,21 @@ defmodule TexttileWeb.CommentComponents do
          the words on a phone, so a long name never meets them. Reply
          answers by mail, in words: an icon said nothing. --%>
       <div :if={!@editing} class="cmt-acts">
-        <.write_link comment={@comment} />
-        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
-          {gettext("Edit")}
-        </button>
+        <%!-- Approve stands first and only while it applies, at every
+             width. It is the one decision a waiting comment asks for, so
+             it wears the accent where the others are the quiet ink. --%>
         <button
           :if={@waiting}
-          class="btn quiet sm"
+          class="btn quiet sm rel"
+          title={gettext("Show the comment now, before its reader confirms")}
           phx-click="release_comment"
           phx-value-id={@comment.id}
         >
-          {gettext("Release")}
+          {gettext("Approve")}
+        </button>
+        <.write_link comment={@comment} />
+        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
+          {gettext("Edit")}
         </button>
         <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
           {gettext("Delete")}
@@ -251,7 +255,7 @@ defmodule TexttileWeb.CommentComponents do
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
-      "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. A comment nobody confirms within %{waiting} days goes for good. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing, rate limit and mail cap checks. No captcha, ever.",
+      "Readers confirm their email first. Unconfirmed comments are deleted after %{waiting} days, and deleted comments stay in the trash for %{days} days.",
       waiting: Comments.waiting_days(),
       days: Comments.trash_days()
     )
@@ -259,7 +263,7 @@ defmodule TexttileWeb.CommentComponents do
 
   def comment_rule(false) do
     gettext(
-      "Comments appear the moment a reader sends them. Delete keeps a comment in the trash for %{days} days, then it is gone. Spam is filtered without a captcha.",
+      "Comments appear the moment a reader sends them. Deleted comments stay in the trash for %{days} days.",
       days: Comments.trash_days()
     )
   end

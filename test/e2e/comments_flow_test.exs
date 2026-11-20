@@ -41,7 +41,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments")
-    |> assert_has("#commentFilter a[data-f='waiting']", text: "0")
+    # nothing waits any more, so the filter for it leaves the row
+    |> refute_has("#commentFilter a[data-f='waiting']")
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")
@@ -83,8 +84,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       session
       |> sign_in()
       |> open("/admin/comments")
-      |> assert_has("#commentsList", text: "not confirmed yet")
-      |> click_button("Release")
+      |> assert_has("#commentsList", text: "unconfirmed")
+      |> click_button("Approve")
       |> assert_has("#commentsList", text: "let through")
       |> refute_has("#commentsList .wait")
       |> open_page(Articles.public_path(article))
@@ -206,10 +207,10 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     session = conn |> sign_in() |> open_page(Articles.public_path(article))
 
-    # The two fields carry the account and take no typing.
+    # The account answers who is writing: the form asks for the words.
     session
-    |> assert_has("#comment-name[disabled][value='Katharina']")
-    |> assert_has("#comment-email[disabled][value='#{user.email}']")
+    |> assert_has("#comment-as", text: "Katharina")
+    |> refute_has("#comment-name")
     |> assert_has("#comments", text: "You are signed in")
     |> fill_in("Comment", with: "Writing under my own name.")
     |> click_button("Post comment")

@@ -120,9 +120,13 @@
      address yet - worn in the admin area and on the reader's own
      pending row */
   .wait {
-    display: inline-block; font-size: 11px; font-weight: 500; color: var(--tt-dim);
-    padding: 1px 6px; border-radius: var(--tt-radius-img);
-    box-shadow: inset 0 0 0 1px var(--tt-rule);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 400; color: var(--tt-dim);
+  }
+  /* the hollow ring of a draft: something is not out yet */
+  .wait::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; flex: none;
+    box-shadow: inset 0 0 0 1.5px var(--tt-faint);
   }
   /* one link: the accent, underlined under the pointer. Links inside
      the words of an entry keep their underline (see .prose a). */
@@ -215,19 +219,17 @@
   }
 
   /* THE ADMIN COLUMN · every screen of the admin area stands in one
-     column of one measure. On a wide window it starts on the left line
-     of the editor's grid, under the wordmark, where the editor's words
-     start, so moving between screens never moves the page sideways.
-     The editor alone is wider, for its two columns. */
+     column of one measure, in the middle of the window, and the bar
+     over it ends on the column's two edges (see .bar-col). The wordmark,
+     the heading and the rows share one left edge, and the way to the
+     site ends where the rows end. The editor alone is wider, for its
+     two columns, and its bar is as wide as it is. */
   .admin-col {
     width: 100%; max-width: 808px; margin: 0 auto;
     padding: 22px 16px 90px;
   }
   @media (min-width: 768px) {
-    .admin-col {
-      width: auto; padding: 34px 24px 110px;
-      margin-left: max(10px, calc((100% - 1108px) / 2 + 10px)); margin-right: auto;
-    }
+    .admin-col { padding: 34px 24px 110px; }
   }
   /* A screen of settings on a wide window: the name of each section in
      a column of its own on the left, its fields on the right, so the
@@ -246,7 +248,6 @@
     /* the heading's first line stands on the baseline of the first label
        beside it; a list that opens on a rule puts its first row lower */
     .admin-col.twocol > .set-h { padding-top: 5px; }
-    .admin-col.twocol > .set-h:has(+ #usersList) { padding-top: 13px; }
   }
 
   /* type roles */
@@ -435,14 +436,18 @@
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
-  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -12px; }
+  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -12px; align-items: center; }
+  /* Release is the one decision a waiting comment asks for: the
+     accent, where the others are the quiet ink */
+  .cmt-acts > .rel { color: var(--tt-accent); font-weight: 600; }
+  .cmt-acts > .rel:hover { color: var(--tt-solidhover); }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
-    /* on the line of the entry and the moment, inside the row's
-       reading path */
-    .cmt-acts { position: absolute; top: 30px; right: -10px; margin: 0; gap: 10px; }
+    /* at the right end of the name line, a column of their own down
+       the list: the row's first line says who and what to do */
+    .cmt-acts { position: absolute; top: 8px; right: -10px; margin: 0; gap: 4px; }
     .cmt.sel .cmt-acts { margin-left: 0; }
-    .cmt-sub { padding-right: 230px; }
+    .cmt-top { padding-right: 300px; }
   }
   .cmt-when .num { white-space: nowrap; }
   /* the writer's website, after the moment: a link like any other */
@@ -576,9 +581,12 @@
     transition: background-color .15s ease, color .15s ease, border-color .15s ease;
   }
   .tagchip:hover { background-color: var(--tt-field, #f2f0ec); color: var(--tt-ink, #23201b); }
+  /* a tag the entry carries: the accent's wash, not a solid block, so
+     the row of choices under the field does not shout the field's own
+     words back at it */
   .tagchip.on {
-    background-color: var(--tt-solid, #4b2a83); color: var(--tt-onsolid, #ffffff);
-    border-color: var(--tt-solid, #4b2a83);
+    background-color: var(--tt-accentwash); color: var(--tt-accent);
+    border-color: var(--tt-accentline); font-weight: 500;
   }
 
   /* the grid of texts: cards without boxes, one two-line title box,
@@ -592,20 +600,41 @@
     border-radius: var(--tt-radius-img);
   }
   .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
-  .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
-  /* An entry of words alone, in the admin grid: its opening words in a
-     framed square, from the top like a page. They are a picture of the
-     entry, not the text to read, so the square cuts them off with an
-     ellipsis. The reader's grid sets them larger, below. */
-  .card .cimg.empty:has(.cx) {
-    display: block; overflow: hidden;
-    background: var(--tt-field); padding: 18px 18px 0;
+  .card .cimg.empty {
+    display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px;
   }
+  /* AN ENTRY OF WORDS ALONE SHOWS ITS WORDS
+     Its opening words stand in the square a picture would take, on a
+     quiet tint of the page, so every title of a row sits on one line.
+     A long opening fills the square at the size of a page, from the
+     top; a short one is set larger and stands in the middle, as a
+     quotation on its own square, so the square never reads as a
+     picture that failed to load. The size follows the card (cqi is a
+     hundredth of its width). A phone, one card to a row, gives the
+     words their own height. */
+  .card { container-type: inline-size; }
+  .card .cimg.empty:has(.cx) {
+    /* `place-items` goes back to its start: a browser that aligns the
+       children of a block (Chrome does) centred a one-line opening */
+    display: flex; flex-direction: column; justify-content: center; place-items: normal;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); padding: 8cqi 8.5cqi;
+  }
+  .card .cimg.empty:has(.cx.short) { justify-content: center; }
   .card .cimg .ci { display: none; }
   .card .cimg .cx {
-    font-family: var(--tt-font-serif); font-size: 15px; line-height: 1.45;
-    color: var(--tt-dim); text-align: left;
-    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+    font-family: var(--tt-font-serif); font-size: clamp(16px, 5.8cqi, 19px); line-height: 1.5;
+    color: var(--tt-inksoft); text-align: left; text-wrap: pretty;
+    display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card .cimg .cx.short {
+    font-size: clamp(20px, 8.6cqi, 28px); line-height: 1.3; letter-spacing: -.01em;
+    color: var(--tt-ink); text-wrap: balance;
+  }
+  @media (max-width: 560px) {
+    body.site .card .cimg.empty:has(.cx) { aspect-ratio: auto; padding: 20px 20px 22px; }
+    body.site .card .cimg .cx { font-size: 18px; -webkit-line-clamp: 5; }
+    body.site .card .cimg .cx.short { font-size: 22px; }
   }
 
   .card .ct {
@@ -639,6 +668,10 @@
   }
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
   .card .cm .bit + .bit::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  /* what is still open about a live entry: a line of its own under the
+     facts, in the accent, so it is found when somebody scans the list
+     for it and never wraps into the facts with a stray dot in front */
+  .card .cm .open { flex-basis: 100%; margin-top: 1px; color: var(--tt-accent); }
 
   /* the way to the zip, laid over the corner of the picture. The card
      under it is one link, so this one cannot stand inside it. It waits
@@ -676,38 +709,62 @@
      quietly as it can and still be seen. */
   @media (hover: none) { .card-get { opacity: .5; } }
 
-  /* ENTRIES ON A PHONE · a list, not a grid. Two columns of squares
-     left a title two words wide and pushed the author onto a line of
-     its own; one row per entry keeps the title, the state and the day
-     together beside a small square. The export leaves the picture and
-     stands at the end of the row, in the ink of the words. */
-  @media (max-width: 639px) {
-    #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
+  /* THE ENTRIES · a list at every width, one row per entry: a small
+     square, the title, and the line of facts under it. A grid of large
+     squares showed three entries to a screen and put the facts far
+     under their pictures; a writer looking for an entry reads titles
+     and states, and a list shows twelve of them at a glance. The
+     pictures have their grid on the reader's side. */
+  #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
+  #cards .card {
+    position: relative;
+    display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 14px;
+    align-items: center; padding: 9px 0;
+  }
+  #cards .card .cimg { grid-row: span 2; width: 100%; }
+  /* without a picture the square keeps its place and shows a page of
+     words, drawn: three lines on the tint of the page, so every title
+     starts on the same edge and an entry of words looks like one */
+  #cards .card .cimg.empty {
+    padding: 0; border-radius: var(--tt-radius-img);
+    background:
+      linear-gradient(var(--tt-slash), var(--tt-slash)) 26% 34% / 48% 2px no-repeat,
+      linear-gradient(var(--tt-slash), var(--tt-slash)) 26% 50% / 48% 2px no-repeat,
+      linear-gradient(var(--tt-slash), var(--tt-slash)) 26% 66% / 30% 2px no-repeat,
+      color-mix(in srgb, var(--tt-field) 70%, var(--tt-page));
+  }
+  #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
+  #cards .card .cm { align-self: start; margin-top: 3px; }
+  #cards .card:hover .cimg { transform: none; box-shadow: none; }
+  /* the export lives in the editor's menu as well; a row on a phone, or
+     under a finger, keeps to the entry itself */
+  #cards .card-get { display: none; }
+  /* A desk row has the width for one more column: the day leaves the
+     line of facts and stands at the right end of the row, in tabular
+     figures, so the days of the list read down one edge. The export
+     follows it, an ink mark that shows itself under the pointer. */
+  @media (min-width: 640px) {
     #cards .card {
-      display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 14px;
-      align-items: center; padding: 9px 44px 9px 0;
+      grid-template-columns: 56px minmax(0, 1fr); column-gap: 16px;
+      padding: 10px 150px 10px 0;
     }
-    #cards .card .cimg { grid-row: span 2; width: 52px; }
-    /* without a picture the square keeps its place, framed, and holds
-       the first letter of the title in the serif, so every title in the
-       list starts on the same edge, as on the desk */
-    #cards .card .cimg.empty { display: grid; place-items: center; padding: 0; }
-    #cards .card .cimg .cx, #cards .card .cimg .cn { display: none; }
-    #cards .card .cimg .ci {
-      display: block; font-family: var(--tt-font-serif); font-size: 20px;
-      font-weight: 500; line-height: 1; color: var(--tt-faint);
+    #cards .card .ct { font-size: 17px; }
+    #cards .card .cm .cday {
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      font-variant-numeric: tabular-nums; color: var(--tt-dim);
     }
-
-    #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
-    #cards .card .cm { align-self: start; margin-top: 3px; }
-
-    #cards .card:hover .cimg { transform: none; box-shadow: none; }
-    /* the export lives in the editor's menu as well; a phone row keeps
-       to the entry itself */
-    #cards .card-get { display: none; }
-    #cards .card { padding-right: 0; }
-    /* who it is by joins the line instead of floating in the row */
-
+    #cards .card .cm .cday::before { content: none; }
+    #cards .card-slot:hover { background: rgb(var(--tt-shadow) / .03); }
+  }
+  /* the export, left of the day, under a pointer only */
+  @media (min-width: 640px) and (hover: hover) {
+    #cards .card-get {
+      display: grid; top: 50%; right: 104px; transform: translateY(-50%); color: var(--tt-dim);
+    }
+    #cards .card-get::before { background: transparent; backdrop-filter: none; }
+    #cards .card-get:hover { color: var(--tt-ink); }
+    #cards .card-get:hover::before { background: var(--tt-field); }
+    #cards .card-get.failed { color: var(--tt-paper); }
   }
 
   /* the split button: the primary action and the state actions in one
@@ -1080,17 +1137,20 @@
      hairline under it. It wears the page's own tokens, so every control
      on it (the crumb, the state dot, the saved mark, the split button)
      looks the way it does everywhere else. */
-  /* The bar stands on the one grid of the admin area, the editor's,
-     on every screen, so the wordmark and the sections never move from
-     screen to screen. The wordmark and the row of sections at its left
-     edge, the stamp and the way to the site at its right. The wordmark
-     button carries 6px of air of its own, which the edge gives back:
-     its glyph starts 34px into the grid, where the editor's words and
-     every column screen start. The right edge is the end of the
-     editor's gallery, past the column's scrollbar lane. */
+  /* The bar stands on the measure of the screen under it. On a column
+     screen that is the admin column: the wordmark button carries 6px of
+     air of its own, which the edge gives back, so its glyph starts on
+     the column's left edge and the last word of the bar ends on its
+     right one. The editor's bar (.wide) stands on the editor's grid:
+     its right edge is the end of the gallery, past the column's
+     scrollbar lane. */
   .bar-col { padding-left: 10px; padding-right: 16px; }
   @media (min-width: 768px) {
     .bar-col {
+      padding-left: max(18px, calc((100% - 808px) / 2 + 18px));
+      padding-right: max(24px, calc((100% - 808px) / 2 + 24px));
+    }
+    .bar-col.wide {
       padding-left: max(28px, calc((100% - 1108px) / 2 + 28px));
       padding-right: max(24px, calc((100% - 1108px) / 2 + 39px));
     }
@@ -1253,7 +1313,7 @@
 
   /* the preview-image picker in the article settings */
   .cover-opt {
-    position: relative; width: 46px; aspect-ratio: 1 / 1;
+    position: relative; width: 100%; aspect-ratio: 1 / 1;
     background: var(--tt-field) center / cover no-repeat;
     border-radius: var(--tt-radius-img); transition: box-shadow .15s;
   }
@@ -1469,7 +1529,7 @@
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     height: 30px; font-size: 13px; line-height: 1;
     padding: 0 max(var(--tt-gut), calc((100% - 1060px) / 2 + var(--tt-gut)));
-    background: var(--tt-ink); color: var(--tt-page);
+    background: var(--tt-inksoft); color: var(--tt-page);
   }
   .known-strip a { color: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; }
   .known-strip a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -1553,18 +1613,6 @@
      notes under the forms, which have to be comfortable to read */
   .f-note { font-size: 14px; line-height: 1.55; color: var(--tt-dim); }
 
-  /* the way into the admin area, in the line under the title. Only an admin
-     who is signed in is ever served it, so it stays small and quiet
-     and lets the date keep the line. */
-  /* A word in the line, not a button on it. A pill beside the date
-     read as the one thing to press on a page whose whole point is the
-     words under it. */
-  .edit-link {
-    margin-left: 8px; color: var(--tt-accent); text-decoration: underline;
-    text-underline-offset: 2px; text-decoration-thickness: 1px;
-    transition: color .15s ease;
-  }
-  .edit-link:hover { color: var(--tt-ink); }
 
   /* the comment form: a row that wraps, and a box that grows with the
      words (public.js grows it by hand where field-sizing is missing)
@@ -1589,6 +1637,12 @@
     grid-template-areas: "lead" "body" "name" "mail" "url" "remem" "err" "act";
   }
   .cform > .cf-lead { grid-area: lead; margin: 0 0 2px; }
+  /* signed in, the form is the words and the button: no empty rows of
+     fields that are not there, whose gaps would still stand */
+  .cform.as-account {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "lead" "body" "err" "act";
+  }
   .cform > .cf-body { grid-area: body; }
   .cform > .cf-name { grid-area: name; }
   .cform > .cf-mail { grid-area: mail; }
@@ -1651,7 +1705,10 @@
   body.site .card .cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* the placeholder square: a text without a picture holds the same
      footprint, with the mark standing quietly in the middle */
-  body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
+  body.site .card .cimg.blank {
+    display: grid; place-items: center; color: var(--tt-faint, #736d63);
+    background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page));
+  }
   body.site .card .cimg.blank svg { width: clamp(34px, 19%, 78px); height: auto; opacity: .22; }
   .card-wrap .cm { font-size: 14px; color: var(--tt-dim); margin-top: 6px; }
   /* how many comments stand under the text, beside its date. It is a
@@ -1662,14 +1719,6 @@
   /* the excerpt reads in the serif of the entry, like the words on a
      text-only square: every excerpt in the grid in one face */
   .card-wrap .clead { font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.55; color: var(--tt-inksoft); margin-top: 8px; }
-  /* the words of a text-only square, in the reader's grid: the serif
-     of the excerpts a step larger, as many lines as the square holds
-     (9 fit the narrowest 260px column, 10 the phone's) */
-  body.site .card .cimg.empty:has(.cx) { padding: 22px 22px 0; }
-  body.site .card .cimg .cx {
-    font-size: 17px; line-height: 1.5; color: var(--tt-inksoft); -webkit-line-clamp: 9;
-  }
-  @media (max-width: 560px) { body.site .card .cimg .cx { -webkit-line-clamp: 10; } }
   .card-wrap .ctags { margin-top: 7px; }
   /* a small link of the reader's pages takes the deeper violet of the
      buttons, so it stays quiet beside the warm type */
@@ -1704,11 +1753,20 @@
      phone the field takes a line of its own and the choices stand under
      it, so the placeholder is never cut short by the count. */
   .searchrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 16px; }
-  /* the search is a tool beside the list, not its headline: with the
-     year beside it, it ends on the right edge of the grid's second
-     column */
-  @media (min-width: 861px) { .searchrow { max-width: calc((100% - 56px) / 3 * 2 + 28px); } }
   .searchrow input { flex: 1; min-width: 0; }
+  /* On a desk the row runs the width of the grid under it: the field
+     takes it, the year (and the month) stand at its right end at the
+     width of a choice, and the count goes under them. */
+  @media (min-width: 861px) {
+    .searchrow {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 12px; row-gap: 10px; align-items: center;
+    }
+    .searchrow > label + input, .searchrow > input { grid-column: 1; }
+    .searchrow .picks { grid-column: 2; display: flex !important; gap: 10px; }
+    .searchrow .picks select { width: 170px; }
+    .searchrow .cnt { grid-column: 1 / -1; margin-top: 0; }
+  }
 
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   /* the count is a note on the search, so it stands under it at every
@@ -2013,7 +2071,7 @@
 @media (max-width: 639px) {
   .mdb.rare, .mdsep.rare { display: none; }
   /* the buttons that are left share the row's width evenly */
-  .mdbar { justify-content: space-between; margin-right: -17px; }
+  .mdbar { justify-content: flex-start; gap: 2px; }
 }
 .mdb {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2319,11 +2377,10 @@ body.site .card-wrap .cm { font-size: 14px; }
 }
 
 /* the Logo & favicon heading on the line of its first row's name */
-@media (min-width: 1000px) { .admin-col.twocol > .set-h:has(+ #logoRow) { padding-top: 26px; } }
 /* on a desk the option lines of Settings are help lines like any other */
 @media (min-width: 1024px) { .opt .note { font-size: 14px; } }
 /* the website is optional and short: half the row */
-@media (min-width: 640px) { .cform > .cf-url { max-width: calc(50% - 8px); } }
+
 /* the formatting glyphs at the size of the words they sit over */
 .mdb svg { width: 17px; height: 17px; }
 
@@ -2396,13 +2453,6 @@ section.foot-band .about-md { max-width: none; }
    Profile */
 .admin-col.twocol > .lead { margin-bottom: 12px; }
 
-/* a section that opens on a rule starts as far under the last help line
-   as a section that opens on a label */
-@media (min-width: 1000px) {
-  .admin-col.twocol > #logoRow, .admin-col.twocol > #usersList { margin-top: 46px; }
-  .admin-col.twocol > .set-h:has(+ #logoRow) { padding-top: 40px; }
-  .admin-col.twocol > .set-h:has(+ #usersList) { padding-top: 27px; }
-}
 
 /* a textarea ends where its box ends, so a stack of fields keeps one
    step (an inline box would leave a baseline gap under it) */
@@ -2430,7 +2480,7 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 .drow .hint { margin-top: 8px; }
 
 /* a phone's comment actions: the same quiet words, a finger tall */
-@media (max-width: 639px) { .cmt-acts .btn { height: 40px; margin-top: -5px; margin-bottom: -5px; } }
+@media (max-width: 639px) { .cmt-acts .btn { height: 40px; } .cmt-acts { margin-top: 6px; margin-bottom: -4px; } }
 
 /* a field group's help line one step under its last field: the grid's
    own gap is that step */
@@ -2460,25 +2510,11 @@ textarea, .ed-cm { display: block; vertical-align: top; }
    ragged gap beside a large line */
 @media (max-width: 480px) { .f-h1.list-h { text-wrap: wrap; max-width: none; } }
 
-/* the Entries tools lock to the card grid on a desk: the search ends on
-   the second column's edge and the year and New entry fill the third */
-@media (min-width: 1000px) {
-  #gridTools { display: grid; grid-template-columns: minmax(0, 1fr) 134px 94px; column-gap: 12px; }
-  #gridTools > #grid-search > input { margin-right: 8px; }
-  #gridTools #periods { min-width: 0; }
-  #gridTools #periods .pick, #gridTools #years { width: 100%; }
-  #gridTools #new-text { width: 100%; padding-left: 0; padding-right: 0; }
-}
-
 /* the title and the state in the editor bar stand apart */
 #stateWord { margin-left: 8px; }
 
 /* a way on to another entry is a link: its title in violet */
 .textnav .t { color: var(--tt-accent); }
-
-/* every admin card keeps two lines for its title, so a row's meta
-   lines share one line */
-@media (min-width: 640px) { #cards .card .ct { min-height: calc(17px * 1.25 * 2); } }
 
 /* a tag's count stands with its tag, the next tag a clear step away */
 #tagbar { column-gap: 24px; }
@@ -2491,3 +2527,813 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* the editor's address is a link inside its one help line */
 #slugHint #slugPrefix { margin-right: 4px; }
+
+/* a phone's filters: two rows, one step apart, every one in sight */
+@media (max-width: 639px) { #commentFilter { row-gap: 2px; } }
+
+/* the band on a phone: its blocks one step apart, not a screen */
+@media (max-width: 639px) {
+  section.foot-band .cols { gap: 26px; padding-top: 30px; padding-bottom: 26px; }
+}
+
+/* a phone's controls are a finger tall: fields and buttons 44px */
+@media (max-width: 639px) {
+  :root { --fld-p: 10px 12px; }
+  .btn:not(.sm) { height: 44px; }
+}
+
+/* Stats on a phone: the last column shown ends on the edge, like its
+   header (the hidden Comments column is the table's last child) */
+@media (max-width: 639px) {
+  .admin-col table th.people, .admin-col table td.people { padding-right: 0; }
+}
+
+/* the tag row of the archive reads like every other row of choices:
+   the quiet ink, the open one in ink with the violet rule */
+#tagbar .ctag { color: var(--tt-dim); }
+#tagbar .ctag:hover { color: var(--tt-ink); }
+#tagbar .ctag.on { color: var(--tt-ink); font-weight: 600; }
+
+/* a title in an admin list or table is the ink of its row; the accent
+   stays for what acts (a button, the open tab, a link in a sentence) */
+.cmt-ent, .cmt-ent:hover, a.rowp, .admin-col table a.link { color: var(--tt-ink); }
+.cmt-ent { color: var(--tt-dim); }
+.cmt-ent:hover, a.rowp:hover, .admin-col table a.link:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* a desk row of Entries has the width: what is still open joins the
+   line of facts, so every row keeps one height */
+@media (min-width: 640px) {
+  #cards .card .cm .open { flex-basis: auto; margin-top: 0; }
+  #cards .card .cm .open::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+}
+
+/* a phone's rows of choices: every item starts on the row's edge, so a
+   second row lines up under the first */
+@media (max-width: 639px) {
+  #commentFilter .seg-b { padding-left: 0; padding-right: 0; margin-right: 18px; }
+}
+
+/* the actions of a comment: one step between them all, Release first
+   at every width. On a phone the row is the ink of the words. */
+@media (max-width: 639px) {
+  .cmt-acts > .btn.quiet:not(.rel) { color: var(--tt-inksoft); }
+}
+
+
+/* the tags the blog carries, under the tag field: words, not pills.
+   The ones on this entry stand in ink, the others in the quiet ink */
+.tagchip, .tagchip:hover, .tagchip.on {
+  border: 0; background: none; border-radius: 0; padding: 4px 0; margin-right: 10px;
+  font-size: 13.5px;
+}
+.tagchip { color: var(--tt-faint); }
+.tagchip:hover { color: var(--tt-ink); }
+.tagchip.on { color: var(--tt-ink); }
+
+/* SETTINGS · a long screen with a way through it. Every section is
+   named once: on a desk in a list in the left column that stays in
+   sight while the sections scroll, the one in view in ink; on a phone
+   in one picker that stays under the bar and names the section in
+   view. The sections carry their headings over their fields. */
+.setnav a { display: none; color: var(--tt-dim); text-decoration: none; font-size: 14px; }
+.setnav a:hover { color: var(--tt-ink); }
+.setnav a[aria-current] { color: var(--tt-ink); font-weight: 600; }
+.setnav {
+  position: sticky; top: 52px; z-index: 20;
+  margin: 0 -16px; padding: 8px 16px 10px;
+  background: var(--tt-page); border-bottom: 1px solid var(--tt-hair);
+}
+.setbody > .set-h:first-child { margin-top: 18px; }
+.set-h { scroll-margin-top: 120px; }
+/* the logo and the favicon stand under the site's three fields */
+#logoRow { margin-top: 14px; }
+@media (min-width: 1000px) {
+  .admin-col.setgrid {
+    display: grid; grid-template-columns: 136px minmax(0, 1fr); column-gap: 40px;
+    align-items: start;
+  }
+  .admin-col.setgrid > .page-h, .admin-col.setgrid > .lead { grid-column: 1 / -1; }
+  .admin-col.setgrid > .lead { margin-bottom: 12px; }
+  .setnav {
+    grid-column: 1; top: 76px; margin: 22px 0 0; padding: 0; border: 0; background: none;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .setnav .setpick { display: none; }
+  .setnav a { display: block; }
+  .set-h { scroll-margin-top: 72px; }
+  .setbody { grid-column: 2; min-width: 0; }
+  .setbody > .set-h { margin-top: 44px; }
+  .setbody > .set-h:first-child { margin-top: 18px; }
+}
+
+/* the preview image in use, beside the way to change it */
+.cover-now {
+  flex: none; width: 44px; aspect-ratio: 1 / 1; border-radius: var(--tt-radius-img);
+  background: var(--tt-field) center / cover no-repeat;
+}
+
+/* the archive's tags on a phone: wrapped rows a full step apart, so
+   the open one's rule never touches the row under it */
+@media (max-width: 639px) { #tagbar { row-gap: 14px; } }
+
+/* the admin bar is solid: words that scroll under it do not show
+   through. The formatting bar of a phone ends on a hairline. */
+#topbar { background: var(--tt-page); }
+@media (max-width: 1023px) { .mdbar { box-shadow: 0 1px 0 var(--tt-hair); } }
+
+/* the count after a list's name, in the quiet ink of the figures */
+.hcount { font-family: var(--tt-font-sans); font-size: 17px; font-weight: 500; color: var(--tt-faint); margin-left: 8px; letter-spacing: 0; }
+
+/* Backup: while the switch is off, the token, the addresses and the
+   last fetch say nothing a reader of the screen needs */
+#backupSection:has(#setting-backup_enabled:not(:checked)) .backup-more { display: none; }
+
+/* a table's headings keep one line: a heading broken at its hyphen
+   reads as two words */
+.admin-col table th { white-space: nowrap; }
+
+/* the archive's tags on a phone: one row that scrolls sideways under
+   the open one's rule, on the row's own hairline */
+@media (max-width: 639px) {
+  #tagbar {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    margin-left: calc(var(--tt-gut) * -1); margin-right: calc(var(--tt-gut) * -1);
+    padding-left: var(--tt-gut); padding-right: var(--tt-gut);
+  }
+  #tagbar::-webkit-scrollbar { display: none; }
+  #tagbar .ctag { flex: none; white-space: nowrap; }
+  #tagbar { border-bottom: 1px solid var(--tt-hair); }
+  #tagbar .ctag.on { margin-bottom: -1px; }
+}
+
+/* Settings on a phone: a section is a step apart, on a hairline */
+@media (max-width: 999px) {
+  .setbody > .set-h:not(:first-child) { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--tt-hair); }
+}
+
+/* what is still open about a live entry is a fact, not a link: the
+   ink of the facts, after the ring the editor bar wears for it */
+.card .cm .open { color: var(--tt-inksoft); }
+
+/* the whole filter's delete: the rust of a warning in its words even
+   before a selection, so its reach is never mistaken for a quiet word */
+.cmt-tools > #bulk-delete { color: var(--tt-julia); }
+.cmt-tools > #bulk-delete:hover { background-color: var(--tt-juliatint); }
+
+/* THE PHONE'S ROW OF PLACES stays under the bar the whole way down the
+   entry: Text, Gallery, Settings and More, one kind of tab. Gallery
+   and Settings are parts of the one page, so they take the open rule
+   while they are the part in view (the hook writes data-spy). The
+   formatting bar sticks under the row. */
+.ptabs-wrap {
+  position: sticky; top: 52px; z-index: 35;
+  padding: 0 16px; background: var(--tt-page);
+}
+.ptabs-wrap .ptabs { margin-bottom: 0; }
+.ptabs-wrap[data-spy="gallery"] .ptab.on, .ptabs-wrap[data-spy="settings"] .ptab.on {
+  color: var(--tt-dim); font-weight: 400; border-bottom-color: transparent;
+}
+.ptabs-wrap[data-spy="gallery"] #jumpGallery, .ptabs-wrap[data-spy="settings"] #jumpSettings {
+  color: var(--tt-ink); font-weight: 600; border-bottom-color: var(--tt-accent);
+}
+@media (max-width: 1023px) {
+  .mdbar { top: 92px; }
+  #tilesBlock, #artSettings { scroll-margin-top: 104px; }
+}
+
+/* a phone's comment actions: a finger's height, the words at the size
+   of a control, Delete at the far end where a slip cannot reach it */
+@media (max-width: 639px) {
+  .cmt-acts > .btn { font-size: 14px; font-weight: 500; }
+  .cmt-acts > .danger { margin-left: auto; margin-right: -10px; }
+}
+
+/* the foot's ways out start on the left, under the blog's own line */
+.wrap.f-foot .sp { display: none; }
+
+/* every list screen's heading stands as far over its first control */
+#statsWindows { margin-top: 24px; }
+
+/* the count after a list's name, at the size of the counts in its tabs */
+.hcount { font-size: 15px; font-weight: 400; }
+
+/* a person in Users is one row: the address right under the name */
+#usersList .note { margin-top: -4px; }
+
+/* an edited live entry: the ink of the words, the one state a writer
+   has to notice in the list */
+.card .cm .open { color: var(--tt-ink); }
+
+/* a few fields about one person: as wide as an address needs, not the
+   whole column */
+
+
+/* THE EDITOR'S STATE GROUP · the entry's state and the save state side
+   by side on a wide bar; on a phone stacked, two short lines of words
+   beside the buttons, so Saved stays a word and not a lone tick */
+.edstat { display: contents; }
+@media (max-width: 767px) {
+  .edstat { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; min-width: 0; }
+  .edstat .st, .edstat .saved { font-size: 12px; margin: 0; padding: 0; }
+  .edstat #stateWord ~ #state { margin-left: 0; }
+}
+
+/* how many comments still wait for their reader, in a tab or on More:
+   a number in the accent, the words in its title and in the panel */
+.more { color: var(--tt-accent); font-weight: 600; margin-left: 4px; font-size: 13px; }
+
+/* the archive's row of tags fades out at the right edge of a phone,
+   where it goes on under the finger */
+@media (max-width: 639px) {
+  #tagbar {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    padding-right: 36px;
+  }
+}
+
+/* an edited live entry: the quiet ink of the facts, after a dot in the
+   accent, the one mark that says something waits to be published */
+.card .cm .open { color: var(--tt-dim); }
+.card .cm .open::after { content: none; }
+#cards .card .cm .open { display: inline-flex; align-items: center; }
+.card .cm .open i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin-right: 6px; }
+
+/* the actions of a comment on a desk: a step before Delete */
+@media (min-width: 640px) { .cmt-acts > .danger { margin-left: 14px; } }
+
+/* entries without a picture: a quiet square, nothing drawn in it */
+#cards .card .cimg.empty { background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); }
+
+/* the gallery's Add is a place to drop pictures, dashed, not a field */
+.tile-add, .tile-add:hover { border-style: dashed; background: transparent; }
+
+/* the foot's ways out, one dot between them */
+.f-foot a + a::before, .f-foot a + button::before, .f-foot button + a::before { content: "\00b7"; margin-right: 12px; color: var(--tt-slash); }
+.wrap.f-foot { padding-top: 6px; }
+
+/* the paths of the installation in the type of a path */
+#storagePaths code { font-family: var(--tt-font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* Profile: the sessions at the width of the fields over them */
+
+
+/* a phone's tag rows: Edit and Delete a full step apart */
+@media (max-width: 639px) { #tagsList .btn.danger { margin-left: 12px; } }
+/* the accent dot is the edited note's separator too: no middle dot */
+@media (min-width: 640px) { #cards .card .cm .open::before { content: none; } #cards .card .cm .open { margin-left: 10px; } }
+
+/* THE WAYS OUT stand in the band, under the blog's own line: on a desk
+   in the first column, close under the words; on a phone at the end of
+   the band, after Subscribe */
+.band-out { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; padding-bottom: env(safe-area-inset-bottom); }
+.band-out a + a::before, .band-out a + button::before, .band-out button + a::before {
+  content: "\00b7"; margin-right: 12px; color: var(--tt-dim);
+}
+@media (min-width: 860px) {
+  section.foot-band .cols .band-out { grid-column: 1 / 3; grid-row: 2; margin-top: -14px; }
+  section.foot-band .cols #subscribe { grid-row: 1 / 3; }
+}
+@media (max-width: 859px) { section.foot-band .cols .band-out { order: 9; } }
+
+/* ROUND OF FINISHING TOUCHES */
+/* an entry without a picture keeps its slot empty: the titles stay on
+   one edge and nothing stands in for a picture that is not there */
+#cards .card .cimg.empty { background: transparent; }
+
+/* the phone editor's states on one line: the entry's, then the save's */
+@media (max-width: 767px) {
+  .edstat { flex-direction: row; align-items: center; gap: 0; }
+  .edstat .st, .edstat .saved { font-size: 12.5px; }
+  .edstat .saved:not(.warn)::before { content: "\00b7\00a0"; color: var(--tt-slash); margin-left: 5px; }
+}
+
+/* the whole filter's delete: a framed quiet button at rest, the rust
+   of a warning under the pointer, where its reach is about to act */
+.cmt-tools > #bulk-delete {
+  color: var(--tt-inksoft); background: transparent;
+  box-shadow: inset 0 0 0 1px var(--tt-rule); padding-left: 11px; padding-right: 11px; margin-right: 0;
+}
+.cmt-tools > #bulk-delete:hover { color: var(--tt-julia); background: var(--tt-juliatint); box-shadow: inset 0 0 0 1px var(--tt-julialine); }
+
+/* Settings on a phone: the picker names the first section already */
+@media (max-width: 999px) {
+  .setbody > .set-h:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .setbody > .set-h:first-child + * { margin-top: 14px; }
+}
+
+/* Settings on a desk: the section in view carries the accent's rule */
+@media (min-width: 1000px) {
+  .setnav a { padding-left: 12px; margin-left: -12px; box-shadow: inset 2px 0 0 transparent; }
+  .setnav a[aria-current] { box-shadow: inset 2px 0 0 var(--tt-accent); }
+}
+
+/* a quotation's rule in the ink of a field's frame, so it reads as one */
+.prose blockquote { border-left-color: var(--tt-slash); }
+
+/* a text tile's square has an edge, and its words sit on the floor of
+   it, a quotation on its baseline */
+.card .cimg.empty:has(.cx) { justify-content: flex-end; box-shadow: inset 0 0 0 1px var(--tt-hair); }
+
+/* the phone editor bar: its buttons a little tighter, so the states
+   beside them keep their words */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion { padding-left: 9px; padding-right: 9px; }
+  #topbar.wide { gap: 4px; }
+}
+
+/* ROUND 9 */
+/* a text tile's words stand in the middle of their square */
+.card .cimg.empty:has(.cx) { justify-content: center; }
+
+/* an entry without a picture: a quiet square with an edge, nothing in it */
+#cards .card .cimg.empty {
+  background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page));
+  box-shadow: inset 0 0 0 1px var(--tt-hair);
+}
+
+/* the phone's Settings picker is where you are, not a field to fill:
+   the name of the section in the semibold of the bar, a chevron, no box */
+@media (max-width: 999px) {
+  .setnav .setpick {
+    border: 0; box-shadow: none; background-color: transparent; padding: 6px 28px 6px 0;
+    font-size: 15px; font-weight: 600; color: var(--tt-ink); width: auto; height: auto;
+    background-position: right 4px center;
+  }
+  .setnav .setpick:focus { box-shadow: none; border: 0; }
+  .setnav { padding-top: 4px; padding-bottom: 4px; }
+  /* sections a step apart on space alone, as on a desk */
+  .setbody > .set-h:not(:first-child) { margin-top: 40px; padding-top: 0; border-top: 0; }
+}
+
+/* the actions of a comment on a desk: one step between all of them */
+@media (min-width: 640px) { .cmt-acts > .danger { margin-left: 0; } }
+
+/* the gallery's Add: a solid hairline, like every other frame */
+.tile-add, .tile-add:hover { border-style: solid; }
+
+/* an edited live entry: its note in the accent, the line's own dot
+   before it and no second mark */
+.card .cm .open i { display: none; }
+.card .cm .open { color: var(--tt-accent); }
+@media (min-width: 640px) {
+  #cards .card .cm .open { margin-left: 0; }
+  #cards .card .cm .open::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+}
+
+/* the address to add a subscriber: as wide as an address */
+
+
+/* ROUND 10 */
+/* a phone's comment filters keep one row: the words a step smaller,
+   the gaps a step closer; past the edge the row scrolls under a fade */
+@media (max-width: 639px) {
+  #commentFilter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #commentFilter::-webkit-scrollbar { display: none; }
+  #commentFilter .seg-b { flex: none; font-size: 14px; margin-right: 15px; }
+}
+
+/* the base line every row of choices stands on, its open one's rule on it */
+#commentFilter, #statsWindows { border-bottom: 1px solid var(--tt-hair); }
+#commentFilter .seg-b.on, #statsWindows .seg-b.on { margin-bottom: -1px; }
+
+/* the phone's Settings picker: as wide as its words, its chevron right
+   after them; the first section keeps its own heading */
+@media (max-width: 999px) {
+  .setnav .setpick { field-sizing: content; }
+  .setbody > .set-h:first-child { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; margin-top: 18px; }
+  .setbody > .set-h:first-child + * { margin-top: 0; }
+}
+
+/* the phone editor's bar: its two buttons a finger tall */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 40px; }
+  #topbar.wide .split .chev { width: 40px; }
+}
+
+/* the chosen tile's flag: one line */
+.tile .cov { white-space: nowrap; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; }
+
+/* an entry without a picture: its first letter, in the serif, in a
+   framed square, so the column reads as a column of entries */
+#cards .card .cimg.empty { background: transparent; box-shadow: inset 0 0 0 1px var(--tt-hair); }
+#cards .card .cimg .ci {
+  display: block; font-family: var(--tt-font-serif); font-size: 22px; font-weight: 500;
+  line-height: 1; color: var(--tt-faint);
+}
+
+/* the waiting mark on the line of the name it follows */
+.cmt-top { align-items: baseline; }
+.wait { align-self: baseline; }
+
+/* the reader's search on a phone: the year and the count share a row */
+@media (max-width: 860px) {
+  .searchrow .cnt { flex-basis: auto; margin-top: 0; margin-left: auto; align-self: center; }
+}
+
+/* Import: its heading a step over the words, as on every screen */
+.admin-col > .page-h + .lead { margin-top: 14px; }
+
+/* ROUND 11 */
+/* the reader's search on a phone: the field on a row of its own, the
+   year at the left of the next row and the count at its right end */
+@media (max-width: 860px) {
+  .searchrow > input { flex-basis: 100%; }
+  .searchrow .cnt { margin-left: auto; }
+}
+
+/* the archive's tags on a phone: wrapped rows a step apart, every tag
+   whole and in sight, no base line to fall between the rows */
+@media (max-width: 639px) {
+  #tagbar {
+    flex-wrap: wrap; overflow: visible; row-gap: 12px; padding-right: var(--tt-gut);
+    -webkit-mask-image: none; mask-image: none; border-bottom: 0;
+  }
+}
+
+/* THE READER'S CARDS SHARE THEIR ROWS · each card takes four rows of
+   its row of cards: the picture with the title, the facts, the lead,
+   the tags (subgrid). The facts and the tags of one row stand on one
+   line, however many lines a title takes or whether a lead is there. */
+@media (min-width: 561px) {
+  /* the space between rows of cards is each card's own, so the rows
+     inside a card stand close */
+  .cards { row-gap: 0; }
+  .cards > .card-wrap { margin-bottom: 44px; }
+  .cards > .card-wrap { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 0; }
+  /* a card without a lead closes on its tags right under its facts */
+  .cards > .card-wrap:not(:has(> .clead)) > .ctags { grid-row: 3; }
+  .cards > .card-wrap > .card { grid-row: 1; }
+  .cards > .card-wrap > .cm { grid-row: 2; }
+  .cards > .card-wrap > .clead { grid-row: 3; }
+  .cards > .card-wrap > .ctags { grid-row: 4; }
+}
+
+/* Storage: the folder names in a column of their own, so the words
+   after them start on one edge; a phone puts the words under the name */
+.tally td .p { display: inline-block; min-width: 10.5em; }
+@media (max-width: 639px) {
+  .tally td .p { display: block; min-width: 0; }
+  .tally td .note { display: block; margin-left: 0; }
+}
+
+/* the dot on More while comments wait for their reader */
+.more-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin-left: 5px; }
+
+/* the optional mark, a step quieter than its label */
+.cf-opt { font-size: 12.5px; }
+
+/* ROUND 12 */
+/* the reader's grid: a title keeps one line, its facts close under it;
+   the whole title stands on the entry */
+@media (min-width: 561px) {
+  body.site .cards .card .ct { -webkit-line-clamp: 1; line-clamp: 1; }
+}
+
+/* a text tile: two sizes of type and one inset, its words from the
+   top like a page, so the first lines of a row share a line */
+.card .cimg.empty:has(.cx) { justify-content: flex-start; }
+.card .cimg .cx.short { font-size: clamp(18px, 6.9cqi, 22px); line-height: 1.38; }
+
+/* the archive's tags on a phone: a line of tags, not a row of tabs;
+   the open one in the bold ink, no rule */
+@media (max-width: 639px) {
+  #tagbar .ctag.on { box-shadow: none; background: none; margin-bottom: 0; }
+}
+
+/* Tags on a desk: the name in a column as wide as a long tag, its
+   count on the name's line */
+#tagsList > div { align-items: baseline; }
+
+/* the editor's address keeps inside its pane */
+#slugHint, #slugPrefix { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+
+/* the blog's name in the band in the serif of its wordmark */
+section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font-size: 17px; font-weight: 600; }
+
+/* a path is set as a path, everywhere */
+.p, #storagePaths code, #backupSection code { font-family: var(--tt-font-mono); font-size: 12.5px; }
+
+/* ROUND 13 */
+/* a short opening in a text tile is a quotation: set larger, on the
+   lower part of its square; a long one is a page, from the top. The
+   tile is tint alone, no frame. */
+.card .cimg.empty:has(.cx) { box-shadow: none; }
+.card .cimg.empty:has(.cx.short) { justify-content: flex-end; padding-bottom: 12cqi; }
+.card .cimg .cx.short { font-size: clamp(22px, 8.4cqi, 27px); line-height: 1.25; }
+@media (max-width: 560px) { body.site .card .cimg .cx.short { font-size: 23px; } }
+
+/* the archive's tags on a phone: the desk's row of tabs, one line that
+   scrolls sideways under a fade, the open one on the row's rule */
+@media (max-width: 639px) {
+  #tagbar {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    border-bottom: 1px solid var(--tt-hair);
+    padding-right: 32px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  }
+  #tagbar::-webkit-scrollbar { display: none; }
+  #tagbar .ctag { flex: none; white-space: nowrap; padding-bottom: 7px; }
+  #tagbar .ctag.on { box-shadow: inset 0 -2px 0 var(--tt-accent); margin-bottom: -1px; }
+}
+
+/* Tags on a phone: the count on a line of its own under the name */
+@media (max-width: 639px) {
+  #tagsList .tagcount { order: 3; flex-basis: 100%; margin-top: 2px; }
+}
+
+/* REFERRERS · at every width a source over its bar, the share at the
+   right end of the source's line, as a phone always had it */
+.reftab thead { display: none; }
+.reftab tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--tt-hair); }
+.reftab td { border: 0; padding: 0; }
+.reftab td.align-middle { grid-column: 1 / -1; grid-row: 2; padding: 6px 0 0; }
+.reftab .track { height: 4px; }
+.reftab td:last-child::after { content: "%"; color: var(--tt-faint); }
+
+/* the installation's paths: a short list, the name and its path */
+.paths { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin: 12px 0 0; font-size: 13px; color: var(--tt-dim); }
+.paths dd { margin: 0; }
+.paths code { overflow-wrap: anywhere; color: var(--tt-inksoft); }
+
+/* one way to say the save state: the tick and the word, after the
+   entry's state, at every width; a phone's Save version is a word in
+   the ink, the frame stays for View */
+@media (max-width: 767px) {
+  .edstat .saved:not(.warn)::before { content: "\2713\00a0"; color: var(--tt-faint); margin-left: 8px; }
+  #topbar.wide #barSaveVersion { box-shadow: none; background: transparent; padding-left: 6px; padding-right: 6px; font-weight: 600; }
+}
+
+/* the phone's formatting bar folds its rare formats behind ⋯ */
+.fmt-more { display: none; }
+@media (max-width: 639px) {
+  .fmt-more { display: inline-flex; margin-left: auto; }
+  .mdbar.show-rare .mdb.rare, .mdbar.show-rare .mdsep.rare { display: inline-flex; }
+}
+
+/* ROUND 14 */
+/* one rule for the text squares: every opening from the top, at one
+   inset; a short one only a size larger */
+.card .cimg.empty:has(.cx), .card .cimg.empty:has(.cx.short) { justify-content: flex-start; padding: 8cqi 8.5cqi; }
+.card .cimg .cx.short { font-size: clamp(19px, 7.4cqi, 23px); line-height: 1.32; }
+
+/* an entry without a picture: a flat square of the paper's tint, as on
+   the reader's side, nothing drawn in it */
+#cards .card .cimg.empty { background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); box-shadow: none; }
+#cards .card .cimg .ci { display: none; }
+
+/* a state is not a link: the edited note and the new-comment counts in
+   the ink of the facts, after a small dot in the accent */
+.card .cm .open { color: var(--tt-inksoft); }
+#cards .card .cm .open::before { content: none; }
+#cards .card .cm .open i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin: 0 6px 0 10px; }
+.more { color: var(--tt-inksoft); font-weight: 500; }
+.more::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin: 0 5px 1px 2px; vertical-align: middle; }
+
+/* the phone editor bar: both actions plain words, View with its chevron */
+@media (max-width: 767px) {
+  #topbar.wide .split.calm { outline: none; background: transparent; }
+  #topbar.wide .split.calm .div { display: none; }
+  #topbar.wide .split .main { padding-left: 6px; padding-right: 2px; font-weight: 600; }
+  .edstat .st, .edstat .saved { font-size: 13px; }
+}
+
+/* Profile: fields as wide as a name and an address need */
+@media (min-width: 768px) { .admin-col.profile .val, .admin-col.profile .pairrow { max-width: 520px; } }
+@media (max-width: 639px) { #cards .card .cm .open i { margin-left: 0; } }
+
+/* ROUND 15 */
+/* an entry without a picture: no fill, a hairline frame and a pilcrow
+   in the faint ink, so the column reads as made, not as a picture that
+   failed to load */
+#cards .card .cimg.empty { background: transparent; box-shadow: inset 0 0 0 1px var(--tt-rule); }
+#cards .card .cimg .ci { display: block; font-size: 17px; color: var(--tt-faint); }
+
+/* the phone's More: a dot alone, the count is on the tab inside */
+.more.dot-only::before { margin: 0 2px 1px 6px; }
+
+/* a long address breaks inside the side column instead of running
+   to its edge */
+#slugHint a { overflow-wrap: anywhere; }
+
+/* Profile: the one form measure of the admin area, the width of a
+   Settings field, for the fields and the sessions under them */
+@media (min-width: 768px) {
+  .admin-col.profile .val, .admin-col.profile .pairrow { max-width: none; }
+  .admin-col.profile > * { max-width: 584px; }
+}
+
+/* ROUND 16 */
+/* the reader's text square: a short opening is a quotation, larger and
+   in the middle of its square; a long one fills it from the top */
+.card .cimg.empty:has(.cx.short) { justify-content: center; }
+.card .cimg .cx.short { font-size: clamp(22px, 9cqi, 30px); line-height: 1.25; }
+@media (max-width: 560px) { body.site .card .cimg .cx.short { font-size: 24px; } }
+
+/* the entries list: an entry without a picture wears the reader's
+   tint for words alone, its pilcrow in a quiet ink, no frame */
+#cards .card .cimg.empty { background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); box-shadow: none; }
+#cards .card .cimg .ci { color: color-mix(in srgb, var(--tt-ink) 40%, transparent); }
+
+/* the phone editor's bar: its two actions framed as on a desk */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion { box-shadow: revert-layer; background: revert-layer; font-weight: revert-layer; padding-left: 8px; padding-right: 8px; }
+  #topbar.wide .split.calm { outline: revert-layer; background: revert-layer; }
+  #topbar.wide .split.calm .div { display: revert-layer; }
+  #topbar.wide .split .main { padding-left: 8px; padding-right: 6px; font-weight: revert-layer; }
+  #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 34px; }
+  #topbar.wide .split .chev { width: 26px; }
+  /* the states give the buttons their room: one step of air less */
+  .edstat .saved:not(.warn)::before { margin-left: 6px; }
+  #topbar.wide { gap: 6px; }
+}
+
+/* a phone's Stats: the periods start where every list screen starts */
+@media (max-width: 639px) { #statsWindows { margin-top: 0; } }
+
+/* ROUND 17 */
+/* the reader's text square: one rule, every opening from the top; a
+   short one only a size larger. A phone keeps a 4:3 frame, so the
+   column keeps its rhythm next to the pictures. */
+.card .cimg.empty:has(.cx), .card .cimg.empty:has(.cx.short) { justify-content: flex-start; }
+.card .cimg .cx.short { font-size: clamp(20px, 7.6cqi, 26px); line-height: 1.3; }
+@media (max-width: 560px) {
+  body.site .card .cimg.empty:has(.cx) { aspect-ratio: 4 / 3; padding: 22px 22px 20px; }
+  body.site .card .cimg .cx { -webkit-line-clamp: 7; }
+  body.site .card .cimg .cx.short { font-size: 24px; }
+}
+
+/* the front page's count on a desk: at the end of the search row, as
+   on a phone */
+@media (min-width: 861px) {
+  .searchrow { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .searchrow .cnt { grid-column: 3; justify-self: end; white-space: nowrap; padding-left: 8px; margin-top: 0; }
+}
+
+/* ROUND 18 */
+/* the reader's text square: the words in the ink; a short opening a
+   quotation in the middle of its square, a long one fills it from the
+   top */
+.card .cimg .cx, .card .cimg .cx.short { color: var(--tt-ink); }
+.card .cimg.empty:has(.cx.short) { justify-content: center; }
+
+/* a tag is a finger's target on a touch screen: the same size of type,
+   a taller hit box and more air between two of them */
+@media (pointer: coarse), (max-width: 639px) {
+  .ctag { padding: 6px 0; margin: -6px 12px -6px 0; }
+  #tagbar .ctag { margin: 0; }
+  #meta .mtags { gap: 0 12px; }
+  #meta .mtags .link { padding: 6px 0; margin: -6px 0; }
+  .tagpick { gap: 8px; }
+}
+/* a tag the entry carries: a tick and the accent, not weight alone */
+.tagchip.on { color: var(--tt-accent); }
+.tagchip.on::before { content: "\2713\00a0"; }
+
+/* a column header is a word: no figures' spacing, never broken */
+th.num { font-variant-numeric: normal; white-space: nowrap; }
+
+/* ROUND 19 */
+/* the reader's text square, one rule: every opening from the top at
+   one inset; a long one runs to the bottom inset and ends on an
+   ellipsis, a short one is a size larger. A phone draws the square of
+   the pictures beside it. */
+.card .cimg.empty:has(.cx), .card .cimg.empty:has(.cx.short) { justify-content: flex-start; }
+.card .cimg .cx { -webkit-line-clamp: 9; }
+@media (max-width: 560px) {
+  body.site .card .cimg.empty:has(.cx) { aspect-ratio: 1; padding: 22px; }
+  body.site .card .cimg .cx { -webkit-line-clamp: 11; }
+}
+
+/* the entries list: Live is the quiet state, a dot in the meta's ink;
+   the marks that ask for something keep the full ink */
+.card .cm .st.published { background: var(--tt-faint); }
+
+/* the phone's More: new comments as a speech mark and a count in the
+   accent, a badge of its own */
+.mcount { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; color: var(--tt-accent); font-weight: 600; font-size: 13px; }
+.mcount svg { width: 14px; height: 14px; }
+
+/* the phone editor's bar: its two buttons a finger tall */
+@media (max-width: 767px) {
+  #topbar.wide #barSaveVersion, #topbar.wide .split, #topbar.wide .split .main, #topbar.wide .split .chev { height: 40px; }
+}
+
+/* ROUND 20 */
+/* the reader's text square: a surface a step deeper than the page, so
+   it reads as made on a slow line too. A short opening is a cover: set
+   large, on the floor of its square; a long one fills it from the top. */
+.card .cimg.empty:has(.cx) { background: color-mix(in srgb, var(--tt-field), var(--tt-ink) 3%); }
+.card .cimg.empty:has(.cx.short) { justify-content: flex-end; }
+.card .cimg .cx.short { font-size: clamp(22px, 9.4cqi, 30px); line-height: 1.2; }
+@media (max-width: 560px) { body.site .card .cimg .cx.short { font-size: 30px; } }
+
+
+/* a reader's tag on a phone: a size up, a finger tall */
+@media (max-width: 639px) {
+  .ctag { font-size: 14px; padding: 10px 0; margin: -10px 12px -10px 0; }
+  #tagbar .ctag { margin: 0; padding: 6px 0; }
+  #meta .mtags .link { padding: 10px 0; margin: -10px 0; }
+}
+
+/* a heading's count stands on the heading's line */
+.page-h .hcount { vertical-align: baseline; font-size: 16px; line-height: 1; }
+
+/* a phone without a heading: the first thing under the bar starts on
+   one line on every list screen */
+@media (max-width: 639px) {
+  .admin-col > div:has(> .page-h:only-child) { margin-bottom: 0; }
+}
+
+/* ROUND 21 */
+/* the reader's text square by the length of its opening: a short one
+   a cover on the floor of its square, a middling one a size up from
+   the top, a long one at the size of a page, to the foot */
+.card .cimg.empty:has(.cx.mid) { justify-content: flex-start; }
+.card .cimg .cx.mid { font-size: clamp(18px, 6.6cqi, 21px); line-height: 1.5; color: var(--tt-ink); }
+@media (max-width: 560px) { body.site .card .cimg .cx.mid { font-size: 21px; } }
+
+/* the entries list: an entry without a picture keeps its place on the
+   paper, a faint pilcrow and nothing drawn around it */
+#cards .card .cimg.empty { background: transparent; box-shadow: none; }
+#cards .card .cimg .ci { color: var(--tt-faint); opacity: .7; }
+
+/* the busiest bar carries its number over it; a bar under the pointer
+   or the focus takes the accent, so it shows that it opens */
+#dayChart button i { position: relative; }
+#dayChart .peak {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 3px; font-size: 11px; font-style: normal; line-height: 1; color: var(--tt-ink); white-space: nowrap;
+}
+#dayChart button:hover i, #dayChart button:focus-visible i { background: var(--tt-accent); }
+
+/* the phone editor's bar: the state and the save state apart, Save
+   version a word, View the one framed control */
+@media (max-width: 767px) {
+  .edstat .saved:not(.warn)::before { margin-left: 12px; }
+  #topbar.wide #barSaveVersion { box-shadow: none; background: transparent; font-weight: 600; padding-left: 6px; padding-right: 6px; }
+}
+
+/* ROUND 22 */
+/* a text square shows whole lines only: the count of lines follows
+   the width of the card, so the last line it keeps ends inside the
+   padding with its ellipsis and no line is cut through */
+.card .cimg .cx.mid { -webkit-line-clamp: 8; }
+@container (max-width: 256px) { .card .cimg .cx { -webkit-line-clamp: 8; } }
+@container (max-width: 257px) { .card .cimg .cx.mid { -webkit-line-clamp: 7; } }
+@container (max-width: 228px) { .card .cimg .cx { -webkit-line-clamp: 7; } }
+@media (max-width: 560px) {
+  /* a phone's square: 22px inset, 27px lines at page size, 31.5px a
+     size up */
+  body.site .card .cimg .cx { -webkit-line-clamp: 12; }
+  body.site .card .cimg .cx.mid { -webkit-line-clamp: 11; }
+  @container (max-width: 389px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 10; } }
+  @container (max-width: 367px) { body.site .card .cimg .cx { -webkit-line-clamp: 11; } }
+  @container (max-width: 358px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 9; } }
+  @container (max-width: 340px) { body.site .card .cimg .cx { -webkit-line-clamp: 10; } }
+  @container (max-width: 327px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 8; } }
+  @container (max-width: 313px) { body.site .card .cimg .cx { -webkit-line-clamp: 9; } }
+  @container (max-width: 295px) { body.site .card .cimg .cx.mid { -webkit-line-clamp: 7; } }
+}
+
+/* the signed-in strip on a phone: a finger tall, its two ways in on
+   the full height and apart from the state */
+@media (max-width: 639px) {
+  .known-strip { height: 44px; gap: 12px; }
+  .known-strip a { display: inline-flex; align-items: center; height: 44px; }
+  .known-strip > span:last-child { gap: 18px; }
+}
+
+/* a phone's comment in the overview: one left edge for the name, the
+   line under it, the words and the actions, right of the box */
+@media (max-width: 639px) {
+  .cmt.sel .comment-body, .cmt.sel .cmt-sub { margin-left: 0; }
+  .cmt.sel .cmt-acts { margin-left: -12px; }
+}
+
+/* the entries list: "Edited since publishing" on the baseline of the
+   facts before it, in their ink; only its dot is the accent */
+#cards .card .cm { align-items: baseline; }
+#cards .card .cm .open, .card .cm .open { color: var(--tt-dim); }
+#cards .card .cm .open { display: inline-block; }
+#cards .card .cm .open i { vertical-align: 1px; }
+
+/* ROUND 23 */
+/* Comments in the desk's row: the count of comments that wait, in the
+   quiet ink after the word */
+.bn-n { margin-left: 5px; color: var(--tt-faint); font-weight: 500; }
+#barWaiting { margin-left: 2px; }
+@media (min-width: 768px) { #barWaiting { display: none; } }
+
+/* the editor's Comments tab: "2 new" in the tab's own grey, only its
+   dot in the accent, so the open tab stays the one heavy word */
+.tab .more { color: var(--tt-faint); font-weight: 400; }
+
+/* Logo and Favicon name their rows the way every field is named */
+.mark-lab { font-size: 13px; font-weight: 500; color: var(--tt-ink); }
+
+/* the unconfirmed mark on the baseline of the name it follows, its
+   ring on the middle of the small letters */
+.wait { display: inline-block; }
+.wait::before { display: inline-block; vertical-align: 1px; margin-right: 6px; }

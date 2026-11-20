@@ -44,23 +44,25 @@
         autocomplete="off"
         spellcheck="false"
       />
-      <label :if={@years != []} for="year" class="sr">{gettext("Year")}</label>
-      <span :if={@years != []} class="pick">
-        <select name="y" id="year">
-          <option value="">{gettext("All years")}</option>
-          <option :for={{year, count} <- @years} value={year} selected={@year == year}>
-            {year} ({count})
-          </option>
-        </select>
-      </span>
-      <label :if={@months != []} for="month" class="sr">{gettext("Month")}</label>
-      <span :if={@months != []} class="pick">
-        <select name="m" id="month">
-          <option value="">{gettext("All months")}</option>
-          <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
-            {Texttile.I18n.month_name(month)}
-          </option>
-        </select>
+      <span :if={@years != []} class="picks contents">
+        <label :if={@years != []} for="year" class="sr">{gettext("Year")}</label>
+        <span :if={@years != []} class="pick">
+          <select name="y" id="year">
+            <option value="">{gettext("All years")}</option>
+            <option :for={{year, count} <- @years} value={year} selected={@year == year}>
+              {year} ({count})
+            </option>
+          </select>
+        </span>
+        <label :if={@months != []} for="month" class="sr">{gettext("Month")}</label>
+        <span :if={@months != []} class="pick">
+          <select name="m" id="month">
+            <option value="">{gettext("All months")}</option>
+            <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
+              {Texttile.I18n.month_name(month)}
+            </option>
+          </select>
+        </span>
       </span>
       <span class="cnt" id="count">{entry_count(@found, @total)}</span>
     </form>
@@ -114,6 +116,5 @@
   </div>
 
   <%!-- the second zone: what belongs to the blog and not to the list --%>
-  <.site_band about_html={assigns[:about_html]} />
+  <.site_band about_html={assigns[:about_html]} current_scope={@current_scope} />
 </main>
-<.site_foot current_scope={@current_scope} />

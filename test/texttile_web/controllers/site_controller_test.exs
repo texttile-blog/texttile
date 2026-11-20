@@ -33,6 +33,23 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ "Signed in as"
       assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/admin"}
     end
+
+    # the strip never claims changes that do not exist
+    test "on a live entry it says whether the working copy differs", %{conn: conn} do
+      user = user_fixture()
+      article = published_post(title: "Harbor", body: "Fog.")
+      conn = log_in_user(conn, user)
+
+      same = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert same =~ "same as live"
+      refute same =~ "not published yet"
+
+      {:ok, _} = Articles.update_text(article, %{title: "Harbor", body: "Fog lifting."})
+
+      changed = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert changed =~ "changes not published yet"
+      refute changed =~ "same as live"
+    end
   end
 
   describe "the front page" do
@@ -104,7 +121,8 @@ defmodule TexttileWeb.SiteControllerTest do
 
       # every card keeps the square, so the grid never looks like a
       # picture went missing; the words stand once, inside it
-      assert html =~ ~s(<span class="cx">Only words here.</span>)
+      # (a short opening is set larger: the class says so)
+      assert html =~ ~r/<span class="cx short">\s*Only words here.\s*<\/span>/
       refute html =~ ~s(class="clead">Only words here.)
       # an entry without words either keeps the quiet mark
       assert html =~ "cimg blank"
@@ -351,7 +369,7 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ ~s(id="edit-text")
     end
 
-    test "a signed-in admin gets an Edit link beside the date", %{conn: conn} do
+    test "a signed-in admin gets an Edit link in the strip over the header", %{conn: conn} do
       article = published_post(title: "Harbor", slug: "harbor", publish_date: ~D[2026-03-01])
       conn = log_in_user(conn, user_fixture())
 

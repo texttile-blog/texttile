@@ -22,7 +22,15 @@ defmodule TexttileWeb.SettingsLiveTest do
       assert html =~ "Settings"
       assert html =~ ~s(id="savedSettings")
 
-      for section <- ~w(Site About Theme Comments Users Images Storage) do
+      for section <- [
+            "Site",
+            "About",
+            "Theme",
+            "Comments",
+            "Users",
+            "Pictures & videos",
+            "Storage"
+          ] do
         assert has_element?(view, "h2", section)
       end
 
@@ -202,7 +210,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "the comments toggle rewrites its own explanation", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
-      assert html =~ "follows the link in a mail"
+      assert html =~ "confirms the email address"
 
       html =
         view
@@ -569,7 +577,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the biggest upload is a setting, and it has a floor and a ceiling", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "Biggest upload"
+      assert html =~ "Upload size limit"
       assert has_element?(view, "#setting-max_upload_mb[value='512']")
 
       view

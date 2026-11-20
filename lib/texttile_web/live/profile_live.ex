@@ -176,6 +176,7 @@ defmodule TexttileWeb.ProfileLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Your profile")}
       active="profile"
@@ -194,18 +195,16 @@ defmodule TexttileWeb.ProfileLive do
         </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col twocol">
+      <div class="admin-col profile">
         <h1 class="page-h">{gettext("Your profile")}</h1>
 
-        <h2 class="set-h on-field">{gettext("Name")}</h2>
+        <h2 class="set-h on-field">{gettext("Account")}</h2>
         <%!-- fields to type into, so they look like fields; the same
              treatment the Site block of Settings wears --%>
         <.form for={@profile_form} id="profile-form" phx-change="save_profile">
           <div class="drow">
-            <%!-- the section names the one field; the label is for a screen
-                 reader --%>
-            <label class="sr" for={@profile_form[:display_name].id}>
-              {gettext("Displayed name")}
+            <label class="lab" for={@profile_form[:display_name].id}>
+              {gettext("Display name")}
             </label>
             <span class="val">
               <input
@@ -225,13 +224,14 @@ defmodule TexttileWeb.ProfileLive do
         <%!-- The one field on this screen that does not save itself.
              The address is the identity, so it asks for the password
              the way the password itself does. --%>
-        <h2 class="set-h on-field">{gettext("Email")}</h2>
         <.form for={@email_form} id="email-form" phx-change="email_draft" phx-submit="set_email">
           <div class="drow">
             <span class="val">
               <span class="pairrow">
                 <span class="min-w-0">
-                  <label class="sr" for="em-address">{gettext("Address")}</label>
+                  <label class="block pb-[6px] text-[13px] font-medium text-ink" for="em-address">
+                    {gettext("Email")}
+                  </label>
                   <input
                     type="email"
                     id="em-address"
@@ -261,9 +261,7 @@ defmodule TexttileWeb.ProfileLive do
                 <.field_errors field={@email_form[:current_password]} />
                 <.field_errors field={@email_form[:email]} />
                 <div class="hint pairhint">
-                  {gettext(
-                    "You sign in with this address, and password links go to it. Readers never see it."
-                  )}
+                  {gettext("You sign in with this address. Changing it asks for your password.")}
                 </div>
               </span>
               <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
@@ -302,7 +300,7 @@ defmodule TexttileWeb.ProfileLive do
                 <.field_errors field={@pw_form[:current_password]} />
                 <.field_errors field={@pw_form[:password]} />
                 <div class="hint pairhint">
-                  {gettext("At least 12 characters. Confirm your current password to change it.")}
+                  {gettext("At least 12 characters.")}
                 </div>
               </span>
               <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>

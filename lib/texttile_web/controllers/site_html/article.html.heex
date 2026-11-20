@@ -4,6 +4,8 @@
   menu_pages={@menu_pages}
   current_scope={@current_scope}
   known={assigns[:known_browser]}
+  edit={@current_scope && ~p"/admin/texts/#{@article.id}"}
+  live_state={@current_scope && live_state(@article)}
 />
 <main>
   <%!-- An entry that is not live wears its address for the admins and
@@ -27,38 +29,27 @@
   <article id="text" class="pb-[var(--tt-sec)]">
     <div class="wrap narrow pt-[46px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
-      <%!-- the line under the title: the day, the tags, and for the
-           admin who is signed in the way straight into the admin area.
-           A page has no date and no tags, so there the line is the way
-           in and nothing else. --%>
-      <p :if={@article.type == "post" || @current_scope} id="meta" class="f-note mt-3">
-        <%= if @article.type == "post" do %>
-          <span class="num">{format_date(@article.publish_date)}</span>
-          <%!-- who started the entry, read from the account now, so a
-               rename reaches every entry that person ever wrote --%>
-          <span :if={Articles.author_name(@article)} id="by">
-            · {Articles.author_name(@article)}
-          </span>
-          <span :if={Articles.tag_list(@article) != []}>·</span>
-          <%!-- the tags 8px apart, as on the cards --%>
-          <span :if={Articles.tag_list(@article) != []} class="mtags">
-            <a
-              :for={tag <- Articles.tag_list(@article)}
-              href={~p"/tags/#{String.downcase(tag)}"}
-              class="link"
-            >
-              #{tag}
-            </a>
-          </span>
-        <% end %>
-        <a
-          :if={@current_scope}
-          id="edit-text"
-          class="edit-link"
-          href={~p"/admin/texts/#{@article.id}"}
-        >
-          {gettext("Edit")}
-        </a>
+      <%!-- the line under the title: the day, who wrote it, the tags.
+           A page has no date and no tags, so it has no line. The way
+           into the editor stands in the strip over the header. --%>
+      <p :if={@article.type == "post"} id="meta" class="f-note mt-3">
+        <span class="num">{format_date(@article.publish_date)}</span>
+        <%!-- who started the entry, read from the account now, so a
+             rename reaches every entry that person ever wrote --%>
+        <span :if={Articles.author_name(@article)} id="by">
+          · {Articles.author_name(@article)}
+        </span>
+        <span :if={Articles.tag_list(@article) != []}>·</span>
+        <%!-- the tags 8px apart, as on the cards --%>
+        <span :if={Articles.tag_list(@article) != []} class="mtags">
+          <a
+            :for={tag <- Articles.tag_list(@article)}
+            href={~p"/tags/#{String.downcase(tag)}"}
+            class="link"
+          >
+            #{tag}
+          </a>
+        </span>
       </p>
 
       <div class="prose" id="body">{body_html(@article)}</div>
@@ -92,8 +83,8 @@
           }
         >
           <%!-- one picture fills the reading column, so it gets the
-               size a picture in the text gets; a tile of a grid needs
-               the card size and no more --%>
+               size a picture in the text gets; a tile of a grid is a
+               square and needs the card size and no more --%>
           <img
             src={Images.url(tile.still, gallery_size(@gallery))}
             alt={tile.description}
@@ -209,7 +200,7 @@
            that came back with a mistake keeps the one it had. --%>
       <form
         id="comment-form"
-        class="cform"
+        class={["cform", @comment_author && "as-account"]}
         action={~p"/comments/#{@article.id}"}
         method="post"
         data-stamp={~p"/comments/#{@article.id}/stamp"}
@@ -217,7 +208,15 @@
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
 
-        <p class="cf-lead f-note">{@comment_rule}</p>
+        <%!-- Signed in, the account answers who is writing, so the form
+             asks for nothing but the words, and the line over it says
+             under which name they go out. The server takes the name,
+             the address and the website from the account, whatever a
+             form sends. --%>
+        <p :if={@comment_author} class="cf-lead f-note" id="comment-as">
+          {gettext("You comment as")} <b class="text-ink font-semibold">{@comment_author.name}</b>. {@comment_rule}
+        </p>
+        <p :if={!@comment_author} class="cf-lead f-note">{@comment_rule}</p>
         <noscript>
           <p class="cf-lead f-note">
             {gettext("Posting a comment needs JavaScript. Without it, the comment is not stored.")}
@@ -229,25 +228,20 @@
           <textarea name="body" id="comment-body" rows="5" maxlength="4000" required>{@comment_values["body"]}</textarea>
         </span>
 
-        <%!-- signed in, the two fields are facts and not questions: they
-             carry what the account says and take no typing. A browser
-             sends nothing for a disabled field, and the server takes
-             both from the account anyway. --%>
-        <span class="cf-name cfld">
+        <span :if={!@comment_author} class="cf-name cfld">
           <label class="cf-lab" for="comment-name">{gettext("Name")}</label>
           <input
             type="text"
             name="name"
             id="comment-name"
-            value={(@comment_author && @comment_author.name) || @comment_values["name"]}
+            value={@comment_values["name"]}
             maxlength="120"
             autocomplete="name"
-            required={!@comment_author}
-            disabled={!!@comment_author}
+            required
           />
         </span>
 
-        <span class="cf-mail cfld">
+        <span :if={!@comment_author} class="cf-mail cfld">
           <label class="cf-lab" for="comment-email">
             {gettext("Email")}
           </label>
@@ -255,27 +249,23 @@
             type="email"
             name="email"
             id="comment-email"
-            value={(@comment_author && @comment_author.email) || @comment_values["email"]}
+            value={@comment_values["email"]}
             autocomplete="email"
-            required={!@comment_author}
-            disabled={!!@comment_author}
+            required
           />
         </span>
 
-        <%!-- signed in, this one is a fact too: the comment stands for
-             the blog itself, so it carries the address of the blog --%>
-        <span class="cf-url cfld">
+        <span :if={!@comment_author} class="cf-url cfld">
           <label class="cf-lab" for="comment-website">
-            {gettext("Website")} <span class="cf-opt">{gettext("optional")}</span>
+            {gettext("Website")} <span class="cf-opt">({gettext("optional")})</span>
           </label>
           <input
             type="text"
             name="website"
             id="comment-website"
-            value={(@comment_author && @comment_author.website) || @comment_values["website"]}
+            value={@comment_values["website"]}
             maxlength="200"
             autocomplete="url"
-            disabled={!!@comment_author}
           />
         </span>
 
@@ -324,9 +314,11 @@
   <%!-- a page is the blog speaking for itself (an About page above
        all), so its foot leaves the About block out and keeps the
        invitation to subscribe --%>
-  <.site_band about_html={@article.type == "post" && assigns[:about_html]} />
+  <.site_band
+    about_html={@article.type == "post" && assigns[:about_html]}
+    current_scope={@current_scope}
+  />
 </main>
-<.site_foot current_scope={@current_scope} />
 
 <%!-- the lightbox: a count, a way out, an arrow on each side, the
      caption at the foot. public.js fills it from the tiles. --%>

@@ -5,7 +5,7 @@ defmodule TexttileWeb.UploadRoofTest do
   A stranger sends no files, so a stranger gets 1 MB. A signed-in
   session gets 52 MB anywhere, before half a gigabyte has arrived. The
   big one belongs to the admin area's upload addresses and to a
-  signed-in session, and it is Settings > Storage > Biggest upload, so
+  signed-in session, and it is Settings > Storage > Upload size limit, so
   what the settings screen promises and what the parser does are the
   same number.
   """

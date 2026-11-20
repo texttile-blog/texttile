@@ -98,6 +98,7 @@ defmodule TexttileWeb.StatsComponents do
               ]}
               style={"height:#{height(bar.views, @top)}%"}
             >
+              <span :if={bar.views == @max and @max > 0} class="peak num">{number(bar.views)}</span>
             </i>
           </button>
           <i
@@ -160,7 +161,7 @@ defmodule TexttileWeb.StatsComponents do
   def referrer_table(assigns) do
     ~H"""
     <div class="overflow-x-auto">
-      <table id={@id}>
+      <table id={@id} class="reftab">
         <thead>
           <tr>
             <th class="sm:w-[366px]">{gettext("Source")}</th>
@@ -183,14 +184,16 @@ defmodule TexttileWeb.StatsComponents do
   end
 
   @doc """
-  A count as a person reads it: a thin space between the thousands, so
-  2 310 is one number and no comma can be read as a decimal point.
+  A count as a person reads it: the thousands grouped the way the blog's
+  language writes them, 2,310 in English and 2.310 in German.
   """
   def number(count) do
+    separator = pgettext("thousands separator in a number", ",")
+
     count
     |> Integer.to_string()
     |> String.reverse()
-    |> String.replace(~r/(\d{3})(?=\d)/, "\\1\u2009")
+    |> String.replace(~r/(\d{3})(?=\d)/, "\\1" <> separator)
     |> String.reverse()
   end
 

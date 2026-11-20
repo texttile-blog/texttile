@@ -37,6 +37,5 @@
   </div>
 
   <%!-- the second zone: what belongs to the blog and not to the archive --%>
-  <.site_band about_html={assigns[:about_html]} />
+  <.site_band about_html={assigns[:about_html]} current_scope={@current_scope} />
 </main>
-<.site_foot current_scope={@current_scope} />

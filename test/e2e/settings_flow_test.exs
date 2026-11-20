@@ -89,7 +89,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> assert_has("#link-who", text: "opens the admin account of")
       |> fill_in("Your password", with: "julias own password")
       |> fill_in("Repeat the password", with: "julias own password")
-      |> fill_in("Displayed name", with: "Julia")
+      |> fill_in("Display name", with: "Julia")
       |> click_button("Open the account and sign in")
       |> assert_has("#crumb", text: "Entries")
 
@@ -167,6 +167,26 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> sign_in()
       |> open("/admin/settings")
       |> assert_has("#appVersion", text: Mix.Project.config()[:version], exact: true)
+    end
+
+    # Version is too short to reach the line under the bars, so the
+    # end of the page names it
+    @tag browser_context_opts: [viewport: %{width: 1440, height: 900}]
+    test "the end of the page marks the last section", %{conn: conn} do
+      conn
+      |> sign_in()
+      |> open("/admin/settings")
+      |> evaluate(
+        """
+        () => new Promise((done) => {
+          window.scrollTo(0, document.documentElement.scrollHeight)
+          requestAnimationFrame(() => requestAnimationFrame(() =>
+            done(document.querySelector("#setNav a[aria-current]")?.hash)))
+        })
+        """,
+        [is_function: true],
+        &assert(&1 == "#set-version")
+      )
     end
   end
 end

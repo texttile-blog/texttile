@@ -50,7 +50,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     assert has_element?(view, "#crumb", "Comments")
     assert has_element?(view, "#commentsList", "No comments yet, anywhere")
-    assert has_element?(view, "#commentsRule", "No captcha, ever")
+    assert has_element?(view, "#commentsRule", "Readers confirm their email first")
   end
 
   test "lists the latest comments across texts with their marks and jumps", %{conn: conn} do
@@ -62,7 +62,7 @@ defmodule TexttileWeb.CommentsLiveTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
 
-    assert has_element?(view, "#comment-#{waiting.id}", "not confirmed yet")
+    assert has_element?(view, "#comment-#{waiting.id}", "unconfirmed")
     assert has_element?(view, "#comment-#{confirmed.id}", "Good set.")
     refute has_element?(view, "#comment-#{confirmed.id} .wait")
 
@@ -72,6 +72,39 @@ defmodule TexttileWeb.CommentsLiveTest do
              ~s(#comment-#{waiting.id} a.cmt-ent[href="/admin/texts/#{a.id}?tab=comments"]),
              "Harbor mornings"
            )
+  end
+
+  # the comments that wait for a decision are counted where every
+  # admin screen points at Comments: the desk's row of sections and a
+  # phone's bar
+  test "every admin screen counts the comments that wait", %{conn: conn} do
+    article = published_post()
+    post!(article)
+    post!(article, %{"email" => "jens@example.org", "body" => "Good set."})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+    assert has_element?(view, "#navWaiting", "2")
+    assert has_element?(view, "#barWaiting", "2")
+  end
+
+  # with confirmation off a reader's comment stands at once: nothing
+  # waits, and Comments has no Approve to clear a count with
+  test "no count stands while readers need not confirm", %{conn: conn} do
+    {:ok, _} = Settings.put(:comments_require_confirmation, false)
+    post!(published_post())
+
+    {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+    refute has_element?(view, "#navWaiting")
+    refute has_element?(view, "#barWaiting")
+  end
+
+  test "no count stands while nothing waits", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+    refute has_element?(view, "#navWaiting")
+    refute has_element?(view, "#barWaiting")
   end
 
   describe "the status filter" do
@@ -99,7 +132,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(published_post())
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
-      view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+      view |> element("#comment-#{comment.id} button", "Approve") |> render_click()
 
       refute has_element?(view, "#comment-#{comment.id}")
       assert has_element?(view, "#commentsList", "No comments here.")
@@ -135,14 +168,14 @@ defmodule TexttileWeb.CommentsLiveTest do
       view |> element("#comment-#{comment.id} input[type=checkbox]") |> render_click()
     end
 
-    test "Release all takes every comment of the filter, across the pages", %{conn: conn} do
+    test "Approve all takes every comment of the filter, across the pages", %{conn: conn} do
       comments = wave(26)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments?status=waiting")
 
       assert has_element?(view, "#commentTools", "Select all")
-      view |> element("#bulk-release", "Release all 26") |> render_click()
-      assert has_element?(view, "#dialog", "Release 26 comments?")
+      view |> element("#bulk-release", "Approve all 26") |> render_click()
+      assert has_element?(view, "#dialog", "Approve 26 comments?")
       assert has_element?(view, "#dialog", "no way back except Delete")
       assert Comments.status_counts()["waiting"] == 26
 
@@ -564,18 +597,20 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(article)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      assert has_element?(view, "#comment-#{comment.id}", "not confirmed yet")
+      assert has_element?(view, "#comment-#{comment.id}", "unconfirmed")
 
-      view |> element("#comment-#{comment.id} button", "Release") |> render_click()
+      view |> element("#comment-#{comment.id} button", "Approve") |> render_click()
 
       refute has_element?(view, "#comment-#{comment.id} .wait")
-      refute has_element?(view, "#comment-#{comment.id} button", "Release")
-      assert has_element?(view, ~s(#commentFilter a[data-f="waiting"]), "0")
+      refute has_element?(view, "#comment-#{comment.id} button", "Approve")
+      # an empty filter leaves the row, and the released one joins it
+      refute has_element?(view, ~s(#commentFilter a[data-f="waiting"]))
+      assert has_element?(view, ~s(#commentFilter a[data-f="released"]), "1")
       assert Comments.shown_to_readers?(Comments.get_comment!(comment.id))
 
       # the next comment from the same address waits like every other
       later = post!(article, %{"body" => "And another thing"})
-      assert has_element?(view, "#comment-#{later.id}", "not confirmed yet")
+      assert has_element?(view, "#comment-#{later.id}", "unconfirmed")
     end
 
     test "a confirmed comment is never offered a release", %{conn: conn} do
@@ -584,7 +619,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       {:ok, _} = Comments.confirm(comment.address.token)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      refute has_element?(view, "#comment-#{comment.id} button", "Approve")
     end
 
     test "with the setting off nothing waits and nothing is released", %{conn: conn} do
@@ -593,7 +628,7 @@ defmodule TexttileWeb.CommentsLiveTest do
       comment = post!(article)
 
       {:ok, view, _html} = live(conn, ~p"/admin/comments")
-      refute has_element?(view, "#comment-#{comment.id} button", "Release")
+      refute has_element?(view, "#comment-#{comment.id} button", "Approve")
       # an empty Released filter has nothing left to fill it
       refute has_element?(view, "#commentFilter [data-f=released]")
     end
@@ -602,7 +637,7 @@ defmodule TexttileWeb.CommentsLiveTest do
   test "the rule follows the setting as it changes", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/comments")
     assert has_element?(view, "#commentsRule", "Readers confirm their email first")
-    assert has_element?(view, "#commentsRule", "within 3 days goes for good")
+    assert has_element?(view, "#commentsRule", "deleted after 3 days")
 
     {:ok, _} = Settings.put(:comments_require_confirmation, false)
     assert has_element?(view, "#commentsRule", "Comments appear the moment a reader sends them")

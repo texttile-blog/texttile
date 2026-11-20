@@ -82,6 +82,7 @@ defmodule TexttileWeb.NewsletterLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Newsletter")}
       count={@confirmed}
@@ -93,22 +94,26 @@ defmodule TexttileWeb.NewsletterLive do
       </:bar>
       <div class="admin-col">
         <div class="mb-[9px] md:mb-6">
-          <h1 class="page-h">{gettext("Newsletter")}</h1>
-          <p class="lead !mb-0 num max-md:hidden" id="newsletterSub">
-            {sub_line(@subscribers, @confirmed)}
-          </p>
+          <%!-- the count stands after the name, as on every list screen --%>
+          <h1 class="page-h">
+            {gettext("Newsletter")}
+            <span class="hcount num" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</span>
+          </h1>
         </div>
         <div>
+          <%!-- labelled as every field of the admin area, the way
+               Settings > Users invites an admin --%>
+          <label for="subEmail" class="lab block mb-[3px]">{gettext("Email address")}</label>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
             <input
               type="email"
               name="email"
-              placeholder={gettext("Email")}
-              aria-label={gettext("Email")}
+              id="subEmail"
+              placeholder="name@example.org"
               required
               class="flex-1 min-w-[200px]"
             />
-            <button class="btn solid">{gettext("Add")}</button>
+            <button class="btn solid">{gettext("Add subscriber")}</button>
             <span
               :if={@add_error}
               id="subAddError"
@@ -118,6 +123,15 @@ defmodule TexttileWeb.NewsletterLive do
               {gettext("That does not look like an email address.")}
             </span>
           </form>
+          <%!-- what Add does, said before the list --%>
+          <p class="hint mt-[10px]" id="newsletterRule">
+            {gettext("Readers confirm by mail first; an address added here is confirmed at once.")}
+            <span :if={@protected?}>
+              {gettext(
+                "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
+              )}
+            </span>
+          </p>
 
           <div id="subList" class={["mt-7", @subscribers != [] && "border-t border-hair"]}>
             <p :if={@subscribers == []} class="note">
@@ -131,13 +145,14 @@ defmodule TexttileWeb.NewsletterLive do
               class="flex items-start sm:items-center gap-x-3 py-[9px] sm:py-[12px] border-b border-hair"
             >
               <span class="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-[2px]">
-                <%!-- the address on a fixed column, its day beside it as
-                     Tags sets a count beside a name; the right is for
-                     the action alone --%>
-                <span class="rowp truncate max-w-full sm:w-[354px] sm:flex-none">
+                <%!-- the address and its day, one after the other; the
+                     right is for the action alone --%>
+                <span class="rowp truncate max-w-full">
                   {subscriber.email}
                 </span>
-                <span class="hidden sm:inline text-[13px] text-faint num">
+                <%!-- the day in a column of its own at the right, before
+                     Remove, so the days of the list read down one edge --%>
+                <span class="hidden sm:inline sm:ml-auto sm:order-2 text-[13px] text-faint num">
                   {since(subscriber)}
                 </span>
                 <span :if={!Subscriber.confirmed?(subscriber)} class="wait">
@@ -160,15 +175,6 @@ defmodule TexttileWeb.NewsletterLive do
               </button>
             </div>
           </div>
-
-          <p class="hint mt-[16px]" id="newsletterRule">
-            {gettext("Readers confirm by mail first; an address added here is confirmed at once.")}
-            <span :if={@protected?}>
-              {gettext(
-                "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
-              )}
-            </span>
-          </p>
         </div>
       </div>
 
@@ -199,7 +205,7 @@ defmodule TexttileWeb.NewsletterLive do
   # list counts, and who still waits after it.
   defp sub_line(subscribers, confirmed) do
     waiting = length(subscribers) - confirmed
-    line = ngettext("1 subscriber", "%{count} subscribers", confirmed)
+    line = "#{confirmed}"
 
     if waiting == 0 do
       line

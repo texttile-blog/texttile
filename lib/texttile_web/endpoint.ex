@@ -76,7 +76,7 @@ defmodule TexttileWeb.Endpoint do
   # form around it. It is a guard, not a setting, so nothing an admin
   # types can raise it.
   #
-  # The big one is Settings > Storage > Biggest upload, plus the form
+  # The big one is Settings > Storage > Upload size limit, plus the form
   # around the file. It needs a signed-in session, not merely the right
   # address: the parser runs before the router, so without that check a
   # stranger could push half a gigabyte at the server and only be

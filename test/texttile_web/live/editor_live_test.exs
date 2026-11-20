@@ -113,7 +113,13 @@ defmodule TexttileWeb.EditorLiveTest do
       assert Articles.get_article!(article.id).status == "scheduled"
       assert has_element?(view, "#stateWord", "Scheduled")
       assert has_element?(view, "#stateBtn .main", "Publish now")
-      assert has_element?(view, "#edDateHint", "It goes live on #{future}")
+
+      assert has_element?(
+               view,
+               "#edDateHint",
+               "It goes live on #{Texttile.I18n.format_date(Date.from_iso8601!(future))}"
+             )
+
       # the mail has one owner on this pane, and it is not the date
       assert has_element?(view, "#notifyOpt", "Goes out to the confirmed subscribers")
 
@@ -171,7 +177,12 @@ defmodule TexttileWeb.EditorLiveTest do
 
       assert has_element?(view, "#state[data-note='Published \u00b7 the mail is on its way']")
       assert Articles.get_article!(article.id).notified_on == Date.utc_today()
-      assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
+
+      assert has_element?(
+               view,
+               "#notifyOpt",
+               "went out on #{Texttile.I18n.format_date(Date.utc_today())}"
+             )
     end
 
     test "a scheduled entry says the day it goes live", %{conn: conn, user: user} do
@@ -332,7 +343,11 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
       # the stamp outranks the draft status in the settings note
-      assert has_element?(view, "#notifyOpt", "went out on #{Date.utc_today()}")
+      assert has_element?(
+               view,
+               "#notifyOpt",
+               "went out on #{Texttile.I18n.format_date(Date.utc_today())}"
+             )
 
       # and nothing is asked: a mail that has gone never goes twice
       view |> element("#stateBtn .main", "Publish") |> render_click()
@@ -438,7 +453,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       refute has_element?(view, "#oldAddresses")
-      assert has_element?(view, "#slugHint", "the old address leads here")
+      assert has_element?(view, "#slugHint", "the old address still leads to this entry")
       refute has_element?(view, "#slugHint", "breaks old links")
 
       set_slug(view, "the-harbour")

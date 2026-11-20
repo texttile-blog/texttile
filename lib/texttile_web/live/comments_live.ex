@@ -166,6 +166,7 @@ defmodule TexttileWeb.CommentsLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Comments")}
       active="comments"
@@ -183,8 +184,12 @@ defmodule TexttileWeb.CommentsLive do
             id="commentFilter"
             aria-label={gettext("Filter by status")}
           >
+            <%!-- an empty filter says nothing worth a place in the row;
+                 All, the open one and the trash, which the rule under
+                 the list speaks of, always stand --%>
             <.link
               :for={status <- @statuses}
+              :if={status in ["all", "trash", @status] or @counts[status] > 0}
               patch={comments_path(status, 1)}
               class={["seg-b", @status == status && "on"]}
               data-f={status}
@@ -192,6 +197,14 @@ defmodule TexttileWeb.CommentsLive do
               {status_name(status)} <span class="num text-faint">{@counts[status]}</span>
             </.link>
           </nav>
+          <%!-- the one distinction a decision needs, said before the
+               decisions; what is kept and for how long stays under the
+               list --%>
+          <p :if={@require? and @status == "waiting"} class="note mt-2 mb-1" id="releaseNote">
+            {gettext(
+              "Unconfirmed: the reader has not confirmed the email yet. Approve shows the comment now."
+            )}
+          </p>
         </div>
         <div>
           <div :if={@counts[@status] > 0} class="cmt-tools" id="commentTools">
@@ -313,11 +326,19 @@ defmodule TexttileWeb.CommentsLive do
   defp selection_line(0, _all), do: gettext("Select all")
   defp selection_line(selected, _all), do: gettext("%{count} selected", count: selected)
 
-  defp bulk_label("release", 0, all), do: gettext("Release all %{count}", count: all)
-  defp bulk_label("release", selected, _all), do: gettext("Release %{count}", count: selected)
-  defp bulk_label("delete", 0, all), do: gettext("Delete all %{count}", count: all)
+  defp bulk_label("release", 0, all),
+    do: ngettext("Approve all %{count} comment", "Approve all %{count} comments", all)
+
+  defp bulk_label("release", selected, _all), do: gettext("Approve %{count}", count: selected)
+
+  defp bulk_label("delete", 0, all),
+    do: ngettext("Delete all %{count} comment", "Delete all %{count} comments", all)
+
   defp bulk_label("delete", selected, _all), do: gettext("Delete %{count}", count: selected)
-  defp bulk_label("restore", 0, all), do: gettext("Restore all %{count}", count: all)
+
+  defp bulk_label("restore", 0, all),
+    do: ngettext("Restore all %{count} comment", "Restore all %{count} comments", all)
+
   defp bulk_label("restore", selected, _all), do: gettext("Restore %{count}", count: selected)
 
   defp run_bulk("release", ids), do: Comments.release_comments(ids)
@@ -327,14 +348,14 @@ defmodule TexttileWeb.CommentsLive do
   # The shape `<.ask>` reads, plus the list the answer acts on.
   defp bulk_dialog("release", ids) do
     %{
-      title: ngettext("Release 1 comment?", "Release %{count} comments?", length(ids)),
+      title: ngettext("Approve 1 comment?", "Approve %{count} comments?", length(ids)),
       body: [
         gettext(
           "They stand under their entries at once. Their addresses stay unconfirmed, and nobody is mailed."
         ),
         gettext("There is no way back except Delete.")
       ],
-      ok: gettext("Release"),
+      ok: gettext("Approve"),
       event: "confirm_bulk",
       value: "release",
       ids: ids
@@ -370,9 +391,9 @@ defmodule TexttileWeb.CommentsLive do
   end
 
   defp status_name("all"), do: gettext("All")
-  defp status_name("waiting"), do: gettext("Not confirmed yet")
+  defp status_name("waiting"), do: gettext("Unconfirmed")
   defp status_name("confirmed"), do: gettext("Confirmed")
-  defp status_name("released"), do: gettext("Released")
+  defp status_name("released"), do: gettext("Approved")
   defp status_name("trash"), do: gettext("Trash")
 
   defp empty_line("all") do

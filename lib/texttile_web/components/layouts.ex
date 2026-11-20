@@ -167,6 +167,10 @@ defmodule TexttileWeb.Layouts do
   attr :active, :string, default: nil, doc: "the section the crumb belongs to"
   attr :others, :list, default: [], doc: "presence: everybody here except the current user"
 
+  attr :waiting, :integer,
+    default: 0,
+    doc: "comments that wait for a decision, counted beside Comments"
+
   attr :count, :any,
     default: nil,
     doc: "how many the screen lists: a phone, which names the screen in its bar, says it there"
@@ -236,16 +240,37 @@ defmodule TexttileWeb.Layouts do
                has no room for the row of sections, so there the name of
                the screen stands in the button, its count beside it, and
                the chevron after them says the name opens the others. --%>
-          <span :if={@wide} class="sm:hidden text-[15px] font-semibold text-ink -ml-[2px]">
-            {gettext("Entry")}
-          </span>
           <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
-            {@crumb}<span :if={@count} class="bn-count">{@count}</span>
+            <%!-- a screen under a section (Import under Settings) names
+                 the section first, as the desk's bar does --%>
+            <span :if={parent = parent_label(@crumb, @active)} class="font-normal text-dim">
+              {parent}<span class="text-slash"> / </span>
+            </span>{@crumb}<span
+              :if={@count}
+              class="bn-count"
+            >{@count}</span>
           </span>
           <%!-- a desk bar that shows the row of sections needs no chevron:
-               the mark still opens the menu --%>
-          <span class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden"]} aria-hidden="true">
+               the mark still opens the menu. The editor has no row of
+               sections, so its chevron stands at every width. --%>
+          <span
+            class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden"]}
+            aria-hidden="true"
+          >
             <.chevron />
+          </span>
+          <%!-- a phone has no row of sections: the comments that wait
+               stand beside the menu that leads to them --%>
+          <span
+            :if={!@wide && @waiting > 0 && @active != "comments"}
+            class="mcount md:hidden"
+            id="barWaiting"
+          >
+            <.speech_mark />
+            <span aria-hidden="true">{@waiting}</span>
+            <span class="sr">
+              {ngettext("1 comment waits", "%{count} comments wait", @waiting)}
+            </span>
           </span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
@@ -330,9 +355,6 @@ defmodule TexttileWeb.Layouts do
            sections, and the room is there anyway. --%>
       <span class="flex items-center gap-[6px] md:gap-2 min-w-0 max-md:overflow-hidden text-[13.5px] text-dim">
         <%= if @wide do %>
-          <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
-            /
-          </span>
           <%!-- a phone has the title in the field right under the bar,
                so the bar keeps the state and leaves the name out --%>
           <span
@@ -352,7 +374,11 @@ defmodule TexttileWeb.Layouts do
               class={["bn", @active == section.active && "on"]}
               aria-current={@active == section.active && "page"}
             >
-              {section.label}
+              {section.label}<span
+                :if={section.active == "comments" && @waiting > 0 && @active != "comments"}
+                class="bn-n num"
+                id="navWaiting"
+              ><span aria-hidden="true">{@waiting}</span><span class="sr">{ngettext("1 comment waits", "%{count} comments wait", @waiting)}</span></span>
             </.link>
           </nav>
           <%!-- the profile is named by the person's own name at the right
@@ -387,6 +413,22 @@ defmodule TexttileWeb.Layouts do
         class={["bar-me hidden md:inline-flex", @active == "profile" && "on"]}
         aria-current={@active == "profile" && "page"}
       >
+        <%!-- a person, drawn: a name alone read as one more word of
+             the bar and not as the account it is --%>
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+          class="mr-[7px] opacity-80"
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
+        </svg>
         {Texttile.Accounts.display_name(@current_scope.user)}
       </.link>
       {render_slot(@bar)}
@@ -402,6 +444,14 @@ defmodule TexttileWeb.Layouts do
 
   # The sections the bar shows as a row: the screens of the menu.
   defp screens, do: Enum.filter(sections(), &(&1.kind == :screen))
+
+  # The section a screen stands under, when the crumb is not the
+  # section's own name: Settings for Import.
+  defp parent_label(crumb, active) do
+    if crumb_in_nav?(crumb, active),
+      do: nil,
+      else: Enum.find_value(screens(), &(&1.active == active && &1.label))
+  end
 
   # Whether the crumb is the name of the open section, so the marked
   # link of the row can carry it.
@@ -423,6 +473,22 @@ defmodule TexttileWeb.Layouts do
     >
       {gettext("View site")}
     </a>
+    """
+  end
+
+  # A speech mark: new comments, wherever they are counted.
+  def speech_mark(assigns) do
+    ~H"""
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 3.5h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Z" />
+    </svg>
     """
   end
 

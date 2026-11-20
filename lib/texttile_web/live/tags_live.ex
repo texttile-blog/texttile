@@ -90,7 +90,16 @@ defmodule TexttileWeb.TagsLive do
     tags = Articles.tag_counts()
     editing = socket.assigns.editing
     confirm_tag = socket.assigns.confirm_tag
-    socket = assign(socket, :tags, tags)
+
+    # how many of a tag's entries a reader can open, posts and pages,
+    # by the tag's lower case
+    live =
+      Articles.list_articles()
+      |> Enum.filter(&Texttile.Articles.Visibility.live?/1)
+      |> Enum.flat_map(&Articles.tag_list/1)
+      |> Enum.frequencies_by(&String.downcase/1)
+
+    socket = socket |> assign(:tags, tags) |> assign(:live, live)
 
     socket =
       if editing && not Enum.any?(tags, fn {tag, _} -> tag == editing end) do
@@ -124,10 +133,11 @@ defmodule TexttileWeb.TagsLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Tags")}
-      active="tags"
       count={length(@tags)}
+      active="tags"
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
@@ -135,31 +145,35 @@ defmodule TexttileWeb.TagsLive do
         <%!-- the count stands under the heading, where every screen
              puts its line; a phone says it in its bar instead --%>
         <div class="mb-[9px] md:mb-6">
-          <h1 class="page-h">{gettext("Tags")}</h1>
-          <p class="lead !mb-0 num max-md:hidden" id="tagsCount">
-            {ngettext("1 tag", "%{count} tags", length(@tags))}
-          </p>
+          <%!-- the count stands after the name, as on every list screen --%>
+          <h1 class="page-h">
+            {gettext("Tags")} <span class="hcount num" id="tagsCount">{length(@tags)}</span>
+          </h1>
         </div>
-        <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
+        <div id="tagsList" class={@tags != [] && "md:border-t md:border-hair"}>
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>
           <div
             :for={{tag, count} <- @tags}
             id={"tagrow-#{tag_id(tag)}"}
-            class="py-[8px] sm:py-[11px] border-b border-hair flex items-center gap-x-[10px] flex-wrap"
+            class="py-[8px] sm:py-[11px] border-b border-hair flex items-baseline gap-x-[10px] flex-wrap"
           >
             <%!-- the tag is the way to its archive on the site, a link like every
                  other tag in the product --%>
             <a
               href={~p"/tags/#{String.downcase(tag)}"}
               target="_blank"
-              class="link rowp break-words min-w-[92px]"
+              class="link rowp break-words min-w-[160px]"
             >
               #{tag}
             </a>
-            <span class="note num flex-1">
-              {ngettext("1 entry", "%{count} entries", count)}
+            <span class="note num flex-1 tagcount">
+              {ngettext("1 entry", "%{count} entries", count)}<span :if={
+                Map.get(@live, String.downcase(tag), 0) not in [0, count]
+              }> · {gettext("%{count} not live",
+                count: count - Map.get(@live, String.downcase(tag), 0)
+              )}</span>
             </span>
             <div :if={@editing != tag} class="flex gap-1 max-sm:gap-3 -mr-[11px] max-sm:ml-auto">
               <button
