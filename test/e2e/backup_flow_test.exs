@@ -30,7 +30,13 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> sign_in()
       |> open("/admin/settings")
       |> assert_has("#backupSection", text: "Backup")
+      |> assert_has("#setBackupNote", text: "answers nothing")
+      # the token and the rest wait behind the switch
+      |> refute_has("#backupLastAccess")
+      |> check("Serve a backup client", exact: false)
       |> assert_has("#backupLastAccess", text: "Nothing has been fetched yet")
+      |> uncheck("Serve a backup client", exact: false)
+      |> refute_has("#backupLastAccess")
 
       refute Backup.enabled?()
       refute Backup.token?()
