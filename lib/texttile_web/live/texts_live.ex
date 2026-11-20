@@ -215,15 +215,8 @@ defmodule TexttileWeb.TextsLive do
             </form>
             <%!-- the one primary action ends the row of tools, on a phone
                  as on a desk, so it never needs a row of its own --%>
-            <%!-- a phone says New: the search beside it needs the room --%>
-            <button
-              class="btn solid flex-none"
-              id="new-text"
-              phx-click="new_text"
-              aria-label={gettext("New entry")}
-            >
-              <span class="max-sm:hidden">{gettext("New entry")}</span>
-              <span class="sm:hidden" aria-hidden="true">{gettext("New")}</span>
+            <button class="btn solid flex-none" id="new-text" phx-click="new_text">
+              {gettext("New entry")}
             </button>
           </div>
         </div>
@@ -335,8 +328,9 @@ defmodule TexttileWeb.TextsLive do
   # then what else is true. Every row starts the same way, with the
   # state, so a column of cards reads down one vocabulary.
   defp card_meta(article) do
-    # the day says which day it is: a draft's last edit, the day a
-    # scheduled one goes live, the day a live one went out
+    # the day says which day it is, each with its verb: a draft's last
+    # edit, the day a scheduled one goes live, the day a live one went
+    # out
     day =
       case article.status do
         "draft" ->
@@ -351,7 +345,10 @@ defmodule TexttileWeb.TextsLive do
             )
 
         _status ->
-          article.publish_date && Texttile.I18n.format_short_date(article.publish_date)
+          article.publish_date &&
+            gettext("published %{date}",
+              date: Texttile.I18n.format_short_date(article.publish_date)
+            )
       end
 
     state =

@@ -158,10 +158,9 @@ defmodule TexttileWeb.StatsLive do
         <h2 class="sec-h">{gettext("Views")}{step_label(@step)}</h2>
         <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
         <p :if={@summary.busiest} class="hint" id="chartKey">
-          <%!-- what the dark bar means, and what a click does: two facts,
-               two lines --%>
-          <span class="max-sm:block">{gettext("The dark bar is the busiest day.")}</span>
-          <span class="max-sm:block">{gettext("Open a day for its entries and sources.")}</span>
+          <%!-- the busiest bar carries its number; the line says what a
+               bar does --%>
+          {gettext("Open a bar for that day's entries and sources.")}
         </p>
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">

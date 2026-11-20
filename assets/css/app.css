@@ -3245,14 +3245,6 @@ th.num { font-variant-numeric: normal; white-space: nowrap; }
 .card .cimg .cx.short { font-size: clamp(22px, 9.4cqi, 30px); line-height: 1.2; }
 @media (max-width: 560px) { body.site .card .cimg .cx.short { font-size: 30px; } }
 
-/* a phone's comment row: Reply and Edit keep their places on every
-   row; Approve, when it applies, stands at the far end beside Delete */
-@media (max-width: 639px) {
-  .cmt-acts > .rel { order: 2; margin-left: auto; }
-  .cmt-acts > .danger { order: 3; }
-  .cmt-acts > .rel + * { margin-left: 0; }
-  .cmt-acts:has(> .rel) > .danger { margin-left: 14px; }
-}
 
 /* a reader's tag on a phone: a size up, a finger tall */
 @media (max-width: 639px) {
@@ -3268,4 +3260,33 @@ th.num { font-variant-numeric: normal; white-space: nowrap; }
    one line on every list screen */
 @media (max-width: 639px) {
   .admin-col > div:has(> .page-h:only-child) { margin-bottom: 0; }
+}
+
+/* ROUND 21 */
+/* the reader's text square by the length of its opening: a short one
+   a cover on the floor of its square, a middling one a size up from
+   the top, a long one at the size of a page, to the foot */
+.card .cimg.empty:has(.cx.mid) { justify-content: flex-start; }
+.card .cimg .cx.mid { font-size: clamp(18px, 6.6cqi, 21px); line-height: 1.5; color: var(--tt-ink); }
+@media (max-width: 560px) { body.site .card .cimg .cx.mid { font-size: 21px; } }
+
+/* the entries list: an entry without a picture keeps its place on the
+   paper, a faint pilcrow and nothing drawn around it */
+#cards .card .cimg.empty { background: transparent; box-shadow: none; }
+#cards .card .cimg .ci { color: var(--tt-faint); opacity: .7; }
+
+/* the busiest bar carries its number over it; a bar under the pointer
+   or the focus takes the accent, so it shows that it opens */
+#dayChart button i { position: relative; }
+#dayChart .peak {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 3px; font-size: 11px; font-style: normal; line-height: 1; color: var(--tt-ink); white-space: nowrap;
+}
+#dayChart button:hover i, #dayChart button:focus-visible i { background: var(--tt-accent); }
+
+/* the phone editor's bar: the state and the save state apart, Save
+   version a word, View the one framed control */
+@media (max-width: 767px) {
+  .edstat .saved:not(.warn)::before { margin-left: 12px; }
+  #topbar.wide #barSaveVersion { box-shadow: none; background: transparent; font-weight: 600; padding-left: 6px; padding-right: 6px; }
 }

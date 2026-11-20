@@ -134,6 +134,7 @@ defmodule TexttileWeb.TagsLive do
       flash={@flash}
       current_scope={@current_scope}
       crumb={gettext("Tags")}
+      count={length(@tags)}
       active="tags"
       others={@others}
     >

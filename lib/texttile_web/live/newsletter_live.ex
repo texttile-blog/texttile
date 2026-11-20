@@ -84,6 +84,7 @@ defmodule TexttileWeb.NewsletterLive do
       flash={@flash}
       current_scope={@current_scope}
       crumb={gettext("Newsletter")}
+      count={@confirmed}
       active="newsletter"
       others={@others}
     >

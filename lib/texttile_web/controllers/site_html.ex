@@ -86,6 +86,15 @@ defmodule TexttileWeb.SiteHTML do
 
   defp working_copy_line(_), do: gettext("Working copy")
 
+  # The setting of a text square, by how long its opening is.
+  defp lead_size(article) do
+    case String.length(lead(article, 480)) do
+      n when n < 70 -> "short"
+      n when n < 300 -> "mid"
+      _ -> nil
+    end
+  end
+
   @doc "Whether the readers of a live entry have the words on screen."
   def live_state(article) do
     cond do
@@ -264,10 +273,12 @@ defmodule TexttileWeb.SiteHTML do
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
-        <%!-- a short opening is set larger, a quotation on its own
-             square; a long one fills the square at the size of a page --%>
+        <%!-- the length of the opening picks its setting: a short one
+             is a cover, large on the floor of its square; a middling
+             one a size up from the top; a long one at the size of a page,
+             from the top, to the foot of the square --%>
         <span :if={!@preview && lead(@article) != ""} class="cimg empty">
-          <span class={["cx", String.length(lead(@article)) < 120 && "short"]}>
+          <span class={["cx", lead_size(@article)]}>
             {lead(@article, 480)}
           </span>
         </span>

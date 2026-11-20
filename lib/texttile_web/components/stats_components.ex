@@ -98,6 +98,7 @@ defmodule TexttileWeb.StatsComponents do
               ]}
               style={"height:#{height(bar.views, @top)}%"}
             >
+              <span :if={bar.views == @max and @max > 0} class="peak num">{number(bar.views)}</span>
             </i>
           </button>
           <i
