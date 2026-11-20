@@ -46,12 +46,12 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     conn
     |> sign_in()
     |> open("/admin/newsletter")
-    |> assert_has("#newsletterSub", text: "1 subscriber")
+    |> assert_has("#newsletterSub", text: "1")
     |> assert_has("#subList", text: "christel@example.org")
     |> fill_in("Email", with: "jens@example.org")
     |> click_button("Add")
     |> assert_has("#subList", text: "jens@example.org")
-    |> assert_has("#newsletterSub", text: "2 subscribers")
+    |> assert_has("#newsletterSub", text: "2")
 
     # A publish click sends the text to both.
     conn

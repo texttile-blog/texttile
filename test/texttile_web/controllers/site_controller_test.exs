@@ -104,7 +104,8 @@ defmodule TexttileWeb.SiteControllerTest do
 
       # every card keeps the square, so the grid never looks like a
       # picture went missing; the words stand once, inside it
-      assert html =~ ~s(<span class="cx">Only words here.</span>)
+      # (a short opening is set larger: the class says so)
+      assert html =~ ~r/<span class="cx short">\s*Only words here.\s*<\/span>/
       refute html =~ ~s(class="clead">Only words here.)
       # an entry without words either keeps the quiet mark
       assert html =~ "cimg blank"

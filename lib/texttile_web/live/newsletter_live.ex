@@ -84,7 +84,6 @@ defmodule TexttileWeb.NewsletterLive do
       flash={@flash}
       current_scope={@current_scope}
       crumb={gettext("Newsletter")}
-      count={@confirmed}
       active="newsletter"
       others={@others}
     >
@@ -93,10 +92,11 @@ defmodule TexttileWeb.NewsletterLive do
       </:bar>
       <div class="admin-col">
         <div class="mb-[9px] md:mb-6">
-          <h1 class="page-h">{gettext("Newsletter")}</h1>
-          <p class="lead !mb-0 num max-md:hidden" id="newsletterSub">
-            {sub_line(@subscribers, @confirmed)}
-          </p>
+          <%!-- the count stands after the name, as on every list screen --%>
+          <h1 class="page-h">
+            {gettext("Newsletter")}
+            <span class="hcount num" id="newsletterSub">{sub_line(@subscribers, @confirmed)}</span>
+          </h1>
         </div>
         <div>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
@@ -199,7 +199,7 @@ defmodule TexttileWeb.NewsletterLive do
   # list counts, and who still waits after it.
   defp sub_line(subscribers, confirmed) do
     waiting = length(subscribers) - confirmed
-    line = ngettext("1 subscriber", "%{count} subscribers", confirmed)
+    line = "#{confirmed}"
 
     if waiting == 0 do
       line

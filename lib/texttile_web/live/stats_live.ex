@@ -106,12 +106,6 @@ defmodule TexttileWeb.StatsLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Stats")}</h1>
-        <%!-- a phone leaves the line out: with the heading in the bar it
-             would open the screen as a stray subtitle, and the note at
-             the foot says how a reader is counted --%>
-        <p class="lead max-sm:hidden" id="statsSub">
-          {gettext("Counted by this server alone. No cookie, no fingerprint, no third party.")}
-        </p>
 
         <div id="statsWindows" class="flex flex-wrap gap-1 mb-5">
           <.link
@@ -145,16 +139,22 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
-              <%!-- one line, so the three figures end together --%>
-              <span class="whitespace-nowrap">
-                {gettext("busiest day")}<span
-                  :if={@summary.busiest}
-                  id="figBusiestDay"
-                >, {busiest_day(@summary.busiest)}</span>
-              </span>
+              <%!-- the unit, then the day on a line of its own, as the
+                   change stands under the other two --%>
+              {gettext("views on the busiest day")}<span
+                :if={@summary.busiest}
+                id="figBusiestDay"
+                class="block"
+              >{busiest_day(@summary.busiest)}</span>
             </div>
           </div>
         </div>
+        <%!-- how a reader is counted, where the count stands --%>
+        <p class="hint !mt-1" id="statsRule">
+          {gettext(
+            "A reader counts once a day: the server forgets every night who was here, so nothing links two days. Bots and prefetches do not count."
+          )}
+        </p>
 
         <h2 class="sec-h">{gettext("Views")}{step_label(@step)}</h2>
         <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
@@ -195,7 +195,7 @@ defmodule TexttileWeb.StatsLive do
                       {gettext("Views")}
                     </th>
                     <th class="text-right num w-[44px] sm:w-[64px] pl-2 sm:pl-4">
-                      {gettext("Readers")}
+                      {gettext("Reader-days")}
                     </th>
                   </tr>
                 </thead>
@@ -238,7 +238,7 @@ defmodule TexttileWeb.StatsLive do
                 <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Date")}</th>
                 <th class="text-right num w-[48px] sm:w-[88px] pl-3 sm:pl-4">{gettext("Views")}</th>
                 <th class="text-right num people w-[56px] sm:w-[88px] pl-3 sm:pl-4">
-                  {gettext("Readers")}
+                  {gettext("Reader-days")}
                 </th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">
                   {gettext("Comments")}
@@ -322,12 +322,6 @@ defmodule TexttileWeb.StatsLive do
         </div>
         <p :if={length(@pages) == Stats.rows()} class="note mt-[10px]" id="pagesCapped">
           {gettext("The %{rows} most read addresses.", rows: Stats.rows())}
-        </p>
-
-        <p class="note mt-[22px]" id="statsRule">
-          {gettext(
-            "A reader is a new number each day, from a secret the server forgets every night, so nothing links two days. Bots and prefetches do not count."
-          )}
         </p>
       </div>
     </Layouts.app>

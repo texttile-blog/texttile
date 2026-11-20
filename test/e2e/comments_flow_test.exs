@@ -41,7 +41,8 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments")
-    |> assert_has("#commentFilter a[data-f='waiting']", text: "0")
+    # nothing waits any more, so the filter for it leaves the row
+    |> refute_has("#commentFilter a[data-f='waiting']")
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")

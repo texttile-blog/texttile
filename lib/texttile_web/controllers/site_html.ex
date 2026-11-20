@@ -144,6 +144,10 @@ defmodule TexttileWeb.SiteHTML do
   """
   attr :about_html, :any, default: nil
 
+  attr :describe, :boolean,
+    default: true,
+    doc: "false on the list, whose heading is the description already"
+
   def site_band(assigns) do
     assigns =
       assign(
@@ -163,7 +167,10 @@ defmodule TexttileWeb.SiteHTML do
              band full with the blog's one line, so Subscribe never stands
              over two empty columns --%>
         <div
-          :if={!@about_html and String.trim(Texttile.Settings.get(:site_description)) != ""}
+          :if={
+            @describe and !@about_html and
+              String.trim(Texttile.Settings.get(:site_description)) != ""
+          }
           id="bandDesc"
         >
           <p class="f-eyebrow">{site_title()}</p>
@@ -228,8 +235,12 @@ defmodule TexttileWeb.SiteHTML do
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
+        <%!-- a short opening is set larger, a quotation on its own
+             square; a long one fills the square at the size of a page --%>
         <span :if={!@preview && lead(@article) != ""} class="cimg empty">
-          <span class="cx">{lead(@article, 320)}</span>
+          <span class={["cx", String.length(lead(@article)) < 120 && "short"]}>
+            {lead(@article, 320)}
+          </span>
         </span>
         <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
           <Layouts.mark size={34} />

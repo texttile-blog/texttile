@@ -127,7 +127,6 @@ defmodule TexttileWeb.TagsLive do
       current_scope={@current_scope}
       crumb={gettext("Tags")}
       active="tags"
-      count={length(@tags)}
       others={@others}
     >
       <:bar><Layouts.view_site /></:bar>
@@ -135,10 +134,10 @@ defmodule TexttileWeb.TagsLive do
         <%!-- the count stands under the heading, where every screen
              puts its line; a phone says it in its bar instead --%>
         <div class="mb-[9px] md:mb-6">
-          <h1 class="page-h">{gettext("Tags")}</h1>
-          <p class="lead !mb-0 num max-md:hidden" id="tagsCount">
-            {ngettext("1 tag", "%{count} tags", length(@tags))}
-          </p>
+          <%!-- the count stands after the name, as on every list screen --%>
+          <h1 class="page-h">
+            {gettext("Tags")} <span class="hcount num" id="tagsCount">{length(@tags)}</span>
+          </h1>
         </div>
         <div id="tagsList" class={@tags != [] && "md:border-t md:border-hair"}>
           <p :if={@tags == []} class="note">

@@ -1838,7 +1838,7 @@ defmodule TexttileWeb.EditorLive do
                       {length(@versions)}
                     </span>
                     <span :if={tab == "comments" && @comments != []} class="k">
-                      {length(@comments)}
+                      {comment_tally(@comments, @cmt_require)}
                     </span>
                   </button>
                 </div>
@@ -1867,7 +1867,7 @@ defmodule TexttileWeb.EditorLive do
                   {length(@versions)}
                 </span>
                 <span :if={tab == "comments" && @comments != []} class="cnt">
-                  {length(@comments)}
+                  {comment_tally(@comments, @cmt_require)}
                 </span>
               </button>
             </nav>
@@ -1939,6 +1939,25 @@ defmodule TexttileWeb.EditorLive do
                         )}
                       <% end %>
                     </span>
+                  </p>
+                  <%!-- A phone bar has no room for the deliberate save, so
+                       it stands where the writing ends: the one action a
+                       writer takes on purpose, said with what it keeps. --%>
+                  <p
+                    :if={@holds_lock}
+                    class="md:hidden flex items-center gap-3 mt-5 mb-10"
+                    id="footSave"
+                  >
+                    <button
+                      type="button"
+                      class="btn sm"
+                      id="footSaveVersion"
+                      phx-click="save_version"
+                      data-flush-body
+                    >
+                      {gettext("Save version")}
+                    </button>
+                    <span class="note">{gettext("Keeps a copy you can restore.")}</span>
                   </p>
                   <span class="drop-flag" id="bodyDropFlag" hidden>
                     {gettext("Put the image in the text, where the caret is")}
@@ -2845,9 +2864,8 @@ defmodule TexttileWeb.EditorLive do
                     id={"tagchip-#{Articles.slugify(tag)}"}
                     phx-click="toggle_tag"
                     phx-value-tag={tag}
-                  >
-                    {tag}
-                  </button>
+                    phx-no-format
+                  >#{tag}</button>
                 </div>
               </span>
             </div>
@@ -3330,6 +3348,18 @@ defmodule TexttileWeb.EditorLive do
       gettext(
         "No email went out for this entry. The email goes out only at the moment an entry goes live."
       )
+
+  # The comments of the tab, counted the way a reader counts them, and
+  # the ones still waiting for their reader beside them: the number on
+  # the entry page and the number here never disagree.
+  defp comment_tally(comments, require?) do
+    waiting = Enum.count(comments, &Comments.waiting?(&1, require?))
+
+    case waiting do
+      0 -> "#{length(comments)}"
+      n -> gettext("%{shown} · %{waiting} waiting", shown: length(comments) - n, waiting: n)
+    end
+  end
 
   # The dot beside the state word: hollow while nothing is out,
   # outlined once a date stands, filled once a reader can reach it.

@@ -646,18 +646,42 @@ defmodule TexttileWeb.SettingsLive do
       </:bar>
       <div class="admin-col setgrid">
         <h1 class="page-h">{gettext("Settings")}</h1>
-        <%!-- a phone has the save state in its bar, so the line that
-             explains it stays on the desk --%>
-        <p class="lead max-sm:hidden">
-          {gettext("Every change saves itself the moment you make it.")}
-        </p>
 
-        <%!-- the way through a long screen: every section by name. A
-             desk keeps the list beside the sections while they scroll;
-             a phone has it once, at the top. --%>
-        <nav class="setnav" id="setNav" aria-label={gettext("Sections")}>
+        <%!-- the way through a long screen: every section by name, the
+             one in view marked. A desk keeps the list beside the
+             sections while they scroll; a phone keeps one picker under
+             its bar that names the section in view and jumps to any
+             other. Without the script both are plain jumps. --%>
+        <nav class="setnav" id="setNav" phx-hook=".SetNav" aria-label={gettext("Sections")}>
+          <select class="setpick" aria-label={gettext("Jump to a section")}>
+            <option :for={{id, label} <- sections()} value={id}>{label}</option>
+          </select>
           <a :for={{id, label} <- sections()} href={"#" <> id}>{label}</a>
         </nav>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".SetNav">
+          export default {
+            mounted() {
+              const links = [...this.el.querySelectorAll("a")]
+              const pick = this.el.querySelector("select")
+              const heads = links.map(a => document.getElementById(a.hash.slice(1))).filter(Boolean)
+              const mark = id => {
+                links.forEach(a => a.hash === "#" + id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current"))
+                pick.value = id
+              }
+              this.onScroll = () => {
+                const end = innerHeight + scrollY >= document.documentElement.scrollHeight - 4
+                let now = heads[0]
+                for (const head of heads) if (head.getBoundingClientRect().top < 150) now = head
+                if (end) now = heads[heads.length - 1]
+                if (now) mark(now.id)
+              }
+              pick.addEventListener("change", () => document.getElementById(pick.value)?.scrollIntoView())
+              addEventListener("scroll", this.onScroll, {passive: true})
+              this.onScroll()
+            },
+            destroyed() { removeEventListener("scroll", this.onScroll) }
+          }
+        </script>
 
         <div class="setbody">
           <.section id="set-site">{gettext("Site")}</.section>
@@ -801,6 +825,9 @@ defmodule TexttileWeb.SettingsLive do
           </p>
 
           <.section id="set-about">{gettext("About")}</.section>
+          <p class="note mb-[10px]" id="aboutWhere">
+            {gettext("A few lines about the blog, at the foot of every entry.")}
+          </p>
           <%!-- the editor of an entry, with the pictures taken out: About
              stands in the band under every page and carries words, not
              a gallery. One hook, one behaviour, one set of keys. The bar
@@ -1361,7 +1388,7 @@ defmodule TexttileWeb.SettingsLive do
           <div id="backupSection">
             <p class="note mb-2 leading-[1.6]">
               {gettext(
-                "A machine you keep fetches the database and every upload from here, on its own schedule. The token lives on that machine; this server keeps only a hash of it. The client is scripts/texttile-backup.sh in the repository."
+                "A machine you keep fetches the database and every upload from here, with scripts/texttile-backup.sh from the repository."
               )}
             </p>
 
@@ -1388,7 +1415,7 @@ defmodule TexttileWeb.SettingsLive do
                file somewhere else, so it is handed over the way the
                editor hands over the lines of an entry: touching it
                picks all of it, and Copy says what it did. --%>
-            <div class="drow" id="backupTokenRow" phx-hook="CopyOut">
+            <div class="drow backup-more" id="backupTokenRow" phx-hook="CopyOut">
               <span class="labrow">
                 <span class="lab">{gettext("Token")}</span>
                 <button
@@ -1449,10 +1476,15 @@ defmodule TexttileWeb.SettingsLive do
               </div>
             </div>
 
-            <.form for={@settings_form} id="backup-ips-form" phx-change="save_setting">
+            <.form
+              for={@settings_form}
+              id="backup-ips-form"
+              class="backup-more"
+              phx-change="save_setting"
+            >
               <div class="drow">
                 <label class="lab" for="setting-backup_allowed_ips">
-                  {gettext("Only these addresses")}
+                  {gettext("Allowed IP addresses")}
                 </label>
                 <span class="val">
                   <input
@@ -1476,7 +1508,7 @@ defmodule TexttileWeb.SettingsLive do
               </div>
             </.form>
 
-            <div class="drow">
+            <div class="drow backup-more">
               <span class="lab">{gettext("Last fetched")}</span>
               <span class="val" id="backupLastAccess">{last_access_line(@backup_access)}</span>
             </div>
