@@ -166,9 +166,8 @@ defmodule TexttileWeb.SiteController do
 
   Somebody signed in passes all of them. They came through the sign-in,
   so they are no stranger, and their name and their address come from
-  the account instead of from the form: the two fields stand there
-  filled and disabled, and a browser sends nothing at all for a
-  disabled field.
+  the account instead of from the form: the form asks them for the
+  words alone and sends no name, address or website.
   """
   def post_comment(conn, %{"article_id" => id} = params) do
     article = fetch_commentable(id)
@@ -725,12 +724,11 @@ defmodule TexttileWeb.SiteController do
     gettext("You are signed in, so it appears under the entry at once.")
   end
 
-  # The account writing the comment, as the form draws it: the name,
-  # the address and the website it will carry, so the three fields can
-  # stand there filled and disabled instead of asking for what the site
-  # already knows. The website of somebody signed in is this blog: they
-  # write from the house, and nothing of it is stored on the comment,
-  # so the link follows the site wherever it moves.
+  # The account writing the comment, as the form names it ("You comment
+  # as kb"): the form then asks for the words alone instead of what the
+  # site already knows. The website of somebody signed in is this blog:
+  # they write from the house, and nothing of it is stored on the
+  # comment, so the link follows the site wherever it moves.
   defp comment_author(conn) do
     case signed_in_user(conn) do
       nil ->

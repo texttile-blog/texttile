@@ -50,8 +50,9 @@ defmodule TexttileWeb.Admin do
       |> assign(:own_tabs, own_tabs(scope, socket.id))
       |> assign(:online_ids, online_user_ids())
       # the comments that wait for a decision, counted where the bar
-      # points at Comments; counted once, when a screen opens
-      |> assign(:waiting_comments, if(scope, do: Texttile.Comments.count("waiting"), else: 0))
+      # points at Comments; counted once, when a screen opens. With
+      # confirmation off nothing waits: a reader's comment stands at once.
+      |> assign(:waiting_comments, waiting_comments(scope))
       |> attach_hook(:admin_presence, :handle_info, &handle_info/2)
       |> attach_hook(:admin_actions, :handle_event, &handle_event/3)
 
@@ -102,6 +103,14 @@ defmodule TexttileWeb.Admin do
   end
 
   defp handle_info(_message, socket), do: {:cont, socket}
+
+  defp waiting_comments(nil), do: 0
+
+  defp waiting_comments(_scope) do
+    if Texttile.Settings.get(:comments_require_confirmation),
+      do: Texttile.Comments.count("waiting"),
+      else: 0
+  end
 
   @doc """
   Everybody in the admin area except the current user: one entry per

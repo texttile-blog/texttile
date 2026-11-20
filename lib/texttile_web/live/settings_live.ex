@@ -694,6 +694,8 @@ defmodule TexttileWeb.SettingsLive do
               addEventListener("scroll", this.onScroll, {passive: true})
               this.onScroll()
             },
+            // an autosave patches the page: mark the section again
+            updated() { this.onScroll() },
             destroyed() { removeEventListener("scroll", this.onScroll) }
           }
         </script>

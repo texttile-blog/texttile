@@ -182,10 +182,6 @@ defmodule TexttileWeb.SiteHTML do
   attr :about_html, :any, default: nil
   attr :current_scope, :any, default: nil
 
-  attr :describe, :boolean,
-    default: true,
-    doc: "false on the list, whose heading is the description already"
-
   def site_band(assigns) do
     assigns =
       assign(
@@ -209,7 +205,7 @@ defmodule TexttileWeb.SiteHTML do
           id="bandDesc"
         >
           <p class="f-eyebrow">{site_title()}</p>
-          <p :if={@describe and String.trim(Texttile.Settings.get(:site_description)) != ""}>
+          <p :if={String.trim(Texttile.Settings.get(:site_description)) != ""}>
             {String.trim(Texttile.Settings.get(:site_description))}
           </p>
         </div>

@@ -91,10 +91,11 @@ defmodule TexttileWeb.TagsLive do
     editing = socket.assigns.editing
     confirm_tag = socket.assigns.confirm_tag
 
-    # how many of a tag's entries a reader can open, by the tag's lower
-    # case: the archive on the site counts these and nothing else
+    # how many of a tag's entries a reader can open, posts and pages,
+    # by the tag's lower case
     live =
-      Articles.list_published()
+      Articles.list_articles()
+      |> Enum.filter(&Texttile.Articles.Visibility.live?/1)
       |> Enum.flat_map(&Articles.tag_list/1)
       |> Enum.frequencies_by(&String.downcase/1)
 

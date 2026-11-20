@@ -88,6 +88,18 @@ defmodule TexttileWeb.CommentsLiveTest do
     assert has_element?(view, "#barWaiting", "2")
   end
 
+  # with confirmation off a reader's comment stands at once: nothing
+  # waits, and Comments has no Approve to clear a count with
+  test "no count stands while readers need not confirm", %{conn: conn} do
+    {:ok, _} = Settings.put(:comments_require_confirmation, false)
+    post!(published_post())
+
+    {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+    refute has_element?(view, "#navWaiting")
+    refute has_element?(view, "#barWaiting")
+  end
+
   test "no count stands while nothing waits", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/admin/tags")
 
