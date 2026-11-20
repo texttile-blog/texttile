@@ -87,7 +87,9 @@ defmodule Texttile.Articles.Article do
   defp close_comments_on_a_new_page(changeset) do
     if get_change(changeset, :type) == "page" and
          not Map.has_key?(changeset.params, "allow_comments") do
-      put_change(changeset, :allow_comments, false)
+      # forced: the copy this change starts from may be older than the
+      # row, and put_change drops a value equal to that copy
+      force_change(changeset, :allow_comments, false)
     else
       changeset
     end

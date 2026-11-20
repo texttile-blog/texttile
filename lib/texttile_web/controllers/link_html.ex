@@ -38,7 +38,7 @@ defmodule TexttileWeb.LinkHTML do
              an @ is a byline nobody chose. --%>
         <div :if={@invitation} class="mb-[15px]">
           <label class="block text-[13px] font-medium text-ink mb-[6px]" for="link-display-name">
-            {gettext("Displayed name")}
+            {gettext("Display name")}
           </label>
           <input
             type="text"

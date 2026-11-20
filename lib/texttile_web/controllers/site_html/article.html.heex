@@ -81,11 +81,11 @@
               do: if(tile.film, do: gettext("Open video"), else: gettext("Open image"))
           }
         >
-          <%!-- one picture fills the reading column, so it gets the
-               size a picture in the text gets; a tile of a grid needs
-               the card size and no more --%>
+          <%!-- a tile as wide as the reading column gets the size a
+               picture in the text gets; a cell of the grid needs the
+               card size and no more --%>
           <img
-            src={Images.url(tile.still, gallery_size(@gallery))}
+            src={Images.url(tile.still, gallery_size(@gallery, tile))}
             alt={tile.description}
             loading="lazy"
           />

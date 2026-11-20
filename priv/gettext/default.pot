@@ -281,8 +281,8 @@ msgid_plural ", %{names} are here"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/texttile_web/controllers/site_html.ex:404
-#: lib/texttile_web/controllers/site_html.ex:412
+#: lib/texttile_web/controllers/site_html.ex:413
+#: lib/texttile_web/controllers/site_html.ex:421
 #: lib/texttile_web/live/import_live.ex:196
 #: lib/texttile_web/live/stats_live.ex:270
 #, elixir-autogen, elixir-format
@@ -565,7 +565,7 @@ msgid "Comment"
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:55
-#: lib/texttile_web/controllers/site_html.ex:403
+#: lib/texttile_web/controllers/site_html.ex:412
 #: lib/texttile_web/controllers/site_html/article.html.heex:130
 #: lib/texttile_web/live/comments_live.ex:33
 #: lib/texttile_web/live/comments_live.ex:170
@@ -706,11 +706,6 @@ msgstr ""
 msgid "Discard"
 msgstr ""
 
-#: lib/texttile_web/controllers/link_html.ex:41
-#, elixir-autogen, elixir-format
-msgid "Displayed name"
-msgstr ""
-
 #: lib/texttile_web/live/import_live.ex:277
 #, elixir-autogen, elixir-format
 msgid "Done"
@@ -775,7 +770,7 @@ msgid "Empty means whenever you publish. A future date schedules the entry."
 msgstr ""
 
 #: lib/texttile_web/components/layouts.ex:48
-#: lib/texttile_web/controllers/site_html.ex:371
+#: lib/texttile_web/controllers/site_html.ex:380
 #: lib/texttile_web/live/texts_live.ex:23
 #: lib/texttile_web/live/texts_live.ex:150
 #: lib/texttile_web/live/texts_live.ex:162
@@ -3110,7 +3105,7 @@ msgid "%{from} to %{to}"
 msgstr ""
 
 #: lib/texttile/i18n.ex:142
-#: lib/texttile_web/controllers/site_html.ex:390
+#: lib/texttile_web/controllers/site_html.ex:399
 #, elixir-autogen, elixir-format
 msgid "%{month} %{year}"
 msgstr ""
@@ -3223,17 +3218,17 @@ msgstr ""
 msgid "Password: %{password}"
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:396
+#: lib/texttile_web/controllers/site_html.ex:405
 #, elixir-autogen, elixir-format
 msgid "Entries from %{period}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:398
+#: lib/texttile_web/controllers/site_html.ex:407
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}” from %{period}."
 msgstr ""
 
-#: lib/texttile_web/controllers/site_html.ex:397
+#: lib/texttile_web/controllers/site_html.ex:406
 #, elixir-autogen, elixir-format
 msgid "Entries matching “%{q}”."
 msgstr ""
@@ -4269,6 +4264,7 @@ msgstr ""
 msgid "At least 12 characters."
 msgstr ""
 
+#: lib/texttile_web/controllers/link_html.ex:41
 #: lib/texttile_web/live/profile_live.ex:206
 #, elixir-autogen, elixir-format
 msgid "Display name"

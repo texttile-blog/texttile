@@ -357,9 +357,18 @@ defmodule TexttileWeb.SiteHTML do
   def gallery_shape(gallery) when length(gallery) < 4, do: "gal-#{length(gallery)}"
   def gallery_shape(_gallery), do: nil
 
-  @doc "Which use a tile fetches its picture at: a picture alone fills the column."
-  def gallery_size([_one]), do: :reading
-  def gallery_size(_gallery), do: :card
+  @doc """
+  Which use a tile fetches its picture at. A picture alone fills the
+  column, and so does the last tile of an odd gallery of five or more,
+  which spans the whole width (see the gallery's last row in app.css).
+  Every other tile is one cell of the grid and gets the card size.
+  """
+  def gallery_size([_one], _tile), do: :reading
+
+  def gallery_size(gallery, tile) do
+    count = length(gallery)
+    if count >= 5 and rem(count, 2) == 1 and tile == List.last(gallery), do: :reading, else: :card
+  end
 
   @doc """
   The heading over the reader's list: the site description from

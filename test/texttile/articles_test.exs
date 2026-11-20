@@ -368,6 +368,17 @@ defmodule Texttile.ArticlesTest do
       assert page.allow_comments
     end
 
+    # two admins: one holds the entry from before the other opened its
+    # comments, then switches the type alone
+    test "closes them even when the one switching holds an older copy" do
+      {article, _user} = draft(%{title: "About"})
+      {:ok, closed} = Articles.update_settings(article, %{allow_comments: false})
+      {:ok, _open} = Articles.update_settings(closed, %{allow_comments: true})
+
+      {:ok, _page} = Articles.update_settings(closed, %{type: "page"})
+      refute Repo.get!(Texttile.Articles.Article, article.id).allow_comments
+    end
+
     test "a page that turns into a post keeps what it had" do
       {article, _user} = draft(%{title: "About"})
       {:ok, page} = Articles.update_settings(article, %{type: "page"})
