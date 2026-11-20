@@ -2480,7 +2480,7 @@ textarea, .ed-cm { display: block; vertical-align: top; }
 .drow .hint { margin-top: 8px; }
 
 /* a phone's comment actions: the same quiet words, a finger tall */
-@media (max-width: 639px) { .cmt-acts .btn { height: 40px; margin-top: -5px; margin-bottom: -5px; } }
+@media (max-width: 639px) { .cmt-acts .btn { height: 40px; } .cmt-acts { margin-top: 6px; margin-bottom: -4px; } }
 
 /* a field group's help line one step under its last field: the grid's
    own gap is that step */
@@ -2743,3 +2743,58 @@ section.foot-band .cols { padding-bottom: 32px; }
 /* a few fields about one person: as wide as an address needs, not the
    whole column */
 @media (min-width: 768px) { .admin-col.profile .val, .admin-col.profile .pairrow { max-width: 480px; } }
+
+/* THE EDITOR'S STATE GROUP · the entry's state and the save state side
+   by side on a wide bar; on a phone stacked, two short lines of words
+   beside the buttons, so Saved stays a word and not a lone tick */
+.edstat { display: contents; }
+@media (max-width: 767px) {
+  .edstat { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; min-width: 0; }
+  .edstat .st, .edstat .saved { font-size: 12px; margin: 0; padding: 0; }
+  .edstat #stateWord ~ #state { margin-left: 0; }
+}
+
+/* how many comments still wait for their reader, in a tab or on More:
+   a number in the accent, the words in its title and in the panel */
+.more { color: var(--tt-accent); font-weight: 600; margin-left: 4px; font-size: 13px; }
+
+/* the archive's row of tags fades out at the right edge of a phone,
+   where it goes on under the finger */
+@media (max-width: 639px) {
+  #tagbar {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    padding-right: 36px;
+  }
+}
+
+/* an edited live entry: the quiet ink of the facts, after a dot in the
+   accent, the one mark that says something waits to be published */
+.card .cm .open { color: var(--tt-dim); }
+.card .cm .open::after { content: none; }
+#cards .card .cm .open { display: inline-flex; align-items: center; }
+.card .cm .open i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tt-accent); margin-right: 6px; }
+
+/* the actions of a comment on a desk: a step before Delete */
+@media (min-width: 640px) { .cmt-acts > .danger { margin-left: 14px; } }
+
+/* entries without a picture: a quiet square, nothing drawn in it */
+#cards .card .cimg.empty { background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); }
+
+/* the gallery's Add is a place to drop pictures, dashed, not a field */
+.tile-add, .tile-add:hover { border-style: dashed; background: transparent; }
+
+/* the foot's ways out, one dot between them */
+.f-foot a + a::before, .f-foot a + button::before, .f-foot button + a::before { content: "\00b7"; margin-right: 12px; color: var(--tt-slash); }
+.wrap.f-foot { padding-top: 6px; }
+
+/* the paths of the installation in the type of a path */
+#storagePaths code { font-family: var(--tt-font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* Profile: the sessions at the width of the fields over them */
+@media (min-width: 768px) { .admin-col.profile #sessions { max-width: 480px; } }
+
+/* a phone's tag rows: Edit and Delete a full step apart */
+@media (max-width: 639px) { #tagsList .btn.danger { margin-left: 12px; } }
+/* the accent dot is the edited note's separator too: no middle dot */
+@media (min-width: 640px) { #cards .card .cm .open::before { content: none; } #cards .card .cm .open { margin-left: 10px; } }

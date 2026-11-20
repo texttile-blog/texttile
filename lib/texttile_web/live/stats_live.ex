@@ -152,7 +152,7 @@ defmodule TexttileWeb.StatsLive do
         <%!-- how a reader is counted, where the count stands --%>
         <p class="hint !mt-2 mb-2" id="statsRule">
           {gettext(
-            "A reader counts once a day: the server forgets every night who was here, so nothing links two days. Bots and prefetches do not count."
+            "Views count every page a reader opens. Reader-days count each reader once a day: the server forgets every night who was here, so nothing links two days. Bots and prefetches count for neither."
           )}
         </p>
 

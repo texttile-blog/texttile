@@ -112,7 +112,7 @@ defmodule TexttileWeb.ImportLive do
       </:bar>
       <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
-        <p class="lead !max-w-none">
+        <p class="lead">
           {gettext(
             "Bring entries over from another blog: a zip with one folder per entry, holding its Markdown, its settings and its pictures. Pictures can also be web addresses the server downloads."
           )}

@@ -1491,52 +1491,57 @@ defmodule TexttileWeb.EditorLive do
            button all carrying the same word. Nothing here is a button,
            so "Draft" and "Publish" stop saying the same thing. --%>
       <:lead>
-        <span
-          class={
-            [
-              "st",
-              # the state and the save state stand together at the left
-              # on every width
-              if(@pending, do: "pending", else: state_tone(@article.status))
-            ]
-          }
-          id="stateWord"
-        >
-          <i aria-hidden="true"></i>
-          <%!-- Two words, because this pill shares a phone bar with the
+        <%!-- the entry's state and the save state, one group: side by
+             side on a wide bar, stacked on a phone, so both stay words
+             beside the buttons --%>
+        <span class="edstat">
+          <span
+            class={
+              [
+                "st",
+                # the state and the save state stand together at the left
+                # on every width
+                if(@pending, do: "pending", else: state_tone(@article.status))
+              ]
+            }
+            id="stateWord"
+          >
+            <i aria-hidden="true"></i>
+            <%!-- Two words, because this pill shares a phone bar with the
                title of the entry and the publish button. A sentence
                here ran under the button and took the title with it. --%>
-          <b>
-            {if @pending, do: gettext("Live · draft"), else: status_word(@article.status)}
-          </b>
-        </span>
-        <%!-- The save state stands with the entry's state at the left:
+            <b>
+              {if @pending, do: gettext("Live · draft"), else: status_word(@article.status)}
+            </b>
+          </span>
+          <%!-- The save state stands with the entry's state at the left:
              the right of the bar is for actions alone. --%>
-        <%!-- The save state, and no longer a link with a bare arrow on
+          <%!-- The save state, and no longer a link with a bare arrow on
              it: the way to the reader's side is the button at the end
              of this bar, or a row of its menu, and it carries a word.
              The clock reading is gone with the link; the exact second
              lives in the tooltip, where a moving number cannot pull at
              the eye. --%>
-        <span
-          class="saved whitespace-nowrap num save-on"
-          id="state"
-          phx-hook="SavedTicker"
-          data-at={@saved_at}
-          data-note={@saved_note}
-          data-note-until={@saved_until}
-        >
-          <%!-- the word at every width: a tick alone read as a stray
+          <span
+            class="saved whitespace-nowrap num save-on"
+            id="state"
+            phx-hook="SavedTicker"
+            data-at={@saved_at}
+            data-note={@saved_note}
+            data-note-until={@saved_until}
+          >
+            <%!-- the word at every width: a tick alone read as a stray
                mark. A phone bar has the room since the wordmark there
                carries no word of its own; on the narrowest phone the
                left of the bar gives way before the View button. --%>
-          <span data-words>{gettext("Saved")}</span>
-        </span>
-        <%!-- the one save state that needs the eye. LiveView puts the
+            <span data-words>{gettext("Saved")}</span>
+          </span>
+          <%!-- the one save state that needs the eye. LiveView puts the
              class on an element above this one the moment the socket
              drops, so no event and no timer is needed. --%>
-        <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
-          {gettext("Not saved · offline")}
+          <span class="saved warn whitespace-nowrap save-off" id="stateOffline">
+            {gettext("Not saved · offline")}
+          </span>
         </span>
       </:lead>
 
@@ -1807,6 +1812,15 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
+              <%!-- comments waiting for their reader, carried out of
+                   the folded menu --%>
+              <span
+                :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
+                class="more"
+                title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
+              >
+                +{unconfirmed(@comments, @cmt_require)}
+              </span>
               <svg
                 width="14"
                 height="14"
@@ -1852,8 +1866,9 @@ defmodule TexttileWeb.EditorLive do
           mounted() {
             const parts = [["gallery", "tilesBlock"], ["settings", "artSettings"]]
             this.onScroll = () => {
-              // the part at the top, right under this row
-              const line = this.el.getBoundingClientRect().bottom + 24
+              // the part the eye is in: its heading within a short step
+              // under this row
+              const line = this.el.getBoundingClientRect().bottom + 120
               let now = ""
               for (const [name, id] of parts) {
                 const part = document.getElementById(id)
@@ -1893,8 +1908,17 @@ defmodule TexttileWeb.EditorLive do
                 <span :if={tab == "versions" && @versions != []} class="cnt">
                   {length(@versions)}
                 </span>
+                <%!-- the comments readers see, and in the accent the ones
+                     still waiting for their reader: a tab says it in a
+                     number, its panel in words --%>
                 <span :if={tab == "comments" && @comments != []} class="cnt">
-                  {comment_tally(@comments, @cmt_require)}
+                  {length(@comments) - unconfirmed(@comments, @cmt_require)}<span
+                    :if={unconfirmed(@comments, @cmt_require) > 0}
+                    class="more"
+                    title={
+                      gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))
+                    }
+                  >+{unconfirmed(@comments, @cmt_require)}</span>
                 </span>
               </button>
             </nav>
@@ -3365,13 +3389,13 @@ defmodule TexttileWeb.EditorLive do
   # the ones still waiting for their reader beside them: the number on
   # the entry page and the number here never disagree.
   defp comment_tally(comments, require?) do
-    waiting = Enum.count(comments, &Comments.waiting?(&1, require?))
-
-    case waiting do
+    case unconfirmed(comments, require?) do
       0 -> "#{length(comments)}"
       n -> gettext("%{shown} · %{waiting} unconfirmed", shown: length(comments) - n, waiting: n)
     end
   end
+
+  defp unconfirmed(comments, require?), do: Enum.count(comments, &Comments.waiting?(&1, require?))
 
   # The dot beside the state word: hollow while nothing is out,
   # outlined once a date stands, filled once a reader can reach it.

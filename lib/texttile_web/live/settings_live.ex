@@ -668,13 +668,13 @@ defmodule TexttileWeb.SettingsLive do
                 links.forEach(a => a.hash === "#" + id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current"))
                 pick.value = id
               }
-              // the section in view is the one at the top of the visible
-              // part: the last heading that has reached the bars that
-              // stay (the admin bar, and on a phone the picker)
+              // the section in view is the last one whose heading has come
+              // within a short step of the bars that stay (the admin bar,
+              // and on a phone the picker): the section the eye is in
               this.onScroll = () => {
                 const beside = matchMedia("(min-width: 1000px)").matches
                 const top = beside ? 52 : this.el.getBoundingClientRect().bottom
-                const line = top + 24
+                const line = top + 120
                 let now = heads[0]
                 for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
                 if (now) mark(now.id)
@@ -824,7 +824,7 @@ defmodule TexttileWeb.SettingsLive do
             <%!-- the default is said once, under the logo; the favicon
                names its file only once one is uploaded --%>
             <span :if={@settings.favicon_name} id="name-favicon">{@settings.favicon_name}.</span> {gettext(
-              "Square."
+              "A square picture for the browser tab. SVG or PNG."
             )}
           </p>
 
@@ -1306,11 +1306,11 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <%!-- where the installation lies, as the install config set it:
                the answer somebody needs before a copy or a move --%>
-            <div class="hint [overflow-wrap:anywhere]">
-              {gettext("The uploads are in %{root} and the database is %{db}.",
-                root: @uploads_root,
-                db: @db_path
-              )}
+            <div class="hint" id="storagePaths">
+              {gettext("Uploads:")} <code>{@uploads_root}</code>
+              <br />
+              {gettext("Database:")} <code>{@db_path}</code>
+              <br />
               {gettext("A copy of the volume is a copy of the site.")}
             </div>
           </div>

@@ -254,7 +254,7 @@ defmodule TexttileWeb.TextsLive do
                 </span>
                 <span :if={article.user} class="by">{admin_name(article.user)}</span>
                 <span :if={article.id in @pending} class="open">
-                  {gettext("Edited since publishing")}
+                  <i aria-hidden="true"></i>{gettext("Edited since publishing")}
                 </span>
               </span>
             </.link>

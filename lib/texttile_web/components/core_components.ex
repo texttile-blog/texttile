@@ -383,14 +383,13 @@ defmodule TexttileWeb.CoreComponents do
   def import_doc(assigns) do
     ~H"""
     <a
-      class="link"
+      class="link whitespace-nowrap"
       id="import-doc"
       href="https://github.com/texttile-blog/texttile/blob/main/IMPORT.md"
       target="_blank"
       rel="noopener"
-    >
-      {gettext("the format guide")}<.out_icon />
-    </a>
+      phx-no-format
+    >{gettext("the format guide")}<.out_icon /></a>
     """
   end
 
