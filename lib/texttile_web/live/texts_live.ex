@@ -172,7 +172,7 @@ defmodule TexttileWeb.TextsLive do
             </button>
           </span>
           <div
-            class="flex items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0"
+            class="flex max-sm:flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0"
             id="gridTools"
           >
             <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
@@ -190,7 +190,12 @@ defmodule TexttileWeb.TextsLive do
             <%!-- the archive, the way the reader's list offers it: a year,
                  then the months of that year that carry entries, each with
                  its count; the counts follow the search and the filter --%>
-            <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
+            <form
+              :if={@years != []}
+              id="periods"
+              phx-change="period"
+              class="flex gap-2 flex-none max-sm:flex-1"
+            >
               <span class="pick">
                 <select name="year" id="years" aria-label={gettext("Year")}>
                   <option value="">{gettext("All years")}</option>

@@ -83,7 +83,14 @@ defmodule TexttileWeb.SiteHTML do
   def known_strip(assigns) do
     ~H"""
     <div :if={@current_scope || @known} class="known-strip" id="known-strip">
-      <span :if={@current_scope} class="truncate">
+      <%!-- on an entry the strip says what is shown: the working copy,
+           which every signed-in admin reads instead of the live one --%>
+      <span :if={@current_scope && @edit} class="truncate">
+        {gettext("Working copy · signed in as %{name}",
+          name: Texttile.Accounts.display_name(@current_scope.user)
+        )}
+      </span>
+      <span :if={@current_scope && !@edit} class="truncate">
         {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
       </span>
       <span :if={!@current_scope} class="truncate">{site_title()}</span>
@@ -140,6 +147,10 @@ defmodule TexttileWeb.SiteHTML do
   attr :about_html, :any, default: nil
   attr :current_scope, :any, default: nil
 
+  attr :describe, :boolean,
+    default: true,
+    doc: "false on the list, whose heading is the description already"
+
   def site_band(assigns) do
     assigns =
       assign(
@@ -159,7 +170,10 @@ defmodule TexttileWeb.SiteHTML do
              band full with the blog's one line, so Subscribe never stands
              over two empty columns --%>
         <div
-          :if={!@about_html and String.trim(Texttile.Settings.get(:site_description)) != ""}
+          :if={
+            @describe and !@about_html and
+              String.trim(Texttile.Settings.get(:site_description)) != ""
+          }
           id="bandDesc"
         >
           <p class="f-eyebrow">{site_title()}</p>

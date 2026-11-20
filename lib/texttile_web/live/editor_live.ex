@@ -1819,7 +1819,7 @@ defmodule TexttileWeb.EditorLive do
                 class="more"
                 title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
               >
-                · {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
+                {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
               </span>
               <svg
                 width="14"
@@ -2501,14 +2501,14 @@ defmodule TexttileWeb.EditorLive do
                     :if={@public_url && Visibility.live?(@article)}
                     href={@public_url}
                     target="_blank"
-                    class="link block truncate"
+                    class="link block [overflow-wrap:anywhere]"
                     id="slugPrefix"
                   >
                     {site_address()}{Articles.public_prefix(@article)}{@article.slug}
                   </a>
                   <span
                     :if={!(@public_url && Visibility.live?(@article))}
-                    class="block truncate"
+                    class="block [overflow-wrap:anywhere]"
                     id="slugPrefix"
                   >
                     {site_address()}{Articles.public_prefix(@article)}{@article.slug}
@@ -2925,7 +2925,6 @@ defmodule TexttileWeb.EditorLive do
                      pane still owes: whether this kind of entry mails
                      anybody at all. --%>
             <div class="drow gtop">
-              <span class="lab">{gettext("Email")}</span>
               <span class="val" id="notifyOpt">
                 <span :if={@article.type == "page"} class="note">
                   {gettext("Pages never email anyone.")}

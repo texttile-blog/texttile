@@ -735,7 +735,7 @@ defmodule TexttileWeb.SettingsLive do
                 </select>
                 <div class="hint">
                   {gettext(
-                    "For the reader pages, this admin area, the dates and the mails. Your own words stay as you wrote them."
+                    "Used for the site, this admin area, dates and mails. Your own writing stays as it is."
                   )}
                 </div>
               </span>
@@ -1538,7 +1538,7 @@ defmodule TexttileWeb.SettingsLive do
             <span class="lab">{gettext("This installation")}</span>
             <span class="val num" id="appVersion">{Texttile.version()}</span>
             <div class="hint">
-              {gettext("Name this number when you report a problem: it says which build runs here.")}
+              {gettext("Include this number when you report a problem.")}
             </div>
           </div>
         </div>

@@ -183,11 +183,12 @@ defmodule TexttileWeb.CommentsLive do
             id="commentFilter"
             aria-label={gettext("Filter by status")}
           >
-            <%!-- an empty filter other than All and the open one says
-                 nothing worth a place in the row --%>
+            <%!-- an empty filter says nothing worth a place in the row;
+                 All, the open one and the trash, which the rule under
+                 the list speaks of, always stand --%>
             <.link
               :for={status <- @statuses}
-              :if={status in ["all", @status] or @counts[status] > 0}
+              :if={status in ["all", "trash", @status] or @counts[status] > 0}
               patch={comments_path(status, 1)}
               class={["seg-b", @status == status && "on"]}
               data-f={status}

@@ -2857,3 +2857,45 @@ section.foot-band .cols { padding-bottom: 32px; }
   #topbar.wide #barSaveVersion { padding-left: 9px; padding-right: 9px; }
   #topbar.wide { gap: 4px; }
 }
+
+/* ROUND 9 */
+/* a text tile's words stand in the middle of their square */
+.card .cimg.empty:has(.cx) { justify-content: center; }
+
+/* an entry without a picture: a quiet square with an edge, nothing in it */
+#cards .card .cimg.empty {
+  background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page));
+  box-shadow: inset 0 0 0 1px var(--tt-hair);
+}
+
+/* the phone's Settings picker is where you are, not a field to fill:
+   the name of the section in the semibold of the bar, a chevron, no box */
+@media (max-width: 999px) {
+  .setnav .setpick {
+    border: 0; box-shadow: none; background-color: transparent; padding: 6px 28px 6px 0;
+    font-size: 15px; font-weight: 600; color: var(--tt-ink); width: auto; height: auto;
+    background-position: right 4px center;
+  }
+  .setnav .setpick:focus { box-shadow: none; border: 0; }
+  .setnav { padding-top: 4px; padding-bottom: 4px; }
+  /* sections a step apart on space alone, as on a desk */
+  .setbody > .set-h:not(:first-child) { margin-top: 40px; padding-top: 0; border-top: 0; }
+}
+
+/* the actions of a comment on a desk: one step between all of them */
+@media (min-width: 640px) { .cmt-acts > .danger { margin-left: 0; } }
+
+/* the gallery's Add: a solid hairline, like every other frame */
+.tile-add, .tile-add:hover { border-style: solid; }
+
+/* an edited live entry: its note in the accent, the line's own dot
+   before it and no second mark */
+.card .cm .open i { display: none; }
+.card .cm .open { color: var(--tt-accent); }
+@media (min-width: 640px) {
+  #cards .card .cm .open { margin-left: 0; }
+  #cards .card .cm .open::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+}
+
+/* the address to add a subscriber: as wide as an address */
+@media (min-width: 640px) { #subAdd input[type=email] { max-width: 400px; } }

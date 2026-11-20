@@ -332,9 +332,6 @@ defmodule TexttileWeb.Layouts do
            sections, and the room is there anyway. --%>
       <span class="flex items-center gap-[6px] md:gap-2 min-w-0 max-md:overflow-hidden text-[13.5px] text-dim">
         <%= if @wide do %>
-          <span class="hidden sm:inline flex-none" style="color:var(--tt-slash)" aria-hidden="true">
-            /
-          </span>
           <%!-- a phone has the title in the field right under the bar,
                so the bar keeps the state and leaves the name out --%>
           <span
