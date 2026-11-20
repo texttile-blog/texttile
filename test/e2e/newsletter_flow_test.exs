@@ -25,7 +25,7 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     # The reader subscribes in the Subscribe section and confirms by mail.
     conn
     |> open_page("/")
-    |> assert_has("#subscribe", text: "You get an email when a new entry goes out")
+    |> assert_has("#subscribe", text: "New entries by email, nothing else.")
     |> fill_in("Email for new entries", with: "christel@example.org")
     # the test types faster than a person; the time trap must not read
     # that as a script

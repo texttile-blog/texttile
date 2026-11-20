@@ -51,6 +51,7 @@
             </a>
           </span>
         <% end %>
+        <span :if={@current_scope && @article.type == "post"} aria-hidden="true">·</span>
         <a
           :if={@current_scope}
           id="edit-text"
@@ -209,7 +210,7 @@
            that came back with a mistake keeps the one it had. --%>
       <form
         id="comment-form"
-        class="cform"
+        class={["cform", @comment_author && "as-account"]}
         action={~p"/comments/#{@article.id}"}
         method="post"
         data-stamp={~p"/comments/#{@article.id}/stamp"}
@@ -217,7 +218,15 @@
         <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
         <input type="hidden" name="t" value={@comment_token} />
 
-        <p class="cf-lead f-note">{@comment_rule}</p>
+        <%!-- Signed in, the account answers who is writing, so the form
+             asks for nothing but the words, and the line over it says
+             under which name they go out. The server takes the name,
+             the address and the website from the account, whatever a
+             form sends. --%>
+        <p :if={@comment_author} class="cf-lead f-note" id="comment-as">
+          {gettext("You comment as")} <b class="text-ink font-semibold">{@comment_author.name}</b>. {@comment_rule}
+        </p>
+        <p :if={!@comment_author} class="cf-lead f-note">{@comment_rule}</p>
         <noscript>
           <p class="cf-lead f-note">
             {gettext("Posting a comment needs JavaScript. Without it, the comment is not stored.")}
@@ -229,25 +238,20 @@
           <textarea name="body" id="comment-body" rows="5" maxlength="4000" required>{@comment_values["body"]}</textarea>
         </span>
 
-        <%!-- signed in, the two fields are facts and not questions: they
-             carry what the account says and take no typing. A browser
-             sends nothing for a disabled field, and the server takes
-             both from the account anyway. --%>
-        <span class="cf-name cfld">
+        <span :if={!@comment_author} class="cf-name cfld">
           <label class="cf-lab" for="comment-name">{gettext("Name")}</label>
           <input
             type="text"
             name="name"
             id="comment-name"
-            value={(@comment_author && @comment_author.name) || @comment_values["name"]}
+            value={@comment_values["name"]}
             maxlength="120"
             autocomplete="name"
-            required={!@comment_author}
-            disabled={!!@comment_author}
+            required
           />
         </span>
 
-        <span class="cf-mail cfld">
+        <span :if={!@comment_author} class="cf-mail cfld">
           <label class="cf-lab" for="comment-email">
             {gettext("Email")}
           </label>
@@ -255,16 +259,13 @@
             type="email"
             name="email"
             id="comment-email"
-            value={(@comment_author && @comment_author.email) || @comment_values["email"]}
+            value={@comment_values["email"]}
             autocomplete="email"
-            required={!@comment_author}
-            disabled={!!@comment_author}
+            required
           />
         </span>
 
-        <%!-- signed in, this one is a fact too: the comment stands for
-             the blog itself, so it carries the address of the blog --%>
-        <span class="cf-url cfld">
+        <span :if={!@comment_author} class="cf-url cfld">
           <label class="cf-lab" for="comment-website">
             {gettext("Website")} <span class="cf-opt">{gettext("optional")}</span>
           </label>
@@ -272,10 +273,9 @@
             type="text"
             name="website"
             id="comment-website"
-            value={(@comment_author && @comment_author.website) || @comment_values["website"]}
+            value={@comment_values["website"]}
             maxlength="200"
             autocomplete="url"
-            disabled={!!@comment_author}
           />
         </span>
 

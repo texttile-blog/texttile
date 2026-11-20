@@ -236,9 +236,6 @@ defmodule TexttileWeb.Layouts do
                has no room for the row of sections, so there the name of
                the screen stands in the button, its count beside it, and
                the chevron after them says the name opens the others. --%>
-          <span :if={@wide} class="sm:hidden text-[15px] font-semibold text-ink -ml-[2px]">
-            {gettext("Entry")}
-          </span>
           <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
             {@crumb}<span :if={@count} class="bn-count">{@count}</span>
           </span>
@@ -387,6 +384,22 @@ defmodule TexttileWeb.Layouts do
         class={["bar-me hidden md:inline-flex", @active == "profile" && "on"]}
         aria-current={@active == "profile" && "page"}
       >
+        <%!-- a person, drawn: a name alone read as one more word of
+             the bar and not as the account it is --%>
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+          class="mr-[7px] opacity-80"
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
+        </svg>
         {Texttile.Accounts.display_name(@current_scope.user)}
       </.link>
       {render_slot(@bar)}

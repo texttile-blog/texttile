@@ -140,7 +140,7 @@ defmodule TexttileWeb.TagsLive do
             {ngettext("1 tag", "%{count} tags", length(@tags))}
           </p>
         </div>
-        <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
+        <div id="tagsList" class={@tags != [] && "md:border-t md:border-hair"}>
           <p :if={@tags == []} class="note">
             {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
           </p>

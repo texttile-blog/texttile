@@ -73,9 +73,24 @@ defmodule Texttile.Articles.Article do
     ])
     |> update_change(:slug, &normalize_slug/1)
     |> update_change(:tags, &normalize_tags/1)
+    |> close_comments_on_a_new_page()
     |> validate_inclusion(:type, @types)
     |> validate_exclusion(:slug, @reserved_slugs, message: "is an address the site itself uses")
     |> unique_constraint(:slug)
+  end
+
+  # An entry that becomes a page closes its comments: a page is the
+  # blog speaking for itself (About, Imprint), and a comment form under
+  # it reads like a contact form. A change that names the comments
+  # itself keeps its word (an import does, the editor sends one field
+  # at a time), and the admin can open them again later.
+  defp close_comments_on_a_new_page(changeset) do
+    if get_change(changeset, :type) == "page" and
+         not Map.has_key?(changeset.params, "allow_comments") do
+      put_change(changeset, :allow_comments, false)
+    else
+      changeset
+    end
   end
 
   @doc """

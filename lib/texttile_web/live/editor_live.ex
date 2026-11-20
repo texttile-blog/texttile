@@ -1417,7 +1417,7 @@ defmodule TexttileWeb.EditorLive do
   defp load_stats(socket, _tab), do: socket
 
   defp stats_empty(%{status: "scheduled", publish_date: date}) do
-    gettext("No numbers yet. It goes live on %{date}.", date: date)
+    gettext("No numbers yet. It goes live on %{date}.", date: Texttile.I18n.format_date(date))
   end
 
   defp stats_empty(_article) do
@@ -1526,11 +1526,11 @@ defmodule TexttileWeb.EditorLive do
           data-note={@saved_note}
           data-note-until={@saved_until}
         >
-          <%!-- a phone bar keeps the tick alone: the word stays for a
-               screen reader, and the clock of the save is in the
-               tooltip. A word here ran under the View button on a
-               narrow phone, the longer German one on any phone. --%>
-          <span data-words class="max-md:sr-only">{gettext("Saved")}</span>
+          <%!-- the word at every width: a tick alone read as a stray
+               mark. A phone bar has the room since the wordmark there
+               carries no word of its own; on the narrowest phone the
+               left of the bar gives way before the View button. --%>
+          <span data-words>{gettext("Saved")}</span>
         </span>
         <%!-- the one save state that needs the eye. LiveView puts the
              class on an element above this one the moment the socket
@@ -1651,7 +1651,9 @@ defmodule TexttileWeb.EditorLive do
              so once it has gone the menu says so before it offers
              anything else. --%>
         <p :if={@article.notified_on} class="fact" id="mailSaid">
-          {gettext("The subscriber email went out on %{day}.", day: @article.notified_on)}
+          {gettext("The subscriber email went out on %{day}.",
+            day: Texttile.I18n.format_date(@article.notified_on)
+          )}
         </p>
 
         <%!-- data-flush-body: the editor settles its debounce on the
@@ -2241,7 +2243,7 @@ defmodule TexttileWeb.EditorLive do
               </span>
             </div>
             <div
-              class="grid gap-[10px] grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
+              class="grid gap-[8px] sm:gap-[10px] grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 mt-3"
               id="tileGrid"
             >
               <div class="contents" id="tileServer">
@@ -2363,7 +2365,10 @@ defmodule TexttileWeb.EditorLive do
             <div :if={@preview_candidates != []} class="drow pt-0.5" id="previewRow">
               <span class="lab">{gettext("Preview image")}</span>
               <span class="val">
-                <div class="flex flex-wrap gap-[6px] items-center" id="coverRow">
+                <div
+                  class="grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] gap-[6px]"
+                  id="coverRow"
+                >
                   <button
                     :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
                     type="button"
@@ -2421,14 +2426,14 @@ defmodule TexttileWeb.EditorLive do
                     :if={@public_url && Visibility.live?(@article)}
                     href={@public_url}
                     target="_blank"
-                    class="link break-all"
+                    class="link block truncate"
                     id="slugPrefix"
                   >
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
                   </a>
                   <span
                     :if={!(@public_url && Visibility.live?(@article))}
-                    class="break-all"
+                    class="block truncate"
                     id="slugPrefix"
                   >
                     {TexttileWeb.Endpoint.host()}{Articles.public_prefix(@article)}{@article.slug}
@@ -2545,7 +2550,7 @@ defmodule TexttileWeb.EditorLive do
                   />
                   <span>
                     {gettext("Page")}<span class="note">{gettext(
-                      "Standalone Page, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
+                      "A page of its own, like About or Imprint. Appears in the site menu sorted by publish date, never in the feed."
                     )}</span>
                   </span>
                 </label>
@@ -3234,7 +3239,10 @@ defmodule TexttileWeb.EditorLive do
   # same screen.
   defp date_hint(%{status: "scheduled"} = article) do
     if article.publish_date,
-      do: gettext("Scheduled. It goes live on %{date}.", date: article.publish_date),
+      do:
+        gettext("Scheduled. It goes live on %{date}.",
+          date: Texttile.I18n.format_date(article.publish_date)
+        ),
       else: gettext("Pick the day it goes live.")
   end
 
@@ -3271,17 +3279,20 @@ defmodule TexttileWeb.EditorLive do
     do:
       gettext(
         "The subscriber email for this entry went out on %{day}. It goes out once; publishing again does not send it again.",
-        day: day
+        day: Texttile.I18n.format_date(day)
       )
 
   defp notify_note(%{status: "scheduled", notify_on_publish: true} = article),
     do:
       gettext("Goes out to the confirmed subscribers when this goes live on %{date}.",
-        date: article.publish_date
+        date: Texttile.I18n.format_date(article.publish_date)
       )
 
   defp notify_note(%{status: "scheduled"} = article),
-    do: gettext("No email will go out on %{date}.", date: article.publish_date)
+    do:
+      gettext("No email will go out on %{date}.",
+        date: Texttile.I18n.format_date(article.publish_date)
+      )
 
   defp notify_note(%{status: "draft"}),
     do:

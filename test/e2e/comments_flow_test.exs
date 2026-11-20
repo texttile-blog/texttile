@@ -206,10 +206,10 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     session = conn |> sign_in() |> open_page(Articles.public_path(article))
 
-    # The two fields carry the account and take no typing.
+    # The account answers who is writing: the form asks for the words.
     session
-    |> assert_has("#comment-name[disabled][value='Katharina']")
-    |> assert_has("#comment-email[disabled][value='#{user.email}']")
+    |> assert_has("#comment-as", text: "Katharina")
+    |> refute_has("#comment-name")
     |> assert_has("#comments", text: "You are signed in")
     |> fill_in("Comment", with: "Writing under my own name.")
     |> click_button("Post comment")

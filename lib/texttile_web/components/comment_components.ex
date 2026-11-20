@@ -96,17 +96,21 @@ defmodule TexttileWeb.CommentComponents do
          the words on a phone, so a long name never meets them. Reply
          answers by mail, in words: an icon said nothing. --%>
       <div :if={!@editing} class="cmt-acts">
-        <.write_link comment={@comment} />
-        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
-          {gettext("Edit")}
-        </button>
+        <%!-- Release stands first and only while it applies, so Reply,
+             Edit and Delete keep their places down the list. It is the
+             one decision a waiting comment asks for, so it wears the
+             accent where the others are the quiet ink. --%>
         <button
           :if={@waiting}
-          class="btn quiet sm"
+          class="btn quiet sm rel"
           phx-click="release_comment"
           phx-value-id={@comment.id}
         >
           {gettext("Release")}
+        </button>
+        <.write_link comment={@comment} />
+        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
+          {gettext("Edit")}
         </button>
         <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
           {gettext("Delete")}
@@ -251,7 +255,7 @@ defmodule TexttileWeb.CommentComponents do
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
-      "Readers confirm their email first. A comment stays out of the entry until the reader follows the link in the mail. Until then only you see it, marked \"not confirmed yet\", and Release puts that one comment under the entry without waiting. A comment nobody confirms within %{waiting} days goes for good. Delete keeps a comment in the trash for %{days} days, silently, and then it is gone. Spam is filtered by honeypot, timing, rate limit and mail cap checks. No captcha, ever.",
+      "Readers confirm their email first. Release shows a comment before that, and a comment nobody confirms within %{waiting} days goes for good. The trash keeps a deleted comment for %{days} days. No captcha, ever.",
       waiting: Comments.waiting_days(),
       days: Comments.trash_days()
     )
@@ -259,7 +263,7 @@ defmodule TexttileWeb.CommentComponents do
 
   def comment_rule(false) do
     gettext(
-      "Comments appear the moment a reader sends them. Delete keeps a comment in the trash for %{days} days, then it is gone. Spam is filtered without a captcha.",
+      "Comments appear the moment a reader sends them. The trash keeps a deleted comment for %{days} days. No captcha, ever.",
       days: Comments.trash_days()
     )
   end

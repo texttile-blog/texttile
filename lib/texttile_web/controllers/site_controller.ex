@@ -712,7 +712,7 @@ defmodule TexttileWeb.SiteController do
   # address, so there is no link to follow and nothing to confirm.
   defp comment_rule(nil, true) do
     gettext(
-      "Your address is never published. You get one link by mail, and your comment appears under the entry once you follow it. The link works for %{days} days.",
+      "We email you a link to confirm your comment; it works for %{days} days. Your address is never published.",
       days: Comments.waiting_days()
     )
   end
@@ -722,9 +722,7 @@ defmodule TexttileWeb.SiteController do
   end
 
   defp comment_rule(_user, _require?) do
-    gettext(
-      "You are signed in, so your name and your address come from your account. Your address is never published, and your comment appears under the entry at once."
-    )
+    gettext("You are signed in, so it appears under the entry at once.")
   end
 
   # The account writing the comment, as the form draws it: the name,

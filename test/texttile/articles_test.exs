@@ -347,4 +347,33 @@ defmodule Texttile.ArticlesTest do
       assert Articles.get_article!(one.id).tags == "sea"
     end
   end
+
+  describe "an entry that becomes a page" do
+    # A page is the blog speaking for itself (About, Imprint), and a
+    # comment form under it reads like a contact form. The switch closes
+    # the comments; the admin can open them again on the same pane.
+    test "closes its comments" do
+      {article, _user} = draft(%{title: "About"})
+      assert article.allow_comments
+
+      {:ok, page} = Articles.update_settings(article, %{type: "page"})
+      refute page.allow_comments
+    end
+
+    # an import names the comments of every bundle, a page's included
+    test "keeps them open when the same change asks for them" do
+      {article, _user} = draft(%{title: "About"})
+
+      {:ok, page} = Articles.update_settings(article, %{type: "page", allow_comments: true})
+      assert page.allow_comments
+    end
+
+    test "a page that turns into a post keeps what it had" do
+      {article, _user} = draft(%{title: "About"})
+      {:ok, page} = Articles.update_settings(article, %{type: "page"})
+
+      {:ok, post} = Articles.update_settings(page, %{type: "post"})
+      refute post.allow_comments
+    end
+  end
 end

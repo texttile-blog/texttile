@@ -114,18 +114,22 @@ defmodule TexttileWeb.ImportLive do
         <h1 class="page-h">{gettext("Import")}</h1>
         <p class="lead">
           {gettext(
-            "A zip of bundles becomes entries: one folder per entry, with Markdown, settings and pictures. Pictures may be files in the bundle or URLs; the server downloads the URLs itself, so the zip stays small."
+            "Bring entries over from another blog: one folder per entry in a zip, with its Markdown, settings and pictures. Pictures may also be addresses; the server fetches them."
           )}
           <.import_doc />
-          {gettext(
-            "in the repository is the format, written so a script or an AI agent can build the zip from any export."
-          )}
+          {gettext("in the repository describes the format.")}
         </p>
 
         <%= case @job.phase do %>
           <% :idle -> %>
             <form id="import-upload" phx-change="validate_upload" class="mt-6">
-              <label class="btn cursor-pointer relative overflow-hidden">
+              <%!-- what somebody wants to know before they pick a file --%>
+              <p class="note mb-3 max-w-[62ch]">
+                {gettext(
+                  "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
+                )}
+              </p>
+              <label class="btn solid cursor-pointer relative overflow-hidden">
                 {gettext("Upload the zip")}
                 <.live_file_input
                   upload={@uploads.zip}
@@ -160,11 +164,6 @@ defmodule TexttileWeb.ImportLive do
                 <span :for={error <- upload_errors(@uploads.zip, entry)}>
                   {upload_error_note(error, @limit_mb)}
                 </span>
-              </p>
-              <p class="note mt-3">
-                {gettext(
-                  "Nothing is written yet: the zip is read and checked first, and the report shows what an import would do."
-                )}
               </p>
             </form>
           <% :validating -> %>

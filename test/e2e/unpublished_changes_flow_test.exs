@@ -110,13 +110,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open("/admin/texts")
-      |> refute_has(".card .cm", text: "edited since publishing")
+      |> refute_has(".card .cm", text: "Edited since publishing")
 
       {:ok, _} = Articles.update_text(article, %{title: "Harbor evenings"})
 
       conn
       |> open("/admin/texts")
-      |> assert_has(".card .cm", text: "edited since publishing")
+      |> assert_has(".card .cm", text: "Edited since publishing")
     end
   end
 

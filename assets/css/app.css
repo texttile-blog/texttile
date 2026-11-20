@@ -120,9 +120,13 @@
      address yet - worn in the admin area and on the reader's own
      pending row */
   .wait {
-    display: inline-block; font-size: 11px; font-weight: 500; color: var(--tt-dim);
-    padding: 1px 6px; border-radius: var(--tt-radius-img);
-    box-shadow: inset 0 0 0 1px var(--tt-rule);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 400; color: var(--tt-dim);
+  }
+  /* the hollow ring of a draft: something is not out yet */
+  .wait::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; flex: none;
+    box-shadow: inset 0 0 0 1.5px var(--tt-faint);
   }
   /* one link: the accent, underlined under the pointer. Links inside
      the words of an entry keep their underline (see .prose a). */
@@ -215,19 +219,17 @@
   }
 
   /* THE ADMIN COLUMN · every screen of the admin area stands in one
-     column of one measure. On a wide window it starts on the left line
-     of the editor's grid, under the wordmark, where the editor's words
-     start, so moving between screens never moves the page sideways.
-     The editor alone is wider, for its two columns. */
+     column of one measure, in the middle of the window, and the bar
+     over it ends on the column's two edges (see .bar-col). The wordmark,
+     the heading and the rows share one left edge, and the way to the
+     site ends where the rows end. The editor alone is wider, for its
+     two columns, and its bar is as wide as it is. */
   .admin-col {
     width: 100%; max-width: 808px; margin: 0 auto;
     padding: 22px 16px 90px;
   }
   @media (min-width: 768px) {
-    .admin-col {
-      width: auto; padding: 34px 24px 110px;
-      margin-left: max(10px, calc((100% - 1108px) / 2 + 10px)); margin-right: auto;
-    }
+    .admin-col { padding: 34px 24px 110px; }
   }
   /* A screen of settings on a wide window: the name of each section in
      a column of its own on the left, its fields on the right, so the
@@ -435,14 +437,18 @@
   /* Reply, Edit, Release and Delete: on a desk they close the name
      line at its right end; on a phone they stand on a line of their own
      under the words, from the row's left edge */
-  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -12px; }
+  .cmt-acts { display: flex; gap: 0; margin: 4px 0 -8px -12px; align-items: center; }
+  /* Release is the one decision a waiting comment asks for: the
+     accent, where the others are the quiet ink */
+  .cmt-acts > .rel { color: var(--tt-accent); font-weight: 600; }
+  .cmt-acts > .rel:hover { color: var(--tt-solidhover); }
   .cmt.sel .cmt-acts { margin-left: -38px; }
   @media (min-width: 640px) {
-    /* on the line of the entry and the moment, inside the row's
-       reading path */
-    .cmt-acts { position: absolute; top: 30px; right: -10px; margin: 0; gap: 10px; }
+    /* at the right end of the name line, a column of their own down
+       the list: the row's first line says who and what to do */
+    .cmt-acts { position: absolute; top: 8px; right: -10px; margin: 0; gap: 4px; }
     .cmt.sel .cmt-acts { margin-left: 0; }
-    .cmt-sub { padding-right: 230px; }
+    .cmt-top { padding-right: 300px; }
   }
   .cmt-when .num { white-space: nowrap; }
   /* the writer's website, after the moment: a link like any other */
@@ -576,9 +582,12 @@
     transition: background-color .15s ease, color .15s ease, border-color .15s ease;
   }
   .tagchip:hover { background-color: var(--tt-field, #f2f0ec); color: var(--tt-ink, #23201b); }
+  /* a tag the entry carries: the accent's wash, not a solid block, so
+     the row of choices under the field does not shout the field's own
+     words back at it */
   .tagchip.on {
-    background-color: var(--tt-solid, #4b2a83); color: var(--tt-onsolid, #ffffff);
-    border-color: var(--tt-solid, #4b2a83);
+    background-color: var(--tt-accentwash); color: var(--tt-accent);
+    border-color: var(--tt-accentline); font-weight: 500;
   }
 
   /* the grid of texts: cards without boxes, one two-line title box,
@@ -592,20 +601,33 @@
     border-radius: var(--tt-radius-img);
   }
   .card:hover .cimg { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--tt-shadow) / .16); }
-  .card .cimg.empty { display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px; }
-  /* An entry of words alone, in the admin grid: its opening words in a
-     framed square, from the top like a page. They are a picture of the
-     entry, not the text to read, so the square cuts them off with an
-     ellipsis. The reader's grid sets them larger, below. */
+  .card .cimg.empty {
+    display: grid; place-items: center; color: var(--tt-faint); font-size: 12.5px;
+  }
+  /* AN ENTRY OF WORDS ALONE SHOWS ITS WORDS
+     Its opening words fill the square a picture would take, on a quiet
+     tint of the page, set a step over the excerpts under the pictures,
+     from the top like a page. A grey square with two lines in its
+     corner read as a picture that had failed to load; a page of words
+     reads as what it is. The square keeps every title of a row on one
+     line. The size follows the card (cqi is a hundredth of its width).
+     A phone, one card to a row, gives the words their own height. */
+  .card { container-type: inline-size; }
   .card .cimg.empty:has(.cx) {
-    display: block; overflow: hidden;
-    background: var(--tt-field); padding: 18px 18px 0;
+    /* `place-items` goes back to its start: a browser that aligns the
+       children of a block (Chrome does) centred a one-line opening */
+    display: block; place-items: normal; overflow: hidden;
+    background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page)); padding: 8cqi 8.5cqi;
   }
   .card .cimg .ci { display: none; }
   .card .cimg .cx {
-    font-family: var(--tt-font-serif); font-size: 15px; line-height: 1.45;
-    color: var(--tt-dim); text-align: left;
-    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+    font-family: var(--tt-font-serif); font-size: clamp(16px, 6.2cqi, 20px); line-height: 1.5;
+    color: var(--tt-inksoft); text-align: left; text-wrap: pretty;
+    display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  @media (max-width: 560px) {
+    body.site .card .cimg.empty:has(.cx) { aspect-ratio: auto; padding: 20px 20px 22px; }
+    body.site .card .cimg .cx { font-size: 18px; -webkit-line-clamp: 5; }
   }
 
   .card .ct {
@@ -639,6 +661,10 @@
   }
   .card .cm .st.draft { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tt-faint); }
   .card .cm .bit + .bit::before { content: "\00a0\00b7\00a0"; color: var(--tt-slash); }
+  /* what is still open about a live entry: a line of its own under the
+     facts, in the accent, so it is found when somebody scans the list
+     for it and never wraps into the facts with a stray dot in front */
+  .card .cm .open { flex-basis: 100%; margin-top: 1px; color: var(--tt-accent); }
 
   /* the way to the zip, laid over the corner of the picture. The card
      under it is one link, so this one cannot stand inside it. It waits
@@ -676,38 +702,62 @@
      quietly as it can and still be seen. */
   @media (hover: none) { .card-get { opacity: .5; } }
 
-  /* ENTRIES ON A PHONE · a list, not a grid. Two columns of squares
-     left a title two words wide and pushed the author onto a line of
-     its own; one row per entry keeps the title, the state and the day
-     together beside a small square. The export leaves the picture and
-     stands at the end of the row, in the ink of the words. */
-  @media (max-width: 639px) {
-    #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
+  /* THE ENTRIES · a list at every width, one row per entry: a small
+     square, the title, and the line of facts under it. A grid of large
+     squares showed three entries to a screen and put the facts far
+     under their pictures; a writer looking for an entry reads titles
+     and states, and a list shows twelve of them at a glance. The
+     pictures have their grid on the reader's side. */
+  #cards .card-slot { border-bottom: 1px solid var(--tt-hair); }
+  #cards .card {
+    position: relative;
+    display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 14px;
+    align-items: center; padding: 9px 0;
+  }
+  #cards .card .cimg { grid-row: span 2; width: 100%; }
+  /* without a picture the square keeps its place and shows a page of
+     words, drawn: three lines on the tint of the page, so every title
+     starts on the same edge and an entry of words looks like one */
+  #cards .card .cimg.empty {
+    padding: 0; border-radius: var(--tt-radius-img);
+    background:
+      linear-gradient(var(--tt-slash), var(--tt-slash)) 26% 34% / 48% 2px no-repeat,
+      linear-gradient(var(--tt-slash), var(--tt-slash)) 26% 50% / 48% 2px no-repeat,
+      linear-gradient(var(--tt-slash), var(--tt-slash)) 26% 66% / 30% 2px no-repeat,
+      color-mix(in srgb, var(--tt-field) 70%, var(--tt-page));
+  }
+  #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
+  #cards .card .cm { align-self: start; margin-top: 3px; }
+  #cards .card:hover .cimg { transform: none; box-shadow: none; }
+  /* the export lives in the editor's menu as well; a row on a phone, or
+     under a finger, keeps to the entry itself */
+  #cards .card-get { display: none; }
+  /* A desk row has the width for one more column: the day leaves the
+     line of facts and stands at the right end of the row, in tabular
+     figures, so the days of the list read down one edge. The export
+     follows it, an ink mark that shows itself under the pointer. */
+  @media (min-width: 640px) {
     #cards .card {
-      display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 14px;
-      align-items: center; padding: 9px 44px 9px 0;
+      grid-template-columns: 56px minmax(0, 1fr); column-gap: 16px;
+      padding: 10px 150px 10px 0;
     }
-    #cards .card .cimg { grid-row: span 2; width: 52px; }
-    /* without a picture the square keeps its place, framed, and holds
-       the first letter of the title in the serif, so every title in the
-       list starts on the same edge, as on the desk */
-    #cards .card .cimg.empty { display: grid; place-items: center; padding: 0; }
-    #cards .card .cimg .cx, #cards .card .cimg .cn { display: none; }
-    #cards .card .cimg .ci {
-      display: block; font-family: var(--tt-font-serif); font-size: 20px;
-      font-weight: 500; line-height: 1; color: var(--tt-faint);
+    #cards .card .ct { font-size: 17px; }
+    #cards .card .cm .cday {
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      font-variant-numeric: tabular-nums; color: var(--tt-dim);
     }
-
-    #cards .card .ct { margin-top: 0; font-size: 16px; align-self: end; }
-    #cards .card .cm { align-self: start; margin-top: 3px; }
-
-    #cards .card:hover .cimg { transform: none; box-shadow: none; }
-    /* the export lives in the editor's menu as well; a phone row keeps
-       to the entry itself */
-    #cards .card-get { display: none; }
-    #cards .card { padding-right: 0; }
-    /* who it is by joins the line instead of floating in the row */
-
+    #cards .card .cm .cday::before { content: none; }
+    #cards .card-slot:hover { background: rgb(var(--tt-shadow) / .03); }
+  }
+  /* the export, left of the day, under a pointer only */
+  @media (min-width: 640px) and (hover: hover) {
+    #cards .card-get {
+      display: grid; top: 50%; right: 104px; transform: translateY(-50%); color: var(--tt-dim);
+    }
+    #cards .card-get::before { background: transparent; backdrop-filter: none; }
+    #cards .card-get:hover { color: var(--tt-ink); }
+    #cards .card-get:hover::before { background: var(--tt-field); }
+    #cards .card-get.failed { color: var(--tt-paper); }
   }
 
   /* the split button: the primary action and the state actions in one
@@ -1080,17 +1130,20 @@
      hairline under it. It wears the page's own tokens, so every control
      on it (the crumb, the state dot, the saved mark, the split button)
      looks the way it does everywhere else. */
-  /* The bar stands on the one grid of the admin area, the editor's,
-     on every screen, so the wordmark and the sections never move from
-     screen to screen. The wordmark and the row of sections at its left
-     edge, the stamp and the way to the site at its right. The wordmark
-     button carries 6px of air of its own, which the edge gives back:
-     its glyph starts 34px into the grid, where the editor's words and
-     every column screen start. The right edge is the end of the
-     editor's gallery, past the column's scrollbar lane. */
+  /* The bar stands on the measure of the screen under it. On a column
+     screen that is the admin column: the wordmark button carries 6px of
+     air of its own, which the edge gives back, so its glyph starts on
+     the column's left edge and the last word of the bar ends on its
+     right one. The editor's bar (.wide) stands on the editor's grid:
+     its right edge is the end of the gallery, past the column's
+     scrollbar lane. */
   .bar-col { padding-left: 10px; padding-right: 16px; }
   @media (min-width: 768px) {
     .bar-col {
+      padding-left: max(18px, calc((100% - 808px) / 2 + 18px));
+      padding-right: max(24px, calc((100% - 808px) / 2 + 24px));
+    }
+    .bar-col.wide {
       padding-left: max(28px, calc((100% - 1108px) / 2 + 28px));
       padding-right: max(24px, calc((100% - 1108px) / 2 + 39px));
     }
@@ -1253,7 +1306,7 @@
 
   /* the preview-image picker in the article settings */
   .cover-opt {
-    position: relative; width: 46px; aspect-ratio: 1 / 1;
+    position: relative; width: 100%; aspect-ratio: 1 / 1;
     background: var(--tt-field) center / cover no-repeat;
     border-radius: var(--tt-radius-img); transition: box-shadow .15s;
   }
@@ -1469,7 +1522,7 @@
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     height: 30px; font-size: 13px; line-height: 1;
     padding: 0 max(var(--tt-gut), calc((100% - 1060px) / 2 + var(--tt-gut)));
-    background: var(--tt-ink); color: var(--tt-page);
+    background: var(--tt-inksoft); color: var(--tt-page);
   }
   .known-strip a { color: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; }
   .known-strip a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -1560,11 +1613,10 @@
      read as the one thing to press on a page whose whole point is the
      words under it. */
   .edit-link {
-    margin-left: 8px; color: var(--tt-accent); text-decoration: underline;
-    text-underline-offset: 2px; text-decoration-thickness: 1px;
+    margin-left: 4px; color: var(--tt-accent); text-decoration: none;
     transition: color .15s ease;
   }
-  .edit-link:hover { color: var(--tt-ink); }
+  .edit-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 
   /* the comment form: a row that wraps, and a box that grows with the
      words (public.js grows it by hand where field-sizing is missing)
@@ -1589,6 +1641,12 @@
     grid-template-areas: "lead" "body" "name" "mail" "url" "remem" "err" "act";
   }
   .cform > .cf-lead { grid-area: lead; margin: 0 0 2px; }
+  /* signed in, the form is the words and the button: no empty rows of
+     fields that are not there, whose gaps would still stand */
+  .cform.as-account {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "lead" "body" "err" "act";
+  }
   .cform > .cf-body { grid-area: body; }
   .cform > .cf-name { grid-area: name; }
   .cform > .cf-mail { grid-area: mail; }
@@ -1604,8 +1662,7 @@
         "lead  lead"
         "body  body"
         "name  mail"
-        "url   url"
-        "remem remem"
+        "url   remem"
         "err   err"
         "act   act";
     }
@@ -1651,7 +1708,10 @@
   body.site .card .cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* the placeholder square: a text without a picture holds the same
      footprint, with the mark standing quietly in the middle */
-  body.site .card .cimg.blank { display: grid; place-items: center; color: var(--tt-faint, #736d63); }
+  body.site .card .cimg.blank {
+    display: grid; place-items: center; color: var(--tt-faint, #736d63);
+    background: color-mix(in srgb, var(--tt-field) 55%, var(--tt-page));
+  }
   body.site .card .cimg.blank svg { width: clamp(34px, 19%, 78px); height: auto; opacity: .22; }
   .card-wrap .cm { font-size: 14px; color: var(--tt-dim); margin-top: 6px; }
   /* how many comments stand under the text, beside its date. It is a
@@ -1662,14 +1722,6 @@
   /* the excerpt reads in the serif of the entry, like the words on a
      text-only square: every excerpt in the grid in one face */
   .card-wrap .clead { font-family: var(--tt-font-serif); font-size: 16px; line-height: 1.55; color: var(--tt-inksoft); margin-top: 8px; }
-  /* the words of a text-only square, in the reader's grid: the serif
-     of the excerpts a step larger, as many lines as the square holds
-     (9 fit the narrowest 260px column, 10 the phone's) */
-  body.site .card .cimg.empty:has(.cx) { padding: 22px 22px 0; }
-  body.site .card .cimg .cx {
-    font-size: 17px; line-height: 1.5; color: var(--tt-inksoft); -webkit-line-clamp: 9;
-  }
-  @media (max-width: 560px) { body.site .card .cimg .cx { -webkit-line-clamp: 10; } }
   .card-wrap .ctags { margin-top: 7px; }
   /* a small link of the reader's pages takes the deeper violet of the
      buttons, so it stays quiet beside the warm type */
@@ -1704,11 +1756,21 @@
      phone the field takes a line of its own and the choices stand under
      it, so the placeholder is never cut short by the count. */
   .searchrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 16px; }
-  /* the search is a tool beside the list, not its headline: with the
-     year beside it, it ends on the right edge of the grid's second
-     column */
-  @media (min-width: 861px) { .searchrow { max-width: calc((100% - 56px) / 3 * 2 + 28px); } }
   .searchrow input { flex: 1; min-width: 0; }
+  /* On a desk the row stands on the grid of the cards under it: the
+     field spans the first two columns, the year (and the month) the
+     third, and the count goes under them. */
+  @media (min-width: 861px) {
+    .searchrow {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 28px; row-gap: 10px; align-items: center;
+    }
+    .searchrow > label + input, .searchrow > input { grid-column: 1 / 3; }
+    .searchrow .picks { grid-column: 3; display: flex !important; gap: 10px; }
+    .searchrow .picks .pick { flex: 1; min-width: 0; }
+    .searchrow .picks select { width: 100%; }
+    .searchrow .cnt { grid-column: 1 / -1; margin-top: 0; }
+  }
 
   .searchrow input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   /* the count is a note on the search, so it stands under it at every
@@ -2323,7 +2385,8 @@ body.site .card-wrap .cm { font-size: 14px; }
 /* on a desk the option lines of Settings are help lines like any other */
 @media (min-width: 1024px) { .opt .note { font-size: 14px; } }
 /* the website is optional and short: half the row */
-@media (min-width: 640px) { .cform > .cf-url { max-width: calc(50% - 8px); } }
+/* the offer to remember stands beside Website, on the line of its field */
+@media (min-width: 620px) { .cform > .cf-remem { align-self: end; padding-bottom: 10px; } }
 /* the formatting glyphs at the size of the words they sit over */
 .mdb svg { width: 17px; height: 17px; }
 
@@ -2460,25 +2523,11 @@ textarea, .ed-cm { display: block; vertical-align: top; }
    ragged gap beside a large line */
 @media (max-width: 480px) { .f-h1.list-h { text-wrap: wrap; max-width: none; } }
 
-/* the Entries tools lock to the card grid on a desk: the search ends on
-   the second column's edge and the year and New entry fill the third */
-@media (min-width: 1000px) {
-  #gridTools { display: grid; grid-template-columns: minmax(0, 1fr) 134px 94px; column-gap: 12px; }
-  #gridTools > #grid-search > input { margin-right: 8px; }
-  #gridTools #periods { min-width: 0; }
-  #gridTools #periods .pick, #gridTools #years { width: 100%; }
-  #gridTools #new-text { width: 100%; padding-left: 0; padding-right: 0; }
-}
-
 /* the title and the state in the editor bar stand apart */
 #stateWord { margin-left: 8px; }
 
 /* a way on to another entry is a link: its title in violet */
 .textnav .t { color: var(--tt-accent); }
-
-/* every admin card keeps two lines for its title, so a row's meta
-   lines share one line */
-@media (min-width: 640px) { #cards .card .ct { min-height: calc(17px * 1.25 * 2); } }
 
 /* a tag's count stands with its tag, the next tag a clear step away */
 #tagbar { column-gap: 24px; }
@@ -2491,3 +2540,39 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* the editor's address is a link inside its one help line */
 #slugHint #slugPrefix { margin-right: 4px; }
+
+/* a phone's filters: two rows, one step apart, every one in sight */
+@media (max-width: 639px) { #commentFilter { row-gap: 2px; } }
+
+/* the band on a phone: its blocks one step apart, not a screen */
+@media (max-width: 639px) {
+  section.foot-band .cols { gap: 26px; padding-top: 30px; padding-bottom: 26px; }
+}
+
+/* a phone's controls are a finger tall: fields and buttons 44px */
+@media (max-width: 639px) {
+  :root { --fld-p: 10px 12px; }
+  .btn:not(.sm) { height: 44px; }
+}
+
+/* Stats on a phone: the last column shown ends on the edge, like its
+   header (the hidden Comments column is the table's last child) */
+@media (max-width: 639px) {
+  .admin-col table th.people, .admin-col table td.people { padding-right: 0; }
+}
+
+/* THE GALLERY'S LAST ROW · four to a row on a desk, two on a phone. A
+   row that comes up short spreads its pictures over the whole width
+   and keeps the height of the rows over it, so the grid ends on a full
+   line instead of a hole. The pictures fill their wider frames. */
+.gal:not(.gal-1, .gal-2, .gal-3) > a:last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+@media (min-width: 900px) {
+  .gal:not(.gal-1, .gal-2, .gal-3) { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .gal:not(.gal-1, .gal-2, .gal-3) > a,
+  .gal:not(.gal-1, .gal-2, .gal-3) > a:last-child:nth-child(odd) { grid-column: span 3; aspect-ratio: 1; }
+  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):last-child { grid-column: 1 / -1; aspect-ratio: 4 / 1; }
+  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(2),
+  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(2) + a { grid-column: span 6; aspect-ratio: 2 / 1; }
+  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(3),
+  .gal:not(.gal-1, .gal-2, .gal-3) > a:nth-child(4n+1):nth-last-child(3) ~ a { grid-column: span 4; aspect-ratio: 4 / 3; }
+}

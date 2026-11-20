@@ -8,10 +8,11 @@
 <main>
   <div class="wrap narrow pt-[46px] pb-[var(--tt-sec)]">
     <h1 class="f-h1">{gettext("Nothing here")}</h1>
-    <p class="f-body mt-4">
-      {gettext("There is no text at this address.")}
+    <p class="prose !mt-4">
+      {gettext("There is no entry at this address.")}
       <a class="link" href={~p"/"}>{gettext("Back to the front page")}</a>.
     </p>
   </div>
+  <.site_band />
 </main>
 <.site_foot current_scope={@current_scope} />

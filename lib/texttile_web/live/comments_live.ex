@@ -370,7 +370,7 @@ defmodule TexttileWeb.CommentsLive do
   end
 
   defp status_name("all"), do: gettext("All")
-  defp status_name("waiting"), do: gettext("Not confirmed yet")
+  defp status_name("waiting"), do: gettext("Unconfirmed")
   defp status_name("confirmed"), do: gettext("Confirmed")
   defp status_name("released"), do: gettext("Released")
   defp status_name("trash"), do: gettext("Trash")

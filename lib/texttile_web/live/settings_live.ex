@@ -398,11 +398,11 @@ defmodule TexttileWeb.SettingsLive do
     |> assign(:backup_access, Texttile.Backup.last_access())
   end
 
-  defp backup_note(true), do: gettext("· a client with the token may fetch")
-  defp backup_note(false), do: gettext("· /backup answers nothing, as if it were not there")
+  defp backup_note(true), do: gettext("A client with the token may fetch.")
+  defp backup_note(false), do: gettext("/backup answers nothing, as if it were not there.")
 
-  defp token_state(""), do: gettext("No token yet, so nothing is served")
-  defp token_state(_hash), do: gettext("A token is in service, kept as a hash")
+  defp token_state(""), do: gettext("No token yet, so nothing is served.")
+  defp token_state(_hash), do: gettext("A token is in service, kept as a hash.")
 
   defp last_access_line(nil), do: gettext("Nothing has been fetched yet")
 
@@ -707,7 +707,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Logo & favicon")}</.section>
-        <div class="flex items-center gap-[14px] pt-[14px] sm:border-t sm:border-hair" id="logoRow">
+        <div class="flex items-center gap-[14px] pt-[6px]" id="logoRow">
           <span
             class="w-[44px] h-[44px] flex-none grid place-items-center bg-paper border border-rule rounded"
             id="prev-logo"
@@ -1029,7 +1029,7 @@ defmodule TexttileWeb.SettingsLive do
         </.form>
 
         <.section>{gettext("Users")}</.section>
-        <div id="usersList" class="sm:border-t sm:border-hair">
+        <div id="usersList">
           <div :for={user <- @users} class="py-3 border-b border-hair" id={"user-#{user.id}"}>
             <%!-- the name line keeps the height of its buttons in every
                  row, so name and address stand at one rhythm --%>
@@ -1179,7 +1179,7 @@ defmodule TexttileWeb.SettingsLive do
               </p>
               <div class="hint">
                 {gettext(
-                  "Videos are converted once to an MP4 with at most this edge, gently in the background. A new value applies to the next conversion."
+                  "Each video is converted once to an MP4 of at most this edge, in the background. A new value applies to the next video."
                 )}
               </div>
             </span>
@@ -1221,7 +1221,7 @@ defmodule TexttileWeb.SettingsLive do
              of it. The counts are walked on every render of this
              screen, which one person opens now and then. --%>
         <div class="drow">
-          <span class="lab">{gettext("What lies on the volume")}</span>
+          <span class="lab">{gettext("Space in use")}</span>
           <span class="val">
             <table class="tally" id="storageTally">
               <thead>
@@ -1251,7 +1251,7 @@ defmodule TexttileWeb.SettingsLive do
               </tbody>
               <tfoot>
                 <tr id="usage-total">
-                  <td>{gettext("Together")}</td>
+                  <td>{gettext("Total")}</td>
                   <td class="n num">{@usage_files}</td>
                   <td class="n num">{@usage_size}</td>
                 </tr>
@@ -1263,19 +1263,21 @@ defmodule TexttileWeb.SettingsLive do
               </tfoot>
             </table>
           </span>
-          <div class="hint">
-            {gettext("The uploads stand below %{root} and the database is %{db}.",
+          <%!-- where the installation lies, as the install config set it:
+               the answer somebody needs before a copy or a move --%>
+          <div class="hint [overflow-wrap:anywhere]">
+            {gettext("The uploads are in %{root} and the database is %{db}.",
               root: @uploads_root,
               db: @db_path
             )}
-            {gettext(
-              "Both paths come from the install config. The volume is the whole installation: a copy of it is a copy of the site."
-            )}
+            {gettext("A copy of the volume is a copy of the site.")}
           </div>
         </div>
-        <p class="mt-3">
-          <button class="btn" phx-click="clear_cache">Clear image cache</button>
-          <span class="note">Variants regenerate on demand.</span>
+        <p class="mt-3 flex items-center flex-wrap gap-x-3 gap-y-2">
+          <button class="btn" phx-click="clear_cache">{gettext("Clear image cache")}</button>
+          <span class="note">
+            {gettext("Display sizes are made again when a page asks for them.")}
+          </span>
         </p>
 
         <.section>{gettext("Theme")}</.section>
@@ -1351,7 +1353,7 @@ defmodule TexttileWeb.SettingsLive do
         <div id="backupSection">
           <p class="note mb-2 leading-[1.6]">
             {gettext(
-              "A machine you keep fetches the database and every uploaded file from here, on a clock of its own. It holds the token and this server holds nothing of it, so whoever breaks in here finds no way to your copies. The client is scripts/texttile-backup.sh in the repository, and where it puts the copies is as worth guarding as this blog."
+              "A machine you keep fetches the database and every upload from here, on its own schedule. The token lives on that machine; this server keeps only a hash of it. The client is scripts/texttile-backup.sh in the repository."
             )}
           </p>
 
@@ -1367,7 +1369,7 @@ defmodule TexttileWeb.SettingsLive do
               />
               <span>
                 {gettext("Serve a backup client at /backup")}
-                <span class="note" id="setBackupNote">
+                <span class="note block" id="setBackupNote">
                   {backup_note(@settings.backup_enabled)}
                 </span>
               </span>
@@ -1434,7 +1436,7 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <div class="hint">
               {gettext(
-                "It opens the backup endpoints and nothing else, and it only ever reads. Keep it like a password all the same: what it fetches is the database, and the database carries the blog password, the sign-in of every account and the address of every reader who wrote to you."
+                "It only reads, and only the backup endpoints. Keep it like a password: the database it fetches holds every account and the address of every reader."
               )}
             </div>
           </div>
@@ -1460,7 +1462,7 @@ defmodule TexttileWeb.SettingsLive do
               </span>
               <div class="hint">
                 {gettext(
-                  "The addresses your backup machine calls from, separated by commas. Empty is the usual case: then the token alone decides. Behind a proxy this is only as good as the header the proxy writes, so read it as a second lock and never as the first."
+                  "The addresses your backup machine calls from, separated by commas. Leave it empty and the token alone decides. Behind a proxy it is a second lock, never the first."
                 )}
               </div>
             </div>
@@ -1471,7 +1473,7 @@ defmodule TexttileWeb.SettingsLive do
             <span class="val" id="backupLastAccess">{last_access_line(@backup_access)}</span>
             <div class="hint">
               {gettext(
-                "A backup that stopped running says nothing until the day you need it. This line is where it shows."
+                "A backup that stopped says nothing until the day you need it. This line shows it."
               )}
             </div>
           </div>
@@ -1479,11 +1481,9 @@ defmodule TexttileWeb.SettingsLive do
 
         <.section>{gettext("Import")}</.section>
         <p class="note mb-2 leading-[1.6]">
-          {gettext(
-            "Texttile imports entries from a zip of bundles: Markdown, settings and pictures, made from another systems export."
-          )}
+          {gettext("Bring entries over from another blog: a zip of Markdown, settings and pictures.")}
           <.import_doc />
-          {gettext("in the repository is the format contract.")}
+          {gettext("in the repository describes the format.")}
         </p>
         <p>
           <.link navigate={~p"/admin/settings/import"} class="btn" id="open-import">
@@ -1498,9 +1498,7 @@ defmodule TexttileWeb.SettingsLive do
           <span class="lab">{gettext("This installation")}</span>
           <span class="val num" id="appVersion">{Texttile.version()}</span>
           <div class="hint">
-            {gettext(
-              "Every change to Texttile raises this number: the last of the three for a repair, the middle one for something new, the first one when an old habit breaks. Name it when you report a problem, because it says which build stands here."
-            )}
+            {gettext("Name this number when you report a problem: it says which build runs here.")}
           </div>
         </div>
       </div>

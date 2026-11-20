@@ -117,6 +117,6 @@ defmodule TexttileWeb.EditorStatsTest do
 
     {:ok, view, _html} = live(conn, ~p"/admin/texts/#{scheduled.id}?tab=stats")
 
-    assert has_element?(view, "#tpStatsEmpty", "2099-01-20")
+    assert has_element?(view, "#tpStatsEmpty", Texttile.I18n.format_date(~D[2099-01-20]))
   end
 end

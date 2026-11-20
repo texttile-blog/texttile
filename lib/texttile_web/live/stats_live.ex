@@ -137,7 +137,7 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
-              {gettext("people")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
+              {gettext("daily readers")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
             </div>
           </div>
           <div class="fig py-4 pr-3 md:pr-5">
@@ -193,7 +193,7 @@ defmodule TexttileWeb.StatsLive do
                       {gettext("Views")}
                     </th>
                     <th class="text-right num w-[44px] sm:w-[64px] pl-2 sm:pl-4">
-                      {gettext("People")}
+                      {gettext("Readers")}
                     </th>
                   </tr>
                 </thead>
@@ -235,7 +235,9 @@ defmodule TexttileWeb.StatsLive do
                 <th>{gettext("Entry")}</th>
                 <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Date")}</th>
                 <th class="text-right num w-[48px] sm:w-[88px] pl-3 sm:pl-4">{gettext("Views")}</th>
-                <th class="text-right num w-[48px] sm:w-[88px] pl-3 sm:pl-4">{gettext("People")}</th>
+                <th class="text-right num people w-[56px] sm:w-[88px] pl-3 sm:pl-4">
+                  {gettext("Readers")}
+                </th>
                 <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">
                   {gettext("Comments")}
                 </th>
@@ -249,7 +251,14 @@ defmodule TexttileWeb.StatsLive do
                        a phone, which has no Date and Comments columns, says
                        them on a line under the title --%>
                   <span class="flex items-baseline">
-                    <i class={["mk flex-none", row.article.status]} aria-hidden="true"></i>
+                    <%!-- live is what a read entry almost always is, so only
+                         another state earns its mark --%>
+                    <i
+                      :if={row.article.status != "published"}
+                      class={["mk flex-none", row.article.status]}
+                      aria-hidden="true"
+                    >
+                    </i>
                     <span class="min-w-0">
                       <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
                         {Articles.display_title(row.article)}
@@ -315,7 +324,7 @@ defmodule TexttileWeb.StatsLive do
 
         <p class="note mt-[22px]" id="statsRule">
           {gettext(
-            "A reader is a new number each day, made with a secret the server forgets every night, so nothing links two days. A page counts once per reader every half hour. Bots and prefetches do not count."
+            "A reader is a new number each day, from a secret the server forgets every night, so nothing links two days. Bots and prefetches do not count."
           )}
         </p>
       </div>

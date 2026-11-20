@@ -45,7 +45,7 @@ defmodule TexttileWeb.SiteNewsletterTest do
         html = conn |> get(path) |> html_response(200)
         assert html =~ ~s(id="subscribe")
         assert html =~ ~s(id="newsletter-form")
-        assert html =~ "You get an email when a new entry goes out"
+        assert html =~ "New entries by email, nothing else."
       end
     end
   end

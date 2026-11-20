@@ -114,7 +114,7 @@ defmodule TexttileWeb.SiteHTML do
         <span class="sp"></span>
         <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
         <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
-        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Sign in")}</a>
+        <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Admin area")}</a>
         <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
       </div>
     </footer>
@@ -165,9 +165,7 @@ defmodule TexttileWeb.SiteHTML do
         <div id="subscribe" aria-label={gettext("Subscribe")}>
           <p class="f-eyebrow">{gettext("Subscribe")}</p>
           <p>
-            {gettext(
-              "You get an email when a new entry goes out, nothing else. Unsubscribe is one click, no questions."
-            )}
+            {gettext("New entries by email, nothing else. Unsubscribe in one click.")}
           </p>
           <form
             id="newsletter-form"
