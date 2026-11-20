@@ -3320,3 +3320,17 @@ th.num { font-variant-numeric: normal; white-space: nowrap; }
   .known-strip a { display: inline-flex; align-items: center; height: 44px; }
   .known-strip > span:last-child { gap: 18px; }
 }
+
+/* a phone's comment in the overview: one left edge for the name, the
+   line under it, the words and the actions, right of the box */
+@media (max-width: 639px) {
+  .cmt.sel .comment-body, .cmt.sel .cmt-sub { margin-left: 0; }
+  .cmt.sel .cmt-acts { margin-left: -12px; }
+}
+
+/* the entries list: "Edited since publishing" on the baseline of the
+   facts before it, in their ink; only its dot is the accent */
+#cards .card .cm { align-items: baseline; }
+#cards .card .cm .open, .card .cm .open { color: var(--tt-dim); }
+#cards .card .cm .open { display: inline-block; }
+#cards .card .cm .open i { vertical-align: 1px; }
