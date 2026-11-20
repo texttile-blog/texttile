@@ -83,7 +83,7 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
     end
 
     # One roof for a picture and for a film, and Settings > Storage >
-    # Biggest upload owns the number. The test moves it down instead of
+    # Upload size limit owns the number. The test moves it down instead of
     # making a half-gigabyte file, and that is the point of the test:
     # the browser reads the roof off the page.
     test "a file past the roof fails on the spot, nothing travels", %{conn: conn, kb: kb} do

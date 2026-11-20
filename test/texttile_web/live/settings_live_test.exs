@@ -577,7 +577,7 @@ defmodule TexttileWeb.SettingsLiveTest do
     test "the biggest upload is a setting, and it has a floor and a ceiling", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      assert html =~ "Biggest upload"
+      assert html =~ "Upload size limit"
       assert has_element?(view, "#setting-max_upload_mb[value='512']")
 
       view

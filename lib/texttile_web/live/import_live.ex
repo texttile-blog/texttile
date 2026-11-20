@@ -26,7 +26,7 @@ defmodule TexttileWeb.ImportLive do
       # number would say nothing about whether the zip fits.
       |> assign(:free_bytes, Uploads.free_bytes(Import.workroom()))
       # The roof over the zip is the one roof the admin area has:
-      # Settings > Storage > Biggest upload. A second number here would
+      # Settings > Storage > Upload size limit. A second number here would
       # be a second thing to find and to raise, and the zip is by far
       # the largest thing this area ever takes. It is read when the
       # page opens, so a new limit holds from the next opening.
@@ -303,7 +303,7 @@ defmodule TexttileWeb.ImportLive do
   # now and the person reading this is the person who can raise it.
   defp upload_error_note(:too_large, limit_mb) do
     gettext(
-      "The zip is larger than %{limit}. Raise the roof in Settings > Storage > Biggest upload.",
+      "The zip is larger than %{limit}. Raise the roof in Settings > Storage > Upload size limit.",
       limit: mb(limit_mb)
     )
   end

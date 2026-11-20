@@ -525,7 +525,7 @@ defmodule TexttileWeb.SettingsLive do
   # What each folder of the uploads root is for. The layout itself is
   # documented on Texttile.Uploads; this is the one line beside a count.
   defp dir_note("images"), do: gettext("every picture as it came")
-  defp dir_note("videos"), do: gettext("every video, and the MP4 ffmpeg made of it")
+  defp dir_note("videos"), do: gettext("every video and its MP4 copy")
   defp dir_note("site"), do: gettext("the logo and the favicon")
   defp dir_note("cache"), do: gettext("display sizes, disposable")
   defp dir_note(_dir), do: ""
@@ -1175,7 +1175,7 @@ defmodule TexttileWeb.SettingsLive do
           <.form for={@settings_form} id="images-form" phx-change="save_setting">
             <div class="drow">
               <label class="lab" for="setting-image_max_edge">
-                {gettext("Longest edge of a picture")}
+                {gettext("Largest picture size")}
               </label>
               <span class="val">
                 <span class="addr">
@@ -1196,7 +1196,7 @@ defmodule TexttileWeb.SettingsLive do
                 </p>
                 <div class="hint">
                   {gettext(
-                    "The longest edge a picture is shown at. Originals stay on disk, and nothing is scaled up."
+                    "The longest side, in pixels. Originals are kept; smaller pictures are never enlarged."
                   )}
                 </div>
               </span>
@@ -1206,7 +1206,7 @@ defmodule TexttileWeb.SettingsLive do
           <.form for={@settings_form} id="videos-form" phx-change="save_setting">
             <div class="drow">
               <label class="lab" for="setting-video_max_edge">
-                {gettext("Longest edge of a video")}
+                {gettext("Largest video size")}
               </label>
               <span class="val">
                 <span class="addr">
@@ -1237,7 +1237,7 @@ defmodule TexttileWeb.SettingsLive do
           <.section id="set-storage">{gettext("Storage")}</.section>
           <.form for={@settings_form} id="upload-form" phx-change="save_setting">
             <div class="drow">
-              <label class="lab" for="setting-max_upload_mb">{gettext("Biggest upload")}</label>
+              <label class="lab" for="setting-max_upload_mb">{gettext("Upload size limit")}</label>
               <span class="val">
                 <span class="addr">
                   <input
@@ -1313,13 +1313,13 @@ defmodule TexttileWeb.SettingsLive do
             </span>
             <%!-- where the installation lies, as the install config set it:
                the answer somebody needs before a copy or a move --%>
-            <div class="hint" id="storagePaths">
-              {gettext("Uploads:")} <code>{@uploads_root}</code>
-              <br />
-              {gettext("Database:")} <code>{@db_path}</code>
-              <br />
-              {gettext("A copy of the volume is a copy of the site.")}
-            </div>
+            <dl class="paths" id="storagePaths">
+              <dt>{gettext("Uploads")}</dt>
+              <dd><code>{@uploads_root}</code></dd>
+              <dt>{gettext("Database")}</dt>
+              <dd><code>{@db_path}</code></dd>
+            </dl>
+            <p class="hint">{gettext("A copy of the volume is a copy of the site.")}</p>
           </div>
           <div class="mt-3">
             <button class="btn" phx-click="clear_cache">{gettext("Clear image cache")}</button>

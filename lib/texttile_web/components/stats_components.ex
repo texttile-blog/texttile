@@ -160,7 +160,7 @@ defmodule TexttileWeb.StatsComponents do
   def referrer_table(assigns) do
     ~H"""
     <div class="overflow-x-auto">
-      <table id={@id}>
+      <table id={@id} class="reftab">
         <thead>
           <tr>
             <th class="sm:w-[366px]">{gettext("Source")}</th>

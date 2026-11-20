@@ -165,7 +165,7 @@ defmodule TexttileWeb.TagsLive do
             >
               #{tag}
             </a>
-            <span class="note num flex-1">
+            <span class="note num flex-1 tagcount">
               {ngettext("1 entry", "%{count} entries", count)}<span :if={
                 Map.get(@live, String.downcase(tag), 0) not in [0, count]
               }> · {gettext("%{count} not live",

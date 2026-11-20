@@ -1812,14 +1812,13 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
-              <i
+              <span
                 :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
-                class="more-dot"
-                aria-label={
-                  gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))
-                }
+                class="more"
+                title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
               >
-              </i>
+                {unconfirmed(@comments, @cmt_require)}
+              </span>
               <svg
                 width="14"
                 height="14"
@@ -2944,6 +2943,7 @@ defmodule TexttileWeb.EditorLive do
                      pane still owes: whether this kind of entry mails
                      anybody at all. --%>
             <div class="drow gtop">
+              <span class="lab">{gettext("Subscriber email")}</span>
               <span class="val" id="notifyOpt">
                 <span :if={@article.type == "page"} class="note">
                   {gettext("Pages never email anyone.")}

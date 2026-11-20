@@ -372,6 +372,17 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M2.6 11.4 6.5 8l3 2.6 1.9-1.6 2.2 2" />
         </svg>
       </button>
+      <%!-- a phone keeps the rare formats folded: this opens them in
+           the bar, and JS.toggle_class keeps them open across redraws --%>
+      <button
+        type="button"
+        class="mdb fmt-more"
+        phx-click={Phoenix.LiveView.JS.toggle_class("show-rare", to: "#" <> @id)}
+        title={gettext("More formats")}
+        aria-label={gettext("More formats")}
+      >
+        <span class="g font-sans font-semibold text-[15px] leading-none">⋯</span>
+      </button>
     </div>
     """
   end
