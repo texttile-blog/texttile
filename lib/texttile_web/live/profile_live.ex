@@ -176,6 +176,7 @@ defmodule TexttileWeb.ProfileLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Your profile")}
       active="profile"

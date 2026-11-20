@@ -82,6 +82,7 @@ defmodule TexttileWeb.NewsletterLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Newsletter")}
       count={@confirmed}

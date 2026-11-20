@@ -1480,6 +1480,7 @@ defmodule TexttileWeb.EditorLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={Articles.display_title(@article)}
       active="texts"

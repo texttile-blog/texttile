@@ -132,6 +132,7 @@ defmodule TexttileWeb.TagsLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Tags")}
       count={length(@tags)}

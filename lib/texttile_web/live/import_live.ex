@@ -102,6 +102,7 @@ defmodule TexttileWeb.ImportLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Import")}
       active="settings"
@@ -113,7 +114,7 @@ defmodule TexttileWeb.ImportLive do
       <div class="admin-col">
         <h1 class="page-h">{gettext("Import")}</h1>
         <%!-- the instruction in the ink, the details in the guide --%>
-        <p class="leading-[1.6] max-w-[584px] md:mt-6">
+        <p class="leading-[1.6] md:mt-6">
           {gettext("Bring entries over from another blog as a zip, one folder per entry.")}
           {gettext("See")} <.import_doc />.
         </p>

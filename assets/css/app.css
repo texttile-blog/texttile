@@ -3334,3 +3334,22 @@ th.num { font-variant-numeric: normal; white-space: nowrap; }
 #cards .card .cm .open, .card .cm .open { color: var(--tt-dim); }
 #cards .card .cm .open { display: inline-block; }
 #cards .card .cm .open i { vertical-align: 1px; }
+
+/* ROUND 23 */
+/* Comments in the desk's row: the count of comments that wait, in the
+   quiet ink after the word */
+.bn-n { margin-left: 5px; color: var(--tt-faint); font-weight: 500; }
+#barWaiting { margin-left: 2px; }
+@media (min-width: 768px) { #barWaiting { display: none; } }
+
+/* the editor's Comments tab: "2 new" in the tab's own grey, only its
+   dot in the accent, so the open tab stays the one heavy word */
+.tab .more { color: var(--tt-faint); font-weight: 400; }
+
+/* Logo and Favicon name their rows the way every field is named */
+.mark-lab { font-size: 13px; font-weight: 500; color: var(--tt-ink); }
+
+/* the unconfirmed mark on the baseline of the name it follows, its
+   ring on the middle of the small letters */
+.wait { display: inline-block; }
+.wait::before { display: inline-block; vertical-align: 1px; margin-right: 6px; }

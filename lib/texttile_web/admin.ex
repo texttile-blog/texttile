@@ -49,6 +49,9 @@ defmodule TexttileWeb.Admin do
       |> assign(:others, others(scope))
       |> assign(:own_tabs, own_tabs(scope, socket.id))
       |> assign(:online_ids, online_user_ids())
+      # the comments that wait for a decision, counted where the bar
+      # points at Comments; counted once, when a screen opens
+      |> assign(:waiting_comments, if(scope, do: Texttile.Comments.count("waiting"), else: 0))
       |> attach_hook(:admin_presence, :handle_info, &handle_info/2)
       |> attach_hook(:admin_actions, :handle_event, &handle_event/3)
 

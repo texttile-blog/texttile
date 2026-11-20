@@ -622,6 +622,7 @@ defmodule TexttileWeb.SettingsLive do
     ~H"""
     <Layouts.app
       flash={@flash}
+      waiting={@waiting_comments}
       current_scope={@current_scope}
       crumb={gettext("Settings")}
       active="settings"
@@ -766,7 +767,7 @@ defmodule TexttileWeb.SettingsLive do
               <Layouts.mark :if={!@settings.logo} size={28} ink="var(--tt-ink)" />
             </span>
             <span class="flex flex-col flex-1 min-w-0">
-              <span class="rowp">{gettext("Logo")}</span>
+              <span class="mark-lab">{gettext("Logo")}</span>
             </span>
             <button
               :if={@settings.logo}
@@ -789,7 +790,7 @@ defmodule TexttileWeb.SettingsLive do
             </form>
           </div>
           <%!-- what is in use now and what the field is for, as one line --%>
-          <p class="note pt-[8px] pb-[14px] border-b border-hair">
+          <p class="note pt-[8px] pb-[6px]">
             <span id="name-logo">{@settings.logo_name || gettext("Default: the Texttile mark")}</span>. {gettext(
               "SVG, PNG, JPG or WebP."
             )}
@@ -808,7 +809,7 @@ defmodule TexttileWeb.SettingsLive do
               <Layouts.mark :if={!@settings.favicon} size={16} ink="var(--tt-ink)" />
             </span>
             <span class="flex flex-col flex-1 min-w-0">
-              <span class="rowp">{gettext("Favicon")}</span>
+              <span class="mark-lab">{gettext("Favicon")}</span>
             </span>
             <button
               :if={@settings.favicon}

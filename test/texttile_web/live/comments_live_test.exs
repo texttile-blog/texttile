@@ -74,6 +74,27 @@ defmodule TexttileWeb.CommentsLiveTest do
            )
   end
 
+  # the comments that wait for a decision are counted where every
+  # admin screen points at Comments: the desk's row of sections and a
+  # phone's bar
+  test "every admin screen counts the comments that wait", %{conn: conn} do
+    article = published_post()
+    post!(article)
+    post!(article, %{"email" => "jens@example.org", "body" => "Good set."})
+
+    {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+    assert has_element?(view, "#navWaiting", "2")
+    assert has_element?(view, "#barWaiting", "2")
+  end
+
+  test "no count stands while nothing waits", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+    refute has_element?(view, "#navWaiting")
+    refute has_element?(view, "#barWaiting")
+  end
+
   describe "the status filter" do
     test "narrows the list, and each status says how many it holds", %{conn: conn} do
       article = published_post()
