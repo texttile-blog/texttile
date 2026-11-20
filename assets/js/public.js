@@ -299,12 +299,20 @@ document.querySelectorAll("time[data-comment-moment]").forEach((el) => {
   });
 })();
 
+// The archive's tags scroll sideways on a phone: the open one is
+// brought to the middle of the row, wherever it stands in the order.
+// Only the row moves, never the page; a row that wraps (a desk) has
+// nothing to scroll and stays as it is.
+(() => {
+  const bar = document.getElementById("tagbar");
+  const on = bar?.querySelector(".ctag.on");
+  if (!on || bar.scrollWidth <= bar.clientWidth) return;
+  const offset = on.getBoundingClientRect().left - bar.getBoundingClientRect().left;
+  bar.scrollLeft += offset - (bar.clientWidth - on.offsetWidth) / 2;
+})();
+
 // The page says it: the script is up and its listeners stand. The
 // gallery block says the same thing about its own half, and the
 // browser tests wait for both before they act. Nothing on the page
 // needs it; a reader who never gets this far reads the same words.
-// The archive's tags scroll sideways on a phone: the open one is
-// brought into the row's view, wherever it stands in the order.
-document.querySelector("#tagbar .ctag.on")?.scrollIntoView({block: "nearest", inline: "center"});
-
 document.body.dataset.ready = "1";

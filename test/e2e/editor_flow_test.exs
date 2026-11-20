@@ -677,4 +677,35 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       end)
     end
   end
+
+  describe "the phone's row of places" do
+    # the jump is the browser's own and may glide, so the check waits
+    # for the page to arrive (up to two seconds)
+    @scrolled """
+    (where) => new Promise((done) => {
+      const until = Date.now() + 2000
+      const look = () => {
+        const there = where === "top" ? window.scrollY === 0 : window.scrollY > 300
+        if (there) done(true)
+        else if (Date.now() > until) done(false)
+        else requestAnimationFrame(look)
+      }
+      look()
+    })
+    """
+
+    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    test "Text takes the writer back up from the settings", %{conn: conn} do
+      body = Enum.map_join(1..40, "\n\n", &"Paragraph #{&1} of a long walk.")
+      %{id: id} = Texttile.ArticlesFixtures.published_post(title: "Long", body: body)
+
+      conn
+      |> sign_in()
+      |> open_editor(id)
+      |> click("#jumpSettings")
+      |> evaluate(@scrolled, [is_function: true, arg: "down"], &assert(&1 == true))
+      |> click("#ptabText")
+      |> evaluate(@scrolled, [is_function: true, arg: "top"], &assert(&1 == true))
+    end
+  end
 end

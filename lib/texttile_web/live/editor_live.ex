@@ -1803,6 +1803,7 @@ defmodule TexttileWeb.EditorLive do
           <button
             type="button"
             class={["ptab", @tab == "text" && "on"]}
+            id="ptabText"
             phx-click={JS.push("set_tab", value: %{tab: "text"})}
           >
             {gettext("Text")}
@@ -1884,6 +1885,11 @@ defmodule TexttileWeb.EditorLive do
             }
             addEventListener("scroll", this.onScroll, {passive: true})
             this.onScroll()
+            // the words stand at the top of the page, so Text takes the
+            // writer back up there, from the gallery or the settings too
+            this.el.addEventListener("click", (event) => {
+              if (event.target.closest("#ptabText")) window.scrollTo({top: 0})
+            })
           },
           updated() { this.onScroll() },
           destroyed() { removeEventListener("scroll", this.onScroll) }
