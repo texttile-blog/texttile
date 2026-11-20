@@ -3186,3 +3186,26 @@ section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font
   .searchrow { grid-template-columns: minmax(0, 1fr) auto auto; }
   .searchrow .cnt { grid-column: 3; justify-self: end; white-space: nowrap; padding-left: 8px; margin-top: 0; }
 }
+
+/* ROUND 18 */
+/* the reader's text square: the words in the ink; a short opening a
+   quotation in the middle of its square, a long one fills it from the
+   top */
+.card .cimg .cx, .card .cimg .cx.short { color: var(--tt-ink); }
+.card .cimg.empty:has(.cx.short) { justify-content: center; }
+
+/* a tag is a finger's target on a touch screen: the same size of type,
+   a taller hit box and more air between two of them */
+@media (pointer: coarse), (max-width: 639px) {
+  .ctag { padding: 6px 0; margin: -6px 12px -6px 0; }
+  #tagbar .ctag { margin: 0; }
+  #meta .mtags { gap: 0 12px; }
+  #meta .mtags .link { padding: 6px 0; margin: -6px 0; }
+  .tagpick { gap: 8px; }
+}
+/* a tag the entry carries: a tick and the accent, not weight alone */
+.tagchip.on { color: var(--tt-accent); }
+.tagchip.on::before { content: "\2713\00a0"; }
+
+/* a column header is a word: no figures' spacing, never broken */
+th.num { font-variant-numeric: normal; white-space: nowrap; }

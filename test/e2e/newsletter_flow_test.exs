@@ -48,8 +48,8 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     |> open("/admin/newsletter")
     |> assert_has("#newsletterSub", text: "1")
     |> assert_has("#subList", text: "christel@example.org")
-    |> fill_in("Email", with: "jens@example.org")
-    |> click_button("Add")
+    |> fill_in("Email address", with: "jens@example.org")
+    |> click_button("Add subscriber")
     |> assert_has("#subList", text: "jens@example.org")
     |> assert_has("#newsletterSub", text: "2")
 

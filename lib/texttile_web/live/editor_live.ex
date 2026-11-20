@@ -1813,13 +1813,18 @@ defmodule TexttileWeb.EditorLive do
           <details class="ptab-more" id="moreTabs">
             <summary class={["ptab", @tab != "text" && "on"]}>
               {more_label(@tab)}
-              <%!-- the one place a phone names new comments --%>
+              <%!-- the one place a phone names new comments, with its
+                   noun: the count stands for the comments, not for More --%>
               <span
                 :if={@tab != "comments" and unconfirmed(@comments, @cmt_require) > 0}
                 class="more"
                 title={gettext("%{count} unconfirmed", count: unconfirmed(@comments, @cmt_require))}
               >
-                {gettext("%{count} new", count: unconfirmed(@comments, @cmt_require))}
+                {ngettext(
+                  "1 new comment",
+                  "%{count} new comments",
+                  unconfirmed(@comments, @cmt_require)
+                )}
               </span>
               <svg
                 width="14"

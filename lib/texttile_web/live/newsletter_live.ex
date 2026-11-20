@@ -99,16 +99,19 @@ defmodule TexttileWeb.NewsletterLive do
           </h1>
         </div>
         <div>
+          <%!-- labelled as every field of the admin area, the way
+               Settings > Users invites an admin --%>
+          <label for="subEmail" class="lab block mb-[3px]">{gettext("Email address")}</label>
           <form id="subAdd" phx-submit="add" class="flex flex-wrap items-center gap-2">
             <input
               type="email"
               name="email"
-              placeholder={gettext("Email")}
-              aria-label={gettext("Email")}
+              id="subEmail"
+              placeholder="name@example.org"
               required
               class="flex-1 min-w-[200px]"
             />
-            <button class="btn solid">{gettext("Add")}</button>
+            <button class="btn solid">{gettext("Add subscriber")}</button>
             <span
               :if={@add_error}
               id="subAddError"
@@ -118,6 +121,15 @@ defmodule TexttileWeb.NewsletterLive do
               {gettext("That does not look like an email address.")}
             </span>
           </form>
+          <%!-- what Add does, said before the list --%>
+          <p class="hint mt-[10px]" id="newsletterRule">
+            {gettext("Readers confirm by mail first; an address added here is confirmed at once.")}
+            <span :if={@protected?}>
+              {gettext(
+                "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
+              )}
+            </span>
+          </p>
 
           <div id="subList" class={["mt-7", @subscribers != [] && "border-t border-hair"]}>
             <p :if={@subscribers == []} class="note">
@@ -161,15 +173,6 @@ defmodule TexttileWeb.NewsletterLive do
               </button>
             </div>
           </div>
-
-          <p class="hint mt-[16px]" id="newsletterRule">
-            {gettext("Readers confirm by mail first; an address added here is confirmed at once.")}
-            <span :if={@protected?}>
-              {gettext(
-                "This blog asks for its access word, and every one of those mails carries it, so this list is who can read the blog."
-              )}
-            </span>
-          </p>
         </div>
       </div>
 

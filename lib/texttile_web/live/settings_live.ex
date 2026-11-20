@@ -682,8 +682,9 @@ defmodule TexttileWeb.SettingsLive do
                 if (heads[0].getBoundingClientRect().top < top + 8)
                   for (const head of heads) if (head.getBoundingClientRect().top < line) now = head
                 // a short last section never reaches the line: at the
-                // end of the page it is the one in view
-                const atEnd = scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 2
+                // end of the page the desk's list names it. A phone's
+                // picker keeps naming what is under its bar.
+                const atEnd = beside && scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 2
                 if (atEnd) now = heads[heads.length - 1]
                 if (now) mark(now.id)
                 else { links.forEach(a => a.removeAttribute("aria-current")); pick.value = "" }
