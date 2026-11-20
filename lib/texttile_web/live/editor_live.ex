@@ -2346,7 +2346,7 @@ defmodule TexttileWeb.EditorLive do
                   <span
                     :if={@effective_preview == image.path}
                     class="cov"
-                    aria-label={gettext("Preview image")}
+                    title={gettext("Preview image")}
                   >
                     ✓ {gettext("Preview")}
                   </span>
