@@ -448,12 +448,16 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
   end
 
   describe "the foot" do
-    # The foot wears .wrap and .f-foot together. `.wrap` writes the
-    # padding shorthand, so the space under the last line only holds
-    # while the rule that writes it beats `.wrap`. Once it lost, the
-    # site name stood on the bottom edge of the page.
+    # The ways out stand at the end of the band, and the band keeps
+    # space under its last line: without it the links stood on the
+    # bottom edge of the page.
     @foot_pad """
-    () => parseFloat(getComputedStyle(document.querySelector(".f-foot")).paddingBottom)
+    () => {
+      const band = document.querySelector("section.foot-band");
+      const last = [...band.querySelectorAll(".cols > *")]
+        .reduce((low, el) => Math.max(low, el.getBoundingClientRect().bottom), 0);
+      return band.getBoundingClientRect().bottom - last;
+    }
     """
 
     test "keeps space under the last line", %{conn: conn} do
