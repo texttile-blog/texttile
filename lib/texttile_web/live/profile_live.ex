@@ -260,9 +260,7 @@ defmodule TexttileWeb.ProfileLive do
                 <.field_errors field={@email_form[:current_password]} />
                 <.field_errors field={@email_form[:email]} />
                 <div class="hint pairhint">
-                  {gettext(
-                    "You sign in with this address, and password links go to it. Readers never see it."
-                  )}
+                  {gettext("You sign in with this address. Changing it asks for your password.")}
                 </div>
               </span>
               <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>

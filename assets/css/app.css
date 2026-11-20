@@ -3167,3 +3167,22 @@ section.foot-band #bandDesc .f-eyebrow { font-family: var(--tt-font-serif); font
 
 /* a phone's Stats: the periods start where every list screen starts */
 @media (max-width: 639px) { #statsWindows { margin-top: 0; } }
+
+/* ROUND 17 */
+/* the reader's text square: one rule, every opening from the top; a
+   short one only a size larger. A phone keeps a 4:3 frame, so the
+   column keeps its rhythm next to the pictures. */
+.card .cimg.empty:has(.cx), .card .cimg.empty:has(.cx.short) { justify-content: flex-start; }
+.card .cimg .cx.short { font-size: clamp(20px, 7.6cqi, 26px); line-height: 1.3; }
+@media (max-width: 560px) {
+  body.site .card .cimg.empty:has(.cx) { aspect-ratio: 4 / 3; padding: 22px 22px 20px; }
+  body.site .card .cimg .cx { -webkit-line-clamp: 7; }
+  body.site .card .cimg .cx.short { font-size: 24px; }
+}
+
+/* the front page's count on a desk: at the end of the search row, as
+   on a phone */
+@media (min-width: 861px) {
+  .searchrow { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .searchrow .cnt { grid-column: 3; justify-self: end; white-space: nowrap; padding-left: 8px; margin-top: 0; }
+}

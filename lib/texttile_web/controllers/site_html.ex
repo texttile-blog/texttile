@@ -31,13 +31,22 @@ defmodule TexttileWeb.SiteHTML do
   attr :menu_pages, :list, default: []
   attr :edit, :string, default: nil, doc: "the editor of the entry on screen, for the strip"
 
+  attr :live_state, :atom,
+    default: nil,
+    doc: "for a live entry: `:same` or `:changed` working copy, for the strip"
+
   def site_head(assigns) do
     assigns =
       assigns
       |> assign(:brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
-    <.known_strip current_scope={@current_scope} known={@known} edit={@edit} />
+    <.known_strip
+      current_scope={@current_scope}
+      known={@known}
+      edit={@edit}
+      live_state={@live_state}
+    />
     <header class="site-head">
       <a class="site-mark" href={~p"/"}>
         <img
@@ -69,6 +78,23 @@ defmodule TexttileWeb.SiteHTML do
     """
   end
 
+  # The strip's words for the entry on screen.
+  defp working_copy_line(:same), do: gettext("Working copy") <> " · " <> gettext("same as live")
+
+  defp working_copy_line(:changed),
+    do: gettext("Working copy") <> " · " <> gettext("changes not published yet")
+
+  defp working_copy_line(_), do: gettext("Working copy")
+
+  @doc "Whether the readers of a live entry have the words on screen."
+  def live_state(article) do
+    cond do
+      not Visibility.live?(article) -> nil
+      Articles.unpublished_changes?(article) -> :changed
+      true -> :same
+    end
+  end
+
   @doc """
   The thin dark strip with the way back in, for a browser that has
   signed in here before (`known`) or is signed in now: Sign in, or the
@@ -79,17 +105,16 @@ defmodule TexttileWeb.SiteHTML do
   attr :current_scope, :any, default: nil
   attr :known, :boolean, default: false
   attr :edit, :string, default: nil
+  attr :live_state, :atom, default: nil
 
   def known_strip(assigns) do
     ~H"""
     <div :if={@current_scope || @known} class="known-strip" id="known-strip">
       <%!-- on an entry the strip says what is shown: the working copy,
-           which every signed-in admin reads instead of the live one --%>
+           which every signed-in admin reads instead of the live one,
+           and on a live entry whether readers have the same words --%>
       <span :if={@current_scope && @edit} class="truncate">
-        {gettext("Working copy")}<span class="max-sm:hidden"> · {gettext(
-            "signed in as %{name}",
-            name: Texttile.Accounts.display_name(@current_scope.user)
-          )}</span>
+        {working_copy_line(@live_state)}<span class="max-sm:hidden">{" · " <> gettext("signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}</span>
       </span>
       <span :if={@current_scope && !@edit} class="truncate">
         {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}

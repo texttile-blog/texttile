@@ -210,7 +210,7 @@ defmodule TexttileWeb.SettingsLiveTest do
 
     test "the comments toggle rewrites its own explanation", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/settings")
-      assert html =~ "follows the link in a mail"
+      assert html =~ "confirms the email address"
 
       html =
         view

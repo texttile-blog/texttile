@@ -30,7 +30,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> sign_in()
       |> open("/admin/settings")
       |> assert_has("#backupSection", text: "Backup")
-      |> assert_has("#setBackupNote", text: "answers nothing")
+      |> assert_has("#setBackupNote", text: "/backup is closed")
       # the token and the rest wait behind the switch
       |> refute_has("#backupLastAccess")
       |> check("Allow backups at /backup", exact: false)
@@ -168,7 +168,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       |> click_button("#makeBackupToken", "Create a token")
       |> assert_has("#backupToken")
       |> uncheck("Allow backups at /backup", exact: false)
-      |> assert_has("#setBackupNote", text: "answers nothing")
+      |> assert_has("#setBackupNote", text: "/backup is closed")
       |> check("Allow backups at /backup", exact: false)
       |> assert_has("#setBackupNote", text: "may fetch")
       |> click_button("#copyBackupToken", "Copy")

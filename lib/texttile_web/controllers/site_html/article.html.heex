@@ -5,6 +5,7 @@
   current_scope={@current_scope}
   known={assigns[:known_browser]}
   edit={@current_scope && ~p"/admin/texts/#{@article.id}"}
+  live_state={@current_scope && live_state(@article)}
 />
 <main>
   <%!-- An entry that is not live wears its address for the admins and

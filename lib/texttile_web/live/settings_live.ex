@@ -399,7 +399,7 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   defp backup_note(true), do: gettext("On: a client with the token may fetch.")
-  defp backup_note(false), do: gettext("Off: the backup address answers nothing.")
+  defp backup_note(false), do: gettext("Off: /backup is closed.")
 
   defp token_state(""), do: gettext("No token yet, so nothing is served.")
   defp token_state(_hash), do: gettext("A token is in service, kept as a hash.")
@@ -601,9 +601,7 @@ defmodule TexttileWeb.SettingsLive do
   end
 
   defp comments_note(true) do
-    gettext(
-      "A comment stays hidden until its reader follows the link in a mail. Until then it is marked unconfirmed here."
-    )
+    gettext("A comment stays hidden until its reader confirms the email address.")
   end
 
   defp comments_note(false) do
@@ -675,7 +673,9 @@ defmodule TexttileWeb.SettingsLive do
               this.onScroll = () => {
                 const beside = matchMedia("(min-width: 1000px)").matches
                 const top = beside ? 52 : this.el.getBoundingClientRect().bottom
-                const line = top + (beside ? 120 : 24)
+                // on a desk the section that fills the screen: its heading
+                // has passed a third of the window
+                const line = beside ? Math.max(top + 120, innerHeight * 0.3) : top + 24
                 // before the first heading has reached the bars, the
                 // screen is at its top and the picker names no section
                 let now = beside ? heads[0] : null
@@ -1231,7 +1231,7 @@ defmodule TexttileWeb.SettingsLive do
                 </p>
                 <div class="hint">
                   {gettext(
-                    "Each video is converted once to an MP4 of at most this edge, in the background. A new value applies to the next video."
+                    "The longest side, in pixels. Each video is converted once, in the background; a new value applies to the next one."
                   )}
                 </div>
               </span>

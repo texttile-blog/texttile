@@ -33,6 +33,23 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ "Signed in as"
       assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/admin"}
     end
+
+    # the strip never claims changes that do not exist
+    test "on a live entry it says whether the working copy differs", %{conn: conn} do
+      user = user_fixture()
+      article = published_post(title: "Harbor", body: "Fog.")
+      conn = log_in_user(conn, user)
+
+      same = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert same =~ "same as live"
+      refute same =~ "not published yet"
+
+      {:ok, _} = Articles.update_text(article, %{title: "Harbor", body: "Fog lifting."})
+
+      changed = conn |> get(Articles.public_path(article)) |> html_response(200)
+      assert changed =~ "changes not published yet"
+      refute changed =~ "same as live"
+    end
   end
 
   describe "the front page" do
