@@ -200,6 +200,13 @@ defmodule TexttileWeb.SessionControllerTest do
       assert max_age >= 365 * 86_400
     end
 
+    test "every sign-in writes the mark afresh", %{conn: conn, user: user} do
+      conn = conn |> Plug.Test.put_req_cookie("_texttile_known", "1") |> sign_in(user)
+
+      assert %{value: "1", max_age: max_age} = conn.resp_cookies["_texttile_known"]
+      assert max_age >= 365 * 86_400
+    end
+
     test "signing out keeps the mark, so the way back stays offered", %{conn: conn, user: user} do
       conn = sign_in(conn, user)
 

@@ -25,6 +25,29 @@ defmodule TexttileWeb.SiteControllerTest do
       assert html =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/login"}
     end
 
+    # a browser signed in before the mark existed, or kept in by its
+    # cookie since, has never passed the sign-in form to get it
+    test "a signed-in browser without the mark gets it", %{conn: conn} do
+      conn = conn |> log_in_user(user_fixture()) |> get(~p"/blog")
+
+      assert %{value: "1", max_age: max_age} = conn.resp_cookies["_texttile_known"]
+      assert max_age >= 365 * 86_400
+    end
+
+    test "a browser whose sign-in has run out is offered the way back in", %{conn: conn} do
+      user = user_fixture()
+      token = Texttile.Accounts.create_session(user)
+      Texttile.Accounts.delete_all_sessions(user)
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{user_token: token})
+        |> get(~p"/blog")
+
+      assert conn.resp_cookies["_texttile_known"].value == "1"
+      assert html_response(conn, 200) =~ ~r{<a[^>]*id="known-strip-go"[^>]*href="/login"}
+    end
+
     test "a signed-in admin is named and led to the admin area", %{conn: conn} do
       user = user_fixture()
       html = conn |> log_in_user(user) |> get(~p"/blog") |> html_response(200)

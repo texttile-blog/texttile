@@ -28,6 +28,8 @@ defmodule TexttileWeb.UserAuth do
   # A plain flag that this browser has signed in here once: no name, no
   # token. It outlives signing out, so the reader pages keep offering
   # the way back in at the top. The longest a browser keeps a cookie.
+  # Any token a browser brings, alive or ended, earns it too, so a
+  # browser signed in before the flag existed is not left out.
   @known_cookie "_texttile_known"
   @known_max_age 400 * 86_400
 
@@ -42,13 +44,26 @@ defmodule TexttileWeb.UserAuth do
     |> renew_session()
     |> put_token_in_session(token)
     |> put_auth_cookie(token, remember?)
-    |> put_resp_cookie(@known_cookie, "1",
+    |> put_known_cookie()
+    |> redirect(to: ~p"/admin")
+  end
+
+  # Every sign-in writes the flag afresh, so its 400 days count from
+  # the last one.
+  defp put_known_cookie(conn) do
+    put_resp_cookie(conn, @known_cookie, "1",
       max_age: @known_max_age,
       same_site: "Lax",
       http_only: true,
       secure: conn.scheme == :https
     )
-    |> redirect(to: ~p"/admin")
+  end
+
+  # Any other request writes it only when it is missing, so a page does
+  # not set a cookie on every answer.
+  defp mark_known(conn) do
+    conn = fetch_cookies(conn)
+    if conn.req_cookies[@known_cookie] == "1", do: conn, else: put_known_cookie(conn)
   end
 
   defp put_auth_cookie(conn, token, remember?) do
@@ -105,7 +120,11 @@ defmodule TexttileWeb.UserAuth do
   """
   def fetch_known_browser(conn, _opts) do
     conn = fetch_cookies(conn)
-    assign(conn, :known_browser, conn.cookies[@known_cookie] == "1")
+
+    known? =
+      conn.req_cookies[@known_cookie] == "1" or Map.has_key?(conn.resp_cookies, @known_cookie)
+
+    assign(conn, :known_browser, known?)
   end
 
   @doc """
@@ -116,10 +135,11 @@ defmodule TexttileWeb.UserAuth do
   session only once it names a live session, so nothing behind this
   plug, the upload roof included, ever sees a token the server has
   ended. A token that names nothing is dropped where it was found.
+  Either way the browser has been signed in here, and is marked so.
   """
   def fetch_current_scope_for_user(conn, _opts) do
     case get_session(conn, :user_token) do
-      token when is_binary(token) -> from_session(conn, token)
+      token when is_binary(token) -> conn |> mark_known() |> from_session(token)
       _ -> from_auth_cookie(conn)
     end
   end
@@ -135,7 +155,7 @@ defmodule TexttileWeb.UserAuth do
     conn = fetch_cookies(conn, signed: [@auth_cookie])
 
     case conn.cookies[@auth_cookie] do
-      token when is_binary(token) -> promote(conn, token)
+      token when is_binary(token) -> conn |> mark_known() |> promote(token)
       _ -> assign(conn, :current_scope, nil)
     end
   end
