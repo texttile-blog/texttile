@@ -2132,9 +2132,14 @@ defmodule TexttileWeb.EditorLive do
                       )}
                     </b>
                   </span>
-                  <button type="button" class="btn sm" data-img-action="retry-all">
-                    <.retry_icon /> {gettext("Resume all")}
-                  </button>
+                  <span class="acts">
+                    <button type="button" class="btn sm quiet" data-img-action="remove-all">
+                      {gettext("Remove all")}
+                    </button>
+                    <button type="button" class="btn sm" data-img-action="retry-all">
+                      <.retry_icon /> {gettext("Resume all")}
+                    </button>
+                  </span>
                 </div>
               </div>
             </div>
@@ -2398,16 +2403,22 @@ defmodule TexttileWeb.EditorLive do
             </p>
             <%!-- the hook shows it under the tiles it sends, while two
                  or more wait for a Retry: after a reload, or when the
-                 line dropped. It writes the count into the b. --%>
+                 line dropped. It writes the count into the b. Both
+                 buttons act on every failed tile at once. --%>
             <div class="upwarn mt-[12px]" id="tileResume" phx-update="ignore" hidden>
               <.warn_icon />
               <span class="t">
                 <b></b>
                 {gettext("The files are still in this browser.")}
               </span>
-              <button type="button" class="btn sm">
-                <.retry_icon /> {gettext("Resume all")}
-              </button>
+              <span class="acts">
+                <button type="button" class="btn sm quiet" data-act="remove-all">
+                  {gettext("Remove all")}
+                </button>
+                <button type="button" class="btn sm" data-act="retry-all">
+                  <.retry_icon /> {gettext("Resume all")}
+                </button>
+              </span>
             </div>
             <input
               type="file"

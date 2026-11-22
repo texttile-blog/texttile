@@ -356,7 +356,22 @@ export class Gallery {
         this.resend([record])
       }
     })
-    this.resume.querySelector("button").addEventListener("click", () => this.resend(this.retryable()))
+    this.resume.addEventListener("click", e => {
+      const act = e.target.closest("button[data-act]")?.dataset.act
+      if (act === "retry-all") this.resend(this.retryable())
+      else if (act === "remove-all") this.dropFailed()
+    })
+  }
+
+  // every failed tile, out of the grid and out of the browser's keep
+  dropFailed() {
+    const failed = this.records.filter(r => !r.done && r.status === "failed")
+    for (const record of failed) {
+      forget(record.cacheKey)
+      URL.revokeObjectURL(record.objurl)
+    }
+    this.records = this.records.filter(r => !failed.includes(r))
+    this.renderLocal()
   }
 
   // the failed tiles a Retry can still help
