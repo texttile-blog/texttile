@@ -193,6 +193,9 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
   function remove(name, how) {
     if (editor.readOnly()) { editor.refuse(); return }
     const entry = entries.get(name)
+    /* a failure's Remove can still stand in the panel for a file a
+       Retry just sent again; that file is not a failure any more */
+    if (how === "remove" && entry && entry.status !== "failed") return
 
     /* an aborted request fires neither load nor error, so the slot it
        held is given back right here; a queued or failed entry holds

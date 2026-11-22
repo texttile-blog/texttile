@@ -547,6 +547,41 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> refute_has("#inlineResume")
     end
 
+    # The same two can also leave at once: their markers go out of the
+    # text, and nothing is sent.
+    test "failed pictures in the text leave with one button", %{conn: conn} do
+      picture = fn width ->
+        path = Path.join(System.tmp_dir!(), "e2e-#{System.unique_integer([:positive])}.png")
+        {:ok, black} = Vix.Vips.Operation.black(width, 20)
+        :ok = Vix.Vips.Image.write_to_file(black, path)
+        path
+      end
+
+      conn
+      |> sign_in()
+      |> click_button("New entry")
+      |> assert_has(".ed-cm .cm-content")
+      |> evaluate(
+        """
+        () => {
+          XMLHttpRequest.prototype.send = function () {
+            setTimeout(() => this.dispatchEvent(new Event("error")))
+          }
+          return true
+        }
+        """,
+        is_function: true
+      )
+      |> upload("Put pictures and videos in the text", picture.(40))
+      |> assert_has("#inlineCount", text: "1 failed")
+      |> upload("Put pictures and videos in the text", picture.(41))
+      |> assert_has("#inlineCount", text: "2 failed")
+      |> click_button("#inlineResume button", "Remove all")
+      |> refute_has("#inlineResume")
+      |> refute_has("#inlineImgs [data-img-action=retry]")
+      |> refute_has(".ed-cm .cm-content", text: "Upload failed")
+    end
+
     # The lines to hand on are a field of the pane, in the same clothes
     # as every other field beside them. They were a bare paragraph.
     # The address is one field now (round 19): `.addr` carries the

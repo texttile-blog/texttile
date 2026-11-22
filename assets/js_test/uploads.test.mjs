@@ -167,6 +167,19 @@ test("removing takes the marker out; a retry without the file says so", () => {
   assert.deepEqual(lastNews(told), [{kind: "retry_missing", name: "a.jpg"}])
 })
 
+// Remove all reads the panel's Remove buttons; a Resume all a moment
+// earlier can leave one standing for a file that is on its way again.
+test("removing a failure leaves a file that is on its way again alone", () => {
+  const {editor, requests, uploads} = build()
+  uploads.add([file("a.jpg")])
+  requests.open[0].answer(500, "")
+  uploads.retry("a.jpg")
+
+  uploads.remove("a.jpg", "remove")
+  assert.equal(requests.open[1].aborted, undefined)
+  assert.equal(editor.text(), "![Uploading a.jpg…]()")
+})
+
 test("cancelling a running upload gives its slot back to the queue", () => {
   const {requests, uploads} = build()
   uploads.add([file("a.jpg"), file("b.jpg"), file("c.jpg"), file("d.jpg")])

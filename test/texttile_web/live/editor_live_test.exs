@@ -673,8 +673,8 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#inlineImgs button[data-img-action=retry]")
     end
 
-    # One failed picture has its own Retry; from the second on, one
-    # button sends them all.
+    # One failed picture has its own Retry and Remove; from the second
+    # on, one button sends them all and one takes them all out.
     test "two failed pictures offer one button for both", %{conn: conn, user: user} do
       one = draft(user, %{title: "One", body: "![Upload failed: fog.png]()"})
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{one}")
@@ -690,6 +690,7 @@ defmodule TexttileWeb.EditorLiveTest do
 
       assert has_element?(view, "#inlineResume", "2 uploads did not arrive")
       assert has_element?(view, "#inlineResume button[data-img-action=retry-all]", "Resume all")
+      assert has_element?(view, "#inlineResume button[data-img-action=remove-all]", "Remove all")
     end
 
     test "the upload state reaches the log and the progress display", %{conn: conn, user: user} do
