@@ -220,6 +220,36 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       assert [] = Gallery.list(article.id)
     end
 
+    # The same pictures picked a second time fail as "already here".
+    # Nothing can resend them, but they still leave with one button.
+    test "several refused tiles leave with one button", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      first = jpg!("2024:05:01 12:00:00")
+
+      again = fn ->
+        path = Path.join(System.tmp_dir!(), "again-#{System.unique_integer([:positive])}.jpg")
+        File.cp!(first, path)
+        path
+      end
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> upload("Add pictures and videos to the gallery", first)
+      |> assert_has("#tileServer [data-id]")
+      |> upload("Add pictures and videos to the gallery", again.())
+      |> assert_has("#tileLocal .tile.failed", text: "already here", count: 1)
+      |> upload("Add pictures and videos to the gallery", again.())
+      |> assert_has("#tileLocal .tile.failed", text: "already here", count: 2)
+      |> assert_has("#tileResume", text: "2 uploads did not arrive")
+      |> refute_has("#tileResume button", text: "Resume all")
+      |> click_button("#tileResume button", "Remove all")
+      |> refute_has("#tileLocal .tile")
+      |> refute_has("#tileResume")
+
+      assert [_only_one] = Gallery.list(article.id)
+    end
+
     test "leaves for good when it is removed", %{conn: conn, kb: kb} do
       article = draft!(kb)
 

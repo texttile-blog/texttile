@@ -365,7 +365,7 @@ export class Gallery {
 
   // every failed tile, out of the grid and out of the browser's keep
   dropFailed() {
-    const failed = this.records.filter(r => !r.done && r.status === "failed")
+    const failed = this.failed()
     for (const record of failed) {
       forget(record.cacheKey)
       URL.revokeObjectURL(record.objurl)
@@ -374,9 +374,13 @@ export class Gallery {
     this.renderLocal()
   }
 
-  // the failed tiles a Retry can still help
+  // every tile that did not arrive, and those of them a Retry can still help
+  failed() {
+    return this.records.filter(r => !r.done && r.status === "failed")
+  }
+
   retryable() {
-    return this.records.filter(r => !r.done && r.status === "failed" && !r.noRetry)
+    return this.failed().filter(r => !r.noRetry)
   }
 
   resend(records) {
@@ -425,10 +429,12 @@ export class Gallery {
 
     const away = this.records.filter(r => !r.done && r.status !== "failed").length
     this.onWay.textContent = away ? ` · ${t("%{count} on the way", {count: away})}` : ""
-    /* one tile has a Retry of its own */
-    const stuck = this.retryable().length
+    /* one tile has a Retry and a Remove of its own. Remove all takes
+       every failed tile; Resume all shows while one can be sent again. */
+    const stuck = this.failed().length
     this.resume.hidden = stuck < 2
     this.resume.querySelector("b").textContent = t("%{count} uploads did not arrive", {count: stuck})
+    this.resume.querySelector("[data-act=retry-all]").hidden = !this.retryable().length
   }
 
   // What a travelling tile says about itself, in words. The screen
