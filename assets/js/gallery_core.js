@@ -106,6 +106,8 @@ export class Gallery {
 
   destroy() {
     this.dead = true
+    // let go of the originals still waiting for a preview
+    this.previewQueue = []
     clearTimeout(this.descriptionRetry)
     this.records.forEach(r => {
       if (r.xhr) r.xhr.abort()
