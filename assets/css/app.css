@@ -2791,8 +2791,10 @@ section.foot-band .cols { padding-bottom: 32px; }
 
 /* THE WAYS OUT stand in the band, under the blog's own line: on a desk
    in the first column, close under the words; on a phone at the end of
-   the band, after Subscribe */
-.band-out { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; padding-bottom: env(safe-area-inset-bottom); }
+   the band, after Subscribe. The grid stretches the row taller than a
+   line, and a button centers its word where a link keeps it on top, so
+   the words stand on one baseline. */
+.band-out { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 0; padding-bottom: env(safe-area-inset-bottom); }
 .band-out a + a::before, .band-out a + button::before, .band-out button + a::before {
   content: "\00b7"; margin-right: 12px; color: var(--tt-dim);
 }

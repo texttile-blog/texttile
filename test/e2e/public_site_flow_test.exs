@@ -507,6 +507,33 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
         assert title =~ "Harbor mornings"
       end)
     end
+
+    # Where each word of the foot stands, measured on the text and not on
+    # its box: a button centers its word in a box the band stretches,
+    # while a link keeps its word on top.
+    @word_tops """
+    () => [...document.querySelectorAll("#band-out > :not([hidden])")].map(el => {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      const rects = range.getClientRects()
+      return Math.round(rects[rects.length - 1].top)
+    })
+    """
+
+    test "keeps Share on the line of the links beside it", %{conn: conn} do
+      {:ok, _} =
+        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+          source: @a_sheet,
+          timeout: 5_000
+        )
+
+      conn
+      |> open_page("/")
+      |> evaluate(@word_tops, [is_function: true], fn tops ->
+        assert length(tops) == 3
+        assert Enum.uniq(tops) |> length() == 1, "foot words at #{inspect(tops)}"
+      end)
+    end
   end
 
   # A real mouse click at a point inside the element, measured from its
