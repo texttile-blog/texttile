@@ -299,6 +299,42 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       |> evaluate("() => window.firstTile.isConnected", [is_function: true], &assert(&1 == true))
     end
 
+    # Each progress tick redraws the travelling tile. A keyboard on its
+    # Cancel button stays there.
+    test "a focused button keeps its focus while its upload travels", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      long_line = """
+      () => {
+        XMLHttpRequest.prototype.send = function () {
+          let step = 0
+          const tick = () => {
+            step += 1
+            this.upload.onprogress && this.upload.onprogress({lengthComputable: true, loaded: step % 100, total: 100})
+            setTimeout(tick, 20)
+          }
+          setTimeout(tick)
+        }
+        return true
+      }
+      """
+
+      focus_then_look = """
+      () => new Promise(resolve => {
+        document.querySelector("#tileLocal button[data-act=cancel]").focus()
+        setTimeout(() => resolve(document.activeElement.dataset.act || null), 300)
+      })
+      """
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(long_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileLocal .tile.uploading")
+      |> evaluate(focus_then_look, [is_function: true], &assert(&1 == "cancel"))
+    end
+
     # The same pictures picked a second time fail as "already here".
     # Nothing can resend them, but they still leave with one button.
     test "several refused tiles leave with one button", %{conn: conn, kb: kb} do
