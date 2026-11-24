@@ -87,14 +87,31 @@ defmodule TexttileWeb.Endpoint do
   # The setting is read per upload, not at compile time, so a new limit
   # holds from the moment it is saved. Only the two upload addresses
   # ever ask, so no other request pays for the read.
+  # Plug.Parsers.MULTIPART reads in 1 MB chunks by default, and
+  # Plug.Conn.read_part_headers/2 gives the first read only 5 seconds.
+  # Bandit blocks until the whole chunk arrives, so any upload slower
+  # than 200 KB/s dies with 400 (which a reverse proxy turns into 502).
+  # Reading 64 KB at a time with a 30-second chunk timeout matches
+  # read_part_headers/2's own 64 KB header ceiling and keeps slow lines
+  # alive down to ~2 KB/s.
+  @multipart_read_opts [read_length: 64_000, read_timeout: 30_000]
+
   @stranger_roof Plug.Parsers.init(
-                   parsers: [:urlencoded, {:multipart, length: 1_000_000}, :json],
+                   parsers: [
+                     :urlencoded,
+                     {:multipart, [length: 1_000_000, read_length: 64_000, read_timeout: 15_000]},
+                     :json
+                   ],
                    pass: ["*/*"],
                    json_decoder: Phoenix.json_library()
                  )
 
   @picture_roof Plug.Parsers.init(
-                  parsers: [:urlencoded, {:multipart, length: 52_000_000}, :json],
+                  parsers: [
+                    :urlencoded,
+                    {:multipart, [{:length, 52_000_000} | @multipart_read_opts]},
+                    :json
+                  ],
                   pass: ["*/*"],
                   json_decoder: Phoenix.json_library()
                 )
@@ -120,7 +137,11 @@ defmodule TexttileWeb.Endpoint do
     Plug.Parsers.init(
       parsers: [
         :urlencoded,
-        {:multipart, length: Texttile.Settings.max_upload_bytes() + @form_around_the_file},
+        {:multipart,
+         [
+           {:length, Texttile.Settings.max_upload_bytes() + @form_around_the_file}
+           | @multipart_read_opts
+         ]},
         :json
       ],
       pass: ["*/*"],
