@@ -39,6 +39,7 @@ defmodule TexttileWeb.E2E do
 
       setup {TexttileWeb.E2E, :close_browser_context_afterwards}
       setup {TexttileWeb.E2E, :one_admin_to_sign_in_as}
+      setup {TexttileWeb.E2E, :a_share_sheet}
     end
   end
 
@@ -82,6 +83,29 @@ defmodule TexttileWeb.E2E do
 
   def one_admin_to_sign_in_as(_context) do
     %{kb: Texttile.AccountsFixtures.user_fixture(%{email: "kb@example.org", display_name: "kb"})}
+  end
+
+  @doc """
+  Gives the browser a share sheet, the way a phone and a Mac have one.
+
+  Headless Chromium has none, so without this the footer's Share stays
+  hidden in every test and every screenshot, and nobody sees how it
+  stands beside the links. That is how a misaligned Share reached a
+  reader (DESIGN.md). The sheet notes what it was handed in
+  `window.__shared`. A test about a browser without a sheet says
+  `@tag :no_share_sheet`.
+  """
+  def a_share_sheet(%{no_share_sheet: true}), do: :ok
+
+  def a_share_sheet(%{conn: conn}) do
+    {:ok, _} =
+      PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
+        source:
+          "navigator.share = (data) => { window.__shared = data; return Promise.resolve() }",
+        timeout: 5_000
+      )
+
+    :ok
   end
 
   @doc """

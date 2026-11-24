@@ -172,13 +172,16 @@ list and say which entries applied.
   `mix gettext.extract --merge` and translate the German file; `mix precommit`
   refuses an out-of-date template. Sentences the browser says live in
   `TexttileWeb.JsStrings` and reach `assets/js/i18n.js` as `data-words`.
-- **Phone and desktop.** Judge both screenshots together, phone first.
+- **Phone and desktop.** Judge both screenshots together, phone first, by
+  the rules in `DESIGN.md`.
 - **Settings.** A new switch belongs in Settings with a default that fits a
   fresh installation, and it saves itself with no Save button.
 - **Docs.** `README.md` is for the person running Texttile: update it in the
   same pull request as any change to environment variables, ports, Docker,
   deployment or Make targets. `IMPORT.md` is the bundle format contract.
-  `PHOENIX.md` is the framework guide. This file holds the permanent rules.
+  `PHOENIX.md` is the framework guide. `DESIGN.md` holds the visual rules
+  and the log of visual regressions: when you fix one, add its entry and its
+  rule there in the same pull request. This file holds the permanent rules.
   `docs/decisions/` holds one record per decision that is expensive to
   reverse: write one in the pull request that makes such a decision, and
   read the existing ones before you re-decide something.
@@ -253,7 +256,8 @@ An empty database is a bad test. Work from real data instead of pointing at it.
   you have disproved it. Reproduce suspected contamination by ordering the files
   with `--seed 0`, and timing races under CPU load. Rerunning proves nothing.
 - Finish every UI change with the shared `visual-qa` skill in a headless browser.
-  Judge the desktop and phone screenshots together.
+  Judge the desktop and phone screenshots together. `DESIGN.md` says what a
+  headless browser hides and how to show it.
 
 ## Pull requests
 
