@@ -484,7 +484,7 @@ export class Gallery {
           // a progress tick or a preview must not take a focused button away
           const act = tile.el.contains(document.activeElement) && document.activeElement.dataset.act
           tile.el.replaceWith(el)
-          if (act) el.querySelector(`button[data-act="${act}"]`)?.focus()
+          if (act) el.querySelector(`button[data-act="${act}"]`)?.focus({preventScroll: true})
           if (tile.el === at) at = el
         }
         tile = {el, html}
