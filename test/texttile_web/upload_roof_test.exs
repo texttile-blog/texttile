@@ -116,4 +116,51 @@ defmodule TexttileWeb.UploadRoofTest do
 
     assert redirected_to(conn) == ~p"/login"
   end
+
+  # Plug.Parsers.MULTIPART defaults to 1 MB reads, while
+  # Plug.Conn.read_part_headers/2 defaults to a 5 s timeout. Over
+  # Bandit's blocking socket recv, any upload whose first megabyte takes
+  # more than five seconds used to die with 400 (and a reverse proxy
+  # turned the early close into 502).
+  test "a slow upload whose first megabyte takes more than five seconds still reaches the router" do
+    user = Texttile.AccountsFixtures.user_fixture()
+
+    auth =
+      build_conn()
+      |> post(~p"/login", %{
+        "user" => %{
+          "email" => user.email,
+          "password" => Texttile.AccountsFixtures.valid_password()
+        }
+      })
+      |> Map.fetch!(:resp_cookies)
+      |> Map.fetch!(TexttileWeb.UserAuth.auth_cookie())
+      |> Map.fetch!(:value)
+
+    payload = body(1_200_000)
+    <<first_chunk::binary-size(32_000), rest::binary>> = payload
+    port = Application.fetch_env!(:texttile, TexttileWeb.Endpoint)[:http][:port]
+
+    {:ok, socket} = :gen_tcp.connect(~c"127.0.0.1", port, [:binary, active: false])
+    on_exit(fn -> :gen_tcp.close(socket) end)
+
+    headers =
+      "POST /admin/texts/1/gallery HTTP/1.1\r\n" <>
+        "Host: localhost:#{port}\r\n" <>
+        "Cookie: #{TexttileWeb.UserAuth.auth_cookie()}=#{auth}\r\n" <>
+        "Content-Type: multipart/form-data; boundary=#{@boundary}\r\n" <>
+        "Content-Length: #{byte_size(payload)}\r\n" <>
+        "Connection: close\r\n\r\n"
+
+    :ok = :gen_tcp.send(socket, headers)
+    :ok = :gen_tcp.send(socket, first_chunk)
+    Process.sleep(5_300)
+    :ok = :gen_tcp.send(socket, rest)
+
+    {:ok, response} = :gen_tcp.recv(socket, 0, 10_000)
+
+    # The parser read the entire slow body and handed off to the router,
+    # where CSRF rejects the bare request with 403 rather than 400.
+    assert response =~ "HTTP/1.1 403"
+  end
 end
