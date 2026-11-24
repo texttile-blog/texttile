@@ -6,11 +6,15 @@ defmodule TexttileWeb.GalleryController do
 
   A picture this entry already holds is refused with a 409, and the
   answer names the picture it is.
+
+  A big file arrives in pieces (`TexttileWeb.ChunkedUpload`); the last
+  piece is welded into the file and runs the same `add_file`.
   """
   use TexttileWeb, :controller
 
   alias Texttile.Articles
   alias Texttile.Gallery
+  alias TexttileWeb.ChunkedUpload
 
   def create(conn, %{"id" => id, "file" => %Plug.Upload{} = upload}) do
     article = Articles.get_article!(id)
@@ -30,5 +34,23 @@ defmodule TexttileWeb.GalleryController do
 
   def create(conn, _params) do
     conn |> put_status(400) |> json(%{error: "No file arrived"})
+  end
+
+  def chunk(conn, %{"id" => id} = params) do
+    article = Articles.get_article!(id)
+    user = conn.assigns.current_scope.user
+
+    ChunkedUpload.receive(conn, params, fn conn, whole, name ->
+      case Gallery.add_file(article, whole, name, by: user.id) do
+        {:ok, image} ->
+          json(conn, %{id: image.id})
+
+        {:error, {:duplicate, name}} ->
+          TexttileWeb.UploadAnswer.duplicate(conn, name)
+
+        {:error, reason} ->
+          conn |> put_status(422) |> json(%{error: reason})
+      end
+    end)
   end
 end

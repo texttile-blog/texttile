@@ -118,6 +118,87 @@ defmodule TexttileWeb.ImagesControllerTest do
     assert redirected_to(conn) == ~p"/login"
   end
 
+  # The chunk endpoints share the pipeline with their single-file
+  # addresses, so the redirect above stands for them too. What is
+  # theirs alone is the welded file, proved on a picture and a film.
+  describe "a file that arrives in pieces" do
+    test "welds a pasted picture together and answers with its address", %{
+      conn: conn,
+      article: article
+    } do
+      bytes = File.read!(png_file(mark: "the pieces one"))
+      {first, rest} = String.split_at(bytes, div(byte_size(bytes), 2))
+
+      conn = send_piece(conn, article, index: 0, parts: 2, size: byte_size(bytes), body: first)
+      assert conn.status == 204
+
+      conn = send_piece(conn, article, index: 1, parts: 2, size: byte_size(bytes), body: rest)
+      assert %{"url" => "/uploads/images/" <> stored} = json_response(conn, 200)
+      assert File.exists?(Uploads.absolute("images/" <> stored))
+    end
+
+    test "welds a film together and puts it in line for the conversion", %{
+      conn: conn,
+      article: article
+    } do
+      bytes = File.read!(Texttile.VideoFixtures.video_file(320, 240))
+      {first, rest} = String.split_at(bytes, div(byte_size(bytes), 2))
+
+      conn = send_piece(conn, article, index: 0, parts: 2, size: byte_size(bytes), body: first)
+      assert conn.status == 204
+
+      conn =
+        send_piece(conn, article,
+          index: 1,
+          parts: 2,
+          size: byte_size(bytes),
+          body: rest,
+          name: "Harbour Morning.mov"
+        )
+
+      assert %{"url" => "/uploads/videos/" <> stored} = json_response(conn, 200)
+      assert File.exists?(Uploads.absolute("videos/" <> stored))
+      assert Texttile.Videos.get("videos/" <> stored).state == "queued"
+    end
+
+    test "signed out, the piece endpoint answers with a redirect to sign-in", %{
+      article: article
+    } do
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/octet-stream")
+        |> post(
+          "/admin/texts/#{article.id}/images/chunks?" <>
+            URI.encode_query(
+              upload: "aaaaaaaaaaaaaaaa",
+              index: 0,
+              parts: 1,
+              size: 10,
+              name: "a.png"
+            ),
+          ""
+        )
+
+      assert redirected_to(conn) == ~p"/login"
+    end
+  end
+
+  defp send_piece(conn, article, opts) do
+    query =
+      URI.encode_query(
+        upload: Keyword.get(opts, :upload, "aaaaaaaaaaaaaaaa"),
+        index: Keyword.fetch!(opts, :index),
+        parts: Keyword.fetch!(opts, :parts),
+        size: Keyword.fetch!(opts, :size),
+        name: Keyword.get(opts, :name, "Pier Gull.png")
+      )
+
+    conn
+    |> ensure_recycled()
+    |> put_req_header("content-type", "application/octet-stream")
+    |> post("/admin/texts/#{article.id}/images/chunks?" <> query, Keyword.get(opts, :body, ""))
+  end
+
   # The one picture that is on disk for this entry, as the body would
   # write it.
   defp stored_name(_article) do

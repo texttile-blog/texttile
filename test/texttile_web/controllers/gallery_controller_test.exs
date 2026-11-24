@@ -90,4 +90,85 @@ defmodule TexttileWeb.GalleryControllerTest do
     assert error =~ "Pier Lantern.jpg"
     assert [_only_one] = Gallery.list(article.id)
   end
+
+  describe "a file that arrives in pieces" do
+    test "welds together and lands as one picture", %{conn: conn, article: article} do
+      bytes = File.read!(jpg_file(mark: "the pieces one"))
+      {first, rest} = String.split_at(bytes, div(byte_size(bytes), 2))
+
+      conn = send_piece(conn, article, index: 0, parts: 2, size: byte_size(bytes), body: first)
+      assert conn.status == 204
+
+      conn = send_piece(conn, article, index: 1, parts: 2, size: byte_size(bytes), body: rest)
+      assert %{"id" => id} = json_response(conn, 200)
+      assert [%{id: ^id, filename: "Pier.jpg"}] = Gallery.list(article.id)
+    end
+
+    test "pieces that do not add up to the announced size are a restart", %{
+      conn: conn,
+      article: article
+    } do
+      bytes = File.read!(jpg_file([]))
+      size = byte_size(bytes)
+
+      conn = send_piece(conn, article, index: 0, parts: 2, size: size + 5, body: bytes)
+      assert conn.status == 204
+
+      conn = send_piece(conn, article, index: 1, parts: 2, size: size + 5, body: "x")
+      assert %{"error" => error, "restart" => true} = json_response(conn, 409)
+      assert Gallery.list(article.id) == []
+    end
+
+    test "a piece without the ones before it is a restart", %{conn: conn, article: article} do
+      conn =
+        send_piece(conn, article,
+          index: 1,
+          parts: 2,
+          size: 100,
+          body: "half a picture is no picture"
+        )
+
+      assert %{"restart" => true} = json_response(conn, 409)
+      assert Gallery.list(article.id) == []
+    end
+
+    test "a file over the roof is turned away before its pieces travel", %{
+      conn: conn,
+      article: article
+    } do
+      conn =
+        send_piece(conn, article,
+          index: 0,
+          parts: 1,
+          size: 600 * 1024 * 1024,
+          body: "nothing to read"
+        )
+
+      assert %{"error" => _} = json_response(conn, 413)
+      assert Gallery.list(article.id) == []
+    end
+
+    test "pieces that name themselves badly are a 400", %{conn: conn, article: article} do
+      conn =
+        send_piece(conn, article, index: 0, parts: 1, size: 10, body: "x", upload: "has-dash")
+
+      assert json_response(conn, 400)
+    end
+  end
+
+  defp send_piece(conn, article, opts) do
+    query =
+      URI.encode_query(
+        upload: Keyword.get(opts, :upload, "aaaaaaaaaaaaaaaa"),
+        index: Keyword.fetch!(opts, :index),
+        parts: Keyword.fetch!(opts, :parts),
+        size: Keyword.fetch!(opts, :size),
+        name: Keyword.get(opts, :name, "Pier.jpg")
+      )
+
+    conn
+    |> ensure_recycled()
+    |> put_req_header("content-type", "application/octet-stream")
+    |> post("/admin/texts/#{article.id}/gallery/chunks?" <> query, Keyword.get(opts, :body, ""))
+  end
 end

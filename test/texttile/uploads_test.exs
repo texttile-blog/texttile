@@ -318,4 +318,85 @@ defmodule Texttile.UploadsTest do
       assert Uploads.free_bytes("/no/such/folder-#{System.unique_integer([:positive])}") == nil
     end
   end
+
+  describe "uploads that travel in pieces" do
+    setup context do
+      on_exit(context, fn -> Uploads.drop_chunks("aaaaaaaaaaaaaaaa") end)
+      :ok
+    end
+
+    # a token names a folder in the machine's temporary space, so only
+    # a plain run of lowercase letters and digits may ever stand for one
+    test "a token is a plain run of letters and digits" do
+      assert Uploads.chunk_token?("abcdef1234567890")
+      refute Uploads.chunk_token?("short")
+      refute Uploads.chunk_token?(String.duplicate("a", 65))
+      refute Uploads.chunk_token?("has-a-dash")
+      refute Uploads.chunk_token?("has.dot")
+      refute Uploads.chunk_token?("climbs/out")
+      refute Uploads.chunk_token?(nil)
+    end
+
+    test "the pieces weld together in their order" do
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "first ")
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 1, "second")
+
+      assert {:ok, whole} = Uploads.assemble_chunks("aaaaaaaaaaaaaaaa", 2, 12)
+      assert File.read!(whole) == "first second"
+    end
+
+    test "piece 0 starts the upload over" do
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "old ")
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 1, "old")
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "new ")
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 1, "second")
+
+      assert {:ok, whole} = Uploads.assemble_chunks("aaaaaaaaaaaaaaaa", 2, 10)
+      assert File.read!(whole) == "new second"
+    end
+
+    test "a missing piece is a restart, not an error" do
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "first ")
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 2, "third")
+
+      assert Uploads.assemble_chunks("aaaaaaaaaaaaaaaa", 3, 11) == {:error, :restart}
+    end
+
+    test "pieces that do not add up to the announced size are a restart" do
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "first")
+
+      assert Uploads.assemble_chunks("aaaaaaaaaaaaaaaa", 1, 99) == {:error, :restart}
+    end
+
+    test "a later piece for an upload this server never saw is a restart" do
+      assert Uploads.store_chunk("bbbbbbbbbbbbbbbb", 1, "second") == {:error, :restart}
+    end
+
+    test "dropping takes the whole stash with it" do
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "first")
+      :ok = Uploads.drop_chunks("aaaaaaaaaaaaaaaa")
+
+      assert Uploads.store_chunk("aaaaaaaaaaaaaaaa", 1, "second") == {:error, :restart}
+    end
+
+    test "a stash nobody came back for a day ago is swept at the next start" do
+      stale = "cccccccccccccccc"
+      on_exit(fn -> Uploads.drop_chunks(stale) end)
+      :ok = Uploads.store_chunk(stale, 0, "old")
+      part = Path.join([System.tmp_dir!(), "texttile-chunks", stale, "0.part"])
+
+      yesterday = DateTime.add(DateTime.utc_now(), -25 * 24 * 60 * 60)
+
+      # File.touch speaks the calendar tuple, not a DateTime
+      File.touch!(
+        part,
+        {{yesterday.year, yesterday.month, yesterday.day},
+         {yesterday.hour, yesterday.minute, yesterday.second}}
+      )
+
+      :ok = Uploads.store_chunk("aaaaaaaaaaaaaaaa", 0, "new")
+
+      refute File.exists?(Path.dirname(part))
+    end
+  end
 end

@@ -21,6 +21,7 @@
 import {t, esc} from "./i18n.js"
 import {attachSwipe, trapTab, quiet, closeMark, mediaNode} from "./lightbox.js"
 import {keep, forget, waiting} from "./upload_cache.js"
+import {sendChunks} from "./chunks.js"
 
 const MAX_PARALLEL = 2
 /* one roof for a photograph and for a film, and the server owns the
@@ -110,7 +111,7 @@ export class Gallery {
     this.previewQueue = []
     clearTimeout(this.descriptionRetry)
     this.records.forEach(r => {
-      if (r.xhr) r.xhr.abort()
+      if (r.sender) r.sender.abort()
       if (r.objurl) URL.revokeObjectURL(r.objurl)
     })
     window.removeEventListener("keydown", this.onKeydown)
@@ -271,70 +272,72 @@ export class Gallery {
     record.status = "uploading"
     record.pct = 0
 
-    const xhr = new XMLHttpRequest()
-    record.xhr = xhr
-    xhr.open("POST", this.uploadUrl)
-    xhr.setRequestHeader("x-csrf-token", this.csrf)
-    xhr.responseType = "json"
-
-    xhr.upload.onprogress = e => {
-      if (e.lengthComputable) {
-        record.pct = Math.min(99, Math.round((e.loaded / e.total) * 100))
+    const sender = sendChunks({
+      url: this.uploadUrl + "/chunks",
+      csrf: this.csrf,
+      file: record.file,
+      name: record.name,
+      onProgress: done => {
+        record.pct = Math.min(99, Math.round((done / record.file.size) * 100))
         this.scheduleRender()
-      }
-    }
-    // bytes are out the door; the server is reading the picture now
-    xhr.upload.onload = () => {
-      record.status = "processing"
-      this.scheduleRender()
-    }
-    xhr.onload = () => {
-      this.active -= 1
-      record.xhr = null
-      if (xhr.status === 200 && xhr.response && xhr.response.id != null) {
-        record.serverId = String(xhr.response.id)
-        record.done = true
-        forget(record.cacheKey)
-        this.settleDone()
-      } else if (xhr.status === 409 && xhr.response && xhr.response.error) {
-        /* the picture is in this entry already: nothing failed, and a
-           retry would answer the same. The tile has room for three
-           words, so the row above it carries the sentence. */
-        record.status = "failed"
-        record.noRetry = true
-        record.error = t("already here")
-        forget(record.cacheKey)
-        this.noteTile(xhr.response.error)
-      } else {
-        record.status = "failed"
-        record.error = (xhr.response && xhr.response.error) || t("upload failed")
-        this.noteTile(t("%{name} failed to upload. Retry or remove it.", {name: record.name}))
-      }
-      this.scheduleRender()
-      this.pump()
-    }
-    xhr.onerror = xhr.ontimeout = () => {
-      this.active -= 1
-      record.xhr = null
+      },
+      // bytes are out the door; the server is reading the picture now
+      onUploaded: () => {
+        record.status = "processing"
+        this.scheduleRender()
+      },
+      onAnswer: answer => this.arrived(record, answer),
+      onLost: loss => this.lost(record, loss),
+    })
+    record.sender = sender
+    this.scheduleRender()
+  }
+
+  // the last piece came back with an answer; the same three ways the
+  // one-request upload could end
+  arrived(record, answer) {
+    this.active -= 1
+    record.sender = null
+    if (answer.status === 200 && answer.response && answer.response.id != null) {
+      record.serverId = String(answer.response.id)
+      record.done = true
+      forget(record.cacheKey)
+      this.settleDone()
+    } else if (answer.status === 409 && answer.response && answer.response.error) {
+      /* the picture is in this entry already: nothing failed, and a
+         retry would answer the same. The tile has room for three
+         words, so the row above it carries the sentence. */
       record.status = "failed"
-      record.error = t("upload failed")
-      this.noteTile(t("%{name} failed to upload. Retry or remove it.", {name: record.name}))
-      this.scheduleRender()
-      this.pump()
+      record.noRetry = true
+      record.error = t("already here")
+      forget(record.cacheKey)
+      this.noteTile(answer.response.error)
+    } else {
+      this.failRecord(record, answer.response && answer.response.error)
     }
-    // abort fires neither load nor error; without this the slot would
-    // stay taken and the cancelled tile could never leave
-    xhr.onabort = () => {
-      this.active -= 1
-      record.xhr = null
+    this.scheduleRender()
+    this.pump()
+  }
+
+  // a piece never became an answer: the connection is gone. A cancel
+  // (abort) takes the tile away; everything else is a failure to retry
+  lost(record, loss) {
+    this.active -= 1
+    record.sender = null
+    if (loss && loss.aborted) {
       this.dropRecord(record)
       this.pump()
+      return
     }
-
-    const form = new FormData()
-    form.append("file", record.file, record.name)
-    xhr.send(form)
+    this.failRecord(record)
     this.scheduleRender()
+    this.pump()
+  }
+
+  failRecord(record, error) {
+    record.status = "failed"
+    record.error = error || t("upload failed")
+    this.noteTile(t("%{name} failed to upload. Retry or remove it.", {name: record.name}))
   }
 
   // a finished upload's local tile leaves the moment the server tile
@@ -362,7 +365,10 @@ export class Gallery {
 
       if (button.dataset.act === "cancel" || button.dataset.act === "remove") {
         forget(record.cacheKey)
-        if (record.xhr) record.xhr.abort()
+        // the abort comes back through the sender's own onLost and
+        // drops the tile there; a tile that holds no transfer leaves
+        // at once
+        if (record.sender) record.sender.abort()
         else this.dropRecord(record)
       } else if (button.dataset.act === "retry") {
         this.resend([record])

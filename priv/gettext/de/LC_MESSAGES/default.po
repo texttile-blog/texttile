@@ -4313,3 +4313,18 @@ msgstr[1] "%{count} Kommentare warten"
 #, elixir-autogen, elixir-format
 msgid "Remove all"
 msgstr "Alle entfernen"
+
+#: lib/texttile_web/chunked_upload.ex:107
+#, elixir-autogen, elixir-format
+msgid "A piece of this upload did not arrive; send it again."
+msgstr "Ein Teil dieser Übertragung ist nicht angekommen; sende sie erneut."
+
+#: lib/texttile_web/chunked_upload.ex:59
+#, elixir-autogen, elixir-format
+msgid "The file is over the upload limit."
+msgstr "Die Datei liegt über dem Upload-Limit."
+
+#: lib/texttile_web/chunked_upload.ex:65
+#, elixir-autogen, elixir-format
+msgid "The upload arrived in pieces that do not fit together."
+msgstr "Diese Übertragung ist in Teilen angekommen, die nicht zusammenpassen."

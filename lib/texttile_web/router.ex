@@ -168,6 +168,11 @@ defmodule TexttileWeb.Router do
     # the browser feeds them one after the other.
     post "/texts/:id/gallery", GalleryController, :create
 
+    # The same two uploads in pieces, for the files a single request is
+    # too big for on the way in (TexttileWeb.ChunkedUpload).
+    post "/texts/:id/gallery/chunks", GalleryController, :chunk
+    post "/texts/:id/images/chunks", ImagesController, :chunk
+
     # One entry as a zip: the bundle the import reads, which is a Hugo
     # page bundle as well. Made for the request and gone after it.
     get "/texts/:id/export", ExportController, :show

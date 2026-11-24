@@ -11,23 +11,29 @@ defmodule TexttileWeb.ImagesController do
   A picture this entry already holds is refused with a 409, and the
   answer names the picture it is. Films are taken as they come: a film
   is never read here.
+
+  A big file arrives in pieces (`TexttileWeb.ChunkedUpload`); the last
+  piece is welded into the file and runs the same storing.
   """
   use TexttileWeb, :controller
 
   alias Texttile.Articles
   alias Texttile.Uploads
   alias Texttile.Videos
+  alias TexttileWeb.ChunkedUpload
   alias TexttileWeb.UploadAnswer
 
   def create(conn, %{"id" => id, "file" => %Plug.Upload{} = upload}) do
     article = Articles.get_article!(id)
 
     if Videos.video?(upload.filename) do
-      answer(conn, store_video(upload))
+      answer(conn, store_video(upload.path, upload.filename))
     else
       # Asking and storing stand together, so two pastes of one
       # photograph cannot both find nothing.
-      case Articles.with_pictures_held(article, fn -> store_picture(article, upload) end) do
+      case Articles.with_pictures_held(article, fn ->
+             store_picture(article, upload.path, upload.filename)
+           end) do
         {:duplicate, name} -> UploadAnswer.duplicate(conn, name)
         stored -> answer(conn, stored)
       end
@@ -38,15 +44,30 @@ defmodule TexttileWeb.ImagesController do
     conn |> put_status(400) |> json(%{error: "No file arrived"})
   end
 
-  defp store_picture(article, upload) do
-    case Articles.duplicate_picture(article, upload.path) do
-      nil -> Uploads.put_body_image(upload.path, upload.filename, article_id: article.id)
+  def chunk(conn, %{"id" => id} = params) do
+    article = Articles.get_article!(id)
+
+    ChunkedUpload.receive(conn, params, fn conn, whole, name ->
+      if Videos.video?(name) do
+        answer(conn, store_video(whole, name))
+      else
+        case Articles.with_pictures_held(article, fn -> store_picture(article, whole, name) end) do
+          {:duplicate, name} -> UploadAnswer.duplicate(conn, name)
+          stored -> answer(conn, stored)
+        end
+      end
+    end)
+  end
+
+  defp store_picture(article, source_path, original_name) do
+    case Articles.duplicate_picture(article, source_path) do
+      nil -> Uploads.put_body_image(source_path, original_name, article_id: article.id)
       name -> {:duplicate, name}
     end
   end
 
-  defp store_video(upload) do
-    with {:ok, relative} <- Uploads.put_body_video(upload.path, upload.filename) do
+  defp store_video(source_path, original_name) do
+    with {:ok, relative} <- Uploads.put_body_video(source_path, original_name) do
       Videos.queue(relative)
       {:ok, relative}
     end

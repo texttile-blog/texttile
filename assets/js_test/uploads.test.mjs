@@ -41,25 +41,29 @@ function fakeEditor(initial = "", readOnly = false) {
   }
 }
 
-/* an XMLHttpRequest that answers when told to */
+/* an XMLHttpRequest that answers when told to. The manager speaks
+   through the handler properties, so the fake calls those. */
 function fakeRequests() {
   const open = []
   const mk = () => {
     const xhr = {
-      listeners: {},
-      upload: {addEventListener: (ev, fn) => (xhr.listeners["up:" + ev] = fn)},
-      addEventListener: (ev, fn) => (xhr.listeners[ev] = fn),
+      upload: {onprogress: null, onload: null},
       setRequestHeader: () => {},
       open: () => {},
       send: () => open.push(xhr),
-      abort: () => (xhr.aborted = true),
+      /* the real request fires the abort event, and the sender hands
+         the slot back through it */
+      abort: () => {
+        xhr.aborted = true
+        if (xhr.onabort) xhr.onabort()
+      },
       answer(status, body) {
         xhr.status = status
         xhr.responseText = body
-        xhr.listeners.load()
+        if (xhr.onload) xhr.onload()
       },
       progress(loaded, total) {
-        xhr.listeners["up:progress"]({lengthComputable: true, loaded, total})
+        if (xhr.upload.onprogress) xhr.upload.onprogress({lengthComputable: true, loaded, total})
       },
     }
     return xhr

@@ -4313,3 +4313,18 @@ msgstr[1] ""
 #, elixir-autogen, elixir-format
 msgid "Remove all"
 msgstr ""
+
+#: lib/texttile_web/chunked_upload.ex:107
+#, elixir-autogen, elixir-format
+msgid "A piece of this upload did not arrive; send it again."
+msgstr ""
+
+#: lib/texttile_web/chunked_upload.ex:59
+#, elixir-autogen, elixir-format
+msgid "The file is over the upload limit."
+msgstr ""
+
+#: lib/texttile_web/chunked_upload.ex:65
+#, elixir-autogen, elixir-format
+msgid "The upload arrived in pieces that do not fit together."
+msgstr ""

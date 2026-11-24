@@ -15,6 +15,7 @@
    that says nothing. */
 
 import {t} from "./i18n.js"
+import {sendChunks} from "./chunks.js"
 
 const DEFAULT_TEMPLATES = {uploading: "Uploading %{name}…", failed: "Upload failed: %{name}"}
 
@@ -125,42 +126,42 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
     const entry = entries.get(name)
     running++
     entry.status = "uploading"
-    const xhr = mkRequest()
-    entry.xhr = xhr
-    xhr.open("POST", uploadUrl)
-    const token = csrf()
-    if (token) xhr.setRequestHeader("x-csrf-token", token)
-    xhr.upload.addEventListener("progress", e => {
-      if (!e.lengthComputable) return
-      entry.pct = Math.round((e.loaded / e.total) * 100)
-      tell([])
-    })
-    xhr.addEventListener("load", () => {
-      settle()
-      if (xhr.status === 200) {
-        const {url} = JSON.parse(xhr.responseText)
-        editor.swap(tokens.up(name), tokens.done(name, url))
-        entries.delete(name)
-        tell([{kind: "done", name}])
-      } else if (xhr.status === 409 && refusedName(xhr)) {
-        /* the picture is in this entry already: nothing failed and a
-           retry would answer the same, so the token leaves the text
-           and the news names the picture it is */
-        const of = refusedName(xhr)
-        dropToken(tokens.up(name))
-        entries.delete(name)
-        tell([{kind: "refused", name, of}])
-      } else {
+    entry.sender = sendChunks({
+      url: uploadUrl + "/chunks",
+      csrf: csrf(),
+      file: entry.file,
+      name,
+      request: mkRequest,
+      onProgress: done => {
+        entry.pct = Math.round((done / entry.file.size) * 100)
+        tell([])
+      },
+      onAnswer: answer => {
+        settle()
+        if (answer.status === 200) {
+          editor.swap(tokens.up(name), tokens.done(name, answer.response.url))
+          entries.delete(name)
+          tell([{kind: "done", name}])
+        } else if (answer.status === 409 && answer.response && answer.response.of) {
+          /* the picture is in this entry already: nothing failed and a
+             retry would answer the same, so the token leaves the text
+             and the news names the picture it is */
+          dropToken(tokens.up(name))
+          entries.delete(name)
+          tell([{kind: "refused", name, of: answer.response.of}])
+        } else {
+          fail(name, entry)
+        }
+      },
+      onLost: loss => {
+        settle()
+        /* a cancel or remove aborted this transfer on purpose: its
+           token is already gone and the words must not learn of a
+           failure that never happened */
+        if (loss && loss.aborted) return
         fail(name, entry)
-      }
+      },
     })
-    xhr.addEventListener("error", () => {
-      settle()
-      fail(name, entry)
-    })
-    const form = new FormData()
-    form.append("file", entry.file, name)
-    xhr.send(form)
   }
 
   function fail(name, entry) {
@@ -197,12 +198,11 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
        Retry just sent again; that file is not a failure any more */
     if (how === "remove" && entry && entry.status !== "failed") return
 
-    /* an aborted request fires neither load nor error, so the slot it
-       held is given back right here; a queued or failed entry holds
-       none */
+    /* the abort comes back through the sender's own onLost, which
+       gives the slot back; a queued or failed entry holds none */
     if (entry && entry.status === "uploading") {
-      if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
-      settle()
+      if (entry.sender) entry.sender.abort()
+      else settle()
     }
 
     entries.delete(name)
@@ -212,12 +212,8 @@ export function createUploads({tokens, uploadUrl, csrf, maxMb, editor, notify, r
 
   function abortAll() {
     for (const entry of entries.values()) {
-      if (entry.xhr) { try { entry.xhr.abort() } catch (_e) {} }
+      if (entry.sender) entry.sender.abort()
     }
-  }
-
-  function refusedName(xhr) {
-    try { return JSON.parse(xhr.responseText).of || null } catch (_e) { return null }
   }
 
   return {add, retry, remove, abortAll}

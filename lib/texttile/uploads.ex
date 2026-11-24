@@ -79,6 +79,158 @@ defmodule Texttile.Uploads do
     :ok
   end
 
+  ## A file that travels in pieces
+
+  # The pieces of one upload wait here, in the machine's temporary
+  # space and not on the volume: they are halves of a file on its way,
+  # not installation data, and a restart clears them with everything
+  # else. An upload the browser never finished sweeps itself away a
+  # day later, when the next one starts.
+  @chunk_root_name "texttile-chunks"
+  @chunk_stale_ms 24 * 60 * 60 * 1000
+
+  @doc """
+  Is this a token the piece stash accepts? A token names a folder, so
+  anything with a slash or a dot in it is turned away before a path is
+  ever built from it.
+  """
+  def chunk_token?(token) when is_binary(token), do: token =~ ~r/\A[a-z0-9]{8,64}\z/
+  def chunk_token?(_), do: false
+
+  @doc """
+  Keeps one piece of a chunked upload, numbered from zero. Piece 0
+  starts the upload over: the pieces a broken attempt left behind have
+  no place in the second one. A later piece for an upload this server
+  never saw (it restarted between pieces) is refused, so the browser
+  learns it at once and not after the whole file has travelled.
+  """
+  def store_chunk(token, index, body) do
+    dir = chunk_dir(token)
+
+    if index == 0 do
+      File.rm_rf!(dir)
+      sweep_chunks()
+      File.mkdir_p!(dir)
+    end
+
+    with true <- File.dir?(dir),
+         :ok <- File.write(part_path(token, index), body) do
+      :ok
+    else
+      false -> {:error, :restart}
+      {:error, _reason} -> {:error, :restart}
+    end
+  end
+
+  @doc """
+  Welds the pieces 0..parts-1 into one file and answers with its path,
+  or `{:error, :restart}` when a piece is missing or the pieces do not
+  add up to the size the browser announced. The caller owns the path
+  until `drop_chunks/1` takes the stash away.
+  """
+  def assemble_chunks(token, parts, total) do
+    part_paths = for index <- 0..(parts - 1), do: part_path(token, index)
+
+    with {:ok, sizes} <- part_sizes(part_paths),
+         true <- Enum.sum(sizes) == total,
+         whole = Path.join(chunk_dir(token), "whole"),
+         :ok <- weld(part_paths, whole) do
+      {:ok, whole}
+    else
+      {:error, :missing_part} -> {:error, :restart}
+      false -> {:error, :restart}
+      {:error, _reason} -> {:error, :restart}
+    end
+  end
+
+  defp part_sizes(part_paths) do
+    sizes =
+      Enum.map(part_paths, fn path ->
+        case File.stat(path) do
+          {:ok, %File.Stat{size: size}} -> size
+          {:error, _reason} -> :missing_part
+        end
+      end)
+
+    if :missing_part in sizes, do: {:error, :missing_part}, else: {:ok, sizes}
+  end
+
+  defp weld(part_paths, whole) do
+    File.open!(whole, [:write], fn out ->
+      for part <- part_paths do
+        File.stream!(part, 2_097_152)
+        |> Enum.each(&IO.binwrite(out, &1))
+      end
+
+      :ok
+    end)
+  end
+
+  defp chunk_root, do: Path.join(System.tmp_dir!(), @chunk_root_name)
+  defp chunk_dir(token), do: Path.join(chunk_root(), token)
+  defp part_path(token, index), do: Path.join(chunk_dir(token), "#{index}.part")
+
+  @doc "The stash of one upload is done, one way or the other: gone."
+  def drop_chunks(token) do
+    File.rm_rf!(chunk_dir(token))
+    :ok
+  end
+
+  # A stash is as old as its newest piece: an upload that is still
+  # going keeps writing fresh pieces, and one the browser never
+  # finished grows old and quiet. An empty stash has no piece to speak
+  # for it, so the folder's own age stands in.
+  defp sweep_chunks do
+    case File.ls(chunk_root()) do
+      {:ok, tokens} ->
+        deadline = System.system_time(:millisecond) - @chunk_stale_ms
+
+        for token <- tokens do
+          dir = Path.join(chunk_root(), token)
+
+          if stash_older?(dir, deadline), do: File.rm_rf!(dir)
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+  end
+
+  defp stash_older?(dir, deadline) do
+    case File.ls(dir) do
+      {:ok, []} ->
+        age(dir) < deadline
+
+      {:ok, names} ->
+        names
+        |> Enum.map(&age(Path.join(dir, &1)))
+        |> Enum.max() < deadline
+
+      {:error, _reason} ->
+        false
+    end
+  end
+
+  defp age(path) do
+    case File.stat(path) do
+      {:ok, %File.Stat{mtime: mtime}} -> unix_ms(mtime)
+      # gone while the sweep looked: somebody is using it right now, so
+      # it counts as young and stays
+      {:error, _reason} -> System.system_time(:millisecond)
+    end
+  end
+
+  # File.stat says when a file was last touched, as a DateTime where
+  # the platform gives one and as a calendar tuple where it does not.
+  defp unix_ms(%DateTime{} = mtime), do: DateTime.to_unix(mtime) * 1000
+
+  defp unix_ms({date, {h, m, s}}) do
+    {:ok, date} = Date.new(elem(date, 0), elem(date, 1), elem(date, 2))
+    {:ok, time} = Time.new(h, m, s)
+    naive = NaiveDateTime.new!(date, time)
+    DateTime.to_unix(DateTime.from_naive!(naive, "Etc/UTC")) * 1000
+  end
+
   ## The folders of the layout
 
   @images_dir "images"

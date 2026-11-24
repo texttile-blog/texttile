@@ -85,8 +85,8 @@ defmodule TexttileWeb.Endpoint do
   # the router's question, one roof later.
   #
   # The setting is read per upload, not at compile time, so a new limit
-  # holds from the moment it is saved. Only the two upload addresses
-  # ever ask, so no other request pays for the read.
+  # holds from the moment it is saved. Only the upload addresses ever
+  # ask, so no other request pays for the read.
   @stranger_roof Plug.Parsers.init(
                    parsers: [:urlencoded, {:multipart, length: 1_000_000}, :json],
                    pass: ["*/*"],
@@ -143,6 +143,8 @@ defmodule TexttileWeb.Endpoint do
 
   defp upload_address?(["admin", "texts", _id, "images"]), do: true
   defp upload_address?(["admin", "texts", _id, "gallery"]), do: true
+  defp upload_address?(["admin", "texts", _id, "images", "chunks"]), do: true
+  defp upload_address?(["admin", "texts", _id, "gallery", "chunks"]), do: true
   defp upload_address?(_path), do: false
 
   plug Plug.MethodOverride
