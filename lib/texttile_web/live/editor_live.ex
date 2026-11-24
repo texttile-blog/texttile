@@ -2323,8 +2323,7 @@ defmodule TexttileWeb.EditorLive do
                 <span class="note num font-normal font-sans" id="tileCount">
                   {tile_count(@gallery)}
                 </span>
-                <span class="note num font-normal font-sans" id="tileOnWay" phx-update="ignore">
-                </span>
+                <span class="note num font-normal font-sans" id="tileOnWay" phx-update="ignore"></span>
               </span>
             </div>
             <div
@@ -2479,8 +2478,7 @@ defmodule TexttileWeb.EditorLive do
                           @effective_preview
                       )
                     }
-                  >
-                  </span>
+                  ></span>
                   <span class="hint !mt-0 flex-1">
                     {gettext("Used in the entries list, on the front page and in link previews.")}
                   </span>
@@ -2505,8 +2503,7 @@ defmodule TexttileWeb.EditorLive do
                     phx-click="set_preview"
                     phx-value-path={path}
                     aria-label={gettext("Use image %{index} as the preview image", index: index)}
-                  >
-                  </button>
+                  ></button>
                 </div>
               </span>
             </div>

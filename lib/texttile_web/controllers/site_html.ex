@@ -123,7 +123,8 @@ defmodule TexttileWeb.SiteHTML do
            which every signed-in admin reads instead of the live one,
            and on a live entry whether readers have the same words --%>
       <span :if={@current_scope && @edit} class="truncate">
-        {working_copy_line(@live_state)}<span class="max-sm:hidden">{" · " <> gettext("signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}</span>
+        {working_copy_line(@live_state)}<span class="max-sm:hidden">{" · " <>
+          gettext("signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}</span>
       </span>
       <span :if={@current_scope && !@edit} class="truncate">
         {gettext("Signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}
@@ -284,7 +285,8 @@ defmodule TexttileWeb.SiteHTML do
         <span class="ct">{Articles.display_title(@article)}</span>
       </a>
       <p class="cm num">
-        {format_date(@article.publish_date)}<span :if={Articles.author_name(@article)} class="by">
+        {format_date(@article.publish_date)}
+        <span :if={Articles.author_name(@article)} class="by">
           · {Articles.author_name(@article)}
         </span>
         <span :if={comment_count(@comments)}>
