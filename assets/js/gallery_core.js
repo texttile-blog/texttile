@@ -39,6 +39,9 @@ const NOTE_MS = 2600
 const JMOVE_MS = 2600
 const UNDO_S = 10
 const SAVED_MS = 4000
+/* the shorter edge of a waiting tile's preview: the size the server's
+   own tiles come in (/renditions/320) */
+const PREVIEW_EDGE = 320
 
 export function mount(hook) {
   const core = new Gallery(hook)
@@ -76,6 +79,11 @@ export class Gallery {
     this.descriptionSaves = new Set()
     this.offline = false
     this.renderQueued = false
+    // local tiles on screen, by record id: {el, html}
+    this.drawn = new Map()
+    // pictures still waiting for a preview, made one at a time
+    this.previewQueue = []
+    this.previewing = false
 
     this.mountAdd()
     this.mountDropzone()
@@ -98,6 +106,8 @@ export class Gallery {
 
   destroy() {
     this.dead = true
+    // let go of the originals still waiting for a preview
+    this.previewQueue = []
     clearTimeout(this.descriptionRetry)
     this.records.forEach(r => {
       if (r.xhr) r.xhr.abort()
@@ -197,10 +207,10 @@ export class Gallery {
         id: "u" + ++this.uid,
         file,
         name: file.name,
-        /* only a picture can stand in for itself while it travels; a
-           video shows its name and its state until the server has a
-           poster for it */
-        objurl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null,
+        /* a picture gets a small preview a moment later (see
+           wantPreview); a video shows its name and its state until the
+           server has a poster for it */
+        objurl: null,
         status: oversize ? "failed" : "queued",
         error: oversize ? t("bigger than the %{roof} MB roof", {roof}) : null,
         noRetry: oversize,
@@ -208,6 +218,7 @@ export class Gallery {
         /* a file that cannot be sent is not kept either */
         cacheKey: oversize ? null : keep(this.uploadUrl, file),
       })
+      this.wantPreview(this.records[this.records.length - 1])
 
       if (oversize)
         this.noteTile(t("%{name} is bigger than the %{roof} MB roof.", {name: file.name, roof}))
@@ -235,12 +246,13 @@ export class Gallery {
         id: "u" + ++this.uid,
         file,
         name: file.name,
-        objurl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null,
+        objurl: null,
         status: "failed",
         error: t("not uploaded"),
         pct: 0,
         cacheKey: key,
       })
+      this.wantPreview(this.records[this.records.length - 1])
     }
     this.renderLocal()
     this.noteTile(t("Not uploaded yet: %{names}.", {names: left.map(l => l.file.name).join(", ")}))
@@ -411,6 +423,35 @@ export class Gallery {
     this.renderLocal()
   }
 
+  /* A waiting tile shows its picture, but never the photo itself: a
+     twelve megapixel original takes some 48 MB once the browser has
+     decoded it, and a row of them made the editor crawl. Each picture
+     is scaled down once, one after the other, and the tile shows that. */
+  wantPreview(record) {
+    if (!/^image\//.test(record.file.type)) return
+    this.previewQueue.push(record)
+    this.makePreviews()
+  }
+
+  async makePreviews() {
+    if (this.previewing) return
+    this.previewing = true
+    while (this.previewQueue.length && !this.dead) {
+      const record = this.previewQueue.shift()
+      if (record.done || !this.records.includes(record)) continue
+      const url = await preview(record.file)
+      if (!url) continue
+      // the tile may have left while its picture was being scaled
+      if (this.dead || record.done || !this.records.includes(record)) {
+        URL.revokeObjectURL(url)
+        continue
+      }
+      record.objurl = url
+      this.scheduleRender()
+    }
+    this.previewing = false
+  }
+
   scheduleRender() {
     if (this.renderQueued) return
     this.renderQueued = true
@@ -420,12 +461,38 @@ export class Gallery {
     })
   }
 
+  /* Draws the local tiles. A tile whose markup did not change keeps its
+     element, so a progress tick rebuilds the one tile that moved, not
+     the whole row. */
   renderLocal() {
-    const html = this.records
-      .filter(r => !r.done)
-      .map(r => this.localTile(r))
-      .join("")
-    this.local.innerHTML = html
+    const shown = this.records.filter(r => !r.done)
+    const ids = new Set(shown.map(r => r.id))
+    for (const [id, tile] of this.drawn) {
+      if (!ids.has(id)) {
+        tile.el.remove()
+        this.drawn.delete(id)
+      }
+    }
+
+    let at = this.local.firstElementChild
+    for (const r of shown) {
+      const html = this.localTile(r)
+      let tile = this.drawn.get(r.id)
+      if (!tile || tile.html !== html) {
+        const el = element(html)
+        if (tile) {
+          // a progress tick or a preview must not take a focused button away
+          const act = tile.el.contains(document.activeElement) && document.activeElement.dataset.act
+          tile.el.replaceWith(el)
+          if (act) el.querySelector(`button[data-act="${act}"]`)?.focus({preventScroll: true})
+          if (tile.el === at) at = el
+        }
+        tile = {el, html}
+        this.drawn.set(r.id, tile)
+      }
+      if (tile.el === at) at = at.nextElementSibling
+      else this.local.insertBefore(tile.el, at)
+    }
 
     const away = this.records.filter(r => !r.done && r.status !== "failed").length
     this.onWay.textContent = away ? ` · ${t("%{count} on the way", {count: away})}` : ""
@@ -1156,5 +1223,37 @@ export class Gallery {
     clearInterval(this.undoTimer)
     const bar = document.getElementById("undoBar")
     if (bar) bar.remove()
+  }
+}
+
+// One element from its markup.
+function element(html) {
+  const template = document.createElement("template")
+  template.innerHTML = html.trim()
+  return template.content.firstElementChild
+}
+
+/* A picture scaled so its shorter edge is PREVIEW_EDGE, as an object
+   URL, or null when this browser cannot read the file (HEIC outside
+   Safari, say); the tile then shows its name only, as a video does. */
+async function preview(file) {
+  let bitmap
+  try {
+    bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, PREVIEW_EDGE / Math.min(bitmap.width, bitmap.height))
+    const canvas = document.createElement("canvas")
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+    const ctx = canvas.getContext("2d")
+    ctx.imageSmoothingQuality = "high"
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    /* WebP keeps a transparent PNG transparent; a browser that cannot
+       write WebP hands back a PNG, which keeps it too */
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/webp", 0.8))
+    return blob ? URL.createObjectURL(blob) : null
+  } catch (_e) {
+    return null
+  } finally {
+    if (bitmap) bitmap.close()
   }
 }

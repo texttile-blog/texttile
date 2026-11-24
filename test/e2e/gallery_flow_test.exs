@@ -220,6 +220,121 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       assert [] = Gallery.list(article.id)
     end
 
+    # The first tile's size in pixels, once its preview is drawn. The
+    # preview is made after the tile, so this waits up to five seconds.
+    @preview_size """
+    () => new Promise(resolve => {
+      const deadline = Date.now() + 5000
+      const look = () => {
+        const tile = document.querySelector("#tileLocal .tile")
+        const url = tile && tile.style.backgroundImage.match(/url\\("?(.*?)"?\\)/)
+        if (!url) return Date.now() > deadline ? resolve(null) : setTimeout(look, 50)
+        const img = new Image()
+        img.onload = () => resolve([img.naturalWidth, img.naturalHeight])
+        img.onerror = () => resolve("broken")
+        img.src = url[1]
+      }
+      look()
+    })
+    """
+
+    # A row of waiting tiles, each with a twelve megapixel photo behind
+    # it, made the editor crawl. A tile shows a preview the size of a
+    # server tile instead, and so does a tile that comes back.
+    test "shows a small preview, not the whole photo", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+      photo = Path.join(System.tmp_dir!(), "photo-#{System.unique_integer([:positive])}.jpg")
+      {:ok, black} = Vix.Vips.Operation.black(4000, 3000)
+      :ok = Vix.Vips.Image.write_to_file(black, photo)
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(@broken_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", photo)
+      |> assert_has("#tileLocal .tile.failed", text: "upload failed")
+      |> evaluate(@preview_size, [is_function: true], &assert(&1 == [427, 320]))
+      |> evaluate(@kept_files, [arg: 1, is_function: true], &assert(&1 == 1))
+      |> open_editor(article.id)
+      |> assert_has("#tileLocal .tile.failed", text: "not uploaded")
+      |> evaluate(@preview_size, [is_function: true], &assert(&1 == [427, 320]))
+    end
+
+    # A travelling upload reports its progress many times a second.
+    # Only its own tile changes; the others stay the elements they are.
+    test "a tile stays put while another one travels", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      slow_line = """
+      () => {
+        XMLHttpRequest.prototype.send = function () {
+          let step = 0
+          const tick = () => {
+            step += 1
+            if (step > 5) return this.onerror && this.onerror()
+            this.upload.onprogress && this.upload.onprogress({lengthComputable: true, loaded: step, total: 10})
+            setTimeout(tick, 30)
+          }
+          setTimeout(tick)
+        }
+        return true
+      }
+      """
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(@broken_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileLocal .tile.failed", count: 1)
+      # its preview is in, so nothing of its own changes it any more
+      |> evaluate(@preview_size, [is_function: true], &assert(&1 == [40, 20]))
+      |> evaluate(
+        "() => { window.firstTile = document.querySelector('#tileLocal .tile'); return true }",
+        is_function: true
+      )
+      |> evaluate(slow_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:02 12:00:00"))
+      |> assert_has("#tileLocal .tile.failed", count: 2)
+      |> evaluate("() => window.firstTile.isConnected", [is_function: true], &assert(&1 == true))
+    end
+
+    # Each progress tick redraws the travelling tile. A keyboard on its
+    # Cancel button stays there.
+    test "a focused button keeps its focus while its upload travels", %{conn: conn, kb: kb} do
+      article = draft!(kb)
+
+      long_line = """
+      () => {
+        XMLHttpRequest.prototype.send = function () {
+          let step = 0
+          const tick = () => {
+            step += 1
+            this.upload.onprogress && this.upload.onprogress({lengthComputable: true, loaded: step % 100, total: 100})
+            setTimeout(tick, 20)
+          }
+          setTimeout(tick)
+        }
+        return true
+      }
+      """
+
+      focus_then_look = """
+      () => new Promise(resolve => {
+        document.querySelector("#tileLocal button[data-act=cancel]").focus()
+        setTimeout(() => resolve(document.activeElement.dataset.act || null), 300)
+      })
+      """
+
+      conn
+      |> sign_in()
+      |> open_editor(article.id)
+      |> evaluate(long_line, is_function: true)
+      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
+      |> assert_has("#tileLocal .tile.uploading")
+      |> evaluate(focus_then_look, [is_function: true], &assert(&1 == "cancel"))
+    end
+
     # The same pictures picked a second time fail as "already here".
     # Nothing can resend them, but they still leave with one button.
     test "several refused tiles leave with one button", %{conn: conn, kb: kb} do
