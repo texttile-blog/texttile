@@ -378,7 +378,11 @@ defmodule TexttileWeb.Layouts do
                 :if={section.active == "comments" && @waiting > 0 && @active != "comments"}
                 class="bn-n num"
                 id="navWaiting"
-              ><span aria-hidden="true">{@waiting}</span><span class="sr">{ngettext("1 comment waits", "%{count} comments wait", @waiting)}</span></span>
+              ><span aria-hidden="true">{@waiting}</span><span class="sr">{ngettext(
+                "1 comment waits",
+                "%{count} comments wait",
+                @waiting
+              )}</span></span>
             </.link>
           </nav>
           <%!-- the profile is named by the person's own name at the right

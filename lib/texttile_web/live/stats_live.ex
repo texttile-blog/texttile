@@ -134,7 +134,11 @@ defmodule TexttileWeb.StatsLive do
           <div class="fig py-4 pr-3 md:pr-5">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
-              {gettext("reader-days")}<span class="block">{moved(@summary.people, @summary.before, :people)}</span>
+              {gettext("reader-days")}<span class="block">{moved(
+                @summary.people,
+                @summary.before,
+                :people
+              )}</span>
             </div>
           </div>
           <div class="fig py-4 pr-3 md:pr-5">
@@ -258,8 +262,7 @@ defmodule TexttileWeb.StatsLive do
                       :if={row.article.status != "published"}
                       class={["mk flex-none", row.article.status]}
                       aria-hidden="true"
-                    >
-                    </i>
+                    ></i>
                     <span class="min-w-0">
                       <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
                         {Articles.display_title(row.article)}

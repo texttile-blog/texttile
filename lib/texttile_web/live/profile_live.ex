@@ -323,8 +323,10 @@ defmodule TexttileWeb.ProfileLive do
           </div>
         </div>
         <p class="note mt-3">
-          {gettext("Sign out ends this session only.")}<span :if={length(@sessions) > 1}>
-            {gettext("Sign out everywhere ends all of them, in every browser.")}</span>
+          {gettext("Sign out ends this session only.")}
+          <span :if={length(@sessions) > 1}>
+            {gettext("Sign out everywhere ends all of them, in every browser.")}
+          </span>
         </p>
         <p class="mt-4 flex gap-2">
           <.link href={~p"/logout"} method="delete" class="btn" id="sign-out">

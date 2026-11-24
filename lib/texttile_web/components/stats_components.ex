@@ -49,8 +49,7 @@ defmodule TexttileWeb.StatsComponents do
       <span
         class="absolute left-0 right-[42px] top-[18px] border-t border-rule -z-10 pointer-events-none"
         aria-hidden="true"
-      >
-      </span>
+      ></span>
       <span
         class="absolute right-0 top-[10px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
         id={"#{@id}Max"}
@@ -61,8 +60,7 @@ defmodule TexttileWeb.StatsComponents do
         :if={@top > 1}
         class="absolute left-0 right-[42px] top-[84px] border-t border-rule -z-10 pointer-events-none"
         aria-hidden="true"
-      >
-      </span>
+      ></span>
       <span
         :if={@top > 1}
         class="absolute right-0 top-[76px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
@@ -106,8 +104,7 @@ defmodule TexttileWeb.StatsComponents do
             class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(bar.views, @max)]}
             style={"height:#{height(bar.views, @top)}%"}
             title={bar_title(bar)}
-          >
-          </i>
+          ></i>
         <% end %>
       </div>
       <div class="flex justify-between text-[12px] text-dim pt-[7px] pb-2 border-t border-faint">
