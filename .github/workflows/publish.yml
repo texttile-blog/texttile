@@ -49,7 +49,7 @@ jobs:
       version: ${{ steps.version.outputs.exact }}
       newest: ${{ steps.floating.outputs.newest }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.COMMIT }}
           # the version comes from the tags, so the checkout needs them
@@ -122,7 +122,7 @@ jobs:
           echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
           echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -154,7 +154,7 @@ jobs:
 
       # Two tags stand still: the exact version and the commit name one
       # build for good. The moving tags come in the step after.
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -210,7 +210,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.COMMIT }}
 
@@ -249,14 +249,14 @@ jobs:
       group: deploy-staging
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.COMMIT }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Install Bunny CLI
-        run: npm install --global @bunny.net/cli@0.19.0
+        run: npm install --global @bunny.net/cli@0.23.0
       - name: Check deployment safeguards
         run: |
           sh -n scripts/start-bunny.sh

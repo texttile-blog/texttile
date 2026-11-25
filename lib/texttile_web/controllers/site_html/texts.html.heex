@@ -45,8 +45,8 @@
         spellcheck="false"
       />
       <span :if={@years != []} class="picks contents">
-        <label :if={@years != []} for="year" class="sr">{gettext("Year")}</label>
-        <span :if={@years != []} class="pick">
+        <label for="year" class="sr">{gettext("Year")}</label>
+        <span class="pick">
           <select name="y" id="year">
             <option value="">{gettext("All years")}</option>
             <option :for={{year, count} <- @years} value={year} selected={@year == year}>
