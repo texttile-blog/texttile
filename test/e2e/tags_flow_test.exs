@@ -12,7 +12,6 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
       conn
       |> sign_in()
       |> press(by_css("body"), "4")
-      |> await_live()
       |> assert(contain_text(by_css("#crumb"), "Tags"))
       |> click(by_css("#edit-tag-reisen"))
       |> fill(by_label("Name"), "Reisen4")

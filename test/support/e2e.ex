@@ -109,17 +109,21 @@ defmodule TexttileWeb.E2E do
 
   A developer machine hides this, because the script is up before the
   first click. A loaded CI runner does not.
+
+  Fluffy waits for this itself after a visit and after a navigation a
+  step of the test causes, so only a socket the test connects by hand
+  needs it.
   """
   def await_live(session) do
     assert_has(session, by_css("[data-phx-main].phx-connected"))
   end
 
   @doc """
-  Opens a screen of the admin area and waits for it to be live. The one
-  way into a screen that carries a LiveView.
+  Opens a screen of the admin area, live: Fluffy's visit waits for its
+  LiveView to connect. The one way into a screen that carries a LiveView.
   """
   def open(session, path) do
-    session |> visit(path) |> await_live()
+    visit(session, path)
   end
 
   @doc """
@@ -152,19 +156,16 @@ defmodule TexttileWeb.E2E do
   @doc """
   Signs kb in and lands in the admin area, live.
 
-  Every browser test starts here, so the wait for the script belongs
-  here too.
+  Every browser test starts here. Fluffy follows the sign-in to the
+  admin area and waits for its LiveView to connect.
   """
   def sign_in(session) do
-    # The sign-in screen carries no LiveView, so there is nothing to
-    # wait for until the admin area answers below.
     session
     |> visit("/login")
     |> fill(by_label("Email address"), "kb@example.org")
     |> fill(by_label("Password"), Texttile.AccountsFixtures.valid_password())
     |> click(by_role(:button, name: "Sign in"))
     |> assert_has(by_css("#new-text"))
-    |> await_live()
   end
 
   @doc """
