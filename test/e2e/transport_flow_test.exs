@@ -253,7 +253,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       const socket = window.liveSocket.socket
       socket.conn.onclose = () => {}
       socket.conn.close()
-      socket.conn = null
+      socket.connection = null
       socket.connect()
       return window.liveSocket.main.channel.state
     }

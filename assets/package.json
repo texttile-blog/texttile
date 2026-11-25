@@ -3,14 +3,14 @@
     "test": "node --test \"js_test/*.test.mjs\""
   },
   "devDependencies": {
-    "playwright": "^1.62.1"
+    "playwright": "^1.65.1"
   },
   "dependencies": {
-    "@codemirror/commands": "^6.10.4",
-    "@codemirror/lang-markdown": "^6.5.1",
-    "@codemirror/language": "^6.12.4",
-    "@codemirror/state": "^6.7.1",
-    "@codemirror/view": "^6.43.7",
-    "@lezer/highlight": "^1.2.3"
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@lezer/highlight": "^1.2.5"
   }
 }
