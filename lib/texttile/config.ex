@@ -174,7 +174,7 @@ defmodule Texttile.Config do
     size = byte_size(rest) - 1
 
     case rest do
-      <<inner::binary-size(size), ^q>> -> inner
+      <<inner::binary-size(^size), ^q>> -> inner
       _ -> value
     end
   end
