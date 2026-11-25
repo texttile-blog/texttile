@@ -17,16 +17,16 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> visit(link)
-      |> assert_has("#link-who", text: "opens the admin account of")
-      |> assert_has("#link-who", text: "kb@example.org")
-      |> fill_in("Your password", with: "a long password")
-      |> fill_in("Repeat the password", with: "a long password")
-      |> fill_in("Display name", with: "KB")
-      |> click_button("Open the account and sign in")
-      |> assert_has("#crumb", text: "Entries")
-      |> assert_has("h1", text: "Entries")
-      |> click("#wmBtn")
-      |> assert_has("#wmMe", text: "KB")
+      |> assert(contain_text(by_css("#link-who"), "opens the admin account of"))
+      |> assert(contain_text(by_css("#link-who"), "kb@example.org"))
+      |> fill(by_label("Your password"), "a long password")
+      |> fill(by_label("Repeat the password"), "a long password")
+      |> fill(by_label("Display name"), "KB")
+      |> click(by_role(:button, name: "Open the account and sign in"))
+      |> assert(contain_text(by_css("#crumb"), "Entries"))
+      |> assert(contain_text(by_css("h1"), "Entries"))
+      |> click(by_css("#wmBtn"))
+      |> assert(contain_text(by_css("#wmMe"), "KB"))
     end
 
     # Nobody knows this password yet, and the name under the entries is
@@ -40,23 +40,23 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> visit(link)
-      |> fill_in("Your password", with: "a long password")
-      |> fill_in("Repeat the password", with: "a long passwort")
-      |> fill_in("Display name", with: "KB")
-      |> click_button("Open the account and sign in")
-      |> assert_has("p", text: "does not match the password")
+      |> fill(by_label("Your password"), "a long password")
+      |> fill(by_label("Repeat the password"), "a long passwort")
+      |> fill(by_label("Display name"), "KB")
+      |> click(by_role(:button, name: "Open the account and sign in"))
+      |> assert_has(by_text("does not match the password"))
       # the name that was typed is still there after a refused answer
-      |> assert_has("#link-display-name[value='KB']")
-      |> fill_in("Your password", with: "a long password")
-      |> fill_in("Repeat the password", with: "a long password")
-      |> fill_in("Display name", with: "")
-      |> click_button("Open the account and sign in")
-      |> assert_has("p", text: "cannot be empty")
-      |> fill_in("Your password", with: "a long password")
-      |> fill_in("Repeat the password", with: "a long password")
-      |> fill_in("Display name", with: "KB")
-      |> click_button("Open the account and sign in")
-      |> assert_has("#crumb", text: "Entries")
+      |> assert_has(by_css("#link-display-name[value='KB']"))
+      |> fill(by_label("Your password"), "a long password")
+      |> fill(by_label("Repeat the password"), "a long password")
+      |> fill(by_label("Display name"), "")
+      |> click(by_role(:button, name: "Open the account and sign in"))
+      |> assert_has(by_text("cannot be empty"))
+      |> fill(by_label("Your password"), "a long password")
+      |> fill(by_label("Repeat the password"), "a long password")
+      |> fill(by_label("Display name"), "KB")
+      |> click(by_role(:button, name: "Open the account and sign in"))
+      |> assert(contain_text(by_css("#crumb"), "Entries"))
     end
 
     # There is no door on this screen that makes an account, so a
@@ -67,11 +67,11 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
 
       conn
       |> visit("/login")
-      |> assert_has("#login-nobody", text: "No account here has a password yet")
-      |> fill_in("Email address", with: "kb@example.org")
-      |> fill_in("Password", with: "let me in please")
-      |> click_button("Sign in")
-      |> assert_has("#login-error", text: "do not match")
+      |> assert(contain_text(by_css("#login-nobody"), "No account here has a password yet"))
+      |> fill(by_label("Email address"), "kb@example.org")
+      |> fill(by_label("Password"), "let me in please")
+      |> click(by_role(:button, name: "Sign in"))
+      |> assert(contain_text(by_css("#login-error"), "do not match"))
     end
   end
 
@@ -79,20 +79,20 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "the link from the mail sets a new one and signs in", %{conn: conn, kb: user} do
       conn
       |> visit("/login")
-      |> click_link("Forgot your password?")
-      |> fill_in("Email address", with: user.email)
-      |> click_button("Send the link")
-      |> assert_has("#forgot-sent", text: "The mail is on its way")
+      |> click(by_role(:link, name: "Forgot your password?"))
+      |> fill(by_label("Email address"), user.email)
+      |> click(by_role(:button, name: "Send the link"))
+      |> assert(contain_text(by_css("#forgot-sent"), "The mail is on its way"))
 
       assert_receive {:email, %Swoosh.Email{} = mail}, 2000
       [link] = Regex.run(~r"http://[^\s]+/link/[^\s]+", mail.text_body)
 
       conn
       |> visit(link)
-      |> assert_has("#link-who", text: "belongs to the account kb@example.org")
-      |> fill_in("New password", with: "a brand new password")
-      |> click_button("Set the password and sign in")
-      |> assert_has("#crumb", text: "Entries")
+      |> assert(contain_text(by_css("#link-who"), "belongs to the account kb@example.org"))
+      |> fill(by_label("New password"), "a brand new password")
+      |> click(by_role(:button, name: "Set the password and sign in"))
+      |> assert(contain_text(by_css("#crumb"), "Entries"))
 
       assert {:ok, _} =
                Texttile.Accounts.authenticate_user("kb@example.org", "a brand new password")
@@ -101,9 +101,9 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "an address without an account gets no mail", %{conn: conn} do
       conn
       |> visit("/forgot")
-      |> fill_in("Email address", with: "nobody@example.org")
-      |> click_button("Send the link")
-      |> assert_has("#forgot-sent", text: "The mail is on its way")
+      |> fill(by_label("Email address"), "nobody@example.org")
+      |> click(by_role(:button, name: "Send the link"))
+      |> assert(contain_text(by_css("#forgot-sent"), "The mail is on its way"))
 
       refute_receive {:email, _}, 500
     end
@@ -113,14 +113,14 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "wrong credentials leave a quiet line, right ones open the admin area", %{conn: conn} do
       conn
       |> visit("/admin")
-      |> assert_has("p", text: "Admin sign-in")
-      |> fill_in("Email address", with: "kb@example.org")
-      |> fill_in("Password", with: "wrong password!")
-      |> click_button("Sign in")
-      |> assert_has("#login-error", text: "do not match")
-      |> fill_in("Password", with: valid_password())
-      |> click_button("Sign in")
-      |> assert_has("#crumb", text: "Entries")
+      |> assert_has(by_text("Admin sign-in"))
+      |> fill(by_label("Email address"), "kb@example.org")
+      |> fill(by_label("Password"), "wrong password!")
+      |> click(by_role(:button, name: "Sign in"))
+      |> assert(contain_text(by_css("#login-error"), "do not match"))
+      |> fill(by_label("Password"), valid_password())
+      |> click(by_role(:button, name: "Sign in"))
+      |> assert(contain_text(by_css("#crumb"), "Entries"))
     end
   end
 
@@ -128,11 +128,11 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "the wordmark menu opens with sections and presence", %{conn: conn} do
       conn
       |> sign_in()
-      |> click("#wmBtn")
-      |> assert_has("#navMenu", text: "New entry")
-      |> assert_has("#navMenu", text: "Here now")
-      |> assert_has("#navMenu", text: "No one else right now.")
-      |> assert_has("#wmMe", text: "kb")
+      |> click(by_css("#wmBtn"))
+      |> assert(contain_text(by_css("#navMenu"), "New entry"))
+      |> assert(contain_text(by_css("#navMenu"), "Here now"))
+      |> assert(contain_text(by_css("#navMenu"), "No one else right now."))
+      |> assert(contain_text(by_css("#wmMe"), "kb"))
     end
   end
 
@@ -140,18 +140,18 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "edits save instantly and follow into the menu", %{conn: conn} do
       conn
       |> sign_in()
-      |> click("#wmBtn")
+      |> click(by_css("#wmBtn"))
       # the menu opens in the browser: wait for it, or the next click
       # races the script on a slow machine
-      |> assert_has("#navMenu", text: "Your profile")
-      |> click_link("Your profile")
-      |> assert_has("#barMe[aria-current=page]")
-      |> assert_has("#sessions", text: "This browser")
-      |> refute_has("#sessions", text: "Another browser")
-      |> fill_in("Display name", with: "Klaus")
-      |> assert_has("#barMe", text: "Klaus")
-      |> click("#wmBtn")
-      |> assert_has("#wmMe", text: "Klaus")
+      |> assert(contain_text(by_css("#navMenu"), "Your profile"))
+      |> click(by_role(:link, name: "Your profile"))
+      |> assert_has(by_css("#barMe[aria-current=page]"))
+      |> assert(contain_text(by_css("#sessions"), "This browser"))
+      |> refute_has(by_css("#sessions") |> filter(has_text: "Another browser"))
+      |> fill(by_label("Display name"), "Klaus")
+      |> assert(contain_text(by_css("#barMe"), "Klaus"))
+      |> click(by_css("#wmBtn"))
+      |> assert(contain_text(by_css("#wmMe"), "Klaus"))
     end
   end
 end

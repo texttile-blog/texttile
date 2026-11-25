@@ -29,10 +29,13 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#tileCount", text: "0 tiles")
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileServer [data-id]")
-      |> assert_has("#tileCount", text: "1 tile")
+      |> assert(contain_text(by_css("#tileCount"), "0 tiles"))
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
+      )
+      |> assert_has(by_css("#tileServer [data-id]"))
+      |> assert(contain_text(by_css("#tileCount"), "1 tile"))
 
       assert [%{filename: "e2e-" <> _}] = Gallery.list(article.id)
     end
@@ -50,15 +53,15 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> upload("Add pictures and videos to the gallery", first)
-        |> assert_has("#tileServer [data-id]")
-        |> upload("Add pictures and videos to the gallery", again)
-        |> assert_has("#tileLocal .tile.failed", text: "already here")
+        |> set_input_files(by_label("Add pictures and videos to the gallery"), first)
+        |> assert_has(by_css("#tileServer [data-id]"))
+        |> set_input_files(by_label("Add pictures and videos to the gallery"), again)
+        |> assert(contain_text(by_css("#tileLocal .tile.failed"), "already here"))
 
       session
-      |> assert_has("#tileNote", text: "already in this entry")
-      |> assert_has("#tileCount", text: "1 tile")
-      |> refute_has("#tileLocal button", text: "Retry")
+      |> assert(contain_text(by_css("#tileNote"), "already in this entry"))
+      |> assert(contain_text(by_css("#tileCount"), "1 tile"))
+      |> refute_has(by_css("#tileLocal button") |> filter(has_text: "Retry"))
 
       assert [_only_one] = Gallery.list(article.id)
     end
@@ -76,8 +79,8 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> upload("Add pictures and videos to the gallery", big)
-      |> assert_has("#tileServer [data-id]", timeout: 30_000)
+      |> set_input_files(by_label("Add pictures and videos to the gallery"), big)
+      |> assert_has(by_css("#tileServer [data-id]"), timeout: 30_000)
 
       assert [_] = Gallery.list(article.id)
     end
@@ -98,10 +101,10 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> upload("Add pictures and videos to the gallery", huge)
-      |> assert_has("#tileLocal .tile.failed", text: "10 MB")
-      |> assert_has("#tileLocal button[data-act=remove]")
-      |> refute_has("#tileLocal button[data-act=retry]")
+      |> set_input_files(by_label("Add pictures and videos to the gallery"), huge)
+      |> assert(contain_text(by_css("#tileLocal .tile.failed"), "10 MB"))
+      |> assert_has(by_css("#tileLocal button[data-act=remove]"))
+      |> refute_has(by_css("#tileLocal button[data-act=retry]"))
 
       assert Gallery.list(article.id) == []
     end
@@ -121,24 +124,19 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
     }
     """
 
-    # How many files the browser keeps, read straight from IndexedDB,
-    # waiting up to five seconds for the expected count. A reload right
-    # after a click would race the write.
+    # How many files the browser keeps, read straight from IndexedDB.
+    # The assertion asks again until the count is the expected one: a
+    # reload right after a click would race the write.
     @kept_files """
-    want => new Promise(resolve => {
-      const deadline = Date.now() + 5000
-      const look = () => {
-        const open = indexedDB.open("texttile-uploads")
-        open.onsuccess = () => {
-          const count = open.result.transaction("files").objectStore("files").count()
-          count.onsuccess = () => {
-            open.result.close()
-            if (count.result === want || Date.now() > deadline) resolve(count.result)
-            else setTimeout(look, 50)
-          }
+    () => new Promise(resolve => {
+      const open = indexedDB.open("texttile-uploads")
+      open.onsuccess = () => {
+        const count = open.result.transaction("files").objectStore("files").count()
+        count.onsuccess = () => {
+          open.result.close()
+          resolve(count.result)
         }
       }
-      look()
     })
     """
 
@@ -148,19 +146,22 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(@broken_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", text: "upload failed")
-      |> evaluate(@kept_files, [arg: 1, is_function: true], &assert(&1 == 1))
+      |> run_script(@broken_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
+      )
+      |> assert(contain_text(by_css("#tileLocal .tile.failed"), "upload failed"))
+      |> assert_script(@kept_files, &assert(&1 == 1))
       |> open_editor(article.id)
-      |> assert_has("#tileLocal .tile.failed", text: "not uploaded")
-      |> click_button("#tileLocal button[data-act=retry]", "Retry")
-      |> assert_has("#tileServer [data-id]")
-      |> assert_has("#tileCount", text: "1 tile")
-      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+      |> assert(contain_text(by_css("#tileLocal .tile.failed"), "not uploaded"))
+      |> click(by_css("#tileLocal button[data-act=retry]") |> filter(has_text: "Retry"))
+      |> assert_has(by_css("#tileServer [data-id]"))
+      |> assert(contain_text(by_css("#tileCount"), "1 tile"))
+      |> assert_script(@kept_files, &assert(&1 == 0))
       |> open_editor(article.id)
-      |> assert_has("#tileServer [data-id]")
-      |> refute_has("#tileLocal .tile")
+      |> assert_has(by_css("#tileServer [data-id]"))
+      |> refute_has(by_css("#tileLocal .tile"))
 
       assert [_] = Gallery.list(article.id)
     end
@@ -174,22 +175,28 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> refute_has("#tileResume")
-      |> evaluate(@broken_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", count: 1)
-      |> refute_has("#tileResume")
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:02 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", count: 2)
-      |> evaluate(@kept_files, [arg: 2, is_function: true], &assert(&1 == 2))
+      |> refute_has(by_css("#tileResume"))
+      |> run_script(@broken_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
+      )
+      |> assert(count(by_css("#tileLocal .tile.failed"), 1))
+      |> refute_has(by_css("#tileResume"))
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:02 12:00:00")
+      )
+      |> assert(count(by_css("#tileLocal .tile.failed"), 2))
+      |> assert_script(@kept_files, &assert(&1 == 2))
       |> open_editor(article.id)
-      |> assert_has("#tileLocal .tile.failed", text: "not uploaded", count: 2)
-      |> assert_has("#tileResume", text: "2 uploads did not arrive")
-      |> click_button("#tileResume button", "Resume all")
-      |> assert_has("#tileServer [data-id]", count: 2)
-      |> refute_has("#tileLocal .tile")
-      |> refute_has("#tileResume")
-      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+      |> assert(count(by_css("#tileLocal .tile.failed") |> filter(has_text: "not uploaded"), 2))
+      |> assert(contain_text(by_css("#tileResume"), "2 uploads did not arrive"))
+      |> click(by_css("#tileResume button") |> filter(has_text: "Resume all"))
+      |> assert(count(by_css("#tileServer [data-id]"), 2))
+      |> refute_has(by_css("#tileLocal .tile"))
+      |> refute_has(by_css("#tileResume"))
+      |> assert_script(@kept_files, &assert(&1 == 0))
 
       assert [_, _] = Gallery.list(article.id)
     end
@@ -202,39 +209,42 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(@broken_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", count: 1)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:02 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", count: 2)
-      |> evaluate(@kept_files, [arg: 2, is_function: true], &assert(&1 == 2))
+      |> run_script(@broken_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
+      )
+      |> assert(count(by_css("#tileLocal .tile.failed"), 1))
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:02 12:00:00")
+      )
+      |> assert(count(by_css("#tileLocal .tile.failed"), 2))
+      |> assert_script(@kept_files, &assert(&1 == 2))
       |> open_editor(article.id)
-      |> assert_has("#tileResume", text: "2 uploads did not arrive")
-      |> click_button("#tileResume button", "Remove all")
-      |> refute_has("#tileLocal .tile")
-      |> refute_has("#tileResume")
-      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+      |> assert(contain_text(by_css("#tileResume"), "2 uploads did not arrive"))
+      |> click(by_css("#tileResume button") |> filter(has_text: "Remove all"))
+      |> refute_has(by_css("#tileLocal .tile"))
+      |> refute_has(by_css("#tileResume"))
+      |> assert_script(@kept_files, &assert(&1 == 0))
       |> open_editor(article.id)
-      |> refute_has("#tileLocal .tile")
+      |> refute_has(by_css("#tileLocal .tile"))
 
       assert [] = Gallery.list(article.id)
     end
 
     # The first tile's size in pixels, once its preview is drawn. The
-    # preview is made after the tile, so this waits up to five seconds.
+    # preview is made after the tile, so the assertion asks again until
+    # it is there.
     @preview_size """
     () => new Promise(resolve => {
-      const deadline = Date.now() + 5000
-      const look = () => {
-        const tile = document.querySelector("#tileLocal .tile")
-        const url = tile && tile.style.backgroundImage.match(/url\\("?(.*?)"?\\)/)
-        if (!url) return Date.now() > deadline ? resolve(null) : setTimeout(look, 50)
-        const img = new Image()
-        img.onload = () => resolve([img.naturalWidth, img.naturalHeight])
-        img.onerror = () => resolve("broken")
-        img.src = url[1]
-      }
-      look()
+      const tile = document.querySelector("#tileLocal .tile")
+      const url = tile && tile.style.backgroundImage.match(/url\\("?(.*?)"?\\)/)
+      if (!url) return resolve("no preview yet")
+      const img = new Image()
+      img.onload = () => resolve([img.naturalWidth, img.naturalHeight])
+      img.onerror = () => resolve("broken")
+      img.src = url[1]
     })
     """
 
@@ -250,14 +260,14 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(@broken_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", photo)
-      |> assert_has("#tileLocal .tile.failed", text: "upload failed")
-      |> evaluate(@preview_size, [is_function: true], &assert(&1 == [427, 320]))
-      |> evaluate(@kept_files, [arg: 1, is_function: true], &assert(&1 == 1))
+      |> run_script(@broken_line)
+      |> set_input_files(by_label("Add pictures and videos to the gallery"), photo)
+      |> assert(contain_text(by_css("#tileLocal .tile.failed"), "upload failed"))
+      |> assert_script(@preview_size, &assert(&1 == [427, 320]))
+      |> assert_script(@kept_files, &assert(&1 == 1))
       |> open_editor(article.id)
-      |> assert_has("#tileLocal .tile.failed", text: "not uploaded")
-      |> evaluate(@preview_size, [is_function: true], &assert(&1 == [427, 320]))
+      |> assert(contain_text(by_css("#tileLocal .tile.failed"), "not uploaded"))
+      |> assert_script(@preview_size, &assert(&1 == [427, 320]))
     end
 
     # A travelling upload reports its progress many times a second.
@@ -284,19 +294,24 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(@broken_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", count: 1)
-      # its preview is in, so nothing of its own changes it any more
-      |> evaluate(@preview_size, [is_function: true], &assert(&1 == [40, 20]))
-      |> evaluate(
-        "() => { window.firstTile = document.querySelector('#tileLocal .tile'); return true }",
-        is_function: true
+      |> run_script(@broken_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
       )
-      |> evaluate(slow_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:02 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", count: 2)
-      |> evaluate("() => window.firstTile.isConnected", [is_function: true], &assert(&1 == true))
+      |> assert(count(by_css("#tileLocal .tile.failed"), 1))
+      # its preview is in, so nothing of its own changes it any more
+      |> assert_script(@preview_size, &assert(&1 == [40, 20]))
+      |> run_script(
+        "() => { window.firstTile = document.querySelector('#tileLocal .tile'); return true }"
+      )
+      |> run_script(slow_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:02 12:00:00")
+      )
+      |> assert(count(by_css("#tileLocal .tile.failed"), 2))
+      |> assert_script("() => window.firstTile.isConnected", &assert(&1 == true))
     end
 
     # Each progress tick redraws the travelling tile. A keyboard on its
@@ -329,10 +344,13 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(long_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileLocal .tile.uploading")
-      |> evaluate(focus_then_look, [is_function: true], &assert(&1 == "cancel"))
+      |> run_script(long_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
+      )
+      |> assert_has(by_css("#tileLocal .tile.uploading"))
+      |> assert_script(focus_then_look, &assert(&1 == "cancel"))
     end
 
     # The same pictures picked a second time fail as "already here".
@@ -350,17 +368,17 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> upload("Add pictures and videos to the gallery", first)
-      |> assert_has("#tileServer [data-id]")
-      |> upload("Add pictures and videos to the gallery", again.())
-      |> assert_has("#tileLocal .tile.failed", text: "already here", count: 1)
-      |> upload("Add pictures and videos to the gallery", again.())
-      |> assert_has("#tileLocal .tile.failed", text: "already here", count: 2)
-      |> assert_has("#tileResume", text: "2 uploads did not arrive")
-      |> refute_has("#tileResume button", text: "Resume all")
-      |> click_button("#tileResume button", "Remove all")
-      |> refute_has("#tileLocal .tile")
-      |> refute_has("#tileResume")
+      |> set_input_files(by_label("Add pictures and videos to the gallery"), first)
+      |> assert_has(by_css("#tileServer [data-id]"))
+      |> set_input_files(by_label("Add pictures and videos to the gallery"), again.())
+      |> assert(count(by_css("#tileLocal .tile.failed") |> filter(has_text: "already here"), 1))
+      |> set_input_files(by_label("Add pictures and videos to the gallery"), again.())
+      |> assert(count(by_css("#tileLocal .tile.failed") |> filter(has_text: "already here"), 2))
+      |> assert(contain_text(by_css("#tileResume"), "2 uploads did not arrive"))
+      |> refute_has(by_css("#tileResume button") |> filter(has_text: "Resume all"))
+      |> click(by_css("#tileResume button") |> filter(has_text: "Remove all"))
+      |> refute_has(by_css("#tileLocal .tile"))
+      |> refute_has(by_css("#tileResume"))
 
       assert [_only_one] = Gallery.list(article.id)
     end
@@ -371,14 +389,17 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(@broken_line, is_function: true)
-      |> upload("Add pictures and videos to the gallery", jpg!("2024:05:01 12:00:00"))
-      |> assert_has("#tileLocal .tile.failed", text: "upload failed")
-      |> click_button("#tileLocal button[data-act=remove]", "Remove")
-      |> refute_has("#tileLocal .tile")
-      |> evaluate(@kept_files, [arg: 0, is_function: true], &assert(&1 == 0))
+      |> run_script(@broken_line)
+      |> set_input_files(
+        by_label("Add pictures and videos to the gallery"),
+        jpg!("2024:05:01 12:00:00")
+      )
+      |> assert(contain_text(by_css("#tileLocal .tile.failed"), "upload failed"))
+      |> click(by_css("#tileLocal button[data-act=remove]") |> filter(has_text: "Remove"))
+      |> refute_has(by_css("#tileLocal .tile"))
+      |> assert_script(@kept_files, &assert(&1 == 0))
       |> open_editor(article.id)
-      |> refute_has("#tileLocal .tile")
+      |> refute_has(by_css("#tileLocal .tile"))
     end
   end
 
@@ -392,15 +413,15 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#tileCount", text: "3 tiles")
-      |> drag("#tile-#{c.id}", to: "#tile-#{a.id}")
+      |> assert(contain_text(by_css("#tileCount"), "3 tiles"))
+      |> drag_to(by_css("#tile-#{c.id}"), by_css("#tile-#{a.id}"))
 
       eventually(fn ->
         Enum.map(Gallery.list(article.id), & &1.id) == [c.id, a.id, b.id]
       end)
 
       # the numbers followed the drop
-      conn |> assert_has("#tile-#{c.id} .n", text: "01")
+      conn |> assert(contain_text(by_css("#tile-#{c.id} .n"), "01"))
     end
   end
 
@@ -412,10 +433,10 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> click("#tile-#{a.id}")
-      |> assert_has("#lbName", text: "pier.jpg")
-      |> assert_has("#lbPixels", text: "40 × 20 px")
-      |> assert_has("#lbWeight", text: " KB")
+      |> click(by_css("#tile-#{a.id}"))
+      |> assert(contain_text(by_css("#lbName"), "pier.jpg"))
+      |> assert(contain_text(by_css("#lbPixels"), "40 × 20 px"))
+      |> assert(contain_text(by_css("#lbWeight"), " KB"))
     end
 
     test "the lightbox picks the preview image and lets it go again", %{conn: conn, kb: kb} do
@@ -427,34 +448,36 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> assert_has("#tile-#{a.id} .cov")
-        |> click("#tile-#{b.id}")
-        |> assert_has("#lbPreview:not(:checked)")
-        |> check("Preview image")
-        |> assert_has("#lbPreview:checked")
-        |> assert_has("#tile-#{b.id} .cov")
-        |> refute_has("#tile-#{a.id} .cov")
+        |> assert_has(by_css("#tile-#{a.id} .cov"))
+        |> click(by_css("#tile-#{b.id}"))
+        |> refute(checked(by_css("#lbPreview")))
+        # a click, not check: the box springs back until the server
+        # answers, and check fails a box whose click did not tick it
+        |> click(by_label("Preview image", exact: true))
+        |> assert(checked(by_css("#lbPreview")))
+        |> assert_has(by_css("#tile-#{b.id} .cov"))
+        |> refute_has(by_css("#tile-#{a.id} .cov"))
 
       eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == b.path end)
 
       # the first picture speaks again
       conn =
         conn
-        |> uncheck("Preview image")
-        |> assert_has("#tile-#{a.id} .cov")
-        |> assert_has("#lbPreview:not(:checked)")
+        |> click(by_label("Preview image", exact: true))
+        |> assert_has(by_css("#tile-#{a.id} .cov"))
+        |> refute(checked(by_css("#lbPreview")))
 
       eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == nil end)
 
       # the first picture is the preview whether ticked or not: the box
       # stays with the server and does not unstick
       conn
-      |> click_button("Previous tile")
-      |> assert_has("#lbName", text: "pier.jpg")
-      |> assert_has("#lbPreview:checked")
-      |> uncheck("Preview image")
-      |> assert_has("#lbPreview:checked")
-      |> assert_has("#tile-#{a.id} .cov")
+      |> click(by_role(:button, name: "Previous tile"))
+      |> assert(contain_text(by_css("#lbName"), "pier.jpg"))
+      |> assert(checked(by_css("#lbPreview")))
+      |> click(by_label("Preview image", exact: true))
+      |> assert(checked(by_css("#lbPreview")))
+      |> assert_has(by_css("#tile-#{a.id} .cov"))
 
       # the lightbox's untick asked to choose it, and that stays
       eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == a.path end)
@@ -468,8 +491,8 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> click("#tile-#{image.id}")
-        |> fill_in("Description", with: "The pier in the morning.")
+        |> click(by_css("#tile-#{image.id}"))
+        |> fill(by_label("Description"), "The pier in the morning.")
 
       eventually(fn ->
         Gallery.get!(article.id, image.id).description == "The pier in the morning."
@@ -478,10 +501,10 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       {:ok, _} = Gallery.set_description(article.id, image.id, "A gull above the pier.")
 
       session
-      |> assert_has("#lbDescription", value: "A gull above the pier.")
-      |> fill_in("Description", with: "")
-      |> click_button("Close")
-      |> refute_has("#lbRoot")
+      |> assert(value(by_css("#lbDescription"), "A gull above the pier."))
+      |> fill(by_label("Description"), "")
+      |> click(by_role(:button, name: "Close"))
+      |> refute_has(by_css("#lbRoot"))
 
       eventually(fn -> Gallery.get!(article.id, image.id).description == "" end)
     end
@@ -494,11 +517,11 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> click("#tile-#{a.id}")
-      |> fill_in("Description", with: "The pier.")
-      |> click_button("Next tile")
-      |> assert_has("#lbName", text: "gull.jpg")
-      |> assert_has("#lbDescription", value: "")
+      |> click(by_css("#tile-#{a.id}"))
+      |> fill(by_label("Description"), "The pier.")
+      |> click(by_role(:button, name: "Next tile"))
+      |> assert(contain_text(by_css("#lbName"), "gull.jpg"))
+      |> assert(value(by_css("#lbDescription"), ""))
 
       eventually(fn -> Gallery.get!(article.id, a.id).description == "The pier." end)
       assert Gallery.get!(article.id, b.id).description == ""
@@ -511,9 +534,9 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
 
       conn
       |> open_page(Texttile.Articles.public_path(article))
-      |> assert_has("#gal img[alt='The pier in the morning.']")
-      |> click("#gal a")
-      |> assert_has("#lbCap", text: "The pier in the morning.")
+      |> assert_has(by_css("#gal img[alt='The pier in the morning.']"))
+      |> click(by_css("#gal a"))
+      |> assert(contain_text(by_css("#lbCap"), "The pier in the morning."))
     end
 
     test "opens on a tap, navigates, edits, and survives background changes",
@@ -526,32 +549,32 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> assert_has("#tileCount", text: "2 tiles")
-        |> click("#tileServer [data-id='#{a.id}']")
-        |> assert_has("#lbRoot")
-        |> assert_has("#lbName", text: "pier.jpg")
-        |> assert_has("#lbCount", text: "1 / 2")
-        |> press("#lbRoot", "ArrowRight")
-        |> assert_has("#lbName", text: "gull.jpg")
+        |> assert(contain_text(by_css("#tileCount"), "2 tiles"))
+        |> click(by_css("#tileServer [data-id='#{a.id}']"))
+        |> assert_has(by_css("#lbRoot"))
+        |> assert(contain_text(by_css("#lbName"), "pier.jpg"))
+        |> assert(contain_text(by_css("#lbCount"), "1 / 2"))
+        |> press(by_css("#lbRoot"), "ArrowRight")
+        |> assert(contain_text(by_css("#lbName"), "gull.jpg"))
 
       # a picture added elsewhere: the count moves, the lightbox stays
       seed!(article, "fog.jpg", "2024:05:01 14:00:00")
 
       conn
-      |> assert_has("#tileCount", text: "3 tiles")
-      |> assert_has("#lbRoot")
-      |> assert_has("#lbName", text: "gull.jpg")
+      |> assert(contain_text(by_css("#tileCount"), "3 tiles"))
+      |> assert_has(by_css("#lbRoot"))
+      |> assert(contain_text(by_css("#lbName"), "gull.jpg"))
 
       # the date picker resorts the gallery at once
-      conn = fill_in(conn, "Date", with: "2024-05-01T15:00")
+      conn = fill(conn, by_label("Date", exact: true), "2024-05-01T15:00")
 
       eventually(fn ->
         article.id |> Gallery.list() |> List.last() |> Map.fetch!(:id) == b.id
       end)
 
       conn
-      |> press("#lbRoot", "Escape")
-      |> refute_has("#lbRoot")
+      |> press(by_css("#lbRoot"), "Escape")
+      |> refute_has(by_css("#lbRoot"))
     end
   end
 
@@ -564,15 +587,15 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> click("#tileServer [data-id='#{a.id}']")
-      |> assert_has("#lbRoot")
-      |> click_button("#lbDelete", "Delete")
-      |> assert_has("#undoBar", text: "pier.jpg")
-      |> assert_has("#tileCount", text: "1 tile")
-      |> assert_has("#lbName", text: "gull.jpg")
-      |> click_button("Undo")
-      |> assert_has("#tileCount", text: "2 tiles")
-      |> assert_has("#tileServer [data-id='#{a.id}']")
+      |> click(by_css("#tileServer [data-id='#{a.id}']"))
+      |> assert_has(by_css("#lbRoot"))
+      |> click(by_css("#lbDelete"))
+      |> assert(contain_text(by_css("#undoBar"), "pier.jpg"))
+      |> assert(contain_text(by_css("#tileCount"), "1 tile"))
+      |> assert(contain_text(by_css("#lbName"), "gull.jpg"))
+      |> click(by_role(:button, name: "Undo"))
+      |> assert(contain_text(by_css("#tileCount"), "2 tiles"))
+      |> assert_has(by_css("#tileServer [data-id='#{a.id}']"))
 
       assert Enum.map(Gallery.list(article.id), & &1.filename) == ["pier.jpg", "gull.jpg"]
     end

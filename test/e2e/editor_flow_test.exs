@@ -7,14 +7,17 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "a new text: title and body autosave, the live preview renders", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> assert_has("#crumb", text: "Untitled")
-      |> fill_in("Title", with: "Fourteen doors")
-      |> assert_has("#crumb", text: "Fourteen doors")
-      |> type(".ed-cm .cm-content", "## The doors\n\nSome are **wooden**, some are not.")
+      |> click(by_role(:button, name: "New entry"))
+      |> assert(contain_text(by_css("#crumb"), "Untitled"))
+      |> fill(by_label("Title", exact: true), "Fourteen doors")
+      |> assert(contain_text(by_css("#crumb"), "Fourteen doors"))
+      |> press_sequentially(
+        by_css(".ed-cm .cm-content"),
+        "## The doors\n\nSome are **wooden**, some are not."
+      )
       # the live preview: the heading line is styled, the caret's line
       # stays raw, and the finished bold line hides its asterisks
-      |> assert_has(".cm-mdh2", text: "The doors")
+      |> assert(contain_text(by_css(".cm-mdh2"), "The doors"))
 
       article =
         eventually(fn ->
@@ -31,21 +34,21 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       # everything is still there after a full reload
       conn
       |> open_editor(article.id)
-      |> assert_has("#edTitle[value='Fourteen doors']")
-      |> assert_has(".ed-cm", text: "The doors")
+      |> assert_has(by_css("#edTitle[value='Fourteen doors']"))
+      |> assert(contain_text(by_css(".ed-cm"), "The doors"))
     end
 
     test "the formatting bar writes markdown through the same commands", %{conn: conn} do
       conn =
         conn
         |> sign_in()
-        |> click_button("New entry")
-        |> type(".ed-cm .cm-content", "strong words")
+        |> click(by_role(:button, name: "New entry"))
+        |> press_sequentially(by_css(".ed-cm .cm-content"), "strong words")
 
       # select the line, then bold it from the bar
       conn
-      |> press(".ed-cm .cm-content", "ControlOrMeta+a")
-      |> click("[data-cmd=bold]")
+      |> press(by_css(".ed-cm .cm-content"), "ControlOrMeta+a")
+      |> click(by_css("[data-cmd=bold]"))
 
       eventually(fn ->
         match?([%{body: "**strong words**"}], Articles.list_articles())
@@ -62,21 +65,21 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> click("#edSlug")
-        |> press("#edSlug", "ControlOrMeta+a")
-        |> press("#edSlug", "Backspace")
-        |> click("#slugSet")
-        |> assert_has("#dialog", text: "no address of its own")
-        |> click("#dialog-ok")
+        |> click(by_css("#edSlug"))
+        |> press(by_css("#edSlug"), "ControlOrMeta+a")
+        |> press(by_css("#edSlug"), "Backspace")
+        |> click(by_css("#slugSet"))
+        |> assert(contain_text(by_css("#dialog"), "no address of its own"))
+        |> click(by_css("#dialog-ok"))
 
       eventually(fn -> Articles.get_article!(article.id).slug == nil end)
 
       conn
       |> open_editor(article.id)
-      |> type("#edSlug", "restored-doors")
-      |> click("#slugSet")
-      |> click("#dialog-ok")
-      |> assert_has(~s(#slugHint[data-live$="/restored-doors"]))
+      |> press_sequentially(by_css("#edSlug"), "restored-doors")
+      |> click(by_css("#slugSet"))
+      |> click(by_css("#dialog-ok"))
+      |> assert_has(by_css(~s(#slugHint[data-live$="/restored-doors"])))
 
       assert Articles.get_article!(article.id).slug == "restored-doors"
     end
@@ -85,18 +88,18 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("New entry")
-        |> fill_in("Title", with: "Going live")
-        |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Live", exact: true)
-        |> assert_has("#slugHint[data-live]")
+        |> click(by_role(:button, name: "New entry"))
+        |> fill(by_label("Title", exact: true), "Going live")
+        |> click(by_css("#stateBtn .main") |> filter(has_text: "Publish"))
+        |> assert(text(by_css("#stateWord"), "Live"))
+        |> assert_has(by_css("#slugHint[data-live]"))
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
 
       conn
-      |> click("#stateChev")
-      |> click_button("Unpublish")
-      |> assert_has("#stateWord", text: "Draft")
+      |> click(by_css("#stateChev"))
+      |> click(by_role(:button, name: "Unpublish"))
+      |> assert(contain_text(by_css("#stateWord"), "Draft"))
 
       assert [%{status: "draft"}] = Articles.list_articles()
     end
@@ -107,28 +110,28 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("New entry")
+        |> click(by_role(:button, name: "New entry"))
         # a draft with no slug has no address of its own yet, and the
         # door is still there: it opens the same page by id, from the
         # one menu the bar carries
-        |> click("#stateChev")
-        |> assert_has("a#viewRow[href^='/preview/']", text: "Open the entry")
-        |> click("#stateChev")
-        |> fill_in("Title", with: "Going live")
-        |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Live", exact: true)
+        |> click(by_css("#stateChev"))
+        |> assert(contain_text(by_css("a#viewRow[href^='/preview/']"), "Open the entry"))
+        |> click(by_css("#stateChev"))
+        |> fill(by_label("Title", exact: true), "Going live")
+        |> click(by_css("#stateBtn .main") |> filter(has_text: "Publish"))
+        |> assert(text(by_css("#stateWord"), "Live"))
 
       address =
         "/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/" <>
           "#{String.pad_leading("#{today.day}", 2, "0")}/going-live"
 
       conn
-      |> assert_has("#stateBtn a#stateMain[href='#{address}']", text: "View")
+      |> assert(contain_text(by_css("#stateBtn a#stateMain[href='#{address}']"), "View"))
       |> visit(address)
-      |> assert_has("h1", text: "Going live")
+      |> assert(contain_text(by_css("h1"), "Going live"))
 
       # the bare slug is not an address of the text
-      conn |> visit("/going-live") |> assert_has("h1", text: "Nothing here")
+      conn |> visit("/going-live") |> assert(contain_text(by_css("h1"), "Nothing here"))
     end
   end
 
@@ -154,11 +157,11 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "the open menu stands over the formatting glyphs", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> assert_has(".mdbar")
-      |> click("#wmBtn")
-      |> assert_has("#navMenu", text: "View site")
-      |> evaluate(@stacking, [is_function: true], &assert(&1 == "menu"))
+      |> click(by_role(:button, name: "New entry"))
+      |> assert_has(by_css(".mdbar"))
+      |> click(by_css("#wmBtn"))
+      |> assert(contain_text(by_css("#navMenu"), "View site"))
+      |> assert_script(@stacking, &assert(&1 == "menu"))
     end
 
     # The chevron used to be a toggle, and a click on an open menu is
@@ -167,21 +170,24 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "a second click on the chevron closes the menu again", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> click("#stateChev")
-      |> assert_has("#stateMenu", text: "Save version")
-      |> click("#stateChev")
-      |> refute_has("#stateMenu")
-      |> click("#stateChev")
-      |> assert_has("#stateMenu", text: "Save version")
+      |> click(by_role(:button, name: "New entry"))
+      |> click(by_css("#stateChev"))
+      |> assert(contain_text(by_css("#stateMenu"), "Save version"))
+      |> click(by_css("#stateChev"))
+      |> refute_has(by_css("#stateMenu"))
+      |> click(by_css("#stateChev"))
+      |> assert(contain_text(by_css("#stateMenu"), "Save version"))
     end
 
     test "the site opens beside the admin area, in its own tab", %{conn: conn} do
       conn
       |> sign_in()
-      |> click("#wmBtn")
-      |> assert_has(~s(#navMenu a[href="/"][target="_blank"][rel="noopener"]),
-        text: "View site"
+      |> click(by_css("#wmBtn"))
+      |> assert(
+        contain_text(
+          by_css(~s(#navMenu a[href="/"][target="_blank"][rel="noopener"])),
+          "View site"
+        )
       )
     end
   end
@@ -194,17 +200,17 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> fill_in("Title", with: "Tagged by hand")
-      |> click("#tagchip-sea")
-      |> assert_has("#tagchip-sea.on")
-      |> assert_has("#edTags[value='sea']")
-      |> click("#tagchip-fog")
-      |> assert_has("#edTags[value='sea, fog']")
-      |> click("#tagchip-sea")
-      |> assert_has("#edTags[value='fog']")
-      |> refute_has("#tagchip-sea.on")
-      |> assert_has("#tagchip-sea")
+      |> click(by_role(:button, name: "New entry"))
+      |> fill(by_label("Title", exact: true), "Tagged by hand")
+      |> click(by_css("#tagchip-sea"))
+      |> assert_has(by_css("#tagchip-sea.on"))
+      |> assert_has(by_css("#edTags[value='sea']"))
+      |> click(by_css("#tagchip-fog"))
+      |> assert_has(by_css("#edTags[value='sea, fog']"))
+      |> click(by_css("#tagchip-sea"))
+      |> assert_has(by_css("#edTags[value='fog']"))
+      |> refute_has(by_css("#tagchip-sea.on"))
+      |> assert_has(by_css("#tagchip-sea"))
     end
 
     test "a half-written word is no tag until a comma or the way out",
@@ -212,9 +218,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       session =
         conn
         |> sign_in()
-        |> click_button("New entry")
-        |> fill_in("Title", with: "Half a tag")
-        |> type("#edTags", "har")
+        |> click(by_role(:button, name: "New entry"))
+        |> fill(by_label("Title", exact: true), "Half a tag")
+        |> press_sequentially(by_css("#edTags"), "har")
 
       # "har" is three letters on the way to "harbor" and nothing else.
       # Nothing on the page says whether the field stayed quiet, so the
@@ -223,24 +229,24 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       Process.sleep(600)
 
       session
-      |> refute_has("#tagchip-har")
-      |> refute_has("#tagPick")
+      |> refute_has(by_css("#tagchip-har"))
+      |> refute_has(by_css("#tagPick"))
 
       assert Enum.all?(Articles.list_articles(), &(&1.tags == ""))
 
       # the comma ends the word, and only then is it a tag
-      session = type(session, "#edTags", "bor,")
+      session = press_sequentially(session, by_css("#edTags"), "bor,")
 
-      assert_has(session, "#tagchip-harbor.on")
+      assert_has(session, by_css("#tagchip-harbor.on"))
 
       # what stands in the field after the comma follows on the way out
-      session = type(session, "#edTags", " pier")
+      session = press_sequentially(session, by_css("#edTags"), " pier")
       Process.sleep(600)
-      refute_has(session, "#tagchip-pier")
+      refute_has(session, by_css("#tagchip-pier"))
 
       session
-      |> click("#edTitle")
-      |> assert_has("#tagchip-pier.on")
+      |> click(by_css("#edTitle"))
+      |> assert_has(by_css("#tagchip-pier.on"))
     end
 
     # A comma used to be the only way to close a word, which is a thing
@@ -249,19 +255,13 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "Enter finishes the word the same way a comma does", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> fill_in("Title", with: "Tagged with Enter")
-      |> type("#edTags", "harbor")
-      |> press("#edTags", "Enter")
-      |> assert_has("#tagchip-harbor.on")
+      |> click(by_role(:button, name: "New entry"))
+      |> fill(by_label("Title", exact: true), "Tagged with Enter")
+      |> press_sequentially(by_css("#edTags"), "harbor")
+      |> press(by_css("#edTags"), "Enter")
+      |> assert_has(by_css("#tagchip-harbor.on"))
       # and the field is ready for the next word
-      |> evaluate(
-        "() => document.getElementById('edTags').value",
-        [is_function: true],
-        fn value ->
-          assert value == "harbor, "
-        end
-      )
+      |> assert(value(by_css("#edTags"), "harbor, "))
     end
 
     # A word the blog does not carry yet had no row of its own, so the
@@ -274,30 +274,30 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       session =
         conn
         |> sign_in()
-        |> click_button("New entry")
-        |> fill_in("Title", with: "A tag of its own")
-        |> type("#edTags", "estuary")
-        |> assert_has(~s(#tagMenu li.fresh[data-tag="estuary"]))
-        |> assert_has("#tagMenu li", count: 1)
+        |> click(by_role(:button, name: "New entry"))
+        |> fill(by_label("Title", exact: true), "A tag of its own")
+        |> press_sequentially(by_css("#edTags"), "estuary")
+        |> assert_has(by_css(~s(#tagMenu li.fresh[data-tag="estuary"])))
+        |> assert(count(by_css("#tagMenu li"), 1))
 
       # and the marked row is the one Enter takes
       session
-      |> press("#edTags", "Enter")
-      |> assert_has("#tagchip-estuary.on")
+      |> press(by_css("#edTags"), "Enter")
+      |> assert_has(by_css("#tagchip-estuary.on"))
     end
 
     test "a tag nobody else carries leaves the row when it leaves the field",
          %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> fill_in("Title", with: "Only tag")
-      |> type("#edTags", "lonely,")
-      |> assert_has("#tagchip-lonely.on")
-      |> press("#edTags", "ControlOrMeta+a")
-      |> press("#edTags", "Backspace")
-      |> click("#edTitle")
-      |> refute_has("#tagchip-lonely")
+      |> click(by_role(:button, name: "New entry"))
+      |> fill(by_label("Title", exact: true), "Only tag")
+      |> press_sequentially(by_css("#edTags"), "lonely,")
+      |> assert_has(by_css("#tagchip-lonely.on"))
+      |> press(by_css("#edTags"), "ControlOrMeta+a")
+      |> press(by_css("#edTags"), "Backspace")
+      |> click(by_css("#edTitle"))
+      |> refute_has(by_css("#tagchip-lonely"))
     end
   end
 
@@ -307,30 +307,33 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn =
         conn
         |> sign_in()
-        |> click_button("New entry")
-        |> fill_in("Title", with: "Versioned")
-        |> type(".ed-cm .cm-content", "First words.")
+        |> click(by_role(:button, name: "New entry"))
+        |> fill(by_label("Title", exact: true), "Versioned")
+        |> press_sequentially(by_css(".ed-cm .cm-content"), "First words.")
         # the toast is the save itself answering
-        |> assert_has("#toast", text: "Saved")
-        |> click("#stateChev")
-        |> click_button("#saveVersionRow", "Save version")
-        |> assert_has("#stateLine", text: "Version saved")
+        |> assert(contain_text(by_css("#toast"), "Saved"))
+        |> click(by_css("#stateChev"))
+        |> click(by_css("#saveVersionRow"))
+        |> assert(contain_text(by_css("#stateLine"), "Version saved"))
 
       conn =
         conn
-        |> press(".ed-cm .cm-content", "ControlOrMeta+a")
-        |> type(".ed-cm .cm-content", "Second words.")
-        |> click("#stateChev")
-        |> click_button("#saveVersionRow", "Save version")
-        |> click_button(".tab", "Versions")
-        |> assert_has("#versionsList .dif-add", text: "Second")
-        |> assert_has("#versionsList .dif-del", text: "First")
+        |> press(by_css(".ed-cm .cm-content"), "ControlOrMeta+a")
+        |> press_sequentially(by_css(".ed-cm .cm-content"), "Second words.")
+        |> click(by_css("#stateChev"))
+        |> click(by_css("#saveVersionRow"))
+        |> click(by_css(".tab") |> filter(has_text: "Versions"))
+        |> assert_has(by_css("#versionsList .dif-add") |> filter(has_text: "Second"))
+        |> assert_has(by_css("#versionsList .dif-del") |> filter(has_text: "First"))
 
       # the older version's restore puts the first text back; the
       # pre-restore state is snapshotted first, so nothing is lost
       conn
-      |> click("#versionsList > div:nth-of-type(2) button", "Restore this version")
-      |> assert_has("#toast", text: "restored")
+      |> click(
+        by_css("#versionsList > div:nth-of-type(2) button")
+        |> filter(has_text: "Restore this version")
+      )
+      |> assert(contain_text(by_css("#toast"), "restored"))
 
       assert [article] = Articles.list_articles()
       assert article.body == "First words."
@@ -340,10 +343,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
   describe "the author" do
     # A closed select shows its options to nobody, Playwright included,
-    # so the name the field stands on is read from the field itself.
-    @author_field """
-    () => document.querySelector("#edAuthor").selectedOptions[0].textContent.trim()
-    """
+    # so the name the field stands on is read from its chosen option.
 
     test "the field hands the entry to another admin, and the page says so",
          %{conn: conn, kb: kb} do
@@ -354,9 +354,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> evaluate(@author_field, [is_function: true], &assert(&1 == "kb"))
-        |> select("Author", option: "Anna Berger")
-        |> assert_has("#state", text: "Saved")
+        |> assert(text(by_css("#edAuthor option:checked"), "kb"))
+        |> select_option(by_label("Author"), %{label: "Anna Berger"})
+        |> assert(contain_text(by_css("#state"), "Saved"))
 
       moved =
         eventually(fn ->
@@ -367,10 +367,10 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       # the move is the entry's own story, and the reader gets the name
       conn
-      |> click_button(".tab", "Log")
-      |> assert_has("#logList", text: "named Anna Berger as the author")
+      |> click(by_css(".tab") |> filter(has_text: "Log"))
+      |> assert(contain_text(by_css("#logList"), "named Anna Berger as the author"))
       |> open_page(Articles.public_path(article))
-      |> assert_has("#by", text: "Anna Berger")
+      |> assert(contain_text(by_css("#by"), "Anna Berger"))
     end
   end
 
@@ -378,12 +378,12 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "the Log tab tells the story of the text", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> fill_in("Title", with: "Logged")
-      |> click_button("#stateBtn .main", "Publish")
-      |> click_button(".tab", "Log")
-      |> assert_has("#logList", text: "published the entry")
-      |> assert_has("#logList", text: "started the entry")
+      |> click(by_role(:button, name: "New entry"))
+      |> fill(by_label("Title", exact: true), "Logged")
+      |> click(by_css("#stateBtn .main") |> filter(has_text: "Publish"))
+      |> click(by_css(".tab") |> filter(has_text: "Log"))
+      |> assert(contain_text(by_css("#logList"), "published the entry"))
+      |> assert(contain_text(by_css("#logList"), "started the entry"))
     end
   end
 
@@ -402,9 +402,9 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "the formatting bar belongs to the body, not to the title", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> assert_has(".mdbar")
-      |> evaluate(@bar_gaps, [is_function: true], fn [over, under] ->
+      |> click(by_role(:button, name: "New entry"))
+      |> assert_has(by_css(".mdbar"))
+      |> assert_script(@bar_gaps, fn [over, under] ->
         assert under < over
       end)
     end
@@ -460,12 +460,14 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
             path -> open(conn, path)
           end
 
-        conn
-        |> assert_has("#{unquote(host)} .cm-content")
-        |> evaluate(@seed_surface, [arg: unquote(host), is_function: true], fn result ->
-          assert result["lines"] == unquote(lines)
-          assert Enum.all?(result["shift"], &(&1 < 1))
-        end)
+        # the script puts the server's markup in place, so it runs once
+        result =
+          conn
+          |> assert_has(by_css("#{unquote(host)} .cm-content"))
+          |> evaluate(@seed_surface, unquote(host))
+
+        assert result["lines"] == unquote(lines)
+        assert Enum.all?(result["shift"], &(&1 < 1))
       end
     end
 
@@ -474,11 +476,11 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     test "Escape leaves the body", %{conn: conn} do
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> type(".ed-cm .cm-content", "Words.")
-      |> assert_has(".cm-editor.cm-focused")
-      |> press(".ed-cm .cm-content", "Escape")
-      |> refute_has(".cm-editor.cm-focused")
+      |> click(by_role(:button, name: "New entry"))
+      |> press_sequentially(by_css(".ed-cm .cm-content"), "Words.")
+      |> assert_has(by_css(".cm-editor.cm-focused"))
+      |> press(by_css(".ed-cm .cm-content"), "Escape")
+      |> refute_has(by_css(".cm-editor.cm-focused"))
     end
 
     # The body had no roof of its own: an oversize paste put a token in
@@ -494,14 +496,14 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       conn
       |> sign_in()
-      |> click_button("New entry")
+      |> click(by_role(:button, name: "New entry"))
       # The picker is in the markup before the editor's chunk has
       # loaded, and a file picked before that is lost in silence. The
       # surface and the picker's listener come up in the same step.
-      |> assert_has(".ed-cm .cm-content")
-      |> upload("Put pictures and videos in the text", huge)
-      |> assert_has("#toast", text: "over the 10 MB roof")
-      |> refute_has(".cm-content", text: "Uploading")
+      |> assert_has(by_css(".ed-cm .cm-content"))
+      |> set_input_files(by_label("Put pictures and videos in the text"), huge)
+      |> assert(contain_text(by_css("#toast"), "over the 10 MB roof"))
+      |> refute_has(by_css(".cm-content") |> filter(has_text: "Uploading"))
     end
 
     # The line drops, both pictures fail, the line comes back: one
@@ -517,34 +519,29 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       conn
       |> sign_in()
-      |> click_button("New entry")
+      |> click(by_role(:button, name: "New entry"))
       # the picker listens once the surface stands, see the roof test
-      |> assert_has(".ed-cm .cm-content")
-      |> evaluate(
-        """
-        () => {
-          window.realSend = XMLHttpRequest.prototype.send
-          XMLHttpRequest.prototype.send = function () {
-            setTimeout(() => this.dispatchEvent(new Event("error")))
-          }
-          return true
+      |> assert_has(by_css(".ed-cm .cm-content"))
+      |> run_script("""
+      () => {
+        window.realSend = XMLHttpRequest.prototype.send
+        XMLHttpRequest.prototype.send = function () {
+          setTimeout(() => this.dispatchEvent(new Event("error")))
         }
-        """,
-        is_function: true
-      )
-      |> upload("Put pictures and videos in the text", picture.(40))
-      |> assert_has("#inlineCount", text: "1 failed")
-      |> refute_has("#inlineResume")
-      |> upload("Put pictures and videos in the text", picture.(41))
-      |> assert_has("#inlineCount", text: "2 failed")
-      |> evaluate("() => { XMLHttpRequest.prototype.send = window.realSend; return true }",
-        is_function: true
-      )
-      |> assert_has("#inlineResume", text: "2 uploads did not arrive")
-      |> click_button("#inlineResume button", "Resume all")
-      |> assert_has("#inlineCount", text: "2 files")
-      |> refute_has("#inlineCount", text: "failed")
-      |> refute_has("#inlineResume")
+        return true
+      }
+      """)
+      |> set_input_files(by_label("Put pictures and videos in the text"), picture.(40))
+      |> assert(contain_text(by_css("#inlineCount"), "1 failed"))
+      |> refute_has(by_css("#inlineResume"))
+      |> set_input_files(by_label("Put pictures and videos in the text"), picture.(41))
+      |> assert(contain_text(by_css("#inlineCount"), "2 failed"))
+      |> run_script("() => { XMLHttpRequest.prototype.send = window.realSend; return true }")
+      |> assert(contain_text(by_css("#inlineResume"), "2 uploads did not arrive"))
+      |> click(by_css("#inlineResume button") |> filter(has_text: "Resume all"))
+      |> assert(contain_text(by_css("#inlineCount"), "2 files"))
+      |> refute_has(by_css("#inlineCount") |> filter(has_text: "failed"))
+      |> refute_has(by_css("#inlineResume"))
     end
 
     # The same two can also leave at once: their markers go out of the
@@ -559,27 +556,24 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
       conn
       |> sign_in()
-      |> click_button("New entry")
-      |> assert_has(".ed-cm .cm-content")
-      |> evaluate(
-        """
-        () => {
-          XMLHttpRequest.prototype.send = function () {
-            setTimeout(() => this.dispatchEvent(new Event("error")))
-          }
-          return true
+      |> click(by_role(:button, name: "New entry"))
+      |> assert_has(by_css(".ed-cm .cm-content"))
+      |> run_script("""
+      () => {
+        XMLHttpRequest.prototype.send = function () {
+          setTimeout(() => this.dispatchEvent(new Event("error")))
         }
-        """,
-        is_function: true
-      )
-      |> upload("Put pictures and videos in the text", picture.(40))
-      |> assert_has("#inlineCount", text: "1 failed")
-      |> upload("Put pictures and videos in the text", picture.(41))
-      |> assert_has("#inlineCount", text: "2 failed")
-      |> click_button("#inlineResume button", "Remove all")
-      |> refute_has("#inlineResume")
-      |> refute_has("#inlineImgs [data-img-action=retry]")
-      |> refute_has(".ed-cm .cm-content", text: "Upload failed")
+        return true
+      }
+      """)
+      |> set_input_files(by_label("Put pictures and videos in the text"), picture.(40))
+      |> assert(contain_text(by_css("#inlineCount"), "1 failed"))
+      |> set_input_files(by_label("Put pictures and videos in the text"), picture.(41))
+      |> assert(contain_text(by_css("#inlineCount"), "2 failed"))
+      |> click(by_css("#inlineResume button") |> filter(has_text: "Remove all"))
+      |> refute_has(by_css("#inlineResume"))
+      |> refute_has(by_css("#inlineImgs [data-img-action=retry]"))
+      |> refute_has(by_css(".ed-cm .cm-content") |> filter(has_text: "Upload failed"))
     end
 
     # The lines to hand on are a field of the pane, in the same clothes
@@ -622,8 +616,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#stateWord", text: "Live", exact: true)
-      |> evaluate(@state_motion, [is_function: true], fn [word, dot] ->
+      |> assert(text(by_css("#stateWord"), "Live"))
+      |> assert_script(@state_motion, fn [word, dot] ->
         assert word == "none"
         assert dot == "pulse"
       end)
@@ -655,8 +649,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(id)
-      |> assert_has("#inlineCount", text: "2")
-      |> evaluate(@inline_columns, [is_function: true], fn [names, raws] ->
+      |> assert(contain_text(by_css("#inlineCount"), "2"))
+      |> assert_script(@inline_columns, fn [names, raws] ->
         assert length(names) == 2
         assert length(raws) == 2
         assert Enum.uniq(names) == [hd(names)]
@@ -679,7 +673,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
     }
     """
 
-    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    @tag Playwright.Test.use(viewport: %{width: 390, height: 844})
     test "the way out of a stopped upload is on the screen of a phone", %{conn: conn} do
       %{id: id} =
         Texttile.ArticlesFixtures.published_post(
@@ -690,8 +684,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(id)
-      |> assert_has("#inlineImgs", text: "pier.jpg")
-      |> evaluate(@stopped_actions, [is_function: true], fn [width, left, right, screen] ->
+      |> assert(contain_text(by_css("#inlineImgs"), "pier.jpg"))
+      |> assert_script(@stopped_actions, fn [width, left, right, screen] ->
         assert width > 100
         assert left >= 0
         assert right <= screen
@@ -704,8 +698,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#shareLines")
-      |> evaluate(@share_ground, [is_function: true], fn [bg, other_bg, fs, other_fs, p, other_p] ->
+      |> assert_has(by_css("#shareLines"))
+      |> assert_script(@share_ground, fn [bg, other_bg, fs, other_fs, p, other_p] ->
         assert bg == other_bg
         assert fs == other_fs
         assert p == other_p
@@ -715,21 +709,12 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
   describe "the phone's row of places" do
     # the jump is the browser's own and may glide, so the check waits
-    # for the page to arrive (up to two seconds)
+    # for the page to arrive
     @scrolled """
-    (where) => new Promise((done) => {
-      const until = Date.now() + 2000
-      const look = () => {
-        const there = where === "top" ? window.scrollY === 0 : window.scrollY > 300
-        if (there) done(true)
-        else if (Date.now() > until) done(false)
-        else requestAnimationFrame(look)
-      }
-      look()
-    })
+    (where) => where === "top" ? window.scrollY === 0 : window.scrollY > 300
     """
 
-    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    @tag Playwright.Test.use(viewport: %{width: 390, height: 844})
     test "Text takes the writer back up from the settings", %{conn: conn} do
       body = Enum.map_join(1..40, "\n\n", &"Paragraph #{&1} of a long walk.")
       %{id: id} = Texttile.ArticlesFixtures.published_post(title: "Long", body: body)
@@ -737,10 +722,10 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> open_editor(id)
-      |> click("#jumpSettings")
-      |> evaluate(@scrolled, [is_function: true, arg: "down"], &assert(&1 == true))
-      |> click("#ptabText")
-      |> evaluate(@scrolled, [is_function: true, arg: "top"], &assert(&1 == true))
+      |> click(by_css("#jumpSettings"))
+      |> assert_script(@scrolled, "down", &assert(&1 == true))
+      |> click(by_css("#ptabText"))
+      |> assert_script(@scrolled, "top", &assert(&1 == true))
     end
   end
 end

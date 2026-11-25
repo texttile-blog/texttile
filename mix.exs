@@ -75,8 +75,7 @@ defmodule Texttile.MixProject do
       {:bcrypt_elixir, "~> 4.0"},
       {:req, "~> 0.7"},
       {:gen_smtp, "~> 1.3"},
-      {:phoenix_test, "~> 0.14.0", only: :test, runtime: false},
-      {:phoenix_test_playwright, "~> 0.19.0", only: :test, runtime: false}
+      {:fluffy, "~> 0.9.0-rc.6", only: :test}
     ]
   end
 

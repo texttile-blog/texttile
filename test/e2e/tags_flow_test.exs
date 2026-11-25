@@ -11,32 +11,32 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
     session =
       conn
       |> sign_in()
-      |> press("body", "4")
+      |> press(by_css("body"), "4")
       |> await_live()
-      |> assert_has("#crumb", text: "Tags")
-      |> click_button("#edit-tag-reisen", "Edit")
-      |> fill_in("Name", with: "Reisen4")
-      |> press("#tag-name", "2")
-      |> assert_has("#crumb", text: "Tags")
-      |> fill_in("Name", with: "Reisen")
-      |> click_button("Rename")
-      |> assert_has("#tagrow-reisen a", text: "Reisen")
-      |> assert_has("#tagrow-reisen", text: "2 entries")
+      |> assert(contain_text(by_css("#crumb"), "Tags"))
+      |> click(by_css("#edit-tag-reisen"))
+      |> fill(by_label("Name"), "Reisen4")
+      |> press(by_css("#tag-name"), "2")
+      |> assert(contain_text(by_css("#crumb"), "Tags"))
+      |> fill(by_label("Name"), "Reisen")
+      |> click(by_role(:button, name: "Rename"))
+      |> assert(contain_text(by_css("#tagrow-reisen a"), "Reisen"))
+      |> assert(contain_text(by_css("#tagrow-reisen"), "2 entries"))
 
     assert Articles.get_article!(live.id).tags == "Reisen, Meer"
     assert Articles.get_article!(draft.id).tags == "Reisen"
 
     session
     |> open_editor(draft.id)
-    |> assert_has("#edTags[value='Reisen']")
-    |> assert_has("#tagchip-reisen.on", text: "Reisen")
+    |> assert_has(by_css("#edTags[value='Reisen']"))
+    |> assert(contain_text(by_css("#tagchip-reisen.on"), "Reisen"))
     |> open_editor(blank.id)
-    |> type("#edTags", "rei")
-    |> assert_has(~s(#tagMenu li[data-tag="Reisen"]), text: "Reisen")
-    |> press("#edTags", "Enter")
-    |> assert_has("#tagchip-reisen.on", text: "Reisen")
+    |> press_sequentially(by_css("#edTags"), "rei")
+    |> assert(contain_text(by_css(~s(#tagMenu li[data-tag="Reisen"])), "Reisen"))
+    |> press(by_css("#edTags"), "Enter")
+    |> assert(contain_text(by_css("#tagchip-reisen.on"), "Reisen"))
     |> open_page("/tags/reisen")
-    |> assert_has("#title", text: "#Reisen")
+    |> assert(contain_text(by_css("#title"), "#Reisen"))
   end
 
   test "cancel, invalid rename and delete keep their distinct outcomes", %{conn: conn} do
@@ -46,23 +46,23 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
       conn
       |> sign_in()
       |> open("/admin/tags")
-      |> click_button("#edit-tag-reisen", "Edit")
-      |> fill_in("Name", with: "Meer")
-      |> click_button("Rename")
-      |> assert_has("#tag-error", text: "already exists")
-      |> click_button("#cancel-tag-edit", "Cancel")
-      |> refute_has("#rename-tag-form")
-      |> click_button("#delete-tag-reisen", "Delete")
-      |> click_button("#dialog-cancel", "Cancel")
-      |> assert_has("#tagrow-reisen")
+      |> click(by_css("#edit-tag-reisen"))
+      |> fill(by_label("Name"), "Meer")
+      |> click(by_role(:button, name: "Rename"))
+      |> assert(contain_text(by_css("#tag-error"), "already exists"))
+      |> click(by_css("#cancel-tag-edit"))
+      |> refute_has(by_css("#rename-tag-form"))
+      |> click(by_css("#delete-tag-reisen"))
+      |> click(by_css("#dialog-cancel"))
+      |> assert_has(by_css("#tagrow-reisen"))
 
     assert Articles.get_article!(entry.id).tags == "reisen, Meer"
 
     session
-    |> click_button("#delete-tag-reisen", "Delete")
-    |> click_button("#dialog-ok", "Delete the tag")
-    |> refute_has("#tagrow-reisen")
-    |> assert_has("#tagrow-meer")
+    |> click(by_css("#delete-tag-reisen"))
+    |> click(by_css("#dialog-ok"))
+    |> refute_has(by_css("#tagrow-reisen"))
+    |> assert_has(by_css("#tagrow-meer"))
 
     assert Articles.get_article!(entry.id).tags == "Meer"
   end

@@ -2,9 +2,6 @@
   "scripts": {
     "test": "node --test \"js_test/*.test.mjs\""
   },
-  "devDependencies": {
-    "playwright": "^1.65.1"
-  },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.2",

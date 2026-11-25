@@ -8,13 +8,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
   # is read off the live page, because that is where it stands: the
   # first render of this screen carries no token at all.
   defp token_on_screen(session) do
-    {:ok, text} =
-      PlaywrightEx.Frame.text_content(session.frame_id,
-        selector: "#backupToken",
-        timeout: 5_000
-      )
-
-    String.trim(text)
+    session |> text_content(by_css("#backupToken")) |> String.trim()
   end
 
   defp fetch(path, token) do
@@ -29,14 +23,14 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
-      |> assert_has("#backupSection", text: "Backup")
-      |> assert_has("#setBackupNote", text: "/backup is closed")
+      |> assert_has(by_css("#backupSection") |> filter(has_text: "Backup"))
+      |> assert(contain_text(by_css("#setBackupNote"), "/backup is closed"))
       # the token and the rest wait behind the switch
-      |> refute_has("#backupLastAccess")
-      |> check("Allow backups at /backup", exact: false)
-      |> assert_has("#backupLastAccess", text: "Nothing has been fetched yet")
-      |> uncheck("Allow backups at /backup", exact: false)
-      |> refute_has("#backupLastAccess")
+      |> refute_has(by_css("#backupLastAccess"))
+      |> check(by_label("Allow backups at /backup"))
+      |> assert(contain_text(by_css("#backupLastAccess"), "Nothing has been fetched yet"))
+      |> uncheck(by_label("Allow backups at /backup"))
+      |> refute_has(by_css("#backupLastAccess"))
 
       refute Backup.enabled?()
       refute Backup.token?()
@@ -47,11 +41,11 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
+        |> check(by_label("Allow backups at /backup"))
         # the toast is the save answering
-        |> assert_has("#toast", text: "Saved")
-        |> click_button("#makeBackupToken", "Create a token")
-        |> assert_has("#backupToken")
+        |> assert(contain_text(by_css("#toast"), "Saved"))
+        |> click(by_css("#makeBackupToken"))
+        |> assert_has(by_css("#backupToken"))
 
       assert Backup.enabled?()
 
@@ -69,10 +63,10 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       # And the screen then says the backups run.
       session
       |> open("/admin/settings")
-      |> assert_has("#backupLastAccess", text: "127.0.0.1")
+      |> assert(contain_text(by_css("#backupLastAccess"), "127.0.0.1"))
       # The word itself is gone from the screen: it is kept as a hash.
-      |> refute_has("#backupToken")
-      |> assert_has("#backupTokenState", text: "A token is in service")
+      |> refute_has(by_css("#backupToken"))
+      |> assert(contain_text(by_css("#backupTokenState"), "A token is in service"))
     end
 
     # The word is shown once and has to reach a configuration file
@@ -81,7 +75,6 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
     @token_selected """
     () => {
       const field = document.querySelector("#backupToken")
-      field.focus()
       return field.selectionEnd - field.selectionStart === field.value.length
     }
     """
@@ -90,12 +83,13 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
-      |> check("Allow backups at /backup", exact: false)
-      |> click_button("#makeBackupToken", "Create a token")
-      |> assert_has("#backupToken")
-      |> evaluate(@token_selected, [is_function: true], &assert(&1 == true))
-      |> click_button("#copyBackupToken", "Copy")
-      |> assert_has("#copyBackupToken", text: "Copied")
+      |> check(by_label("Allow backups at /backup"))
+      |> click(by_css("#makeBackupToken"))
+      |> assert_has(by_css("#backupToken"))
+      |> focus(by_css("#backupToken"))
+      |> assert_script(@token_selected, &assert(&1 == true))
+      |> click(by_css("#copyBackupToken"))
+      |> assert(contain_text(by_css("#copyBackupToken"), "Copied"))
     end
 
     # A page with no clipboard object at all, which is what a browser
@@ -111,31 +105,25 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
     # Asking the page whether it copied proves nothing: the button said
     # "Copied" while nothing had been copied at all. So the test pastes
     # into a field of the same screen and reads what arrives.
-    @pasted "() => document.querySelector('#setting-backup_allowed_ips').value"
 
     test "copies over plain http, where the page has no clipboard object", %{conn: conn} do
-      {:ok, _} =
-        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
-          source: @no_clipboard,
-          timeout: 5_000
-        )
-
       session =
         conn
+        |> add_init_script(@no_clipboard)
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
-        |> click_button("#makeBackupToken", "Create a token")
-        |> assert_has("#backupToken")
+        |> check(by_label("Allow backups at /backup"))
+        |> click(by_css("#makeBackupToken"))
+        |> assert_has(by_css("#backupToken"))
 
       token = token_on_screen(session)
 
       session
-      |> click_button("#copyBackupToken", "Copy")
-      |> assert_has("#copyBackupToken", text: "Copied")
-      |> click("#setting-backup_allowed_ips")
-      |> press("#setting-backup_allowed_ips", "ControlOrMeta+v")
-      |> evaluate(@pasted, [is_function: true], &assert(&1 == token))
+      |> click(by_css("#copyBackupToken"))
+      |> assert(contain_text(by_css("#copyBackupToken"), "Copied"))
+      |> click(by_css("#setting-backup_allowed_ips"))
+      |> press(by_css("#setting-backup_allowed_ips"), "ControlOrMeta+v")
+      |> assert(value(by_css("#setting-backup_allowed_ips"), token))
     end
 
     # A clipboard that counts what it is handed. The page has none on
@@ -155,25 +143,20 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
     # button again on every redraw would hand the word over once per
     # redraw, and nothing on the screen would say so.
     test "copies once, however often the screen has been redrawn", %{conn: conn} do
-      {:ok, _} =
-        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
-          source: @counting_clipboard,
-          timeout: 5_000
-        )
-
       conn
+      |> add_init_script(@counting_clipboard)
       |> sign_in()
       |> open("/admin/settings")
-      |> check("Allow backups at /backup", exact: false)
-      |> click_button("#makeBackupToken", "Create a token")
-      |> assert_has("#backupToken")
-      |> uncheck("Allow backups at /backup", exact: false)
-      |> assert_has("#setBackupNote", text: "/backup is closed")
-      |> check("Allow backups at /backup", exact: false)
-      |> assert_has("#setBackupNote", text: "may fetch")
-      |> click_button("#copyBackupToken", "Copy")
-      |> assert_has("#copyBackupToken", text: "Copied")
-      |> evaluate(@writes, [is_function: true], &assert(&1 == 1))
+      |> check(by_label("Allow backups at /backup"))
+      |> click(by_css("#makeBackupToken"))
+      |> assert_has(by_css("#backupToken"))
+      |> uncheck(by_label("Allow backups at /backup"))
+      |> assert(contain_text(by_css("#setBackupNote"), "/backup is closed"))
+      |> check(by_label("Allow backups at /backup"))
+      |> assert(contain_text(by_css("#setBackupNote"), "may fetch"))
+      |> click(by_css("#copyBackupToken"))
+      |> assert(contain_text(by_css("#copyBackupToken"), "Copied"))
+      |> assert_script(@writes, &assert(&1 == 1))
     end
 
     test "a new token takes the old one out of service, once it is confirmed", %{conn: conn} do
@@ -181,18 +164,18 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
-        |> click_button("#makeBackupToken", "Create a token")
-        |> assert_has("#backupToken")
+        |> check(by_label("Allow backups at /backup"))
+        |> click(by_css("#makeBackupToken"))
+        |> assert_has(by_css("#backupToken"))
 
       first = token_on_screen(session)
 
       session =
         session
-        |> click_button("#replaceBackupToken", "Replace the token")
-        |> assert_has("#dlgH", text: "Replace the backup token?")
-        |> click_button("#dialog-ok", "Replace it")
-        |> assert_has("#backupToken")
+        |> click(by_css("#replaceBackupToken"))
+        |> assert(contain_text(by_css("#dlgH"), "Replace the backup token?"))
+        |> click(by_css("#dialog-ok"))
+        |> assert_has(by_css("#backupToken"))
 
       second = token_on_screen(session)
       refute second == first
@@ -206,18 +189,18 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
         conn
         |> sign_in()
         |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
-        |> click_button("#makeBackupToken", "Create a token")
-        |> assert_has("#backupToken")
+        |> check(by_label("Allow backups at /backup"))
+        |> click(by_css("#makeBackupToken"))
+        |> assert_has(by_css("#backupToken"))
 
       token = token_on_screen(session)
 
       session
-      |> click_button("#replaceBackupToken", "Replace the token")
-      |> assert_has("#dlgH", text: "Replace the backup token?")
-      |> click_button("#dialog-cancel", "Cancel")
-      |> refute_has("#dlgH")
-      |> assert_has("#backupTokenState", text: "A token is in service")
+      |> click(by_css("#replaceBackupToken"))
+      |> assert(contain_text(by_css("#dlgH"), "Replace the backup token?"))
+      |> click(by_css("#dialog-cancel"))
+      |> refute_has(by_css("#dlgH"))
+      |> assert(contain_text(by_css("#backupTokenState"), "A token is in service"))
 
       assert {:ok, %{status: 200}} = fetch("/backup/manifest", token)
     end

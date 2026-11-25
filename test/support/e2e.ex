@@ -16,7 +16,7 @@ defmodule TexttileWeb.E2E do
     * `open_editor/2` for the editor, which also waits for the gallery
     * `open_page/2` for a reader page, whose script says when it stands
 
-  `PhoenixTest.visit/2` is for the pages that carry neither: the
+  `Fluffy.visit/2` is for the pages that carry neither: the
   sign-in screens and a link out of a mail. Say so where you use it.
 
   `eventually/2` comes along for the things that settle a moment after
@@ -25,11 +25,20 @@ defmodule TexttileWeb.E2E do
 
   use ExUnit.CaseTemplate
 
+  import Fluffy
+  import Fluffy.Assert, only: [assert_has: 2]
+  import Fluffy.Locator
+
+  # Not async, the default: SQLite serializes writers, concurrent
+  # sandbox owners flake.
   using do
     quote do
-      # Not async: SQLite serializes writers, concurrent sandbox owners flake.
-      use PhoenixTest.Playwright.Case, async: false
+      use Playwright.Test
+      use Fluffy.Assert
 
+      import Fluffy
+      import Fluffy.Locator
+      import Fluffy.Playwright
       import Texttile.AccountsFixtures
       import Texttile.ArticlesFixtures
       import Texttile.DataCase, only: [eventually: 1, eventually: 2]
@@ -37,39 +46,22 @@ defmodule TexttileWeb.E2E do
 
       @moduletag :e2e
 
-      setup {TexttileWeb.E2E, :close_browser_context_afterwards}
+      setup {TexttileWeb.E2E, :sandbox_and_browser}
       setup {TexttileWeb.E2E, :one_admin_to_sign_in_as}
       setup {TexttileWeb.E2E, :a_share_sheet}
     end
   end
 
   @doc """
-  Closes the test's browser context the moment the test ends, before
-  the next one starts, and clears what no sandbox rolls back.
+  Starts the sandbox owner, then the browser session as `:conn`.
 
-  The Playwright case closes contexts in a spawned process, so a page
-  can outlive its test. Its LiveViews then reconnect mid-run under a
-  sandbox owner that is already dead, and SQLite's single writer turns
-  that race into stalls in whatever test runs next. Registered after
-  the case's own setup, this runs first on exit and closes the context
-  synchronously.
+  Fluffy closes the session's browser context in an `on_exit` of its
+  own, registered after the owner's, so the context is gone before the
+  owner stops and no LiveView of this test reconnects under a dead one.
   """
-  def close_browser_context_afterwards(%{conn: conn}) do
-    # The browser tests keep their own sandbox, so they never pass
-    # through Texttile.DataCase.setup_sandbox/1. They open editors and
-    # upload files like nobody else, and both outlive them the same
-    # way, so they start from none too.
-    Texttile.DataCase.clear_what_no_sandbox_rolls_back()
-
-    ExUnit.Callbacks.on_exit(fn ->
-      try do
-        PlaywrightEx.BrowserContext.close(conn.context_id, timeout: 5_000)
-      catch
-        _, _ -> :ok
-      end
-    end)
-
-    :ok
+  def sandbox_and_browser(tags) do
+    Texttile.DataCase.setup_sandbox(tags)
+    %{conn: start_session(:playwright)}
   end
 
   @doc """
@@ -98,12 +90,10 @@ defmodule TexttileWeb.E2E do
   def a_share_sheet(%{no_share_sheet: true}), do: :ok
 
   def a_share_sheet(%{conn: conn}) do
-    {:ok, _} =
-      PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
-        source:
-          "navigator.share = (data) => { window.__shared = data; return Promise.resolve() }",
-        timeout: 5_000
-      )
+    Fluffy.Playwright.add_init_script(
+      conn,
+      "navigator.share = (data) => { window.__shared = data; return Promise.resolve() }"
+    )
 
     :ok
   end
@@ -121,7 +111,7 @@ defmodule TexttileWeb.E2E do
   first click. A loaded CI runner does not.
   """
   def await_live(session) do
-    PhoenixTest.assert_has(session, "[data-phx-main].phx-connected")
+    assert_has(session, by_css("[data-phx-main].phx-connected"))
   end
 
   @doc """
@@ -129,7 +119,7 @@ defmodule TexttileWeb.E2E do
   way into a screen that carries a LiveView.
   """
   def open(session, path) do
-    session |> PhoenixTest.visit(path) |> await_live()
+    session |> visit(path) |> await_live()
   end
 
   @doc """
@@ -142,7 +132,7 @@ defmodule TexttileWeb.E2E do
   races the script without this.
   """
   def open_page(session, path) do
-    session |> PhoenixTest.visit(path) |> PhoenixTest.assert_has("body[data-ready]")
+    session |> visit(path) |> assert_has(by_css("body[data-ready]"))
   end
 
   @doc """
@@ -156,7 +146,7 @@ defmodule TexttileWeb.E2E do
   def open_editor(session, article_id) do
     session
     |> open("/admin/texts/#{article_id}")
-    |> PhoenixTest.assert_has("#tilesBlock[data-ready]")
+    |> assert_has(by_css("#tilesBlock[data-ready]"))
   end
 
   @doc """
@@ -169,11 +159,11 @@ defmodule TexttileWeb.E2E do
     # The sign-in screen carries no LiveView, so there is nothing to
     # wait for until the admin area answers below.
     session
-    |> PhoenixTest.visit("/login")
-    |> PhoenixTest.fill_in("Email address", with: "kb@example.org")
-    |> PhoenixTest.fill_in("Password", with: Texttile.AccountsFixtures.valid_password())
-    |> PhoenixTest.click_button("Sign in")
-    |> PhoenixTest.assert_has("#new-text")
+    |> visit("/login")
+    |> fill(by_label("Email address"), "kb@example.org")
+    |> fill(by_label("Password"), Texttile.AccountsFixtures.valid_password())
+    |> click(by_role(:button, name: "Sign in"))
+    |> assert_has(by_css("#new-text"))
     |> await_live()
   end
 
@@ -189,12 +179,36 @@ defmodule TexttileWeb.E2E do
   def age_form(session, form) do
     stamp = TexttileWeb.HumanCheck.stamp(form, now: System.system_time(:second) - 10)
 
-    PhoenixTest.Playwright.evaluate(
+    run_script(
       session,
       "t => document.querySelectorAll(\"input[name='t']\").forEach(el => el.value = t)",
-      is_function: true,
-      arg: stamp
+      stamp
     )
+  end
+
+  @doc """
+  Runs a script in the page for what it does there, such as a stand-in
+  for the network, and goes on with the session.
+
+  A script whose answer the test checks goes through `assert_script/4`
+  instead, which waits for the page to come round.
+  """
+  def run_script(session, script, arg \\ nil) do
+    Fluffy.Playwright.evaluate(session, script, arg)
+    session
+  end
+
+  @doc """
+  Checks what a script in the page returns, and asks again until
+  `check` passes or the expect timeout runs out.
+
+  For what no locator assertion reads: a measure of the layout, a
+  count the page keeps in a variable. The script runs once per try,
+  so it only looks.
+  """
+  def assert_script(session, script, arg \\ nil, check) do
+    Playwright.Expect.poll!(fn -> Fluffy.Playwright.evaluate(session, script, arg) end, check)
+    session
   end
 
   @doc """

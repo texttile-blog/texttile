@@ -26,6 +26,7 @@ crash.dump
 /.elixir_ls/
 priv/uploads/
 /tmp/
+/test-results/
 /assets/node_modules/
 *.db
 *.db-shm

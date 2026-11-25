@@ -55,9 +55,6 @@ defmodule Texttile.DataCase do
   used to be cleared by hand in the tests that happened to need it,
   which is how a test that needed it and did not say so became a test
   that fails only after some other test.
-
-  The browser tests keep their own sandbox and never pass through
-  `setup_sandbox/1`, so they call this themselves.
   """
   def clear_what_no_sandbox_rolls_back do
     restore_admin_emails_afterwards()
