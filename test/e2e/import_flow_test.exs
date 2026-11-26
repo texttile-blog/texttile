@@ -11,23 +11,23 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
 
     conn
     |> sign_in()
-    |> click("#wmBtn")
+    |> click(by_css("#wmBtn"))
     # the menu opens in the browser: wait for it, or the next click
     # races the script on a slow machine
-    |> assert_has("#navMenu", text: "Settings")
-    |> click_link("#navMenu a", "Settings")
-    |> click_link("#open-import", "Open the import")
-    |> assert_has("#crumb", text: "Import")
-    |> upload("#import-upload input[type=file]", "Upload the zip", zip, exact: false)
-    |> assert_has("#import-report", text: "The report")
-    |> assert_has("#bundle-beach", text: "will import")
-    |> assert_has("#bundle-beach", text: "2 comments")
-    |> assert_has("#bundle-beach", text: "nothing references stray.txt")
-    |> assert_has("#bundle-broken", text: "will not import")
-    |> click_button("#import-run", "Import 1 entry")
-    |> assert_has("#import-summary", text: "1 created")
-    |> click_button("#import-done", "Done")
-    |> assert_has("#import-upload", text: "Upload the zip")
+    |> assert(contain_text(by_css("#navMenu"), "Settings"))
+    |> click(by_css("#navMenu a") |> filter(has_text: "Settings"))
+    |> click(by_css("#open-import"))
+    |> assert(contain_text(by_css("#crumb"), "Import"))
+    |> set_input_files(by_css("#import-upload input[type=file]"), zip)
+    |> assert(contain_text(by_css("#import-report"), "The report"))
+    |> assert(contain_text(by_css("#bundle-beach"), "will import"))
+    |> assert(contain_text(by_css("#bundle-beach"), "2 comments"))
+    |> assert(contain_text(by_css("#bundle-beach"), "nothing references stray.txt"))
+    |> assert(contain_text(by_css("#bundle-broken"), "will not import"))
+    |> click(by_css("#import-run"))
+    |> assert(contain_text(by_css("#import-summary"), "1 created"))
+    |> click(by_css("#import-done"))
+    |> assert(contain_text(by_css("#import-upload"), "Upload the zip"))
 
     article = Repo.get_by!(Article, slug: "beach-days")
     assert article.title == "Beach days"
@@ -39,18 +39,20 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     assert tile_a.filename == "a.jpg"
     assert File.regular?(Uploads.absolute(tile_b.path))
 
-    # the imported text stands in the texts grid
+    # the imported entry stands in the grid
     conn
     |> open_page("/")
-    |> assert_has("body", text: "Beach days")
+    |> assert_has(by_role(:link, name: "Beach days"))
 
     # and its comments stand under it, the answer behind the comment it
     # answers, the name carrying the address its author gave back then
     conn
     |> open_page(Texttile.Articles.public_path(article))
-    |> assert_has("#comments", text: "Ihr Lieben, immer wieder!")
-    |> assert_has("#comments", text: "Danke euch!")
-    |> assert_has("#comments a[href='https://christiane.example']", text: "Christiane")
+    |> assert(contain_text(by_css("#comments"), "Ihr Lieben, immer wieder!"))
+    |> assert(contain_text(by_css("#comments"), "Danke euch!"))
+    |> assert(
+      contain_text(by_css("#comments a[href='https://christiane.example']"), "Christiane")
+    )
 
     [christiane, kb] = elem(Texttile.Comments.for_readers(article.id), 0)
     assert christiane.name == "Christiane"
@@ -72,26 +74,19 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     conn
     |> sign_in()
     |> open("/admin/settings/import")
-    |> upload("#import-upload input[type=file]", "Upload the zip", zip, exact: false)
-    |> assert_has("#import-report", text: "The report")
-    |> click_button("#import-run", "Import 1 entry")
-    |> assert_has("#import-summary", text: "1 updated")
-    |> click("#wmBtn")
-    |> assert_has("#navMenu", text: "Sign out")
-    |> click_link("Sign out")
+    |> set_input_files(by_css("#import-upload input[type=file]"), zip)
+    |> assert(contain_text(by_css("#import-report"), "The report"))
+    |> click(by_css("#import-run"))
+    |> assert(contain_text(by_css("#import-summary"), "1 updated"))
+    |> click(by_css("#wmBtn"))
+    |> assert(contain_text(by_css("#navMenu"), "Sign out"))
+    |> click(by_role(:link, name: "Sign out"))
     |> open_page(Texttile.Articles.public_path(article))
-    |> assert_has("h1", text: "Beach days")
-    |> assert_has("body", text: "of the trip.")
-    |> refute_has("body", text: "Old public words.")
-    |> refute_has("#unpublished")
-    |> evaluate(
-      "() => ({title: document.title, heading: document.querySelector('h1').textContent})",
-      [is_function: true],
-      fn page ->
-        assert page["title"] =~ "Beach days"
-        assert page["heading"] == "Beach days"
-      end
-    )
+    |> assert_has(by_role(:heading, level: 1, name: "Beach days", exact: true))
+    |> assert_has(by_text(by_css("#body"), "of the trip."))
+    |> assert(count(by_text("Old public words."), 0))
+    |> refute_has(by_css("#unpublished"))
+    |> assert(page_title(~r/Beach days/))
   end
 
   defp build_zip do

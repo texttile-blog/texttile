@@ -25,10 +25,10 @@ defmodule TexttileWeb.E2E.LanguageFlowTest do
     session
     |> open_editor(article.id)
     # written by the server, into the tiles block
-    |> assert_has("#tileCount", text: "0 Kacheln")
+    |> assert(contain_text(by_css("#tileCount"), "0 Kacheln"))
     # written by the hook, out of data-words: without the object, or
     # with the object read once and never again, this stays English
-    |> assert_has("#tileAdd", text: "+ Hinzufügen")
+    |> assert(contain_text(by_css("#tileAdd"), "+ Hinzufügen"))
   end
 
   test "an English site keeps the English the hooks are written in", %{conn: conn, kb: kb} do
@@ -38,8 +38,8 @@ defmodule TexttileWeb.E2E.LanguageFlowTest do
     conn
     |> sign_in()
     |> open_editor(article.id)
-    |> assert_has("#tileCount", text: "0 tiles")
-    |> assert_has("#tileAdd", text: "+ Add")
+    |> assert(contain_text(by_css("#tileCount"), "0 tiles"))
+    |> assert(contain_text(by_css("#tileAdd"), "+ Add"))
   end
 
   test "the language a reader meets follows the setting", %{conn: conn, kb: kb} do
@@ -50,7 +50,7 @@ defmodule TexttileWeb.E2E.LanguageFlowTest do
     # The reader pages are no LiveView, so there is nothing live to
     # wait for: the words stand in the first render.
     conn
-    |> PhoenixTest.visit("/blog")
-    |> assert_has(~s(#q[placeholder="Einträge durchsuchen"]))
+    |> visit("/blog")
+    |> assert_has(by_css(~s(#q[placeholder="Einträge durchsuchen"])))
   end
 end

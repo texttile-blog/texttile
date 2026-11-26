@@ -11,17 +11,19 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     # The reader writes. The comment waits, visible only to its reader.
     conn
     |> open_page(Articles.public_path(article))
-    |> assert_has("#comments", text: "Post a comment")
-    |> refute_has("#comment-count")
-    |> fill_in("Name", with: "Grandma Christel")
-    |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
-    |> fill_in("Comment", with: "More of the dog, please.")
+    |> assert(contain_text(by_css("#comments"), "Post a comment"))
+    |> refute_has(by_css("#comment-count"))
+    |> fill(by_label("Name"), "Grandma Christel")
+    |> fill(by_css("#comment-email"), "christel@example.org")
+    |> fill(by_label("Comment", exact: true), "More of the dog, please.")
     # no age_form here: this one send goes the way a reader's does, the
     # page's script draws the stamp and holds the send until the time
     # trap is satisfied
-    |> click_button("Post comment")
-    |> assert_has("#comment-note", text: "Sent. Follow the link in your mail", timeout: 8000)
-    |> assert_has("#comments", text: "waiting for your confirmation")
+    |> click(by_role(:button, name: "Post comment"))
+    |> assert(contain_text(by_css("#comment-note"), "Sent. Follow the link in your mail"),
+      timeout: 8000
+    )
+    |> assert(contain_text(by_css("#comments"), "waiting for your confirmation"))
 
     # The mailed link publishes the comment for everybody.
     assert_receive {:email, %Swoosh.Email{} = mail}, 2000
@@ -30,11 +32,11 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     conn
     |> visit(link)
-    |> assert_has("#comments h2", text: "1 comment")
-    |> assert_has("#comments", text: "More of the dog, please.")
+    |> assert_has(by_css("#comments h2") |> filter(has_text: "1 comment"))
+    |> assert(contain_text(by_css("#comments"), "More of the dog, please."))
     # the server writes the day, the browser adds the hour in its zone
-    |> assert_has("#comments time", text: " at ")
-    |> refute_has("#comments .wait")
+    |> assert(contain_text(by_css("#comments time"), " at "))
+    |> refute_has(by_css("#comments .wait"))
 
     # The admin area: the overview carries it, its jump opens the
     # text's tab, Delete takes it out.
@@ -42,14 +44,14 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> sign_in()
     |> open("/admin/comments")
     # nothing waits any more, so the filter for it leaves the row
-    |> refute_has("#commentFilter a[data-f='waiting']")
-    |> assert_has("#commentsList", text: "Grandma Christel")
-    |> click_link("Harbor mornings")
-    |> assert_has("#tp-comments", text: "More of the dog, please.")
-    |> click_button("Delete")
-    |> assert_has("#dialog", text: "Delete the comment of Grandma Christel?")
-    |> click_button("Delete the comment")
-    |> assert_has("#tp-comments", text: "No comments yet.")
+    |> refute_has(by_css("#commentFilter a[data-f='waiting']"))
+    |> assert(contain_text(by_css("#commentsList"), "Grandma Christel"))
+    |> click(by_role(:link, name: "Harbor mornings"))
+    |> assert(contain_text(by_css("#tp-comments"), "More of the dog, please."))
+    |> click(by_role(:button, name: "Delete"))
+    |> assert(contain_text(by_css("#dialog"), "Delete the comment of Grandma Christel?"))
+    |> click(by_role(:button, name: "Delete the comment"))
+    |> assert(contain_text(by_css("#tp-comments"), "No comments yet."))
 
     assert Texttile.Comments.status_counts()["all"] == 0
   end
@@ -76,62 +78,62 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       conn
       |> open_page(Articles.public_path(article))
-      |> refute_has("#comments", text: "More of the dog, please.")
-      |> refute_has("#comment-count")
+      |> refute_has(by_css("#comments") |> filter(has_text: "More of the dog, please."))
+      |> refute_has(by_css("#comment-count"))
 
     # The admin lets this one comment through, and the text carries it.
     session =
       session
       |> sign_in()
       |> open("/admin/comments")
-      |> assert_has("#commentsList", text: "unconfirmed")
-      |> click_button("Approve")
-      |> assert_has("#commentsList", text: "let through")
-      |> refute_has("#commentsList .wait")
+      |> assert(contain_text(by_css("#commentsList"), "unconfirmed"))
+      |> click(by_role(:button, name: "Approve"))
+      |> assert(contain_text(by_css("#commentsList"), "let through"))
+      |> refute_has(by_css("#commentsList .wait"))
       |> open_page(Articles.public_path(article))
-      |> assert_has("#comment-count", text: "1 comment")
-      |> refute_has("#comments", text: "waiting for your confirmation")
+      |> assert(contain_text(by_css("#comment-count"), "1 comment"))
+      |> refute_has(by_css("#comments") |> filter(has_text: "waiting for your confirmation"))
 
     # And rewrites the words the reader sent.
     session =
       session
       |> open("/admin/comments")
-      |> click_button("Edit")
-      |> fill_in("The words of the comment", with: "Less of the dog, please.")
-      |> click_button("Save")
-      |> assert_has("#commentsList", text: "Less of the dog, please.")
-      |> assert_has("#commentsList", text: "edited")
+      |> click(by_role(:button, name: "Edit"))
+      |> fill(by_label("The words of the comment"), "Less of the dog, please.")
+      |> click(by_role(:button, name: "Save"))
+      |> assert(contain_text(by_css("#commentsList"), "Less of the dog, please."))
+      |> assert(contain_text(by_css("#commentsList"), "edited"))
       |> open_page(Articles.public_path(article))
-      |> assert_has("#comments", text: "Less of the dog, please.")
-      |> refute_has("#comments", text: "More of the dog, please.")
+      |> assert(contain_text(by_css("#comments"), "Less of the dog, please."))
+      |> refute_has(by_css("#comments") |> filter(has_text: "More of the dog, please."))
 
     # Delete is the trash now: out of the text, kept in the admin area.
     session =
       session
       |> open("/admin/comments")
-      |> click_button("#commentsList button", "Delete")
-      |> click_button("Delete the comment")
-      |> refute_has("#commentsList", text: "Less of the dog, please.")
+      |> click(by_css("#commentsList button") |> filter(has_text: "Delete"))
+      |> click(by_role(:button, name: "Delete the comment"))
+      |> refute_has(by_css("#commentsList") |> filter(has_text: "Less of the dog, please."))
       |> open_page(Articles.public_path(article))
-      |> refute_has("#comments", text: "Less of the dog, please.")
+      |> refute_has(by_css("#comments") |> filter(has_text: "Less of the dog, please."))
 
     # And the way back puts it exactly where it stood.
     session
     |> open("/admin/comments")
-    |> click_link("#commentFilter a[data-f='trash']", "Trash")
-    |> assert_has("#commentsList", text: "Less of the dog, please.")
-    |> assert_has("#commentsList", text: "goes for good")
-    |> click_button("#commentsList button", "Restore")
-    |> assert_has("#commentsList", text: "No comments here.")
+    |> click(by_css("#commentFilter a[data-f='trash']") |> filter(has_text: "Trash"))
+    |> assert(contain_text(by_css("#commentsList"), "Less of the dog, please."))
+    |> assert(contain_text(by_css("#commentsList"), "goes for good"))
+    |> click(by_css("#commentsList button") |> filter(has_text: "Restore"))
+    |> assert(contain_text(by_css("#commentsList"), "No comments here."))
     |> open_page(Articles.public_path(article))
-    |> assert_has("#comment-count", text: "1 comment")
-    |> assert_has("#comments", text: "Less of the dog, please.")
+    |> assert(contain_text(by_css("#comment-count"), "1 comment"))
+    |> assert(contain_text(by_css("#comments"), "Less of the dog, please."))
 
     assert Texttile.Comments.status_counts()["all"] == 1
     assert Texttile.Comments.status_counts()["trash"] == 0
   end
 
-  @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+  @tag Playwright.Test.use(viewport: %{width: 390, height: 844})
   test "a step of the pager lands on the top of the next comments", %{conn: conn} do
     article = published_post()
 
@@ -141,25 +143,14 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments?status=waiting")
-    |> evaluate("() => window.scrollTo(0, document.body.scrollHeight)", is_function: true)
-    |> click_link("#next-page", "Older")
-    |> assert_has("#commentsList", text: "Words 25")
+    |> run_script("() => window.scrollTo(0, document.body.scrollHeight)")
+    |> click(by_css("#next-page"))
+    |> assert(contain_text(by_css("#commentsList"), "Words 25"))
     # LiveView jumps to the anchor a frame after the new rows are in, so
-    # the check waits for the jump (up to two seconds) instead of reading
-    # the position once; a page that never jumps still fails
-    |> evaluate(
-      """
-      () => new Promise((done) => {
-        const until = Date.now() + 2000;
-        const look = () => {
-          if (document.querySelector('#commentFilter').getBoundingClientRect().top >= 0) done(true);
-          else if (Date.now() > until) done(false);
-          else requestAnimationFrame(look);
-        };
-        look();
-      })
-      """,
-      [is_function: true],
+    # the check waits for the jump instead of reading the position once;
+    # a page that never jumps still fails
+    |> assert_script(
+      "() => document.querySelector('#commentFilter').getBoundingClientRect().top >= 0",
       &assert(&1 == true)
     )
   end
@@ -172,31 +163,23 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments?status=waiting")
-    |> assert_has("#commentTools", text: "Select all")
-    |> assert_has("#bulk-delete", text: "Delete all 30")
-    |> click("#selectAll")
-    |> assert_has("#commentTools", text: "30 selected")
-    |> assert_has("#commentsList .cmt.on", count: 25)
+    |> assert(contain_text(by_css("#commentTools"), "Select all"))
+    |> assert(contain_text(by_css("#bulk-delete"), "Delete all 30"))
+    |> click(by_css("#selectAll"))
+    |> assert(contain_text(by_css("#commentTools"), "30 selected"))
+    |> assert(count(by_css("#commentsList .cmt.on"), 25))
     # a box the browser ticked and the server took back shows as empty
-    |> click("#commentsList .cmt:first-child input[type=checkbox]")
-    |> assert_has("#commentTools", text: "29 selected")
-    |> assert_has("#commentsList .cmt.on", count: 24)
-    |> evaluate(
-      "() => document.querySelector('#commentsList .cmt:first-child input').checked",
-      [is_function: true],
-      &assert(&1 == false)
-    )
-    |> evaluate(
-      "() => document.querySelector('#selectAll').checked",
-      [is_function: true],
-      &assert(&1 == false)
-    )
-    |> click_button("Delete 29")
-    |> assert_has("#dialog", text: "Delete 29 comments?")
-    |> click_button("#dialog-ok", "Delete")
-    |> assert_has("#commentFilter a[data-f='trash']", text: "29")
-    |> assert_has("#commentTools", text: "Select all")
-    |> assert_has("#bulk-delete", text: "Delete all 1")
+    |> click(by_css("#commentsList .cmt:first-child input[type=checkbox]"))
+    |> assert(contain_text(by_css("#commentTools"), "29 selected"))
+    |> assert(count(by_css("#commentsList .cmt.on"), 24))
+    |> refute(checked(by_css("#commentsList .cmt:first-child input")))
+    |> refute(checked(by_css("#selectAll")))
+    |> click(by_role(:button, name: "Delete 29"))
+    |> assert(contain_text(by_css("#dialog"), "Delete 29 comments?"))
+    |> click(by_css("#dialog-ok"))
+    |> assert(contain_text(by_css("#commentFilter a[data-f='trash']"), "29"))
+    |> assert(contain_text(by_css("#commentTools"), "Select all"))
+    |> assert(contain_text(by_css("#bulk-delete"), "Delete all 1"))
 
     assert Texttile.Comments.status_counts()["trash"] == 29
   end
@@ -209,20 +192,20 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
 
     # The account answers who is writing: the form asks for the words.
     session
-    |> assert_has("#comment-as", text: "Katharina")
-    |> refute_has("#comment-name")
-    |> assert_has("#comments", text: "You are signed in")
-    |> fill_in("Comment", with: "Writing under my own name.")
-    |> click_button("Post comment")
+    |> assert(contain_text(by_css("#comment-as"), "Katharina"))
+    |> refute_has(by_css("#comment-name"))
+    |> assert(contain_text(by_css("#comments"), "You are signed in"))
+    |> fill(by_label("Comment", exact: true), "Writing under my own name.")
+    |> click(by_role(:button, name: "Post comment"))
     # No link to follow: it stands under the text at once.
-    |> assert_has("#comment-count", text: "1 comment")
-    |> assert_has("#comments", text: "Writing under my own name.")
-    |> refute_has("#comments", text: "waiting for your confirmation")
+    |> assert(contain_text(by_css("#comment-count"), "1 comment"))
+    |> assert(contain_text(by_css("#comments"), "Writing under my own name."))
+    |> refute_has(by_css("#comments") |> filter(has_text: "waiting for your confirmation"))
 
     # And the count travels to the reader's list.
     session
     |> open_page("/blog")
-    |> assert_has("#texts", text: "1 comment")
+    |> assert(contain_text(by_css("#texts"), "1 comment"))
 
     assert [comment] = Texttile.Comments.for_article(article.id)
     assert comment.user_id == user.id
@@ -237,17 +220,17 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       conn
       |> open_page(Articles.public_path(one))
-      |> fill_in("Name", with: "Grandma Christel")
-      |> fill_in("#comment-email", "Email", with: "christel@example.org", exact: false)
-      |> fill_in("Comment", with: "More of the dog, please.")
-      |> check("Remember me on this device", exact: false)
+      |> fill(by_label("Name"), "Grandma Christel")
+      |> fill(by_css("#comment-email"), "christel@example.org")
+      |> fill(by_label("Comment", exact: true), "More of the dog, please.")
+      |> check(by_label("Remember me on this device"))
       |> age_form({:comment, one.id})
-      |> click_button("Post comment")
-      |> assert_has("#comment-note", text: "Sent.")
+      |> click(by_role(:button, name: "Post comment"))
+      |> assert(contain_text(by_css("#comment-note"), "Sent."))
 
     session
     |> open_page(Articles.public_path(two))
-    |> assert_has("#comment-name[value='Grandma Christel']")
-    |> assert_has("#comment-email[value='christel@example.org']")
+    |> assert_has(by_css("#comment-name[value='Grandma Christel']"))
+    |> assert_has(by_css("#comment-email[value='christel@example.org']"))
   end
 end

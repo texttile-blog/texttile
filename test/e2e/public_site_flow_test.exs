@@ -11,10 +11,10 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/")
-      |> assert_has("a", text: "Harbor mornings")
-      |> click_link("Harbor mornings")
-      |> assert_has("h1", text: "Harbor mornings")
-      |> assert_has(".prose", text: "Fog over the pier.")
+      |> assert_has(by_role(:link, name: "Harbor mornings"))
+      |> click(by_role(:link, name: "Harbor mornings"))
+      |> assert_has(by_role(:heading, level: 1, name: "Harbor mornings"))
+      |> assert(contain_text(by_css(".prose"), "Fog over the pier."))
     end
 
     test "/ jumps into the search and Enter filters the list", %{conn: conn} do
@@ -23,11 +23,11 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/")
-      |> press("body", "/")
-      |> type("input:focus", "harbor")
-      |> press("#q", "Enter")
-      |> assert_has("a", text: "Harbor mornings")
-      |> refute_has("a", text: "Desert nights")
+      |> press(by_css("body"), "/")
+      |> press_sequentially(by_css("input:focus"), "harbor")
+      |> press(by_css("#q"), "Enter")
+      |> assert_has(by_role(:link, name: "Harbor mornings"))
+      |> refute_has(by_role(:link, name: "Desert nights"))
     end
 
     # An empty field used to leave the list exactly as the deleted word
@@ -39,10 +39,10 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/blog?q=harbor")
-      |> refute_has("a", text: "Desert nights")
-      |> fill_in("Search the entries", with: "")
-      |> assert_has("a", text: "Desert nights", timeout: 5_000)
-      |> assert_has("a", text: "Harbor mornings")
+      |> refute_has(by_role(:link, name: "Desert nights"))
+      |> fill(by_label("Search the entries"), "")
+      |> assert_has(by_role(:link, name: "Desert nights"), timeout: 5_000)
+      |> assert_has(by_role(:link, name: "Harbor mornings"))
     end
 
     # The year narrows what the field found, so with no term there is
@@ -53,11 +53,11 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/blog?q=harbor&y=2023")
-      |> refute_has("a", text: "Desert nights")
-      |> click("#q")
-      |> press("#q", "Escape")
-      |> assert_has("a", text: "Desert nights", timeout: 5_000)
-      |> assert_has("#q[value='']")
+      |> refute_has(by_role(:link, name: "Desert nights"))
+      |> click(by_css("#q"))
+      |> press(by_css("#q"), "Escape")
+      |> assert_has(by_role(:link, name: "Desert nights"), timeout: 5_000)
+      |> assert_has(by_css("#q[value='']"))
     end
 
     # The year is a choice on the search form, and a choice goes as soon
@@ -83,12 +83,14 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/blog?q=harbor")
-      |> refute_has("a", text: "Desert nights")
-      |> select("Year", option: "2023 (1)")
-      |> assert_has("#narrowed", text: "Entries matching “harbor” from 2023.", timeout: 5_000)
-      |> assert_has("a", text: "Harbor nights")
-      |> refute_has("a", text: "Harbor mornings")
-      |> assert_has("#q[value='harbor']")
+      |> refute_has(by_role(:link, name: "Desert nights"))
+      |> select_option(by_label("Year"), %{label: "2023 (1)"})
+      |> assert(contain_text(by_css("#narrowed"), "Entries matching “harbor” from 2023."),
+        timeout: 5_000
+      )
+      |> assert_has(by_role(:link, name: "Harbor nights"))
+      |> refute_has(by_role(:link, name: "Harbor mornings"))
+      |> assert_has(by_css("#q[value='harbor']"))
     end
 
     test "a new year lets go of the month", %{conn: conn} do
@@ -98,10 +100,10 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/blog?y=2025&m=5")
-      |> refute_has("a", text: "June 2024")
-      |> select("Year", option: "2024 (2)")
-      |> assert_has("#narrowed", text: "Entries from 2024.", timeout: 5_000)
-      |> assert_has("a", text: "June 2024")
+      |> refute_has(by_role(:link, name: "June 2024"))
+      |> select_option(by_label("Year"), %{label: "2024 (2)"})
+      |> assert(contain_text(by_css("#narrowed"), "Entries from 2024."), timeout: 5_000)
+      |> assert_has(by_role(:link, name: "June 2024"))
     end
   end
 
@@ -113,12 +115,12 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page(Articles.public_path(article))
-      |> assert_has("#unlock")
-      |> fill_in("Password", with: "sesame")
-      |> click_button("To the blog")
-      |> assert_has("h1", text: "Behind the wall")
+      |> assert_has(by_css("#unlock"))
+      |> fill(by_label("Password"), "sesame")
+      |> click(by_role(:button, name: "To the blog"))
+      |> assert_has(by_role(:heading, level: 1, name: "Behind the wall"))
       |> open_page("/")
-      |> assert_has("a", text: "Behind the wall")
+      |> assert_has(by_role(:link, name: "Behind the wall"))
     end
 
     # Two things. The card stands in the middle of the page: the same
@@ -163,9 +165,9 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/")
-      |> assert_has("#unlock")
-      |> refute_has("body", text: "One password opens the whole blog")
-      |> evaluate(@gate_edge, [is_function: true], &assert(&1 < 1.5))
+      |> assert_has(by_css("#unlock"))
+      |> assert(count(by_text("One password opens the whole blog"), 0))
+      |> assert_script(@gate_edge, &assert(&1 < 1.5))
     end
   end
 
@@ -175,33 +177,20 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
   # sizes; the one that counts is the size the browser chose for the
   # picture on show, so a page forward finds the next one in the cache.
   @fetched """
-  (wanted) => new Promise((done) => {
+  () => {
     const sizesOf = (a) => a.dataset.srcset.split(',').map((c) => c.trim().split(' ')[0]);
     const tiles = [...document.querySelectorAll('#gal a')];
-    const got = () => performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname);
-    const started = Date.now();
-    const look = () => {
-      const src = document.querySelector('#lbArt img').currentSrc;
-      if (!src) return setTimeout(look, 50);
-      const shown = new URL(src).pathname;
-      const chosen = tiles.map(sizesOf).map((sizes) => sizes.indexOf(shown)).find((k) => k >= 0);
-      const paths = got();
-      const have = tiles.map((a) => paths.includes(sizesOf(a)[chosen]));
-      if (wanted.every((i) => have[i]) || Date.now() - started > 4000) done(have);
-      else setTimeout(look, 50);
-    };
-    look();
-  })
+    const src = document.querySelector('#lbArt img').currentSrc;
+    if (!src) return "no picture on show yet";
+    const shown = new URL(src).pathname;
+    const chosen = tiles.map(sizesOf).map((sizes) => sizes.indexOf(shown)).find((k) => k >= 0);
+    const paths = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname);
+    return tiles.map((a) => paths.includes(sizesOf(a)[chosen]));
+  }
   """
 
   # The address the browser picked for the picture on show.
-  @chosen """
-  () => new Promise((done) => {
-    const img = document.querySelector('#lbArt img');
-    const look = () => (img.currentSrc ? done(new URL(img.currentSrc).pathname) : setTimeout(look, 50));
-    look();
-  })
-  """
+  @chosen "() => document.querySelector('#lbArt img').currentSrc"
 
   describe "the gallery" do
     test "a tile opens the lightbox, the arrows walk, Escape closes", %{conn: conn} do
@@ -215,14 +204,14 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page(Articles.public_path(article))
-      |> click("#tile-#{first.id}")
-      |> assert_has("#lbCount", text: "1 / 2")
-      |> assert_has("#lbCap", text: "The pier at sunrise.")
-      |> press("body", "ArrowRight")
-      |> assert_has("#lbCount", text: "2 / 2")
-      |> assert_has("#lbCap", text: "Still water in the lagoon.")
-      |> press("body", "Escape")
-      |> refute_has("#lbCount", text: "2 / 2")
+      |> click(by_css("#tile-#{first.id}"))
+      |> assert(contain_text(by_css("#lbCount"), "1 / 2"))
+      |> assert(contain_text(by_css("#lbCap"), "The pier at sunrise."))
+      |> press(by_css("body"), "ArrowRight")
+      |> assert(contain_text(by_css("#lbCount"), "2 / 2"))
+      |> assert(contain_text(by_css("#lbCap"), "Still water in the lagoon."))
+      |> press(by_css("body"), "Escape")
+      |> refute_has(by_css("#lbCount") |> filter(has_text: "2 / 2"))
     end
 
     test "Tab stays inside the open lightbox", %{conn: conn} do
@@ -234,17 +223,12 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       session =
         conn
         |> open_page(Articles.public_path(article))
-        |> click("#tile-#{first.id}")
-        |> assert_has("#lbCount", text: "1 / 1")
+        |> click(by_css("#tile-#{first.id}"))
+        |> assert(contain_text(by_css("#lbCount"), "1 / 1"))
 
-      for _step <- 1..6, do: press(session, "body", "Tab")
+      for _step <- 1..6, do: press(session, by_css("body"), "Tab")
 
-      evaluate(
-        session,
-        "() => document.getElementById('lb').contains(document.activeElement)",
-        [is_function: true],
-        &assert(&1 == true)
-      )
+      assert_has(session, by_css("#lb:focus-within"))
     end
 
     test "a picture in the text opens the lightbox too", %{conn: conn} do
@@ -257,11 +241,11 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page(Articles.public_path(article))
-      |> click("#body a.bodypic")
-      |> assert_has("#lbCount", text: "1 / 1")
-      |> assert_has("#lbCap", text: "the pier")
-      |> press("body", "Escape")
-      |> refute_has("#lbCount", text: "1 / 1")
+      |> click(by_css("#body a.bodypic"))
+      |> assert(contain_text(by_css("#lbCount"), "1 / 1"))
+      |> assert(contain_text(by_css("#lbCap"), "the pier"))
+      |> press(by_css("body"), "Escape")
+      |> refute_has(by_css("#lbCount") |> filter(has_text: "1 / 1"))
     end
 
     # The dark around the picture is a way out. The picture's box is as
@@ -272,30 +256,20 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
       {:ok, _} = Texttile.Gallery.add_file(article, jpg_fixture(), "lagoon.jpg")
 
-      session =
-        conn
-        |> open_page(Articles.public_path(article))
-        |> click("#tile-#{first.id}")
-        |> assert_has("#lbCount", text: "1 / 2")
-
+      conn
+      |> open_page(Articles.public_path(article))
+      |> click(by_css("#tile-#{first.id}"))
+      |> assert(contain_text(by_css("#lbCount"), "1 / 2"))
       # the picture (20 by 10 pixels, in the middle of its box) stays
-      click_at(session, "#lbArt img", 5, 5)
-      assert_has(session, "#lbCount", text: "1 / 2")
-
+      |> click(by_css("#lbArt img"), position: %{x: 5, y: 5})
+      |> assert(contain_text(by_css("#lbCount"), "1 / 2"))
       # the arrow walks, as before
-      click(session, "#lbNext")
-      assert_has(session, "#lbCount", text: "2 / 2")
-
+      |> click(by_css("#lbNext"))
+      |> assert(contain_text(by_css("#lbCount"), "2 / 2"))
       # the corner of the box, far from the picture, is the dark
-      click_at(session, "#lbArt", 4, 4)
-      refute_has(session, "#lbCount", text: "2 / 2")
-
-      evaluate(
-        session,
-        "() => document.getElementById('lb').hidden",
-        [is_function: true],
-        &assert(&1 == true)
-      )
+      |> click(by_css("#lbArt"), position: %{x: 4, y: 4})
+      |> refute_has(by_css("#lbCount") |> filter(has_text: "2 / 2"))
+      |> assert(js_property(by_css("#lb"), "hidden", true))
     end
 
     # On a slow line the next picture takes seconds. The two after the
@@ -309,15 +283,15 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page(Articles.public_path(article))
-      |> click("#tile-#{first.id}")
-      |> assert_has("#lbCount", text: "1 / 4")
-      |> evaluate(@fetched, [arg: [1, 2], is_function: true], fn have ->
+      |> click(by_css("#tile-#{first.id}"))
+      |> assert(contain_text(by_css("#lbCount"), "1 / 4"))
+      |> assert_script(@fetched, fn have ->
         assert have == [true, true, true, false]
       end)
       # a page forward moves the window: now the fourth is wanted too
-      |> press("body", "ArrowRight")
-      |> assert_has("#lbCount", text: "2 / 4")
-      |> evaluate(@fetched, [arg: [3], is_function: true], fn have ->
+      |> press(by_css("body"), "ArrowRight")
+      |> assert(contain_text(by_css("#lbCount"), "2 / 4"))
+      |> assert_script(@fetched, fn have ->
         assert have == [true, true, true, true]
       end)
     end
@@ -331,28 +305,28 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       :ok
     end
 
-    @tag browser_context_opts: [viewport: %{width: 390, height: 844}, device_scale_factor: 3.0]
+    @tag Playwright.Test.use(viewport: %{width: 390, height: 844}, device_scale_factor: 3.0)
     test "a phone gets the reading size", %{conn: conn} do
       article = published_post(title: "Phone", slug: "phone", body: "Pictures below.")
       {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
 
       conn
       |> open_page(Articles.public_path(article))
-      |> click("#tile-#{first.id}")
-      |> assert_has("#lbCount", text: "1 / 1")
-      |> evaluate(@chosen, [is_function: true], &assert(&1 =~ "/renditions/1320/"))
+      |> click(by_css("#tile-#{first.id}"))
+      |> assert(contain_text(by_css("#lbCount"), "1 / 1"))
+      |> assert_script(@chosen, &assert(&1 =~ "/renditions/1320/"))
     end
 
-    @tag browser_context_opts: [viewport: %{width: 1440, height: 900}, device_scale_factor: 2.0]
+    @tag Playwright.Test.use(viewport: %{width: 1440, height: 900}, device_scale_factor: 2.0)
     test "a sharp desktop gets the reader size", %{conn: conn} do
       article = published_post(title: "Desk", slug: "desk", body: "Pictures below.")
       {:ok, first} = Texttile.Gallery.add_file(article, jpg_fixture(), "pier.jpg")
 
       conn
       |> open_page(Articles.public_path(article))
-      |> click("#tile-#{first.id}")
-      |> assert_has("#lbCount", text: "1 / 1")
-      |> evaluate(@chosen, [is_function: true], &assert(&1 =~ "/renditions/max/"))
+      |> click(by_css("#tile-#{first.id}"))
+      |> assert(contain_text(by_css("#lbCount"), "1 / 1"))
+      |> assert_script(@chosen, &assert(&1 =~ "/renditions/max/"))
     end
   end
 
@@ -370,18 +344,18 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/")
-      |> assert_has("a", text: "Text 3")
-      |> refute_has("a", text: "Text 1")
-      |> click_link("#next-page", "Older")
-      |> assert_has("a", text: "Text 1")
-      |> click_link("#prev-page", "Newer")
-      |> assert_has("a", text: "Text 3")
-      |> click_link("Text 2")
-      |> assert_has("h1", text: "Text 2")
-      |> assert_has("#prev-post", text: "Text 1")
-      |> click_link("#next-post", "Text 3")
-      |> assert_has("h1", text: "Text 3")
-      |> refute_has("#next-post")
+      |> assert_has(by_role(:link, name: "Text 3"))
+      |> refute_has(by_role(:link, name: "Text 1"))
+      |> click(by_css("#next-page"))
+      |> assert_has(by_role(:link, name: "Text 1"))
+      |> click(by_css("#prev-page"))
+      |> assert_has(by_role(:link, name: "Text 3"))
+      |> click(by_role(:link, name: "Text 2"))
+      |> assert_has(by_role(:heading, level: 1, name: "Text 2"))
+      |> assert(contain_text(by_css("#prev-post"), "Text 1"))
+      |> click(by_css("#next-post"))
+      |> assert_has(by_role(:heading, level: 1, name: "Text 3"))
+      |> refute_has(by_css("#next-post"))
     end
   end
 
@@ -417,9 +391,9 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page(Articles.public_path(article))
-      |> assert_has("#comments", text: "Post a comment")
-      |> evaluate(@subscribe_row, [is_function: true], &assert(&1 <= 1))
-      |> evaluate(@comment_box, [is_function: true], &assert(&1 >= 2.5))
+      |> assert(contain_text(by_css("#comments"), "Post a comment"))
+      |> assert_script(@subscribe_row, &assert(&1 <= 1))
+      |> assert_script(@comment_box, &assert(&1 >= 2.5))
     end
   end
 
@@ -436,14 +410,14 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     }
     """
 
-    @tag browser_context_opts: [viewport: %{width: 320, height: 700}]
+    @tag Playwright.Test.use(viewport: %{width: 320, height: 700})
     test "keeps the menu in it when the site title is long", %{conn: conn} do
       {:ok, _} = Settings.put(:site_title, "The blog of Klaus and Julia Breyer")
 
       conn
       |> open_page("/")
-      |> assert_has(".site-name", text: "The blog of Klaus and Julia Breyer")
-      |> evaluate(@bar_fits, [is_function: true], &assert(&1 <= 1))
+      |> assert(contain_text(by_css(".site-name"), "The blog of Klaus and Julia Breyer"))
+      |> assert_script(@bar_fits, &assert(&1 <= 1))
     end
   end
 
@@ -463,22 +437,18 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     test "keeps space under the last line", %{conn: conn} do
       conn
       |> open_page("/")
-      |> assert_has("#foot-signin")
-      |> evaluate(@foot_pad, [is_function: true], &assert(&1 >= 24))
+      |> assert_has(by_css("#foot-signin"))
+      |> assert_script(@foot_pad, &assert(&1 >= 24))
     end
 
     # The sheet belongs to the browser. This one has none, so the word
     # is not offered: a button that answers nothing is worse than no
     # button. Every other browser test has a sheet (TexttileWeb.E2E).
-    @share_hidden """
-    () => document.getElementById("foot-share").hidden
-    """
-
     @tag :no_share_sheet
     test "offers no Share where the browser has no sheet", %{conn: conn} do
       conn
       |> open_page("/")
-      |> evaluate(@share_hidden, [is_function: true], &assert(&1 == true))
+      |> assert(js_property(by_css("#foot-share"), "hidden", true))
     end
 
     @what_was_shared """
@@ -490,8 +460,8 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/2026/03/01/harbor")
-      |> click_button("#foot-share", "Share")
-      |> evaluate(@what_was_shared, [is_function: true], fn [url, title] ->
+      |> click(by_css("#foot-share"))
+      |> assert_script(@what_was_shared, fn [url, title] ->
         assert url =~ "/2026/03/01/harbor"
         assert title =~ "Harbor mornings"
       end)
@@ -512,28 +482,15 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     test "keeps Share on the line of the links beside it", %{conn: conn} do
       conn
       |> open_page("/")
-      |> evaluate(@word_tops, [is_function: true], fn tops ->
+      |> assert_script(@word_tops, fn tops ->
         assert length(tops) == 3
         assert Enum.uniq(tops) |> length() == 1, "foot words at #{inspect(tops)}"
       end)
     end
   end
 
-  # A real mouse click at a point inside the element, measured from its
-  # top left corner. `click/2` aims at the centre, which is the picture.
-  defp click_at(session, selector, x, y) do
-    {:ok, _} =
-      PlaywrightEx.Frame.click(session.frame_id,
-        selector: selector,
-        position: %{x: x, y: y},
-        timeout: 5_000
-      )
-
-    session
-  end
-
   describe "the archive's tag row on a phone" do
-    @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
+    @tag Playwright.Test.use(viewport: %{width: 390, height: 844})
     test "brings the open tag into the row and leaves the page where it is", %{conn: conn} do
       # twelve tags carried twice each, and the open one once: it stands
       # last whether the row counts or spells
@@ -545,7 +502,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
 
       conn
       |> open_page("/tags/zebra")
-      |> evaluate(
+      |> assert_script(
         """
         () => {
           const bar = document.querySelector("#tagbar")
@@ -554,7 +511,6 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
           return [window.scrollY, bar.scrollLeft > 0, on.left >= row.left && on.right <= row.right]
         }
         """,
-        [is_function: true],
         &assert(&1 == [0, true, true])
       )
     end

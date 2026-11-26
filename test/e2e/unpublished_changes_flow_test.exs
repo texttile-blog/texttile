@@ -20,19 +20,19 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> assert_has("#stateWord", text: "Live", exact: true)
-        |> assert_has("#stateMain", text: "View")
-        |> fill_in("Title", with: "Harbor evenings")
-        |> assert_has("#stateWord", text: "Live · draft")
-        |> assert_has("#stateMain", text: "Publish changes")
+        |> assert(text(by_css("#stateWord"), "Live"))
+        |> assert(contain_text(by_css("#stateMain"), "View"))
+        |> fill(by_label("Title", exact: true), "Harbor evenings")
+        |> assert(contain_text(by_css("#stateWord"), "Live · draft"))
+        |> assert(contain_text(by_css("#stateMain"), "Publish changes"))
 
       # the readers still have the published title
       assert Articles.as_read(Articles.get_article!(article.id)).title == "Harbor mornings"
 
       session
-      |> click_button("#stateMain", "Publish changes")
-      |> assert_has("#stateWord", text: "Live", exact: true)
-      |> assert_has("#stateMain", text: "View")
+      |> click(by_css("#stateMain"))
+      |> assert(text(by_css("#stateWord"), "Live"))
+      |> assert(contain_text(by_css("#stateMain"), "View"))
 
       assert Articles.as_read(Articles.get_article!(article.id)).title == "Harbor evenings"
     end
@@ -43,13 +43,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> fill_in("Title", with: "Harbor evenings")
-      |> assert_has("#stateWord", text: "Live · draft")
-      |> click("#stateChev")
-      |> click_button("#discardChangesRow", "Discard the changes")
-      |> click_button("Discard the changes")
-      |> assert_has("#edTitle[value='Harbor mornings']")
-      |> assert_has("#stateWord", text: "Live", exact: true)
+      |> fill(by_label("Title", exact: true), "Harbor evenings")
+      |> assert(contain_text(by_css("#stateWord"), "Live · draft"))
+      |> click(by_css("#stateChev"))
+      |> click(by_css("#discardChangesRow"))
+      |> click(by_role(:button, name: "Discard the changes"))
+      |> assert_has(by_css("#edTitle[value='Harbor mornings']"))
+      |> assert(text(by_css("#stateWord"), "Live"))
     end
 
     test "the Versions tab says which version the readers have", %{conn: conn, kb: kb} do
@@ -58,11 +58,11 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> fill_in("Title", with: "Harbor evenings")
-      |> click_button("#stateMain", "Publish changes")
-      |> click_button(".tab", "Versions")
-      |> assert_has(".is-live", text: "live")
-      |> assert_has(".is-live", count: 1)
+      |> fill(by_label("Title", exact: true), "Harbor evenings")
+      |> click(by_css("#stateMain"))
+      |> click(by_css(".tab") |> filter(has_text: "Versions"))
+      |> assert(contain_text(by_css(".is-live"), "live"))
+      |> assert(count(by_css(".is-live"), 1))
     end
   end
 
@@ -74,14 +74,14 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> fill_in("Title", with: "Harbor evenings")
-      |> assert_has("#stateWord", text: "Live · draft")
+      |> fill(by_label("Title", exact: true), "Harbor evenings")
+      |> assert(contain_text(by_css("#stateWord"), "Live · draft"))
 
       # signed in, the site shows the working copy and says so
       conn
       |> open_page(Articles.public_path(article))
-      |> assert_has("h1", text: "Harbor evenings")
-      |> assert_has("#unpublished", text: "working copy")
+      |> assert_has(by_role(:heading, level: 1, name: "Harbor evenings"))
+      |> assert(contain_text(by_css("#unpublished"), "working copy"))
     end
 
     test "a reader gets the published text and no banner", %{conn: conn, kb: kb} do
@@ -91,13 +91,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       # this browser never signs in
       conn
       |> open_page(Articles.public_path(article))
-      |> assert_has("h1", text: "Harbor mornings")
-      |> refute_has("#unpublished")
+      |> assert_has(by_role(:heading, level: 1, name: "Harbor mornings"))
+      |> refute_has(by_css("#unpublished"))
 
       conn
       |> open_page("/blog")
-      |> assert_has("a", text: "Harbor mornings")
-      |> refute_has("a", text: "Harbor evenings")
+      |> assert_has(by_role(:link, name: "Harbor mornings"))
+      |> refute_has(by_role(:link, name: "Harbor evenings"))
     end
   end
 
@@ -110,13 +110,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open("/admin/texts")
-      |> refute_has(".card .cm", text: "Edited since publishing")
+      |> refute_has(by_css(".card .cm") |> filter(has_text: "Edited since publishing"))
 
       {:ok, _} = Articles.update_text(article, %{title: "Harbor evenings"})
 
       conn
       |> open("/admin/texts")
-      |> assert_has(".card .cm", text: "Edited since publishing")
+      |> assert(contain_text(by_css(".card .cm"), "Edited since publishing"))
     end
   end
 
@@ -128,13 +128,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open("/admin/texts")
-      |> assert_has(".card .cm", text: "Klaus Breyer")
+      |> assert(contain_text(by_css(".card .cm"), "Klaus Breyer"))
 
       conn
       |> open_page("/blog")
-      |> assert_has(".card-wrap .cm", text: "Klaus Breyer")
+      |> assert(contain_text(by_css(".card-wrap .cm"), "Klaus Breyer"))
       |> open_page(Articles.public_path(article))
-      |> assert_has("#by", text: "Klaus Breyer")
+      |> assert(contain_text(by_css("#by"), "Klaus Breyer"))
     end
   end
 end

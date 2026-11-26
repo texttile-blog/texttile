@@ -6,7 +6,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
   # Leave the old DOM in place, as a sleeping tab does, but let Phoenix
   # know its channel is gone so reconnect runs real form recovery.
   defp disconnect(session) do
-    evaluate(
+    run_script(
       session,
       """
       () => new Promise(resolve => {
@@ -17,16 +17,15 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
           resolve(true)
         })
       })
-      """,
-      is_function: true
+      """
     )
   end
 
   defp reconnect(session) do
     session
-    |> evaluate("() => window.liveSocket.connect()", is_function: true)
+    |> run_script("() => window.liveSocket.connect()")
     |> await_live()
-    |> assert_has("#tilesBlock[data-ready]")
+    |> assert_has(by_css("#tilesBlock[data-ready]"))
   end
 
   test "a sleeping draft tab cannot erase the address published by another admin", %{
@@ -40,7 +39,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
       |> sign_in()
       |> open_editor(article.id)
       # A tab opened before the fix has no custom recovery binding yet.
-      |> evaluate("document.querySelector('#artSettings').removeAttribute('phx-auto-recover')")
+      |> run_script("document.querySelector('#artSettings').removeAttribute('phx-auto-recover')")
       |> disconnect()
 
     {:ok, published} = Articles.publish(article, user_fixture())
@@ -50,16 +49,16 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
 
     conn =
       conn
-      |> assert_has("#edSlug[value='doors']")
-      |> assert_has("#stateWord", text: "Live", exact: true)
+      |> assert_has(by_css("#edSlug[value='doors']"))
+      |> assert(text(by_css("#stateWord"), "Live"))
 
     # A deliberate edit on the restored connection still saves normally.
     conn
-    |> press("#edSlug", "ControlOrMeta+a")
-    |> type("#edSlug", "doors-edited")
-    |> click("#slugSet")
-    |> click("#dialog-ok")
-    |> assert_has(~s(#slugHint[data-live$="/doors-edited"]))
+    |> press(by_css("#edSlug"), "ControlOrMeta+a")
+    |> press_sequentially(by_css("#edSlug"), "doors-edited")
+    |> click(by_css("#slugSet"))
+    |> click(by_css("#dialog-ok"))
+    |> assert_has(by_css(~s(#slugHint[data-live$="/doors-edited"])))
 
     assert Articles.get_article!(article.id).slug == "doors-edited"
   end
@@ -75,12 +74,12 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> press("#edSlug", "ControlOrMeta+a")
-      |> type("#edSlug", "doors-earlier")
-      |> click("#slugSet")
-      |> click("#dialog-ok")
-      |> assert_has(~s(#slugHint[data-live$="/doors-earlier"]))
-      |> click("#stateWord")
+      |> press(by_css("#edSlug"), "ControlOrMeta+a")
+      |> press_sequentially(by_css("#edSlug"), "doors-earlier")
+      |> click(by_css("#slugSet"))
+      |> click(by_css("#dialog-ok"))
+      |> assert_has(by_css(~s(#slugHint[data-live$="/doors-earlier"])))
+      |> click(by_css("#stateWord"))
       |> disconnect()
 
     article = Articles.get_article!(article.id)
@@ -88,6 +87,6 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
 
     conn = reconnect(conn)
     assert Articles.get_article!(article.id).slug == "newer-address"
-    conn |> assert_has("#edSlug[value='newer-address']")
+    conn |> assert_has(by_css("#edSlug[value='newer-address']"))
   end
 end

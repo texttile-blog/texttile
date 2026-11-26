@@ -52,43 +52,17 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
   """
 
   defp fast_clocks(conn) do
-    {:ok, _} =
-      PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
-        source: @fast_clocks <> ";" <> @record,
-        timeout: 5_000
-      )
-
-    conn
+    add_init_script(conn, @fast_clocks <> ";" <> @record)
   end
 
   # Waits until the page has called its line quiet with the mark on,
   # however briefly that stood. A failure shows the whole record, so a
   # red run on CI says what the page said instead of what it did not.
-  defp said_quiet(conn, tries \\ 50) do
-    said = line_said(conn)
-
-    cond do
-      Enum.any?(said, &(String.starts_with?(&1, "marked") and &1 =~ "quiet")) ->
-        conn
-
-      tries == 0 ->
-        flunk("the page never called its line quiet, it said: #{inspect(said)}")
-
-      true ->
-        Process.sleep(100)
-        said_quiet(conn, tries - 1)
-    end
-  end
-
-  defp line_said(conn) do
-    {:ok, said} =
-      PlaywrightEx.Frame.evaluate(conn.frame_id,
-        expression: "() => window.__lineSaid",
-        is_function: true,
-        timeout: 5_000
-      )
-
-    said
+  defp said_quiet(conn) do
+    assert_script(conn, "() => window.__lineSaid", fn said ->
+      assert Enum.any?(said, &(String.starts_with?(&1, "marked") and &1 =~ "quiet")),
+             "the page never called its line quiet, it said: #{inspect(said)}"
+    end)
   end
 
   describe "the transport" do
@@ -97,36 +71,29 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # than the 2.5 s Phoenix throws a working WebSocket away after.
       conn
       |> sign_in()
-      |> evaluate(
-        "() => window.liveSocket.socket.longPollFallbackMs",
-        [is_function: true],
-        fn ms ->
-          assert ms >= 10_000
-        end
+      |> assert_script("() => window.liveSocket.socket.longPollFallbackMs", &assert(&1 >= 10_000))
+      |> assert_script(
+        "() => window.liveSocket.socket.transport.name",
+        &assert(&1 == "WebSocket")
       )
-      |> evaluate("() => window.liveSocket.socket.transport.name", [is_function: true], fn name ->
-        assert name == "WebSocket"
-      end)
     end
 
     test "a fallback another tab wrote down does not travel into this one", %{conn: conn} do
       # A tab opened out of another one inherits its session store, so
       # one slow moment sent every later tab of the day straight to
       # long polling without ever trying a WebSocket.
-      {:ok, _} =
-        PlaywrightEx.BrowserContext.add_init_script(conn.context_id,
-          source: "sessionStorage.setItem('phx:fallback:longpoll', 'true')",
-          timeout: 5_000
-        )
-
       conn
+      |> add_init_script("sessionStorage.setItem('phx:fallback:longpoll', 'true')")
       |> sign_in()
-      |> evaluate("() => sessionStorage.getItem('phx:fallback:longpoll')", [is_function: true], fn
-        note -> assert note in [nil, "null"]
-      end)
-      |> evaluate("() => window.liveSocket.socket.transport.name", [is_function: true], fn name ->
-        assert name == "WebSocket"
-      end)
+      # the note is gone, or says there is none
+      |> assert_script(
+        "() => [null, 'null'].includes(sessionStorage.getItem('phx:fallback:longpoll'))",
+        &assert(&1 == true)
+      )
+      |> assert_script(
+        "() => window.liveSocket.socket.transport.name",
+        &assert(&1 == "WebSocket")
+      )
     end
   end
 
@@ -138,15 +105,15 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> fast_clocks()
       |> sign_in()
       |> open_editor(article.id)
-      |> refute_has("html.phx-late")
-      |> refute_has("#stateOffline")
-      |> evaluate("() => window.liveSocket.disconnect()", is_function: true)
+      |> refute_has(by_css("html.phx-late"))
+      |> refute_has(by_css("#stateOffline"))
+      |> run_script("() => window.liveSocket.disconnect()")
       # LiveView says this much itself for a line that was there and
       # went. The mark below is the page's own, and it is the one that
       # covers a tab that was never live at all.
-      |> assert_has("#stateOffline", text: "Not saved", timeout: 5_000)
-      |> assert_has("html.phx-late", timeout: 5_000)
-      |> refute_has("#state")
+      |> assert(contain_text(by_css("#stateOffline"), "Not saved"), timeout: 5_000)
+      |> assert_has(by_css("html.phx-late"), timeout: 5_000)
+      |> refute_has(by_css("#state"))
     end
   end
 
@@ -167,9 +134,11 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
     () => {
       window.addEventListener("unhandledrejection", e => e.preventDefault())
       window.liveSocket.socket.conn.send = () => {}
-      return window.liveSocket.socket.isConnected()
     }
     """
+
+    # What the socket says about itself right after the cut.
+    @connected "() => window.liveSocket.socket.isConnected()"
 
     test "a page nobody answers any more says so", %{conn: conn, kb: kb} do
       article = draft!(kb, "A text on a line that goes quiet")
@@ -178,8 +147,9 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> fast_clocks()
       |> sign_in()
       |> open_editor(article.id)
-      |> refute_has("#stateOffline")
-      |> evaluate(@cut, [is_function: true], &assert(&1 == true))
+      |> refute_has(by_css("#stateOffline"))
+      |> run_script(@cut)
+      |> assert_script(@connected, &assert(&1 == true))
       |> said_quiet()
     end
 
@@ -190,19 +160,20 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       |> fast_clocks()
       |> sign_in()
       |> open_editor(article.id)
-      |> evaluate(@cut, [is_function: true], &assert(&1 == true))
+      |> run_script(@cut)
+      |> assert_script(@connected, &assert(&1 == true))
       |> said_quiet()
       # nobody reloads and nobody clicks: the page takes the dead line
       # down and builds it again, and says so when it stands.
-      |> assert_has("#state", text: "Saved", timeout: 10_000)
-      |> refute_has("html.phx-late")
+      |> assert(contain_text(by_css("#state"), "Saved"), timeout: 10_000)
+      |> refute_has(by_css("html.phx-late"))
       # the record names an answer, not a hopeful class: the new line
       # was asked and it replied.
-      |> assert_has("html[data-line*='answered']")
+      |> assert_has(by_css("html[data-line*='answered']"))
       # and it is a working line, not a hopeful class: the title goes
       # to the server and comes back in the crumb.
-      |> fill_in("Title", with: "The line came back")
-      |> assert_has("#crumb", text: "The line came back")
+      |> fill(by_label("Title", exact: true), "The line came back")
+      |> assert(contain_text(by_css("#crumb"), "The line came back"))
     end
 
     test "words written into a quiet line are still there afterwards", %{conn: conn, kb: kb} do
@@ -213,7 +184,7 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
         |> fast_clocks()
         |> sign_in()
         |> open_editor(article.id)
-        |> type(".ed-cm .cm-content", "Before the line went")
+        |> press_sequentially(by_css(".ed-cm .cm-content"), "Before the line went")
 
       eventually(fn -> Articles.get_article!(article.id).body =~ "Before" end)
 
@@ -221,14 +192,15 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # LiveView answers that half a minute later with a hard refresh,
       # and a refresh throws these words away.
       conn
-      |> evaluate(@cut, [is_function: true], &assert(&1 == true))
-      |> type(".ed-cm .cm-content", " and after it went")
+      |> run_script(@cut)
+      |> assert_script(@connected, &assert(&1 == true))
+      |> press_sequentially(by_css(".ed-cm .cm-content"), " and after it went")
       |> said_quiet()
-      |> assert_has("#state", text: "Saved", timeout: 10_000)
-      |> assert_has(".ed-cm", text: "Before the line went and after it went")
+      |> assert(contain_text(by_css("#state"), "Saved"), timeout: 10_000)
+      |> assert(contain_text(by_css(".ed-cm"), "Before the line went and after it went"))
       # one more keystroke on the line that stands, and the words that
       # were written into the quiet are on the server too
-      |> type(".ed-cm .cm-content", ".")
+      |> press_sequentially(by_css(".ed-cm .cm-content"), ".")
 
       eventually(fn ->
         Articles.get_article!(article.id).body =~ "Before the line went and after it went."
@@ -262,18 +234,22 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
     test "a view the server threw away is joined again", %{conn: conn, kb: kb} do
       article = draft!(kb, "A text in a tab that was put aside")
 
-      conn
-      |> fast_clocks()
-      |> sign_in()
-      |> open_editor(article.id)
+      conn =
+        conn
+        |> fast_clocks()
+        |> sign_in()
+        |> open_editor(article.id)
+
       # the channel still says joined, which is the whole trap
-      |> evaluate(@stale, [is_function: true], &assert(&1 == "joined"))
+      assert evaluate(conn, @stale) == "joined"
+
       # nobody reloads: the page notices that its view cannot be the one
       # on this line, and joins again. The title proves it, because a
       # crumb only changes when the server answered.
-      |> fill_in("Title", with: "A tab that came back")
-      |> assert_has("#crumb", text: "A tab that came back", timeout: 10_000)
-      |> assert_has("#state", text: "Saved", timeout: 10_000)
+      conn
+      |> fill(by_label("Title", exact: true), "A tab that came back")
+      |> assert(contain_text(by_css("#crumb"), "A tab that came back"), timeout: 10_000)
+      |> assert(contain_text(by_css("#state"), "Saved"), timeout: 10_000)
     end
   end
 end

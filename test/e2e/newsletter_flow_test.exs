@@ -25,13 +25,13 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
     # The reader subscribes in the Subscribe section and confirms by mail.
     conn
     |> open_page("/")
-    |> assert_has("#subscribe", text: "New entries by email, nothing else.")
-    |> fill_in("Email for new entries", with: "christel@example.org")
+    |> assert(contain_text(by_css("#subscribe"), "New entries by email, nothing else."))
+    |> fill(by_label("Email for new entries"), "christel@example.org")
     # the test types faster than a person; the time trap must not read
     # that as a script
     |> age_form(:newsletter)
-    |> click_button("Subscribe")
-    |> assert_has("main", text: "Now check your mail.")
+    |> click(by_role(:button, name: "Subscribe"))
+    |> assert(contain_text(by_css("main"), "Now check your mail."))
 
     assert_receive {:email, %Swoosh.Email{} = mail}, 2000
     assert mail.to == [{"", "christel@example.org"}]
@@ -39,33 +39,33 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
 
     conn
     |> visit(link)
-    |> assert_has("main", text: "You are on the list.")
+    |> assert(contain_text(by_css("main"), "You are on the list."))
 
     # The admin area: the list carries the reader, and the admin adds an
     # address by hand, confirmed at once.
     conn
     |> sign_in()
     |> open("/admin/newsletter")
-    |> assert_has("#newsletterSub", text: "1")
-    |> assert_has("#subList", text: "christel@example.org")
-    |> fill_in("Email address", with: "jens@example.org")
-    |> click_button("Add subscriber")
-    |> assert_has("#subList", text: "jens@example.org")
-    |> assert_has("#newsletterSub", text: "2")
+    |> assert(contain_text(by_css("#newsletterSub"), "1"))
+    |> assert(contain_text(by_css("#subList"), "christel@example.org"))
+    |> fill(by_label("Email address"), "jens@example.org")
+    |> click(by_role(:button, name: "Add subscriber"))
+    |> assert(contain_text(by_css("#subList"), "jens@example.org"))
+    |> assert(contain_text(by_css("#newsletterSub"), "2"))
 
     # A publish click sends the text to both.
     conn
     |> open("/admin/texts")
-    |> click_button("New entry")
-    |> fill_in("Title", with: "Harbor mornings")
-    |> click_button("#stateBtn .main", "Publish")
+    |> click(by_role(:button, name: "New entry"))
+    |> fill(by_label("Title", exact: true), "Harbor mornings")
+    |> click(by_css("#stateBtn .main") |> filter(has_text: "Publish"))
     # the mail cannot be called back, so the click asks first and names
     # the number of people it would reach
-    |> assert_has("#dialog", text: "Publish and email 2 subscribers?")
-    |> click_button("#dialog-ok", "Publish and send")
-    |> assert_has("#stateWord", text: "Live", exact: true)
-    |> assert_has("#toast", text: "the mail is on its way")
-    |> assert_has("#notifyOpt", text: "went out on")
+    |> assert(contain_text(by_css("#dialog"), "Publish and email 2 subscribers?"))
+    |> click(by_css("#dialog-ok"))
+    |> assert(text(by_css("#stateWord"), "Live"))
+    |> assert(contain_text(by_css("#toast"), "the mail is on its way"))
+    |> assert(contain_text(by_css("#notifyOpt"), "went out on"))
 
     mails =
       for _ <- 1..2 do
@@ -84,10 +84,10 @@ defmodule TexttileWeb.E2E.NewsletterFlowTest do
 
     conn
     |> visit(leave)
-    |> assert_has("main", text: "Leave the list?")
-    |> evaluate(@card_in_room, [is_function: true], &assert(&1 < 1.5))
-    |> click_button("Take me off the list")
-    |> assert_has("main", text: "You are off the list.")
+    |> assert(contain_text(by_css("main"), "Leave the list?"))
+    |> assert_script(@card_in_room, &assert(&1 < 1.5))
+    |> click(by_role(:button, name: "Take me off the list"))
+    |> assert(contain_text(by_css("main"), "You are off the list."))
 
     assert [%{email: "jens@example.org"}] = Newsletter.list()
   end

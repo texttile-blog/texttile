@@ -28,19 +28,21 @@ config :texttile, TexttileWeb.Endpoint,
 # Browser tests check out a DB connection via this sandbox (see Endpoint plug).
 config :texttile, :sql_sandbox, Ecto.Adapters.SQL.Sandbox
 
-config :phoenix_test,
-  otp_app: :texttile,
-  endpoint: TexttileWeb.Endpoint,
-  playwright: [
-    browser: :chromium,
-    headless: true,
-    # How long the browser waits for what a test asks for. The default
-    # two seconds fit a developer machine; the CI runner has two cores
-    # for the server, the browser and SQLite together, and a page that
-    # mounts a LiveView first can take longer than that. The ceiling
-    # only costs time where something is broken anyway.
-    timeout: 10_000
-  ]
+config :fluffy, endpoint: TexttileWeb.Endpoint, ecto_repos: [Texttile.Repo]
+config :fluffy, Fluffy.Sandbox, header: "user-agent"
+# The upload roof tests pick a file of 11 MB.
+config :fluffy, file_input_max_bytes: 20_000_000
+
+config :playwright, :test,
+  browser_name: :chromium,
+  headless: true,
+  # How long the browser waits for what a test asks for. The CI runner
+  # has two cores for the server, the browser and SQLite together, and
+  # a page that mounts a LiveView first can take a few seconds there.
+  # The ceiling only costs time where something is broken anyway.
+  action_timeout: 10_000,
+  navigation_timeout: 10_000,
+  expect: [timeout: 10_000]
 
 # The backup limit is 600 a minute in life, which no test would reach
 # without spending a minute reaching it.

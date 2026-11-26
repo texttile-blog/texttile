@@ -761,8 +761,8 @@ make db-pull
 
 ## Development
 
-Requires Elixir 1.19+, Erlang/OTP 28+, Node.js (for browser tests), and ffmpeg
-(for the video conversion; `make tools` installs it).
+Requires Elixir 1.19+, Erlang/OTP 28+, Node.js (for the asset packages and
+the JS tests), and ffmpeg (for the video conversion; `make tools` installs it).
 
 ```sh
 make tools       # install the command line tools: ffmpeg and ffprobe

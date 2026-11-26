@@ -22,15 +22,15 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     # entry names itself in it.
     conn
     |> open_page("/blog")
-    |> assert_has("body[data-count]")
-    |> click_link("Concrete flowers of Kaunas")
-    |> assert_has("body[data-count][data-count-entry='#{article.id}']")
+    |> assert_has(by_css("body[data-count]"))
+    |> click(by_role(:link, name: "Concrete flowers of Kaunas"))
+    |> assert_has(by_css("body[data-count][data-count-entry='#{article.id}']"))
 
     # The same entry with an admin reading it: nothing to report.
     conn
     |> sign_in()
     |> open_page(Texttile.Articles.public_path(article))
-    |> refute_has("body[data-count]")
+    |> refute_has(by_css("body[data-count]"))
   end
 
   test "the admin reads the numbers on Stats and follows one entry into the editor",
@@ -43,33 +43,39 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
 
     conn
     |> sign_in()
-    |> click("#wmBtn")
-    |> click_link("#navMenu a[data-key='8']", "Stats")
-    |> assert_has("h1", text: "Stats")
-    |> assert_has("#figViews", text: "12")
-    |> assert_has("#figPeople", text: "12")
-    |> assert_has("#figBusiest", text: "9")
-    |> assert_has("#dayChart")
-    |> assert_has("#top-#{article.id}", text: "Concrete flowers of Kaunas")
-    |> assert_has("#referrers", text: "news.ycombinator.com")
-    |> assert_has("#otherPages", text: "/blog")
+    |> click(by_css("#wmBtn"))
+    |> click(by_css("#navMenu a[data-key='8']") |> filter(has_text: "Stats"))
+    |> assert_has(by_role(:heading, level: 1, name: "Stats"))
+    |> assert(contain_text(by_css("#figViews"), "12"))
+    |> assert(contain_text(by_css("#figPeople"), "12"))
+    |> assert(contain_text(by_css("#figBusiest"), "9"))
+    |> assert_has(by_css("#dayChart"))
+    |> assert(contain_text(by_css("#top-#{article.id}"), "Concrete flowers of Kaunas"))
+    |> assert(contain_text(by_css("#referrers"), "news.ycombinator.com"))
+    |> assert(contain_text(by_css("#otherPages"), "/blog"))
     # A bar opens the day under the chart, the address remembers it,
     # and the window switch is a link that keeps the page live.
-    |> click_button("#bar-#{Date.utc_today()}", "")
-    |> assert_has("#barTitle", text: "9 views")
-    |> assert_has("#barPages", text: "Concrete flowers of Kaunas")
-    |> assert_has("#barPages", text: "/blog")
-    |> assert_path("/admin/stats",
-      query_params: %{"days" => "30", "day" => Date.to_iso8601(Date.utc_today())}
+    |> click(by_css("#bar-#{Date.utc_today()}"))
+    |> assert(contain_text(by_css("#barTitle"), "9 views"))
+    |> assert(contain_text(by_css("#barPages"), "Concrete flowers of Kaunas"))
+    |> assert(contain_text(by_css("#barPages"), "/blog"))
+    |> assert(
+      page_url(fn url ->
+        url.path == "/admin/stats" and
+          URI.decode_query(url.query || "") == %{
+            "days" => "30",
+            "day" => Date.to_iso8601(Date.utc_today())
+          }
+      end)
     )
-    |> click_link("#win-7", "7 days")
-    |> assert_has("#win-7.on")
-    |> assert_has("#figViews", text: "12")
-    |> refute_has("#barDetail")
-    |> click_link("#top-#{article.id} a", "Concrete flowers of Kaunas")
-    |> assert_has("#tp-stats")
-    |> assert_has("#tpFigViews", text: "10")
-    |> assert_has("#tpReferrers", text: "news.ycombinator.com")
+    |> click(by_css("#win-7"))
+    |> assert_has(by_css("#win-7.on"))
+    |> assert(contain_text(by_css("#figViews"), "12"))
+    |> refute_has(by_css("#barDetail"))
+    |> click(by_css("#top-#{article.id} a") |> filter(has_text: "Concrete flowers of Kaunas"))
+    |> assert_has(by_css("#tp-stats"))
+    |> assert(contain_text(by_css("#tpFigViews"), "10"))
+    |> assert(contain_text(by_css("#tpReferrers"), "news.ycombinator.com"))
   end
 
   test "a draft says why its Stats tab is empty", %{conn: conn} do
@@ -78,6 +84,6 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/texts/#{draft.id}?tab=stats")
-    |> assert_has("#tpStatsEmpty", text: "Drafts are invisible to readers")
+    |> assert(contain_text(by_css("#tpStatsEmpty"), "Drafts are invisible to readers"))
   end
 end

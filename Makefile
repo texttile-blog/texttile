@@ -20,7 +20,7 @@ prepare:
 	mix deps.get
 	mix assets.setup
 	npm --prefix assets install
-	npm --prefix assets exec -- playwright install chromium
+	MIX_ENV=test mix playwright.install chromium
 	mix compile
 
 test: prepare
