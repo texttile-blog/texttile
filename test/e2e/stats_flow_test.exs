@@ -45,7 +45,7 @@ defmodule TexttileWeb.E2E.StatsFlowTest do
     |> sign_in()
     |> click(by_css("#wmBtn"))
     |> click(by_css("#navMenu a[data-key='8']") |> filter(has_text: "Stats"))
-    |> assert(contain_text(by_css("h1"), "Stats"))
+    |> assert_has(by_role(:heading, level: 1, name: "Stats"))
     |> assert(contain_text(by_css("#figViews"), "12"))
     |> assert(contain_text(by_css("#figPeople"), "12"))
     |> assert(contain_text(by_css("#figBusiest"), "9"))

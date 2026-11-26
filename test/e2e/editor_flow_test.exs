@@ -128,10 +128,12 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> assert(contain_text(by_css("#stateBtn a#stateMain[href='#{address}']"), "View"))
       |> visit(address)
-      |> assert(contain_text(by_css("h1"), "Going live"))
+      |> assert_has(by_role(:heading, level: 1, name: "Going live"))
 
       # the bare slug is not an address of the text
-      conn |> visit("/going-live") |> assert(contain_text(by_css("h1"), "Nothing here"))
+      conn
+      |> visit("/going-live")
+      |> assert_has(by_role(:heading, level: 1, name: "Nothing here"))
     end
   end
 

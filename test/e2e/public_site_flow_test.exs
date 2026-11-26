@@ -13,7 +13,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> open_page("/")
       |> assert_has(by_role(:link, name: "Harbor mornings"))
       |> click(by_role(:link, name: "Harbor mornings"))
-      |> assert(contain_text(by_css("h1"), "Harbor mornings"))
+      |> assert_has(by_role(:heading, level: 1, name: "Harbor mornings"))
       |> assert(contain_text(by_css(".prose"), "Fog over the pier."))
     end
 
@@ -118,7 +118,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> assert_has(by_css("#unlock"))
       |> fill(by_label("Password"), "sesame")
       |> click(by_role(:button, name: "To the blog"))
-      |> assert(contain_text(by_css("h1"), "Behind the wall"))
+      |> assert_has(by_role(:heading, level: 1, name: "Behind the wall"))
       |> open_page("/")
       |> assert_has(by_role(:link, name: "Behind the wall"))
     end
@@ -166,7 +166,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       conn
       |> open_page("/")
       |> assert_has(by_css("#unlock"))
-      |> refute_has(by_css("body") |> filter(has_text: "One password opens the whole blog"))
+      |> assert(count(by_text("One password opens the whole blog"), 0))
       |> assert_script(@gate_edge, &assert(&1 < 1.5))
     end
   end
@@ -351,10 +351,10 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> click(by_css("#prev-page"))
       |> assert_has(by_role(:link, name: "Text 3"))
       |> click(by_role(:link, name: "Text 2"))
-      |> assert(contain_text(by_css("h1"), "Text 2"))
+      |> assert_has(by_role(:heading, level: 1, name: "Text 2"))
       |> assert(contain_text(by_css("#prev-post"), "Text 1"))
       |> click(by_css("#next-post"))
-      |> assert(contain_text(by_css("h1"), "Text 3"))
+      |> assert_has(by_role(:heading, level: 1, name: "Text 3"))
       |> refute_has(by_css("#next-post"))
     end
   end

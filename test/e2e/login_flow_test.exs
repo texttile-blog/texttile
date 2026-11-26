@@ -24,7 +24,7 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
       |> fill(by_label("Display name"), "KB")
       |> click(by_role(:button, name: "Open the account and sign in"))
       |> assert(contain_text(by_css("#crumb"), "Entries"))
-      |> assert(contain_text(by_css("h1"), "Entries"))
+      |> assert_has(by_role(:heading, level: 1, name: "Entries"))
       |> click(by_css("#wmBtn"))
       |> assert(contain_text(by_css("#wmMe"), "KB"))
     end

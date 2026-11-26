@@ -80,7 +80,7 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       # signed in, the site shows the working copy and says so
       conn
       |> open_page(Articles.public_path(article))
-      |> assert(contain_text(by_css("h1"), "Harbor evenings"))
+      |> assert_has(by_role(:heading, level: 1, name: "Harbor evenings"))
       |> assert(contain_text(by_css("#unpublished"), "working copy"))
     end
 
@@ -91,7 +91,7 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       # this browser never signs in
       conn
       |> open_page(Articles.public_path(article))
-      |> assert(contain_text(by_css("h1"), "Harbor mornings"))
+      |> assert_has(by_role(:heading, level: 1, name: "Harbor mornings"))
       |> refute_has(by_css("#unpublished"))
 
       conn

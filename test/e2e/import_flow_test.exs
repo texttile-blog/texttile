@@ -39,10 +39,10 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     assert tile_a.filename == "a.jpg"
     assert File.regular?(Uploads.absolute(tile_b.path))
 
-    # the imported text stands in the texts grid
+    # the imported entry stands in the grid
     conn
     |> open_page("/")
-    |> assert(contain_text(by_css("body"), "Beach days"))
+    |> assert_has(by_role(:link, name: "Beach days"))
 
     # and its comments stand under it, the answer behind the comment it
     # answers, the name carrying the address its author gave back then
@@ -82,12 +82,11 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     |> assert(contain_text(by_css("#navMenu"), "Sign out"))
     |> click(by_role(:link, name: "Sign out"))
     |> open_page(Texttile.Articles.public_path(article))
-    |> assert(contain_text(by_css("h1"), "Beach days"))
-    |> assert(contain_text(by_css("body"), "of the trip."))
-    |> refute_has(by_css("body") |> filter(has_text: "Old public words."))
+    |> assert_has(by_role(:heading, level: 1, name: "Beach days", exact: true))
+    |> assert_has(by_text(by_css("#body"), "of the trip."))
+    |> assert(count(by_text("Old public words."), 0))
     |> refute_has(by_css("#unpublished"))
     |> assert(page_title(~r/Beach days/))
-    |> assert(text(by_css("h1"), "Beach days"))
   end
 
   defp build_zip do
