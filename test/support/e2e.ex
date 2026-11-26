@@ -26,7 +26,7 @@ defmodule TexttileWeb.E2E do
   use ExUnit.CaseTemplate
 
   import Fluffy
-  import Fluffy.Assert, only: [assert_has: 2]
+  import Fluffy.Assert, only: [assert_has: 2, poll: 2]
   import Fluffy.Locator
 
   # Not async, the default: SQLite serializes writers, concurrent
@@ -208,8 +208,7 @@ defmodule TexttileWeb.E2E do
   so it only looks.
   """
   def assert_script(session, script, arg \\ nil, check) do
-    Playwright.Expect.poll!(fn -> Fluffy.Playwright.evaluate(session, script, arg) end, check)
-    session
+    Fluffy.Assert.assert(session, poll(&Fluffy.Playwright.evaluate(&1, script, arg), check))
   end
 
   @doc """

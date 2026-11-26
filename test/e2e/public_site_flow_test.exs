@@ -444,15 +444,11 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     # The sheet belongs to the browser. This one has none, so the word
     # is not offered: a button that answers nothing is worse than no
     # button. Every other browser test has a sheet (TexttileWeb.E2E).
-    @share_hidden """
-    () => document.getElementById("foot-share").hidden
-    """
-
     @tag :no_share_sheet
     test "offers no Share where the browser has no sheet", %{conn: conn} do
       conn
       |> open_page("/")
-      |> assert_script(@share_hidden, &assert(&1 == true))
+      |> assert(js_property(by_css("#foot-share"), "hidden", true))
     end
 
     @what_was_shared """
