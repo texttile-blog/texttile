@@ -160,7 +160,7 @@ variable stops the app at boot with a message that names it.
 | `SECRET_KEY_BASE`  | yes              | none                        | signs cookies; generate with `mix phx.gen.secret`   |
 | `PHX_HOST`         | yes              | `example.com`               | public hostname                                     |
 | `PORT`             | no               | `4000`                      | HTTP port                                           |
-| `MAIL_ADAPTER`     | no               | local preview mailbox       | `resend`, `postmark`, `brevo`, `smtp`, or `ses`     |
+| `MAIL_ADAPTER`     | no               | local preview mailbox       | `lettermint`, `resend`, `postmark`, `brevo`, `smtp`, or `ses` |
 | `MAIL_FROM`        | no               | `texttile@PHX_HOST`         | sender address for outgoing mail                    |
 | `CLIENT_IP_HEADER` | no               | none, the socket address    | header a trusted proxy writes, e.g. `x-real-ip`     |
 
@@ -171,6 +171,7 @@ mail goes to a preview mailbox (`/dev/mailbox`, development only).
 
 | `MAIL_ADAPTER` | Variables                                                                         |
 | -------------- | --------------------------------------------------------------------------------- |
+| `lettermint`   | `LETTERMINT_API_TOKEN`                                                            |
 | `resend`       | `RESEND_API_KEY`                                                                  |
 | `postmark`     | `POSTMARK_API_KEY`                                                                |
 | `brevo`        | `BREVO_API_KEY`                                                                   |

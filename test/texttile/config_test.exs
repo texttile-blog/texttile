@@ -63,6 +63,13 @@ defmodule Texttile.ConfigTest do
       assert Config.mailer_config(%{}) == [adapter: Swoosh.Adapters.Local]
     end
 
+    test "lettermint loads its API token" do
+      assert Config.mailer_config(%{
+               "MAIL_ADAPTER" => "lettermint",
+               "LETTERMINT_API_TOKEN" => "lm_123"
+             }) == [adapter: Texttile.Mailer.Lettermint, api_token: "lm_123"]
+    end
+
     test "resend loads its API key" do
       assert Config.mailer_config(%{"MAIL_ADAPTER" => "resend", "RESEND_API_KEY" => "re_123"}) ==
                [adapter: Swoosh.Adapters.Resend, api_key: "re_123"]
@@ -143,13 +150,17 @@ defmodule Texttile.ConfigTest do
     end
 
     test "a chosen adapter with a missing credential names the variable" do
+      assert_raise RuntimeError, ~r/LETTERMINT_API_TOKEN/, fn ->
+        Config.mailer_config(%{"MAIL_ADAPTER" => "lettermint"})
+      end
+
       assert_raise RuntimeError, ~r/RESEND_API_KEY/, fn ->
         Config.mailer_config(%{"MAIL_ADAPTER" => "resend"})
       end
     end
 
     test "an unknown adapter names the valid options" do
-      assert_raise RuntimeError, ~r/resend, postmark, brevo, smtp, ses/, fn ->
+      assert_raise RuntimeError, ~r/lettermint, resend, postmark, brevo, smtp, ses/, fn ->
         Config.mailer_config(%{"MAIL_ADAPTER" => "sendgrid"})
       end
     end
