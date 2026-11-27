@@ -18,6 +18,12 @@ an entry is fine; an entry without a rule or a guard is not finished.
 2. **A button among links wears what the links wear.** Same font, same ink,
    no padding, no box. `base.css` resets every button. Do not give one back a
    box when it stands in a row of links.
+3. **A separator stays outside the link.** Never draw a middle dot or other
+   separator with `::before` or `::after` on an `<a>` or `<button>`. Hover
+   underlines paint under inline pseudo-elements, focus rings wrap them, and
+   clicking the dot activates the neighbour. Put the separator on a
+   non-interactive wrapper (such as an `<li>`) or on a non-interactive
+   neighbour instead.
 
 ## Verifying a screen
 
@@ -44,11 +50,35 @@ an entry is fine; an entry without a rule or a guard is not finished.
 - **Measure the text, not the box.** A stretched box has the same top as its
   neighbours even when its word stands lower. Measure the words with a
   `Range` (`range.selectNodeContents(el)`, then `getClientRects()`).
+- **Hover interactive rows.** Static screenshots show resting state only.
+  Hover every link and button in a changed row to verify that underlines,
+  focus rings, and hit boxes stay on the word alone.
 
 ## Regressions
 
 Newest first. One entry per regression: what a person saw, why, why nobody
 saw it before, and what guards it now.
+
+### 2026-11-27: Hovering footer links underlined the middle dot before them
+
+- **Seen:** hovering Share or Sign in in the reader footer drew an underline
+  under the middle dot before the word. The dot also sat inside the link's
+  click and focus box. The same pattern existed on `.cmt-web` in the admin
+  comments list.
+- **Cause:** the separator came from `::before` on the `<a>` and `<button>`
+  elements (`.band-out a + a::before`, `.band-out a + button::before`,
+  `.band-out button + a::before`, and `.cmt-when + .cmt-web::before`). CSS
+  `text-decoration` on `:hover` paints across inline pseudo-elements of the
+  link or button. In addition, `button + a::before` drew a leading dot before
+  Sign in when RSS was absent and Share was hidden.
+- **Missed because:** earlier checks inspected resting layout and baseline
+  alignment without hovering the items or checking pseudo-elements on links
+  and buttons.
+- **Rule:** 3.
+- **Guard:** the browser tests "keeps footer separators outside the links
+  and buttons" and "shows no leading separator when Sign in stands alone" in
+  `test/e2e/public_site_flow_test.exs`, plus the `.cmt-web` check in
+  `test/e2e/comments_flow_test.exs`.
 
 ### 2026-11-24: Share stood lower than the footer links (#131)
 

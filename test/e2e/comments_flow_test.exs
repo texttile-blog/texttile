@@ -67,6 +67,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
         %{
           "name" => "Grandma Christel",
           "email" => "christel@example.org",
+          "website" => "https://christel.example.org/garden",
           "body" => "More of the dog, please."
         },
         confirm_url: &"http://localhost/comments/confirm/#{&1}"
@@ -85,6 +86,25 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       |> sign_in()
       |> open("/admin/comments")
       |> assert_has("#commentsList", text: "unconfirmed")
+      |> evaluate(
+        """
+        () => {
+          const link = document.querySelector("#commentsList a.cmt-web")
+          const when = document.querySelector("#commentsList .cmt-when")
+          return {
+            linkBefore: getComputedStyle(link, "::before").content,
+            whenAfter: getComputedStyle(when, "::after").content
+          }
+        }
+        """,
+        [is_function: true],
+        fn res ->
+          assert res["linkBefore"] == "none",
+                 "website link carries ::before #{inspect(res["linkBefore"])}"
+
+          assert res["whenAfter"] == "\"·\" / \"\""
+        end
+      )
       |> click_button("Approve")
       |> assert_has("#commentsList", text: "let through")
       |> refute_has("#commentsList .wait")
