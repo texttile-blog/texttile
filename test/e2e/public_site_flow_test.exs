@@ -501,7 +501,7 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
     # its box: a button centers its word in a box the band stretches,
     # while a link keeps its word on top.
     @word_tops """
-    () => [...document.querySelectorAll("#band-out > :not([hidden])")].map(el => {
+    () => [...document.querySelectorAll("#band-out a:not([hidden]), #band-out button:not([hidden])")].map(el => {
       const range = document.createRange()
       range.selectNodeContents(el)
       const rects = range.getClientRects()
@@ -515,6 +515,68 @@ defmodule TexttileWeb.E2E.PublicSiteFlowTest do
       |> evaluate(@word_tops, [is_function: true], fn tops ->
         assert length(tops) == 3
         assert Enum.uniq(tops) |> length() == 1, "foot words at #{inspect(tops)}"
+      end)
+    end
+
+    # A separator dot must live outside every link and button: inside
+    # `::before`, hovering underlines the dot too and expands the hit box
+    # past the word.
+    @foot_controls """
+    () => [...document.querySelectorAll("#band-out a:not([hidden]), #band-out button:not([hidden])")].map(el => {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      const textWidth = range.getBoundingClientRect().width
+      const boxWidth = el.getBoundingClientRect().width
+      return {
+        id: el.id,
+        before: getComputedStyle(el, "::before").content,
+        after: getComputedStyle(el, "::after").content,
+        extraWidth: Math.round(boxWidth - textWidth)
+      }
+    })
+    """
+
+    @foot_separators """
+    () => [...document.querySelectorAll("#band-out > *")]
+      .filter(el => getComputedStyle(el).display !== "none")
+      .map(el => getComputedStyle(el, "::before").content)
+    """
+
+    test "keeps footer separators outside the links and buttons", %{conn: conn} do
+      conn
+      |> open_page("/")
+      |> evaluate(@foot_controls, [is_function: true], fn controls ->
+        assert length(controls) == 3
+
+        for control <- controls do
+          assert control["before"] == "none",
+                 "#{control["id"]} carries ::before #{inspect(control["before"])}"
+
+          assert control["after"] == "none",
+                 "#{control["id"]} carries ::after #{inspect(control["after"])}"
+
+          assert control["extraWidth"] <= 2,
+                 "#{control["id"]} box extends #{control["extraWidth"]}px beyond its word"
+        end
+      end)
+      |> evaluate(@foot_separators, [is_function: true], fn seps ->
+        assert seps == ["none", "\"·\" / \"\"", "\"·\" / \"\""]
+      end)
+    end
+
+    @tag :no_share_sheet
+    test "shows no leading separator when Sign in stands alone", %{conn: conn} do
+      {:ok, _} = Settings.put(:site_visibility, "protected")
+      {:ok, _} = Settings.put(:site_password, "sesame")
+
+      conn
+      |> open_page("/")
+      |> assert_has("#unlock")
+      |> fill_in("Password", with: "sesame")
+      |> click_button("To the blog")
+      |> assert_has("#foot-signin")
+      |> evaluate(@foot_separators, [is_function: true], fn seps ->
+        assert seps == ["none"]
       end)
     end
   end

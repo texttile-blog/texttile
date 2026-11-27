@@ -157,12 +157,20 @@ defmodule TexttileWeb.SiteHTML do
 
   def site_foot(assigns) do
     ~H"""
-    <p class="band-out f-foot" id="band-out">
-      <a :if={Texttile.Feed.public?()} id="foot-feed" href={~p"/feed.xml"}>RSS</a>
-      <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
-      <a :if={@current_scope} id="foot-admin" href={~p"/admin"}>{gettext("Admin area")}</a>
-      <a :if={!@current_scope} id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
-    </p>
+    <ul class="band-out f-foot" id="band-out">
+      <li :if={Texttile.Feed.public?()}>
+        <a id="foot-feed" href={~p"/feed.xml"}>RSS</a>
+      </li>
+      <li>
+        <button type="button" id="foot-share" hidden>{gettext("Share")}</button>
+      </li>
+      <li :if={@current_scope}>
+        <a id="foot-admin" href={~p"/admin"}>{gettext("Admin area")}</a>
+      </li>
+      <li :if={!@current_scope}>
+        <a id="foot-signin" href={~p"/login"}>{gettext("Sign in")}</a>
+      </li>
+    </ul>
     """
   end
 
