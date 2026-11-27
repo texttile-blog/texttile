@@ -13,7 +13,21 @@ import urllib.error
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "bunny.json"
-MAIL_SECRETS = ("MAIL_ADAPTER", "MAIL_FROM", "RESEND_API_KEY")
+MAIL_SECRETS = ("MAIL_ADAPTER", "MAIL_FROM", "LETTERMINT_API_TOKEN")
+
+
+def merge_environment(existing, config_env, process_env=None):
+    """Apply tracked config and explicit mail secrets while keeping runtime secrets."""
+    source = os.environ if process_env is None else process_env
+    environment = dict(existing)
+    environment.update(config_env)
+    # Missing GitHub secrets preserve existing mail settings and the signing key.
+    for name in MAIL_SECRETS:
+        if source.get(name):
+            environment[name] = source[name]
+    if environment.get("MAIL_ADAPTER") == "lettermint":
+        environment.pop("RESEND_API_KEY", None)
+    return environment
 
 
 def api(method, path, body=None):
@@ -121,12 +135,8 @@ def deploy(config, check_only=False):
         "registryId": container["imageRegistryId"],
         "imageNamespace": "texttile-blog", "imageName": "texttile", "tag": config["image_tag"],
     })
-    environment = {item["name"]: item["value"] for item in container["environmentVariables"]}
-    environment.update(config["environment"])
-    # Missing GitHub secrets preserve existing mail settings and the signing key.
-    for name in MAIL_SECRETS:
-        if os.environ.get(name):
-            environment[name] = os.environ[name]
+    existing_env = {item["name"]: item["value"] for item in container["environmentVariables"]}
+    environment = merge_environment(existing_env, config["environment"])
     require(bool(environment.get("SECRET_KEY_BASE")), "Missing SECRET_KEY_BASE on the Bunny app.")
     patch = {
         "imageTag": config["image_tag"], "imageDigest": image["digest"], "imagePullPolicy": "always",

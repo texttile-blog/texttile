@@ -66,5 +66,38 @@ class HttpReadinessTest(unittest.TestCase):
             sleep.assert_not_called()
 
 
+class EnvironmentMergeTest(unittest.TestCase):
+    def test_lettermint_secrets_override_existing_mail_config_and_drop_resend_key(self):
+        existing = {
+            "SECRET_KEY_BASE": "keep",
+            "MAIL_ADAPTER": "resend",
+            "MAIL_FROM": "blog@staging.texttile.blog",
+            "RESEND_API_KEY": "re_old",
+        }
+        secrets = {
+            "MAIL_ADAPTER": "lettermint",
+            "MAIL_FROM": "blog@texttile.blog",
+            "LETTERMINT_API_TOKEN": "lm_new",
+        }
+        merged = deploy.merge_environment(existing, {"PORT": "4000"}, secrets)
+        self.assertEqual(merged["SECRET_KEY_BASE"], "keep")
+        self.assertEqual(merged["MAIL_ADAPTER"], "lettermint")
+        self.assertEqual(merged["MAIL_FROM"], "blog@texttile.blog")
+        self.assertEqual(merged["LETTERMINT_API_TOKEN"], "lm_new")
+        self.assertNotIn("RESEND_API_KEY", merged)
+
+    def test_missing_mail_secrets_preserve_existing_values(self):
+        existing = {
+            "SECRET_KEY_BASE": "keep",
+            "MAIL_ADAPTER": "lettermint",
+            "MAIL_FROM": "blog@texttile.blog",
+            "LETTERMINT_API_TOKEN": "lm_existing",
+        }
+        merged = deploy.merge_environment(existing, {"PORT": "4000"}, {})
+        self.assertEqual(merged["MAIL_ADAPTER"], "lettermint")
+        self.assertEqual(merged["MAIL_FROM"], "blog@texttile.blog")
+        self.assertEqual(merged["LETTERMINT_API_TOKEN"], "lm_existing")
+
+
 if __name__ == "__main__":
     unittest.main()

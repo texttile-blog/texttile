@@ -46,6 +46,9 @@ defmodule Texttile.Config do
       nil ->
         [adapter: Swoosh.Adapters.Local]
 
+      "lettermint" ->
+        [adapter: Texttile.Mailer.Lettermint, api_token: fetch!(env, "LETTERMINT_API_TOKEN")]
+
       "resend" ->
         [adapter: Swoosh.Adapters.Resend, api_key: fetch!(env, "RESEND_API_KEY")]
 
@@ -79,7 +82,7 @@ defmodule Texttile.Config do
 
       other ->
         raise "unknown MAIL_ADAPTER #{inspect(other)}. " <>
-                "Valid values: resend, postmark, brevo, smtp, ses. " <>
+                "Valid values: lettermint, resend, postmark, brevo, smtp, ses. " <>
                 "Unset the variable to use the local preview mailbox."
     end
   end
