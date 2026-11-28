@@ -10,7 +10,10 @@
 <main>
   <%!-- An entry that is not live wears its address for the admins and
        for nobody else. The strip says so before the first line, because
-       everything under it looks exactly like the published thing. --%>
+       everything under it looks exactly like the published thing.
+       A live entry with unpublished edits carries its notice in the
+       single top strip (.known-strip) so no second banner stacks under
+       the header. --%>
   <p :if={not Visibility.live?(@article)} class="notlive" id="not-live">
     <b>{status_word(@article.status)}.</b>
     {gettext(
@@ -18,39 +21,28 @@
     )}
     <a href={~p"/admin/texts/#{@article.id}"}>{gettext("Back to the editor")}</a>
   </p>
-  <%!-- The entry is live and the words below it are not: what stands
-       here is the working copy, and the readers still have the text
-       that was published. Only somebody signed in ever sees this. --%>
-  <p :if={@unpublished_changes} class="notlive" id="unpublished">
-    <b>{gettext("Not published yet.")}</b>
-    {gettext("This is the working copy. Readers still get the text as it was last published.")}
-    <a href={~p"/admin/texts/#{@article.id}"}>{gettext("Back to the editor")}</a>
-  </p>
   <article id="text" class="pb-[var(--tt-sec)]">
-    <div class="wrap narrow pt-[46px]">
+    <div class="wrap narrow pt-[20px] sm:pt-[44px]">
       <h1 class="f-h1">{Articles.display_title(@article)}</h1>
       <%!-- the line under the title: the day, who wrote it, the tags.
-           A page has no date and no tags, so it has no line. The way
-           into the editor stands in the strip over the header. --%>
-      <p :if={@article.type == "post"} id="meta" class="f-note mt-3">
-        <span class="num">{format_date(@article.publish_date)}</span>
-        <%!-- who started the entry, read from the account now, so a
-             rename reaches every entry that person ever wrote --%>
-        <span :if={Articles.author_name(@article)} id="by">
-          · {Articles.author_name(@article)}
+           Date and author stay together; tags sit in their own group so
+           wrapping on a phone never strands a trailing separator. --%>
+      <div :if={@article.type == "post"} id="meta" class="f-note mt-3">
+        <span class="meta-fact">
+          <span class="num">{format_date(@article.publish_date)}</span>
+          <span :if={Articles.author_name(@article)} id="by" class="meta-by" phx-no-format>{Articles.author_name(@article)}</span>
         </span>
-        <span :if={Articles.tag_list(@article) != []}>·</span>
-        <%!-- the tags 8px apart, as on the cards --%>
+        <%!-- the tags separated cleanly on desktop and wrapped gracefully on mobile --%>
         <span :if={Articles.tag_list(@article) != []} class="mtags">
           <a
             :for={tag <- Articles.tag_list(@article)}
             href={~p"/tags/#{String.downcase(tag)}"}
-            class="link"
+            class="mtag"
           >
             #{tag}
           </a>
         </span>
-      </p>
+      </div>
 
       <div class="prose" id="body">{body_html(@article)}</div>
     </div>
@@ -145,10 +137,10 @@
       <div :if={@comments != []} class="mt-[6px]">
         <div
           :for={{kind, comment} <- @comments}
-          class={["py-[14px] border-b border-rule last:border-b-0", kind == :own && "opacity-70"]}
+          class={["py-[16px] border-b border-hair last:border-b-0", kind == :own && "opacity-70"]}
           id={"comment-#{comment.id}"}
         >
-          <div class="flex flex-wrap gap-[10px] items-baseline text-[15px] font-medium">
+          <div class="reader-cmt-head">
             <%!-- the address the author gave for themselves, from the
                  form or out of a bundle. The words are somebody else's,
                  and so is where they lead: the link says as much to a
@@ -171,7 +163,7 @@
               datetime={DateTime.to_iso8601(comment.inserted_at)}
               data-comment-moment
               data-zone={comment.imported_at && "UTC"}
-              class="font-normal text-dim text-[14px]"
+              class="reader-cmt-when"
             >
               {comment_when(comment.inserted_at)}
             </time>
@@ -225,7 +217,7 @@
 
         <span class="cf-body cfld">
           <label class="cf-lab" for="comment-body">{gettext("Comment")}</label>
-          <textarea name="body" id="comment-body" rows="5" maxlength="4000" required>{@comment_values["body"]}</textarea>
+          <textarea name="body" id="comment-body" rows="3" maxlength="4000" required>{@comment_values["body"]}</textarea>
         </span>
 
         <span :if={!@comment_author} class="cf-name cfld">
@@ -303,7 +295,7 @@
           )}
         </p>
         <p class="btn-row cf-act">
-          <button class="btn solid">{gettext("Post comment")}</button>
+          <button class="btn solid w-full sm:w-auto">{gettext("Post comment")}</button>
           <span :if={@comment_note} class="f-note" id="comment-note">{@comment_note}</span>
         </p>
       </form>

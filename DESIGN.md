@@ -24,6 +24,10 @@ an entry is fine; an entry without a rule or a guard is not finished.
    clicking the dot activates the neighbour. Put the separator on a
    non-interactive wrapper (such as an `<li>`) or on a non-interactive
    neighbour instead.
+4. **Focus state never shifts layout below the field.** A status indicator tied
+   to `:focus` or `:focus-within` reserves its line height at rest so leaving
+   the field on `mousedown` does not shift buttons below it out from under the
+   pointer before `mouseup`.
 
 ## Verifying a screen
 
@@ -58,6 +62,24 @@ an entry is fine; an entry without a rule or a guard is not finished.
 
 Newest first. One entry per regression: what a person saw, why, why nobody
 saw it before, and what guards it now.
+
+### 2026-11-28: Blurring the body editor shifted upload action buttons under the pointer
+
+- **Seen:** clicking Remove all or Resume all in `#inlineResume` immediately
+  after uploading images into the body did nothing.
+- **Cause:** `.ed-foot .flag` switched from `display: inline-flex` to
+  `display: none` when `.cm-content` lost focus on `mousedown`, collapsing
+  `#edFoot` from 20px to 0px and moving `#inlineResume` upward before
+  `mouseup` landed.
+- **Missed because:** earlier padding and spacing around the editor left the
+  pointer inside the button after the shift; tighter vertical rhythm exposed
+  the jump.
+- **Rule:** 4.
+- **Guard:** `.ed-foot` reserves `min-height: 20px; line-height: 20px` at rest,
+  and the browser tests "failed pictures in the text go again with one button"
+  and "failed pictures in the text leave with one button" in
+  `test/e2e/editor_flow_test.exs` exercise clicking `#inlineResume` straight
+  from a focused body editor.
 
 ### 2026-11-27: Hovering footer links underlined the middle dot before them
 

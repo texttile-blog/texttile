@@ -6,7 +6,7 @@
   known={assigns[:known_browser]}
 />
 <main>
-  <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
+  <div class="wrap pt-[20px] sm:pt-[44px] pb-[var(--tt-sec)]">
     <%!-- the blog's own line opens its list: the description from
          Settings, set as the heading; without one the list is named --%>
     <h1 class="f-h1 list-h">{list_heading()}</h1>
@@ -64,10 +64,10 @@
           </select>
         </span>
       </span>
-      <span class="cnt" id="count">{entry_count(@found, @total)}</span>
+      <span :if={@q != "" || @year} class="cnt" id="count">{entry_count(@found, @total)}</span>
     </form>
 
-    <div class="cards mt-8" id="texts">
+    <div class="cards mt-5" id="texts">
       <.card
         :for={article <- @articles}
         article={article}

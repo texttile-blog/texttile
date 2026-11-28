@@ -2,7 +2,12 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
   use TexttileWeb.E2E
 
   alias Texttile.Backup
-  alias Texttile.Settings
+
+  defp open_backup_settings(session) do
+    session
+    |> open("/admin/settings")
+    |> click("#installationPanel > summary")
+  end
 
   # The word is shown once, in a box of its own, and nowhere else. It
   # is read off the live page, because that is where it stands: the
@@ -28,14 +33,14 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
     test "a fresh installation offers backups but serves none", %{conn: conn} do
       conn
       |> sign_in()
-      |> open("/admin/settings")
+      |> open_backup_settings()
       |> assert_has("#backupSection", text: "Backup")
       |> assert_has("#setBackupNote", text: "/backup is closed")
       # the token and the rest wait behind the switch
       |> refute_has("#backupLastAccess")
-      |> check("Allow backups at /backup", exact: false)
+      |> check("Enable backup downloads", exact: false)
       |> assert_has("#backupLastAccess", text: "Nothing has been fetched yet")
-      |> uncheck("Allow backups at /backup", exact: false)
+      |> uncheck("Enable backup downloads", exact: false)
       |> refute_has("#backupLastAccess")
 
       refute Backup.enabled?()
@@ -46,8 +51,8 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       session =
         conn
         |> sign_in()
-        |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
+        |> open_backup_settings()
+        |> check("Enable backup downloads", exact: false)
         # the toast is the save answering
         |> assert_has("#toast", text: "Saved")
         |> click_button("#makeBackupToken", "Create a token")
@@ -68,7 +73,7 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
 
       # And the screen then says the backups run.
       session
-      |> open("/admin/settings")
+      |> open_backup_settings()
       |> assert_has("#backupLastAccess", text: "127.0.0.1")
       # The word itself is gone from the screen: it is kept as a hash.
       |> refute_has("#backupToken")
@@ -89,8 +94,8 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
     test "the token is picked whole by a touch, and Copy says it copied", %{conn: conn} do
       conn
       |> sign_in()
-      |> open("/admin/settings")
-      |> check("Allow backups at /backup", exact: false)
+      |> open_backup_settings()
+      |> check("Enable backup downloads", exact: false)
       |> click_button("#makeBackupToken", "Create a token")
       |> assert_has("#backupToken")
       |> evaluate(@token_selected, [is_function: true], &assert(&1 == true))
@@ -123,8 +128,8 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       session =
         conn
         |> sign_in()
-        |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
+        |> open_backup_settings()
+        |> check("Enable backup downloads", exact: false)
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 
@@ -163,13 +168,13 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
 
       conn
       |> sign_in()
-      |> open("/admin/settings")
-      |> check("Allow backups at /backup", exact: false)
+      |> open_backup_settings()
+      |> check("Enable backup downloads", exact: false)
       |> click_button("#makeBackupToken", "Create a token")
       |> assert_has("#backupToken")
-      |> uncheck("Allow backups at /backup", exact: false)
+      |> uncheck("Enable backup downloads", exact: false)
       |> assert_has("#setBackupNote", text: "/backup is closed")
-      |> check("Allow backups at /backup", exact: false)
+      |> check("Enable backup downloads", exact: false)
       |> assert_has("#setBackupNote", text: "may fetch")
       |> click_button("#copyBackupToken", "Copy")
       |> assert_has("#copyBackupToken", text: "Copied")
@@ -180,8 +185,8 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       session =
         conn
         |> sign_in()
-        |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
+        |> open_backup_settings()
+        |> check("Enable backup downloads", exact: false)
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 
@@ -205,8 +210,8 @@ defmodule TexttileWeb.E2E.BackupFlowTest do
       session =
         conn
         |> sign_in()
-        |> open("/admin/settings")
-        |> check("Allow backups at /backup", exact: false)
+        |> open_backup_settings()
+        |> check("Enable backup downloads", exact: false)
         |> click_button("#makeBackupToken", "Create a token")
         |> assert_has("#backupToken")
 

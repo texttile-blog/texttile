@@ -12,10 +12,10 @@ defmodule TexttileWeb.ProfileLiveTest do
     {:ok, view, html} = live(conn, ~p"/admin/profile")
 
     assert html =~ "Your profile"
-    assert has_element?(view, "#crumb", "Your profile")
+    assert has_element?(view, "h1.page-h", "Your profile")
 
     assert has_element?(view, ~s(#email-form input[name="em[email]"][value="#{user.email}"]))
-    assert has_element?(view, "#savedProfile")
+    refute has_element?(view, "#savedProfile")
     refute html =~ "user[username]"
   end
 

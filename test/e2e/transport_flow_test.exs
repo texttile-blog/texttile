@@ -200,9 +200,23 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # was asked and it replied.
       |> assert_has("html[data-line*='answered']")
       # and it is a working line, not a hopeful class: the title goes
-      # to the server and comes back in the crumb.
+      # to the server and updates the page title.
       |> fill_in("Title", with: "The line came back")
-      |> assert_has("#crumb", text: "The line came back")
+      |> evaluate(
+        """
+        () => new Promise((done) => {
+          const until = Date.now() + 10000
+          const look = () => {
+            if (document.title.includes("The line came back")) done(true)
+            else if (Date.now() > until) done(false)
+            else setTimeout(look, 50)
+          }
+          look()
+        })
+        """,
+        [is_function: true],
+        &assert(&1 == true)
+      )
     end
 
     test "words written into a quiet line are still there afterwards", %{conn: conn, kb: kb} do
@@ -269,10 +283,24 @@ defmodule TexttileWeb.E2E.TransportFlowTest do
       # the channel still says joined, which is the whole trap
       |> evaluate(@stale, [is_function: true], &assert(&1 == "joined"))
       # nobody reloads: the page notices that its view cannot be the one
-      # on this line, and joins again. The title proves it, because a
-      # crumb only changes when the server answered.
+      # on this line, and joins again. The page title proves it, because it
+      # only changes when the server answered.
       |> fill_in("Title", with: "A tab that came back")
-      |> assert_has("#crumb", text: "A tab that came back", timeout: 10_000)
+      |> evaluate(
+        """
+        () => new Promise((done) => {
+          const until = Date.now() + 10000
+          const look = () => {
+            if (document.title.includes("A tab that came back")) done(true)
+            else if (Date.now() > until) done(false)
+            else setTimeout(look, 50)
+          }
+          look()
+        })
+        """,
+        [is_function: true],
+        &assert(&1 == true)
+      )
       |> assert_has("#state", text: "Saved", timeout: 10_000)
     end
   end

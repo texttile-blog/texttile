@@ -125,23 +125,27 @@ defmodule TexttileWeb.Layouts do
     assigns = assign(assigns, :brand, %{title: site_title(), logo: Texttile.Settings.get(:logo)})
 
     ~H"""
-    <main class="auth-main min-h-[100dvh] flex items-start justify-center px-4 pt-[7vh] md:pt-[22vh] pb-10">
+    <main class="auth-main min-h-[100dvh] flex items-start md:items-center justify-center px-4 pt-[7vh] md:pt-0 pb-10 md:pb-[10vh]">
       <div class="w-[min(374px,100%)]">
-        <div class="flex items-center gap-[11px]">
+        <div class="flex items-center gap-[10px]">
           <img
             :if={@brand.logo}
             src={Texttile.Images.url(@brand.logo, :original)}
             alt=""
-            class="h-[28px] w-auto max-w-[112px] object-contain"
+            class="h-[24px] w-auto max-w-[104px] object-contain"
           />
-          <.mark :if={!@brand.logo} size={28} ink="var(--tt-ink)" />
-          <h1 class="font-serif text-[26px] font-semibold tracking-[-.02em]">{@brand.title}</h1>
+          <.mark :if={!@brand.logo} size={24} ink="var(--tt-ink)" />
+          <span class="font-serif text-[18px] font-bold tracking-[-.015em] text-ink">
+            {@brand.title}
+          </span>
         </div>
-        <p class="text-faint text-[13px] mt-[6px]">{@subtitle}</p>
+        <h1 class="font-serif text-[28px] font-bold tracking-[-.02em] text-ink mt-6 leading-[1.15]">
+          {@subtitle}
+        </h1>
         {render_slot(@inner_block)}
         <%!-- the way back for whoever came here from the blog --%>
-        <p class="mt-6 text-[13px]">
-          <a class="rowlink text-dim" href={~p"/"} id="back-to-blog">
+        <p class="mt-6 pt-4 border-t border-hair text-[13.5px]">
+          <a class="link" href={~p"/"} id="back-to-blog">
             ← {gettext("Back to %{site}", site: @brand.title)}
           </a>
         </p>
@@ -183,6 +187,10 @@ defmodule TexttileWeb.Layouts do
     Every bar stands on the same grid either way.
     """
 
+  attr :bar_wide, :boolean,
+    default: false,
+    doc: "aligns a section-nav topbar to the two-column wide admin grid (e.g. Settings)"
+
   slot :lead,
     doc: """
     what stands beside the breadcrumb and belongs to it: the editor's
@@ -210,11 +218,11 @@ defmodule TexttileWeb.Layouts do
       class={[
         "sticky top-0 z-50 flex items-center gap-[6px] md:gap-2 h-[52px] border-b border-hair backdrop-blur-[8px] backdrop-saturate-150",
         "bar-col",
-        @wide && "wide"
+        (@wide || @bar_wide) && "wide"
       ]}
       role="banner"
     >
-      <span class="relative flex-none">
+      <span class={["relative flex-none", @wide && "max-md:hidden"]}>
         <button
           class="flex items-center gap-[9px] text-[14.5px] font-[650] tracking-[-.02em] py-[5px] pl-[6px] pr-2 rounded-[5px] transition-colors hover:text-accent hover:bg-field aria-expanded:bg-field"
           id="wmBtn"
@@ -234,43 +242,28 @@ defmodule TexttileWeb.Layouts do
             <.mark :if={!@brand.logo} size={21} />
             <span class="wmdot" id="wmDot" hidden={@others == []}></span>
           </span>
-          <%!-- the mark alone stands for the blog on every screen: the
-               bar spends its width on the sections, or on the entry;
-               the button's label names it for a screen reader. A phone
-               has no room for the row of sections, so there the name of
-               the screen stands in the button, its count beside it, and
-               the chevron after them says the name opens the others. --%>
-          <span :if={!@wide && @crumb} class="md:hidden text-[15px] font-semibold text-ink -ml-[2px]">
-            <%!-- a screen under a section (Import under Settings) names
-                 the section first, as the desk's bar does --%>
-            <span :if={parent = parent_label(@crumb, @active)} class="font-normal text-dim">
-              {parent}<span class="text-slash"> / </span>
-            </span>{@crumb}<span
-              :if={@count}
-              class="bn-count"
-            >{@count}</span>
-          </span>
-          <%!-- a desk bar that shows the row of sections needs no chevron:
-               the mark still opens the menu. The editor has no row of
-               sections, so its chevron stands at every width. --%>
+          <%!-- Desktop shows the blog's own name beside its mark; mobile shows
+               the active section name + chevron so navigation is unmistakable
+               and never looks like a site switcher. --%>
           <span
-            class={["text-dim -ml-[2px] mt-px", !@wide && "md:hidden"]}
+            :if={!@wide}
+            class="hidden md:inline font-serif text-[15.5px] font-bold tracking-[-.015em] text-ink truncate max-w-[148px] -ml-[1px] leading-none relative top-[0.5px]"
+          >
+            {@brand.title}
+          </span>
+          <span
+            :if={!@wide}
+            class="md:hidden text-[14px] font-medium text-ink truncate max-w-[140px] -ml-[1px]"
+          >
+            {@crumb || gettext("Menu")}
+          </span>
+          <%!-- Mobile keeps the dropdown chevron beside the blog name; desktop
+               uses the clean mark + name without a competing chevron next to <- Entries. --%>
+          <span
+            class={["text-dim -ml-[3px] mt-px", "md:hidden"]}
             aria-hidden="true"
           >
             <.chevron />
-          </span>
-          <%!-- a phone has no row of sections: the comments that wait
-               stand beside the menu that leads to them --%>
-          <span
-            :if={!@wide && @waiting > 0 && @active != "comments"}
-            class="mcount md:hidden"
-            id="barWaiting"
-          >
-            <.speech_mark />
-            <span aria-hidden="true">{@waiting}</span>
-            <span class="sr">
-              {ngettext("1 comment waits", "%{count} comments wait", @waiting)}
-            </span>
           </span>
           <span class="sr" id="wmSr">{here_now_sr(@others)}</span>
         </button>
@@ -353,17 +346,18 @@ defmodule TexttileWeb.Layouts do
            buttons at the right and never runs under them. Only there:
            on a wide bar the clip would cut the focus ring of the
            sections, and the room is there anyway. --%>
-      <span class="flex items-center gap-[6px] md:gap-2 min-w-0 max-md:overflow-hidden text-[13.5px] text-dim">
+      <span class={[
+        "bar-lead flex items-center gap-[6px] md:gap-2 min-w-0 max-md:overflow-hidden text-[13.5px] text-dim",
+        @wide && "ed-lead"
+      ]}>
         <%= if @wide do %>
-          <%!-- a phone has the title in the field right under the bar,
-               so the bar keeps the state and leaves the name out --%>
-          <span
-            class="hidden sm:block text-[14px] font-semibold text-ink tracking-[-.01em] truncate max-w-[24ch] md:max-w-[46ch]"
-            id="crumb"
-            title={@crumb}
+          <.link
+            navigate={~p"/admin/texts"}
+            class="inline-flex items-center gap-1 text-[13.5px] text-dim hover:text-ink transition-colors whitespace-nowrap"
+            id="barBack"
           >
-            {@crumb}
-          </span>
+            &larr; {gettext("Entries")}
+          </.link>
           {render_slot(@lead)}
         <% else %>
           <nav class={["barnav", !crumb_in_nav?(@crumb, @active) && "has-extra"]}>
@@ -375,7 +369,7 @@ defmodule TexttileWeb.Layouts do
               aria-current={@active == section.active && "page"}
             >
               {section.label}<span
-                :if={section.active == "comments" && @waiting > 0 && @active != "comments"}
+                :if={section.active == "comments" && @waiting > 0}
                 class="bn-n num"
                 id="navWaiting"
               ><span aria-hidden="true">{@waiting}</span><span class="sr">{ngettext(
@@ -385,29 +379,27 @@ defmodule TexttileWeb.Layouts do
               )}</span></span>
             </.link>
           </nav>
-          <%!-- the profile is named by the person's own name at the right
-               of a desk bar, so it needs no crumb of its own there --%>
-          <span
-            :if={!crumb_in_nav?(@crumb, @active) and @active != "profile"}
-            class="bn-sep"
-            aria-hidden="true"
-          >
-            /
-          </span>
-          <span
-            :if={!crumb_in_nav?(@crumb, @active)}
-            class={["bn on truncate max-md:hidden", @active == "profile" && "md:hidden"]}
-            id="crumb"
-            title={@crumb}
-          >
-            {@crumb}
-          </span>
           {render_slot(@lead)}
         <% end %>
       </span>
       <%!-- the gap between the zones, and the only thing in the bar
            that gives way --%>
       <span class="flex-1 min-w-[6px]" aria-hidden="true"></span>
+      <%!-- Quiet unboxed waiting-comments shortcut on mobile (hidden on Comments
+           itself so the bar never points twice at the current screen) --%>
+      <.link
+        :if={!@wide && @waiting > 0 && @active != "comments"}
+        navigate={~p"/admin/comments?status=waiting"}
+        class="md:hidden inline-flex items-center self-stretch gap-1 text-[13px] text-dim hover:text-ink px-1.5 whitespace-nowrap"
+        id="barWaiting"
+        title={ngettext("1 comment waits", "%{count} comments wait", @waiting)}
+      >
+        <.speech_mark />
+        <span class="num" aria-hidden="true">{@waiting}</span>
+        <span class="sr">
+          {ngettext("1 comment waits", "%{count} comments wait", @waiting)}
+        </span>
+      </.link>
       <%!-- who is signed in, on a desk: the way to the profile and the
            sign-out, in words instead of a chevron alone --%>
       <.link
@@ -448,14 +440,6 @@ defmodule TexttileWeb.Layouts do
 
   # The sections the bar shows as a row: the screens of the menu.
   defp screens, do: Enum.filter(sections(), &(&1.kind == :screen))
-
-  # The section a screen stands under, when the crumb is not the
-  # section's own name: Settings for Import.
-  defp parent_label(crumb, active) do
-    if crumb_in_nav?(crumb, active),
-      do: nil,
-      else: Enum.find_value(screens(), &(&1.active == active && &1.label))
-  end
 
   # Whether the crumb is the name of the open section, so the marked
   # link of the row can carry it.

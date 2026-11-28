@@ -142,98 +142,109 @@ defmodule TexttileWeb.TagsLive do
     >
       <:bar><Layouts.view_site /></:bar>
       <div class="admin-col">
-        <%!-- the count stands under the heading, where every screen
-             puts its line; a phone says it in its bar instead --%>
-        <div class="mb-[9px] md:mb-6">
-          <%!-- the count stands after the name, as on every list screen --%>
-          <h1 class="page-h">
-            {gettext("Tags")} <span class="hcount num" id="tagsCount">{length(@tags)}</span>
-          </h1>
-        </div>
-        <div id="tagsList" class={@tags != [] && "md:border-t md:border-hair"}>
-          <p :if={@tags == []} class="note">
-            {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
-          </p>
-          <div
-            :for={{tag, count} <- @tags}
-            id={"tagrow-#{tag_id(tag)}"}
-            class="py-[8px] sm:py-[11px] border-b border-hair flex items-baseline gap-x-[10px] flex-wrap"
-          >
-            <%!-- the tag is the way to its archive on the site, a link like every
-                 other tag in the product --%>
-            <a
-              href={~p"/tags/#{String.downcase(tag)}"}
-              target="_blank"
-              class="link rowp break-words min-w-[160px]"
+        <div>
+          <div class="mb-5 md:mb-6">
+            <h1 class="page-h">
+              {gettext("Tags")}
+              <span class="hcount num" id="tagsCount">
+                {ngettext("1 tag", "%{count} tags", length(@tags))}
+              </span>
+            </h1>
+          </div>
+          <div id="tagsList" class={@tags != [] && "border-t border-hair"}>
+            <p :if={@tags == []} class="note">
+              {gettext("No entry carries a tag yet. Add tags in an entry's settings.")}
+            </p>
+            <div
+              :for={{tag, count} <- @tags}
+              id={"tagrow-#{tag_id(tag)}"}
+              class="py-[10px] sm:py-[12px] border-b border-hair flex items-center gap-x-[12px] flex-wrap"
             >
-              #{tag}
-            </a>
-            <span class="note num flex-1 tagcount">
-              {ngettext("1 entry", "%{count} entries", count)}<span :if={
-                Map.get(@live, String.downcase(tag), 0) not in [0, count]
-              }> · {gettext("%{count} not live",
-                count: count - Map.get(@live, String.downcase(tag), 0)
-              )}</span>
-            </span>
-            <div :if={@editing != tag} class="flex gap-1 max-sm:gap-3 -mr-[11px] max-sm:ml-auto">
-              <button
-                type="button"
-                class="btn quiet sm"
-                id={"edit-tag-#{tag_id(tag)}"}
-                phx-click="edit_tag"
-                phx-value-tag={tag}
-              >
-                {gettext("Edit")}
-              </button>
-              <button
-                type="button"
-                class="btn quiet sm danger"
-                id={"delete-tag-#{tag_id(tag)}"}
-                phx-click="ask_delete_tag"
-                phx-value-tag={tag}
-              >
-                {gettext("Delete")}
-              </button>
-            </div>
-            <.form
-              :if={@editing == tag}
-              for={@form}
-              id="rename-tag-form"
-              class="w-full pt-2"
-              phx-submit="rename_tag"
-            >
-              <label for="tag-name" class="lab block mb-[3px]">{gettext("Name")}</label>
-              <input
-                type="text"
-                id="tag-name"
-                phx-mounted={JS.focus()}
-                name={@form[:name].name}
-                value={@form[:name].value}
-                autocomplete="off"
-                aria-describedby={if @error, do: "tag-scope tag-error", else: "tag-scope"}
-                aria-invalid={@error != nil}
-              />
-              <p class="note mt-2" id="tag-scope">
-                {ngettext("Changes in 1 entry.", "Changes in all %{count} entries.", count)}
-              </p>
-              <p :if={@error} class="text-[13px] text-julia mt-2" id="tag-error" role="alert">
-                {@error}
-              </p>
-              <div class="flex gap-2 mt-4">
-                <button type="submit" class="btn solid" phx-disable-with={gettext("Renaming…")}>
-                  {gettext("Rename")}
-                </button>
-                <button type="button" class="btn quiet" id="cancel-tag-edit" phx-click="cancel_edit">
-                  {gettext("Cancel")}
+              <%!-- the tag is the way to its archive on the site, set in serif
+                 like entry titles for typographic unity across admin lists --%>
+              <span class="flex flex-col flex-1 min-w-0 gap-y-[2px]">
+                <a
+                  href={~p"/tags/#{String.downcase(tag)}"}
+                  target="_blank"
+                  class="link rowp font-serif text-[17.5px] font-bold tracking-[-.012em] break-words w-fit"
+                >
+                  #{tag}
+                </a>
+                <span class="note num tagcount whitespace-nowrap">
+                  <% live_count = Map.get(@live, String.downcase(tag), 0) %>
+                  {ngettext("1 entry", "%{count} entries", count)} ·
+                  <%= cond do %>
+                    <% live_count == count and count == 1 -> %>
+                      {gettext("live")}
+                    <% live_count == count -> %>
+                      {gettext("all live")}
+                    <% live_count == 0 -> %>
+                      {gettext("none live")}
+                    <% true -> %>
+                      {gettext("%{live} live", live: live_count)}
+                  <% end %>
+                </span>
+              </span>
+              <div :if={@editing != tag} class="flex items-center -mr-[10px] ml-auto flex-none">
+                <button
+                  type="button"
+                  class="btn quiet sm"
+                  id={"edit-tag-#{tag_id(tag)}"}
+                  phx-click="edit_tag"
+                  phx-value-tag={tag}
+                >
+                  {gettext("Edit")}
                 </button>
               </div>
-            </.form>
+              <.form
+                :if={@editing == tag}
+                for={@form}
+                id="rename-tag-form"
+                class="w-full pt-2"
+                phx-submit="rename_tag"
+              >
+                <label for="tag-name" class="lab block mb-[3px]">{gettext("Name")}</label>
+                <input
+                  type="text"
+                  id="tag-name"
+                  phx-mounted={JS.focus()}
+                  name={@form[:name].name}
+                  value={@form[:name].value}
+                  autocomplete="off"
+                  aria-describedby={if @error, do: "tag-scope tag-error", else: "tag-scope"}
+                  aria-invalid={@error != nil}
+                />
+                <p class="note mt-2" id="tag-scope">
+                  {ngettext("Changes in 1 entry.", "Changes in all %{count} entries.", count)}
+                </p>
+                <p :if={@error} class="text-[13px] text-julia mt-2" id="tag-error" role="alert">
+                  {@error}
+                </p>
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="btn solid" phx-disable-with={gettext("Renaming…")}>
+                    {gettext("Rename")}
+                  </button>
+                  <button type="button" class="btn quiet" id="cancel-tag-edit" phx-click="cancel_edit">
+                    {gettext("Cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn quiet danger ml-auto"
+                    id={"delete-tag-#{tag_id(tag)}"}
+                    phx-click="ask_delete_tag"
+                    phx-value-tag={tag}
+                  >
+                    {gettext("Delete")}
+                  </button>
+                </div>
+              </.form>
+            </div>
           </div>
+          <%!-- where a tag comes from, at the foot of the list --%>
+          <p :if={@tags != []} class="note mt-[16px]" id="tagsRule">
+            {gettext("Tags are added while editing an entry.")}
+          </p>
         </div>
-        <%!-- where a tag comes from, at the foot of the list --%>
-        <p :if={@tags != []} class="note mt-[16px]" id="tagsRule">
-          {gettext("Tags are added in an entry's settings.")}
-        </p>
       </div>
       <.ask
         :if={@confirm_tag}

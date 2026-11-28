@@ -77,9 +77,10 @@ export const SavedTicker = {
       }))
     }
 
-    const line = savedLine({at, now, wide: window.matchMedia("(min-width: 768px)").matches})
+    const wide = window.matchMedia("(min-width: 768px)").matches
+    const line = savedLine({at, now, wide})
     this.el.title = line.title
-    this.words().textContent = line.text
+    this.words().textContent = (!wide && this.el.dataset.savedShort) || this.el.dataset.savedLabel || line.text
   },
 
   /* The toast is one element on the body, made on the first save and

@@ -118,7 +118,7 @@ defmodule Texttile.SettingsTest do
 
   describe "button_colors/0" do
     test "answers the solid buttons of the iris theme" do
-      assert Settings.button_colors() == %{solid: "#5a37c2", onsolid: "#ffffff"}
+      assert Settings.button_colors() == %{solid: "#463f82", onsolid: "#ffffff"}
     end
 
     test "reads the buttons out of a stored theme, over its page" do
@@ -133,7 +133,7 @@ defmodule Texttile.SettingsTest do
 
     test "a theme without the tokens takes the iris buttons" do
       {:ok, _} = Settings.put(:theme_css, ":root { --tt-ink: #123456; }")
-      assert Settings.button_colors() == %{solid: "#5a37c2", onsolid: "#ffffff"}
+      assert Settings.button_colors() == %{solid: "#463f82", onsolid: "#ffffff"}
     end
   end
 

@@ -41,71 +41,74 @@ defmodule TexttileWeb.StatsComponents do
         "Nothing counted in these days yet. The first reader who opens a page draws the first bar."
       )}
     </p>
-    <div :if={@max > 0} class="relative isolate pr-[52px]">
-      <%!-- the scale: a hairline at a round number just over the
+    <div :if={@max > 0} class="day-chart-wrap relative isolate">
+      <div class="relative">
+        <%!-- the scale: a hairline at a round number just over the
            busiest bar and one at half of it, behind the bars and on into
            the gutter at the right, where their counts stand, so every
            label points at its line and no label sits on a bar --%>
-      <span
-        class="absolute left-0 right-[42px] top-[18px] border-t border-rule -z-10 pointer-events-none"
-        aria-hidden="true"
-      ></span>
-      <span
-        class="absolute right-0 top-[10px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
-        id={"#{@id}Max"}
-      >
-        {number(@top)}
-      </span>
-      <span
-        :if={@top > 1}
-        class="absolute left-0 right-[42px] top-[84px] border-t border-rule -z-10 pointer-events-none"
-        aria-hidden="true"
-      ></span>
-      <span
-        :if={@top > 1}
-        class="absolute right-0 top-[76px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
-        aria-hidden="true"
-      >
-        {number(div(@top, 2))}
-      </span>
-      <span
-        class="absolute right-0 top-[142px] w-[38px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
-        aria-hidden="true"
-      >
-        0
-      </span>
-      <div id={@id} class="flex items-end gap-[3px] h-[150px] pt-[18px] pb-0">
-        <%= for bar <- @series do %>
-          <button
-            :if={@pick}
-            type="button"
-            id={"bar-#{bar.from}"}
-            class={[
-              "flex-1 self-stretch flex items-end cursor-pointer rounded-t-[2px]",
-              @open && @open.from == bar.from && "on"
-            ]}
-            title={bar_title(bar)}
-            phx-click={@pick}
-            phx-value-day={bar.from}
-          >
-            <i
+        <span
+          class="absolute left-0 right-0 top-[6px] border-t border-rule -z-10 pointer-events-none"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="absolute -right-[32px] sm:-right-[44px] top-[-2px] w-[26px] sm:w-[34px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
+          id={"#{@id}Max"}
+        >
+          {number(@top)}
+        </span>
+        <span
+          :if={@top > 1}
+          class="absolute left-0 right-0 top-[80px] border-t border-rule -z-10 pointer-events-none"
+          aria-hidden="true"
+        ></span>
+        <span
+          :if={@top > 1}
+          class="absolute -right-[32px] sm:-right-[44px] top-[72px] w-[26px] sm:w-[34px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
+          aria-hidden="true"
+        >
+          {number(div(@top, 2))}
+        </span>
+        <span
+          class="absolute -right-[32px] sm:-right-[44px] top-[146px] w-[26px] sm:w-[34px] text-right text-[12px] leading-[16px] text-dim tabular-nums"
+          aria-hidden="true"
+        >
+          0
+        </span>
+        <div id={@id} class="flex items-end gap-[3px] h-[154px] pt-[6px] pb-0">
+          <%= for bar <- @series do %>
+            <button
+              :if={@pick}
+              type="button"
+              id={"bar-#{bar.from}"}
               class={[
-                "block w-full min-h-[2px] rounded-t-[2px]",
-                bar_colour(bar.views, @max),
-                @open && @open.from == bar.from && "!bg-accent"
+                "flex-1 self-stretch flex items-end cursor-pointer rounded-t-[1px] sm:rounded-t-[2px]",
+                @open && @open.from == bar.from && "on"
+              ]}
+              title={bar_title(bar)}
+              phx-click={@pick}
+              phx-value-day={bar.from}
+            >
+              <i
+                class={[
+                  "block w-full min-h-[2px] rounded-t-[1px] sm:rounded-t-[2px]",
+                  bar_colour(bar.views, @max),
+                  @open && @open.from == bar.from && "!bg-accent"
+                ]}
+                style={"height:#{height(bar.views, @top)}%"}
+              ></i>
+            </button>
+            <i
+              :if={is_nil(@pick)}
+              class={[
+                "flex-1 min-h-[2px] rounded-t-[1px] sm:rounded-t-[2px]",
+                bar_colour(bar.views, @max)
               ]}
               style={"height:#{height(bar.views, @top)}%"}
-            >
-              <span :if={bar.views == @max and @max > 0} class="peak num">{number(bar.views)}</span>
-            </i>
-          </button>
-          <i
-            :if={is_nil(@pick)}
-            class={["flex-1 min-h-[2px] rounded-t-[2px]", bar_colour(bar.views, @max)]}
-            style={"height:#{height(bar.views, @top)}%"}
-            title={bar_title(bar)}
-          ></i>
-        <% end %>
+              title={bar_title(bar)}
+            ></i>
+          <% end %>
+        </div>
       </div>
       <div class="flex justify-between text-[12px] text-dim pt-[7px] pb-2 border-t border-faint">
         <span>{axis_label(List.first(@series).from, @step)}</span>
@@ -161,9 +164,9 @@ defmodule TexttileWeb.StatsComponents do
       <table id={@id} class="reftab">
         <thead>
           <tr>
-            <th class="sm:w-[366px]">{gettext("Source")}</th>
-            <th class="w-[34%] sm:w-auto pl-3 sm:pl-0"><span class="sr">{gettext("Share")}</span></th>
-            <th class="text-right num w-[52px]">%</th>
+            <th class="w-[46%]">{gettext("Source")}</th>
+            <th class="w-auto pl-3"><span class="sr">{gettext("Share")}</span></th>
+            <th class="text-right num w-[48px]">%</th>
           </tr>
         </thead>
         <tbody>
@@ -197,19 +200,28 @@ defmodule TexttileWeb.StatsComponents do
   @doc "A day as the charts write it: 30 Jun."
   defdelegate day_label(day), to: Texttile.I18n, as: :format_short_day
 
-  defp bar_colour(views, max) when views == max and views > 0, do: "bg-ink"
+  defp bar_colour(views, max) when views == max and views > 0, do: "bar-peak"
   defp bar_colour(_views, _max), do: "barc"
 
   defp height(_views, 0), do: 0
   defp height(views, max), do: max(round(views / max * 100), 1)
 
-  # The top of the scale: the busiest count rounded up to its leading
-  # digit (79 to 80, 226 to 300), and to an even number under ten, so
-  # the half line under it is a round number too.
+  # The top of the scale: round ceiling with headroom for the peak label
+  # so the number above the busiest bar never touches the top gridline
+  # (134 -> 160 with 80 midpoint; max < 10 stays tight for small counts).
   defp scale_top(max) when max < 10, do: max + rem(max, 2)
 
   defp scale_top(max) do
     unit = Integer.pow(10, length(Integer.digits(max)) - 1)
-    div(max + unit - 1, unit) * unit
+
+    step =
+      cond do
+        max <= unit * 2 -> max(div(unit, 5), 2)
+        max <= unit * 5 -> div(unit, 2)
+        true -> unit
+      end
+
+    top = div(max + step - 1, step) * step
+    if max / top > 0.85, do: top + step, else: top
   end
 end

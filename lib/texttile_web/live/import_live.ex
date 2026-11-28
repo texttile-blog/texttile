@@ -104,180 +104,217 @@ defmodule TexttileWeb.ImportLive do
       flash={@flash}
       waiting={@waiting_comments}
       current_scope={@current_scope}
-      crumb={gettext("Import")}
+      crumb={gettext("Settings")}
       active="settings"
       others={@others}
     >
       <:bar>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col">
-        <h1 class="page-h">{gettext("Import")}</h1>
-        <%!-- the instruction in the ink, the details in the guide --%>
-        <p class="leading-[1.6] md:mt-6">
-          {gettext("Bring entries over from another blog as a zip, one folder per entry.")}
-          {gettext("See")} <.import_doc />.
-        </p>
+      <div class="admin-col setgrid import-grid">
+        <div class="set-head">
+          <p class="mb-2">
+            <.link navigate={~p"/admin/settings"} class="rowlink text-[13.5px] text-dim">
+              &larr; {gettext("Settings")}
+            </.link>
+          </p>
+          <h1 class="page-h">{gettext("Import")}</h1>
+        </div>
 
-        <%= case @job.phase do %>
-          <% :idle -> %>
-            <form id="import-upload" phx-change="validate_upload" class="mt-3">
-              <%!-- what somebody wants to know before they pick a file --%>
-              <p class="note leading-[1.6] mb-4 max-w-[584px]">
-                {gettext(
-                  "Uploading checks the zip and shows a report first. Nothing is imported yet."
-                )}
+        <%!-- Non-navigational 3-step progress indicator: full vertical sequence on
+             desktop, spacious current-step summary on mobile with room for translations. --%>
+        <% {step_num, step_label} =
+          cond do
+            @job.phase in [:validating, :report] -> {2, gettext("Review report")}
+            @job.phase in [:running, :done] -> {3, gettext("Import entries")}
+            true -> {1, gettext("Upload zip")}
+          end %>
+        <div class="import-step-mobile" aria-hidden="true">
+          <span class="step-n">{step_num}</span>
+          <span class="text-dim">{gettext("Step %{n} of 3", n: step_num)}</span>
+          <span class="text-faint">·</span>
+          <span class="font-semibold text-ink">{step_label}</span>
+        </div>
+        <ol class="import-steps" aria-label={gettext("Import steps")}>
+          <li class={["import-step", step_num == 1 && "on"]}>
+            <span class="step-n" aria-hidden="true">1</span>
+            <span>{gettext("Upload zip")}</span>
+          </li>
+          <li class={["import-step", step_num == 2 && "on"]}>
+            <span class="step-n" aria-hidden="true">2</span>
+            <span>{gettext("Review report")}</span>
+          </li>
+          <li class={["import-step", step_num == 3 && "on"]}>
+            <span class="step-n" aria-hidden="true">3</span>
+            <span>{gettext("Import entries")}</span>
+          </li>
+        </ol>
+
+        <div class="setbody">
+          <h2 class="set-h">{gettext("Upload zip")}</h2>
+          <p class="leading-[1.6] text-inksoft">
+            {gettext(
+              "Upload a zip with one folder per entry. We check the archive and show a report before anything is imported."
+            )}
+            {gettext("Read")} <.import_doc />.
+          </p>
+
+          <%= case @job.phase do %>
+            <% :idle -> %>
+              <p class="text-[13.5px] leading-[1.5] text-dim mt-2" id="import-room">
+                {room_note(@limit_mb, @free_bytes)}
               </p>
-              <label class="btn solid cursor-pointer relative overflow-hidden">
-                {gettext("Upload the zip")}
-                <.live_file_input
-                  upload={@uploads.zip}
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  aria-label={gettext("Upload the zip")}
-                />
-              </label>
-              <%!-- The percentage belongs to a zip that is travelling.
-                   A refused one never travels, and 0% beside its name
-                   reads as work in progress. --%>
-              <span :for={entry <- @uploads.zip.entries} class="note ml-2 num">
-                {entry.client_name}
-                <span :if={upload_errors(@uploads.zip, entry) == []}>· {entry.progress}%</span>
-              </span>
-              <p class="note mt-2" id="import-room">{room_note(@limit_mb, @free_bytes)}</p>
-              <%!-- Both lists. A zip that is too large or is no zip at
-                   all is refused entry by entry, and that error hangs
-                   on the entry: reading the upload alone left the
-                   refusal unsaid, and the page stood at 0% as though
-                   it were still working. --%>
-              <p
-                :for={error <- upload_errors(@uploads.zip)}
-                class="text-julia text-[13px] mt-2"
-              >
-                {upload_error_note(error, @limit_mb)}
-              </p>
-              <p
-                :for={entry <- @uploads.zip.entries}
-                :if={upload_errors(@uploads.zip, entry) != []}
-                class="text-julia text-[13px] mt-2"
-              >
-                <span :for={error <- upload_errors(@uploads.zip, entry)}>
-                  {upload_error_note(error, @limit_mb)}
+              <form id="import-upload" phx-change="validate_upload" class="mt-4">
+                <label class="btn solid w-full sm:w-auto cursor-pointer relative overflow-hidden">
+                  {gettext("Upload the zip")}
+                  <.live_file_input
+                    upload={@uploads.zip}
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    aria-label={gettext("Upload the zip")}
+                  />
+                </label>
+                <%!-- The percentage belongs to a zip that is travelling.
+                     A refused one never travels, and 0% beside its name
+                     reads as work in progress. --%>
+                <span :for={entry <- @uploads.zip.entries} class="note ml-2 num">
+                  {entry.client_name}
+                  <span :if={upload_errors(@uploads.zip, entry) == []}>· {entry.progress}%</span>
                 </span>
-              </p>
-            </form>
-          <% :validating -> %>
-            <div class="mt-6" id="import-validating">
-              <p>{gettext("Reading %{name} …", name: @job.name)}</p>
-              <p :if={@job.step} class="note mt-2 num break-all" id="import-step">
-                {@job.step}
-              </p>
-            </div>
-          <% :failed -> %>
-            <div class="mt-6" id="import-failed">
-              <p class="text-julia">{@job.message}</p>
-              <p class="mt-4">
-                <button class="btn" phx-click="discard" id="import-discard">
-                  {gettext("Start over")}
-                </button>
-              </p>
-            </div>
-          <% :report -> %>
-            <div class="mt-6" id="import-report">
-              <h2 class="set-h">{gettext("The report for %{name}", name: @job.name)}</h2>
-              <div
-                :for={bundle <- @job.report.bundles}
-                class="py-[10px] border-b border-hair"
-                id={"bundle-#{bundle.name}"}
-              >
-                <div class="flex items-baseline gap-2 flex-wrap">
-                  <b class="text-[14.5px]">{bundle.name}</b>
-                  <span :if={bundle.slug} class="note num">{bundle_address(bundle)}</span>
-                  <span :if={bundle.comments != []} class="note">
-                    {ngettext("1 comment", "%{count} comments", length(bundle.comments))}
-                  </span>
-                  <span class="sp"></span>
-                  <span :if={bundle.errors == []} class="note">{gettext("will import")}</span>
-                  <span :if={bundle.errors != []} class="text-julia text-[13px]">
-                    {gettext("will not import")}
-                  </span>
-                </div>
-                <p :for={error <- bundle.errors} class="text-julia text-[13px] mt-[3px]">
-                  {error}
+                <%!-- Both lists. A zip that is too large or is no zip at
+                     all is refused entry by entry, and that error hangs
+                     on the entry: reading the upload alone left the
+                     refusal unsaid, and the page stood at 0% as though
+                     it were still working. --%>
+                <p
+                  :for={error <- upload_errors(@uploads.zip)}
+                  class="text-julia text-[13px] mt-2"
+                >
+                  {upload_error_note(error, @limit_mb)}
                 </p>
-                <p :for={warning <- bundle.warnings} class="note mt-[3px]">
+                <p
+                  :for={entry <- @uploads.zip.entries}
+                  :if={upload_errors(@uploads.zip, entry) != []}
+                  class="text-julia text-[13px] mt-2"
+                >
+                  <span :for={error <- upload_errors(@uploads.zip, entry)}>
+                    {upload_error_note(error, @limit_mb)}
+                  </span>
+                </p>
+              </form>
+            <% :validating -> %>
+              <div class="mt-6" id="import-validating">
+                <p>{gettext("Reading %{name} …", name: @job.name)}</p>
+                <p :if={@job.step} class="note mt-2 num break-all" id="import-step">
+                  {@job.step}
+                </p>
+              </div>
+            <% :failed -> %>
+              <div class="mt-6" id="import-failed">
+                <p class="text-julia">{@job.message}</p>
+                <p class="mt-4">
+                  <button class="btn" phx-click="discard" id="import-discard">
+                    {gettext("Start over")}
+                  </button>
+                </p>
+              </div>
+            <% :report -> %>
+              <div class="mt-6" id="import-report">
+                <h2 class="set-h">{gettext("The report for %{name}", name: @job.name)}</h2>
+                <div
+                  :for={bundle <- @job.report.bundles}
+                  class="py-[10px] border-b border-hair"
+                  id={"bundle-#{bundle.name}"}
+                >
+                  <div class="flex items-baseline gap-2 flex-wrap">
+                    <b class="text-[14.5px]">{bundle.name}</b>
+                    <span :if={bundle.slug} class="note num">{bundle_address(bundle)}</span>
+                    <span :if={bundle.comments != []} class="note">
+                      {ngettext("1 comment", "%{count} comments", length(bundle.comments))}
+                    </span>
+                    <span class="sp"></span>
+                    <span :if={bundle.errors == []} class="note">{gettext("will import")}</span>
+                    <span :if={bundle.errors != []} class="text-julia text-[13px]">
+                      {gettext("will not import")}
+                    </span>
+                  </div>
+                  <p :for={error <- bundle.errors} class="text-julia text-[13px] mt-[3px]">
+                    {error}
+                  </p>
+                  <p :for={warning <- bundle.warnings} class="note mt-[3px]">
+                    {warning}
+                  </p>
+                </div>
+                <p :if={@job.report.bundles == []} class="note mt-2">
+                  {gettext("The zip holds no bundle folders.")}
+                </p>
+                <p :for={warning <- @job.report.warnings} class="note mt-2">
                   {warning}
                 </p>
-              </div>
-              <p :if={@job.report.bundles == []} class="note mt-2">
-                {gettext("The zip holds no bundle folders.")}
-              </p>
-              <p :for={warning <- @job.report.warnings} class="note mt-2">
-                {warning}
-              </p>
-              <p :if={@job.report.hosts != []} class="note mt-2" id="import-hosts">
-                {gettext(
-                  "Downloads from: %{hosts}. Check this list for hosts you do not expect.",
-                  hosts: Enum.join(@job.report.hosts, ", ")
-                )}
-              </p>
-              <div class="flex gap-2 mt-5">
-                <button
-                  class="btn solid"
-                  id="import-run"
-                  phx-click="start"
-                  disabled={importable(@job.report) == 0}
-                >
-                  {gettext("Import %{entries}", entries: texts(importable(@job.report)))}
-                </button>
-                <button class="btn quiet" id="import-discard" phx-click="discard">
-                  {gettext("Discard")}
-                </button>
-              </div>
-            </div>
-          <% :running -> %>
-            <div class="mt-6" id="import-progress">
-              <p class="num">
-                {@job.done} / {@job.total}<span :if={@job.current}> · {@job.current}</span>
-              </p>
-              <div class="h-[4px] bg-field rounded mt-2 overflow-hidden">
-                <div
-                  class="h-full"
-                  style={"background:var(--tt-accent); width:#{if @job.total > 0, do: round(@job.done * 100 / @job.total), else: 0}%"}
-                >
+                <p :if={@job.report.hosts != []} class="note mt-2" id="import-hosts">
+                  {gettext(
+                    "Downloads from: %{hosts}. Check this list for hosts you do not expect.",
+                    hosts: Enum.join(@job.report.hosts, ", ")
+                  )}
+                </p>
+                <div class="flex gap-2 mt-5">
+                  <button
+                    class="btn solid"
+                    id="import-run"
+                    phx-click="start"
+                    disabled={importable(@job.report) == 0}
+                  >
+                    {gettext("Import %{entries}", entries: texts(importable(@job.report)))}
+                  </button>
+                  <button class="btn quiet" id="import-discard" phx-click="discard">
+                    {gettext("Discard")}
+                  </button>
                 </div>
               </div>
-              <p :if={@job.step} class="note mt-3 num break-all" id="import-step">
-                {@job.step}
-              </p>
-              <p class="note mt-3">
-                {gettext("The import runs on the server; this page may close.")}
-              </p>
-            </div>
-          <% :done -> %>
-            <div class="mt-6" id="import-summary">
-              <h2 class="set-h">{gettext("Imported: %{name}", name: @job.name)}</h2>
-              <p class="mt-2">
-                {gettext("%{created} created · %{updated} updated",
-                  created: @job.summary.created,
-                  updated: @job.summary.updated
-                )}
-                <span :if={@job.summary.skipped > 0}>
-                  · {gettext("%{count} skipped for errors", count: @job.summary.skipped)}
-                </span>
-              </p>
-              <div :if={@job.summary.failed != []} class="mt-3">
-                <p
-                  :for={{name, message} <- @job.summary.failed}
-                  class="text-julia text-[13px] mt-[3px]"
-                >
-                  {name}: {message}
+            <% :running -> %>
+              <div class="mt-6" id="import-progress">
+                <p class="num">
+                  {@job.done} / {@job.total}<span :if={@job.current}> · {@job.current}</span>
+                </p>
+                <div class="h-[4px] bg-field rounded mt-2 overflow-hidden">
+                  <div
+                    class="h-full"
+                    style={"background:var(--tt-accent); width:#{if @job.total > 0, do: round(@job.done * 100 / @job.total), else: 0}%"}
+                  >
+                  </div>
+                </div>
+                <p :if={@job.step} class="note mt-3 num break-all" id="import-step">
+                  {@job.step}
+                </p>
+                <p class="note mt-3">
+                  {gettext("The import runs on the server; this page may close.")}
                 </p>
               </div>
-              <p class="mt-4">
-                <button class="btn" phx-click="discard" id="import-done">{gettext("Done")}</button>
-              </p>
-            </div>
-        <% end %>
+            <% :done -> %>
+              <div class="mt-6" id="import-summary">
+                <h2 class="set-h">{gettext("Imported: %{name}", name: @job.name)}</h2>
+                <p class="mt-2">
+                  {gettext("%{created} created · %{updated} updated",
+                    created: @job.summary.created,
+                    updated: @job.summary.updated
+                  )}
+                  <span :if={@job.summary.skipped > 0}>
+                    · {gettext("%{count} skipped for errors", count: @job.summary.skipped)}
+                  </span>
+                </p>
+                <div :if={@job.summary.failed != []} class="mt-3">
+                  <p
+                    :for={{name, message} <- @job.summary.failed}
+                    class="text-julia text-[13px] mt-[3px]"
+                  >
+                    {name}: {message}
+                  </p>
+                </div>
+                <p class="mt-4">
+                  <button class="btn" phx-click="discard" id="import-done">{gettext("Done")}</button>
+                </p>
+              </div>
+          <% end %>
+        </div>
       </div>
     </Layouts.app>
     """

@@ -113,14 +113,14 @@ defmodule TexttileWeb.E2E.LoginFlowTest do
     test "wrong credentials leave a quiet line, right ones open the admin area", %{conn: conn} do
       conn
       |> visit("/admin")
-      |> assert_has("p", text: "Admin sign-in")
+      |> assert_has("h1", text: "Admin sign-in")
       |> fill_in("Email address", with: "kb@example.org")
       |> fill_in("Password", with: "wrong password!")
       |> click_button("Sign in")
       |> assert_has("#login-error", text: "do not match")
       |> fill_in("Password", with: valid_password())
       |> click_button("Sign in")
-      |> assert_has("#crumb", text: "Entries")
+      |> assert_has("h1.page-h", text: "Entries")
     end
   end
 

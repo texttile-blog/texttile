@@ -8,9 +8,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       conn
       |> sign_in()
       |> click_button("New entry")
-      |> assert_has("#crumb", text: "Untitled")
+      |> assert_has("#edTitle")
       |> fill_in("Title", with: "Fourteen doors")
-      |> assert_has("#crumb", text: "Fourteen doors")
       |> type(".ed-cm .cm-content", "## The doors\n\nSome are **wooden**, some are not.")
       # the live preview: the heading line is styled, the caret's line
       # stays raw, and the finished bold line hides its asterisks
@@ -31,7 +30,11 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       # everything is still there after a full reload
       conn
       |> open_editor(article.id)
-      |> assert_has("#edTitle[value='Fourteen doors']")
+      |> evaluate(
+        "() => document.getElementById('edTitle').value",
+        [is_function: true],
+        &assert(&1 == "Fourteen doors")
+      )
       |> assert_has(".ed-cm", text: "The doors")
     end
 
@@ -76,7 +79,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> type("#edSlug", "restored-doors")
       |> click("#slugSet")
       |> click("#dialog-ok")
-      |> assert_has(~s(#slugHint[data-live$="/restored-doors"]))
+      |> assert_has(~s(#openEntryLink[href$="/restored-doors"]))
 
       assert Articles.get_article!(article.id).slug == "restored-doors"
     end
@@ -88,8 +91,8 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> click_button("New entry")
         |> fill_in("Title", with: "Going live")
         |> click_button("#stateBtn .main", "Publish")
-        |> assert_has("#stateWord", text: "Live", exact: true)
-        |> assert_has("#slugHint[data-live]")
+        |> assert_has("#stateWord", text: "Live")
+        |> assert_has("#openEntryLink")
 
       assert [%{status: "published", slug: "going-live"}] = Articles.list_articles()
 
@@ -187,7 +190,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
   end
 
   describe "tags" do
-    test "the suggestions add a tag and take it off again", %{conn: conn} do
+    test "the suggestions add a tag to the entry", %{conn: conn} do
       other = Articles.create_draft(user_fixture(%{display_name: "julia"}))
       {:ok, other} = other
       {:ok, _} = Articles.update_settings(other, %{tags: "sea, fog"})
@@ -197,14 +200,11 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> click_button("New entry")
       |> fill_in("Title", with: "Tagged by hand")
       |> click("#tagchip-sea")
-      |> assert_has("#tagchip-sea.on")
       |> assert_has("#edTags[value='sea']")
+      |> refute_has("#tagchip-sea")
       |> click("#tagchip-fog")
       |> assert_has("#edTags[value='sea, fog']")
-      |> click("#tagchip-sea")
-      |> assert_has("#edTags[value='fog']")
-      |> refute_has("#tagchip-sea.on")
-      |> assert_has("#tagchip-sea")
+      |> refute_has("#tagchip-fog")
     end
 
     test "a half-written word is no tag until a comma or the way out",
@@ -217,9 +217,6 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> type("#edTags", "har")
 
       # "har" is three letters on the way to "harbor" and nothing else.
-      # Nothing on the page says whether the field stayed quiet, so the
-      # test waits out the pause a field of the old kind saved after,
-      # and then reads what the blog carries.
       Process.sleep(600)
 
       session
@@ -231,21 +228,17 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       # the comma ends the word, and only then is it a tag
       session = type(session, "#edTags", "bor,")
 
-      assert_has(session, "#tagchip-harbor.on")
+      eventually(fn -> Enum.any?(Articles.list_articles(), &(&1.tags == "harbor")) end)
 
       # what stands in the field after the comma follows on the way out
       session = type(session, "#edTags", " pier")
       Process.sleep(600)
-      refute_has(session, "#tagchip-pier")
+      assert Enum.any?(Articles.list_articles(), &(&1.tags == "harbor"))
 
-      session
-      |> click("#edTitle")
-      |> assert_has("#tagchip-pier.on")
+      click(session, "#edTitle")
+      eventually(fn -> Enum.any?(Articles.list_articles(), &(&1.tags == "harbor, pier")) end)
     end
 
-    # A comma used to be the only way to close a word, which is a thing
-    # somebody has to tell you. Enter is the key a field is finished
-    # with everywhere else.
     test "Enter finishes the word the same way a comma does", %{conn: conn} do
       conn
       |> sign_in()
@@ -253,8 +246,6 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> fill_in("Title", with: "Tagged with Enter")
       |> type("#edTags", "harbor")
       |> press("#edTags", "Enter")
-      |> assert_has("#tagchip-harbor.on")
-      # and the field is ready for the next word
       |> evaluate(
         "() => document.getElementById('edTags').value",
         [is_function: true],
@@ -262,10 +253,10 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
           assert value == "harbor, "
         end
       )
+
+      eventually(fn -> Enum.any?(Articles.list_articles(), &(&1.tags == "harbor")) end)
     end
 
-    # A word the blog does not carry yet had no row of its own, so the
-    # menu answered every word but the one being written.
     test "a word the blog does not know stands in the menu as the only row",
          %{conn: conn} do
       {:ok, other} = Articles.create_draft(user_fixture(%{display_name: "julia"}))
@@ -281,23 +272,26 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
         |> assert_has("#tagMenu li", count: 1)
 
       # and the marked row is the one Enter takes
-      session
-      |> press("#edTags", "Enter")
-      |> assert_has("#tagchip-estuary.on")
+      press(session, "#edTags", "Enter")
+      eventually(fn -> Enum.any?(Articles.list_articles(), &(&1.tags == "estuary")) end)
     end
 
-    test "a tag nobody else carries leaves the row when it leaves the field",
+    test "a tag nobody else carries leaves the blog when it leaves the field",
          %{conn: conn} do
       conn
       |> sign_in()
       |> click_button("New entry")
       |> fill_in("Title", with: "Only tag")
       |> type("#edTags", "lonely,")
-      |> assert_has("#tagchip-lonely.on")
+
+      eventually(fn -> "lonely" in Articles.known_tags() end)
+
+      conn
       |> press("#edTags", "ControlOrMeta+a")
       |> press("#edTags", "Backspace")
       |> click("#edTitle")
-      |> refute_has("#tagchip-lonely")
+
+      eventually(fn -> "lonely" not in Articles.known_tags() end)
     end
   end
 
@@ -446,7 +440,7 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
 
     for {surface, path, host, lines} <- [
           {"the body", :editor, "#edBodyHost", 0},
-          {"About", "/admin/settings", "#setting-about_markdown", 1}
+          {"About", "/admin/settings", "#setting-about_markdown", 0}
         ] do
       test "#{surface} draws no second line and no jump while the editor loads", %{
         conn: conn,
@@ -582,23 +576,6 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> refute_has(".ed-cm .cm-content", text: "Upload failed")
     end
 
-    # The lines to hand on are a field of the pane, in the same clothes
-    # as every other field beside them. They were a bare paragraph.
-    # The address is one field now (round 19): `.addr` carries the
-    # ground, the rule and the room inside, and the slug inside it is a
-    # bare input. So the lines to pass on are held against the field for
-    # the ground and the room, and against the slug for the size of the
-    # words, which is what both of them are: an address you read.
-    @share_ground """
-    () => {
-      const one = getComputedStyle(document.querySelector("#shareLines"))
-      const field = getComputedStyle(document.querySelector(".addr"))
-      const slug = getComputedStyle(document.querySelector("#edSlug"))
-      return [one.backgroundColor, field.backgroundColor,
-              one.fontSize, slug.fontSize, one.padding, field.padding]
-    }
-    """
-
     # The word for the state used to blink, because the rule that makes
     # a presence dot pulse was written for the bare class the state word
     # also wears. A word that reads "Live" and then fades out reads
@@ -698,39 +675,27 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       end)
     end
 
-    test "the share lines wear the clothes of the pane", %{conn: conn} do
+    test "the share copy action sits in Details and holds the live lines", %{conn: conn} do
       article = Texttile.ArticlesFixtures.published_post(title: "Handed on")
 
       conn
       |> sign_in()
       |> open_editor(article.id)
-      |> assert_has("#shareLines")
-      |> evaluate(@share_ground, [is_function: true], fn [bg, other_bg, fs, other_fs, p, other_p] ->
-        assert bg == other_bg
-        assert fs == other_fs
-        assert p == other_p
-      end)
+      |> assert_has("#copyShare", text: "Copy link")
+      |> evaluate(
+        "() => document.querySelector('#shareLines')?.value || ''",
+        [is_function: true],
+        fn value ->
+          assert value =~ "Handed on"
+          assert value =~ Articles.public_path(article)
+        end
+      )
     end
   end
 
   describe "the phone's row of places" do
-    # the jump is the browser's own and may glide, so the check waits
-    # for the page to arrive (up to two seconds)
-    @scrolled """
-    (where) => new Promise((done) => {
-      const until = Date.now() + 2000
-      const look = () => {
-        const there = where === "top" ? window.scrollY === 0 : window.scrollY > 300
-        if (there) done(true)
-        else if (Date.now() > until) done(false)
-        else requestAnimationFrame(look)
-      }
-      look()
-    })
-    """
-
     @tag browser_context_opts: [viewport: %{width: 390, height: 844}]
-    test "Text takes the writer back up from the settings", %{conn: conn} do
+    test "Text takes the writer back from Details", %{conn: conn} do
       body = Enum.map_join(1..40, "\n\n", &"Paragraph #{&1} of a long walk.")
       %{id: id} = Texttile.ArticlesFixtures.published_post(title: "Long", body: body)
 
@@ -738,9 +703,11 @@ defmodule TexttileWeb.E2E.EditorFlowTest do
       |> sign_in()
       |> open_editor(id)
       |> click("#jumpSettings")
-      |> evaluate(@scrolled, [is_function: true, arg: "down"], &assert(&1 == true))
+      |> assert_has("#editorGrid[data-mpanel='settings']")
+      |> assert_has("#edSlug")
       |> click("#ptabText")
-      |> evaluate(@scrolled, [is_function: true, arg: "top"], &assert(&1 == true))
+      |> assert_has("#editorGrid[data-mpanel='text']")
+      |> assert_has("#edTitle")
     end
   end
 end

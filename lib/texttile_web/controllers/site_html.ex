@@ -82,18 +82,9 @@ defmodule TexttileWeb.SiteHTML do
   defp working_copy_line(:same), do: gettext("Working copy") <> " · " <> gettext("same as live")
 
   defp working_copy_line(:changed),
-    do: gettext("Working copy") <> " · " <> gettext("changes not published yet")
+    do: gettext("Working copy") <> " · " <> gettext("unpublished edits")
 
   defp working_copy_line(_), do: gettext("Working copy")
-
-  # The setting of a text square, by how long its opening is.
-  defp lead_size(article) do
-    case String.length(lead(article, 480)) do
-      n when n < 70 -> "short"
-      n when n < 300 -> "mid"
-      _ -> nil
-    end
-  end
 
   @doc "Whether the readers of a live entry have the words on screen."
   def live_state(article) do
@@ -118,12 +109,33 @@ defmodule TexttileWeb.SiteHTML do
 
   def known_strip(assigns) do
     ~H"""
-    <div :if={@current_scope || @known} class="known-strip" id="known-strip">
+    <div
+      :if={@current_scope || @known}
+      class={["known-strip", @live_state == :changed && "is-changed"]}
+      id="known-strip"
+    >
       <%!-- on an entry the strip says what is shown: the working copy,
            which every signed-in admin reads instead of the live one,
-           and on a live entry whether readers have the same words --%>
-      <span :if={@current_scope && @edit} class="truncate">
-        {working_copy_line(@live_state)}<span class="max-sm:hidden">{" · " <>
+           and on a live entry whether readers have the same words. One
+           strip carries the whole message without a second banner. --%>
+      <span
+        :if={@current_scope && @edit}
+        id={@live_state == :changed && "unpublished"}
+        class="ks-msg min-w-0"
+      >
+        <span :if={@live_state == :changed} class="ks-dot" aria-hidden="true"></span><span
+          :if={@live_state == :changed}
+          class="ks-state"
+        >{gettext("Working copy")}</span><span
+          :if={@live_state == :changed}
+          class="ks-sub"
+        > · {gettext("Unpublished edits")}</span><span
+          :if={@live_state != :changed}
+          class="ks-state"
+        >{working_copy_line(@live_state)}</span><span
+          :if={@live_state != :changed}
+          class="max-sm:hidden ks-sub"
+        >{" · " <>
           gettext("signed in as %{name}", name: Texttile.Accounts.display_name(@current_scope.user))}</span>
       </span>
       <span :if={@current_scope && !@edit} class="truncate">
@@ -132,9 +144,13 @@ defmodule TexttileWeb.SiteHTML do
       <span :if={!@current_scope} class="truncate">{site_title()}</span>
       <%!-- on an entry, the way into its editor comes first: the one
            thing a signed-in writer reading it may want next --%>
-      <span :if={@current_scope} class="flex items-center gap-5">
-        <a :if={@edit} id="edit-text" href={@edit}>{gettext("Edit entry")}</a>
-        <a id="known-strip-go" href={~p"/admin"}>{gettext("Admin area")} →</a>
+      <span :if={@current_scope} class="ks-acts flex items-center gap-3.5 sm:gap-5 flex-none">
+        <a :if={@edit} id="edit-text" href={@edit} class="ks-edit">
+          {gettext("Edit entry")}
+        </a>
+        <a id="known-strip-go" href={~p"/admin"} class="ks-admin">
+          <span>{gettext("Admin")}&nbsp;&rarr;</span>
+        </a>
       </span>
       <a :if={!@current_scope} id="known-strip-go" href={~p"/login"}>{gettext("Sign in")}</a>
     </div>
@@ -228,7 +244,7 @@ defmodule TexttileWeb.SiteHTML do
             id="newsletter-form"
             action={~p"/newsletter"}
             method="post"
-            class="flex items-stretch gap-3 mt-4 max-w-[420px]"
+            class="flex flex-row items-center gap-2 sm:gap-3 mt-4"
           >
             <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
             <input type="hidden" name="t" value={@newsletter_token} />
@@ -245,11 +261,11 @@ defmodule TexttileWeb.SiteHTML do
               type="email"
               name="email"
               class="min-w-0 flex-1"
-              placeholder="you@example.org"
+              placeholder="name@example.org"
               aria-label={gettext("Email for new entries")}
               required
             />
-            <button class="btn solid flex-none">{gettext("Subscribe")}</button>
+            <button class="btn flex-none !text-[15px] sm:!text-[13px]">{gettext("Subscribe")}</button>
           </form>
         </div>
       </div>
@@ -268,56 +284,32 @@ defmodule TexttileWeb.SiteHTML do
   attr :comments, :any, default: nil
 
   def card(assigns) do
+    excerpt = if !assigns.preview, do: tile_excerpt(assigns.article), else: ""
+    assigns = assign(assigns, :excerpt, excerpt)
+
     ~H"""
-    <div class="card-wrap">
+    <article class={["card-wrap", if(@preview, do: "has-photo", else: "is-text")]}>
       <a class="card" id={"text-#{@article.id}"} href={Articles.public_path(@article)}>
-        <%!-- the picture when there is one. An entry of words alone
-             shows its opening words in the square, as the admin grid
-             does, so every card keeps the same shape. With no words
-             either, the quiet mark stands in for the picture. --%>
         <span :if={@preview} class="cimg">
           <img src={Images.url(@preview, :card)} alt="" loading="lazy" />
         </span>
-        <%!-- the length of the opening picks its setting: a short one
-             is a cover, large on the floor of its square; a middling
-             one a size up from the top; a long one at the size of a page,
-             from the top, to the foot of the square --%>
-        <span :if={!@preview && lead(@article) != ""} class="cimg empty">
-          <span class={["cx", lead_size(@article)]}>
-            {lead(@article, 480)}
-          </span>
+        <span :if={!@preview && @excerpt != ""} class="cimg empty">
+          <span class={["cx", String.length(@excerpt) < 120 && "short"]}>{@excerpt}</span>
         </span>
-        <span :if={!@preview && lead(@article) == ""} class="cimg blank" aria-hidden="true">
-          <Layouts.mark size={34} />
+        <span :if={!@preview && @excerpt == ""} class="cimg blank" aria-hidden="true">
+          <TexttileWeb.Layouts.mark size={26} ink="var(--tt-faint)" />
         </span>
         <span class="ct">{Articles.display_title(@article)}</span>
       </a>
       <p class="cm num">
-        {format_date(@article.publish_date)}
-        <span :if={Articles.author_name(@article)} class="by">
-          · {Articles.author_name(@article)}
-        </span>
-        <span :if={comment_count(@comments)}>
-          ·
-          <a
+        <span class="cm-date">{format_date(@article.publish_date)}</span>
+        <span :if={Articles.author_name(@article)} class="by" phx-no-format>{Articles.author_name(@article)}</span>
+        <span :if={comment_count(@comments)} class="cm-c" phx-no-format><a
             href={Articles.public_path(@article) <> "#comments"}
             class="clink"
-          >
-            {comment_count(@comments)}
-          </a>
-        </span>
+          >{comment_count(@comments)}</a></span>
       </p>
-      <p :if={@preview && lead(@article) != ""} class="clead">{lead(@article, 110)}</p>
-      <p :if={Articles.tag_list(@article) != []} class="ctags">
-        <a
-          :for={tag <- Articles.tag_list(@article)}
-          class="ctag"
-          href={~p"/tags/#{String.downcase(tag)}"}
-        >
-          #{tag}
-        </a>
-      </p>
-    </div>
+    </article>
     """
   end
 
@@ -420,6 +412,49 @@ defmodule TexttileWeb.SiteHTML do
 
   @doc "The lead line of a card, see `Texttile.Articles.lead/1`."
   defdelegate lead(article, max \\ 160), to: Articles
+
+  # Square text-only tile excerpt: prefer ending on a complete sentence when one
+  # fits comfortably inside the tile, and never leave a dangling article/preposition
+  # before an ellipsis.
+  defp tile_excerpt(article) do
+    raw = lead(article, 180)
+    trimmed = raw |> String.trim_trailing("...") |> String.trim_trailing("…")
+
+    if raw == trimmed do
+      raw
+    else
+      case Regex.scan(~r/[.!?](?:\s|$)/, trimmed, return: :index) do
+        matches when matches != [] ->
+          [{pos, _len} | _] = List.last(matches)
+
+          if pos >= div(byte_size(trimmed), 2) do
+            binary_part(trimmed, 0, pos + 1)
+          else
+            clean_clause(trimmed)
+          end
+
+        _ ->
+          clean_clause(trimmed)
+      end
+    end
+  end
+
+  defp clean_clause(text) do
+    dangling = ~w(a an the on in to of for with and or but by at from as into)
+
+    cleaned =
+      text
+      |> String.split()
+      |> Enum.reverse()
+      |> Enum.drop_while(&(String.downcase(String.trim_trailing(&1, ",;:")) in dangling))
+      |> Enum.reverse()
+      |> Enum.join(" ")
+      |> String.trim_trailing(",")
+      |> String.trim_trailing(";")
+      |> String.trim_trailing(":")
+
+    if cleaned == "", do: text <> "…", else: cleaned <> "…"
+  end
 
   @doc """
   Why the list is shorter than the blog: the term, the year, the month,

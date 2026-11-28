@@ -463,14 +463,46 @@ defmodule Texttile.Stats do
         []
 
       total ->
-        inside
-        |> group_by([v], v.referrer_host)
-        |> select([v], %{host: v.referrer_host, views: count(v.id)})
-        |> order_by([v], desc: count(v.id))
-        |> limit(@rows)
-        |> Repo.all()
-        |> Enum.map(&Map.put(&1, :share, round(&1.views / total * 100)))
+        rows =
+          inside
+          |> group_by([v], v.referrer_host)
+          |> select([v], %{host: v.referrer_host, views: count(v.id)})
+          |> order_by([v], desc: count(v.id))
+          |> limit(@rows)
+          |> Repo.all()
+
+        assign_shares(rows, total)
     end
+  end
+
+  # Whole-percent shares via largest-remainder rounding when all views fit
+  # within @rows so displayed shares sum cleanly to 100% instead of 101%.
+  defp assign_shares([], _total), do: []
+
+  defp assign_shares(rows, total) do
+    shown = Enum.reduce(rows, 0, &(&1.views + &2))
+    target = round(shown / total * 100)
+
+    parts =
+      rows
+      |> Enum.with_index()
+      |> Enum.map(fn {row, idx} ->
+        exact = row.views / total * 100
+        floor = trunc(exact)
+        {idx, row, floor, exact - floor}
+      end)
+
+    deficit = max(target - Enum.reduce(parts, 0, &(elem(&1, 2) + &2)), 0)
+
+    boost =
+      parts
+      |> Enum.sort_by(fn {idx, _row, _floor, rem} -> {-rem, idx} end)
+      |> Enum.take(deficit)
+      |> MapSet.new(&elem(&1, 0))
+
+    Enum.map(parts, fn {idx, row, floor, _rem} ->
+      Map.put(row, :share, floor + if(MapSet.member?(boost, idx), do: 1, else: 0))
+    end)
   end
 
   @doc "How often one entry was read, for all time."

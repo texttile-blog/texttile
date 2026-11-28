@@ -36,7 +36,7 @@ defmodule TexttileWeb.NewsletterLiveTest do
     assert has_element?(view, "#sub-#{waiting.id}", "two@example.org")
     assert has_element?(view, "#sub-#{waiting.id}", "waits")
     # the whole count, so a waiting one never stands in for a confirmed one
-    assert view |> element("#newsletterSub") |> render() =~ ~r/>\s*1 · 1 waiting\s*</
+    assert view |> element("#newsletterSub") |> render() =~ ~r/>\s*1 subscriber · 1 waiting\s*</
   end
 
   test "adding an address puts it on the list confirmed, live for everybody", %{conn: conn} do

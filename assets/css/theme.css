@@ -13,39 +13,39 @@
   --tt-bar:         rgba(247, 245, 241, .92);
 
   /* ink, strongest to quietest */
-  --tt-ink:         #1f1c18;
-  --tt-inksoft:     #3b3732;
-  --tt-dim:         #5a554d;
-  --tt-faint:       #645e55;
-  --tt-slash:       #b9b2a8;
+  --tt-ink:         #1c1917;
+  --tt-inksoft:     #3a3631;
+  --tt-dim:         #4d4841;
+  --tt-faint:       #59544c;
+  --tt-slash:       #beb7ad;
 
   /* lines */
-  --tt-rule:        #d8d2c9;
-  --tt-hair:        #e6e1d9;
+  --tt-rule:        #dad4cb;
+  --tt-hair:        #e8e3db;
 
   /* accent: links, focus, the selected state */
-  --tt-accent:      #5a37c2;
-  --tt-accentloud:  #5a37c2;
-  --tt-accentsoft:  #b2a2e4;
-  --tt-accentwash:  #efebfa;
-  --tt-accentline:  #d8cff2;
+  --tt-accent:      #463f82;
+  --tt-accentloud:  #463f82;
+  --tt-accentsoft:  #a7a1d1;
+  --tt-accentwash:  #f0eef7;
+  --tt-accentline:  #dbd6ec;
 
   /* solid buttons */
-  --tt-solid:       #5a37c2;
-  --tt-solidhover:  #4a2aa6;
+  --tt-solid:       #463f82;
+  --tt-solidhover:  #373169;
   --tt-onsolid:     #ffffff;
-  --tt-solidline:   rgba(255, 255, 255, .32);
+  --tt-solidline:   rgba(255, 255, 255, .28);
 
   /* the other person */
-  --tt-julia:       #a3471f;
+  --tt-julia:       #a1441e;
   --tt-juliatint:   #fbece2;
   --tt-julialine:   #ecccb6;
-  --tt-livetint:    #efebfa;
-  --tt-liveline:    #d8cff2;
-  --tt-livetext:    #5a37c2;
+  --tt-livetint:    #f0eef7;
+  --tt-liveline:    #dbd6ec;
+  --tt-livetext:    #463f82;
 
   /* depth */
-  --tt-shadow:      31 28 24;
+  --tt-shadow:      28 25 23;
   --tt-scrim:       rgba(24, 21, 17, .34);
   --tt-overlay:     25 23 32;
   --tt-lightbox:    rgba(20, 18, 15, .96);
@@ -54,11 +54,11 @@
   --tt-radius:      6px;
   --tt-radius-pop:  10px;
   --tt-radius-pill: 999px;
-  --tt-radius-img:  4px;
+  --tt-radius-img:  6px;
   --tt-tabw:        2px;
 
-  /* the frame of a field, at rest and under the pointer. A field's
-     frame holds up on a phone in daylight. */
-  --tt-fieldline:      #a59e94;
-  --tt-fieldlinehover: #857e74;
+  /* the frame of a field, at rest and under the pointer. Soft warm stone
+     that holds up in daylight without drawing harsh wireframe boxes. */
+  --tt-fieldline:      #ada69a;
+  --tt-fieldlinehover: #827a6e;
 }

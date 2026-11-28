@@ -299,16 +299,50 @@ document.querySelectorAll("time[data-comment-moment]").forEach((el) => {
   });
 })();
 
-// The archive's tags scroll sideways on a phone: the open one is
-// brought to the middle of the row, wherever it stands in the order.
-// Only the row moves, never the page; a row that wraps (a desk) has
-// nothing to scroll and stays as it is.
+// The archive's tags scroll sideways on a phone: start flush at the
+// left edge whenever the active tag already fits, snap strictly to whole
+// tag boundaries when scrolling is needed, and show crisp edge fades.
 (() => {
   const bar = document.getElementById("tagbar");
+  const wrap = bar?.closest(".tagbar-wrap");
   const on = bar?.querySelector(".ctag.on");
-  if (!on || bar.scrollWidth <= bar.clientWidth) return;
-  const offset = on.getBoundingClientRect().left - bar.getBoundingClientRect().left;
-  bar.scrollLeft += offset - (bar.clientWidth - on.offsetWidth) / 2;
+  if (!bar) return;
+
+  const updateFade = () => {
+    const overflow = bar.scrollWidth > bar.clientWidth + 2;
+    const left = overflow && bar.scrollLeft > 4;
+    const right = overflow && bar.scrollLeft < bar.scrollWidth - bar.clientWidth - 4;
+    bar.classList.toggle("fade-l", left);
+    bar.classList.toggle("fade-r", right);
+    if (wrap) {
+      wrap.classList.toggle("fade-l", left);
+      wrap.classList.toggle("fade-r", right);
+    }
+  };
+
+  if (on && bar.scrollWidth > bar.clientWidth + 2) {
+    const items = [...bar.querySelectorAll(".ctag")];
+    const barRect = bar.getBoundingClientRect();
+    const onRect = on.getBoundingClientRect();
+    const hasNext = Boolean(on.nextElementSibling);
+    const rightBuffer = hasNext ? 82 : 24;
+    if (onRect.right > barRect.right - rightBuffer || onRect.left < barRect.left) {
+      const maxLeft = Math.max(0, bar.scrollWidth - bar.clientWidth);
+      if (!hasNext) {
+        bar.scrollLeft = maxLeft;
+      } else {
+        const minNeeded = Math.min(maxLeft, Math.max(0, on.offsetLeft + on.offsetWidth - bar.clientWidth + rightBuffer));
+        const anchor =
+          items.find((el) => el.offsetLeft >= minNeeded && el.offsetLeft <= maxLeft) ||
+          on;
+        bar.scrollLeft = Math.min(maxLeft, Math.max(0, anchor.offsetLeft));
+      }
+    }
+  }
+
+  bar.addEventListener("scroll", updateFade, { passive: true });
+  addEventListener("resize", updateFade, { passive: true });
+  updateFade();
 })();
 
 // The page says it: the script is up and its listeners stand. The

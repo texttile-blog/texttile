@@ -77,7 +77,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> open("/admin/profile")
       |> click_link("#sign-out", "Sign out")
-      |> assert_has("p", text: "Admin sign-in")
+      |> assert_has("h1", text: "Admin sign-in")
       |> fill_in("Email address", with: "julia@example.org")
       |> fill_in("Password", with: "not her password")
       |> click_button("Sign in")
@@ -91,7 +91,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       |> fill_in("Repeat the password", with: "julias own password")
       |> fill_in("Display name", with: "Julia")
       |> click_button("Open the account and sign in")
-      |> assert_has("#crumb", text: "Entries")
+      |> assert_has("h1.page-h", text: "Entries")
 
       # julia is a full admin now, equal to kb. Her own row cannot go
       # (another admin removes it, not you), but she can delete kb,
@@ -125,6 +125,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
+      |> click("#installationPanel > summary")
       |> assert_has("#import-doc")
       |> evaluate(@arrow_box, [is_function: true], &assert(&1 <= 16))
     end
@@ -166,11 +167,11 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
       conn
       |> sign_in()
       |> open("/admin/settings")
+      |> click("#installationPanel > summary")
       |> assert_has("#appVersion", text: Mix.Project.config()[:version], exact: true)
     end
 
-    # Version is too short to reach the line under the bars, so the
-    # end of the page names it
+    # Installation sits at the bottom of the page, so scrolling to the end marks it
     @tag browser_context_opts: [viewport: %{width: 1440, height: 900}]
     test "the end of the page marks the last section", %{conn: conn} do
       conn
@@ -185,7 +186,7 @@ defmodule TexttileWeb.E2E.SettingsFlowTest do
         })
         """,
         [is_function: true],
-        &assert(&1 == "#set-version")
+        &assert(&1 == "#set-install")
       )
     end
   end

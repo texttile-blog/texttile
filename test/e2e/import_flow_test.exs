@@ -16,8 +16,9 @@ defmodule TexttileWeb.E2E.ImportFlowTest do
     # races the script on a slow machine
     |> assert_has("#navMenu", text: "Settings")
     |> click_link("#navMenu a", "Settings")
+    |> click("#installationPanel > summary")
     |> click_link("#open-import", "Open the import")
-    |> assert_has("#crumb", text: "Import")
+    |> assert_has("h1.page-h", text: "Import")
     |> upload("#import-upload input[type=file]", "Upload the zip", zip, exact: false)
     |> assert_has("#import-report", text: "The report")
     |> assert_has("#bundle-beach", text: "will import")

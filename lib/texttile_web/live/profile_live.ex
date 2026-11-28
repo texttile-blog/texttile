@@ -28,7 +28,9 @@ defmodule TexttileWeb.ProfileLive do
       |> assign(:pw_note, nil)
       |> assign(:email_note, nil)
       |> assign_forms(scope.user)
-      |> mark_saved(nil)
+      |> assign(:saved_at, nil)
+      |> assign(:saved_note, nil)
+      |> assign(:saved_note_until, nil)
 
     {:ok, socket}
   end
@@ -183,165 +185,202 @@ defmodule TexttileWeb.ProfileLive do
       others={@others}
     >
       <:bar>
-        <span
-          class="saved num whitespace-nowrap flex-none max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
-          id="savedProfile"
-          phx-hook="SavedTicker"
-          data-at={@saved_at}
-          data-note={@saved_note}
-          data-note-until={@saved_note_until}
-        >
-          {gettext("Saved")}
-        </span>
         <Layouts.view_site />
       </:bar>
-      <div class="admin-col profile">
-        <h1 class="page-h">{gettext("Your profile")}</h1>
-
-        <h2 class="set-h on-field">{gettext("Account")}</h2>
-        <%!-- fields to type into, so they look like fields; the same
-             treatment the Site block of Settings wears --%>
-        <.form for={@profile_form} id="profile-form" phx-change="save_profile">
-          <div class="drow">
-            <label class="lab" for={@profile_form[:display_name].id}>
-              {gettext("Display name")}
-            </label>
-            <span class="val">
-              <input
-                type="text"
-                id={@profile_form[:display_name].id}
-                name={@profile_form[:display_name].name}
-                value={@profile_form[:display_name].value}
-                phx-debounce="300"
-              />
-              <div class="hint">
-                {gettext("Shown beside your entries and comments.")}
-              </div>
-            </span>
-          </div>
-        </.form>
-
-        <%!-- The one field on this screen that does not save itself.
-             The address is the identity, so it asks for the password
-             the way the password itself does. --%>
-        <.form for={@email_form} id="email-form" phx-change="email_draft" phx-submit="set_email">
-          <div class="drow">
-            <span class="val">
-              <span class="pairrow">
-                <span class="min-w-0">
-                  <label class="block pb-[6px] text-[13px] font-medium text-ink" for="em-address">
-                    {gettext("Email")}
-                  </label>
-                  <input
-                    type="email"
-                    id="em-address"
-                    name="em[email]"
-                    value={@email_form[:email].value}
-                    autocomplete="username"
-                    spellcheck="false"
-                    autocapitalize="off"
-                  />
-                </span>
-                <%!-- until the address differs from the saved one there is
-                     nothing to confirm: the field and its button wait --%>
-                <span :if={@email_moved} class="min-w-0">
-                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-current">
-                    {gettext("Current password")}
-                  </label>
-                  <input
-                    type="password"
-                    id="em-current"
-                    name="em[current_password]"
-                    autocomplete="current-password"
-                  />
-                </span>
-                <button :if={@email_moved} class="btn" type="submit" id="em-set">
-                  {gettext("Change email")}
-                </button>
-                <.field_errors field={@email_form[:current_password]} />
-                <.field_errors field={@email_form[:email]} />
-                <div class="hint pairhint">
-                  {gettext("You sign in with this address. Changing it asks for your password.")}
-                </div>
-              </span>
-              <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
-            </span>
-          </div>
-        </.form>
-
-        <h2 class="set-h">{gettext("Password")}</h2>
-        <.form for={@pw_form} id="password-form" phx-submit="set_password">
-          <div class="drow">
-            <span class="val">
-              <span class="pairrow">
-                <span class="min-w-0">
-                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="pw-current">
-                    {gettext("Current password")}
-                  </label>
-                  <input
-                    type="password"
-                    id="pw-current"
-                    name="pw[current_password]"
-                    autocomplete="current-password"
-                  />
-                </span>
-                <span class="min-w-0">
-                  <label class="block text-[13px] font-medium text-ink mb-[6px]" for="pw-new">
-                    {gettext("New password")}
-                  </label>
-                  <input
-                    type="password"
-                    id="pw-new"
-                    name="pw[password]"
-                    autocomplete="new-password"
-                  />
-                </span>
-                <button class="btn" type="submit" id="pw-set">{gettext("Change password")}</button>
-                <.field_errors field={@pw_form[:current_password]} />
-                <.field_errors field={@pw_form[:password]} />
-                <div class="hint pairhint">
-                  {gettext("At least 12 characters.")}
-                </div>
-              </span>
-              <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
-            </span>
-          </div>
-        </.form>
-
-        <h2 class="set-h">{gettext("Your sessions")}</h2>
-        <div id="sessions" class="border-t border-hair">
-          <div
-            :for={session <- @sessions}
-            class="flex items-center gap-3 py-[13px] border-b border-hair text-[13.5px]"
-          >
-            <span class="flex-1 min-w-0">
-              {gettext("%{browser} · signed in %{when}",
-                browser: session_label(session, @current_scope),
-                when: signed_in_on(session)
-              )}
-            </span>
-          </div>
+      <div class="admin-col setgrid profile-grid">
+        <div class="set-head">
+          <h1 class="page-h">{gettext("Your profile")}</h1>
         </div>
-        <p class="note mt-3">
-          {gettext("Sign out ends this session only.")}
-          <span :if={length(@sessions) > 1}>
-            {gettext("Sign out everywhere ends all of them, in every browser.")}
-          </span>
-        </p>
-        <p class="mt-4 flex gap-2">
-          <.link href={~p"/logout"} method="delete" class="btn" id="sign-out">
-            {gettext("Sign out")}
-          </.link>
-          <.link
-            :if={length(@sessions) > 1}
-            href={~p"/logout/all"}
-            method="delete"
-            class="btn"
-            id="sign-out-all"
+
+        <nav class="setnav profile-nav" aria-label={gettext("Sections")}>
+          <a href="#prof-account" aria-current="true">{gettext("Account")}</a>
+          <a href="#prof-password">{gettext("Password")}</a>
+          <a href="#prof-sessions">{gettext("Your sessions")}</a>
+        </nav>
+
+        <div class="setbody">
+          <h2 class="set-h" id="prof-account">{gettext("Account")}</h2>
+          <.form for={@profile_form} id="profile-form" phx-change="save_profile">
+            <div class="drow !mt-0 !pt-0">
+              <span class="flex items-baseline justify-between gap-2 pb-[6px]">
+                <label
+                  class="text-[13.5px] font-medium text-ink"
+                  for={@profile_form[:display_name].id}
+                >
+                  {gettext("Display name")}
+                </label>
+                <span
+                  :if={@saved_at || @saved_note}
+                  class="saved num whitespace-nowrap flex-none !text-[12.5px] !m-0 !p-0 !border-0"
+                  id="savedProfile"
+                  phx-hook="SavedTicker"
+                  data-at={@saved_at}
+                  data-note={@saved_note}
+                  data-note-until={@saved_note_until}
+                  data-saved-label={gettext("Saved")}
+                >
+                  {gettext("Saved")}
+                </span>
+              </span>
+              <span class="val">
+                <input
+                  type="text"
+                  id={@profile_form[:display_name].id}
+                  name={@profile_form[:display_name].name}
+                  value={@profile_form[:display_name].value}
+                  phx-debounce="300"
+                />
+                <div class="hint">
+                  {gettext("Shown beside your entries and comments. Saves automatically.")}
+                </div>
+              </span>
+            </div>
+          </.form>
+
+          <.form
+            for={@email_form}
+            id="email-form"
+            phx-change="email_draft"
+            phx-submit="set_email"
+            class="mt-5"
           >
-            {gettext("Sign out everywhere")}
-          </.link>
-        </p>
+            <div class="drow">
+              <span class="val">
+                <span class="pairrow">
+                  <span class="min-w-0">
+                    <label class="block text-[13.5px] font-medium text-ink pb-[6px]" for="em-address">
+                      {gettext("Email")}
+                    </label>
+                    <div class={["email-val-row", !@email_moved && "is-resting"]}>
+                      <input
+                        type="email"
+                        id="em-address"
+                        name="em[email]"
+                        value={@email_form[:email].value}
+                        class={!@email_moved && "email-resting"}
+                        autocomplete="username"
+                        spellcheck="false"
+                        autocapitalize="off"
+                      />
+                      <button
+                        :if={!@email_moved}
+                        type="button"
+                        class="link text-[13px] font-medium whitespace-nowrap flex-none"
+                        phx-click={JS.focus(to: "#em-address")}
+                      >
+                        {gettext("Change email")}
+                      </button>
+                    </div>
+                  </span>
+                  <span :if={@email_moved} class="min-w-0">
+                    <label class="block text-[13px] font-medium text-ink mb-[6px]" for="em-current">
+                      {gettext("Current password")}
+                    </label>
+                    <input
+                      type="password"
+                      id="em-current"
+                      name="em[current_password]"
+                      autocomplete="current-password"
+                    />
+                  </span>
+                  <button
+                    :if={@email_moved}
+                    class="btn solid w-full sm:w-auto"
+                    type="submit"
+                    id="em-set"
+                  >
+                    {gettext("Change email")}
+                  </button>
+                  <.field_errors field={@email_form[:current_password]} />
+                  <.field_errors field={@email_form[:email]} />
+                  <div class="hint pairhint">
+                    {gettext("You sign in with this address. Changing it requires your password.")}
+                  </div>
+                </span>
+                <p :if={@email_note} class="note mt-[7px]" id="emMeState">{@email_note}</p>
+              </span>
+            </div>
+          </.form>
+
+          <h2 class="set-h" id="prof-password">{gettext("Password")}</h2>
+          <.form for={@pw_form} id="password-form" phx-submit="set_password">
+            <div class="drow !mt-0 !pt-0">
+              <span class="val">
+                <span class="pairrow pw-pair">
+                  <span class="min-w-0">
+                    <label class="block text-[13.5px] font-medium text-ink mb-[6px]" for="pw-current">
+                      {gettext("Current password")}
+                    </label>
+                    <input
+                      type="password"
+                      id="pw-current"
+                      name="pw[current_password]"
+                      autocomplete="current-password"
+                    />
+                  </span>
+                  <span class="min-w-0">
+                    <label class="block text-[13.5px] font-medium text-ink mb-[6px]" for="pw-new">
+                      {gettext("New password")}
+                    </label>
+                    <input
+                      type="password"
+                      id="pw-new"
+                      name="pw[password]"
+                      autocomplete="new-password"
+                    />
+                  </span>
+                  <button class="btn w-full sm:w-auto mt-1" type="submit" id="pw-set">{gettext(
+                    "Change password"
+                  )}</button>
+                  <.field_errors field={@pw_form[:current_password]} />
+                  <.field_errors field={@pw_form[:password]} />
+                  <div class="hint pairhint">
+                    {gettext("At least 12 characters.")}
+                  </div>
+                </span>
+                <p :if={@pw_note} class="note mt-[7px]" id="pwMeState">{@pw_note}</p>
+              </span>
+            </div>
+          </.form>
+
+          <h2 class="set-h" id="prof-sessions">{gettext("Your sessions")}</h2>
+          <div id="sessions">
+            <div
+              :for={session <- @sessions}
+              class={[
+                "flex items-center gap-3 text-[14px]",
+                length(@sessions) > 1 && "py-[11px] border-b border-hair first:pt-0"
+              ]}
+            >
+              <span class="flex-1 min-w-0">
+                {gettext("%{browser} · signed in %{when}",
+                  browser: session_label(session, @current_scope),
+                  when: signed_in_on(session)
+                )}
+              </span>
+            </div>
+          </div>
+          <p class="note mt-2">
+            {gettext("Sign out ends this session only.")}
+            <span :if={length(@sessions) > 1}>
+              {gettext("Sign out everywhere ends all of them, in every browser.")}
+            </span>
+          </p>
+          <p class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2">
+            <.link href={~p"/logout"} method="delete" class="btn w-full sm:w-auto" id="sign-out">
+              {gettext("Sign out")}
+            </.link>
+            <.link
+              :if={length(@sessions) > 1}
+              href={~p"/logout/all"}
+              method="delete"
+              class="btn w-full sm:w-auto"
+              id="sign-out-all"
+            >
+              {gettext("Sign out everywhere")}
+            </.link>
+          </p>
+        </div>
       </div>
     </Layouts.app>
     """
