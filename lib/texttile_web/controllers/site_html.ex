@@ -81,9 +81,6 @@ defmodule TexttileWeb.SiteHTML do
   # The strip's words for the entry on screen.
   defp working_copy_line(:same), do: gettext("Working copy") <> " · " <> gettext("same as live")
 
-  defp working_copy_line(:changed),
-    do: gettext("Working copy") <> " · " <> gettext("unpublished edits")
-
   defp working_copy_line(_), do: gettext("Working copy")
 
   @doc "Whether the readers of a live entry have the words on screen."

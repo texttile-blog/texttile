@@ -383,7 +383,6 @@ defmodule TexttileWeb.StatsLive do
   defp busiest_number(nil), do: "0"
   defp busiest_number({_day, views}), do: number(views)
 
-  defp busiest_day(nil), do: nil
   defp busiest_day({day, _views}), do: Texttile.I18n.format_short_day(day)
 
   # The day an entry went out, or the word Draft in grey while it has

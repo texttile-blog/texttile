@@ -3182,33 +3182,14 @@ defmodule TexttileWeb.EditorLive do
       :if={@show_password? and is_nil(@share_text)}
       class="drow gtop side-sep"
       id="shareBlock"
-      phx-hook="CopyOut"
     >
       <span class="labrow">
         <span class="lab">{gettext("Share")}</span>
-        <button :if={@share_text} type="button" class="link text-[13px]" id="copyShare" data-copy>
-          {gettext("Copy link")}
-        </button>
       </span>
-
-      <div :if={@share_text}>
-        <p :if={@protected? && @password != ""} class="hint !mt-1">
-          {gettext("Includes the blog password.")}
-        </p>
-        <textarea
-          id="shareLines"
-          class="sharelines sr"
-          rows={length(String.split(@share_text, "\n"))}
-          readonly
-          tabindex="-1"
-          spellcheck="false"
-          aria-label={gettext("The lines to pass on")}
-        >{@share_text}</textarea>
-      </div>
 
       <%!-- Before an entry is live there are no lines to pass on, and
            then this is the one place the access word stands. --%>
-      <div :if={!@share_text && @show_password?} id="sharePassword">
+      <div id="sharePassword">
         <span class="lab block pt-1">{gettext("Blog password")}</span>
         <span class="val">
           <span :if={@password != ""} class="font-mono text-[13.5px]" id="sharePasswordWord">
