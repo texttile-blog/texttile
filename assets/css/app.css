@@ -4544,6 +4544,13 @@ body.site .card-wrap .card {
   text-decoration: none;
   color: inherit;
 }
+body.site .card-wrap .card:focus-visible {
+  outline: none;
+}
+body.site .card-wrap .card:focus-visible .cimg {
+  outline: 2px solid var(--tt-accent);
+  outline-offset: 2px;
+}
 body.site .card-wrap .card .cimg {
   order: 1;
   display: block;
@@ -6111,8 +6118,12 @@ body.site .textnav {
   flex: none;
 }
 .ed-mm-saved.save-off { display: none; }
-.offline .ed-mm-saved.save-on { display: none; }
-.offline .ed-mm-saved.save-off { display: inline-flex; color: var(--tt-julia); }
+.phx-client-error .ed-mm-saved.save-on,
+.phx-server-error .ed-mm-saved.save-on,
+.phx-late .ed-mm-saved.save-on { display: none; }
+.phx-client-error .ed-mm-saved.save-off,
+.phx-server-error .ed-mm-saved.save-off,
+.phx-late .ed-mm-saved.save-off { display: inline-flex; color: var(--tt-julia); }
 
 #tagPick .tagchip {
   text-decoration: none !important;

@@ -46,8 +46,9 @@ export function toastLine({now, note, noteUntil}, say = t) {
 export const SavedTicker = {
   mounted() {
     // the stamp arrives with the last save already on it; only a save
-    // that happens while somebody is watching is worth a toast
-    this.at = Number(this.el.dataset.at || 0)
+    // that happens while somebody is watching is worth a toast, unless
+    // the indicator was inserted specifically for a live save
+    this.at = this.el.dataset.announce === "true" ? 0 : Number(this.el.dataset.at || 0)
     this.timer = setInterval(() => this.paint(), 1000)
     this.paint()
   },

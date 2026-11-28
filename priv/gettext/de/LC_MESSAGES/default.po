@@ -171,7 +171,7 @@ msgid_plural "should have at most %{count} item(s)"
 msgstr[0] "höchstens %{count} Eintrag haben"
 msgstr[1] "höchstens %{count} Einträge haben"
 
-#: lib/texttile_web/live/profile_live.ex:356
+#: lib/texttile_web/live/profile_live.ex:357
 #, elixir-autogen, elixir-format
 msgid "%{browser} · signed in %{when}"
 msgstr "%{browser} · angemeldet %{when}"
@@ -432,7 +432,7 @@ msgstr "Kommentare erlauben"
 msgid "An import is running; let it finish first"
 msgstr "Ein Import läuft. Lass ihn erst zu Ende laufen"
 
-#: lib/texttile_web/live/profile_live.ex:404
+#: lib/texttile_web/live/profile_live.ex:405
 #, elixir-autogen, elixir-format
 msgid "Another browser"
 msgstr "Ein anderer Browser"
@@ -602,8 +602,8 @@ msgstr "Kopieren"
 msgid "Counted by this server alone. No cookie, no fingerprint, no third party. The whole blog is on the"
 msgstr "Gezählt allein von diesem Server. Kein Cookie, kein Fingerabdruck, kein Dritter. Das ganze Blog steht auf der"
 
-#: lib/texttile_web/live/profile_live.ex:277
-#: lib/texttile_web/live/profile_live.ex:312
+#: lib/texttile_web/live/profile_live.ex:278
+#: lib/texttile_web/live/profile_live.ex:313
 #, elixir-autogen, elixir-format
 msgid "Current password"
 msgstr "Aktuelles Passwort"
@@ -740,7 +740,7 @@ msgstr "Bearbeiten"
 
 #: lib/texttile_web/controllers/site_html/article.html.heex:238
 #: lib/texttile_web/controllers/site_html/newsletter.html.heex:33
-#: lib/texttile_web/live/profile_live.ex:252
+#: lib/texttile_web/live/profile_live.ex:253
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "E-Mail"
@@ -1058,7 +1058,7 @@ msgid "New on %{site}: "
 msgstr "Neu auf %{site}: "
 
 #: lib/texttile_web/controllers/link_html.ex:58
-#: lib/texttile_web/live/profile_live.ex:323
+#: lib/texttile_web/live/profile_live.ex:324
 #, elixir-autogen, elixir-format
 msgid "New password"
 msgstr "Neues Passwort"
@@ -1315,7 +1315,7 @@ msgstr "Seiten benachrichtigen nie jemanden."
 #: lib/texttile_web/controllers/session_html.ex:37
 #: lib/texttile_web/controllers/site_html/unlock.html.heex:21
 #: lib/texttile_web/live/profile_live.ex:197
-#: lib/texttile_web/live/profile_live.ex:305
+#: lib/texttile_web/live/profile_live.ex:306
 #, elixir-autogen, elixir-format
 msgid "Password"
 msgstr "Passwort"
@@ -1511,8 +1511,8 @@ msgstr "Version sichern"
 #: lib/texttile_web/live/editor_live.ex:1569
 #: lib/texttile_web/live/editor_live.ex:1574
 #: lib/texttile_web/live/editor_live.ex:1988
-#: lib/texttile_web/live/profile_live.ex:220
-#: lib/texttile_web/live/profile_live.ex:222
+#: lib/texttile_web/live/profile_live.ex:221
+#: lib/texttile_web/live/profile_live.ex:223
 #, elixir-autogen, elixir-format
 msgid "Saved"
 msgstr "Gesichert"
@@ -1629,22 +1629,22 @@ msgid "Sign in"
 msgstr "Anmelden"
 
 #: lib/texttile_web/components/layouts.ex:332
-#: lib/texttile_web/live/profile_live.ex:371
+#: lib/texttile_web/live/profile_live.ex:372
 #, elixir-autogen, elixir-format
 msgid "Sign out"
 msgstr "Abmelden"
 
-#: lib/texttile_web/live/profile_live.ex:364
+#: lib/texttile_web/live/profile_live.ex:365
 #, elixir-autogen, elixir-format
 msgid "Sign out ends this session only."
 msgstr "Abmelden beendet nur diese Sitzung."
 
-#: lib/texttile_web/live/profile_live.ex:380
+#: lib/texttile_web/live/profile_live.ex:381
 #, elixir-autogen, elixir-format
 msgid "Sign out everywhere"
 msgstr "Überall abmelden"
 
-#: lib/texttile_web/live/profile_live.ex:366
+#: lib/texttile_web/live/profile_live.ex:367
 #, elixir-autogen, elixir-format
 msgid "Sign out everywhere ends all of them, in every browser."
 msgstr "Überall abmelden beendet alle, in jedem Browser."
@@ -2022,7 +2022,7 @@ msgstr "Dieses Blog fragt nach seinem Zugangswort, und jede dieser Mails trägt 
 msgid "This blog asks for its password."
 msgstr "Dieses Blog fragt nach seinem Passwort."
 
-#: lib/texttile_web/live/profile_live.ex:403
+#: lib/texttile_web/live/profile_live.ex:404
 #, elixir-autogen, elixir-format
 msgid "This browser"
 msgstr "Dieser Browser"
@@ -2267,7 +2267,7 @@ msgid "Your profile"
 msgstr "Dein Profil"
 
 #: lib/texttile_web/live/profile_live.ex:198
-#: lib/texttile_web/live/profile_live.ex:346
+#: lib/texttile_web/live/profile_live.ex:347
 #, elixir-autogen, elixir-format
 msgid "Your sessions"
 msgstr "Deine Sitzungen"
@@ -2368,7 +2368,7 @@ msgstr "die Umwandlung ist fehlgeschlagen"
 msgid "the conversion failed: %{reason}"
 msgstr "die Umwandlung ist fehlgeschlagen: %{reason}"
 
-#: lib/texttile_web/live/profile_live.ex:411
+#: lib/texttile_web/live/profile_live.ex:412
 #, elixir-autogen, elixir-format
 msgid "today"
 msgstr "heute"
@@ -2421,7 +2421,7 @@ msgstr "wird importiert"
 msgid "will not import"
 msgstr "wird nicht importiert"
 
-#: lib/texttile_web/live/profile_live.ex:412
+#: lib/texttile_web/live/profile_live.ex:413
 #, elixir-autogen, elixir-format
 msgid "yesterday"
 msgstr "gestern"
@@ -3555,13 +3555,13 @@ msgstr "Veröffentlichte Einträge, die neuesten zuerst."
 msgid "%{date}, %{time}"
 msgstr "%{date}, %{time}"
 
-#: lib/texttile_web/live/profile_live.ex:271
-#: lib/texttile_web/live/profile_live.ex:292
+#: lib/texttile_web/live/profile_live.ex:272
+#: lib/texttile_web/live/profile_live.ex:293
 #, elixir-autogen, elixir-format
 msgid "Change email"
 msgstr "E-Mail ändern"
 
-#: lib/texttile_web/live/profile_live.ex:332
+#: lib/texttile_web/live/profile_live.ex:333
 #, elixir-autogen, elixir-format
 msgid "Change password"
 msgstr "Passwort ändern"
@@ -4008,7 +4008,7 @@ msgstr "Hochgeladene Dateien"
 msgid "every video and its MP4 copy"
 msgstr "jedes Video und seine MP4-Kopie"
 
-#: lib/texttile_web/live/profile_live.ex:338
+#: lib/texttile_web/live/profile_live.ex:339
 #, elixir-autogen, elixir-format
 msgid "At least 12 characters."
 msgstr "Mindestens 12 Zeichen."
@@ -4299,7 +4299,7 @@ msgstr "Bereich"
 msgid "Select"
 msgstr "Auswählen"
 
-#: lib/texttile_web/live/profile_live.ex:234
+#: lib/texttile_web/live/profile_live.ex:235
 #, elixir-autogen, elixir-format
 msgid "Shown beside your entries and comments. Saves automatically."
 msgstr "Steht neben deinen Einträgen und Kommentaren. Speichert automatisch."
@@ -4362,7 +4362,7 @@ msgid_plural "You are writing. %{names} read along and see it as you type. The t
 msgstr[0] "Du schreibst. %{names} liest mit und sieht mit, während du tippst. Titel und Text sind dort nur lesbar, bis du aufhörst."
 msgstr[1] "Du schreibst. %{names} lesen mit und sehen mit, während du tippst. Titel und Text sind dort nur lesbar, bis du aufhörst."
 
-#: lib/texttile_web/live/profile_live.ex:297
+#: lib/texttile_web/live/profile_live.ex:298
 #, elixir-autogen, elixir-format
 msgid "You sign in with this address. Changing it requires your password."
 msgstr "Mit dieser Adresse meldest du dich an. Zum Ändern brauchst du dein Passwort."

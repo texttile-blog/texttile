@@ -129,7 +129,7 @@ defmodule TexttileWeb.ImportLive do
             @job.phase in [:running, :done] -> {3, gettext("Import entries")}
             true -> {1, gettext("Upload zip")}
           end %>
-        <div class="import-step-mobile" aria-hidden="true">
+        <div class="import-step-mobile">
           <span class="step-n">{step_num}</span>
           <span class="text-dim">{gettext("Step %{n} of 3", n: step_num)}</span>
           <span class="text-faint">·</span>

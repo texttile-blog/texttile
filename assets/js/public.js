@@ -333,9 +333,10 @@ document.querySelectorAll("time[data-comment-moment]").forEach((el) => {
       } else {
         const minNeeded = Math.min(maxLeft, Math.max(0, on.offsetLeft + on.offsetWidth - bar.clientWidth + rightBuffer));
         const anchor =
-          items.find((el) => el.offsetLeft >= minNeeded && el.offsetLeft <= maxLeft) ||
-          on;
-        bar.scrollLeft = Math.min(maxLeft, Math.min(on.offsetLeft, Math.max(0, anchor.offsetLeft)));
+          items.find(
+            (el) => el.offsetLeft >= minNeeded && el.offsetLeft <= maxLeft && el.offsetLeft <= on.offsetLeft
+          ) || on;
+        bar.scrollLeft = Math.min(maxLeft, Math.max(0, anchor.offsetLeft));
       }
     }
   }

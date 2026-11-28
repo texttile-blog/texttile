@@ -214,6 +214,7 @@ defmodule TexttileWeb.ProfileLive do
                   class="saved num whitespace-nowrap flex-none !text-[12.5px] !m-0 !p-0 !border-0"
                   id="savedProfile"
                   phx-hook="SavedTicker"
+                  data-announce="true"
                   data-at={@saved_at}
                   data-note={@saved_note}
                   data-note-until={@saved_note_until}
