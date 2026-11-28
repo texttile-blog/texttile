@@ -193,9 +193,11 @@ list and say which entries applied.
   out to.
 - `make start` runs the development server on port 4000. That one is Klaus's.
   Start your own on 4441 to 4449.
-- The server listens on the network address, not on `localhost`, so a phone in
-  the same network reaches it. `bin/dev-host` prints the address that gets
-  picked, and `DEV_HOST` replaces it.
+- For a shared preview, select the reachable hostname from the user's hosting
+  instructions on this machine. Set `DEV_HOST` to that hostname and `PORT`
+  to a free agent port when you run `mix phx.server`. This also sets the host
+  in sign-in links. Request `http://$DEV_HOST:$PORT/` and share that exact URL.
+  Without an override, `bin/dev-host` selects the local network address.
 - Development needs no environment variables. A git-ignored `.env` in the main
   checkout is loaded from every worktree, and real environment variables win
   over it. Mail from the development machine goes out through the adapter that
