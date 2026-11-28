@@ -56,6 +56,7 @@ defmodule TexttileWeb.E2E.GalleryDeliveryTest do
     conn
     |> sign_in()
     |> open_editor(article.id)
+    |> click("#jumpGallery")
     |> click("#tile-#{first.id}")
     |> assert_has("#lbCount", text: "1 / 4")
     |> evaluate(@fetched, [arg: [0, 1, 2], is_function: true], fn result ->

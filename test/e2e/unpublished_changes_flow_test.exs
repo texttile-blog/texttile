@@ -20,10 +20,10 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
         conn
         |> sign_in()
         |> open_editor(article.id)
-        |> assert_has("#stateWord", text: "Live", exact: true)
+        |> assert_has("#stateWord", text: "Live")
         |> assert_has("#stateMain", text: "View")
         |> fill_in("Title", with: "Harbor evenings")
-        |> assert_has("#stateWord", text: "Live · draft")
+        |> assert_has("#stateWord", text: "Working copy saved")
         |> assert_has("#stateMain", text: "Publish changes")
 
       # the readers still have the published title
@@ -31,7 +31,7 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
 
       session
       |> click_button("#stateMain", "Publish changes")
-      |> assert_has("#stateWord", text: "Live", exact: true)
+      |> assert_has("#stateWord", text: "Live")
       |> assert_has("#stateMain", text: "View")
 
       assert Articles.as_read(Articles.get_article!(article.id)).title == "Harbor evenings"
@@ -44,12 +44,16 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       |> sign_in()
       |> open_editor(article.id)
       |> fill_in("Title", with: "Harbor evenings")
-      |> assert_has("#stateWord", text: "Live · draft")
+      |> assert_has("#stateWord", text: "Working copy saved")
       |> click("#stateChev")
       |> click_button("#discardChangesRow", "Discard the changes")
       |> click_button("Discard the changes")
-      |> assert_has("#edTitle[value='Harbor mornings']")
-      |> assert_has("#stateWord", text: "Live", exact: true)
+      |> assert_has("#stateWord", text: "Live")
+      |> evaluate(
+        "() => document.getElementById('edTitle').value",
+        [is_function: true],
+        &assert(&1 == "Harbor mornings")
+      )
     end
 
     test "the Versions tab says which version the readers have", %{conn: conn, kb: kb} do
@@ -75,13 +79,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       |> sign_in()
       |> open_editor(article.id)
       |> fill_in("Title", with: "Harbor evenings")
-      |> assert_has("#stateWord", text: "Live · draft")
+      |> assert_has("#stateWord", text: "Working copy saved")
 
       # signed in, the site shows the working copy and says so
       conn
       |> open_page(Articles.public_path(article))
       |> assert_has("h1", text: "Harbor evenings")
-      |> assert_has("#unpublished", text: "working copy")
+      |> assert_has("#unpublished", text: "Working copy")
     end
 
     test "a reader gets the published text and no banner", %{conn: conn, kb: kb} do
@@ -110,13 +114,13 @@ defmodule TexttileWeb.E2E.UnpublishedChangesFlowTest do
       conn
       |> sign_in()
       |> open("/admin/texts")
-      |> refute_has(".card .cm", text: "Edited since publishing")
+      |> refute_has(".card .cm", text: "Unpublished edits")
 
       {:ok, _} = Articles.update_text(article, %{title: "Harbor evenings"})
 
       conn
       |> open("/admin/texts")
-      |> assert_has(".card .cm", text: "Edited since publishing")
+      |> assert_has(".card .cm", text: "Unpublished edits")
     end
   end
 

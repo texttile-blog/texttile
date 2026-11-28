@@ -83,6 +83,10 @@ defmodule TexttileWeb.StatsLive do
 
   # A bar is clicked open and clicked shut. The address changes, the
   # rest follows in `handle_params`.
+  def handle_event("pick", %{"day" => ""}, socket) do
+    {:noreply, push_patch(socket, to: stats_path(socket.assigns.days, nil))}
+  end
+
   def handle_event("pick", %{"day" => day}, socket) do
     open = socket.assigns.bar && Date.to_iso8601(socket.assigns.bar.from)
     day = if day == open, do: nil, else: day
@@ -108,7 +112,7 @@ defmodule TexttileWeb.StatsLive do
       <div class="admin-col">
         <h1 class="page-h">{gettext("Stats")}</h1>
 
-        <div id="statsWindows" class="flex flex-wrap gap-1 mb-5">
+        <div id="statsWindows" class="flex flex-wrap gap-[18px] border-b border-hair mb-5">
           <.link
             :for={days <- windows()}
             id={"win-#{days}"}
@@ -121,8 +125,8 @@ defmodule TexttileWeb.StatsLive do
 
         <%!-- no rule over the figures: the window switch above them is a row
              of tabs like every other, its line under the open one alone --%>
-        <div id="statsFigures" class="grid grid-cols-[1fr_1fr_1.3fr] sm:grid-cols-3">
-          <div class="fig py-4 pr-3 md:pr-5">
+        <div id="statsFigures" class="flex flex-wrap gap-x-7 sm:gap-x-16 gap-y-2">
+          <div class="fig py-4">
             <div class="n" id="figViews">{number(@summary.views)}</div>
             <%!-- the window is named once, by the switch over the figures;
                  the change against the window before stands on a line
@@ -131,7 +135,7 @@ defmodule TexttileWeb.StatsLive do
               {gettext("views")}<span class="block">{moved(@summary.views, @summary.before, :views)}</span>
             </div>
           </div>
-          <div class="fig py-4 pr-3 md:pr-5">
+          <div class="fig py-4">
             <div class="n" id="figPeople">{number(@summary.people)}</div>
             <div class="l">
               {gettext("reader-days")}<span class="block">{moved(
@@ -141,31 +145,46 @@ defmodule TexttileWeb.StatsLive do
               )}</span>
             </div>
           </div>
-          <div class="fig py-4 pr-3 md:pr-5">
+          <div class="fig py-4">
             <div class="n" id="figBusiest">{busiest_number(@summary.busiest)}</div>
             <div class="l">
-              <%!-- the unit, then the day on a line of its own, as the
-                   change stands under the other two --%>
-              {gettext("busiest day")}<span
-                :if={@summary.busiest}
-                id="figBusiestDay"
-              >, {busiest_day(@summary.busiest)}</span>
+              <span id="figBusiestDay" class="peak-day-label">
+                <i :if={@summary.busiest} class="peak-swatch" aria-hidden="true"></i>{gettext(
+                  "peak day"
+                )}<span :if={@summary.busiest}> · {busiest_day(@summary.busiest)}</span>
+              </span>
             </div>
           </div>
         </div>
-        <%!-- how a reader is counted, where the count stands --%>
-        <p class="hint !mt-6 mb-2" id="statsRule">
+        <div class="flex items-center justify-between gap-3 mt-5 sm:mt-6 mb-2.5">
+          <h2 class="sec-h !m-0">{gettext("Views")}{step_label(@step)}</h2>
+          <%!-- Day inspection works via the picker on both phone and desktop,
+               and by clicking any bar directly on desktop. --%>
+          <form :if={@summary.busiest} phx-change="pick" id="dayPickerForm" class="flex-none ml-auto">
+            <label for="dayPick" class="sr">{gettext("Inspect a day")}</label>
+            <select
+              id="dayPick"
+              name="day"
+              class="!w-auto !min-w-0 h-[40px] sm:h-[34px] !py-0 text-[13.5px] sm:text-[13px]"
+            >
+              <option value="">{gettext("Inspect a day")}</option>
+              <option
+                :for={bar <- Enum.reverse(@series)}
+                value={Date.to_iso8601(bar.from)}
+                selected={@bar && @bar.from == bar.from}
+              >
+                {span_label(bar)} · {ngettext("1 view", "%{count} views", bar.views)}
+              </option>
+            </select>
+          </form>
+        </div>
+        <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
+        <%!-- how a reader is counted, directly under the chart so the plot
+             connects straight to the totals above --%>
+        <p class="hint !mt-2.5 mb-0 max-w-[64ch]" id="statsRule">
           {gettext(
             "Views count every page opened. Reader-days count each reader once a day; nobody is followed from one day to the next. Bots are left out."
           )}
-        </p>
-
-        <h2 class="sec-h">{gettext("Views")}{step_label(@step)}</h2>
-        <.day_chart id="dayChart" series={@series} step={@step} pick="pick" open={@bar} />
-        <p :if={@summary.busiest} class="hint" id="chartKey">
-          <%!-- the busiest bar carries its number; the line says what a
-               bar does --%>
-          {gettext("Open a bar for that day's entries and sources.")}
         </p>
 
         <div :if={@bar} id="barDetail" class="border-l-2 border-ink pl-[14px] mt-4">
@@ -231,30 +250,24 @@ defmodule TexttileWeb.StatsLive do
           )}
         </p>
         <div :if={@top != []} class="overflow-x-auto">
-          <table>
+          <table class="toptab">
             <thead>
               <tr>
-                <%!-- the entry takes the free width; the day and the counts
-                     are columns of fixed width packed to the right edge, so
-                     the data of a row reads as one line --%>
+                <%!-- identical metric order and visual weight across desktop and phone --%>
                 <th>{gettext("Entry")}</th>
-                <th class="num hidden sm:table-cell sm:w-[130px]">{gettext("Date")}</th>
-                <th class="text-right num w-[48px] sm:w-[88px] pl-3 sm:pl-4">{gettext("Views")}</th>
-                <th class="text-right num people w-[56px] sm:w-[88px] pl-3 sm:pl-4">
-                  {gettext("Reader-days")}
+                <th class="text-right num w-[1%] whitespace-nowrap pl-2 sm:pl-6">
+                  {gettext("Views")}
                 </th>
-                <th class="text-right num hidden sm:table-cell sm:w-[88px] sm:pl-4">
-                  {gettext("Comments")}
+                <th class="text-right num people w-[1%] whitespace-nowrap pl-2.5 sm:pl-6">
+                  {gettext("Reader-days")}
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr :for={row <- @top} id={"top-#{row.article.id}"}>
                 <%!-- the title is the way to the entry's own numbers --%>
-                <td class="pr-4">
-                  <%!-- the mark of the state before the title, once per row;
-                       a phone, which has no Date and Comments columns, says
-                       them on a line under the title --%>
+                <td class="pr-1.5 sm:pr-4">
+                  <%!-- the mark of the state before the title, once per row --%>
                   <span class="flex items-baseline">
                     <%!-- live is what a read entry almost always is, so only
                          another state earns its mark --%>
@@ -264,10 +277,13 @@ defmodule TexttileWeb.StatsLive do
                       aria-hidden="true"
                     ></i>
                     <span class="min-w-0">
-                      <.link class="link" navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}>
+                      <.link
+                        class="link font-serif text-[15.5px] sm:text-[16px] font-semibold"
+                        navigate={~p"/admin/texts/#{row.article.id}?tab=stats"}
+                      >
                         {Articles.display_title(row.article)}
                       </.link>
-                      <span class="sm:hidden block text-[12.5px] text-faint num">
+                      <span class="block text-[12.5px] text-dim num mt-[2px]">
                         <.published_cell article={row.article} />
                         <span :if={Map.get(@comment_counts, row.article.id, 0) > 0}>
                           · {ngettext(
@@ -280,51 +296,57 @@ defmodule TexttileWeb.StatsLive do
                     </span>
                   </span>
                 </td>
-                <td class="num hidden sm:table-cell">
-                  <.published_cell article={row.article} />
-                </td>
                 <td class="text-right num">{number(row.views)}</td>
                 <td class="text-right num people">{number(row.people)}</td>
-                <td class="text-right num hidden sm:table-cell">
-                  {Map.get(@comment_counts, row.article.id, 0)}
-                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <h2 class="sec-h">{gettext("Referrers")}</h2>
-        <p :if={@referrers == []} class="note" id="referrersEmpty">
-          {gettext("Nothing counted yet, so there is nowhere readers came from.")}
-        </p>
-        <.referrer_table :if={@referrers != []} id="referrers" rows={@referrers} />
-        <p :if={length(@referrers) == Stats.rows()} class="note mt-[10px]" id="referrersCapped">
-          {gettext(
-            "The %{rows} biggest sources. What the shares leave short of a hundred came from the others.",
-            rows: Stats.rows()
-          )}
-        </p>
+        <div class="grid grid-cols-1 items-start">
+          <div>
+            <h2 class="sec-h !mt-10">{gettext("Referrers")}</h2>
+            <p :if={@referrers == []} class="note" id="referrersEmpty">
+              {gettext("Nothing counted yet, so there is nowhere readers came from.")}
+            </p>
+            <.referrer_table :if={@referrers != []} id="referrers" rows={@referrers} />
+            <p :if={length(@referrers) == Stats.rows()} class="note mt-[10px]" id="referrersCapped">
+              {gettext(
+                "The %{rows} biggest sources. What the shares leave short of a hundred came from the others.",
+                rows: Stats.rows()
+              )}
+            </p>
+          </div>
 
-        <h2 :if={@pages != []} class="sec-h">{gettext("Other addresses")}</h2>
-        <div :if={@pages != []} class="overflow-x-auto">
-          <table id="otherPages">
-            <thead>
-              <tr>
-                <th>{gettext("Address")}</th>
-                <th class="text-right num">{gettext("Views")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={row <- @pages}>
-                <td>{row.path}</td>
-                <td class="text-right num">{number(row.views)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div :if={@pages != []}>
+            <h2 class="sec-h !mt-10">{gettext("Other pages")}</h2>
+            <div class="overflow-x-auto">
+              <table id="otherPages">
+                <thead>
+                  <tr>
+                    <th>{gettext("Address")}</th>
+                    <th class="text-right num">{gettext("Views")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr :for={row <- @pages}>
+                    <td>
+                      <%= if row.path == "/" do %>
+                        {gettext("Front page")}
+                      <% else %>
+                        <span class="font-mono text-[13px]">{row.path}</span>
+                      <% end %>
+                    </td>
+                    <td class="text-right num">{number(row.views)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p :if={length(@pages) == Stats.rows()} class="note mt-[10px]" id="pagesCapped">
+              {gettext("The %{rows} most read addresses.", rows: Stats.rows())}
+            </p>
+          </div>
         </div>
-        <p :if={length(@pages) == Stats.rows()} class="note mt-[10px]" id="pagesCapped">
-          {gettext("The %{rows} most read addresses.", rows: Stats.rows())}
-        </p>
       </div>
     </Layouts.app>
     """
@@ -361,7 +383,7 @@ defmodule TexttileWeb.StatsLive do
   defp busiest_number(nil), do: "0"
   defp busiest_number({_day, views}), do: number(views)
 
-  defp busiest_day({day, _views}), do: day_label(day)
+  defp busiest_day({day, _views}), do: Texttile.I18n.format_short_day(day)
 
   # The day an entry went out, or the word Draft in grey while it has
   # none; the mark of the state stands before the title.

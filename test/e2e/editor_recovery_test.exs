@@ -51,7 +51,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
     conn =
       conn
       |> assert_has("#edSlug[value='doors']")
-      |> assert_has("#stateWord", text: "Live", exact: true)
+      |> assert_has("#stateWord", text: "Live")
 
     # A deliberate edit on the restored connection still saves normally.
     conn
@@ -59,7 +59,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
     |> type("#edSlug", "doors-edited")
     |> click("#slugSet")
     |> click("#dialog-ok")
-    |> assert_has(~s(#slugHint[data-live$="/doors-edited"]))
+    |> assert_has(~s(#openEntryLink[href$="/doors-edited"]))
 
     assert Articles.get_article!(article.id).slug == "doors-edited"
   end
@@ -79,7 +79,7 @@ defmodule TexttileWeb.E2E.EditorRecoveryTest do
       |> type("#edSlug", "doors-earlier")
       |> click("#slugSet")
       |> click("#dialog-ok")
-      |> assert_has(~s(#slugHint[data-live$="/doors-earlier"]))
+      |> assert_has(~s(#openEntryLink[href$="/doors-earlier"]))
       |> click("#stateWord")
       |> disconnect()
 

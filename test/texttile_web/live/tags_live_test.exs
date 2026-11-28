@@ -30,8 +30,8 @@ defmodule TexttileWeb.TagsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/tags")
 
-      assert has_element?(view, "#tagrow-sea", "3 entries · 2 not live")
-      refute has_element?(view, "#tagrow-fog", "live")
+      assert has_element?(view, "#tagrow-sea", "3 entries · 1 live")
+      assert has_element?(view, "#tagrow-fog", "1 entry · none live")
     end
 
     # a live page is something a reader can open, so it counts as live
@@ -42,14 +42,15 @@ defmodule TexttileWeb.TagsLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/tags")
 
-      assert has_element?(view, "#tagrow-harbor", "2 entries")
-      refute has_element?(view, "#tagrow-harbor", "not live")
+      assert has_element?(view, "#tagrow-harbor", "2 entries · all live")
+      refute has_element?(view, "#tagrow-harbor", "none live")
     end
 
     test "deleting a tag asks first, then takes it off every text",
          %{conn: conn, one: one, two: two} do
       {:ok, view, _html} = live(conn, ~p"/admin/tags")
 
+      view |> element("#edit-tag-sea") |> render_click()
       view |> element("#delete-tag-sea") |> render_click()
       assert has_element?(view, "#dialog-ok")
 
@@ -66,6 +67,7 @@ defmodule TexttileWeb.TagsLiveTest do
          %{conn: conn, one: one} do
       {:ok, view, _html} = live(conn, ~p"/admin/tags")
 
+      view |> element("#edit-tag-sea") |> render_click()
       view |> element("#delete-tag-sea") |> render_click()
       view |> element("#dialog-cancel") |> render_click()
 
@@ -111,11 +113,10 @@ defmodule TexttileWeb.TagsLiveTest do
 
     for view <- [editor, watcher] do
       assert has_element?(view, ~s(#edTags[value="Reisen"]))
-      assert has_element?(view, "#tagchip-reisen.on", "Reisen")
+      refute has_element?(view, "#tagchip-reisen")
     end
 
     assert has_element?(suggestions, "#tagchip-reisen", "Reisen")
-    refute has_element?(suggestions, "#tagchip-reisen.on")
     assert Articles.get_article!(entry.id).body == "Original body"
   end
 
@@ -132,6 +133,7 @@ defmodule TexttileWeb.TagsLiveTest do
   test "a delete dialog follows case changes and closes when its tag disappears", %{conn: conn} do
     entry = draft_post(tags: "travel")
     {:ok, view, _} = live(conn, "/admin/tags")
+    view |> element("#edit-tag-travel") |> render_click()
     view |> element("#delete-tag-travel") |> render_click()
 
     assert {:ok, 1} = Articles.rename_tag("travel", "Travel")
@@ -143,6 +145,7 @@ defmodule TexttileWeb.TagsLiveTest do
     render_click(view, "delete_tag")
     assert Articles.get_article!(entry.id).tags == "Trips"
 
+    view |> element("#edit-tag-trips") |> render_click()
     view |> element("#delete-tag-trips") |> render_click()
     assert Articles.delete_tag("Trips") == 1
     refute has_element?(view, "#dialog-ok")
@@ -152,6 +155,7 @@ defmodule TexttileWeb.TagsLiveTest do
        %{conn: conn} do
     entry = draft_post(tags: "travel")
     {:ok, view, _} = live(conn, "/admin/tags")
+    view |> element("#edit-tag-travel") |> render_click()
     view |> element("#delete-tag-travel") |> render_click()
 
     # Simulate the interval between another admin's commit and its PubSub notification.

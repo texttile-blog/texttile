@@ -145,119 +145,103 @@ defmodule TexttileWeb.TextsLive do
         <Layouts.view_site />
       </:bar>
       <div class="admin-col">
-        <%!-- the counts live in the filters, as on Comments; a line of
-             its own speaks only while a search or a period narrows the
-             grid --%>
-        <div class="flex items-baseline gap-[14px] flex-wrap">
-          <h1 class="page-h">{gettext("Entries")}</h1>
-          <span :if={@q != "" or @year} class="note num" id="gridCount">
-            {entry_count(@shown, @total)}
-          </span>
-        </div>
-        <div class="flex items-center gap-x-3 gap-y-5 sm:gap-y-[10px] flex-wrap mt-0 sm:mt-6 mb-3 sm:mb-6">
-          <span
-            class="flex gap-[3px] max-sm:gap-[6px] flex-none"
-            role="group"
-            aria-label={gettext("Filter by status")}
-          >
-            <%!-- Scheduled has a tab only while an entry waits for its
-                 day, so the parts always add up to All --%>
-            <button
-              :for={{value, label} <- filters(@counts, @filter)}
-              class={["seg-b", @filter == value && "on"]}
-              data-f={value}
-              phx-click="filter"
-              phx-value-filter={value}
-            >
-              {label} <span class="num text-faint">{@counts[value]}</span>
-            </button>
-          </span>
-          <div
-            class="flex max-sm:flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-[10px] grow basis-full sm:basis-[300px] min-w-0"
-            id="gridTools"
-          >
-            <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
-              <input
-                type="search"
-                name="q"
-                value={@q}
-                placeholder={gettext("Search")}
-                aria-label={gettext("Search entries")}
-                autocomplete="off"
-                phx-debounce="200"
-                class="w-auto grow shrink max-sm:basis-full basis-[160px] min-w-0"
-              />
-            </form>
-            <%!-- the archive, the way the reader's list offers it: a year,
-                 then the months of that year that carry entries, each with
-                 its count; the counts follow the search and the filter --%>
-            <form
-              :if={@years != []}
-              id="periods"
-              phx-change="period"
-              class="flex gap-2 flex-none max-sm:flex-1"
-            >
-              <span class="pick">
-                <select name="year" id="years" aria-label={gettext("Year")}>
-                  <option value="">{gettext("All years")}</option>
-                  <option :for={{year, count} <- @years} value={year} selected={@year == year}>
-                    {year} ({count})
-                  </option>
-                </select>
-              </span>
-              <span :if={@months != []} class="pick">
-                <select name="month" id="months" aria-label={gettext("Month")}>
-                  <option value="">{gettext("All months")}</option>
-                  <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
-                    {Texttile.I18n.month_name(month)}
-                  </option>
-                </select>
-              </span>
-            </form>
-            <%!-- the one primary action ends the row of tools, on a phone
-                 as on a desk, so it never needs a row of its own --%>
-            <button class="btn solid flex-none" id="new-text" phx-click="new_text">
-              {gettext("New entry")}
-            </button>
+        <%!-- Page header: serif H1 on the left, primary CTA on the right on every width --%>
+        <div class="flex items-center justify-between gap-3 mb-4 sm:mb-5">
+          <div class="flex items-baseline gap-[14px] flex-wrap min-w-0">
+            <h1 class="page-h">{gettext("Entries")}</h1>
+            <span :if={@q != "" or @year} class="note num" id="gridCount">
+              {entry_count(@shown, @total)}
+            </span>
           </div>
+          <button
+            class="btn solid flex-none ml-auto"
+            id="new-text"
+            phx-click="new_text"
+          >
+            {gettext("New entry")}
+          </button>
+        </div>
+
+        <%!-- Full-width status tabs on one continuous baseline, matching Comments & Stats --%>
+        <div
+          id="entriesFilter"
+          class="flex gap-[3px] max-sm:gap-[6px] border-b border-hair mb-4"
+          role="group"
+          aria-label={gettext("Filter by status")}
+        >
+          <button
+            :for={{value, label} <- filters(@counts, @filter)}
+            class={["seg-b", @filter == value && "on"]}
+            data-f={value}
+            phx-click="filter"
+            phx-value-filter={value}
+          >
+            {label} <span class="num text-faint">{@counts[value]}</span>
+          </button>
+        </div>
+
+        <%!-- Single compact search + archive filter row --%>
+        <div class="entries-tools mb-4 sm:mb-5" id="gridTools">
+          <form id="grid-search" class="contents" phx-change="search" phx-submit="search">
+            <input
+              type="search"
+              name="q"
+              value={@q}
+              placeholder={gettext("Search entries")}
+              aria-label={gettext("Search entries")}
+              autocomplete="off"
+              phx-debounce="200"
+              class="min-w-0"
+            />
+          </form>
+          <form :if={@years != []} id="periods" phx-change="period" class="flex gap-2 flex-none">
+            <span class="pick">
+              <select name="year" id="years" aria-label={gettext("Year")}>
+                <option value="">{gettext("All years")}</option>
+                <option :for={{year, count} <- @years} value={year} selected={@year == year}>
+                  {year} ({count})
+                </option>
+              </select>
+            </span>
+            <span :if={@months != []} class="pick">
+              <select name="month" id="months" aria-label={gettext("Month")}>
+                <option value="">{gettext("All months")}</option>
+                <option :for={{month, _count} <- @months} value={month} selected={@month == month}>
+                  {Texttile.I18n.month_name(month)}
+                </option>
+              </select>
+            </span>
+          </form>
         </div>
         <div id="cards">
-          <%!-- One row per entry. The row is one link to the editor, so
-               the way to the zip cannot stand inside it: it is a link
-               of its own at the row's right end. It shows itself under
-               a pointer and on focus; a touch screen finds the export
-               in the editor's menu. --%>
+          <%!-- One row per entry. Every title starts on the exact left edge;
+               photo entries carry a crisp square thumbnail at the right
+               without fake placeholders for text-only entries. --%>
           <div :for={article <- @articles} class="card-slot">
-            <.link class="card" navigate={~p"/admin/texts/#{article}"}>
-              <%= if cover = @covers[article.id] do %>
-                <span class="cimg" style={cover_bg(cover)}></span>
-              <% else %>
-                <%!-- an entry of words alone keeps the square: a hairline
-                     frame with a pilcrow, the mark of a paragraph --%>
-                <span class="cimg empty">
-                  <span class="ci" aria-hidden="true">¶</span>
-                </span>
-              <% end %>
+            <.link
+              class={["card", @covers[article.id] && "has-cover"]}
+              navigate={~p"/admin/texts/#{article}"}
+            >
               <span class="ct">{Articles.display_title(article)}</span>
               <%!-- the facts of the row: the state, the day, who it is by.
                    A wide row sets the day at its right end. --%>
               <span class="cm">
-                <%!-- a bit holds no whitespace of the template: the browser
-                     would carry a space of a nowrap span over to the gap
-                     between two bits and refuse to break there --%>
                 <span class="bits">
                   <%= for {kind, bit} <- card_meta(article) do %>
                     <span
                       class={["whitespace-nowrap bit", kind == :day && "cday"]}
                       phx-no-format
                     ><span :if={kind == :state} class={["st", article.status]}></span>{bit}</span>
+                    <span
+                      :if={kind == :state && article.id in @pending}
+                      class="whitespace-nowrap bit open"
+                      phx-no-format
+                    ><i aria-hidden="true"></i>{gettext("Unpublished edits")}</span>
                   <% end %>
                 </span>
-                <span :if={article.user} class="by">{admin_name(article.user)}</span>
-                <span :if={article.id in @pending} class="open">
-                  <i aria-hidden="true"></i>{gettext("Edited since publishing")}
-                </span>
+                <span :if={article.user} class="by" phx-no-format>{admin_name(article.user)}</span>
               </span>
+              <span :if={cover = @covers[article.id]} class="cimg" style={cover_bg(cover)}></span>
             </.link>
             <a
               class="card-get"
@@ -347,9 +331,7 @@ defmodule TexttileWeb.TextsLive do
 
         _status ->
           article.publish_date &&
-            gettext("published %{date}",
-              date: Texttile.I18n.format_short_date(article.publish_date)
-            )
+            Texttile.I18n.format_short_date(article.publish_date)
       end
 
     state =

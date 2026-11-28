@@ -40,7 +40,7 @@ defmodule TexttileWeb.StatsLiveTest do
     assert has_element?(view, "#figViews", "8")
     assert has_element?(view, "#figPeople", "8")
     assert has_element?(view, "#figBusiest", "5")
-    assert render(view) =~ "busiest day"
+    assert render(view) =~ "peak day"
 
     assert has_element?(
              view,
@@ -171,14 +171,14 @@ defmodule TexttileWeb.StatsLiveTest do
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=365")
     assert render(view) =~ "Views, by month"
 
-    assert view |> element("#dayChart + div") |> render() =~
+    assert view |> element(".day-chart-wrap > div:last-child") |> render() =~
              Integer.to_string(Date.utc_today().year)
 
     # A fresh blog with one month of views is a month bar too.
     {:ok, view, _html} = live(conn, ~p"/admin/stats?days=all")
     assert render(view) =~ "Views, by month"
 
-    assert view |> element("#dayChart + div") |> render() =~
+    assert view |> element(".day-chart-wrap > div:last-child") |> render() =~
              Integer.to_string(Date.utc_today().year)
   end
 

@@ -35,9 +35,10 @@ export default {
 
     // the button answers for itself, the way Save version does, and it
     // only says it copied when the browser says so
+    const orig = button.dataset.orig || (button.dataset.orig = button.textContent.trim())
     button.textContent = (await this.hand(field)) ? t("Copied") : t("Now press the copy key")
     clearTimeout(this.timer)
-    this.timer = setTimeout(() => { button.textContent = t("Copy") }, 2200)
+    this.timer = setTimeout(() => { button.textContent = orig }, 2200)
   },
 
   // The clipboard, by the two ways a browser offers it.

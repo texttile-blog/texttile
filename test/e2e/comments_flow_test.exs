@@ -46,6 +46,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#commentsList", text: "Grandma Christel")
     |> click_link("Harbor mornings")
     |> assert_has("#tp-comments", text: "More of the dog, please.")
+    |> click(".cmt-more-btn")
     |> click_button("Delete")
     |> assert_has("#dialog", text: "Delete the comment of Grandma Christel?")
     |> click_button("Delete the comment")
@@ -85,15 +86,13 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
       session
       |> sign_in()
       |> open("/admin/comments")
-      |> assert_has("#commentsList", text: "unconfirmed")
+      |> assert_has("#commentsList", text: "Unconfirmed")
       |> evaluate(
         """
         () => {
           const link = document.querySelector("#commentsList a.cmt-web")
-          const when = document.querySelector("#commentsList .cmt-when")
           return {
-            linkBefore: getComputedStyle(link, "::before").content,
-            whenAfter: getComputedStyle(when, "::after").content
+            linkBefore: getComputedStyle(link, "::before").content
           }
         }
         """,
@@ -101,12 +100,10 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
         fn res ->
           assert res["linkBefore"] == "none",
                  "website link carries ::before #{inspect(res["linkBefore"])}"
-
-          assert res["whenAfter"] == "\"·\" / \"\""
         end
       )
       |> click_button("Approve")
-      |> assert_has("#commentsList", text: "let through")
+      |> assert_has("#commentsList", text: "Approved")
       |> refute_has("#commentsList .wait")
       |> open_page(Articles.public_path(article))
       |> assert_has("#comment-count", text: "1 comment")
@@ -116,6 +113,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       session
       |> open("/admin/comments")
+      |> click(".cmt-more-btn")
       |> click_button("Edit")
       |> fill_in("The words of the comment", with: "Less of the dog, please.")
       |> click_button("Save")
@@ -129,6 +127,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     session =
       session
       |> open("/admin/comments")
+      |> click(".cmt-more-btn")
       |> click_button("#commentsList button", "Delete")
       |> click_button("Delete the comment")
       |> refute_has("#commentsList", text: "Less of the dog, please.")
@@ -192,6 +191,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     conn
     |> sign_in()
     |> open("/admin/comments?status=waiting")
+    |> click("#toggleSelect")
     |> assert_has("#commentTools", text: "Select all")
     |> assert_has("#bulk-delete", text: "Delete all 30")
     |> click("#selectAll")
@@ -215,6 +215,7 @@ defmodule TexttileWeb.E2E.CommentsFlowTest do
     |> assert_has("#dialog", text: "Delete 29 comments?")
     |> click_button("#dialog-ok", "Delete")
     |> assert_has("#commentFilter a[data-f='trash']", text: "29")
+    |> click("#toggleSelect")
     |> assert_has("#commentTools", text: "Select all")
     |> assert_has("#bulk-delete", text: "Delete all 1")
 

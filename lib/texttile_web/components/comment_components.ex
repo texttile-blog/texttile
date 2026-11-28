@@ -34,25 +34,19 @@ defmodule TexttileWeb.CommentComponents do
     <div class={row_class(@selected)} id={"comment-#{@comment.id}"}>
       <.pick :if={is_boolean(@selected)} comment={@comment} selected={@selected} />
       <div class="cmt-top">
-        <span class="rowp">{@comment.name}</span>
-        <span :if={@waiting} class="wait">{gettext("unconfirmed")}</span>
-      </div>
-      <%!-- where and when, on a line of their own under the name: the
-           entry is the jump of the overview, a link like every other --%>
-      <div class="cmt-sub">
-        <.link :if={@article} navigate={"/admin/texts/#{@article.id}?tab=comments"} class="cmt-ent">
-          {Texttile.Articles.display_title(@article)}
-        </.link>
-        <span class="cmt-when num">
-          <%!-- the server writes UTC; the hook rewrites it in the zone of
-               the browser, the one the reader pages use as well --%>
-          <time
-            id={"cmt-at-#{@comment.id}"}
-            datetime={DateTime.to_iso8601(@comment.inserted_at)}
-            phx-hook="LocalMoment"
-          >{I18n.format_short_moment(@comment.inserted_at)}</time>{moment_tail(@comment)}
+        <span class="cmt-who">
+          <span class="rowp">{@comment.name}</span>
+          <span :if={@waiting} class="cmt-st wait">
+            <i class="cmt-dot-st" aria-hidden="true"></i>{gettext("Unconfirmed")}
+          </span>
+          <span :if={!@waiting} class="cmt-st ok">{gettext("Approved")}</span>
+          <span class="cmt-dot" aria-hidden="true">·</span>
+          <span class="cmt-when num" phx-no-format><time
+              id={"cmt-at-#{@comment.id}"}
+              datetime={DateTime.to_iso8601(@comment.inserted_at)}
+              phx-hook="LocalMoment"
+            >{I18n.format_short_moment(@comment.inserted_at)}</time>{moment_tail(@comment)}</span>
         </span>
-        <.website comment={@comment} />
       </div>
 
       <form
@@ -82,26 +76,31 @@ defmodule TexttileWeb.CommentComponents do
         </div>
       </form>
 
-      <%!-- comment-body: the words stand here the way the reader typed
-           them, line breaks and all, exactly as under the text. The tag
-           hugs the words: a line break of the template would be one
-           more empty line at the top. --%>
+      <%!-- comment-body sits immediately under author and status (unbroken reading sequence) --%>
       <p
         :if={!@editing}
-        class="comment-body mt-[8px] font-serif text-[15.5px] leading-[1.55] max-w-[62ch]"
+        class="comment-body mt-[5px] font-serif text-[16px] leading-[1.56] max-w-[78ch]"
         phx-no-format
       >{String.trim(@comment.body)}</p>
-      <%!-- the actions, quiet like the Restore of a version: at the
-         right of the name line on a desk, on a line of their own under
-         the words on a phone, so a long name never meets them. Reply
-         answers by mail, in words: an icon said nothing. --%>
+
+      <%!-- unified provenance line below the body: entry title, with optional website
+           on desktop (tucked into row overflow on phones so actions stay close). --%>
+      <div class="cmt-sub">
+        <span :if={@article} class="cmt-on">{gettext("on")} <.link
+          navigate={"/admin/texts/#{@article.id}?tab=comments"}
+          class="cmt-ent"
+          phx-no-format
+        >{Texttile.Articles.display_title(@article)}</.link></span>
+        <span :if={@comment.website} class="hidden sm:inline cmt-tail">
+          <span class="cmt-web-sep" aria-hidden="true">·</span><.website comment={@comment} />
+        </span>
+      </div>
+
+      <%!-- Pure action bar: Approve (when waiting), Reply, and overflow --%>
       <div :if={!@editing} class="cmt-acts">
-        <%!-- Approve stands first and only while it applies, at every
-             width. It is the one decision a waiting comment asks for, so
-             it wears the accent where the others are the quiet ink. --%>
         <button
           :if={@waiting}
-          class="btn quiet sm rel"
+          class="btn quiet sm rel flex-none"
           title={gettext("Show the comment now, before its reader confirms")}
           phx-click="release_comment"
           phx-value-id={@comment.id}
@@ -109,12 +108,47 @@ defmodule TexttileWeb.CommentComponents do
           {gettext("Approve")}
         </button>
         <.write_link comment={@comment} />
-        <button class="btn quiet sm" phx-click="start_edit" phx-value-id={@comment.id}>
-          {gettext("Edit")}
-        </button>
-        <button class="btn quiet sm danger" phx-click="delete_comment" phx-value-id={@comment.id}>
-          {gettext("Delete")}
-        </button>
+        <details class="cmt-more" id={"cmt-more-#{@comment.id}"}>
+          <summary
+            class="btn quiet sm cmt-more-btn"
+            aria-label={gettext("More actions for %{name}'s comment", name: @comment.name)}
+            title={gettext("More actions")}
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <circle cx="3.2" cy="8" r="1.25" />
+              <circle cx="8" cy="8" r="1.25" />
+              <circle cx="12.8" cy="8" r="1.25" />
+            </svg>
+          </summary>
+          <div class="cmt-more-pop">
+            <a
+              :if={@comment.website}
+              class="cmt-more-row sm:hidden"
+              href={@comment.website}
+              title={@comment.website}
+              rel="nofollow noopener ugc"
+              target="_blank"
+            >
+              {host_of(@comment.website)} &nearr;
+            </a>
+            <button
+              type="button"
+              class="cmt-more-row"
+              phx-click="start_edit"
+              phx-value-id={@comment.id}
+            >
+              {gettext("Edit")}
+            </button>
+            <button
+              type="button"
+              class="cmt-more-row danger"
+              phx-click="delete_comment"
+              phx-value-id={@comment.id}
+            >
+              {gettext("Delete")}
+            </button>
+          </div>
+        </details>
       </div>
     </div>
     """
@@ -135,7 +169,7 @@ defmodule TexttileWeb.CommentComponents do
     ~H"""
     <a
       :if={@email}
-      class="btn quiet sm"
+      class="btn quiet sm cmt-reply"
       href={"mailto:#{@email}"}
       title={gettext("Write to %{email}", email: @email)}
     >
@@ -190,12 +224,7 @@ defmodule TexttileWeb.CommentComponents do
   # through by an admin, rewritten by one. Commas between them.
   # What follows the moment of a comment: let through, edited.
   defp moment_tail(comment) do
-    [
-      Comments.released?(comment) && gettext("let through"),
-      Comments.edited?(comment) && gettext("edited")
-    ]
-    |> Enum.filter(& &1)
-    |> Enum.map_join(&(", " <> &1))
+    if Comments.edited?(comment), do: ", " <> gettext("edited"), else: ""
   end
 
   # The address to write back to. An imported comment whose author
@@ -255,9 +284,8 @@ defmodule TexttileWeb.CommentComponents do
   """
   def comment_rule(true = _require_confirmation?) do
     gettext(
-      "Readers confirm their email first. Unconfirmed comments are deleted after %{waiting} days, and deleted comments stay in the trash for %{days} days.",
-      waiting: Comments.waiting_days(),
-      days: Comments.trash_days()
+      "Readers confirm their email before a comment goes live. Approve publishes right away; unconfirmed comments expire after %{waiting} days.",
+      waiting: Comments.waiting_days()
     )
   end
 

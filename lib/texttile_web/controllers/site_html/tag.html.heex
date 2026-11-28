@@ -6,27 +6,38 @@
   known={assigns[:known_browser]}
 />
 <main>
-  <div class="wrap pt-[46px] pb-[var(--tt-sec)]">
-    <h1 class="f-h1" id="title">#{@tag}</h1>
-    <%!-- no count line: the open tag in the row carries it --%>
-
-    <%!-- every tag of the blog; the one being read is marked and does
-         not link, the others are the way into the next archive --%>
-    <p
-      class="mt-4 sm:border-b sm:border-hair max-sm:mb-6 flex flex-wrap gap-x-4 gap-y-[6px]"
-      id="tagbar"
+  <div class="wrap pt-[18px] sm:pt-[34px] pb-[var(--tt-sec)]">
+    <a
+      class="link text-[13.5px] text-dim hover:text-accent block w-fit mb-2"
+      href={if @home_page, do: ~p"/blog", else: ~p"/"}
     >
-      <%= for {tag, count} <- @tags do %>
-        <span :if={tag == @tag} class="ctag on" aria-current="page">
-          #{tag} <span class="cnt">{count}</span>
-        </span>
-        <a :if={tag != @tag} class="ctag" href={~p"/tags/#{String.downcase(tag)}"}>
-          #{tag} <span class="cnt">{count}</span>
-        </a>
-      <% end %>
-    </p>
+      &larr; {gettext("All entries")}
+    </a>
+    <h1 class="f-h1 inline-flex items-baseline gap-2.5 flex-wrap" id="title">
+      <span>#{@tag}</span>
+      <span class="font-sans text-[15px] font-normal text-dim num tracking-normal">
+        {ngettext("1 entry", "%{count} entries", length(@articles))}
+      </span>
+    </h1>
+    <%!-- every tag of the blog; the active tag carries the underline and
+         the count stands once beside the page heading across both widths --%>
+    <div class="tagbar-wrap mt-4 mb-6">
+      <p
+        class="flex gap-x-4"
+        id="tagbar"
+      >
+        <%= for {tag, _count} <- @tags do %>
+          <span :if={tag == @tag} class="ctag on" aria-current="page">
+            #{tag}
+          </span>
+          <a :if={tag != @tag} class="ctag" href={~p"/tags/#{String.downcase(tag)}"}>
+            #{tag}
+          </a>
+        <% end %>
+      </p>
+    </div>
 
-    <div class="cards mt-7" id="texts">
+    <div class="cards mt-4" id="texts">
       <.card
         :for={article <- @articles}
         article={article}

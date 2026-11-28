@@ -152,8 +152,13 @@ function buildDeco(view, resolveImage) {
       const h = /^ATXHeading([1-6])$/.exec(name)
       if (h) {
         lineCls(n.from, "cm-mdh cm-mdh" + h[1])
-        if (!showRaw(n.from, n.to)) n.node.getChildren("HeaderMark").forEach((m, i) =>
-          hide(m.from, i === 0 ? Math.min(m.to + 1, n.to) : m.to))
+        if (!showRaw(n.from, n.to)) n.node.getChildren("HeaderMark").forEach((m, i) => {
+          if (i === 0) {
+            deco.push(Decoration.mark({class: "cm-mdhmark"}).range(m.from, Math.min(m.to + 1, n.to)))
+          } else {
+            hide(m.from, m.to)
+          }
+        })
         return   /* descend: a heading can hold emphasis */
       }
       if (name === "Emphasis" || name === "StrongEmphasis") {
@@ -201,12 +206,16 @@ function buildDeco(view, resolveImage) {
       }
       if (name === "Blockquote") { eachLine(n.from, n.to, "cm-mdquote"); return }
       if (name === "QuoteMark") {
-        if (!showRaw(n.from, n.to)) hide(n.from, Math.min(n.to + 1, doc.lineAt(n.from).to))
+        if (!showRaw(n.from, n.to)) {
+          const end = Math.min(n.to + 1, doc.lineAt(n.from).to)
+          deco.push(Decoration.mark({class: "cm-mdqmark"}).range(n.from, end))
+        }
         return
       }
       if (name === "ListMark") {
         /* a list line hangs: its wrapped lines start under the words,
-           not under the bullet. Only the drawing changes. */
+           not under the marker. Show the honest dimmed Markdown marker
+           just like headings and blockquotes. */
         lineCls(n.from, "cm-mdli")
         const txt = doc.sliceString(n.from, n.to)
         if (/^\d/.test(txt)) { deco.push(Decoration.mark({class: "cm-mdnum"}).range(n.from, n.to)); return }
@@ -216,13 +225,10 @@ function buildDeco(view, resolveImage) {
           if (!showRaw(n.from, n.to)) hide(n.from, Math.min(n.to + 1, doc.lineAt(n.from).to))
           return
         }
-        /* the marker and its space become one bullet the width of the
-           reader's list indent, so the line and its wrap meet the words
-           where the published entry puts them */
         if (!showRaw(n.from, n.to)) {
           const end = doc.sliceString(n.to, n.to + 1) === " " ? n.to + 1 : n.to
           lineCls(n.from, "cm-mdul")
-          deco.push(Decoration.replace({widget: new BulletW()}).range(n.from, end))
+          deco.push(Decoration.mark({class: "cm-mdlmark"}).range(n.from, end))
         }
         return
       }
@@ -578,7 +584,11 @@ const impl = {
       bar.addEventListener("mousedown", e => { if (e.target.closest(".mdb")) e.preventDefault() })
       bar.addEventListener("click", e => {
         const b = e.target.closest(".mdb")
-        if (b) this.cmd(b.dataset.cmd)
+        if (b) {
+          const det = b.closest("details")
+          if (det) det.open = false
+          this.cmd(b.dataset.cmd)
+        }
       })
     }
 

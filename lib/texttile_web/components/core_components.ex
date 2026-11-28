@@ -193,25 +193,27 @@ defmodule TexttileWeb.CoreComponents do
   """
   attr :id, :string, required: true
   attr :files, :boolean, default: true
+  attr :compact, :boolean, default: false
   attr :readonly, :boolean, default: false
   attr :class, :any, default: nil
 
   def md_bar(assigns) do
     ~H"""
     <div
-      class={["mdbar", @readonly && "is-readonly", @class]}
+      class={["mdbar", @compact && "is-compact", @readonly && "is-readonly", @class]}
       id={@id}
       role="toolbar"
       aria-label={gettext("Formatting")}
     >
       <button
+        :if={!@compact}
         type="button"
         class="mdb"
         data-cmd="heading"
         title={gettext("Heading. Click again for the next size.")}
         aria-label={gettext("Heading")}
       >
-        <span class="g font-sans font-semibold text-[15px]">H</span>
+        <span class="g font-serif font-semibold text-[15px] leading-none">H</span>
       </button>
       <button
         type="button"
@@ -220,7 +222,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Bold (Ctrl or Cmd + B)")}
         aria-label={gettext("Bold")}
       >
-        <span class="g font-sans font-bold text-[14.5px]">B</span>
+        <span class="g font-serif font-bold text-[15px] leading-none">B</span>
       </button>
       <button
         type="button"
@@ -229,7 +231,7 @@ defmodule TexttileWeb.CoreComponents do
         title={gettext("Italic (Ctrl or Cmd + I)")}
         aria-label={gettext("Italic")}
       >
-        <span class="g font-sans italic font-semibold text-[14.5px]">I</span>
+        <span class="g font-serif italic font-semibold text-[15px] leading-none">I</span>
       </button>
       <button
         type="button"
@@ -243,7 +245,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.35"
+          stroke-width="1.4"
           stroke-linecap="round"
         >
           <path d="M6.5 9.5 9.5 6.5" />
@@ -251,19 +253,31 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M8.8 11.4l-1.5 1.5a2.6 2.6 0 0 1-3.7-3.7l1.5-1.5" />
         </svg>
       </button>
-      <span class="mdsep" aria-hidden="true"></span>
+      <span :if={!@compact} class="mdsep" aria-hidden="true"></span>
       <button
+        :if={!@compact}
         type="button"
         class="mdb"
         data-cmd="quote"
         title={gettext("Quote")}
         aria-label={gettext("Quote")}
       >
-        <svg class="g" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-          <path d="M3 9.6C3 7 4.3 5.1 6.6 4.2l.5.9C5.7 5.8 5 6.8 4.9 8h1.6c.6 0 1 .4 1 1v2.4c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1V9.6Zm6 0c0-2.6 1.3-4.5 3.6-5.4l.5.9c-1.4.7-2.1 1.7-2.2 2.9h1.6c.6 0 1 .4 1 1v2.4c0 .6-.4 1-1 1H10c-.6 0-1-.4-1-1V9.6Z" />
+        <svg
+          class="g"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M6.6 4.8C4.8 5.6 3.8 7 3.8 9v2a.7.7 0 0 0 .7.7h1.8a.7.7 0 0 0 .7-.7V9a.7.7 0 0 0-.7-.7H5.1c.1-1.2.6-2 1.6-2.7" />
+          <path d="M12.4 4.8C10.6 5.6 9.6 7 9.6 9v2a.7.7 0 0 0 .7.7h1.8a.7.7 0 0 0 .7-.7V9a.7.7 0 0 0-.7-.7h-1.2c.1-1.2.6-2 1.6-2.7" />
         </svg>
       </button>
       <button
+        :if={!@compact}
         type="button"
         class="mdb"
         data-cmd="bullet"
@@ -275,7 +289,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.45"
           stroke-linecap="round"
         >
           <circle cx="3" cy="4" r=".4" fill="currentColor" />
@@ -285,8 +299,9 @@ defmodule TexttileWeb.CoreComponents do
         </svg>
       </button>
       <button
+        :if={!@compact}
         type="button"
-        class="mdb"
+        class="mdb md-extra"
         data-cmd="ordered"
         title={gettext("Numbered list")}
         aria-label={gettext("Numbered list")}
@@ -296,7 +311,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.45"
           stroke-linecap="round"
         >
           <path d="M7.5 4h5.5M7.5 8h5.5M7.5 12h5.5" />
@@ -309,8 +324,9 @@ defmodule TexttileWeb.CoreComponents do
         </svg>
       </button>
       <button
+        :if={!@compact}
         type="button"
-        class="mdb rare"
+        class="mdb md-extra"
         data-cmd="task"
         title={gettext("Task list. Click a box in the text to tick it.")}
         aria-label={gettext("Task list")}
@@ -320,7 +336,7 @@ defmodule TexttileWeb.CoreComponents do
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.6"
+          stroke-width="1.35"
           stroke-linecap="round"
           stroke-linejoin="round"
         >
@@ -328,33 +344,11 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M5.2 8.2l2 2 3.6-4" />
         </svg>
       </button>
-      <%!-- a phone has nothing after this rule until the ellipsis
-           opens the rest --%>
-      <span class="mdsep rare" aria-hidden="true"></span>
+      <span :if={!@compact} class="mdsep" aria-hidden="true"></span>
       <button
+        :if={!@compact && @files}
         type="button"
-        class="mdb rare"
-        data-cmd="code"
-        title={gettext("Code")}
-        aria-label={gettext("Code")}
-      >
-        <svg
-          class="g"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.6"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M6 4.5 2.5 8 6 11.5" />
-          <path d="M10 4.5 13.5 8 10 11.5" />
-        </svg>
-      </button>
-      <button
-        :if={@files}
-        type="button"
-        class="mdb rare"
+        class="mdb"
         data-cmd="image"
         title={gettext("Put an image in the text, at the caret")}
         aria-label={gettext("Image")}
@@ -373,17 +367,58 @@ defmodule TexttileWeb.CoreComponents do
           <path d="M2.6 11.4 6.5 8l3 2.6 1.9-1.6 2.2 2" />
         </svg>
       </button>
-      <%!-- a phone keeps the rare formats folded: this opens them in
-           the bar, and JS.toggle_class keeps them open across redraws --%>
       <button
+        :if={!@compact}
         type="button"
-        class="mdb fmt-more"
-        phx-click={Phoenix.LiveView.JS.toggle_class("show-rare", to: "#" <> @id)}
-        title={gettext("More formats")}
-        aria-label={gettext("More formats")}
+        class="mdb md-extra"
+        data-cmd="code"
+        title={gettext("Code")}
+        aria-label={gettext("Code")}
       >
-        <span class="g font-sans font-semibold text-[15px] leading-none">⋯</span>
+        <svg
+          class="g"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.35"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M6 4.5 2.5 8 6 11.5" />
+          <path d="M10 4.5 13.5 8 10 11.5" />
+        </svg>
       </button>
+      <details :if={!@compact} class="mdmore md:hidden">
+        <summary
+          class="mdmore-btn"
+          aria-label={gettext("More formatting")}
+          title={gettext("More formatting")}
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M8 3.5v9M3.5 8h9" />
+          </svg>
+        </summary>
+        <div class="mdmore-pop">
+          <button type="button" class="mdb mdmore-row" data-cmd="ordered">
+            {gettext("Numbered list")}
+          </button>
+          <button type="button" class="mdb mdmore-row" data-cmd="task">
+            {gettext("Task list")}
+          </button>
+          <button type="button" class="mdb mdmore-row" data-cmd="code">
+            {gettext("Code")}
+          </button>
+        </div>
+      </details>
     </div>
     """
   end

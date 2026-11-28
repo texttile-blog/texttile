@@ -32,9 +32,14 @@ defmodule TexttileWeb.SessionHTML do
           />
         </div>
         <div class="mb-[15px]">
-          <label class="block text-[13px] font-medium text-ink mb-[6px]" for="login-password">
-            {gettext("Password")}
-          </label>
+          <div class="flex items-baseline justify-between gap-2 mb-[6px]">
+            <label class="block text-[13px] font-medium text-ink" for="login-password">
+              {gettext("Password")}
+            </label>
+            <a class="link text-[13px]" href={~p"/forgot"}>
+              {gettext("Forgot your password?")}
+            </a>
+          </div>
           <input
             type="password"
             id="login-password"
@@ -57,7 +62,7 @@ defmodule TexttileWeb.SessionHTML do
             <span class="note">{gettext("Fourteen days instead of two.")}</span>
           </span>
         </label>
-        <button class="btn solid w-full h-[38px] mt-[13px]" type="submit">
+        <button class="btn solid w-full mt-[14px]" type="submit">
           {gettext("Sign in")}
         </button>
       </.form>
@@ -70,9 +75,6 @@ defmodule TexttileWeb.SessionHTML do
       <p :if={@error == :too_many} class="text-julia text-[13px] mt-[13px]" id="login-error">
         {gettext("Too many tries. Wait a minute, then try again.")}
       </p>
-      <p class="mt-[13px]">
-        <a class="link text-[13px]" href={~p"/forgot"}>{gettext("Forgot your password?")}</a>
-      </p>
       <%!-- Nothing is given away here: while this stands, there is no
            account whose existence it could give away. --%>
       <p :if={@nobody_can_sign_in} class="note mt-[22px] leading-[1.6]" id="login-nobody">
@@ -80,7 +82,7 @@ defmodule TexttileWeb.SessionHTML do
           "No account here has a password yet. The addresses in ADMIN_USERS have been mailed a link that sets one. While nobody can sign in, the server writes that link into its own log as well, so an installation whose mail does not leave still lets its first admin in."
         )}
       </p>
-      <p :if={not @nobody_can_sign_in} class="note text-[12.5px] mt-4 leading-[1.5]">
+      <p :if={not @nobody_can_sign_in} class="note text-[13px] mt-5 leading-[1.5]">
         {gettext("No account? An admin of this blog can invite you.")}
       </p>
     </Layouts.auth>

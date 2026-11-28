@@ -46,8 +46,9 @@ export function toastLine({now, note, noteUntil}, say = t) {
 export const SavedTicker = {
   mounted() {
     // the stamp arrives with the last save already on it; only a save
-    // that happens while somebody is watching is worth a toast
-    this.at = Number(this.el.dataset.at || 0)
+    // that happens while somebody is watching is worth a toast, unless
+    // the indicator was inserted specifically for a live save
+    this.at = this.el.dataset.announce === "true" ? 0 : Number(this.el.dataset.at || 0)
     this.timer = setInterval(() => this.paint(), 1000)
     this.paint()
   },
@@ -77,9 +78,10 @@ export const SavedTicker = {
       }))
     }
 
-    const line = savedLine({at, now, wide: window.matchMedia("(min-width: 768px)").matches})
+    const wide = window.matchMedia("(min-width: 768px)").matches
+    const line = savedLine({at, now, wide})
     this.el.title = line.title
-    this.words().textContent = line.text
+    this.words().textContent = (!wide && this.el.dataset.savedShort) || this.el.dataset.savedLabel || line.text
   },
 
   /* The toast is one element on the body, made on the first save and

@@ -81,8 +81,7 @@ defmodule TexttileWeb.AdminShareTest do
       {:ok, view, html} = live(conn, ~p"/admin/texts/#{article}")
 
       assert has_element?(view, "#shareLines")
-      # Copy stands at the right end of the heading, where Reset does
-      assert has_element?(view, "#shareBlock button[data-copy]", "Copy")
+      assert has_element?(view, "#copyShare[data-copy]", "Copy link")
       assert html =~ "New on Texttile: The harbour"
       assert html =~ Articles.public_path(article)
       refute html =~ "The blog password is"

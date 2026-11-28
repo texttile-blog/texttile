@@ -22,9 +22,10 @@
   --fld-bb:     1px solid var(--tt-fieldline);
   --fld-r:      var(--tt-radius);
   --fld-p:      7px 12px;
-  --fld-sh:     none;
+  --fld-sh:     0 1px 1px rgb(var(--tt-shadow) / .025);
 
   --fld-bg-h:   var(--tt-paper);
+  --fld-bd-h:   1px solid var(--tt-fieldlinehover);
   --fld-bb-h:   1px solid var(--tt-fieldlinehover);
 
   --fld-bg-f:   var(--tt-paper);
@@ -99,7 +100,7 @@
   input[type=time]:hover::-webkit-calendar-picker-indicator { opacity: 1; }
   input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)):hover,
   textarea:hover, select:hover {
-    background-color: var(--fld-bg-h); border-bottom: var(--fld-bb-h);
+    background-color: var(--fld-bg-h); border: var(--fld-bd-h); border-bottom: var(--fld-bb-h);
   }
   input:not(:is([type=checkbox], [type=radio], [type=file], [type=hidden], [type=submit], [type=reset], [type=button], [type=image], [type=range], [type=color], .sr)):focus,
   textarea:focus, select:focus {

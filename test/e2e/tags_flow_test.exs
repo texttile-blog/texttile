@@ -13,11 +13,11 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
       |> sign_in()
       |> press("body", "4")
       |> await_live()
-      |> assert_has("#crumb", text: "Tags")
+      |> assert_has("h1.page-h", text: "Tags")
       |> click_button("#edit-tag-reisen", "Edit")
       |> fill_in("Name", with: "Reisen4")
       |> press("#tag-name", "2")
-      |> assert_has("#crumb", text: "Tags")
+      |> assert_has("h1.page-h", text: "Tags")
       |> fill_in("Name", with: "Reisen")
       |> click_button("Rename")
       |> assert_has("#tagrow-reisen a", text: "Reisen")
@@ -29,12 +29,16 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
     session
     |> open_editor(draft.id)
     |> assert_has("#edTags[value='Reisen']")
-    |> assert_has("#tagchip-reisen.on", text: "Reisen")
+    |> refute_has("#tagchip-reisen")
     |> open_editor(blank.id)
     |> type("#edTags", "rei")
     |> assert_has(~s(#tagMenu li[data-tag="Reisen"]), text: "Reisen")
     |> press("#edTags", "Enter")
-    |> assert_has("#tagchip-reisen.on", text: "Reisen")
+    |> evaluate(
+      "() => document.getElementById('edTags').value",
+      [is_function: true],
+      &assert(&1 == "Reisen, ")
+    )
     |> open_page("/tags/reisen")
     |> assert_has("#title", text: "#Reisen")
   end
@@ -52,6 +56,7 @@ defmodule TexttileWeb.E2E.TagsFlowTest do
       |> assert_has("#tag-error", text: "already exists")
       |> click_button("#cancel-tag-edit", "Cancel")
       |> refute_has("#rename-tag-form")
+      |> click_button("#edit-tag-reisen", "Edit")
       |> click_button("#delete-tag-reisen", "Delete")
       |> click_button("#dialog-cancel", "Cancel")
       |> assert_has("#tagrow-reisen")

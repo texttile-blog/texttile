@@ -156,7 +156,24 @@ defmodule TexttileWeb.E2E do
   def open_editor(session, article_id) do
     session
     |> open("/admin/texts/#{article_id}")
-    |> PhoenixTest.assert_has("#tilesBlock[data-ready]")
+    |> PhoenixTest.assert_has(".ed-cm .cm-content")
+    |> PhoenixTest.Playwright.evaluate(
+      """
+      () => new Promise((done) => {
+        const until = Date.now() + 10000
+        const look = () => {
+          if (document.querySelector("#tilesBlock[data-ready]")) done(true)
+          else if (Date.now() > until) done(false)
+          else requestAnimationFrame(look)
+        }
+        look()
+      })
+      """,
+      [is_function: true],
+      fn ready ->
+        unless ready, do: raise("timed out waiting for #tilesBlock[data-ready]")
+      end
+    )
   end
 
   @doc """

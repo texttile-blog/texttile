@@ -41,12 +41,12 @@ defmodule TexttileWeb.EditorLiveTest do
   end
 
   describe "the editor" do
-    test "shows the text and the crumb", %{conn: conn, user: user} do
+    test "shows the text and title", %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, html} = live(conn, ~p"/admin/texts/#{article}")
 
-      assert has_element?(view, "#crumb", "Doors")
-      assert has_element?(view, "#edTitle[value='Doors']")
+      assert has_element?(view, "#edTitle", "Doors")
+      assert page_title(view) =~ "Doors"
       assert html =~ "Wooden ones."
       assert has_element?(view, "#stateWord", "Draft")
     end
@@ -57,7 +57,6 @@ defmodule TexttileWeb.EditorLiveTest do
 
       view |> element("#text-form") |> render_change(%{title: "Fourteen doors"})
       assert Articles.get_article!(article.id).title == "Fourteen doors"
-      assert has_element?(view, "#crumb", "Fourteen doors")
       assert page_title(view) =~ "Fourteen doors"
     end
 
@@ -181,7 +180,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(
                view,
                "#notifyOpt",
-               "went out on #{Texttile.I18n.format_date(Date.utc_today())}"
+               "Mailed #{Texttile.I18n.format_short_date(Date.utc_today())}"
              )
     end
 
@@ -346,7 +345,7 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(
                view,
                "#notifyOpt",
-               "went out on #{Texttile.I18n.format_date(Date.utc_today())}"
+               "Mailed #{Texttile.I18n.format_short_date(Date.utc_today())}"
              )
 
       # and nothing is asked: a mail that has gone never goes twice
@@ -356,7 +355,7 @@ defmodule TexttileWeb.EditorLiveTest do
       # publishing again sends nothing: the stamp stands from the first
       # go-live and never moves
       assert Articles.get_article!(article.id).notified_on == Date.utc_today()
-      assert has_element?(view, "#notifyOpt", "It goes out once")
+      assert has_element?(view, "#notifyOpt", "Edits are not mailed again")
     end
 
     # One way out of this screen and it carries a word. There used to be
@@ -453,7 +452,6 @@ defmodule TexttileWeb.EditorLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
       refute has_element?(view, "#oldAddresses")
-      assert has_element?(view, "#slugHint", "the old address still leads to this entry")
       refute has_element?(view, "#slugHint", "breaks old links")
 
       set_slug(view, "the-harbour")
@@ -542,26 +540,16 @@ defmodule TexttileWeb.EditorLiveTest do
 
       assert has_element?(view, "#tagchip-sea", "Sea")
       assert has_element?(view, "#tagchip-fog", "fog")
-      refute has_element?(view, "#tagchip-sea.on")
 
       view |> element("#tagchip-sea") |> render_click()
 
       assert Articles.get_article!(article.id).tags == "Sea"
-      assert has_element?(view, "#tagchip-sea.on")
-
-      # the same click again takes the tag off, and the chip stays
-      # there, so one more click puts the tag back
-      view |> element("#tagchip-sea") |> render_click()
-
-      assert Articles.get_article!(article.id).tags == ""
-      assert has_element?(view, "#tagchip-sea")
-      refute has_element?(view, "#tagchip-sea.on")
-
-      view |> element("#tagchip-sea") |> render_click()
-      assert Articles.get_article!(article.id).tags == "Sea"
+      assert has_element?(view, ~s(#edTags[value="Sea"]))
+      refute has_element?(view, "#tagchip-sea")
+      assert has_element?(view, "#tagchip-fog", "fog")
     end
 
-    test "a tag typed by hand joins the suggestions and keeps its spelling",
+    test "a tag typed by hand joins the suggestions for other entries and keeps its spelling",
          %{conn: conn, user: user} do
       article = draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
@@ -570,10 +558,12 @@ defmodule TexttileWeb.EditorLiveTest do
       |> element("#artSettings")
       |> render_change(%{_target: ["tags"], tags: "Harbor"})
 
-      assert has_element?(view, "#tagchip-harbor.on")
+      assert Articles.get_article!(article.id).tags == "Harbor"
+      refute has_element?(view, "#tagchip-harbor")
 
-      view |> element("#tagchip-harbor") |> render_click()
-      assert Articles.get_article!(article.id).tags == ""
+      other = draft(user)
+      {:ok, other_view, _html} = live(conn, ~p"/admin/texts/#{other}")
+      assert has_element?(other_view, "#tagchip-harbor", "Harbor")
     end
 
     test "a tag no text carries any more leaves the row", %{conn: conn, user: user} do
@@ -587,16 +577,16 @@ defmodule TexttileWeb.EditorLiveTest do
       |> element("#artSettings")
       |> render_change(%{_target: ["tags"], tags: "sea, lonely"})
 
-      assert has_element?(view, "#tagchip-lonely.on")
+      refute has_element?(view, "#tagchip-lonely")
 
       # "lonely" stood on this text alone, so it goes with it; "sea"
-      # belongs to another text and stays on offer
+      # belongs to another text and stays on offer once removed
       view
       |> element("#artSettings")
-      |> render_change(%{_target: ["tags"], tags: "sea"})
+      |> render_change(%{_target: ["tags"], tags: ""})
 
       refute has_element?(view, "#tagchip-lonely")
-      assert has_element?(view, "#tagchip-sea.on")
+      assert has_element?(view, "#tagchip-sea", "sea")
     end
 
     test "a reserved address is refused with its own note", %{conn: conn, user: user} do
@@ -919,15 +909,19 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#tile-#{a.id} .cov")
       refute has_element?(view, "#tile-#{b.id} .cov")
 
-      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+      view |> element("#changePreview") |> render_click()
+      assert has_element?(view, "#coverPickBar")
+      view |> element("#tile-#{b.id}") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == b.path
       assert has_element?(view, "#tile-#{b.id} .cov")
-      assert has_element?(view, "#coverRow button.on[phx-value-path='#{b.path}']")
+      refute has_element?(view, "#coverPickBar")
       assert has_element?(other, "#tile-#{b.id} .cov")
 
-      # the second click lets the first image speak again
-      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+      # picking the chosen cover again (or clicking Use first) returns to the first image
+      view |> element("#changePreview") |> render_click()
+      assert has_element?(view, "#resetPreview")
+      view |> element("#tile-#{b.id}") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == nil
       assert has_element?(view, "#tile-#{a.id} .cov")
@@ -937,9 +931,10 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{draft(user)}")
 
       refute has_element?(view, "#previewRow")
+      refute has_element?(view, "#changePreview")
     end
 
-    test "the preview picker offers every image, not only the first eight", %{
+    test "the cover picker offers every gallery tile and inline body images", %{
       conn: conn,
       user: user
     } do
@@ -953,10 +948,17 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
       ninth = List.last(tiles)
-      view |> element("#coverRow button[phx-value-path='#{ninth.path}']") |> render_click()
+      view |> element("#changePreview") |> render_click()
+      view |> element("#tile-#{ninth.id}") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == ninth.path
-      assert has_element?(view, "#coverRow button.on[phx-value-path='#{ninth.path}']")
+      assert has_element?(view, "#tile-#{ninth.id} .cov")
+
+      # Use first resets custom cover back to automatic first tile
+      view |> element("#changePreview") |> render_click()
+      view |> element("#resetPreview") |> render_click()
+      assert Articles.get_article!(article.id).preview_path == nil
+      assert has_element?(view, "#tile-#{hd(tiles).id} .cov")
     end
 
     test "a forged preview path changes nothing", %{conn: conn, user: user} do

@@ -70,7 +70,7 @@ defmodule TexttileWeb.SiteControllerTest do
       {:ok, _} = Articles.update_text(article, %{title: "Harbor", body: "Fog lifting."})
 
       changed = conn |> get(Articles.public_path(article)) |> html_response(200)
-      assert changed =~ "changes not published yet"
+      assert changed =~ "Unpublished edits"
       refute changed =~ "same as live"
     end
   end
@@ -116,7 +116,7 @@ defmodule TexttileWeb.SiteControllerTest do
       refute html =~ "Harbor mornings"
     end
 
-    test "shows each post's preview tile, lead line and tag links", %{conn: conn} do
+    test "shows each post's preview tile and title", %{conn: conn} do
       article =
         published_post(
           title: "With a picture",
@@ -128,11 +128,7 @@ defmodule TexttileWeb.SiteControllerTest do
 
       html = conn |> get(~p"/blog") |> html_response(200)
       assert html =~ "/renditions/640/"
-      # the lead reads over the blank line and leaves the heading out
-      assert html =~ "The first paragraph carries the lead. And the second one too."
-      refute html =~ "clead\">A heading"
-      assert html =~ ~s(href="/tags/sea")
-      assert html =~ ~s(href="/tags/fog")
+      assert html =~ "With a picture"
       refute html =~ "cimg blank"
     end
 
@@ -519,8 +515,8 @@ defmodule TexttileWeb.SiteControllerTest do
       html = conn |> get(~p"/tags/sea") |> html_response(200)
 
       assert html =~ "#Sea"
-      # the count stands in the open tag of the row
-      assert html =~ ~r{aria-current="page">\s*#Sea <span class="cnt">1</span>}
+      assert html =~ "1 entry"
+      assert html =~ ~r{aria-current="page"[^>]*>\s*#Sea\s*<}
       assert html =~ ~s(id="text-#{sea.id}")
       refute html =~ "Desert nights"
 

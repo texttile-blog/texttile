@@ -77,14 +77,14 @@ defmodule TexttileWeb.TextsLiveTest do
       {:ok, article} = Articles.create_draft(user)
       {:ok, view, _html} = live(conn, ~p"/admin/texts")
 
-      assert has_element?(view, "#cards .cimg.empty")
+      refute has_element?(view, "#cards .cimg")
 
       path = Path.join(System.tmp_dir!(), "cover-#{System.unique_integer([:positive])}.jpg")
       {:ok, black} = Vix.Vips.Operation.black(20, 10)
       :ok = Vix.Vips.Image.write_to_file(black, path)
       {:ok, image} = Texttile.Gallery.add_file(article, path, "cover.jpg")
 
-      refute has_element?(view, "#cards .cimg.empty")
+      assert has_element?(view, "#cards .cimg")
       assert render(view) =~ "/renditions/320/#{image.path}"
     end
 
