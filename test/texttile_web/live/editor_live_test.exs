@@ -909,15 +909,19 @@ defmodule TexttileWeb.EditorLiveTest do
       assert has_element?(view, "#tile-#{a.id} .cov")
       refute has_element?(view, "#tile-#{b.id} .cov")
 
-      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+      view |> element("#changePreview") |> render_click()
+      assert has_element?(view, "#coverPickBar")
+      view |> element("#tile-#{b.id}") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == b.path
       assert has_element?(view, "#tile-#{b.id} .cov")
-      assert has_element?(view, "#coverRow button.on[phx-value-path='#{b.path}']")
+      refute has_element?(view, "#coverPickBar")
       assert has_element?(other, "#tile-#{b.id} .cov")
 
-      # the second click lets the first image speak again
-      view |> element("#coverRow button[phx-value-path='#{b.path}']") |> render_click()
+      # picking the chosen cover again (or clicking Use first) returns to the first image
+      view |> element("#changePreview") |> render_click()
+      assert has_element?(view, "#resetPreview")
+      view |> element("#tile-#{b.id}") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == nil
       assert has_element?(view, "#tile-#{a.id} .cov")
@@ -927,9 +931,10 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{draft(user)}")
 
       refute has_element?(view, "#previewRow")
+      refute has_element?(view, "#changePreview")
     end
 
-    test "the preview picker offers every image, not only the first eight", %{
+    test "the cover picker offers every gallery tile and inline body images", %{
       conn: conn,
       user: user
     } do
@@ -943,10 +948,17 @@ defmodule TexttileWeb.EditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/texts/#{article}")
 
       ninth = List.last(tiles)
-      view |> element("#coverRow button[phx-value-path='#{ninth.path}']") |> render_click()
+      view |> element("#changePreview") |> render_click()
+      view |> element("#tile-#{ninth.id}") |> render_click()
 
       assert Articles.get_article!(article.id).preview_path == ninth.path
-      assert has_element?(view, "#coverRow button.on[phx-value-path='#{ninth.path}']")
+      assert has_element?(view, "#tile-#{ninth.id} .cov")
+
+      # Use first resets custom cover back to automatic first tile
+      view |> element("#changePreview") |> render_click()
+      view |> element("#resetPreview") |> render_click()
+      assert Articles.get_article!(article.id).preview_path == nil
+      assert has_element?(view, "#tile-#{hd(tiles).id} .cov")
     end
 
     test "a forged preview path changes nothing", %{conn: conn, user: user} do

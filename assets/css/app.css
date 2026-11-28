@@ -4426,6 +4426,131 @@ textarea.ed-title:focus {
   background: var(--tt-accentwash);
 }
 
+/* In-place cover picking mode: sticky bar flush under topbar, existing tiles become single-tap targets */
+.cover-pick-bar {
+  position: sticky;
+  top: 48px;
+  z-index: 25;
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border-radius: var(--tt-radius);
+  background: var(--tt-accentwash);
+  border: 1px solid var(--tt-accentline);
+  box-shadow: 0 -4px 0 0 var(--tt-page), 0 2px 8px rgb(var(--tt-shadow) / .06);
+  font-size: 12.5px;
+  color: var(--tt-ink);
+}
+@media (min-width: 1024px) {
+  .cover-pick-bar {
+    top: 52px;
+  }
+}
+.cover-pick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cover-pick-cur {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cover-pick-thumb {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 4px;
+  background: var(--tt-field);
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 0 1px var(--tt-accent);
+}
+.cover-pick-lbl {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tt-inksoft);
+}
+.cover-pick-lbl b {
+  color: var(--tt-accent);
+  font-weight: 600;
+}
+.cover-pick-acts {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.cover-pick-src {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--tt-accentline);
+}
+.cov-src-tab {
+  padding: 2px 0 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tt-dim);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.cov-src-tab:hover {
+  color: var(--tt-ink);
+}
+.cov-src-tab.on {
+  color: var(--tt-accent);
+  font-weight: 600;
+  border-bottom-color: var(--tt-accent);
+}
+.is-picking-cover .tile-del,
+.is-picking-cover .tile-add {
+  display: none !important;
+}
+.is-picking-cover .tile {
+  cursor: pointer;
+  touch-action: auto;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color .12s ease, opacity .12s ease;
+}
+.is-picking-cover .tile .n {
+  opacity: 1;
+}
+.is-picking-cover .tile.tile-waiting {
+  opacity: .42;
+  cursor: not-allowed;
+}
+.is-picking-cover .tile[data-preview="1"] {
+  outline-color: var(--tt-accent);
+}
+.is-picking-cover .tile:not(.tile-waiting):hover,
+.is-picking-cover .tile:not(.tile-waiting):focus-visible {
+  outline-color: var(--tt-accent);
+}
+.is-picking-cover .tile[data-pick-label]:hover::after,
+.is-picking-cover .tile[data-pick-label]:focus-visible::after {
+  content: attr(data-pick-label);
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: var(--tt-accent);
+  color: var(--tt-onsolid);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+}
+
 /* 2. LIGHT EDITORIAL SIGNED-IN READER STRIP · consistent link style on both actions */
 .known-strip {
   height: 34px;

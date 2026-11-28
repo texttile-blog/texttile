@@ -460,6 +460,55 @@ defmodule TexttileWeb.E2E.GalleryFlowTest do
       eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == a.path end)
     end
 
+    test "Change cover picks directly on the gallery grid and resets cleanly", %{
+      conn: conn,
+      kb: kb
+    } do
+      article = draft!(kb)
+      a = seed!(article, "pier.jpg", "2024:05:01 10:00:00")
+      b = seed!(article, "gull.jpg", "2024:05:01 12:00:00")
+
+      conn =
+        conn
+        |> sign_in()
+        |> open_editor(article.id)
+        |> assert_has("#tile-#{a.id} .cov")
+        |> click("#changePreview")
+        |> assert_has("#coverPickBar")
+        |> assert_has("#coverPickCurrent", text: "#01")
+        # clicking a tile in pick mode chooses the cover without opening the lightbox
+        |> click("#tile-#{b.id}")
+        |> refute_has("#coverPickBar")
+        |> refute_has("#lbPreview")
+        |> assert_has("#tile-#{b.id} .cov")
+
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == b.path end)
+
+      # Escape exits pick mode without changing the cover
+      conn =
+        conn
+        |> click("#changePreview")
+        |> assert_has("#coverPickBar")
+        |> assert_has("#coverPickCurrent", text: "#02")
+        |> assert_has("#resetPreview", text: "Use first")
+        |> evaluate(
+          "() => { window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})); return true }",
+          is_function: true
+        )
+        |> refute_has("#coverPickBar")
+
+      assert Texttile.Articles.get_article!(article.id).preview_path == b.path
+
+      # Use first resets to the automatic first tile
+      conn
+      |> click("#changePreview")
+      |> click("#resetPreview")
+      |> refute_has("#coverPickBar")
+      |> assert_has("#tile-#{a.id} .cov")
+
+      eventually(fn -> Texttile.Articles.get_article!(article.id).preview_path == nil end)
+    end
+
     test "descriptions autosave, follow remote edits, and clear", %{conn: conn, kb: kb} do
       article = draft!(kb)
       image = seed!(article, "pier.jpg", "2024:05:01 10:00:00")

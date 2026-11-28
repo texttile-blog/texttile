@@ -55,6 +55,8 @@ defmodule TexttileWeb.EditorLive do
       |> assign(:gallery, Gallery.list(article.id))
       |> assign(:gallery_rev, 0)
       |> assign(:media_rev, 0)
+      |> assign(:picking_cover, false)
+      |> assign(:cover_source, :gallery)
       |> assign(:comments, Comments.for_article(article.id))
       |> assign(:cmt_require, Texttile.Settings.get(:comments_require_confirmation))
       # The accounts the Author field offers. All admins are equal, so
@@ -742,24 +744,68 @@ defmodule TexttileWeb.EditorLive do
     end
   end
 
-  # The preview picker in the article settings: a click chooses, a
-  # second click on the chosen one lets the first image speak again.
+  # The preview picker in the gallery: a click chooses and closes pick mode,
+  # a second click on the chosen one lets the first image speak again.
   # Open to every admin, like the rest of the settings.
+  def handle_event("toggle_cover_pick", _params, socket) do
+    next = !socket.assigns.picking_cover
+    {:noreply, socket |> assign(:picking_cover, next) |> assign(:cover_source, :gallery)}
+  end
+
+  def handle_event("close_cover_pick", _params, socket) do
+    {:noreply, socket |> assign(:picking_cover, false) |> assign(:cover_source, :gallery)}
+  end
+
+  def handle_event("set_cover_source", %{"source" => source}, socket) do
+    cover_source = if source == "inline", do: :inline, else: :gallery
+    {:noreply, assign(socket, :cover_source, cover_source)}
+  end
+
+  def handle_event("reset_preview", _params, socket) do
+    %{article: article} = socket.assigns
+
+    {:ok, article} = Articles.update_settings(article, %{preview_path: nil})
+
+    {:noreply,
+     socket
+     |> assign_article(article)
+     |> assign(:picking_cover, false)
+     |> assign(:cover_source, :gallery)
+     |> mark_saved()}
+  end
+
   def handle_event("set_preview", %{"path" => path}, socket) do
     %{article: article, gallery: gallery, current_scope: scope} = socket.assigns
 
     cond do
       path not in Gallery.preview_candidates(article, Enum.map(gallery, & &1.path)) ->
-        {:noreply, socket |> assign_gallery() |> mark_saved(gone_note())}
+        {:noreply,
+         socket
+         |> assign_gallery()
+         |> assign(:picking_cover, false)
+         |> assign(:cover_source, :gallery)
+         |> mark_saved(gone_note())}
 
       article.preview_path == path ->
         {:ok, article} = Articles.update_settings(article, %{preview_path: nil})
-        {:noreply, socket |> assign_article(article) |> mark_saved()}
+
+        {:noreply,
+         socket
+         |> assign_article(article)
+         |> assign(:picking_cover, false)
+         |> assign(:cover_source, :gallery)
+         |> mark_saved()}
 
       true ->
         {:ok, article} = Articles.update_settings(article, %{preview_path: path})
         Articles.push_log(article, scope.user, "chose #{Path.basename(path)} as the preview")
-        {:noreply, socket |> assign_article(article) |> mark_saved()}
+
+        {:noreply,
+         socket
+         |> assign_article(article)
+         |> assign(:picking_cover, false)
+         |> assign(:cover_source, :gallery)
+         |> mark_saved()}
     end
   end
 
@@ -1056,6 +1102,20 @@ defmodule TexttileWeb.EditorLive do
 
   defp effective_preview(%{article: article, gallery: gallery}) do
     Gallery.effective_preview(article, Enum.map(gallery, & &1.path))
+  end
+
+  defp inline_preview_candidates(preview_candidates, gallery) do
+    gallery_paths = MapSet.new(gallery, & &1.path)
+    Enum.reject(preview_candidates, &MapSet.member?(gallery_paths, &1))
+  end
+
+  defp cover_label(nil, _gallery), do: nil
+
+  defp cover_label(path, gallery) do
+    case Enum.find_index(gallery, &(&1.path == path)) do
+      nil -> Path.basename(path)
+      index -> "#" <> String.pad_leading("#{index + 1}", 2, "0")
+    end
   end
 
   defp tile_bg(path) do
@@ -1458,10 +1518,30 @@ defmodule TexttileWeb.EditorLive do
   def render(assigns) do
     # once per render, not once per tile: the candidates parse the body,
     # and the stills ask in one go what every video of this text shows
+    candidates = preview_candidates(assigns)
+    effective = effective_preview(assigns)
+    inline_candidates = inline_preview_candidates(candidates, assigns.gallery)
+
+    can_pick_cover =
+      assigns.gallery != [] &&
+        (length(candidates) >= 2 || not is_nil(assigns.article.preview_path))
+
+    picking_cover = assigns.picking_cover && can_pick_cover
+
+    cover_source =
+      if picking_cover && assigns.cover_source == :inline && inline_candidates != [],
+        do: :inline,
+        else: :gallery
+
     assigns =
       assigns
-      |> assign(:preview_candidates, preview_candidates(assigns))
-      |> assign(:effective_preview, effective_preview(assigns))
+      |> assign(:preview_candidates, candidates)
+      |> assign(:effective_preview, effective)
+      |> assign(:inline_preview_candidates, inline_candidates)
+      |> assign(:can_pick_cover, can_pick_cover)
+      |> assign(:picking_cover, picking_cover)
+      |> assign(:cover_source, cover_source)
+      |> assign(:cover_label, cover_label(effective, assigns.gallery))
       |> assign(:media, media(assigns))
       # There is always a door. An entry with a slug wears its own
       # address; one without has none yet, and until then the way in is
@@ -2360,8 +2440,10 @@ defmodule TexttileWeb.EditorLive do
         >
           <div
             id="tilesBlock"
-            class="relative"
+            class={["relative", @picking_cover && "is-picking-cover"]}
             phx-hook="Gallery"
+            data-picking-cover={@picking_cover && "1"}
+            data-cover-source={Atom.to_string(@cover_source)}
             data-upload-url={~p"/admin/texts/#{@article.id}/gallery"}
             data-csrf={Phoenix.Controller.get_csrf_token()}
             data-max-upload-mb={Texttile.Settings.get(:max_upload_mb)}
@@ -2375,17 +2457,96 @@ defmodule TexttileWeb.EditorLive do
                 <span class="note num font-normal font-sans" id="tileOnWay" phx-update="ignore"></span>
               </h2>
               <button
-                :if={@gallery != [] && @preview_candidates != []}
+                :if={@can_pick_cover && !@picking_cover}
                 type="button"
                 class="link text-[12.5px] font-medium whitespace-nowrap"
                 id="changePreview"
-                phx-click={JS.toggle(to: "#coverRow", display: "grid")}
+                phx-click="toggle_cover_pick"
               >
                 {gettext("Change cover")}
               </button>
             </div>
+            <%!-- In-place cover picking bar: pins cleanly while scrolling long
+                 galleries, pauses drag/delete/lightbox, and swaps inline text
+                 images into the same grid when present. --%>
             <div
-              class="grid gap-[8px] sm:gap-[10px] grid-cols-3 mt-3"
+              :if={@picking_cover}
+              class="cover-pick-bar"
+              id="coverPickBar"
+              role="region"
+              aria-label={gettext("Choose cover")}
+            >
+              <div class="cover-pick-row">
+                <span class="cover-pick-cur">
+                  <span
+                    :if={@effective_preview}
+                    class="cover-pick-thumb"
+                    style={
+                      tile_bg(
+                        (@media[@effective_preview] && @media[@effective_preview].still) ||
+                          @effective_preview
+                      )
+                    }
+                  ></span>
+                  <span class="cover-pick-lbl">
+                    {gettext("Cover")} <b id="coverPickCurrent">{@cover_label}</b>
+                  </span>
+                </span>
+                <span class="cover-pick-acts">
+                  <button
+                    :if={
+                      @article.preview_path &&
+                        @article.preview_path != List.first(@preview_candidates)
+                    }
+                    type="button"
+                    class="link text-[12px] !text-dim"
+                    id="resetPreview"
+                    phx-click="reset_preview"
+                  >
+                    {gettext("Use first")}
+                  </button>
+                  <button
+                    type="button"
+                    class="link text-[12px] font-semibold"
+                    id="doneCoverPick"
+                    phx-click="close_cover_pick"
+                  >
+                    {gettext("Done")}
+                  </button>
+                </span>
+              </div>
+              <div :if={@inline_preview_candidates != []} class="cover-pick-src" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={to_string(@cover_source != :inline)}
+                  class={["cov-src-tab", @cover_source != :inline && "on"]}
+                  id="coverSrcGallery"
+                  data-cover-src="gallery"
+                  phx-click="set_cover_source"
+                  phx-value-source="gallery"
+                >
+                  {gettext("Gallery (%{count})", count: length(@gallery))}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={to_string(@cover_source == :inline)}
+                  class={["cov-src-tab", @cover_source == :inline && "on"]}
+                  id="coverSrcInline"
+                  data-cover-src="inline"
+                  phx-click="set_cover_source"
+                  phx-value-source="inline"
+                >
+                  {gettext("From text (%{count})", count: length(@inline_preview_candidates))}
+                </button>
+              </div>
+            </div>
+            <div
+              class={[
+                "grid gap-[8px] sm:gap-[10px] grid-cols-3 mt-3",
+                @picking_cover && @cover_source == :inline && "hidden"
+              ]}
               id="tileGrid"
             >
               <div class="contents" id="tileServer">
@@ -2406,6 +2567,12 @@ defmodule TexttileWeb.EditorLive do
                   data-original={Images.url(image.path, :original)}
                   data-path={image.path}
                   data-preview={@effective_preview == image.path && "1"}
+                  data-pick-label={
+                    @picking_cover && @media[image.path].still && @effective_preview != image.path &&
+                      gettext("Set cover")
+                  }
+                  phx-click={@picking_cover && @media[image.path].still && "set_preview"}
+                  phx-value-path={@picking_cover && image.path}
                   data-pixels={image.width && "#{image.width} × #{image.height}"}
                   data-weight={weight(image.path)}
                   title={"#{image.filename} · #{I18n.format_plain_day(image.gallery_date)}"}
@@ -2413,10 +2580,17 @@ defmodule TexttileWeb.EditorLive do
                   role="button"
                   tabindex="0"
                   aria-label={
-                    gettext("Tile %{index}, %{file}, grab to sort, tap to see it big",
-                      index: index,
-                      file: image.filename
-                    )
+                    if @picking_cover do
+                      gettext("Use tile %{index}, %{file}, as cover",
+                        index: index,
+                        file: image.filename
+                      )
+                    else
+                      gettext("Tile %{index}, %{file}, grab to sort, tap to see it big",
+                        index: index,
+                        file: image.filename
+                      )
+                    end
                   }
                 >
                   <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
@@ -2451,21 +2625,26 @@ defmodule TexttileWeb.EditorLive do
                 {gettext("+ Add")}
               </button>
             </div>
-            <%!-- cover picker unfolds cleanly under the tiles when Change cover is clicked --%>
             <div
-              :if={@gallery != [] && @preview_candidates != []}
-              class="hidden grid-cols-[repeat(auto-fill,minmax(40px,1fr))] gap-[6px] mt-3"
-              id="coverRow"
+              :if={@picking_cover && @cover_source == :inline && @inline_preview_candidates != []}
+              class="grid gap-[8px] sm:gap-[10px] grid-cols-3 mt-3"
+              id="coverInlineGrid"
             >
               <button
-                :for={{path, index} <- Enum.with_index(@preview_candidates, 1)}
+                :for={{path, index} <- Enum.with_index(@inline_preview_candidates, 1)}
                 type="button"
-                class={["cover-opt", @effective_preview == path && "on"]}
+                class="tile"
+                data-path={path}
+                data-preview={@effective_preview == path && "1"}
+                data-pick-label={@effective_preview != path && gettext("Set cover")}
                 style={tile_bg((@media[path] && @media[path].still) || path)}
                 phx-click="set_preview"
                 phx-value-path={path}
-                aria-label={gettext("Use image %{index} as the preview image", index: index)}
-              ></button>
+                aria-label={gettext("Use image %{index} from text as cover", index: index)}
+              >
+                <span class="n">{String.pad_leading("#{index}", 2, "0")}</span>
+                <span :if={@effective_preview == path} class="cov">{gettext("Cover")}</span>
+              </button>
             </div>
             <%!-- the hook shows it under the tiles it sends, while two
                  or more wait for a Retry: after a reload, or when the

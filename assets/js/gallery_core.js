@@ -90,6 +90,7 @@ export class Gallery {
     this.mountSort()
     this.mountLocalActions()
     this.mountTileActions()
+    this.mountCoverPick()
 
     this.onKeydown = e => this.keydown(e)
     window.addEventListener("keydown", this.onKeydown)
@@ -404,9 +405,36 @@ export class Gallery {
     this.pump()
   }
 
+  isPickingCover() {
+    return this.el.dataset.pickingCover === "1"
+  }
+
+  // Remember the scroll position when switching from Gallery to From text
+  // during cover picking so returning lands back on the same row.
+  mountCoverPick() {
+    this.savedPickScroll = null
+    this.el.addEventListener("click", e => {
+      const btn = e.target.closest("[data-cover-src]")
+      if (!btn) return
+      const scroller = this.scroller()
+      const currentY = scroller === window ? window.scrollY : scroller.scrollTop
+      if (btn.dataset.coverSrc === "inline" && this.el.dataset.coverSource !== "inline") {
+        this.savedPickScroll = currentY
+      } else if (btn.dataset.coverSrc === "gallery" && this.savedPickScroll != null) {
+        const restore = this.savedPickScroll
+        this.savedPickScroll = null
+        requestAnimationFrame(() => {
+          if (scroller === window) window.scrollTo(0, restore)
+          else scroller.scrollTop = restore
+        })
+      }
+    })
+  }
+
   // the delete button on a finished tile: gone at once, undo below
   mountTileActions() {
     this.grid.addEventListener("click", e => {
+      if (this.isPickingCover()) return
       const del = e.target.closest("button[data-del]")
       if (!del) return
       e.stopPropagation()
@@ -561,17 +589,22 @@ export class Gallery {
     this.grid.addEventListener("pointerup", e => this.pointerUp(e))
     this.grid.addEventListener("pointercancel", e => this.pointerUp(e))
 
-    // keyboard: a tile is a button; Enter and Space open it big
+    // keyboard: a tile is a button; Enter and Space open it big, or pick it as cover in pick mode
     this.grid.addEventListener("keydown", e => {
       if (e.key !== "Enter" && e.key !== " ") return
       const tile = e.target.closest && e.target.closest("[data-id]")
       if (!tile) return
       e.preventDefault()
-      this.openLightbox(tile.dataset.id)
+      if (this.isPickingCover()) {
+        if (!tile.classList.contains("tile-waiting")) tile.click()
+      } else {
+        this.openLightbox(tile.dataset.id)
+      }
     })
   }
 
   pointerDown(e) {
+    if (this.isPickingCover()) return
     if (!e.isPrimary || this.drag) return
     if (e.target.closest("button")) return
     const tile = e.target.closest(".tile")
@@ -1157,7 +1190,13 @@ export class Gallery {
   }
 
   keydown(e) {
-    if (!this.lb) return
+    if (!this.lb) {
+      if (e.key === "Escape" && this.isPickingCover()) {
+        e.preventDefault()
+        this.hook.pushEvent("close_cover_pick", {})
+      }
+      return
+    }
 
     if (e.key === "Escape") {
       if (e.target.matches && e.target.matches("input, textarea")) {
