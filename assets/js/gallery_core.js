@@ -121,10 +121,23 @@ export class Gallery {
   }
 
   // after every LiveView patch: settle finished uploads, follow the
-  // lightbox's image through renames, deletes and re-sorts
+  // lightbox's image through renames, deletes and re-sorts, and restore
+  // gallery scroll position after switching back from inline cover candidates
   updated() {
     this.settleDone()
     this.refreshLightbox()
+    if (!this.isPickingCover()) {
+      this.savedPickScroll = null
+      this.pendingPickScroll = null
+    } else if (this.pendingPickScroll != null && this.el.dataset.coverSource === "gallery") {
+      const restore = this.pendingPickScroll
+      this.pendingPickScroll = null
+      const scroller = this.scroller()
+      requestAnimationFrame(() => {
+        if (scroller === window) window.scrollTo(0, restore)
+        else scroller.scrollTop = restore
+      })
+    }
   }
 
   tiles() {
@@ -410,9 +423,11 @@ export class Gallery {
   }
 
   // Remember the scroll position when switching from Gallery to From text
-  // during cover picking so returning lands back on the same row.
+  // during cover picking so returning lands back on the same row once
+  // LiveView has patched the gallery grid back into view.
   mountCoverPick() {
     this.savedPickScroll = null
+    this.pendingPickScroll = null
     this.el.addEventListener("click", e => {
       const btn = e.target.closest("[data-cover-src]")
       if (!btn) return
@@ -420,13 +435,10 @@ export class Gallery {
       const currentY = scroller === window ? window.scrollY : scroller.scrollTop
       if (btn.dataset.coverSrc === "inline" && this.el.dataset.coverSource !== "inline") {
         this.savedPickScroll = currentY
+        this.pendingPickScroll = null
       } else if (btn.dataset.coverSrc === "gallery" && this.savedPickScroll != null) {
-        const restore = this.savedPickScroll
+        this.pendingPickScroll = this.savedPickScroll
         this.savedPickScroll = null
-        requestAnimationFrame(() => {
-          if (scroller === window) window.scrollTo(0, restore)
-          else scroller.scrollTop = restore
-        })
       }
     })
   }
