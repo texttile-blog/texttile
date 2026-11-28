@@ -5041,7 +5041,7 @@ body.site .foot-band input::placeholder {
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    padding-right: 0 !important;
+    padding-right: 8px !important;
     column-gap: 11px;
     row-gap: 0;
   }
